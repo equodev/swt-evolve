@@ -266,7 +266,9 @@ Win32Window::MessageHandler(HWND hwnd,
         case WM_DESTROY: {
             OnDestroy();
             std::cout << "Win32Window: WM_DESTROY" << std::endl;
-            if (quit_on_close_) {
+            // Only the window that owns the application's exit may post this: WM_QUIT goes to the
+            // thread, not to a window, so every other window's pump sees it too -- see SetOwnsAppExit.
+            if (owns_app_exit_) {
                 PostQuitMessage(0);
             }
             return 0;

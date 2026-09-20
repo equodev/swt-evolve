@@ -40,6 +40,13 @@ public class VDisplay {
      */
     public long mainShellId;
 
+    /**
+     * The shells drawn in a window of their own rather than inside this one, or null when there are
+     * none. The client must leave each out of its own stack: a second Flutter client, rooted at that
+     * shell, is drawing it, and rendering it here as well would put it on screen twice.
+     */
+    public long[] windowedShellIds;
+
     protected VDisplay() {
     }
 
@@ -66,10 +73,19 @@ public class VDisplay {
         Menu[] displayPopups = display.popups;
         ArrayList<Menu> popupList = new ArrayList<>();
         if (displayPopups != null) {
+            DisplayBridge bridge = display.displayBridge;
             for (Menu menu : displayPopups) {
-                if (menu != null && !menu.isDisposed()) {
-                    popupList.add(menu);
+                if (menu == null || menu.isDisposed()) {
+                    continue;
                 }
+                // A popup opened over a shell that has a window of its own is drawn by that
+                // window's client, which was sent it on the shell's own channel. Drawing it here
+                // as well would put it on screen twice, in the wrong window both times.
+                Shell owner = bridge == null ? null : DisplayBridge.popupShell(menu);
+                if (owner != null && bridge.isShellWindowed(owner)) {
+                    continue;
+                }
+                popupList.add(menu);
             }
         }
         v.popups = popupList.toArray(new Menu[0]);
@@ -155,6 +171,15 @@ public class VDisplay {
             com.dslplatform.json.NumberConverter.serialize(v.activeShellId, writer);
             writer.writeAscii(",\"mainShellId\":");
             com.dslplatform.json.NumberConverter.serialize(v.mainShellId, writer);
+            if (v.windowedShellIds != null && v.windowedShellIds.length > 0) {
+                writer.writeAscii(",\"windowedShellIds\":");
+                writer.writeByte((byte) '[');
+                for (int i = 0; i < v.windowedShellIds.length; i++) {
+                    if (i > 0) writer.writeByte((byte) ',');
+                    com.dslplatform.json.NumberConverter.serialize(v.windowedShellIds[i], writer);
+                }
+                writer.writeByte((byte) ']');
+            }
             writeConfig(writer, v.config);
             writer.writeByte((byte) '}');
         }

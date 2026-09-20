@@ -27,6 +27,8 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
+import 'src/impl/window_commands_native.dart'
+    if (dart.library.html) 'src/impl/window_commands_web.dart';
 
 import 'src/comm/comm.dart';
 import 'src/gen/display.dart';
@@ -48,7 +50,7 @@ import 'src/impl/utils/image_utils.dart';
 String? _loggedThemeConfig;
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
-_DisplayMetricsReporter? _displayMetricsReporter;
+_WindowMetricsReporter? _windowMetricsReporter;
 
 void main(List<String> args) async {
   int? port = getPort(args);
@@ -133,13 +135,25 @@ void main(List<String> args) async {
   unawaited(initSwtEvolveProperties());
   FocusRequests.listen();
 
-  if (widgetName == "Display") {
+  // This client is a window in its own right: the Display's window, or a shell Java put in a
+  // window of its own (see WindowPolicy). Both get the window chrome, the window-state listeners
+  // and the viewport handshake. Every other client — the size bridges, a child browser view — is
+  // a view inside someone else's window and gets none of it.
+  final bool isWindowRoot = widgetName == "Display" || widgetName == "Shell";
+
+  if (isWindowRoot) {
     csdMainWindowId = widgetId;
     // Track window focus so the macOS controls grey out when the window is inactive.
     EquoWindow.installWindowStateListeners(
       (active) => csdWindowActive.value = active,
     );
+  }
+  if (widgetName == "Display") {
+    // Display-scoped, both of them: GC/create and the window commands are one channel for the
+    // whole session, so a detached window listening too would draw every GC a second time and
+    // race this one to open every window.
     _registerGcCreateListener();
+    registerWindowCommands(widgetId);
   }
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
@@ -149,12 +163,12 @@ void main(List<String> args) async {
       contentWidget: contentWidget,
       theme: theme,
       backgroundColor: backgroundColor,
-      isMainWindow: widgetName == "Display",
+      isMainWindow: isWindowRoot,
     ),
   );
 
-  if (widgetName == "Display") {
-    _displayMetricsReporter ??= _DisplayMetricsReporter(widgetId);
+  if (isWindowRoot) {
+    _windowMetricsReporter ??= _WindowMetricsReporter(widgetName, widgetId);
   } else {
     sendClientReady(widgetName, widgetId);
   }
@@ -226,8 +240,14 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
   }
 }
 
-class _DisplayMetricsReporter {
-  _DisplayMetricsReporter(this.widgetId) {
+/// The viewport handshake for a client that is a window of its own.
+///
+/// [widgetName] is what that window is rooted at — `Display` for the application's own window,
+/// `Shell` for one Java detached into a window of its own — and every channel below is addressed
+/// to it, because that is the widget whose geometry this window reports and whose teardown its
+/// closing means.
+class _WindowMetricsReporter {
+  _WindowMetricsReporter(this.widgetName, this.widgetId) {
     observeViewportChanges(_sendCurrentSize);
     observeWindowClose(_sendWindowClose);
     EquoCommService.onReconnect(_resyncAfterReconnect);
@@ -236,6 +256,7 @@ class _DisplayMetricsReporter {
     configFlagsVersion.addListener(_sendCurrentSize);
   }
 
+  final String widgetName;
   final int widgetId;
   bool _windowCloseSent = false;
 
@@ -246,7 +267,7 @@ class _DisplayMetricsReporter {
   // and cancels any tab-close it had deferred.
   void _resyncAfterReconnect() {
     _displayClientReadySent = false;
-    _sendWindowSizedClientReady("Display", widgetId);
+    _sendWindowSizedClientReady(widgetName, widgetId);
   }
 
   // The window/tab is tearing down (pagehide/beforeunload): ask Java to close the SWT shells (no-op on
@@ -258,14 +279,14 @@ class _DisplayMetricsReporter {
   void _sendWindowClose() {
     if (_windowCloseSent) return;
     _windowCloseSent = true;
-    print('[WinUnload] Display/$widgetId');
-    EquoCommService.send("Display/$widgetId/WinUnload");
+    print('[WinUnload] $widgetName/$widgetId');
+    EquoCommService.send("$widgetName/$widgetId/WinUnload");
   }
 
   void _sendCurrentSize() {
     final rounded = _currentLogicalViewSize();
     if (rounded == null) return;
-    _sendWindowSizedClientReady("Display", widgetId, sizeOverride: rounded);
+    _sendWindowSizedClientReady(widgetName, widgetId, sizeOverride: rounded);
   }
 }
 
@@ -352,7 +373,7 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
   final int mw = monitor?.width.toInt() ?? 0;
   final int mh = monitor?.height.toInt() ?? 0;
   final int zoom = _currentDeviceZoomPercent();
-  print('[ClientReady] Display/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
+  print('[ClientReady] $widgetName/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
   EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
     'width': w,
     'height': h,

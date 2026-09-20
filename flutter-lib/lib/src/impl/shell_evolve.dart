@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../comm/comm.dart';
+import '../comm/v_registry.dart';
+import '../gen/menu.dart';
+import '../gen/widgets.dart' as gen;
 import '../gen/colordialog.dart';
 import '../gen/dialog.dart';
 import '../gen/event.dart';
@@ -17,6 +21,7 @@ import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
 import '../impl/utils/region_clip.dart';
 import '../impl/utils/tracker_session.dart';
+import '../impl/utils/window_origin.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
@@ -81,6 +86,33 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
     TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
+    _popupsToken = EquoCommService.onRaw(_popupsChannel, _receivePopups);
+  }
+
+  /// Popups opened over this shell, when this client is the window drawing it. Empty in every other
+  /// client: Java sends them only to the window that owns the control they were opened for (see
+  /// `DisplayBridge.syncShellPopups`), because a popup hangs off the Display rather than off this
+  /// shell's widget tree and nothing else would carry it here.
+  List<VMenu> _popups = const [];
+  Object? _popupsToken;
+
+  String get _popupsChannel => 'Shell/${state.id}/Popups';
+
+  void _receivePopups(dynamic payload) {
+    final menus = <VMenu>[];
+    if (payload is Map && payload['popups'] is List) {
+      for (final raw in payload['popups'] as List) {
+        if (raw is Map<String, dynamic>) menus.add(VMenu.fromJson(raw));
+      }
+    }
+    // Registering is what puts the menu and its items in the registry; holding is what lets a popup
+    // that closed stop being held, instead of being kept for the life of the session.
+    for (final menu in menus) {
+      VRegistry.instance.register(menu);
+    }
+    VRegistry.instance.holds(_popupsChannel, menus);
+    if (!mounted) return;
+    setState(() => _popups = menus);
   }
 
   /// Where a window-global pointer position falls in the coordinate space Java works in: measured
@@ -112,6 +144,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   @override
   void dispose() {
+    EquoCommService.remove(_popupsChannel, _popupsToken);
+    VRegistry.instance.holds(_popupsChannel, const []);
     _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
     _focusScopeNode.dispose();
@@ -246,15 +280,37 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   Widget build(BuildContext context) {
     final scope = FloatingShellChromeScope.maybeOf(context);
     if (scope == null) {
-      return FocusScope(
-        node: _focusScopeNode,
-        onKeyEvent: _handleShellKey,
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) {
-            if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
-          },
-          child: super.build(context),
+      // No chrome scope above: this shell is the root of its own window, so it is also the only
+      // thing that can host a popup opened over it. Inside the Display's window the Display draws
+      // the popups instead, and _popups stays empty there.
+      Widget content = super.build(context);
+      // This shell IS the window, so its bounds are where the window sits on screen: publish that
+      // for anything consuming a screen coordinate inside it (a popup's location, a drop target).
+      final b0 = state.bounds;
+      final windowOrigin =
+          b0 == null ? Offset.zero : Offset(b0.x.toDouble(), b0.y.toDouble());
+      if (_popups.isNotEmpty) {
+        content = Stack(children: [
+          Positioned.fill(child: content),
+          for (final popup in _popups)
+            KeyedSubtree(
+              key: ValueKey(popup.id),
+              child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
+            ),
+        ]);
+      }
+      return WindowOriginScope(
+        origin: windowOrigin,
+        child: FocusScope(
+          node: _focusScopeNode,
+          onKeyEvent: _handleShellKey,
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) {
+              if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+            },
+            child: content,
+          ),
         ),
       );
     }
@@ -285,18 +341,41 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final h = (isFullScreen || _maximized) ? viewport.maxHeight : bodyH;
     final frameH = headerH + h;
 
+    /// Where a pane asked to sit at [wanted] is actually drawn.
+    ///
+    /// The position comes from the application, and an application built for real windows measures
+    /// one against the monitor — which on the desktop surface is the screen, several times larger
+    /// than the window every shell is drawn inside. The e4 workbench detaching a view is exactly
+    /// that: it places the new shell at `Control.toDisplay` of the part stack, then keeps it on the
+    /// *monitor*. A pane laid out past the edge is clipped away by the stack that holds it, so it
+    /// is not drawn small or half — it is not on screen at all. Moved inside, the way a window
+    /// manager places an off-screen window. A pane that already fits is left exactly where it is.
+    Offset insideViewport(Offset wanted) {
+      if (!viewport.maxWidth.isFinite || !viewport.maxHeight.isFinite) return wanted;
+      final maxX = math.max(0.0, viewport.maxWidth - w);
+      final maxY = math.max(0.0, viewport.maxHeight - frameH);
+      return Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY));
+    }
+
+    // A floating shell's bounds are a SCREEN position; this offset is measured from the window
+    // drawing it, so the window's own origin comes off.
+    final windowOrigin = WindowOriginScope.of(context);
+
     Offset resolvedOffset() {
       if (isFullScreen || _maximized) return Offset.zero;
       if (_offset != null) return _offset!;
       if (b != null && (b.x != 0 || b.y != 0)) {
-        return Offset(b.x.toDouble(), b.y.toDouble());
+        final wanted = Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
+        // A region is read against the shell's own origin (see below), so moving the shell moves
+        // what the region marks: that one is placed where it was asked, wherever that is.
+        return state.region != null ? wanted : insideViewport(wanted);
       }
       // A shell clipped to a region means its position, including the origin: the region's
       // rectangles are given in this shell's own coordinates and describe areas of the window
       // behind it. Centring one larger than the viewport -- the workbench sizes its drop feedback
       // to its own window, not to the client's -- moves those rectangles off the zone they mark.
       if (b != null && state.region != null) {
-        return Offset(b.x.toDouble(), b.y.toDouble());
+        return Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
       }
       return Offset(
         (viewport.maxWidth - bodyW) / 2,
@@ -307,7 +386,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final offset = resolvedOffset();
 
     void sendBoundsToJava() {
-      final pos = (isFullScreen || _maximized) ? Offset.zero : (_offset ?? offset);
+      // Back to SCREEN space, where Java keeps a shell's bounds: reporting the drawn offset would
+      // have the window's origin taken off a second time on the next update.
+      final drawn = (isFullScreen || _maximized) ? Offset.zero : (_offset ?? offset);
+      final pos = drawn + windowOrigin;
       widget.sendShellSetBounds(
         state,
         VEvent()

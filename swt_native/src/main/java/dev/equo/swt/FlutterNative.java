@@ -103,6 +103,42 @@ public final class FlutterNative {
     }
 
     /**
+     * Shows or hides the window, keeping it and its engine alive either way.
+     *
+     * <p>A hidden shell has to stop showing a window, but destroying it is the wrong answer: a
+     * toolkit hides and re-shows a shell freely during a layout, and each round trip would cost a
+     * window rebuild -- a new engine, a lost position, and a client that has to be described from
+     * scratch.
+     */
+    public static void setVisible(long context, boolean visible) {
+        SetVisible(context, visible);
+    }
+
+    /** No window, or one whose position cannot be told. */
+    public static final long ORIGIN_UNKNOWN = Long.MIN_VALUE;
+
+    /**
+     * Where the window's <em>content</em> starts on screen, packed as {@code (x << 32) | (y &
+     * 0xFFFFFFFF)}, or {@link #ORIGIN_UNKNOWN}.
+     *
+     * <p>Content rather than frame, so the title bar is already accounted for: a window-local point
+     * plus this origin is a screen point, with nothing left to correct.
+     */
+    public static long getOrigin(long context) {
+        return GetOrigin(context);
+    }
+
+    /** The x of a {@link #getOrigin} result. */
+    public static int originX(long packed) {
+        return (int) (packed >> 32);
+    }
+
+    /** The y of a {@link #getOrigin} result. */
+    public static int originY(long packed) {
+        return (int) packed;
+    }
+
+    /**
      * Points the native bridge at an external app-bundle directory (the EWT-owned combined
      * bundle: {@code <dir>/lib/libapp.so} + {@code <dir>/data/flutter_assets}). Must be
      * called before the first {@link #initialize}. Passing null/absent restores the default
@@ -111,6 +147,11 @@ public final class FlutterNative {
     public static void setBundleDir(String bundleDir) {
         SetBundleDir(bundleDir);
     }
+
+    private static native void SetVisible(long context, boolean visible);
+
+    private static native long GetOrigin(long context);
+
 
     private static native void SetBundleDir(String bundleDir);
 

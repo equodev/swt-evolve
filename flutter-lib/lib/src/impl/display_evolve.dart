@@ -7,6 +7,7 @@ import '../gen/swt.dart';
 import '../gen/tooltip.dart';
 import '../gen/widgets.dart' as gen;
 import '../comm/comm.dart';
+import 'utils/window_origin.dart';
 import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'key_forwarding.dart';
@@ -129,6 +130,14 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   final Map<int, bool> _shellIsMainCache = {};
 
+  /// The shells Java is hosting in a window of their own. Ids only — the shell itself still
+  /// arrives in [VDisplay.shells], because this client holds it even though it never draws it.
+  Set<int> _windowedShellIds() {
+    final ids = _display.windowedShellIds;
+    if (ids == null || ids.isEmpty) return const <int>{};
+    return ids.toSet();
+  }
+
   /// The shell Java named as main, or null when it named none — or named one this update does not
   /// carry, which is a gap in what reached the client rather than an answer about these shells.
   int? _namedMainShell(List<VShell> shells) {
@@ -213,7 +222,13 @@ class _DisplaySwtState extends State<DisplaySwt> {
     // Held is not drawn. The display carries every shell Java owns, so that a frame on a shell's
     // own channel can always be placed and the widgets inside it are never named at a client that
     // was not given them; a shell that is not visible simply is not built.
-    final shells = (_display.shells ?? []).where((s) => s.visible ?? true).toList();
+    //
+    // A windowed shell is held for the same reason and drawn for none: another client, rooted at
+    // that shell in a window of its own, is drawing it. See VDisplay.windowedShellIds.
+    final windowed = _windowedShellIds();
+    final shells = (_display.shells ?? [])
+        .where((s) => (s.visible ?? true) && !windowed.contains(s.id))
+        .toList();
     print("Dart Display.build shells: ${shells.length}");
     if (shells.isEmpty) return const SizedBox.shrink();
     _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));
@@ -249,11 +264,16 @@ class _DisplaySwtState extends State<DisplaySwt> {
         mainShells.add(loneMainCandidate!);
       }
       for (var s in mainShells) {
-        s.bounds!.x = 0;
-        s.bounds!.y = 0;
+        // Size only. The main shell is drawn Positioned.fill, so its x/y never placed it here --
+        // they are where its window sits ON SCREEN, learned from the OS, and overwriting them with
+        // zero is what made every screen coordinate derived from this shell wrong by that distance.
         s.bounds!.width = constraints.maxWidth.toInt();
         s.bounds!.height = constraints.maxHeight.toInt();
       }
+      final mainOrigin = mainShells.isNotEmpty && mainShells.first.bounds != null
+          ? Offset(mainShells.first.bounds!.x.toDouble(),
+              mainShells.first.bounds!.y.toDouble())
+          : Offset.zero;
 
       // Feed the main shell's title to the CSD overlay strip (it's already in the Display
       // state, so no separate event is needed). Deferred so we don't notify during build.
@@ -269,7 +289,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
         if (_isModal(dialogShells[i])) topmostModalIndex = i;
       }
 
-      return Stack(children: [
+      return WindowOriginScope(
+        origin: mainOrigin,
+        child: Stack(children: [
         for (final s in mainShells)
           KeyedSubtree(
             key: ValueKey(s.id),
@@ -303,7 +325,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
             ),
           ),
         ],
-      ]);
+      ]),
+      );
     }));
   }
 }

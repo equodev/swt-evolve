@@ -152,8 +152,11 @@ class DisplayResizeFlutterTest {
         clientReady(desk.comm, 1600, 1000, false);
 
         assertThat(shell.getBounds())
-                .as("a non-origin main shell is still slaved to the window viewport on resize")
-                .isEqualTo(new Rectangle(0, 0, 1600, 1000));
+                .as("still slaved to the viewport -- but the viewport is a SIZE. Where the window "
+                        + "sits is the window's to report (applyWindowOrigin), so the origin "
+                        + "survives; writing (0,0) here is what made every screen coordinate "
+                        + "derived from this shell wrong by the window's position")
+                .isEqualTo(new Rectangle(200, 100, 1600, 1000));
     }
 
     @Test
@@ -291,8 +294,9 @@ class DisplayResizeFlutterTest {
         clientReady(desk.comm, 1600, 1000, true);
 
         assertThat(shell.getBounds())
-                .as("on desktop a non-resizable lone shell is still slaved to the window viewport")
-                .isEqualTo(new Rectangle(0, 0, 1600, 1000));
+                .as("on desktop a non-resizable lone shell is still slaved to the window viewport, "
+                        + "keeping the origin the window reports")
+                .isEqualTo(new Rectangle(50, 50, 1600, 1000));
     }
 
     @Test
@@ -405,6 +409,11 @@ class DisplayResizeFlutterTest {
         @Override
         protected CommService comm() {
             return comm;
+        }
+
+        @Override
+        protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
+            return null; // a stood-in window sits nowhere; only a real one has a screen position
         }
 
         @Override

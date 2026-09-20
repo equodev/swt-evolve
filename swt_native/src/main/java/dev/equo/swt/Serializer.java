@@ -360,7 +360,7 @@ public class Serializer {
      * it holds.
      */
     private static boolean canReference(VWidget value, boolean stateless) {
-        if (!diffEnabled || depth.get()[0] == 0) return false;
+        if (!mayReference() || depth.get()[0] == 0) return false;
         if (value.sentSeq(target.get()) == 0) return false;
         java.util.Set<VWidget> required = describeInFull.get();
         if (required != null && required.contains(value)) return false;
@@ -388,6 +388,33 @@ public class Serializer {
      */
     public static final boolean diffEnabled = !"false".equalsIgnoreCase(System.getProperty("equo.swt.diff"));
 
+    /**
+     * How many clients each comm is currently serving.
+     *
+     * <p>Delivery is recorded against a connection id, and every client on one comm shares that id:
+     * a widget described to one is then recorded as delivered, and the next client is handed a name
+     * for something it was never given. It recovers by asking for the widget, but only after a round
+     * trip, and it does so for every widget it was named rather than described — which, with a window
+     * per shell, is most of them. So while any comm serves more than one client, nothing is named.
+     *
+     * <p>Kept per comm rather than as one flag because a second comm serving one client says nothing
+     * about the first, and the direction that is safe to be wrong in is describing too much.
+     */
+    private static final java.util.concurrent.ConcurrentHashMap<Object, Integer> clientsPerComm =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Records how many clients {@code comm} is serving; see {@link #clientsPerComm}. */
+    public static void clientsConnected(Object comm, int count) {
+        if (comm == null) return;
+        if (count <= 1) clientsPerComm.remove(comm);
+        else clientsPerComm.put(comm, count);
+    }
+
+    /** Whether a widget may travel as a name rather than as a description. */
+    private static boolean mayReference() {
+        return diffEnabled && clientsPerComm.isEmpty();
+    }
+
     /** Whether {@code impl} can be described by what changed rather than in full. */
     public static boolean canDiff(DartWidget impl) {
         return canDiff(impl, target.get());
@@ -407,7 +434,9 @@ public class Serializer {
 
     /** Whether {@code impl} can be described to {@code connection} by what changed rather than in full. */
     public static boolean canDiff(DartWidget impl, int connection) {
-        if (!diffEnabled || impl == null) return false;
+        // Same reason a widget may not be named while several clients share a connection id: a change
+        // is relative to a state this client may never have been sent. See mayReference().
+        if (!mayReference() || impl == null) return false;
         VWidget value = impl.getValue();
         // Never sent whole, so there is no state on the far side for a change to be relative to.
         return value != null && value.sentSeq(connection) != 0 && value.anyDirty();

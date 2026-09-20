@@ -248,6 +248,15 @@ public class ControlHelper {
     }
 
     private static boolean isMainShell(Shell shell) {
+        // The bridge knows which shell fills its window; ask it rather than inferring. The guesses
+        // below cannot tell a main shell from a floating one once a window may sit anywhere on
+        // screen, and getting it wrong adds a title-bar inset to every coordinate inside the shell.
+        if (shell.getImpl() instanceof DartControl dc) {
+            dev.equo.swt.FlutterBridge bridge = dc.getBridge();
+            if (bridge instanceof dev.equo.swt.WindowBridge wb) {
+                return wb.rendersAsMainWindow(shell);
+            }
+        }
         Rectangle b = shell.getBounds();
         if (b.x != 0 || b.y != 0)
             return false;

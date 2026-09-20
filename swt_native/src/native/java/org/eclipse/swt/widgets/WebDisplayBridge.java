@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.ConfigFlags;
+import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
@@ -177,6 +178,174 @@ public class WebDisplayBridge extends DisplayBridge {
         comm.on(win + "WinRestore", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
         comm.on(win + "WinClose", String.class, s -> onClientWindowClosed());
         comm.on(win + "WinUnload", String.class, s -> scheduleDeferredClose());
+        // A browser refused the window (popup blocker, or the user's browser opened nothing). The
+        // shell has to go back to being drawn inside this one, or it would exist nowhere at all.
+        // Read as a plain Object: that reader is registered for every comm, whereas a payload class
+        // of our own needs one generated for it, and without it this never arrives at all.
+        comm.on(win + "WindowOpenFailed", Object.class, payload -> {
+            long shellId = shellIdOf(payload);
+            if (shellId != 0) winApi.asyncExec(() -> onShellWindowRejected(shellId));
+        });
+    }
+
+    // ---- one browser window per detached shell (see WindowPolicy) ---------------------------------
+
+    /** The {@code shellId} in a window payload, or 0 when it carries none. Package-private so a test
+     *  can put a really-decoded payload through it. */
+    static long shellIdOf(Object payload) {
+        if (payload instanceof java.util.Map<?, ?> map && map.get("shellId") instanceof Number n) {
+            return n.longValue();
+        }
+        return 0;
+    }
+
+    /** Shells whose window the browser refused, so the policy is not asked about them again. */
+    private final java.util.Set<Long> rejectedShellWindows =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * Only with a served application: opening a second window means pointing a browser at a URL, and
+     * under the {@code flutter run} dev path there is no {@code WebFlutterServer} to name one.
+     */
+    @Override
+    protected boolean supportsShellWindows() {
+        return webServer != null;
+    }
+
+    @Override
+    protected boolean ownsWindow(Shell shell) {
+        if (shell != null && rejectedShellWindows.contains((long) shell.hashCode())) return false;
+        return super.ownsWindow(shell);
+    }
+
+    @Override
+    protected ShellWindow createShellWindow(Shell shell) {
+        Rectangle bounds = shell.getBounds();
+        String url = shellWindowUrl(webServer.getApplicationUrl(), shell.hashCode(),
+                effectiveTheme(), isTestSemanticsEnabled());
+        WebShellWindow window = new WebShellWindow(shell);
+        window.command("OpenWindow", java.util.Map.of(
+                "shellId", (long) shell.hashCode(),
+                "url", url,
+                "x", bounds.x,
+                "y", bounds.y,
+                "width", bounds.width > 0 ? bounds.width : 640,
+                "height", bounds.height > 0 ? bounds.height : 480,
+                "title", shell.getText() == null ? "" : shell.getText()));
+        // The window the user closes is the one that tells us; the shell has no other way to hear it.
+        comm().on("Shell/" + shell.hashCode() + "/WinUnload", String.class,
+                s -> closeShellFromWindow(shell));
+        return window;
+    }
+
+    /**
+     * The address a detached shell's window is opened at: the same application, rooted at that shell
+     * rather than at the Display.
+     *
+     * <p>The theme is carried in the URL as well as being pushed over the comm, because the client
+     * paints its first frames before anything arrives on the socket. Without it the window opens
+     * light and then corrects itself, which against a dark application reads as a broken window
+     * rather than as a flash.
+     */
+    static String shellWindowUrl(String baseUrl, long shellId, String theme, boolean testSemantics) {
+        String url = baseUrl + "/?widgetName=Shell&widgetId=" + shellId + "&theme=" + theme;
+        if (testSemantics) url += "&enableTestSemantics=true";
+        return url;
+    }
+
+    /** Whether the served page is asked to build the semantics tree (the E2E runtime toggle). */
+    private static boolean isTestSemanticsEnabled() {
+        return Boolean.getBoolean("dev.equo.swt.web.enableTestSemantics");
+    }
+
+    /** The theme a new window should open in: what the application forces, else the system's. */
+    private static String effectiveTheme() {
+        String forced = dev.equo.swt.Config.getConfigFlags().force_theme;
+        if (forced != null) {
+            String normalized = forced.trim().toLowerCase();
+            if ("dark".equals(normalized) || "light".equals(normalized)) return normalized;
+        }
+        return Display.isSystemDarkTheme() ? "dark" : "light";
+    }
+
+    /** The browser would not open the window: remember it, and re-push so the shell is drawn inline. */
+    private void onShellWindowRejected(long shellId) {
+        if (!rejectedShellWindows.add(shellId)) return;
+        System.err.println("[WebDisplayBridge] the browser refused a window for Shell/" + shellId
+                + " (popup blocked?); drawing it inside the main window instead");
+        if (forDisplay != null && !forDisplay.getApi().isDisposed()) sendDisplayUpdate(forDisplay);
+    }
+
+    /** The user closed a detached shell's browser window. */
+    private void closeShellFromWindow(Shell shell) {
+        Display api = forDisplay == null ? null : forDisplay.getApi();
+        if (api == null || api.isDisposed()) return;
+        api.asyncExec(() -> {
+            if (api.isDisposed() || shell.isDisposed()) return;
+            shell.close();
+            // The window is gone either way, so a vetoed close would strand the shell unreachable.
+            if (!shell.isDisposed()) shell.dispose();
+        });
+    }
+
+    /** A detached shell's browser window, driven entirely by commands to the client that opened it. */
+    private class WebShellWindow implements ShellWindow {
+        private final Shell shell;
+        private boolean open = true;
+
+        WebShellWindow(Shell shell) {
+            this.shell = shell;
+        }
+
+        void command(String name, java.util.Map<String, Object> payload) {
+            if (forDisplay == null) return;
+            try {
+                serializeAndSend("Display/" + forDisplay.getApi().hashCode() + "/" + name, payload);
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public boolean isAlive() {
+            return open;
+        }
+
+        @Override
+        public void setTitle(String title) {
+            command("WindowTitle", java.util.Map.of("shellId", (long) shell.hashCode(), "title", title));
+        }
+
+        @Override
+        public void setBounds(Rectangle bounds) {
+            command("WindowBounds", java.util.Map.of(
+                    "shellId", (long) shell.hashCode(),
+                    "x", bounds.x, "y", bounds.y,
+                    "width", bounds.width, "height", bounds.height));
+        }
+
+        @Override
+        public void setState(int state) {
+            command("WindowState", java.util.Map.of(
+                    "shellId", (long) shell.hashCode(), "state", state));
+        }
+
+        @Override
+        public void setVisible(boolean visible) {
+            // A browser window cannot be hidden and brought back: the platform has no such gesture,
+            // and a tab that is closed is gone. Left showing, which is the lesser wrong -- the shell
+            // it renders is hidden, so the window is empty rather than stale.
+            if (visible) command("WindowState", java.util.Map.of(
+                    "shellId", (long) shell.hashCode(), "state", ShellWindow.STATE_NORMAL));
+        }
+
+        @Override
+        public void close() {
+            if (!open) return;
+            open = false;
+            comm().remove("Shell/" + shell.hashCode() + "/WinUnload");
+            command("CloseWindow", java.util.Map.of("shellId", (long) shell.hashCode()));
+        }
     }
 
     /** Whether the Phase 2 dev/introspection path is active (serve via `flutter run`, VM Service on). */

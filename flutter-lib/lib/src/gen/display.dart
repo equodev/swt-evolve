@@ -24,6 +24,11 @@ class VDisplay {
   /// this shell renders full-bleed; every other one is a window with its own chrome.
   int? mainShellId;
 
+  /// The shells drawn in a window of their own — a second native window, a second browser window —
+  /// each by its own Flutter client rooted at that shell. They are left out of this client's stack;
+  /// drawing them here as well would put them on screen twice. See [WindowPolicy] on the Java side.
+  List<int>? windowedShellIds;
+
   VDisplay();
 
   factory VDisplay.fromJson(Map<String, dynamic> json) =>

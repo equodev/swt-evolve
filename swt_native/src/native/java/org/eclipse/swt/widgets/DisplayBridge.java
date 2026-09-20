@@ -3,7 +3,9 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowBridge;
+import dev.equo.swt.WindowPolicy;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -42,6 +44,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * Single-threaded: only ever read/written on the Display's UI thread.
      */
     protected boolean applyingClientBounds;
+
+    /**
+     * Shells hosted in a window of their own, in open order. Empty under the default single-window
+     * policy, which is what keeps every question below off the normal path.
+     */
+    private final java.util.LinkedHashMap<Shell, ShellWindow> shellWindows =
+            new java.util.LinkedHashMap<>();
 
     protected DisplayBridge(DartDisplay display) {
         this.forDisplay = display;
@@ -350,10 +359,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // event pump — so the window stayed blank. Buffering the pre-connect state avoids that race and
         // gives Flutter content the moment it connects (which also keeps its runloop live).
         try {
+            // Before the value is built: what it names as windowed has to be the windows that exist.
+            syncShellWindows();
             VDisplay vd = VDisplay.of(display);
             vd.activeShellId = publishedActiveShell = activeShellId();
-            vd.mainShellId = mainShellId(display);
+            vd.mainShellId = publishedMainShell = mainShellId(display);
+            vd.windowedShellIds = windowedShellIds();
             serializeAndSend("Display/" + vd.id, vd);
+            syncShellPopups();
             FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -370,14 +383,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         }
         Rectangle shellBounds = shell.getBounds();
+        int x = keepsMainShellOrigin() && shellBounds != null ? shellBounds.x : 0;
+        int y = keepsMainShellOrigin() && shellBounds != null ? shellBounds.y : 0;
         boolean matchesViewport =
                 shellBounds != null
-                        && shellBounds.x == 0
-                        && shellBounds.y == 0
                         && shellBounds.width == viewport.width
                         && shellBounds.height == viewport.height;
         if (!matchesViewport) {
-            shell.setBounds(0, 0, viewport.width, viewport.height);
+            shell.setBounds(x, y, viewport.width, viewport.height);
         }
     }
 
@@ -393,6 +406,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Shell firstTrackable = null;
         for (Shell shell : display._shells()) {
             if (shell == null || shell.isDisposed() || !shouldTrackDisplayBounds(shell)) {
+                continue;
+            }
+            // A shell already hosted in a window of its own drives that window, never this one.
+            // Asked as a fact rather than through the policy, which would ask back who is main.
+            if (shellWindows.containsKey(shell)) {
                 continue;
             }
             Layout layout = shell.getLayout();
@@ -450,6 +468,308 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return true;
     }
 
+    // ---- shells hosted in a window of their own (see WindowPolicy) --------------------------------
+
+    /** Whether this surface can host a shell in a window of its own. */
+    protected boolean supportsShellWindows() {
+        return false;
+    }
+
+    /** Creates the window hosting {@code shell}, or null when the surface could not. */
+    protected ShellWindow createShellWindow(Shell shell) {
+        return null;
+    }
+
+    /** Whether {@code shell} is one {@link WindowPolicy} puts in a window of its own. */
+    protected boolean ownsWindow(Shell shell) {
+        return WindowPolicy.ownsWindow(shell, isMainShell(forDisplay, shell));
+    }
+
+    /** The window hosting {@code control}'s shell, or null when it is drawn inside the Display's. */
+    protected ShellWindow shellWindowFor(DartControl control) {
+        if (!(control instanceof DartShell dartShell)) return null;
+        return shellWindows.get((Shell) dartShell.getApi());
+    }
+
+    /** Test seam: the shells currently hosted in a window of their own, in open order. */
+    protected java.util.Set<Shell> windowedShells() {
+        return java.util.Collections.unmodifiableSet(shellWindows.keySet());
+    }
+
+    /**
+     * Brings the set of open windows in line with what the policy now says, opening one for every
+     * eligible visible shell and closing the ones whose shell is gone, hidden or no longer eligible.
+     *
+     * <p>Driven from {@link #pushDisplayState}, so the ids the client is told about are the windows
+     * that actually exist: a shell the client leaves out of its own stack must have a window to be
+     * drawn in, or it would be rendered nowhere at all.
+     */
+    private void syncShellWindows() {
+        if (forDisplay == null) return;
+        // Nothing can be eligible and nothing is open: the overwhelmingly common case, skipped whole.
+        if (shellWindows.isEmpty() && (!supportsShellWindows() || WindowPolicy.isSingleWindow())) return;
+
+        shellWindows.entrySet().removeIf(entry -> {
+            Shell shell = entry.getKey();
+            ShellWindow window = entry.getValue();
+            if (!window.isAlive()) {
+                onShellWindowLost(shell);
+                return true;
+            }
+            if (shell.isDisposed() || !ownsWindow(shell)) {
+                closeShellWindow(shell, window);
+                return true;
+            }
+            // Hidden is not gone. A toolkit hides and re-shows a shell while it lays out -- the
+            // Eclipse workbench does it to a detached part -- and taking the window down for it
+            // rebuilds the window on the next pass, since a window closed here is not recorded as
+            // lost. That is an endless create/destroy cycle, one new engine per turn.
+            window.setVisible(shell.getVisible());
+            return false;
+        });
+
+        if (!supportsShellWindows()) return;
+        for (Shell shell : forDisplay._shells()) {
+            if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
+            if (shellWindows.containsKey(shell) || lostWindows.contains(shell)) continue;
+            if (!ownsWindow(shell)) continue;
+            ShellWindow window = createShellWindow(shell);
+            if (window == null) continue;
+            shellWindows.put(shell, window);
+            registerShellClientReady(shell);
+        }
+    }
+
+    /**
+     * Teaches {@code shell} where its window actually is.
+     *
+     * <p>Applied under {@link #applyClientBounds} and only on a change, which is what keeps it from
+     * being echoed straight back to the OS as a move -- the resize loop with a different axis.
+     */
+    protected void applyWindowOrigin(Shell shell, org.eclipse.swt.graphics.Point origin) {
+        if (origin == null || shell == null || shell.isDisposed()) return;
+        Rectangle bounds = shell.getBounds();
+        if (bounds == null || (bounds.x == origin.x && bounds.y == origin.y)) return;
+        applyClientBounds(() -> shell.setBounds(origin.x, origin.y, bounds.width, bounds.height));
+    }
+
+    /**
+     * The shell last published as the main one. Read rather than recomputed: working it out walks
+     * every shell and asks each for its layout, and this is reached from inside that very walk
+     * (a coordinate conversion during serialization), where the answer would be half-formed -- which
+     * is how the workbench shell came to be treated as detached and the application drew nothing.
+     */
+    private volatile long publishedMainShell;
+
+    @Override
+    public boolean rendersAsMainWindow(Object shell) {
+        return shell instanceof Shell s && !s.isDisposed()
+                && s.hashCode() == publishedMainShell && !isShellWindowed(s);
+    }
+
+    /**
+     * Whether the main shell keeps its own origin when it is slaved to the viewport.
+     *
+     * <p>Only where a window has a position of its own to keep. A page has none -- it <em>is</em> the
+     * viewport, and its main shell belongs at (0,0) -- while a desktop window sits wherever the OS
+     * put it, and pinning its shell to the origin makes every screen coordinate derived from it (a
+     * popup's location, a drag's drop target) wrong by exactly that distance.
+     */
+    protected boolean keepsMainShellOrigin() {
+        return false;
+    }
+
+    /** Whether {@code shell} is drawn in a window of its own rather than inside the Display's. */
+    boolean isShellWindowed(Shell shell) {
+        return shellWindows.containsKey(shell);
+    }
+
+    /**
+     * The shell a popup menu was opened over, or null when it cannot be told.
+     *
+     * <p>The control the menu was opened for, not {@link Menu#getParent()}: a popup's parent is the
+     * Decorations it was constructed against, which for a menu shared between shells is not the one
+     * it is currently showing over.
+     */
+    static Shell popupShell(Menu menu) {
+        if (menu == null || menu.isDisposed() || !(menu.getImpl() instanceof DartMenu impl)) return null;
+        Control owner = impl.findOwnerControl();
+        if (owner != null && !owner.isDisposed()) return owner.getShell();
+        Decorations parent = menu.getParent();
+        return parent == null || parent.isDisposed() ? null : parent.getShell();
+    }
+
+    /** The popups a windowed shell has to draw itself, in Display order, or an empty array. */
+    private Menu[] popupsFor(Shell shell) {
+        Menu[] all = forDisplay == null ? null : forDisplay.popups;
+        if (all == null) return new Menu[0];
+        java.util.ArrayList<Menu> mine = new java.util.ArrayList<>();
+        for (Menu menu : all) {
+            if (menu != null && !menu.isDisposed() && popupShell(menu) == shell) mine.add(menu);
+        }
+        return mine.toArray(Menu[]::new);
+    }
+
+    /** What each windowed shell was last told its popups were, so a settled set is not re-sent. */
+    private final java.util.Map<Shell, java.util.List<Long>> sentShellPopups =
+            new java.util.IdentityHashMap<>();
+
+    /**
+     * Hands every windowed shell the popups opened over it, on its own channel.
+     *
+     * <p>A popup is drawn by the client that owns the window it was opened over, and the shell's
+     * client cannot learn of one any other way: popups hang off the Display, not off the shell's
+     * widget tree, so nothing carries them into the shell's own frame.
+     */
+    private void syncShellPopups() {
+        if (shellWindows.isEmpty() && sentShellPopups.isEmpty()) return;
+        sentShellPopups.keySet().removeIf(shell -> !shellWindows.containsKey(shell));
+        for (Shell shell : shellWindows.keySet()) {
+            if (shell.isDisposed()) continue;
+            Menu[] popups = popupsFor(shell);
+            java.util.List<Long> ids = new java.util.ArrayList<>(popups.length);
+            for (Menu menu : popups) ids.add((long) menu.hashCode());
+            // Sent on every Display push otherwise, which is every frame — and a popup that is
+            // still up is still in the list.
+            if (ids.equals(sentShellPopups.get(shell))) continue;
+            sentShellPopups.put(shell, ids);
+            VShellPopups payload = new VShellPopups();
+            payload.shellId = shell.hashCode();
+            payload.popups = popups;
+            try {
+                // Described in full, not referenced: a popup the Display's client was already sent
+                // counts as delivered, and this client — which has never seen it — cannot resolve a
+                // reference to something it was never given.
+                for (Menu menu : popups) {
+                    if (menu.getImpl() instanceof DartMenu impl) {
+                        dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
+                    }
+                }
+                serializeAndSend("Shell/" + payload.shellId + "/Popups", payload);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Shells whose window went away on its own. Kept so the pass below does not hand the shell a
+     * fresh window each time — reopening a window the user just closed is the one reaction that is
+     * certainly wrong.
+     */
+    private final java.util.Set<Shell> lostWindows =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * The window hosting {@code shell} is gone without this side asking — the user closed it, or the
+     * OS took it down. The shell has nowhere left to be drawn, so it goes with it. Posted rather than
+     * run here: this is reached from a serialization flush, which is no place to dispose a widget.
+     */
+    private void onShellWindowLost(Shell shell) {
+        if (shell.isDisposed() || !lostWindows.add(shell)) return;
+        Display api = forDisplay == null ? null : forDisplay.getApi();
+        if (api == null || api.isDisposed()) return;
+        api.asyncExec(() -> {
+            if (shell.isDisposed()) return;
+            shell.close();
+            // A veto has nothing left to render into, so it cannot be honoured here.
+            if (!shell.isDisposed()) shell.dispose();
+        });
+    }
+
+    private void closeShellWindow(Shell shell, ShellWindow window) {
+        if (!shell.isDisposed()) offChannel(shellClientReadyChannel(shell));
+        window.close();
+    }
+
+    /** Takes down the window hosting {@code shell}, if it has one. */
+    private void closeShellWindow(Shell shell) {
+        ShellWindow window = shellWindows.remove(shell);
+        if (window != null && window.isAlive()) closeShellWindow(shell, window);
+        lostWindows.remove(shell);
+    }
+
+    private static String shellClientReadyChannel(Shell shell) {
+        return "Shell/" + shell.hashCode() + "/ClientReady";
+    }
+
+    /**
+     * Wires the handshake for a shell rendered in its own window: that window reports its viewport,
+     * and the shell is slaved to it exactly as the main shell is slaved to the Display's window.
+     * The resize is flagged so it is not echoed back as a window resize — the same loop, one window out.
+     */
+    private void registerShellClientReady(Shell shell) {
+        Display api = forDisplay.getApi();
+        comm().on(shellClientReadyChannel(shell), ClientReadyPayload.class, p -> {
+            if (p == null) return;
+            Runnable apply = () -> {
+                if (shell.isDisposed()) return;
+                // A window of its own is a client of its own, and it has been sent nothing: it needs
+                // the same configuration bootstrap the Display's client gets on its first
+                // handshake, or it renders the whole shell against default theme and flags.
+                broadcastSwtEvolveProperties();
+                sendShellState(shell);
+                if (p.width <= 0 || p.height <= 0) return;
+                Rectangle current = shell.getBounds();
+                if (current.width == p.width && current.height == p.height) return;
+                applyClientBounds(() -> shell.setBounds(current.x, current.y, p.width, p.height));
+            };
+            if (api.isDisposed()) return;
+            if (api.getThread() == Thread.currentThread()) apply.run();
+            else api.asyncExec(apply);
+        });
+    }
+
+    /**
+     * Describes {@code shell} in full on its own channel, for the client that draws it in a window
+     * of its own.
+     *
+     * <p>That client is rooted at the shell and never listens on {@code Display/{id}}, so the
+     * Display frame — the only thing a shell is normally delivered inside — reaches it and is
+     * dropped. Nor does asking for a refresh help: a shell delivered only inside the Display has
+     * never been sent on its own channel, so the flush still counts it as new and holds it back for
+     * an ancestor to carry, and the ancestor is the one frame this client ignores. Left to either of
+     * those, a detached window renders nothing at all.
+     *
+     * <p>Delivery is forgotten first so this is a description rather than a name: whatever the shell
+     * was sent before went to the client drawing the Display, and means nothing to this one.
+     */
+    private void sendShellState(Shell shell) {
+        if (!(shell.getImpl() instanceof DartShell impl)) return;
+        try {
+            dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
+            // The api widget, not its value: that is what carries the id and the type name into the
+            // frame, and a client whose only knowledge of this shell is the frame cannot decode one
+            // without them. The ordinary flush sends the same thing for the same reason.
+            serializeAndSend("Shell/" + shell.hashCode(), shell);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * The shells the client must leave out of the Display's own window because each is drawn in a
+     * window of its own. Null when there are none, so the common frame is unchanged.
+     */
+    private long[] windowedShellIds() {
+        if (shellWindows.isEmpty()) return null;
+        long[] ids = new long[shellWindows.size()];
+        int n = 0;
+        for (Shell shell : shellWindows.keySet()) {
+            if (!shell.isDisposed() && shell.getVisible()) ids[n++] = shell.hashCode();
+        }
+        if (n == 0) return null;
+        return n == ids.length ? ids : java.util.Arrays.copyOf(ids, n);
+    }
+
+    /** Takes every extra window down. Called with the Display, before the surface itself goes. */
+    protected void closeShellWindows() {
+        for (java.util.Map.Entry<Shell, ShellWindow> entry : shellWindows.entrySet()) {
+            if (entry.getValue().isAlive()) closeShellWindow(entry.getKey(), entry.getValue());
+        }
+        shellWindows.clear();
+    }
+
     public String registerBrowserHtml(long browserId, String html) {
         return "";
     }
@@ -494,14 +814,20 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void destroy(DartWidget control) {
-        if (control instanceof DartShell && forDisplay != null) {
-            forDisplay.removeShell((Shell) ((DartShell) control).getApi());
+        if (control instanceof DartShell dartShell && forDisplay != null) {
+            Shell shell = (Shell) dartShell.getApi();
+            forDisplay.removeShell(shell);
+            // Reached while the shell is being released, before isDisposed() flips: the sync inside
+            // the push below would still find it visible and eligible, and leave its window standing
+            // with nothing in it. This is the point that knows the shell is going.
+            closeShellWindow(shell);
             sendDisplayUpdate(forDisplay);
         }
     }
 
     /** Tears down the Display's surface and comm. Subclasses override to add surface-specific cleanup. */
     public void destroyDisplay() {
+        closeShellWindows();
         if (comm != null) {
             comm.stop();
             comm = null;
@@ -735,24 +1061,41 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     public void setZOrder(DartControl control, Control sibling, boolean above) {
     }
 
-    // Window ops (WindowBridge): no-op by default; the surfaces that own a real OS window override.
+    // Window ops (WindowBridge). A shell in a window of its own is driven through that window on
+    // every surface, so it is handled here; the Display's own window is the surface's business, and
+    // the surfaces that have one override these and fall back to super for the rest.
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
+        // Applying a client-reported resize: the window already has this geometry, so echoing it
+        // back fights the window manager -- the same loop the main shell avoids.
+        if (applyingClientBounds || bounds == null) return;
+        ShellWindow window = shellWindowFor(control);
+        if (window != null) window.setBounds(bounds);
     }
 
     @Override
     public void setWindowMaximized(DartControl control, boolean maximized) {
+        setShellWindowState(control, maximized, ShellWindow.STATE_MAXIMIZED);
     }
 
     @Override
     public void setWindowMinimized(DartControl control, boolean minimized) {
+        setShellWindowState(control, minimized, ShellWindow.STATE_MINIMIZED);
     }
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        setShellWindowState(control, fullScreen, ShellWindow.STATE_FULLSCREEN);
+    }
+
+    private void setShellWindowState(DartControl control, boolean on, int state) {
+        ShellWindow window = shellWindowFor(control);
+        if (window != null) window.setState(on ? state : ShellWindow.STATE_NORMAL);
     }
 
     @Override
     public void setWindowTitle(DartControl control, String title) {
+        ShellWindow window = shellWindowFor(control);
+        if (window != null) window.setTitle(title == null ? "" : title);
     }
 }

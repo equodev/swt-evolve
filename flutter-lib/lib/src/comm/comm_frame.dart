@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:meta/meta.dart';
 import 'dart:typed_data';
 
 import '../gen/widget.dart';
@@ -143,6 +145,7 @@ abstract class EquoCommBase {
   }
 
   void _enqueue(Uint8List frame) {
+    if (recordSentFrames) _sent.add(frame);
     if (_open) {
       rawSend(frame);
     } else {
@@ -163,6 +166,34 @@ abstract class EquoCommBase {
     out.setRange(2, 2 + actionBytes.length, actionBytes);
     if (body.isNotEmpty) out.setRange(2 + actionBytes.length, out.length, body);
     return out;
+  }
+
+  /// Frames this client has sent, recorded only while [recordSentFrames] is on.
+  ///
+  /// Reading a widget's rendered position only covers what the client draws; a test that never looks
+  /// at what it reports cannot see the two drifting apart -- which is how a coordinate conversion
+  /// came to be right in one direction and wrong in the other. Off by default, so production
+  /// records nothing.
+  final List<Uint8List> _sent = [];
+
+  @visibleForTesting
+  static bool recordSentFrames = false;
+
+  @visibleForTesting
+  List<Uint8List> get sentFrames => List.unmodifiable(_sent);
+
+  /// Forgets the frames recorded so far, so a test can assert on one interaction at a time.
+  @visibleForTesting
+  void clearSentFrames() => _sent.clear();
+
+  /// Splits a frame from [sentFrames] into its channel and its JSON body.
+  @visibleForTesting
+  static (String, String) decodeFrame(Uint8List frame) {
+    final nameLen = (frame[0] << 8) | frame[1];
+    return (
+      utf8.decode(frame.sublist(2, 2 + nameLen)),
+      utf8.decode(frame.sublist(2 + nameLen)),
+    );
   }
 
   /// Subclasses call this with the raw bytes of each received binary frame.

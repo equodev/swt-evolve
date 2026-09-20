@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
 import '../gen/menu.dart';
+import 'utils/window_origin.dart';
 import '../gen/menuitem.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
@@ -312,8 +313,12 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       // and the refill has not. Natively the platform fires Show as part of showing the menu
       // (win32 does it from WM_INITMENUPOPUP, inside TrackPopupMenu), which is the order this
       // restores. The right-click path already worked this way.
+      // location is a SCREEN point; the anchor below is filled to this window, so what it wants is
+      // a point inside it. Without the shift a popup opened over a window that is not at the screen
+      // origin lands off by exactly where that window sits.
+      final windowOrigin = WindowOriginScope.of(context);
       _pendingContextMenuPosition = location != null
-          ? Offset(location.x.toDouble(), location.y.toDouble())
+          ? Offset(location.x.toDouble(), location.y.toDouble()) - windowOrigin
           : const Offset(100, 100);
       _pendingOpenFromVisibleFlag = true;
       _showSent = true;

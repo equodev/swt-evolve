@@ -256,6 +256,11 @@ class ShellCloseContractFlutterTest {
         }
 
         @Override
+        protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
+            return null; // a stood-in window sits nowhere; only a real one has a screen position
+        }
+
+        @Override
         protected CommService comm() {
             return comm;
         }

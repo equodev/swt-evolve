@@ -6,6 +6,7 @@
 #include <glib-object.h>
 #include <gtk/gtk.h>
 
+#include <execinfo.h> // backtrace (EQUO_X_BACKTRACE diagnostic)
 #include <cstring>    // strcmp
 #include <dlfcn.h>    // dladdr
 #include <filesystem> // std::filesystem
@@ -223,6 +224,76 @@ static gboolean on_display_window_delete(GtkWidget * /*widget*/, GdkEvent * /*ev
   return TRUE;
 }
 
+// X error handling, so that tearing one window down does not end the process.
+//
+// Closing a detached window that had been drawn into raises BadAccess on glXMakeContextCurrent, and
+// GDK's default handler answers any X error by exiting -- so closing one window closed the whole
+// application. The call is Flutter's own: its FlView unrealize handler makes the view's GL context
+// current to release its resources (gtk_widget_unrealize -> fl_view -> gdk_gl_context_make_current),
+// and GLX answers BadAccess when the context is already current on another thread, which is where
+// the engine's raster thread holds it. Those resources belong to a view that is going away, so the
+// error is about work that no longer matters -- but only this one is, which is why the match below
+// is exact rather than "ignore X errors while closing". Everything else still goes to GDK.
+//
+// Set EQUO_X_BACKTRACE=1 (with GDK_SYNCHRONIZE=1, or the trace names whatever ran next) to print a
+// native backtrace for every X error, which is how the call above was identified.
+static int (*equo_previous_x_handler)(::Display *, XErrorEvent *) = nullptr;
+static int equo_glx_major_opcode = -1;
+
+// GLX's X_GLXMakeContextCurrent, named here because its header is not among the runner's includes.
+static const int kGlxMakeContextCurrent = 26;
+
+static int equo_x_error_handler(::Display *dpy, XErrorEvent *e) {
+  if (getenv("EQUO_X_BACKTRACE") != nullptr) {
+    char msg[256];
+    XGetErrorText(dpy, e->error_code, msg, sizeof(msg));
+    fprintf(stderr, "\n[equo-x] %s  (error_code=%d request_code=%d minor_code=%d)\n", msg,
+            e->error_code, e->request_code, e->minor_code);
+    void *frames[64];
+    backtrace_symbols_fd(frames, backtrace(frames, 64), 2);
+    fflush(stderr);
+  }
+  const bool glx_make_current_denied = e->error_code == BadAccess &&
+                                       e->request_code == equo_glx_major_opcode &&
+                                       e->minor_code == kGlxMakeContextCurrent;
+  if (glx_make_current_denied) {
+    static bool reported = false;
+    if (!reported) {
+      reported = true;
+      g_warning("Ignoring BadAccess on glXMakeContextCurrent: a Flutter view released its GL "
+                "resources while its engine still held the context. This happens when a window is "
+                "closed, and is fatal only because the default handler exits.");
+    }
+    return 0;
+  }
+  return equo_previous_x_handler != nullptr ? equo_previous_x_handler(dpy, e) : 0;
+}
+
+static void InstallXErrorHandler() {
+  static bool installed = false;
+  if (installed) return;
+  installed = true;
+  ::Display *dpy = gdk_x11_get_default_xdisplay();
+  int first_event = 0, first_error = 0;
+  if (dpy == nullptr ||
+      !XQueryExtension(dpy, "GLX", &equo_glx_major_opcode, &first_event, &first_error)) {
+    // Without GLX there is nothing to tolerate, so leave the default handler alone rather than
+    // install one matching on a request code that could not be resolved.
+    equo_glx_major_opcode = -1;
+    return;
+  }
+  equo_previous_x_handler = XSetErrorHandler(equo_x_error_handler);
+}
+
+// Destroys a toplevel from the GTK main loop rather than from the caller; see Dispose for why.
+static gboolean destroy_window_idle(gpointer data) {
+  GtkWidget *window = GTK_WIDGET(data);
+  if (GTK_IS_WIDGET(window)) {
+    gtk_widget_destroy(window);
+  }
+  return G_SOURCE_REMOVE;
+}
+
 // "destroy" handler: the window really is gone. Flag it so pump() reports back.
 static void on_display_window_destroy(GtkWidget * /*widget*/, gpointer data) {
   FlutterWindow *ctx = static_cast<FlutterWindow *>(data);
@@ -369,6 +440,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
     g_printerr("Failed to initialize GTK\n");
     return nullptr;
   }
+  InstallXErrorHandler();
 
   FlutterWindow *ctx = new FlutterWindow;
   ctx->headless_window = nullptr;
@@ -390,6 +462,14 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   g_signal_connect(window, "destroy", G_CALLBACK(on_display_window_destroy), ctx);
   g_signal_connect(window, "notify::is-active", G_CALLBACK(on_display_window_active), ctx);
 
+  // The engine's implicit view. Note for anyone tempted by fl_view_new_for_engine: a secondary view
+  // is the one an engine will actually remove on teardown -- an implicit view cannot be removed,
+  // which is what FlutterEngineRemoveView refuses by name when a window closes, and the raster
+  // thread then segfaults in fl_opengl_manager_make_current seconds later. But there is no public
+  // way to start an engine that has no view yet: fl_view_new_for_engine requires a non-headless
+  // engine, and fl_engine_new on its own leaves the renderer with no GL context, so the first frame
+  // fails GDK_IS_GL_CONTEXT and the process segfaults at startup. Tried; not possible with the
+  // public API as it stands.
   FlView *view = fl_view_new(project);
   GtkWidget *view_widget = GTK_WIDGET(view);
 
@@ -470,13 +550,31 @@ Java_dev_equo_swt_FlutterNative_Dispose(JNIEnv *env, jclass cls, jlong context) 
     g_clear_object(&w->window_channel);
   }
   if (w->top_window) {
-    // window surface: destroying the toplevel destroys the FlView and shuts the engine down. Our
-    // "destroy" handler nulls top_window/view, so the drain below won't touch freed widgets.
+    // window surface: destroying the toplevel destroys the FlView and shuts the engine down.
+    //
+    // Destroyed from the main loop rather than inline, because inline can be inside the engine's own
+    // dispatch: a shell closed by a button *inside* it arrives as a platform message from that
+    // window's engine. The handlers carry this struct, which is freed at the end of this call, so
+    // they are disconnected first -- the destroy they would answer now happens later.
+    //
+    // KNOWN BROKEN, and not by an ordering this side can fix: with window-manager decorations
+    // (-Ddev.equo.swt.csd=false), closing a detached window by that same in-shell button segfaults
+    // in fl_opengl_manager_make_current a few seconds after this call has returned, on the engine's
+    // raster thread. Flutter refuses to detach the view first -- "FlutterEngineRemoveView ... The
+    // implicit view cannot be removed" -- and there is no public way to stop the engine before its
+    // view goes: fl_engine.h offers neither a start nor a shutdown, and fl_view_new_for_engine (the
+    // call that would give a *removable* view) needs an engine already running. Deferring, hiding,
+    // reordering and unrealizing were all tried and none of them reach another thread. With CSD on
+    // the same close is fine. Left to crash deliberately rather than gated; revisit on a newer
+    // Flutter, where the removable-view path may become reachable.
+    //
+    // Separately, destroying the view raises BadAccess on glXMakeContextCurrent from inside
+    // Flutter's own unrealize handler for any window that had been drawn into. That one IS handled:
+    // see equo_x_error_handler.
     if (GTK_IS_WIDGET(w->top_window)) {
-      gtk_widget_destroy(w->top_window);
-      while (gtk_events_pending()) {
-        gtk_main_iteration_do(FALSE);
-      }
+      g_signal_handlers_disconnect_by_data(w->top_window, w);
+      gtk_widget_hide(w->top_window);
+      g_idle_add(destroy_window_idle, w->top_window);
     }
   } else {
     // embedded surface: detach the view from its SWT parent (keeping it alive).
@@ -566,6 +664,33 @@ Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv *env, jclass cls, jlong context,
     gtk_window_set_title(GTK_WINDOW(w->top_window), t ? t : "");
   }
   env->ReleaseStringUTFChars(title, t);
+}
+
+// The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
+// LLONG_MIN when it cannot be told.
+JNIEXPORT jlong JNICALL
+Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv *env, jclass cls, jlong context) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  if (!w || !w->top_window || !GTK_IS_WIDGET(w->top_window)) return LLONG_MIN;
+  GdkWindow *gdk = gtk_widget_get_window(w->top_window);
+  if (!gdk) return LLONG_MIN;
+  gint x = 0, y = 0;
+  gdk_window_get_origin(gdk, &x, &y);
+  return (static_cast<jlong>(x) << 32)
+         | (static_cast<jlong>(static_cast<guint32>(y)));
+}
+
+// Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding the
+// window each time would cost a new engine and lose the window's position.
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong context, jboolean visible) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  if (!w || !w->top_window || !GTK_IS_WIDGET(w->top_window)) return;
+  if (visible) {
+    gtk_widget_show(w->top_window);
+  } else {
+    gtk_widget_hide(w->top_window);
+  }
 }
 
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen.

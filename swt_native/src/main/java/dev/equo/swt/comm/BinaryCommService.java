@@ -1,5 +1,7 @@
 package dev.equo.swt.comm;
 
+import dev.equo.swt.Serializer;
+
 import org.java_websocket.server.WebSocketServer;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -82,12 +84,16 @@ public class BinaryCommService extends AbstractBinaryCommService {
         @Override
         public void onOpen(WebSocket conn, ClientHandshake handshake) {
             sessions.add(conn);
+            // Several clients share this comm's connection id, so what may travel as a name rather
+            // than a description depends on how many there are -- see Serializer.clientsConnected.
+            Serializer.clientsConnected(BinaryCommService.this, sessions.size());
             onClientConnected(conn::send);
         }
 
         @Override
         public void onClose(WebSocket conn, int code, String reason, boolean remote) {
             sessions.remove(conn);
+            Serializer.clientsConnected(BinaryCommService.this, sessions.size());
         }
 
         @Override

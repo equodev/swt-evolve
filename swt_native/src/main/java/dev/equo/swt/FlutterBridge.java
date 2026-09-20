@@ -90,6 +90,16 @@ public abstract class FlutterBridge {
     private static final java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.WeakReference<Object>> widgetsById =
             new java.util.concurrent.ConcurrentHashMap<>();
 
+    /**
+     * Re-describes the widget with this id to the client in full, as {@link #WIDGET_REFRESH_CHANNEL}
+     * does on request. Called where <em>this</em> side knows a client holds nothing for it: a shell
+     * just given a window of its own is rendered by a fresh client rooted at that shell, which has
+     * never been sent it.
+     */
+    public static void resendWidget(long id) {
+        handleWidgetRefresh(Long.toString(id));
+    }
+
     static void handleWidgetRefresh(String idText) {
         if (idText == null) return;
         long id;

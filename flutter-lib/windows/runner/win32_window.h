@@ -63,6 +63,14 @@ class Win32Window {
   // If true, closing this window will quit the application.
   void SetQuitOnClose(bool quit_on_close);
 
+  // Whether destroying this window ends the process. True for exactly one window -- the one hosting
+  // the Display. PostQuitMessage is per *thread*, not per window, so a detached shell's window
+  // posting it puts WM_QUIT in the queue every other window pumps, and the Display's own pump reads
+  // it as "I am gone" and takes the whole application down with it. Closing one detached window then
+  // closes the app, with nothing in the log to say why, because it is an orderly shutdown.
+  void SetOwnsAppExit(bool owns_app_exit) { owns_app_exit_ = owns_app_exit; }
+  bool OwnsAppExit() const { return owns_app_exit_; }
+
   // Returns whether the user asked to close this window since the last call, clearing the flag.
   // WM_CLOSE on such a window is vetoed rather than obeyed (see MessageHandler), so the owner can
   // run its own close contract while the window is still up and destroy it only if that succeeds.
@@ -108,6 +116,8 @@ class Win32Window {
   static void UpdateTheme(HWND const window);
 
   bool quit_on_close_ = false;
+
+  bool owns_app_exit_ = false;
 
   bool close_requested_ = false;
 

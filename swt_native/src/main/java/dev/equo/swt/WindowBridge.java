@@ -23,4 +23,16 @@ public interface WindowBridge {
     void setWindowFullScreen(DartControl control, boolean fullScreen);
 
     void setWindowTitle(DartControl control, String title);
+
+    /**
+     * Whether this shell is the one filling the bridge's own window, rather than a shell drawn
+     * inside it with chrome of its own.
+     *
+     * <p>Asked rather than guessed from geometry: the answer decides whether a coordinate walk adds
+     * a title-bar inset, and a shell's bounds cannot tell the two apart once a window is free to sit
+     * anywhere on screen.
+     */
+    default boolean rendersAsMainWindow(Object shell) {
+        return false;
+    }
 }

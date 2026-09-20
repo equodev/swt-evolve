@@ -19,6 +19,9 @@ extern "C" __declspec(dllexport) void DummyExportedFunction()
 
 static FlutterWindow* s_first_engine = nullptr;
 
+// Whether some window has already been made responsible for ending the process (see SetOwnsAppExit).
+static bool s_app_exit_owner_assigned = false;
+
 // External app-bundle base directory set from Java (dev.equo.ewt.bundleDir). When non-empty
 // it overrides the GetDllPath() "next to myself" lookup so the bridge can boot a bundle it
 // does not sit beside. The DartProject is created with <base>\data, so this must be the dir
@@ -191,8 +194,16 @@ FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widg
         std::cout << "createDisplayWindow - failed to create window" << std::endl;
         return nullptr;
     }
-    // Closing the window posts WM_QUIT, which the pump reports back as -1 so the SWT side can match.
+    // Closing the window is a request, not a fact: WM_CLOSE is vetoed so SWT.Close can run while the
+    // window is still up (see Win32Window::MessageHandler). Every top-level window wants that.
     window->SetQuitOnClose(true);
+    // Ending the process when destroyed is a different thing, and belongs to exactly one window --
+    // the first, which hosts the Display. A detached shell's window must not take the application
+    // down with it; see Win32Window::SetOwnsAppExit.
+    if (!s_app_exit_owner_assigned) {
+        s_app_exit_owner_assigned = true;
+        window->SetOwnsAppExit(true);
+    }
     return window;
 }
 
@@ -275,15 +286,24 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv* env,
 JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass cls, jlong context) {
     MSG msg;
     int count = 0;
+    Surface* s = reinterpret_cast<Surface*>(context);
+    const bool owns_exit = s && s->window && s->window->OwnsAppExit();
     while (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
-            return -1;
+            // The queue is the thread's, so this message reaches whichever window pumps next rather
+            // than the one it is about. Only the window that owns the application's exit may take it
+            // as its own death; anyone else puts it back, or the owner never sees it and the process
+            // stays up with no window.
+            if (owns_exit) {
+                return -1;
+            }
+            ::PostQuitMessage(0);
+            break;
         }
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
         count++;
     }
-    Surface* s = reinterpret_cast<Surface*>(context);
     if (s && s->window && s->window->TakeCloseRequest()) {
         return -2;
     }
@@ -308,6 +328,29 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jcl
 }
 
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen (approximated as maximized).
+// The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
+// LLONG_MIN when there is no window.
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, jclass cls, jlong context) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return LLONG_MIN;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return LLONG_MIN;
+    POINT origin = {0, 0};
+    if (!::ClientToScreen(hwnd, &origin)) return LLONG_MIN;
+    return (static_cast<jlong>(origin.x) << 32)
+            | (static_cast<jlong>(static_cast<uint32_t>(origin.y)));
+}
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return;
+    // Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding
+    // the window each time would cost a new engine and lose the window's position.
+    ::ShowWindow(hwnd, visible ? SW_SHOW : SW_HIDE);
+}
+
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return;
