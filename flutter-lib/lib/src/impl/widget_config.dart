@@ -147,6 +147,10 @@ void setConfigFlags(ConfigFlags newFlags) {
   newFlags.csd_os = mergeString(newFlags.csd_os, prev.csd_os);
   newFlags.csd_titlebar_color =
       mergeString(newFlags.csd_titlebar_color, prev.csd_titlebar_color);
+  final scale = newFlags.font_point_scale;
+  if (scale == null || scale <= 0) {
+    newFlags.font_point_scale = prev.font_point_scale;
+  }
   configFlags = newFlags;
 }
 

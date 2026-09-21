@@ -140,6 +140,11 @@ public class ConfigFlags {
     /** Explicit CSD title-bar colour (RRGGBB/AARRGGBB hex); overrides the theme's own. */
     public String csd_titlebar_color;
 
+    /** Logical pixels per SWT font point on this host, so the render side paints point-sized text
+     *  at the size {@link FontMetricsUtil#dpiScale()} measured it at. The client cannot derive it:
+     *  its own platform is the browser's, not the one the application is laid out for. */
+    public double font_point_scale;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -175,6 +180,7 @@ public class ConfigFlags {
                 ", csd_maximize='" + csd_maximize + '\'' +
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
+                ", font_point_scale=" + font_point_scale +
                 ", system_menu_bar=" + system_menu_bar +
                 '}';
     }

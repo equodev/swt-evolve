@@ -419,7 +419,7 @@ public abstract class DartDevice implements Drawable, IDevice {
     }
 
     Point getScreenDPI() {
-        return new Point(96, 96);
+        return FontMetricsUtil.hostScreenDPI();
     }
 
     /**

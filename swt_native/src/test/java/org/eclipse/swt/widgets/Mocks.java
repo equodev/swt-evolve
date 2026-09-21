@@ -128,7 +128,7 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
             Color widgetColor = new Color(display, 10, 10, 10);
             when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(widgetColor);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        when(display.getDPI()).thenReturn(new Point(96, 96));
+        when(display.getDPI()).thenReturn(dev.equo.swt.FontMetricsUtil.hostScreenDPI());
         Color systemColor = new Color(display, red(), green(), blue());
         when(display.getSystemColor(anyInt())).thenReturn(systemColor);
         when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));

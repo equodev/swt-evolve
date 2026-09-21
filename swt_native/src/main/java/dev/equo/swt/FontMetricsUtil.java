@@ -58,14 +58,49 @@ public final class FontMetricsUtil {
         return result.toArray(new FontData[0]);
     }
 
+    /** A typographic point is 1/72", the unit an SWT {@code FontData} height is given in. */
+    private static final double POINTS_PER_INCH = 72.0;
+
     /**
-     * Device pixels per 72-dpi point. {@link GenFontMetrics} stores point advances while text is
-     * painted at the display DPI, so widths derived from the table must be multiplied by this to
-     * land on painted glyphs.
+     * The DPI Cocoa lays out in: a point is a logical pixel on macOS. Native SWT arrives here by
+     * dividing the screen resolution by the backing scale factor, which cancels Retina out.
+     */
+    private static final int MACOS_DPI = 72;
+
+    /**
+     * The DPI Win32 and GTK render a point-sized font at. Upstream GTK writes the same literal
+     * ({@code SwtDevice#getScreenDPI}); Win32 normalises {@code GetDeviceCaps} by the autoscale
+     * zoom and lands on it too, the display's own scaling being carried by {@code DPIUtil}.
+     */
+    private static final int WIN32_GTK_DPI = 96;
+
+    /**
+     * The screen DPI this backend reports, for the host it is running on. Native SWT reads it off
+     * the OS; there is none to ask here, and neither can the render side answer it — on web its
+     * platform is the browser's, not the one the application is laid out for.
+     */
+    public static org.eclipse.swt.graphics.Point hostScreenDPI() {
+        return hostScreenDPI(System.getProperty("os.name"));
+    }
+
+    public static org.eclipse.swt.graphics.Point hostScreenDPI(String osName) {
+        String n = osName == null ? "" : osName.toLowerCase();
+        int dpi = (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
+        return new org.eclipse.swt.graphics.Point(dpi, dpi);
+    }
+
+    /**
+     * Logical pixels per SWT font point — {@code dpi / 72} by SWT's own definition.
+     * {@link GenFontMetrics} stores point advances while text is painted at the display DPI, so
+     * widths derived from the table must be multiplied by this to land on painted glyphs. The
+     * render side scales by the same factor — it reads it off {@code ConfigFlags.font_point_scale},
+     * which is this value.
      */
     public static double dpiScale() {
         Display display = Display.getCurrent();
-        return (display != null && display.getDPI().x > 0) ? display.getDPI().x / 72.0 : 96.0 / 72.0;
+        return (display != null && display.getDPI().x > 0)
+                ? display.getDPI().x / POINTS_PER_INCH
+                : hostScreenDPI().x / POINTS_PER_INCH;
     }
 
     /**
@@ -82,7 +117,7 @@ public final class FontMetricsUtil {
         Display display = Display.getCurrent();
         int h = effectiveHeight(fd, display);
         double scale = (double) h / GenFontMetrics.BASE;
-        double dpiScale = display != null ? display.getDPI().x / 72.0 : 1.0;
+        double dpiScale = display != null ? display.getDPI().x / POINTS_PER_INCH : 1.0;
         return new int[]{
             (int) Math.round(m.ascent() * h * dpiScale),
             (int) Math.round(m.descent() * h * dpiScale),

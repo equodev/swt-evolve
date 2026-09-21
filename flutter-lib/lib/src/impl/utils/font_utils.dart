@@ -1,11 +1,31 @@
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart';
 import '../../gen/font.dart';
 import '../../gen/fontdata.dart';
 import '../../gen/color.dart';
+import '../widget_config.dart';
 
 /// Utility class to convert SWT Font/FontData to Flutter TextStyle
 class FontUtils {
+  /// A typographic point is 1/72", the unit an SWT FontData height is given in.
+  static const double _pointsPerInch = 72;
+
+  /// The DPI Win32 and GTK render a point-sized font at. macOS lays out in 72-dpi points instead,
+  /// so a point is a logical pixel there and the scale is 1.
+  static const double _win32GtkDpi = 96;
+
+  /// Logical pixels per SWT font point, as the Java side reports for the host it runs on. Text
+  /// measured there and painted here has to use the one factor. This client's own platform is the
+  /// browser's, which says nothing about the host, so it only answers until the first config
+  /// arrives.
+  static double get pointScale {
+    final fromHost = getConfigFlags().font_point_scale;
+    if (fromHost != null && fromHost > 0) return fromHost;
+    return defaultTargetPlatform == TargetPlatform.macOS
+        ? 1.0
+        : _win32GtkDpi / _pointsPerInch;
+  }
+
   /// Convert SWT font style to Flutter FontWeight and FontStyle
   static (FontWeight, FontStyle) convertSwtFontStyle(int swtFontStyle) {
     FontWeight weight = FontWeight.normal;
@@ -68,13 +88,8 @@ class FontUtils {
         ? fontData.name!
         : defaultFontName;
     final fontHeightPoints = fontData.height?.toDouble() ?? defaultFontSize;
-    // Apply DPI conversion only on Windows where SWT uses 72-DPI points but screens are 96 DPI.
-    // On macOS, SWT points map 1:1 to Flutter logical pixels, so no conversion is needed.
-    final isMacOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
-    final needsDpiScaling = applyDpiScaling && !isMacOS;
-    final fontSize = needsDpiScaling
-        ? fontHeightPoints * (96 / 72)
-        : fontHeightPoints;
+    final fontSize =
+        applyDpiScaling ? fontHeightPoints * pointScale : fontHeightPoints;
     final swtStyle = fontData.style;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);

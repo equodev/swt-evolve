@@ -775,6 +775,9 @@ public class Config {
         // Derived, not configured: it follows the rendering mode, which the desktop bridge sets
         // after the flags above are first read, so it is refreshed on every read.
         configFlags.system_menu_bar = systemMenuBar();
+        // Likewise derived: before a Display exists this falls back to the host's own convention,
+        // and reads the Display's DPI once there is one.
+        configFlags.font_point_scale = FontMetricsUtil.dpiScale();
         return configFlags;
     }
 

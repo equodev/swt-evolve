@@ -42,7 +42,8 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..csd_maximize = json['csd_maximize'] as String?
   ..double_click_timeout_ms = (json['double_click_timeout_ms'] as num?)?.toInt()
   ..csd_titlebar_color = json['csd_titlebar_color'] as String?
-  ..system_menu_bar = json['system_menu_bar'] as bool?;
+  ..system_menu_bar = json['system_menu_bar'] as bool?
+  ..font_point_scale = (json['font_point_scale'] as num?)?.toDouble();
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -76,4 +77,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'double_click_timeout_ms': ?instance.double_click_timeout_ms,
   'csd_titlebar_color': ?instance.csd_titlebar_color,
   'system_menu_bar': ?instance.system_menu_bar,
+  'font_point_scale': ?instance.font_point_scale,
 };
