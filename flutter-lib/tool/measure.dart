@@ -960,6 +960,15 @@ class WidgetMeasurer {
       }
     }
 
+    // The area a container lays the page it shows out in. `Sizes.getClientArea` reserves exactly
+    // this, so the two are one number on two sides, and a drift lays the page -- and everything
+    // the page positions from its own client area -- off by that much.
+    final pageWidget = expectedComponents['pageOf'];
+    if (pageWidget is String) {
+      final page = _findBoxCreatedBy(root, pageWidget);
+      if (page != null) discovered['page'] = _probeJson(page);
+    }
+
     return discovered;
   }
 
@@ -1102,6 +1111,17 @@ class WidgetMeasurer {
       if (found != null) return found;
     }
 
+    return null;
+  }
+
+  /// The outermost box built by [widget], found from the render tree itself rather than from a
+  /// marker the widget has to carry — the same way rows are located.
+  RenderBoxInfo? _findBoxCreatedBy(RenderBoxInfo box, String widget) {
+    if (box.createdBy(widget)) return box;
+    for (final child in box.children) {
+      final found = _findBoxCreatedBy(child, widget);
+      if (found != null) return found;
+    }
     return null;
   }
 
@@ -1616,6 +1636,13 @@ class WidgetMeasurer {
     // Keyed on the probes the measurement actually produced, not on the class name.
     if (_hasRowGeometry(analyses)) {
       _generateJavaRowWidgetSizes(fqn, analyses);
+      return;
+    }
+
+    // A container measured for its chrome reports where it put its page, not how big it wants to
+    // be. What Java needs from it are the insets it has to reserve, not a computeSize.
+    if (_hasClientAreaGeometry(analyses)) {
+      _generateJavaClientAreaSizes(fqn, analyses);
       return;
     }
 
@@ -2374,6 +2401,103 @@ class WidgetMeasurer {
   bool _hasRowGeometry(List<WidgetAnalysis> analyses) => analyses.any(
     (a) => a.measurements.any((m) => m.discoveredComponents['row'] is List),
   );
+
+  bool _hasClientAreaGeometry(List<WidgetAnalysis> analyses) => analyses.any(
+    (a) => a.measurements.any((m) => m.discoveredComponents['page'] is Map),
+  );
+
+  /// Emits the chrome a container reserves around its page: the strip on one edge and the frame on
+  /// the other three, as `Sizes.getClientArea` has to subtract them.
+  ///
+  /// Every style the widget declares is measured, and they all have to agree — Java keeps one
+  /// number for the strip and tells apart exactly one case, `SWT.BORDER`. A style that moves the
+  /// chrome beyond that is a layout bug, so this refuses to write rather than pick a side.
+  void _generateJavaClientAreaSizes(String fqn, List<WidgetAnalysis> analyses) {
+    final widgetType = widgetName(fqn);
+    final results = analyses
+        .expand((a) => a.measurements)
+        .where((m) => m.discoveredComponents['page'] is Map)
+        .toList();
+
+    final strip = <String, double>{};
+    final frame = <String, double>{};
+    final frameStyled = <String, double>{};
+    for (final m in results) {
+      final page = m.discoveredComponents['page'] as Map;
+      final left = (page['left'] as num).toDouble();
+      final top = (page['top'] as num).toDouble();
+      final right = m.finalSize.width - left - (page['width'] as num).toDouble();
+      final bottom =
+          m.finalSize.height - top - (page['height'] as num).toDouble();
+
+      // Which edge the strip is on is the style's to say; the other three carry the frame.
+      final onBottom = m.style.contains('BOTTOM');
+      strip[m.style] = onBottom ? bottom : top;
+      final into = m.style.contains('BORDER') ? frameStyled : frame;
+      into['${m.style} left'] = left;
+      into['${m.style} right'] = right;
+      into['${m.style} ${onBottom ? 'top' : 'bottom'}'] = onBottom ? top : bottom;
+    }
+
+    final stripHeight = _agreedMeasurement(strip, widgetType, 'the tab strip height');
+    final border = _agreedMeasurement(frame, widgetType, 'the body frame');
+    final borderStyled =
+        _agreedMeasurement(frameStyled, widgetType, 'the SWT.BORDER body frame');
+    if (stripHeight == null || border == null || borderStyled == null) return;
+
+    final buffer = StringBuffer()
+      ..writeln('package dev.equo.swt.size;')
+      ..writeln()
+      ..writeln('/**')
+      ..writeln(
+        ' * What a $widgetType lays out around the page it shows. Java hands the page exactly the',
+      )
+      ..writeln(
+        ' * area these leave, so the numbers are the render side\'s rather than a second copy.',
+      )
+      ..writeln(' *')
+      ..writeln(
+        ' * DO NOT EDIT MANUALLY - regenerate from measure_${widgetType.toLowerCase()}.dart',
+      )
+      ..writeln(' */')
+      ..writeln('public class ${widgetType}Sizes {')
+      ..writeln()
+      ..writeln('    /** Height of the tab strip, on whichever edge the tabs sit. */')
+      ..writeln(
+        '    public static final int TAB_STRIP_HEIGHT = ${stripHeight.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** The frame drawn on the three edges the strip does not take. */')
+      ..writeln('    public static final int BODY_BORDER = ${border.round()};')
+      ..writeln()
+      ..writeln('    /** The same frame, as SWT.BORDER widens it. */')
+      ..writeln(
+        '    public static final int BODY_BORDER_STYLED = ${borderStyled.round()};',
+      )
+      ..writeln('}');
+    _writeSizesFile(widgetType, buffer);
+  }
+
+  /// The one value every entry in [edges] agrees on, or null after saying which disagreed. Refusing
+  /// to write beats emitting a number picked out of a disagreement that a layout bug caused.
+  double? _agreedMeasurement(
+    Map<String, double> edges,
+    String widgetType,
+    String what,
+  ) {
+    if (edges.isEmpty) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: nothing measured $what — no style case produced it.',
+      );
+      return null;
+    }
+    final distinct = edges.values.toSet();
+    if (distinct.length != 1) {
+      print('SKIPPED ${widgetType}Sizes.java: $what is not one number: $edges');
+      return null;
+    }
+    return distinct.single;
+  }
 
   /// Emits `computeSize`, so a row widget reports its preferred size the same way every other
   /// generated widget does instead of keeping the arithmetic by hand in Sizes.java.

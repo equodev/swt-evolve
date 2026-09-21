@@ -834,24 +834,23 @@ public class Sizes {
         return new Rectangle(0, 28, b.width, b.height-28);
     }
 
-    /** Height of the tab strip a CTabFolder renders beside its page. Pinned to the render side. */
-    public static final int CTAB_FOLDER_TAB_STRIP_HEIGHT = 32;
-
     /**
      * The frame a CTabFolder draws around its page, on the three edges the tab strip does not take.
-     * Native reports 2, and 3 with SWT.BORDER; a folder that hands its page the full width lays it
-     * — and everything the page positions from its own client area — that much too far left.
+     * A folder that hands its page the full width lays it — and everything the page positions from
+     * its own client area — that much too far left.
      */
     private static int cTabFolderBodyBorder(DartCTabFolder widget) {
-        return (widget.getApi().getStyle() & SWT.BORDER) != 0 ? 3 : 2;
+        return (widget.getApi().getStyle() & SWT.BORDER) != 0
+                ? CTabFolderSizes.BODY_BORDER_STYLED
+                : CTabFolderSizes.BODY_BORDER;
     }
 
     public static Rectangle getClientArea(DartCTabFolder widget) {
         Rectangle b = widget.getBounds();
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int top = onBottom ? border : CTAB_FOLDER_TAB_STRIP_HEIGHT;
-        int bottom = onBottom ? CTAB_FOLDER_TAB_STRIP_HEIGHT : border;
+        int top = onBottom ? border : CTabFolderSizes.TAB_STRIP_HEIGHT;
+        int bottom = onBottom ? CTabFolderSizes.TAB_STRIP_HEIGHT : border;
         return new Rectangle(border, top,
                 Math.max(0, b.width - border * 2),
                 Math.max(0, b.height - top - bottom));
@@ -861,8 +860,8 @@ public class Sizes {
     public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int top = onBottom ? border : CTAB_FOLDER_TAB_STRIP_HEIGHT;
-        int bottom = onBottom ? CTAB_FOLDER_TAB_STRIP_HEIGHT : border;
+        int top = onBottom ? border : CTabFolderSizes.TAB_STRIP_HEIGHT;
+        int bottom = onBottom ? CTabFolderSizes.TAB_STRIP_HEIGHT : border;
         return new Rectangle(x - border, y - top,
                 width + border * 2, height + top + bottom);
     }
