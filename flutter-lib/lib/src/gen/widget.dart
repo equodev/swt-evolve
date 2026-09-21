@@ -5,6 +5,7 @@ import '../comm/comm.dart';
 import '../comm/v_registry.dart';
 import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
+import '../impl/widget_config.dart';
 import 'event.dart';
 import 'gc.dart';
 import 'widgets.dart';
@@ -115,9 +116,16 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     gcOverlayKey.currentState?.clearShapes();
   }
 
+  /// Whether what the application paints through this control's GC is shown. Canvas and
+  /// StyledText override wrapWithGCOverlay and keep painting either way: the opt-out
+  /// drops an overlay, never the drawing a control is made of.
+  bool get paintsGCOverlay =>
+      !(getConfigFlags().disable_control_gc_overlay ?? false);
+
   /// Wrap child widget with GC overlay.
   /// GC is always created so it can listen for events from Java immediately.
-  /// Uses Offstage when GC has no state yet (listening but not rendering).
+  /// Uses Offstage when GC has no state yet, or when the overlay is opted out of
+  /// (listening but not rendering).
   Widget wrapWithGCOverlay(Widget child) {
     final gc = gcOverlay ?? (VGC()..id = state.id);
     final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
@@ -125,7 +133,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     return Stack(
       children: [
         child,
-        if (gcOverlay != null)
+        if (gcOverlay != null && paintsGCOverlay)
           Positioned.fill(child: IgnorePointer(child: gcWidget))
         else
           Offstage(child: gcWidget),

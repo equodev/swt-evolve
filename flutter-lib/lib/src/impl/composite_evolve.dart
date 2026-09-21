@@ -216,7 +216,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     return Stack(
       children: [
         child,
-        if (gcOverlay != null)
+        if (gcOverlay != null && paintsGCOverlay)
           Positioned.fill(child: IgnorePointer(child: gcWidget))
         else
           Offstage(child: gcWidget),

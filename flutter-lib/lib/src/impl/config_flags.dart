@@ -15,6 +15,10 @@ class ConfigFlags {
   bool? gc_icons_replacement;
   bool? use_swt_colors;
   bool? disable_swt_canvas_colors;
+
+  /// Drops what an application paints over a control through its GC, so only what the control draws
+  /// for itself shows. Controls whose GC content is the control (Canvas, StyledText) ignore it.
+  bool? disable_control_gc_overlay;
   bool? use_swt_fonts;
   String? theme_name;
   String? force_theme;

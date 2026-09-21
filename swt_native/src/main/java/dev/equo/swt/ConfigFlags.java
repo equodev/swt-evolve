@@ -73,6 +73,12 @@ public class ConfigFlags {
 
     public boolean disable_swt_canvas_colors;
 
+    /** Drops what an application paints through a Control's own GC, leaving the control's own
+     *  rendering alone. A control that draws itself and is then painted over -- a check box whose
+     *  label the application redraws -- shows that drawing twice. Canvas and StyledText keep
+     *  painting their GC content whatever this says. */
+    public boolean disable_control_gc_overlay;
+
     public boolean use_swt_fonts;
 
     public boolean use_special_dropdown_button;
@@ -162,6 +168,7 @@ public class ConfigFlags {
                 ", disable_evolve_icons=" + disable_evolve_icons +
                 ", use_swt_colors=" + use_swt_colors +
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
+                ", disable_control_gc_overlay=" + disable_control_gc_overlay +
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +

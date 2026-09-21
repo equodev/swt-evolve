@@ -711,6 +711,9 @@ public class Config {
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
+            // Drops what an application paints over a control through its GC, keeping only what the
+            // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
+            configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));
             // Toolbar icons and table cells grow under the pointer by default; opt out to render

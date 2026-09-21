@@ -17,6 +17,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..gc_icons_replacement = json['gc_icons_replacement'] as bool?
   ..use_swt_colors = json['use_swt_colors'] as bool?
   ..disable_swt_canvas_colors = json['disable_swt_canvas_colors'] as bool?
+  ..disable_control_gc_overlay = json['disable_control_gc_overlay'] as bool?
   ..use_swt_fonts = json['use_swt_fonts'] as bool?
   ..theme_name = json['theme_name'] as String?
   ..force_theme = json['force_theme'] as String?
@@ -56,6 +57,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'gc_icons_replacement': ?instance.gc_icons_replacement,
   'use_swt_colors': ?instance.use_swt_colors,
   'disable_swt_canvas_colors': ?instance.disable_swt_canvas_colors,
+  'disable_control_gc_overlay': ?instance.disable_control_gc_overlay,
   'use_swt_fonts': ?instance.use_swt_fonts,
   'theme_name': ?instance.theme_name,
   'force_theme': ?instance.force_theme,
