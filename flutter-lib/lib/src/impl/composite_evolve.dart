@@ -224,6 +224,24 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     );
   }
 
+  @visibleForTesting
+  Widget stackGCUnderChildren(
+      Widget Function(Widget) paintBackground, Widget children) {
+    final gc = gcOverlay ?? (VGC()..id = state.id);
+    final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
+
+    return Stack(
+      children: [
+        Positioned.fill(child: paintBackground(const SizedBox.expand())),
+        if (gcOverlay != null)
+          Positioned.fill(child: IgnorePointer(child: gcWidget))
+        else
+          Offstage(child: gcWidget),
+        children,
+      ],
+    );
+  }
+
   Widget buildComposite() {
     final isPanelChild = SashPanelMarker.of(context);
     final widgetTheme = Theme.of(context).extension<CompositeThemeExtension>()!;
@@ -283,16 +301,13 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       return const SizedBox.shrink();
     }
 
-    final Widget inner;
-    if (isPanelChild) {
-      inner = paintBackground(SashPanelMarker(active: false, child: rawLayout));
-    } else {
-      inner = paintBackground(rawLayout);
-    }
+    final Widget inner = isPanelChild
+        ? SashPanelMarker(active: false, child: rawLayout)
+        : rawLayout;
 
     // wrapCompositeInteractionChrome(), unlike wrap() above, never applies wrapDnd() —
     // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
-    final gcWrapped = wrapWithGCOverlay(inner);
+    final gcWrapped = stackGCUnderChildren(paintBackground, inner);
     final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
     return blockWhenDisabled(wrapCompositeInteractionChrome(this, dndWrapped));
   }
