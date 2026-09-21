@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
+import '../gen/menu.dart';
 import '../gen/widget.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
@@ -48,8 +49,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
   void initState() {
     super.initState();
     _display = _lastDisplayState[widget.value.id] ?? widget.value;
-    applySystemMenu(_display.systemMenu);
     _publishHoldings();
+    applySystemMenu(_heldSystemMenu());
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
     // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
@@ -95,10 +96,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
     try {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       applyConfigFlags(updated.config);
-      applySystemMenu(updated.systemMenu);
       _lastDisplayState[widget.value.id] = updated;
       _display = updated;
       _publishHoldings();
+      applySystemMenu(_heldSystemMenu());
       if (mounted) setState(() {});
     } catch (e) {
       print('DisplaySwt update error: $e');
@@ -117,15 +118,29 @@ class _DisplaySwtState extends State<DisplaySwt> {
   /// while Java counted every one of them delivered, and then named them rather than describing
   /// them. The display is not a widget itself, so this is the only place that walk can start.
   void _publishHoldings() {
+    final systemMenu = _display.systemMenu;
     final held = <VWidget>[
       ...?_display.shells,
       ...?_display.popups,
       ...?_display.tooltips,
+      // The application menu is described here and named everywhere else, so leaving it out left
+      // nothing under it held: a name then resolves to a stub with no style, and the item that is
+      // always named - a separator, which never changes - draws as a full-height blank row.
+      if (systemMenu != null) systemMenu,
     ];
     for (final value in held) {
       VRegistry.instance.register(value);
     }
     VRegistry.instance.holds('Display/${widget.value.id}', held);
+  }
+
+  /// The registry's application menu: the object whose items are the widgets themselves rather
+  /// than the copy of them this payload happened to carry. Read after [_publishHoldings], which is
+  /// what puts it there.
+  VMenu? _heldSystemMenu() {
+    final menu = _display.systemMenu;
+    if (menu == null) return null;
+    return VRegistry.instance.valueOn(VRegistry.channelOf(menu)) as VMenu? ?? menu;
   }
 
   final Map<int, bool> _shellIsMainCache = {};
