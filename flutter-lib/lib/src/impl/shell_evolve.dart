@@ -364,7 +364,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     Offset resolvedOffset() {
       if (isFullScreen || _maximized) return Offset.zero;
       if (_offset != null) return _offset!;
-      if (b != null && (b.x != 0 || b.y != 0)) {
+      // An untrimmed shell counts as placed wherever its bounds are: the application anchors it to
+      // a control and calls setLocation, and anchored at the window's top-left that location IS the
+      // origin -- which the (0,0) test below would otherwise read as never having been placed.
+      if (b != null && (b.x != 0 || b.y != 0 || _noTrim)) {
         final wanted = Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
         // A region is read against the shell's own origin (see below), so moving the shell moves
         // what the region marks: that one is placed where it was asked, wherever that is.
@@ -377,6 +380,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       if (b != null && state.region != null) {
         return Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
       }
+      // What is left is a shell nobody placed: a dialog opened at the platform's default.
       return Offset(
         (viewport.maxWidth - bodyW) / 2,
         (viewport.maxHeight - headerH - bodyH) / 2,
