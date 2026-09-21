@@ -91,11 +91,12 @@ public final class WindowPolicy {
     public static Mode mode() {
         String value = System.getProperty(MODE_PROPERTY);
         if (value == null) return Mode.SINGLE;
-        return switch (value.trim().toLowerCase()) {
-            case "top-level", "toplevel", "top_level" -> Mode.TOP_LEVEL;
-            case "all" -> Mode.ALL;
-            default -> Mode.SINGLE;
-        };
+        String mode = value.trim().toLowerCase();
+        if ("top-level".equals(mode) || "toplevel".equals(mode) || "top_level".equals(mode))
+            return Mode.TOP_LEVEL;
+        if ("all".equals(mode))
+            return Mode.ALL;
+        return Mode.SINGLE;
     }
 
     /** True when nothing can get a window of its own, so a surface can skip the whole question. */
@@ -131,8 +132,9 @@ public final class WindowPolicy {
     /** The per-shell override, or null when the shell carries none. */
     private static Boolean shellOverride(Shell shell) {
         Object data = shell.getData(SHELL_DATA_KEY);
-        if (data instanceof Boolean b) return b;
-        if (data instanceof String s) {
+        if (data instanceof Boolean) return (Boolean) data;
+        if (data instanceof String) {
+            String s = (String) data;
             if ("true".equalsIgnoreCase(s)) return Boolean.TRUE;
             if ("false".equalsIgnoreCase(s)) return Boolean.FALSE;
         }

@@ -487,8 +487,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** The window hosting {@code control}'s shell, or null when it is drawn inside the Display's. */
     protected ShellWindow shellWindowFor(DartControl control) {
-        if (!(control instanceof DartShell dartShell)) return null;
-        return shellWindows.get((Shell) dartShell.getApi());
+        if (!(control instanceof DartShell)) return null;
+        return shellWindows.get((Shell) ((DartShell) control).getApi());
     }
 
     /** Test seam: the shells currently hosted in a window of their own, in open order. */
@@ -563,8 +563,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public boolean rendersAsMainWindow(Object shell) {
-        return shell instanceof Shell s && !s.isDisposed()
-                && s.hashCode() == publishedMainShell && !isShellWindowed(s);
+        if (!(shell instanceof Shell)) return false;
+        Shell s = (Shell) shell;
+        return !s.isDisposed() && s.hashCode() == publishedMainShell && !isShellWindowed(s);
     }
 
     /**
@@ -592,8 +593,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * it is currently showing over.
      */
     static Shell popupShell(Menu menu) {
-        if (menu == null || menu.isDisposed() || !(menu.getImpl() instanceof DartMenu impl)) return null;
-        Control owner = impl.findOwnerControl();
+        if (menu == null || menu.isDisposed() || !(menu.getImpl() instanceof DartMenu)) return null;
+        Control owner = ((DartMenu) menu.getImpl()).findOwnerControl();
         if (owner != null && !owner.isDisposed()) return owner.getShell();
         Decorations parent = menu.getParent();
         return parent == null || parent.isDisposed() ? null : parent.getShell();
@@ -607,7 +608,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         for (Menu menu : all) {
             if (menu != null && !menu.isDisposed() && popupShell(menu) == shell) mine.add(menu);
         }
-        return mine.toArray(Menu[]::new);
+        return mine.toArray(new Menu[0]);
     }
 
     /** What each windowed shell was last told its popups were, so a settled set is not re-sent. */
@@ -641,8 +642,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // counts as delivered, and this client — which has never seen it — cannot resolve a
                 // reference to something it was never given.
                 for (Menu menu : popups) {
-                    if (menu.getImpl() instanceof DartMenu impl) {
-                        dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
+                    if (menu.getImpl() instanceof DartMenu) {
+                        dev.equo.swt.Serializer.forgetDelivery(((DartMenu) menu.getImpl()).getValue());
                     }
                 }
                 serializeAndSend("Shell/" + payload.shellId + "/Popups", payload);
@@ -735,7 +736,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * was sent before went to the client drawing the Display, and means nothing to this one.
      */
     private void sendShellState(Shell shell) {
-        if (!(shell.getImpl() instanceof DartShell impl)) return;
+        if (!(shell.getImpl() instanceof DartShell)) return;
+        DartShell impl = (DartShell) shell.getImpl();
         try {
             dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
             // The api widget, not its value: that is what carries the id and the type name into the
@@ -823,8 +825,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void destroy(DartWidget control) {
-        if (control instanceof DartShell dartShell && forDisplay != null) {
-            Shell shell = (Shell) dartShell.getApi();
+        if (control instanceof DartShell && forDisplay != null) {
+            Shell shell = (Shell) ((DartShell) control).getApi();
             forDisplay.removeShell(shell);
             // Reached while the shell is being released, before isDisposed() flips: the sync inside
             // the push below would still find it visible and eligible, and leave its window standing

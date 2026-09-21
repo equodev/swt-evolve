@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.ConfigFlags;
+import dev.equo.swt.Java8;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
@@ -193,8 +194,9 @@ public class WebDisplayBridge extends DisplayBridge {
     /** The {@code shellId} in a window payload, or 0 when it carries none. Package-private so a test
      *  can put a really-decoded payload through it. */
     static long shellIdOf(Object payload) {
-        if (payload instanceof java.util.Map<?, ?> map && map.get("shellId") instanceof Number n) {
-            return n.longValue();
+        if (payload instanceof java.util.Map<?, ?>) {
+            Object shellId = ((java.util.Map<?, ?>) payload).get("shellId");
+            if (shellId instanceof Number) return ((Number) shellId).longValue();
         }
         return 0;
     }
@@ -224,7 +226,7 @@ public class WebDisplayBridge extends DisplayBridge {
         String url = shellWindowUrl(webServer.getApplicationUrl(), shell.hashCode(),
                 effectiveTheme(), isTestSemanticsEnabled());
         WebShellWindow window = new WebShellWindow(shell);
-        window.command("OpenWindow", java.util.Map.of(
+        window.command("OpenWindow", Java8.map(
                 "shellId", (long) shell.hashCode(),
                 "url", url,
                 "x", bounds.x,
@@ -313,12 +315,12 @@ public class WebDisplayBridge extends DisplayBridge {
 
         @Override
         public void setTitle(String title) {
-            command("WindowTitle", java.util.Map.of("shellId", (long) shell.hashCode(), "title", title));
+            command("WindowTitle", Java8.map("shellId", (long) shell.hashCode(), "title", title));
         }
 
         @Override
         public void setBounds(Rectangle bounds) {
-            command("WindowBounds", java.util.Map.of(
+            command("WindowBounds", Java8.map(
                     "shellId", (long) shell.hashCode(),
                     "x", bounds.x, "y", bounds.y,
                     "width", bounds.width, "height", bounds.height));
@@ -326,7 +328,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
         @Override
         public void setState(int state) {
-            command("WindowState", java.util.Map.of(
+            command("WindowState", Java8.map(
                     "shellId", (long) shell.hashCode(), "state", state));
         }
 
@@ -335,7 +337,7 @@ public class WebDisplayBridge extends DisplayBridge {
             // A browser window cannot be hidden and brought back: the platform has no such gesture,
             // and a tab that is closed is gone. Left showing, which is the lesser wrong -- the shell
             // it renders is hidden, so the window is empty rather than stale.
-            if (visible) command("WindowState", java.util.Map.of(
+            if (visible) command("WindowState", Java8.map(
                     "shellId", (long) shell.hashCode(), "state", ShellWindow.STATE_NORMAL));
         }
 
@@ -344,7 +346,7 @@ public class WebDisplayBridge extends DisplayBridge {
             if (!open) return;
             open = false;
             comm().remove("Shell/" + shell.hashCode() + "/WinUnload");
-            command("CloseWindow", java.util.Map.of("shellId", (long) shell.hashCode()));
+            command("CloseWindow", Java8.map("shellId", (long) shell.hashCode()));
         }
     }
 
