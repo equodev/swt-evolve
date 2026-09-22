@@ -14,26 +14,13 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link Display#getSystemColor(int)} to {@link Display#isSystemDarkTheme()} for the widget
- * colors a JFace control (e.g. a {@code LineNumberRulerColumn}) falls back to when the application
- * never sets its own — these are queried directly, not resolved through a theme extension, so they
- * used to stay their fixed light-mode RGB regardless of {@code force_theme}.
+ * Pins {@link Display#getSystemColor(int)}'s widget and list colors to the scheme the application's
+ * Canvas/GC content is painted in. They follow a dark {@code force_theme} only when the theme also
+ * colors that content ({@code disable_swt_canvas_colors}); an application painting in its own colors
+ * mixes them with fixed ones such as {@code COLOR_WHITE}, so they keep the light scheme.
  *
- * <p>The dark background value ({@code (31, 41, 55)}) is not invented here: it's the app's own
- * default dark {@code ColorScheme.surface} ({@code flutter-lib/lib/src/theme/theme.dart},
- * {@code createDarkColorScheme()}), the same color {@code CanvasThemeExtension.backgroundColor}
- * resolves to for a genuinely Dart-rendered Canvas ({@code canvas_theme_settings.dart}'s
- * {@code _getCanvasTheme}). Java has no synchronous channel to ask Dart for that value at
- * {@code getSystemColor()} call time, so it's mirrored here as a literal rather than computed — but
- * it's the literal the theme actually uses, not an approximation.
- *
- * <p>The foregrounds are covered too, which they once were not: {@code DartControl}'s
- * generator-added {@code _foreground} field used to default to a hardcoded {@code Color(0, 0, 0)}
- * (unlike {@code _background}, which defaults to {@code null}), so {@code Control.getForeground()}
- * never reached {@code defaultForeground()} and making the constants theme-aware changed nothing a
- * control reported. On Cocoa the field is now left unset, so the fallback runs and a foreground is
- * read from the same scheme as the background it is drawn on — without which content drawn from a
- * {@code Paint} listener inherits black onto the dark surface above.
+ * <p>The dark values are the app's default dark {@code ColorScheme.surface}/{@code onSurface}, mirrored
+ * in {@code CanvasTheme}.
  */
 @Tag("flutter-it")
 class DisplaySystemColorThemeFlutterTest {
@@ -56,7 +43,7 @@ class DisplaySystemColorThemeFlutterTest {
 
     @Test
     void widgetBackgroundFollowsDarkForceTheme() {
-        forceTheme("dark");
+        themedCanvas("dark");
 
         Color background = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
 
@@ -67,7 +54,7 @@ class DisplaySystemColorThemeFlutterTest {
 
     @Test
     void widgetForegroundFollowsDarkForceTheme() {
-        forceTheme("dark");
+        themedCanvas("dark");
 
         Color foreground = display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND);
 
@@ -104,7 +91,7 @@ class DisplaySystemColorThemeFlutterTest {
      */
     @Test
     void listBackgroundFollowsDarkForceTheme() {
-        forceTheme("dark");
+        themedCanvas("dark");
 
         Color background = display.getSystemColor(SWT.COLOR_LIST_BACKGROUND);
 
@@ -115,7 +102,7 @@ class DisplaySystemColorThemeFlutterTest {
 
     @Test
     void listForegroundFollowsDarkForceTheme() {
-        forceTheme("dark");
+        themedCanvas("dark");
 
         Color foreground = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
 
@@ -143,11 +130,55 @@ class DisplaySystemColorThemeFlutterTest {
                 .isEqualTo(new int[] { 255, 255, 255 });
     }
 
+    @Test
+    void widgetBackgroundKeepsLightDefaultWhenTheCanvasKeepsTheApplicationsColors() {
+        forceTheme("dark");
+
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND)))
+                .as("an application mixing this with COLOR_WHITE rows must get one scheme")
+                .isEqualTo(new int[] { 240, 240, 240 });
+    }
+
+    @Test
+    void listColorsKeepLightDefaultWhenTheCanvasKeepsTheApplicationsColors() {
+        forceTheme("dark");
+
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND))).isEqualTo(new int[] { 255, 255, 255 });
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_LIST_FOREGROUND))).isEqualTo(new int[] { 0, 0, 0 });
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND))).isEqualTo(new int[] { 0, 0, 0 });
+    }
+
+    @Test
+    void useSwtColorsKeepsLightDefaultEvenWhenCanvasColorsAreDisabled() {
+        ConfigFlags flags = new ConfigFlags();
+        flags.force_theme = "dark";
+        flags.disable_swt_canvas_colors = true;
+        flags.use_swt_colors = true;
+        start(flags);
+
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND))).isEqualTo(new int[] { 240, 240, 240 });
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     private void forceTheme(String theme) {
         ConfigFlags flags = new ConfigFlags();
         flags.force_theme = theme;
+        start(flags);
+    }
+
+    private void themedCanvas(String theme) {
+        ConfigFlags flags = new ConfigFlags();
+        flags.force_theme = theme;
+        flags.disable_swt_canvas_colors = true;
+        start(flags);
+    }
+
+    private static int[] rgb(Color color) {
+        return new int[] { color.getRed(), color.getGreen(), color.getBlue() };
+    }
+
+    private void start(ConfigFlags flags) {
         Config.setConfigFlags(flags);
         FlutterBridge.set(new RecordingBridge());
         display = new Display();

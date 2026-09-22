@@ -1590,14 +1590,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             // common case for owner-drawn content -- inherits both from here.
             case SWT.COLOR_WIDGET_FOREGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 0, 0, 0);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
             case SWT.COLOR_WIDGET_BACKGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 240, 240, 240);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
@@ -1606,14 +1606,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return new Color(this.getApi(), 0, 0, 0);
             case SWT.COLOR_LIST_FOREGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 0, 0, 0);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
             case SWT.COLOR_LIST_BACKGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 255, 255, 255);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());

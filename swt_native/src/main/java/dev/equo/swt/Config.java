@@ -921,4 +921,10 @@ public class Config {
         return debug;
     }
 
+    /** System colors go dark only when the theme also colors Canvas/GC content, or they clash with the application's fixed colors. */
+    public static boolean systemColorsAreDark() {
+        ConfigFlags flags = getConfigFlags();
+        return "dark".equals(flags.force_theme) && flags.disable_swt_canvas_colors && !flags.use_swt_colors;
+    }
+
 }
