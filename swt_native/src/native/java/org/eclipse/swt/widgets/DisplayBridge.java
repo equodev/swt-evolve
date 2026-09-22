@@ -1041,11 +1041,29 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return (focused != null && !focused.getApi().isDisposed()) ? focused.getApi() : null;
     }
 
+    /** The shell the client last reported activating, so a cleared focus can be handed back to it. */
+    private DartShell clientActivated;
+
+    /** Remember the shell the client just activated. */
+    public void noteClientActivated(DartShell shell) {
+        clientActivated = shell;
+    }
+
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
     public void clearFocus(DartControl widget) {
         if (focused == widget) {
             focused = null;
-            publishActiveShell();
+            // The client reports a control losing the focus without reporting who took it, so the
+            // clear can land after the activation that would have named the new holder. Leaving
+            // nobody focused while a shell is active is a state SWT never reaches, and an
+            // application that reads getFocusControl() to decide whether the focus left it acts on
+            // it -- an autocomplete popup hides itself on the very click meant to pick from it.
+            if (clientActivated != null && !clientActivated.getApi().isDisposed()
+                    && clientActivated.getApi().getVisible()) {
+                clientActivated._takeFocusHolder(true);
+            }
+            if (focused == null)
+                publishActiveShell();
         }
         // The client moved focus off it, so focusing it again later is a real move to send.
         if (focusRequested == widget) {

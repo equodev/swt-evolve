@@ -100,6 +100,10 @@ public class WidgetFlutterHarness extends FlutterHarness {
     public void show(Control root) {
         if (shown) throw new IllegalStateException("show() already called");
         shown = true;
+        // A Shell Java never made visible is not drawn, so showing one has to make it visible --
+        // setVisible rather than open, which would also activate it and move the focus.
+        if (root instanceof Shell && !((Shell) root).getVisible())
+            ((Shell) root).setVisible(true);
         DartControl impl = (DartControl) root.getImpl();
         long rootId = id(impl);
         String rootName = widgetName(impl);

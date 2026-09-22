@@ -244,7 +244,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final shells = (_display.shells ?? [])
         .where((s) => (s.visible ?? true) && !windowed.contains(s.id))
         .toList();
-    print("Dart Display.build shells: ${shells.length}");
     if (shells.isEmpty) return const SizedBox.shrink();
     _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));
 
@@ -257,7 +256,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
       VShell? loneMainCandidate;
       var loneMainArea = -1;
       for (var s in shells) {
-        print("Shell text: ${s.text} ${s.bounds?.x},${s.bounds?.y},${s.bounds?.width},${s.bounds?.height}");
         if (_isMainShell(s, constraints, named)) {
           mainShells.add(s);
           continue;

@@ -4935,9 +4935,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 sendFocusEvent(SWT.FocusOut);
-                FlutterBridge bridge = getBridge();
-                if (bridge != null)
-                    bridge.clearFocus(this);
+                getDisplay().asyncExec(() -> {
+                    if (isDisposed())
+                        return;
+                    FlutterBridge bridge = getBridge();
+                    if (bridge != null)
+                        bridge.clearFocus(this);
+                });
             });
         });
         FlutterBridge.on(this, "Gesture", "Gesture", e -> {

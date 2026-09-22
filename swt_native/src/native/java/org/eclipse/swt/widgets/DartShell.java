@@ -915,19 +915,7 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void makeKeyAndOrderFront() {
-        if (savedFocus != null && savedFocus.isDisposed()) {
-            savedFocus = null;
-        }
-        if (getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge) {
-            org.eclipse.swt.widgets.DisplayBridge db = (org.eclipse.swt.widgets.DisplayBridge) getBridge();
-            if (savedFocus != null) {
-                db.setFocus((DartControl) savedFocus.getImpl());
-            } else if (!focusFirstFocusable()) {
-                // Nothing focusable yet: mark the shell itself as focus so getActiveShell()
-                // (derived from the focus control's shell) still points at this shell.
-                db.setFocus(this);
-            }
-        }
+        _takeFocusHolder(true);
         if (!isDisposed()) {
             sendEvent(SWT.Activate);
         }
@@ -1888,21 +1876,56 @@ public class DartShell extends DartDecorations implements IShell {
         if (!(getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge))
             return false;
         org.eclipse.swt.widgets.DisplayBridge db = (org.eclipse.swt.widgets.DisplayBridge) getBridge();
+        org.eclipse.swt.widgets.Control target = _firstFocusable(false);
+        // Table/Tree/List are childless Composites the walk steps past; a container only qualifies once nothing else can.
+        if (target == null)
+            target = _firstFocusable(true);
+        if (target == null)
+            return false;
+        db.setFocus((DartControl) target.getImpl());
+        return true;
+    }
+
+    org.eclipse.swt.widgets.Control _firstFocusable(boolean containers) {
         java.util.List<org.eclipse.swt.widgets.Control> stack = new java.util.ArrayList<>();
         for (org.eclipse.swt.widgets.Control c : _getChildren()) stack.add(c);
         while (!stack.isEmpty()) {
             org.eclipse.swt.widgets.Control c = stack.remove(0);
             if (c == null || c.isDisposed())
                 continue;
-            if (c instanceof org.eclipse.swt.widgets.Composite && !(((org.eclipse.swt.widgets.Composite) c).getImpl() instanceof DartCanvas)) {
+            boolean container = c instanceof org.eclipse.swt.widgets.Composite && !(((org.eclipse.swt.widgets.Composite) c).getImpl() instanceof DartCanvas);
+            boolean focusable = c.getVisible() && c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0 && c.getImpl() instanceof DartControl;
+            if (container) {
                 org.eclipse.swt.widgets.Control[] kids = ((DartComposite) ((org.eclipse.swt.widgets.Composite) c).getImpl())._getChildren();
+                if (containers && kids.length == 0 && focusable)
+                    return c;
                 for (int i = kids.length - 1; i >= 0; i--) stack.add(0, kids[i]);
-            } else if (c.getVisible() && c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0) {
-                db.setFocus((DartControl) c.getImpl());
-                return true;
+            } else if (focusable) {
+                return c;
             }
         }
-        return false;
+        return null;
+    }
+
+    void _takeFocusHolder(boolean force) {
+        if (!(getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge))
+            return;
+        org.eclipse.swt.widgets.DisplayBridge db = (org.eclipse.swt.widgets.DisplayBridge) getBridge();
+        if (!force) {
+            org.eclipse.swt.widgets.Control held = db.getFocused();
+            if (held != null && !held.isDisposed() && held.getShell() == getApi())
+                return;
+        }
+        if (savedFocus != null && savedFocus.isDisposed()) {
+            savedFocus = null;
+        }
+        if (savedFocus != null) {
+            db.setFocus((DartControl) savedFocus.getImpl());
+        } else if (!focusFirstFocusable()) {
+            // Nothing focusable yet: mark the shell itself as focus so getActiveShell()
+            // (derived from the focus control's shell) still points at this shell.
+            db.setFocus(this);
+        }
     }
 
     @Override
@@ -1921,6 +1944,9 @@ public class DartShell extends DartDecorations implements IShell {
                 if (isDisposed())
                     return;
                 _suppressNextFlutterDeactivate = false;
+                if (getBridge() instanceof DisplayBridge)
+                    ((DisplayBridge) getBridge()).noteClientActivated(this);
+                _takeFocusHolder(false);
                 sendEvent(SWT.Activate, e);
             });
         });

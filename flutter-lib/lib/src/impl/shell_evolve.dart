@@ -229,6 +229,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   int get _style => state.style;
   bool get _hasTitle => (_style & SWT.TITLE) != 0;
+  /// An ON_TOP shell is a popup its owner shows without handing over activation, so a click inside
+  /// it must not activate it either: activating deactivates the owner, and an owner that closes on
+  /// Deactivate -- a command palette, whose field and list are two such shells -- tears the popup
+  /// down before the click that was meant for it is dispatched.
+  bool get _isOnTop => (_style & SWT.ON_TOP) != 0;
   bool get _hasClose => (_style & SWT.CLOSE) != 0;
   bool get _hasMax => (_style & SWT.MAX) != 0;
   bool get _hasResize => (_style & SWT.RESIZE) != 0;
@@ -278,6 +283,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   @override
   Widget build(BuildContext context) {
+    // Shell builds its own tree and never routes through ControlImpl.wrap(), so a hidden shell
+    // would keep painting and swallowing pointer input over whatever it covers.
+    if (state.visible != null && !state.visible!) {
+      return const SizedBox.shrink();
+    }
     final scope = FloatingShellChromeScope.maybeOf(context);
     if (scope == null) {
       // No chrome scope above: this shell is the root of its own window, so it is also the only
@@ -307,7 +317,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
           child: Listener(
             behavior: HitTestBehavior.translucent,
             onPointerDown: (_) {
-              if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+              if (!_isOnTop && !_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
             },
             child: content,
           ),
@@ -561,7 +571,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) {
-          if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+          if (!_isOnTop && !_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
         },
         child: dialog,
       ),
