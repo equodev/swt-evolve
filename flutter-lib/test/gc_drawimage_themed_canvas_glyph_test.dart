@@ -22,6 +22,11 @@ const _greyBoxPng =
     'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAI0lEQVR42mNgGDTA2Nj4'
     'PykYqwGkWDZqwKgBtDOAoqQ8YAAASMpGIT+n1+AAAAAASUVORK5CYII=';
 
+/// 16x16 RGBA: the same #333333 box outline around an opaque white interior — a checkbox whose
+/// artwork carries its own light fill.
+const _filledGreyBoxPng =
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVR42mNgGF7A2Nj4PzEYrwGEwKgBI8MAihLS0AQAgS44cNGTIhMAAAAASUVORK5CYII=';
+
 /// The same footprint in gold — stands for the colored artwork alongside it in the same grid.
 const _goldBoxPng =
     'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAI0lEQVR42mNgGDTgxRav'
@@ -52,6 +57,25 @@ Future<ImageShape> _blit(String png, {GlyphTintLimits? limits}) =>
     ImageShape.fromVImageDetailed(_blittedImage(png), _naturalSizeBlit, null,
         tint: _tint, glyphLimits: limits);
 
+const _darkCanvas = Color(0xFF202020);
+
+/// [shape] blitted onto a 16x16 [_darkCanvas], as each pixel's ARGB.
+Future<List<int>> _paintOnDarkCanvas(ImageShape shape) async {
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  canvas.drawRect(const Rect.fromLTWH(0, 0, 16, 16), Paint()..color = _darkCanvas);
+  shape.draw(canvas);
+  final image = await recorder.endRecording().toImage(16, 16);
+  final bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+  return [
+    for (var i = 0; i < 16 * 16; i++)
+      bytes.getUint8(i * 4 + 3) << 24 |
+          bytes.getUint8(i * 4) << 16 |
+          bytes.getUint8(i * 4 + 1) << 8 |
+          bytes.getUint8(i * 4 + 2)
+  ];
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(resetConfigFlags);
@@ -73,6 +97,24 @@ void main() {
     expect(shape.type, ImageType.raster,
         reason: 'the application bitmap still draws — only its color moves');
     expect(shape.colorFilter, const ColorFilter.mode(_tint, BlendMode.srcIn));
+  });
+
+  test('a glyph\'s own light fill stays paper, and only its dark strokes take the tint', () async {
+    applyConfigFlags(ConfigFlags()..disable_swt_canvas_colors = true);
+
+    final shape = await ImageShape.fromVImageDetailed(
+        _blittedImage(_filledGreyBoxPng),
+        VGCDrawImageImageintintintintintintintint(
+            destX: 0, destY: 0, destWidth: -1, destHeight: -1,
+            srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1),
+        null,
+        tint: _tint);
+    final pixels = await _paintOnDarkCanvas(shape);
+
+    expect(pixels[3 * 16 + 3], _tint.toARGB32(), reason: 'the outline takes the tint');
+    expect(pixels[8 * 16 + 8], _darkCanvas.toARGB32(),
+        reason: 'the white interior is paper: tinting it would fill the box solid');
+    expect(pixels[0], _darkCanvas.toARGB32(), reason: 'outside the glyph is untouched');
   });
 
   test('preserve_icon_colors does not hold the tint back', () async {

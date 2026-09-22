@@ -911,7 +911,7 @@ class GCDrawer extends GCDrawerBase {
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha,
-          opaqueSource: s.opaqueSource),
+          opaqueSource: s.opaqueSource, inkMask: s.inkMask),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
@@ -1961,6 +1961,30 @@ class GlyphTintLimits {
       GlyphTintLimits(maxSide: 64, channelTolerance: 4);
 }
 
+/// The grey range a monochrome glyph spans, over its visible pixels.
+class GlyphTone {
+  final int darkest;
+  final int lightest;
+
+  const GlyphTone({required this.darkest, required this.lightest});
+
+  // Below this spread the glyph is one tone of ink, and its alpha alone says where the ink is.
+  static const int _minPaperContrast = 64;
+
+  /// Alpha from darkness: [darkest] is full ink, [lightest] is paper. Null for a single-tone glyph.
+  ColorFilter? get inkMask {
+    final range = lightest - darkest;
+    if (range < _minPaperContrast) return null;
+    final k = 255 / range;
+    return ColorFilter.matrix(<double>[
+      0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0,
+      -k, 0, 0, 0, k * lightest,
+    ]);
+  }
+}
+
 class ImageShape extends Shape {
   ImageShape._({
     required this.type,
@@ -1972,7 +1996,11 @@ class ImageShape extends Shape {
     this.colorFilter,
     this.alpha = 255,
     this.opaqueSource = false,
+    this.inkMask,
   });
+
+  /// Masks a tinted glyph by its darkness, so a light fill it carries is not flooded with the tint.
+  final ColorFilter? inkMask;
 
   /// Whether every pixel of [image] is known opaque. Only set for a picture this side rendered
   /// itself, which always starts from an opaque fill — an application bitmap may have alpha and
@@ -1980,11 +2008,12 @@ class ImageShape extends Shape {
   final bool opaqueSource;
 
   factory ImageShape.raster(ui.Image image, Rect srcRect, Rect destRect,
-      {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255, bool opaqueSource = false}) {
+      {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255, bool opaqueSource = false,
+      ColorFilter? inkMask}) {
     return ImageShape._(
         type: ImageType.raster, image: image, srcRect: srcRect,
         destRect: destRect, clipRect: clipRect, colorFilter: colorFilter,
-        alpha: alpha, opaqueSource: opaqueSource);
+        alpha: alpha, opaqueSource: opaqueSource, inkMask: inkMask);
   }
 
   @override
@@ -2008,7 +2037,8 @@ class ImageShape extends Shape {
   }
 
   // Whether a blitted image reads as a glyph, by pixels — nothing here matches an image by name.
-  static final Map<String, bool> _monochromeGlyphs = {};
+  // A null verdict means the image is not a glyph.
+  static final Map<String, GlyphTone?> _monochromeGlyphs = {};
 
   // Keyed on the whole payload, and on the limits that produced the verdict: two same-sized PNGs share their leading bytes, and a name may be
   // re-registered with different pixels. Only reached past the size gate, so the payload is small.
@@ -2025,37 +2055,43 @@ class ImageShape extends Shape {
     return 'bin-${data.length}-$hash-$suffix';
   }
 
-  static Future<bool> _isMonochromeGlyph(
+  static Future<GlyphTone?> _monochromeGlyphTone(
       ui.Image image, VImage vImage, GlyphTintLimits limits) async {
     if (image.width > limits.maxSide || image.height > limits.maxSide) {
-      return false;
+      return null;
     }
     final key = _glyphCacheKey(vImage, limits);
-    final cached = key == null ? null : _monochromeGlyphs[key];
-    if (cached != null) return cached;
+    if (key != null && _monochromeGlyphs.containsKey(key)) return _monochromeGlyphs[key];
 
-    var monochrome = false;
+    GlyphTone? tone;
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     if (data != null) {
       final bytes = data.buffer.asUint8List();
-      monochrome = true;
+      var darkest = 255;
+      var lightest = 0;
+      var monochrome = true;
       for (var i = 0; i + 3 < bytes.length; i += 4) {
         // Premultiplied alpha scales all three channels alike, so grey stays grey.
-        if (bytes[i + 3] == 0) continue;
+        final a = bytes[i + 3];
+        if (a == 0) continue;
         final min = math.min(bytes[i], math.min(bytes[i + 1], bytes[i + 2]));
         final max = math.max(bytes[i], math.max(bytes[i + 1], bytes[i + 2]));
         if (max - min > limits.channelTolerance) {
           monochrome = false;
           break;
         }
+        final grey = math.min(255, bytes[i] * 255 ~/ a);
+        darkest = math.min(darkest, grey);
+        lightest = math.max(lightest, grey);
       }
+      if (monochrome) tone = GlyphTone(darkest: darkest, lightest: lightest);
     }
     if (key != null) {
       // The key is content-derived, so the map would otherwise grow without bound.
       if (_monochromeGlyphs.length > 512) _monochromeGlyphs.clear();
-      _monochromeGlyphs[key] = monochrome;
+      _monochromeGlyphs[key] = tone;
     }
-    return monochrome;
+    return tone;
   }
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
@@ -2134,15 +2170,17 @@ class ImageShape extends Shape {
 
       // A resolved icon is tinted; an already-rendered bitmap keeps its colors, unless the Canvas
       // itself is themed and the bitmap is a monochrome glyph.
+      final glyphTone = replacement == null && canvasUsesThemeColors
+          ? await _monochromeGlyphTone(uiImage, vImage, glyphLimits ?? GlyphTintLimits.fallback)
+          : null;
       final rasterFilter = replacement != null
           ? colorFilter
-          : (canvasUsesThemeColors &&
-                  await _isMonochromeGlyph(
-                      uiImage, vImage, glyphLimits ?? GlyphTintLimits.fallback)
+          : (glyphTone != null
               ? ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn)
               : null);
       return ImageShape.raster(uiImage, srcRect, destRect,
           clipRect: clipRect, colorFilter: rasterFilter, alpha: alpha,
+          inkMask: glyphTone?.inkMask,
           // A remoteRef names a picture this side rendered, and those start from an opaque fill.
           // An application bitmap carries no such promise.
           opaqueSource: vImage.remoteRef != null);
@@ -2180,6 +2218,10 @@ class ImageShape extends Shape {
 
   void _drawRaster(ui.Canvas c) {
     if (image == null || srcRect == null) return;
+    if (inkMask != null) {
+      _drawMaskedGlyph(c);
+      return;
+    }
     // A 1:1 blit (no real scaling) must be pixel-exact, matching real SWT's GC#drawImage
     // contract for same-size draws (a plain blit on every native backend, no resampling).
     // Bilinear filtering has no benefit when there's nothing to scale, and instead bleeds
@@ -2195,6 +2237,20 @@ class ImageShape extends Shape {
           // Skia scales the blit by the paint's alpha; the RGB channels are unused for an image.
           ..color = Color.fromRGBO(0, 0, 0, alpha / 255.0)
           ..colorFilter = colorFilter);
+  }
+
+  void _drawMaskedGlyph(ui.Canvas c) {
+    final isScaled = srcRect!.width != destRect.width || srcRect!.height != destRect.height;
+    Paint blit() => Paint()
+      ..filterQuality = isScaled ? FilterQuality.high : FilterQuality.none
+      ..isAntiAlias = isScaled;
+    c.saveLayer(destRect, Paint()..color = Color.fromRGBO(0, 0, 0, alpha / 255.0));
+    c.drawImageRect(image!, srcRect!, destRect, blit()..colorFilter = colorFilter);
+    c.drawImageRect(image!, srcRect!, destRect,
+        blit()
+          ..colorFilter = inkMask
+          ..blendMode = BlendMode.dstIn);
+    c.restore();
   }
 
   void _drawSvg(ui.Canvas c) {
