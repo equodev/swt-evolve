@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
 import '../gen/slider.dart';
@@ -20,7 +22,8 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
     final pageIncrement = state.pageIncrement ?? widgetTheme.pageIncrement;
     final thumb = state.thumb ?? widgetTheme.thumb;
 
-    final currentValue = selection!.clamp(minimum, maximum).toDouble();
+    final travelMaximum = maximum - thumb < minimum ? minimum : maximum - thumb;
+    final currentValue = selection!.clamp(minimum, travelMaximum).toDouble();
 
     final enabled = state.enabled ?? true;
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
@@ -62,7 +65,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
       _StyledSlider(
         value: currentValue,
         min: minimum.toDouble(),
-        max: maximum.toDouble(),
+        max: travelMaximum.toDouble(),
         enabled: enabled,
         width: width,
         height: height,
@@ -178,6 +181,49 @@ class _StyledSlider extends StatefulWidget {
 
 class _StyledSliderState extends State<_StyledSlider> {
   double? _localValue;
+  bool _dragging = false;
+  Timer? _replay;
+  int? _sentSelection;
+
+  static const Duration _replayQuiet = Duration(milliseconds: 250);
+
+  @override
+  void dispose() {
+    _replay?.cancel();
+    super.dispose();
+  }
+
+  void _awaitReplay() {
+    _replay?.cancel();
+    _replay = Timer(_replayQuiet, () {
+      if (!mounted) return;
+      setState(() {
+        _replay = null;
+        _localValue = null;
+      });
+    });
+  }
+
+  @override
+  void didUpdateWidget(_StyledSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_dragging) return;
+
+    if (widget.min != oldWidget.min || widget.max != oldWidget.max) {
+      _replay?.cancel();
+      _replay = null;
+      _localValue = null;
+      return;
+    }
+    if (widget.value == oldWidget.value) return;
+
+    if (_replay != null) {
+      _awaitReplay();
+      return;
+    }
+
+    _localValue = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,19 +245,35 @@ class _StyledSliderState extends State<_StyledSlider> {
         value: displayValue.clamp(widget.min, widget.max),
         min: widget.min,
         max: widget.max,
+        onChangeStart: widget.enabled
+            ? (_) {
+                _replay?.cancel();
+                _replay = null;
+                _dragging = true;
+                _sentSelection = null;
+              }
+            : null,
         onChanged: widget.enabled
             ? (value) {
                 setState(() {
                   _localValue = value;
                 });
+                final selection = value.round();
+                if (selection == _sentSelection) return;
+                _sentSelection = selection;
                 widget.onChanged(value);
               }
             : null,
         onChangeEnd: widget.enabled
             ? (value) {
+                final committed =
+                    value.roundToDouble().clamp(widget.min, widget.max);
                 setState(() {
-                  _localValue = null;
+                  _dragging = false;
+                  _localValue = committed;
                 });
+                _sentSelection = committed.round();
+                _awaitReplay();
                 widget.onChangeEnd(value);
               }
             : null,
@@ -221,7 +283,7 @@ class _StyledSliderState extends State<_StyledSlider> {
     Widget result;
     if (widget.isVertical) {
       result = RotatedBox(
-        quarterTurns: 3,
+        quarterTurns: 1,
         child: SizedBox(
           width: widget.height,
           height: widget.width,
