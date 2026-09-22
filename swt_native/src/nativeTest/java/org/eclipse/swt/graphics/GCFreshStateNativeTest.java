@@ -99,7 +99,7 @@ class GCFreshStateNativeTest {
         paintWithEverythingChanged();
 
         GC gc = new GC(canvas);
-        gc.setBackground(new Color(255, 255, 255));
+        gc.setBackground(new Color(canvas.getDisplay(), 255, 255, 255));
         gc.fillRectangle(0, 0, 200, 100);
         gc.dispose();
 

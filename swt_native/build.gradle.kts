@@ -442,6 +442,82 @@ val checkJavaApiLevel by tasks.registering(JavaCompile::class) {
     }
 }
 
+// The files the generator does not own: src/main is entirely hand-written, and these names are
+// hand-written islands inside the generated trees. Mirrors the exclusion list in swtgenerator's
+// generatedJavaTree - HandWrittenSourcesInSyncTest fails the build if the two ever drift.
+val handWrittenInGeneratedTrees = listOf(
+    "**/*Bridge*.java",
+    "**/WebFlutterServer.java",
+    "**/ProxyHandler.java",
+    "**/HeadlessChrome.java",
+    "**/VDisplay.java",
+    "**/VShellPopups.java",
+    "**/GenFontMetrics.java",
+    "**/WidgetSpy.java",
+    "**/MacApplicationMenu.java",
+    "**/MacMenuBar.java",
+)
+
+// The oldest JDK any enabled release runs on. Hand-written code is shared by every one of them, so
+// this is the level it has to fit inside, whatever version the build happens to be targeting.
+val javaFloor = 8
+
+// checkJavaApiLevel needs the generated tree to BE the old release's, so it can only run in the
+// release pipeline, after that version was generated. This one needs nothing generated: it compiles
+// the hand-written files alone, with the already-built backend on the classpath. javac reads those
+// Java 21 class files happily while holding the sources it is given to release 8, so the check runs
+// on any branch, against whatever version is checked out, in seconds.
+//
+// That is the point. The shared sources reach every fragment, including the Java 8 ones, and
+// nothing on an MR compiled them at that level: the normal pipeline builds at 21 and the
+// old-version ladder is a child pipeline gated on release. Newer-Java syntax kept reaching main and
+// surfacing days later, in a release job.
+fun registerJava8Check(name: String, backendName: String, extraDirs: List<String>, flutterBackend: Boolean) =
+    tasks.register<JavaCompile>(name) {
+        group = "verification"
+        description = "Compiles the hand-written sources of $backendName at Java $javaFloor"
+        val backend = sourceSets.getByName(backendName)
+        dependsOn(backend.classesTaskName)
+        source = files(
+            fileTree("src/main/java") { include("**/*.java") },
+            *extraDirs.map { d ->
+                fileTree("src/$d/java") { include(handWrittenInGeneratedTrees) }
+            }.toTypedArray()
+        ).asFileTree.matching {
+            exclude(jdk9OnlySources)
+            // ConfigDyn and GraphicsUtilsSwt reach for Dyn*/Swt* classes that only the embedded
+            // backend generates, which is why its source sets drop them; mirror that here.
+            if (flutterBackend) exclude(nativeFlutterExcludes)
+        }
+        // The generated classes this code calls into come from the classpath, already compiled.
+        classpath = backend.output + backend.compileClasspath
+        destinationDirectory.set(layout.buildDirectory.dir("java8-check/$name"))
+        options.encoding = "UTF-8"
+        options.release.set(javaFloor)
+        options.compilerArgs.addAll(listOf("-Xlint:-options", "-proc:none"))
+        // javac rejects --add-exports together with --release at any level; the sources that need
+        // those exports are the jdk9-only ones this task excludes.
+        doFirst { options.compilerArgs.removeAll { it == "--add-exports" || it.endsWith("=ALL-UNNAMED") } }
+    }
+
+private val osSuffix = currentOs.replaceFirstChar { it.titlecase() }
+
+// One per backend: the same file name appears in several trees (DisplayBridgePlatform in each
+// native<OS> and in web, SwtEmbeddedBridge and WidgetSpy in each embed<OS>), so one merged compile
+// would collide on duplicate classes.
+val checkJava8Native = registerJava8Check(
+    "checkJava8Native", "native$osSuffix", listOf("native", "native$osSuffix"), flutterBackend = true)
+val checkJava8Embed = registerJava8Check(
+    "checkJava8Embed", "embed$osSuffix", listOf("embed$osSuffix"), flutterBackend = false)
+val checkJava8Web = registerJava8Check(
+    "checkJava8Web", "web", listOf("native", "web"), flutterBackend = true)
+
+val checkJava8Sources by tasks.registering {
+    group = "verification"
+    description = "Checks every hand-written source that ships to a Java $javaFloor release"
+    dependsOn(checkJava8Native, checkJava8Embed, checkJava8Web)
+}
+
 // checkJavaApiLevel proves the SOURCE stays inside the release's API. This proves the ARTIFACT:
 // --release / -target are supposed to stamp the class-file version, but until something reads the
 // jar back nobody has confirmed they did, and a shaded dependency can carry a newer class in behind

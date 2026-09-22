@@ -78,8 +78,8 @@ class GCPatternNativeTest {
     @DisplayName("a gradient pattern carries its end points and colors")
     void gradientPatternCarriesItsGeometry() {
         GC gc = freshGc();
-        Color red = new Color(255, 0, 0);
-        Color blue = new Color(0, 0, 255);
+        Color red = new Color(display, 255, 0, 0);
+        Color blue = new Color(display, 0, 0, 255);
         Pattern pattern = new Pattern(display, 1, 2, 30, 40, red, blue);
         gc.setBackgroundPattern(pattern);
         gc.fillRectangle(0, 0, 40, 40);

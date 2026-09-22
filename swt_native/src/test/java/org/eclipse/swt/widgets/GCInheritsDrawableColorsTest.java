@@ -71,7 +71,7 @@ class GCInheritsDrawableColorsTest {
         }).when(display).asyncExec(any(Runnable.class));
         Canvas canvas = new Canvas(shell, SWT.NONE);
         canvas.setBounds(0, 0, 400, 400);
-        canvas.setBackground(new Color(DARK_BACKGROUND));
+        canvas.setBackground(new Color(display, DARK_BACKGROUND));
         Runnable r;
         while ((r = asyncQueue.poll()) != null) {
             r.run();
