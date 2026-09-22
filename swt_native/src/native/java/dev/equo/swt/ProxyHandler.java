@@ -120,16 +120,23 @@ class ProxyHandler implements HttpHandler {
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
             String lowerContentType = contentType.toLowerCase();
+            // The URL a rewritten link routes through: this server's own origin, not the target's.
+            // A page we serve carries an injected <base href> pointing at the *target* (so the
+            // target's own untouched relative references keep resolving against it) -- so a
+            // root-relative "/proxy?..." link we generate would resolve against that base and hit
+            // the target's real server directly, on a path it never heard of, instead of coming
+            // back to us.
+            String selfOrigin = "http://localhost:" + exchange.getLocalAddress().getPort();
             if (lowerContentType.contains("html")) {
                 String html = new String(body, StandardCharsets.UTF_8);
                 URI finalUri = URI.create(resp.finalUrl);
                 // Rewrite first, inject the <base> afterwards: rewriteResourceUrls rewrites every
                 // href=, so a <base> already in place would itself be rewritten to a /proxy?url=
                 // wrapper -- and the page's real address is read back from document.baseURI.
-                html = rewriteResourceUrls(html, finalUri, headerLines);
+                html = rewriteResourceUrls(html, finalUri, headerLines, selfOrigin);
                 html = injectBaseHref(html, resp.finalUrl);
                 if (!headerLines.isEmpty()) {
-                    html = injectFetchShim(html, originOf(finalUri), headerLines);
+                    html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
                 }
                 body = html.getBytes(StandardCharsets.UTF_8);
             } else if (lowerContentType.contains("css")) {
@@ -139,7 +146,7 @@ class ProxyHandler implements HttpHandler {
                 // icon font or SVG icon set behind the same auth gate as the page silently 403s
                 // (or CORS-blocked) and every icon that depends on it renders blank.
                 String css = new String(body, StandardCharsets.UTF_8);
-                css = rewriteCssUrls(css, URI.create(resp.finalUrl), headerLines);
+                css = rewriteCssUrls(css, URI.create(resp.finalUrl), headerLines, selfOrigin);
                 body = css.getBytes(StandardCharsets.UTF_8);
             }
             // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
@@ -257,11 +264,32 @@ class ProxyHandler implements HttpHandler {
         return values;
     }
 
+    /**
+     * Injects the {@code <base>} tag naming the target's real address, plus a small script pinning
+     * it there. A served single-page app's own router (Angular's {@code PlatformLocation} does this)
+     * routinely rewrites the {@code <base>} element's {@code href} at runtime to match the page's
+     * own navigated address -- this document's {@code /proxy} URL, not the target it names. Anything
+     * that resolves a relative reference against {@code document.baseURI} afterwards -- a
+     * background-image set via an inline {@code style} attribute is the one this proxy's static and
+     * runtime rewriting otherwise can't reach at all -- silently starts resolving against this
+     * origin instead, and 404s (or worse, a same-origin resource that happens to exist at that path).
+     * Re-pinning the attribute whenever it changes is simpler and more general than chasing down
+     * every consumer of it.
+     */
     private static String injectBaseHref(String html, String finalUrl) {
-        String baseTag = "<base href=\"" + finalUrl.replace("\"", "%22") + "\">";
+        String hrefLiteral = finalUrl.replace("\"", "%22");
+        String baseTag = "<base href=\"" + hrefLiteral + "\">";
+        String pinScript = "<script>(function(){"
+                + "var TARGET_BASE_HREF=" + jsStringLiteral(finalUrl) + ";"
+                + "function pin(el){try{if(el.getAttribute('href')!==TARGET_BASE_HREF){el.setAttribute('href',TARGET_BASE_HREF);}}catch(e){}}"
+                + "var b=document.currentScript.previousElementSibling;"
+                + "if(b&&b.tagName==='BASE'){pin(b);"
+                + "try{new MutationObserver(function(){pin(b);}).observe(b,{attributes:true,attributeFilter:['href']});}catch(e){}}"
+                + "})();</script>";
+        String insertion = baseTag + pinScript;
         Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
-        return m.find() ? html.substring(0, m.end()) + baseTag + html.substring(m.end())
-                        : baseTag + html;
+        return m.find() ? html.substring(0, m.end()) + insertion + html.substring(m.end())
+                        : insertion + html;
     }
 
     private static final Pattern RESOURCE_ATTR = Pattern.compile(
@@ -282,7 +310,7 @@ class ProxyHandler implements HttpHandler {
      * and needs the target's own cooperation (exempt those paths from the auth gate, or send CORS
      * headers) to fully work through a cross-origin proxy.
      */
-    private static String rewriteResourceUrls(String html, URI baseUri, List<String> headerLines) {
+    private static String rewriteResourceUrls(String html, URI baseUri, List<String> headerLines, String selfOrigin) {
         Matcher m = RESOURCE_ATTR.matcher(html);
         // Matcher.appendReplacement/appendTail only gained a StringBuilder overload in Java 9;
         // this class is compiled down to Java 8 for older SWT releases, so StringBuffer it is.
@@ -294,7 +322,7 @@ class ProxyHandler implements HttpHandler {
                 String scheme = resolved.getScheme();
                 if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
                         && WebFlutterServer.proxyAllowed(resolved.toString())) {
-                    StringBuilder proxied = new StringBuilder("/proxy?url=")
+                    StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
                             .append(Java8.urlEncode(resolved.toString(), StandardCharsets.UTF_8));
                     for (String header : headerLines) {
                         proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
@@ -312,7 +340,7 @@ class ProxyHandler implements HttpHandler {
             "url\\(\\s*(['\"]?)([^'\")]+)\\1\\s*\\)", Pattern.CASE_INSENSITIVE);
 
     /** Same idea as {@link #rewriteResourceUrls}, for a stylesheet's own {@code url(...)} references. */
-    private static String rewriteCssUrls(String css, URI baseUri, List<String> headerLines) {
+    private static String rewriteCssUrls(String css, URI baseUri, List<String> headerLines, String selfOrigin) {
         Matcher m = CSS_URL.matcher(css);
         StringBuffer out = new StringBuffer();
         while (m.find()) {
@@ -324,7 +352,7 @@ class ProxyHandler implements HttpHandler {
                     String scheme = resolved.getScheme();
                     if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
                             && WebFlutterServer.proxyAllowed(resolved.toString())) {
-                        StringBuilder proxied = new StringBuilder("/proxy?url=")
+                        StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
                                 .append(Java8.urlEncode(resolved.toString(), StandardCharsets.UTF_8));
                         for (String header : headerLines) {
                             proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
@@ -359,7 +387,7 @@ class ProxyHandler implements HttpHandler {
      * shim can't recognize as absolute before the browser resolves it, or a request signed/shaped
      * in a way the target only accepts from its own real origin remain out of reach.
      */
-    private static String injectFetchShim(String html, String targetOrigin, List<String> headerLines) {
+    private static String injectFetchShim(String html, String targetOrigin, List<String> headerLines, String selfOrigin) {
         StringBuilder headersJs = new StringBuilder("[");
         for (int i = 0; i < headerLines.size(); i++) {
             if (i > 0) headersJs.append(",");
@@ -368,9 +396,10 @@ class ProxyHandler implements HttpHandler {
         headersJs.append("]");
         String script = "<script>(function(){"
                 + "var TARGET_ORIGIN=" + jsStringLiteral(targetOrigin) + ";"
+                + "var SELF_ORIGIN=" + jsStringLiteral(selfOrigin) + ";"
                 + "var AUTH_HEADERS=" + headersJs + ";"
                 + "function buildProxyUrl(abs){"
-                + "var u='/proxy?url='+encodeURIComponent(abs);"
+                + "var u=SELF_ORIGIN+'/proxy?url='+encodeURIComponent(abs);"
                 + "for(var i=0;i<AUTH_HEADERS.length;i++){u+='&header='+encodeURIComponent(AUTH_HEADERS[i]);}"
                 + "return u;}"
                 // Resolve against the TARGET origin, not document.baseURI: a served single-page
@@ -398,6 +427,67 @@ class ProxyHandler implements HttpHandler {
                 + "if(abs&&sameTargetOrigin(abs)){arguments[1]=buildProxyUrl(abs);}"
                 + "}catch(e){}"
                 + "return origOpen.apply(this,arguments);};"
+                // A resource element (an <img> built from JSON data after load, say) the page adds
+                // or repoints via straight DOM/property writes never touches fetch or XHR at all --
+                // the browser loads it natively. Its src/href, built relative to this document,
+                // resolves through the injected <base> to the *target*'s real address and goes
+                // there directly, missing the auth header only this shim carries. Watching the DOM
+                // for exactly that (a src/href attribute, present or newly set, pointing at the
+                // target origin) and rewriting it the same way the initial-response markup already
+                // is closes that gap without needing to know in advance how the page builds it.
+                + "var REWRITE_ATTRS=['src','href'];"
+                + "function shouldSkipAttr(raw){"
+                + "if(!raw)return true;var t=raw.trim();if(t==='')return true;"
+                + "if(t.charAt(0)==='#')return true;"
+                + "var low=t.toLowerCase();"
+                + "return low.indexOf('data:')===0||low.indexOf('mailto:')===0||low.indexOf('javascript:')===0;}"
+                + "function rewriteAttr(el,attr){"
+                // The <base> tag itself is excluded: its href is this document's base URL, not a
+                // fetchable resource, and injectBaseHref's own script pins it to the target's real
+                // address directly. Treating it as a rewritable reference here would proxy-wrap it
+                // (since it always resolves same-origin-as-target by construction), which the pin
+                // script then reverts, which this observer then rewrites again -- an infinite loop
+                // between the two that hangs the tab.
+                + "if(el.tagName==='BASE')return;"
+                + "try{var raw=el.getAttribute&&el.getAttribute(attr);"
+                + "if(shouldSkipAttr(raw))return;"
+                + "var abs=resolveAgainstTarget(raw);"
+                // Rewriting to our own proxy URL fires another 'attributes' mutation for this same
+                // attribute; that pass resolves to SELF_ORIGIN, not TARGET_ORIGIN, so this check
+                // is also what stops the observer from rewriting its own output forever.
+                + "if(abs&&sameTargetOrigin(abs)){el.setAttribute(attr,buildProxyUrl(abs));}"
+                + "}catch(e){}}"
+                // An icon set as a CSS background-image via an inline style attribute (this app's
+                // own grid rows, built from JSON after load) is neither src= nor href= -- src/href
+                // rewriting above never sees it, and it's not a stylesheet file either, so the
+                // static CSS rewrite doesn't either. It resolves through the pinned <base> straight
+                // to the target's real address and goes there directly, unauthenticated.
+                + "function rewriteBackgroundImage(el){"
+                + "try{var bg=el.style&&el.style.backgroundImage;"
+                + "if(!bg||bg==='none')return;"
+                + "var m=/url\\((['\"]?)(.*?)\\1\\)/.exec(bg);"
+                + "if(!m)return;var raw=m[2];"
+                + "if(shouldSkipAttr(raw)||raw.indexOf(SELF_ORIGIN)===0)return;"
+                + "var abs=resolveAgainstTarget(raw);"
+                + "if(abs&&sameTargetOrigin(abs)){el.style.backgroundImage='url(\"'+buildProxyUrl(abs)+'\")';}"
+                + "}catch(e){}}"
+                + "function scanNode(node){"
+                + "if(!node||node.nodeType!==1)return;"
+                + "for(var i=0;i<REWRITE_ATTRS.length;i++)rewriteAttr(node,REWRITE_ATTRS[i]);"
+                + "rewriteBackgroundImage(node);"
+                + "if(node.querySelectorAll){"
+                + "var els=node.querySelectorAll('[src],[href],[style]');"
+                + "for(var j=0;j<els.length;j++){"
+                + "for(var k=0;k<REWRITE_ATTRS.length;k++)rewriteAttr(els[j],REWRITE_ATTRS[k]);"
+                + "rewriteBackgroundImage(els[j]);"
+                + "}}}"
+                + "try{new MutationObserver(function(records){"
+                + "for(var i=0;i<records.length;i++){var r=records[i];"
+                + "if(r.type==='attributes'){"
+                + "if(r.attributeName==='style'){rewriteBackgroundImage(r.target);}else{rewriteAttr(r.target,r.attributeName);}"
+                + "}else if(r.addedNodes){for(var j=0;j<r.addedNodes.length;j++)scanNode(r.addedNodes[j]);}}"
+                + "}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','href','style']});"
+                + "}catch(e){}"
                 + "})();</script>";
         Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
         return m.find() ? html.substring(0, m.end()) + script + html.substring(m.end())
