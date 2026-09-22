@@ -120,6 +120,12 @@ public class ConfigFlags {
     public Boolean focus_indicators;
 
     public boolean show_scaling_control;
+
+    /** The zoom SWT draws its UI at, in percent — {@code swt.autoScale} already applied to the
+     *  monitor's own zoom. The render layer scales itself by this over the monitor zoom it reports,
+     *  so both halves of a mixed tree end up at the same size. 0 while it is still unknown. */
+    public int ui_zoom;
+
     public DecorationsAlign decorations_align;
 
     public boolean print_move;

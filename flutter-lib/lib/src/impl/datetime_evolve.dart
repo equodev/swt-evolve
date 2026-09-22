@@ -70,7 +70,12 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     _closeCalendarOverlay();
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    final offset = renderBox.localToGlobal(Offset.zero);
+    // Measured against the overlay the entry is inserted into, not the view: the app is drawn
+    // through a Transform the overlay sits inside, so the two spaces differ once SWT asks for a
+    // zoom of its own.
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     final size = renderBox.size;
 
     _calendarOverlay = OverlayEntry(

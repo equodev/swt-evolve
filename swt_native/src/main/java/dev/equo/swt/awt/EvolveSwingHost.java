@@ -376,6 +376,29 @@ public final class EvolveSwingHost {
 
     // ---- Host: LightweightContent + SWT canvas wiring ----------------------------
 
+    /**
+     * The pixel extent of a frame dimension the frame reports in points. {@code JLightweightFrame}
+     * sizes itself in points but allocates its buffer at the display scale, so the two differ on a
+     * scaled display and only this product indexes the buffer correctly.
+     */
+    static int pixelExtent(int points, double scale) {
+        return Math.max(1, (int) Math.round(points * scale));
+    }
+
+    /**
+     * Copies {@code w}x{@code h} pixels out of the frame's shared buffer, dropping the padding its
+     * stride carries, so the SWT thread reads a stable image. {@code w} must be the buffer's pixel
+     * width: passing the frame's width in points instead copies the top-left crop of a magnified
+     * image, which is what a scaled display renders into it.
+     */
+    static int[] copyFrameBuffer(int[] buffer, int stride, int w, int h) {
+        int[] snapshot = new int[w * h];
+        for (int row = 0; row < h; row++) {
+            System.arraycopy(buffer, row * stride, snapshot, row * w, w);
+        }
+        return snapshot;
+    }
+
     private static final class Host {
         private final Canvas canvas;
         // Cached at construction so the EDT never calls canvas.getDisplay() (which throws once the
@@ -425,7 +448,23 @@ public final class EvolveSwingHost {
             canvas.addListener(SWT.Resize, e -> {
                 Rectangle a = canvas.getClientArea();
                 final int w = Math.max(1, a.width), h = Math.max(1, a.height);
-                EventQueue.invokeLater(() -> frame.setSize(w, h));
+                EventQueue.invokeLater(() -> {
+                    frame.setSize(w, h);
+                    // JLightweightFrame.reshape() reallocates the off-screen buffer and repaints
+                    // immediately, but the content tree is still laid out for the old size, so that
+                    // repaint fills the new buffer with background and drops the components — they
+                    // stay invisible until some later event repaints them. Lay the tree out and ask
+                    // for the repaint on a following EDT pass, once the reallocation has settled.
+                    EventQueue.invokeLater(() -> {
+                        javax.swing.JRootPane root = frame.getRootPane();
+                        if (root != null) {
+                            root.setBounds(0, 0, w, h);
+                            root.revalidate();
+                        }
+                        contentRoot.revalidate();
+                        contentRoot.repaint();
+                    });
+                });
                 syncFrameLocation(canvas, frame);
                 scheduleStaggeredRepaints(forceRepaint, 200, 600, 1500);
             });
@@ -531,7 +570,18 @@ public final class EvolveSwingHost {
             imageData.setPixels(0, 0, pw * ph, out, 0);
             Image image = new Image(display, imageData);
             try {
-                pe.gc.drawImage(image, 0, 0);
+                // On a scaled display the off-screen frame rasterises at the monitor's scale, so the
+                // buffer is in physical pixels while the GC draws in points: blitting it 1:1 lands it
+                // oversized by that factor and clips whatever falls outside the canvas. Map the whole
+                // buffer onto the canvas instead — the render side composites it at the physical
+                // resolution, so nothing is resampled and the extra detail is what reaches the screen.
+                Rectangle area = canvas.getClientArea();
+                int lw = Math.max(1, area.width), lh = Math.max(1, area.height);
+                if (pw == lw && ph == lh) {
+                    pe.gc.drawImage(image, 0, 0);
+                } else {
+                    pe.gc.drawImage(image, 0, 0, pw, ph, 0, 0, lw, lh);
+                }
             } finally {
                 image.dispose();
             }
@@ -578,6 +628,11 @@ public final class EvolveSwingHost {
             private int stride;
             private int bufWidth;
             private int bufHeight;
+            // The frame reports its size in points but allocates the buffer at the display scale, so
+            // the real pixel dimensions are bufWidth*scaleX by bufHeight*scaleY. Reading the buffer
+            // as if it were bufWidth wide takes the top-left crop of a magnified image.
+            private double scaleX = 1.0;
+            private double scaleY = 1.0;
             private final Object lock = new Object();
 
             @Override
@@ -596,6 +651,8 @@ public final class EvolveSwingHost {
                     stride = linestride;
                     bufWidth = width;
                     bufHeight = height;
+                    this.scaleX = scaleX > 0 ? scaleX : 1.0;
+                    this.scaleY = scaleY > 0 ? scaleY : 1.0;
                 }
             }
 
@@ -613,14 +670,9 @@ public final class EvolveSwingHost {
                 final int w, h;
                 synchronized (lock) {
                     if (buffer == null || bufWidth <= 0 || bufHeight <= 0) return;
-                    w = bufWidth;
-                    h = bufHeight;
-                    // Copy the whole logical frame out of the shared buffer (dropping any
-                    // padding the stride carries) so the SWT thread reads a stable image.
-                    snapshot = new int[w * h];
-                    for (int row = 0; row < h; row++) {
-                        System.arraycopy(buffer, row * stride, snapshot, row * w, w);
-                    }
+                    w = pixelExtent(bufWidth, scaleX);
+                    h = pixelExtent(bufHeight, scaleY);
+                    snapshot = copyFrameBuffer(buffer, stride, w, h);
                 }
                 paintHeavyweightDescendants(contentRoot, 0, 0, snapshot, w, h);
                 frameProduced(snapshot, w, h);
@@ -655,9 +707,17 @@ public final class EvolveSwingHost {
             private void blitHeavyweight(Component heavy, int destX, int destY, int[] snapshot, int w, int h) {
                 int cw = heavy.getWidth(), ch = heavy.getHeight();
                 if (cw <= 0 || ch <= 0) return;
-                BufferedImage img = new BufferedImage(cw, ch, BufferedImage.TYPE_INT_ARGB);
+                // The component reports its geometry in points while snapshot is the frame's pixel
+                // buffer, so render it at the display scale and place it at the scaled offset —
+                // otherwise a heavyweight child lands undersized in the top-left of where it belongs.
+                int sw = Math.max(1, (int) Math.round(cw * scaleX));
+                int sh = Math.max(1, (int) Math.round(ch * scaleY));
+                int px0 = (int) Math.round(destX * scaleX);
+                int py0 = (int) Math.round(destY * scaleY);
+                BufferedImage img = new BufferedImage(sw, sh, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2 = img.createGraphics();
                 try {
+                    g2.scale(scaleX, scaleY);
                     heavy.paint(g2);
                 } catch (Throwable t) {
                     return; // A component that can't paint off-cycle leaves that region as JLightweightFrame left it.
@@ -665,13 +725,13 @@ public final class EvolveSwingHost {
                     g2.dispose();
                 }
                 int[] src = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-                for (int row = 0; row < ch; row++) {
-                    int py = destY + row;
+                for (int row = 0; row < sh; row++) {
+                    int py = py0 + row;
                     if (py < 0 || py >= h) continue;
-                    int rowBase = row * cw;
+                    int rowBase = row * sw;
                     int destRowBase = py * w;
-                    for (int col = 0; col < cw; col++) {
-                        int px = destX + col;
+                    for (int col = 0; col < sw; col++) {
+                        int px = px0 + col;
                         if (px < 0 || px >= w) continue;
                         int argb = src[rowBase + col];
                         int a = (argb >>> 24) & 0xFF;

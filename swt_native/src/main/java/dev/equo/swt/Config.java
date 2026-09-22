@@ -781,6 +781,9 @@ public class Config {
         // Likewise derived: before a Display exists this falls back to the host's own convention,
         // and reads the Display's DPI once there is one.
         configFlags.font_point_scale = FontMetricsUtil.dpiScale();
+        // Also derived, and for the same reason: the client reports the monitor's zoom only once it
+        // is up, and swt.autoScale is applied to it after these flags were first read.
+        configFlags.ui_zoom = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
         return configFlags;
     }
 

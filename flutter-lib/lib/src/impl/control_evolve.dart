@@ -234,8 +234,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return;
     _removeTooltip();
+    // The hover arrives in the view's coordinates and the panel is laid out inside the overlay,
+    // which the app's zoom Transform sits above -- the two only coincide at zoom 1.
+    final overlayBox = overlay.context.findRenderObject() as RenderBox?;
+    final anchor = overlayBox?.globalToLocal(pointer) ?? pointer;
     final entry = OverlayEntry(
-      builder: (overlayContext) => _tooltipOverlay(overlayContext, message, pointer),
+      builder: (overlayContext) => _tooltipOverlay(overlayContext, message, anchor),
     );
     _tooltipEntry = entry;
     overlay.insert(entry);

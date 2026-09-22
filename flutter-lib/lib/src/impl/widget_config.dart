@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart';
 import 'package:swtflutter/src/theme/named_themes.dart';
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
@@ -40,7 +42,31 @@ void applyConfigFlags(ConfigFlags? flags) {
   if (mapEquals(json, _lastAppliedConfig)) return;
   _lastAppliedConfig = json;
   setConfigFlags(flags);
+  appScaleNotifier.value = swtUiScale();
   configFlagsVersion.value++;
+}
+
+/// The factor the whole app is drawn at: the zoom SWT measures in, over the monitor zoom this side
+/// natively draws at. 1.0 while the two agree or either is still unknown, which is every run that
+/// leaves `swt.autoScale` alone.
+double swtUiScale() => swtUiScaleFor(configFlags.ui_zoom ?? 0, monitorZoomPercent());
+
+/// The monitor's own zoom in percent, as this side draws at it. 0 when it cannot be read yet.
+///
+/// Read straight off [PlatformDispatcher.instance] rather than through the binding: this runs from
+/// [applyConfigFlags], which a widget test reaches without one, and `WidgetsBinding.instance` throws
+/// rather than answering when no binding has been initialized.
+int monitorZoomPercent() {
+  final dispatcher = PlatformDispatcher.instance;
+  if (dispatcher.views.isEmpty) return 0;
+  final dpr = dispatcher.views.first.devicePixelRatio;
+  return dpr > 0 ? (dpr * 100).round() : 0;
+}
+
+@visibleForTesting
+double swtUiScaleFor(int uiZoom, int monitorZoom) {
+  if (uiZoom <= 0 || monitorZoom <= 0) return 1.0;
+  return uiZoom / monitorZoom;
 }
 
 /// The application menu (macOS only) carried by every `Display/{id}` update. It belongs to the

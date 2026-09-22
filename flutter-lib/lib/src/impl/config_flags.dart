@@ -32,6 +32,11 @@ class ConfigFlags {
   bool? custom_tooltip;
   bool? notification_popup;
   bool? show_scaling_control;
+
+  /// The zoom SWT draws its UI at, in percent — `swt.autoScale` already applied to the monitor's
+  /// own zoom. This side draws at the monitor's zoom, so the ratio between them is what the whole
+  /// app has to be scaled by for both halves of a mixed tree to come out the same size.
+  int? ui_zoom;
   @JsonKey(fromJson: DecorationsAlign.fromJson, toJson: DecorationsAlign.toJson)
   DecorationsAlign? decorations_align;
   bool? print_move;

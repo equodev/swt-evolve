@@ -47,6 +47,15 @@ Java_dev_equo_swt_FlutterNative_Wake(JNIEnv *env, jclass cls, jlong context);
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv *env, jclass cls, jlong context, jstring title);
 
+// Declared here, like every other entry point: JNIEXPORT only exports the symbol, and it is this
+// block's `extern "C"` that keeps the name undecorated. A definition the header does not reach
+// still compiles and still exports -- under its C++-mangled name, which the JVM never looks up.
+JNIEXPORT jlong JNICALL
+Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv *env, jclass cls, jlong context);
+
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong context, jboolean visible);
+
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetState(JNIEnv *env, jclass cls, jlong context, jint state);
 

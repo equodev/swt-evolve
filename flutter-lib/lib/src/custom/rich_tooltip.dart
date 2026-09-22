@@ -223,7 +223,12 @@ class _RichToolTipState extends State<RichToolTip> {
   double _horizontalShift(TooltipThemeExtension theme) {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return 0;
-    final itemLeft = box.localToGlobal(Offset.zero).dx;
+    // Against the overlay rather than the view, so the edge and the width below are read in the
+    // same space: the app is drawn through a Transform the overlay sits inside.
+    final overlayBox = Overlay.maybeOf(context, rootOverlay: true)
+        ?.context
+        .findRenderObject() as RenderBox?;
+    final itemLeft = box.localToGlobal(Offset.zero, ancestor: overlayBox).dx;
     final windowWidth = MediaQuery.maybeSizeOf(context)?.width;
     if (windowWidth == null) return 0;
 

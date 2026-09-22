@@ -198,6 +198,8 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         // Forward the theming switches, so a snippet can be run the way a themed product runs:
         // an application that paints itself (e4 CSS) needs its own colors/fonts, not Evolve's theme.
         // theme_color_* is a prefix -- one property per widget -- so it is matched, not listed.
+        // swt.autoScale picks the zoom the UI is drawn at, and updateOnRuntime is what rejects a mode
+        // monitor-specific scaling cannot honour — so a snippet can be run at a zoom of its own.
         for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts", "swt.evolve.force_theme",
                 "swt.evolve.theme_color", "swt.evolve.theme_name",
                 "swt.evolve.preserve_icon_colors", "swt.evolve.disable_evolve_icons",
@@ -207,7 +209,11 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
                 // Client-Side Decorations. -Ddev.equo.swt.csd=false gives the window its system
                 // title bar and buttons back, which is the only way to exercise a window-manager
                 // close rather than the one Flutter draws.
-                "dev.equo.swt.csd", "dev.equo.swt.csd.os", "dev.equo.swt.csd.maximize")) {
+                "dev.equo.swt.csd", "dev.equo.swt.csd.os", "dev.equo.swt.csd.maximize",
+                // swt.autoScale picks the zoom the UI is drawn at, and updateOnRuntime is what
+                // rejects a mode monitor-specific scaling cannot honour -- so a snippet can be run
+                // at a zoom of its own.
+                "swt.autoScale", "swt.autoScale.updateOnRuntime")) {
             System.getProperty(name)?.let { systemProperty(name, it) }
         }
         System.getProperties().stringPropertyNames()

@@ -43,6 +43,7 @@ import 'test_harness.dart' as test_harness;
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
+import 'src/impl/utils/swt_zoom_scale.dart';
 
 // Last theme config printed, so the line is emitted on every real change instead of once.
 // The flags arrive over the socket after the first build, so a once-only log always
@@ -307,11 +308,15 @@ Size _withoutCsdChrome(double width, double height) {
   return Size(width.roundToDouble(), (h > 0 ? h : height).roundToDouble());
 }
 
+/// The area the app lays out in, which is what SWT is told. [swtUiScale] is applied first, so the
+/// result is in the units the app draws in rather than the view's own: SWT measures at the zoom
+/// `swt.autoScale` picked, and the whole tree is scaled by that over the monitor's zoom.
 Size? _currentLogicalViewSize() {
+  final scale = swtUiScale();
   final viewportSize = getViewportSize();
   if (viewportSize != null &&
       _isFinitePositiveSize(viewportSize.width, viewportSize.height)) {
-    return _withoutCsdChrome(viewportSize.width, viewportSize.height);
+    return _withoutCsdChrome(viewportSize.width / scale, viewportSize.height / scale);
   }
   final dispatcher = WidgetsBinding.instance.platformDispatcher;
   if (dispatcher.views.isEmpty) {
@@ -321,7 +326,7 @@ Size? _currentLogicalViewSize() {
   if (view.devicePixelRatio <= 0) {
     return null;
   }
-  final size = view.physicalSize / view.devicePixelRatio;
+  final size = view.physicalSize / view.devicePixelRatio / scale;
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
@@ -343,7 +348,7 @@ Size? _currentLogicalMonitorSize() {
   if (display.devicePixelRatio <= 0) {
     return null;
   }
-  final size = display.size / display.devicePixelRatio;
+  final size = display.size / display.devicePixelRatio / swtUiScale();
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
@@ -351,16 +356,6 @@ Size? _currentLogicalMonitorSize() {
 }
 
 bool _displayClientReadySent = false;
-
-/// Device zoom in percent (100 = no scaling), from devicePixelRatio. 0 when unknown.
-int _currentDeviceZoomPercent() {
-  final dispatcher = WidgetsBinding.instance.platformDispatcher;
-  if (dispatcher.views.isEmpty) {
-    return 0;
-  }
-  final dpr = dispatcher.views.first.devicePixelRatio;
-  return dpr > 0 ? (dpr * 100).round() : 0;
-}
 
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
   final size = sizeOverride ?? _currentLogicalViewSize();
@@ -372,7 +367,7 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
   final monitor = _currentLogicalMonitorSize();
   final int mw = monitor?.width.toInt() ?? 0;
   final int mh = monitor?.height.toInt() ?? 0;
-  final int zoom = _currentDeviceZoomPercent();
+  final int zoom = monitorZoomPercent();
   print('[ClientReady] $widgetName/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
   EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
     'width': w,
@@ -540,31 +535,18 @@ class EvolveApp extends StatelessWidget {
           darkTheme: darkTheme,
           themeMode: effectiveThemeMode,
           debugShowCheckedModeBanner: false,
+          builder: (ctx, navigator) => SwtZoomScale(child: navigator!),
           home: Scaffold(
             backgroundColor: effectiveThemeMode == ThemeMode.dark
                 ? darkTheme.scaffoldBackgroundColor
                 : lightTheme.scaffoldBackgroundColor,
-            body: _maybeWrapCsd(
-              ValueListenableBuilder<double>(
-                valueListenable: appScaleNotifier,
-                builder: (ctx, scale, _) {
-                  // Skip the Transform entirely at the (overwhelmingly common) default
-                  // scale: this RenderTransform wraps the whole app, and keeping a
-                  // permanently-inert one around isn't free.
-                  if (scale == 1.0) return contentWidget;
-                  return Transform.scale(
-                    scale: scale,
-                    alignment: Alignment.topLeft,
-                    child: contentWidget,
-                  );
-                },
-              ),
-            ),
+            body: _maybeWrapCsd(contentWidget),
           ),
         );
       },
     );
   }
+
 }
 
 ThemeMode? parseForcedThemeMode(String? forceTheme) {

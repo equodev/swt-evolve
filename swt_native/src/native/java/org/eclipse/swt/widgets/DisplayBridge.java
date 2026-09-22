@@ -179,7 +179,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
             Display api = display.getApi();
             Runnable apply = () -> {
+                int uiZoomBefore = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
                 display.applyClientDeviceZoom(p.zoom);
+                // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
+                // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
+                // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.
+                if (org.eclipse.swt.internal.DPIUtil.getDeviceZoom() != uiZoomBefore) {
+                    broadcastSwtEvolveProperties();
+                }
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
                 // Push on the very first ClientReady (it bootstraps the Flutter tree); otherwise only

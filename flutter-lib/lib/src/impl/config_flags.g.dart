@@ -34,6 +34,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..custom_tooltip = json['custom_tooltip'] as bool?
   ..notification_popup = json['notification_popup'] as bool?
   ..show_scaling_control = json['show_scaling_control'] as bool?
+  ..ui_zoom = (json['ui_zoom'] as num?)?.toInt()
   ..decorations_align = DecorationsAlign.fromJson(
     json['decorations_align'] as String?,
   )
@@ -71,6 +72,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'custom_tooltip': ?instance.custom_tooltip,
   'notification_popup': ?instance.notification_popup,
   'show_scaling_control': ?instance.show_scaling_control,
+  'ui_zoom': ?instance.ui_zoom,
   'decorations_align': ?DecorationsAlign.toJson(instance.decorations_align),
   'print_move': ?instance.print_move,
   'csd_placement': ?instance.csd_placement,
