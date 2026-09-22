@@ -54,6 +54,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       data: DndDragPayload(sourceControlId: parentTreeValue.id, itemId: state.id),
       widget: parentTree,
       state: parentTreeValue,
+      dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
       onDragStarted: () {
         ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
         final e = _createEvent();

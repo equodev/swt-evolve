@@ -45,6 +45,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Duration? _lastClickStamp;
   Offset? _lastClickPosition;
   int _lastMouseMoveMs = 0;
+
+  Offset? _lastPointerCrossing;
   int _lastDragMoveMs = 0;
   int? _dragDetectPointer;
   Offset? _dragDetectOrigin;
@@ -87,10 +89,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     super.initState();
     _resolveSentinelBounds(state);
     HoverExclusivityArbiter.instance.register(this, (hovering) {
+      final at = _lastPointerCrossing;
+      final event = at == null
+          ? null
+          : (VEvent()
+            ..x = at.dx.round()
+            ..y = at.dy.round());
       if (hovering) {
-        widget.sendMouseTrackMouseEnter(state, null);
+        widget.sendMouseTrackMouseEnter(state, event);
       } else {
-        widget.sendMouseTrackMouseExit(state, null);
+        widget.sendMouseTrackMouseExit(state, event);
       }
     });
     FocusRequests.instance.addListener(_applyFocusRequest);
@@ -199,7 +207,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return mask;
   }
 
+  void takeFocusOnPress() {}
+
+  void notePointerCrossing(Offset localPosition) {
+    _lastPointerCrossing = localPosition;
+  }
+
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
+    HoverExclusivityArbiter.instance.flushPending();
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastMouseMoveMs >= _mouseMoveThrottleMs) {
       _lastMouseMoveMs = now;
@@ -413,6 +428,17 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     );
   }
 
+  final DragDetectGate _dragDetectGate = DragDetectGate();
+
+  VEvent dragDetectPayload() {
+    final at = _dragDetectOrigin ?? _lastPointerCrossing;
+    return VEvent()
+      ..x = (at?.dx ?? 0).round()
+      ..y = (at?.dy ?? 0).round()
+      ..button = swtButton
+      ..stateMask = swtStateMask(released: false);
+  }
+
   void forgetDragDetect(int pointer) {
     if (pointer != _dragDetectPointer) return;
     _dragDetectPointer = null;
@@ -523,6 +549,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       data: DndDragPayload(sourceControlId: state.id),
       widget: widget,
       state: state,
+      dragDetectEvent: dragDetectPayload,
+      dragDetectGate: _dragDetectGate,
     );
   }
 
@@ -632,6 +660,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     widget = Listener(
       onPointerDown: (e) {
+        takeFocusOnPress();
         registerPointerDown(e);
         if (forwardsControlMouseDown) {
           final event = VEvent()
@@ -668,11 +697,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         sendThrottledDragMove(state, event, e.buttons);
       },
       child: MouseRegion(
-        onEnter: (_) {
+        onEnter: (e) {
+          _lastPointerCrossing = e.localPosition;
           if (ActiveDragTracker.isSuppressingHover) return;
           HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
         },
-        onExit: (_) {
+        onExit: (e) {
+          _lastPointerCrossing = e.localPosition;
           _hoverTimer?.cancel();
           _removeTooltip();
           if (ActiveDragTracker.isSuppressingHover) return;

@@ -56,15 +56,22 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       ? impl.swtCursorToFlutter(state.cursor!.cursorStyle!)
       : MouseCursor.defer;
 
+  final forwardsPointer = state.children?.isNotEmpty ?? false;
+
   Widget listener = MouseRegion(
     cursor: cursor,
     // A childless Composite reaches ControlImpl.wrap() (which already sends these); this
     // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
-    onEnter: (_) =>
-        HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true),
-    onExit: (_) =>
-        HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false),
+    onEnter: (e) {
+      impl.notePointerCrossing(e.localPosition);
+      HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true);
+    },
+    onExit: (e) {
+      impl.notePointerCrossing(e.localPosition);
+      HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false);
+    },
     onHover: (e) {
+      if (!forwardsPointer) return;
       // Only the control under the pointer reports the move; its ancestors stay silent.
       // Nested MouseRegions all fire onHover for the same point, which is the very thing
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
@@ -80,26 +87,28 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       onPointerDown: (e) {
         if (_hitsAnyChild(state, e.localPosition)) return;
         if (!impl.forwardsControlMouseDown) return;
-        // Captured so onPointerUp can forward it regardless of where the pointer ends up.
-        impl.capturedPointerDowns.add(e.pointer);
-        impl.registerPointerDown(e);
         final pos = e.localPosition;
-        impl.widget.sendMouseMouseDown(
-          state,
-          VEvent()
-            ..x = pos.dx.round()
-            ..y = pos.dy.round()
-            ..button = impl.swtButton
-            ..count = impl.swtClickCount
-            ..stateMask =
-                impl.swtStateMask(released: false, flutterButtons: e.buttons),
-        );
-        // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
-        // "has children" path bypasses it, so MenuDetect never fired over the composite's
-        // own area -- the gap a container with a lazily-built context menu falls into.
-        // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
-        if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
-          impl.handleMenuDetect(e.pointer, e.localPosition);
+        if (forwardsPointer) {
+          // Captured so onPointerUp can forward it regardless of where the pointer ends up.
+          impl.capturedPointerDowns.add(e.pointer);
+          impl.registerPointerDown(e);
+          impl.widget.sendMouseMouseDown(
+            state,
+            VEvent()
+              ..x = pos.dx.round()
+              ..y = pos.dy.round()
+              ..button = impl.swtButton
+              ..count = impl.swtClickCount
+              ..stateMask =
+                  impl.swtStateMask(released: false, flutterButtons: e.buttons),
+          );
+          // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
+          // "has children" path bypasses it, so MenuDetect never fired over the composite's
+          // own area -- the gap a container with a lazily-built context menu falls into.
+          // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
+          if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
+            impl.handleMenuDetect(e.pointer, e.localPosition);
+          }
         }
         if (!impl.forwardsCompositeDoubleClick) return;
         if (impl.dblTap.registerTap(position: pos) == 2) {
@@ -114,6 +123,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         }
       },
       onPointerUp: (e) {
+        if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
         if (!impl.capturedPointerDowns.remove(e.pointer)) return;
@@ -127,10 +137,12 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.widget.sendMouseMouseUp(state, event);
       },
       onPointerCancel: (e) {
+        if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
         impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
+        if (!forwardsPointer) return;
         impl.maybeSendDragDetect(e);
         // Same exclusivity as onPointerDown above, which already refuses a press that landed
         // on a child. Without it every composite between the Shell and the control under the
@@ -194,6 +206,47 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     extends ScrollableImpl<T, V> {
   final DoubleTapDetector dblTap = DoubleTapDetector();
+
+  final FocusNode _surfaceFocus = FocusNode(debugLabel: 'CompositeSurface');
+
+  bool get _isSurface => state.children?.isEmpty ?? true;
+
+  bool _surfaceFocusReported = false;
+
+  void _reportSurfaceFocusIn() {
+    if (_surfaceFocusReported) return;
+    _surfaceFocusReported = true;
+    widget.sendFocusFocusIn(state, null);
+  }
+
+  void _handleSurfaceFocusChange() {
+    if (_surfaceFocus.hasFocus) {
+      _reportSurfaceFocusIn();
+    } else if (_surfaceFocusReported) {
+      _surfaceFocusReported = false;
+      widget.sendFocusFocusOut(state, null);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _surfaceFocus.addListener(_handleSurfaceFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _surfaceFocus.removeListener(_handleSurfaceFocusChange);
+    _surfaceFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  void takeFocusOnPress() {
+    if (!_isSurface || _surfaceFocus.hasFocus) return;
+    _surfaceFocus.requestFocus();
+    _reportSurfaceFocusIn();
+  }
 
   /// Pointer ids whose MouseDown this composite (not a descendant) forwarded to Java.
   final Set<int> capturedPointerDowns = {};
@@ -275,7 +328,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     }
 
     if (children == null || children.isEmpty) {
-      final content = wrap(paintBackground(const SizedBox.expand()));
+      final content = Focus(
+        focusNode: _surfaceFocus,
+        child: wrap(paintBackground(const SizedBox.expand())),
+      );
       // Hidden Composite: the chrome Listener sits outside wrap()'s Visibility gate, so it would keep
       // stealing clicks from a shown sibling stacked at the same bounds (e.g. a CTabFolder page).
       if (state.visible != null && !state.visible!) return content;

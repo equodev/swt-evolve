@@ -43,6 +43,10 @@ class HoverExclusivityArbiter {
     }
   }
 
+  void flushPending() {
+    if (_resolveScheduled) _resolve();
+  }
+
   void _resolve() {
     _resolveScheduled = false;
     Object? newWinner;

@@ -39,6 +39,26 @@ class Dnd {
   static const feedbackExpand = 16;
 }
 
+class DragDetectGate {
+  static const double thresholdPx = 4.0;
+
+  Offset _moved = Offset.zero;
+  bool _sent = false;
+
+  void reset() {
+    _moved = Offset.zero;
+    _sent = false;
+  }
+
+  bool passed(Offset delta) {
+    if (_sent) return false;
+    _moved += delta;
+    if (_moved.distance < thresholdPx) return false;
+    _sent = true;
+    return true;
+  }
+}
+
 Widget wrapDraggable<T extends Object>({
   required Widget child,
   required T data,
@@ -50,11 +70,20 @@ Widget wrapDraggable<T extends Object>({
   bool useLongPress = false,
   bool alwaysDraggable = false,
   VEvent Function()? dragDetectEvent,
+  DragDetectGate? dragDetectGate,
 }) {
   // alwaysDraggable: a CTabFolder tab is draggable for the folder's own tab reordering even when
   // the application installed no DragSource.
   final hasDragSource = state.dragSource == true;
   if (!hasDragSource && !alwaysDraggable) return child;
+
+  void sendDragDetect() {
+    widget.sendDragDetectDragDetect(state, dragDetectEvent?.call() ?? VEvent());
+  }
+
+  void onUpdate(DragUpdateDetails d) {
+    if (dragDetectGate!.passed(d.delta)) sendDragDetect();
+  }
 
   void fireDragDetect() {
     if (hasDragSource) {
@@ -63,10 +92,11 @@ Widget wrapDraggable<T extends Object>({
       DragStartVeto.reset();
     }
     onDragStarted?.call();
+    dragDetectGate?.reset();
     // DragDetect goes out either way: native SWT raises it for any drag over a control, and an
     // application can listen for it without a DragSource. The Eclipse workbench does exactly that
     // to start moving a view, so withholding it left every view stack immovable.
-    widget.sendDragDetectDragDetect(state, dragDetectEvent?.call() ?? VEvent());
+    if (dragDetectGate == null) sendDragDetect();
   }
 
   final feedback = feedbackBuilder != null
@@ -86,6 +116,7 @@ Widget wrapDraggable<T extends Object>({
           feedback: feedback,
           childWhenDragging: childWhenDragging,
           onDragStarted: fireDragDetect,
+          onDragUpdate: dragDetectGate == null ? null : onUpdate,
           child: child,
         )
       : Draggable<T>(
@@ -94,6 +125,7 @@ Widget wrapDraggable<T extends Object>({
           feedback: feedback,
           childWhenDragging: childWhenDragging,
           onDragStarted: fireDragDetect,
+          onDragUpdate: dragDetectGate == null ? null : onUpdate,
           child: child,
         );
 }
