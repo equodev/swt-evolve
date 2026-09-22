@@ -17,6 +17,7 @@ import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/utils/double_tap_detector.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 class _RecordingTableSwt extends TableSwt<VTable> {
@@ -64,6 +65,7 @@ List<int?> _countsOf(List<String> calls, String event) => calls
 void main() {
   setUp(resetConfigFlags);
   tearDown(resetConfigFlags);
+  tearDown(() => DoubleTapDetector.clock = DateTime.now);
 
   testWidgets('the second click of a row double-click reports count=2',
       (tester) async {
@@ -85,8 +87,15 @@ void main() {
     ));
     await tester.pump();
 
+    // Step the detector's clock by a fixed amount per tap. Left on the wall clock, the pairing
+    // measures how long the harness took to run the two taps, so on a loaded machine the gap
+    // exceeds the double-click window and the second click starts a fresh sequence.
+    var fake = DateTime(2020);
+    DoubleTapDetector.clock = () => fake;
+
     await tester.tap(find.text('Row 1'));
     await tester.pump(Duration.zero);
+    fake = fake.add(const Duration(milliseconds: 20));
     await tester.tap(find.text('Row 1'));
     await tester.pump(Duration.zero);
 

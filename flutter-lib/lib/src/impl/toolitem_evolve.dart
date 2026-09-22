@@ -18,6 +18,7 @@ import '../custom/toast.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'toolbar_evolve.dart';
+import 'menu_evolve.dart' show OpenPopupMenuTracker;
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
@@ -353,7 +354,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           onTap: enabled
               ? () {
                   setState(() => _isHovered = false);
-                  openMenu();
+                  // The pointer-based dismiss (MenuAnchor.consumeOutsideTap) only sees real
+                  // pointer routing. Under forced accessibility this same arrow's second tap is
+                  // delivered as a SemanticsAction, which bypasses that entirely and reaches here
+                  // instead of being consumed as an outside tap -- close directly rather than
+                  // asking Java to show an already-visible menu again, which is a no-op.
+                  if (!OpenPopupMenuTracker.closeIfOpen()) {
+                    openMenu();
+                  }
                 }
               : null,
           splashColor: widgetTheme.hoverColor.withOpacity(

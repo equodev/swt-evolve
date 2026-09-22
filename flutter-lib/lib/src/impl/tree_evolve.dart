@@ -55,10 +55,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _horizontalController = ScrollController();
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
-    // E2E test hooks: the Tree paints its rows onto the Flutter canvas, so there are no per-row DOM
-    // nodes for a test to target. These expose the geometry a test needs instead — map a point to
-    // the row id under it (GetIdFromPoint), report a row's bounds (GetItemBounds), and register a
-    // handle to read/expand the tree from the test harness. One-time registrations; cheap.
+    // E2E test hooks. Rows DO carry a per-row Semantics node: each is a TreeItemSwt whose build()
+    // ends in tagSemantics. But the node only exists while the row is built — the list virtualises,
+    // and a row can lose its node while the widget is live — so these expose what the DOM cannot:
+    // map a point to the row id under it (GetIdFromPoint), report a row's bounds (GetItemBounds),
+    // and register a handle to read/expand the tree from the test harness. One-time; cheap.
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
     // Remember the key we register under. `state` is reassigned in didUpdateWidget (see

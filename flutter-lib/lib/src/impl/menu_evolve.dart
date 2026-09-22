@@ -30,6 +30,29 @@ class MenuState {
   }
 }
 
+/// Tracks whichever standalone popup Menu (POP_UP or DROP_DOWN style, built by
+/// [MenuImpl._buildPopupMenu]) is currently open, so a control that re-triggers its own "show"
+/// action can close it directly instead of asking Java to show it again.
+///
+/// Needed because [MenuAnchor.consumeOutsideTap] dismissal is built on [TapRegion], which only
+/// sees real pointer routing. Under forced accessibility (every E2E run), a tap on a
+/// semantics-tagged control -- including the arrow that opened this same popup -- is delivered as
+/// a [SemanticsAction] and never reaches [TapRegion] at all, so the popup never sees that tap as
+/// "outside" and never closes on its own; the arrow's own handler asks Java to show it again,
+/// which is a no-op because it is already visible.
+class OpenPopupMenuTracker {
+  static MenuImpl? _current;
+
+  /// Closes the currently tracked popup, if one is open. Returns whether it did.
+  static bool closeIfOpen() {
+    final current = _current;
+    if (current == null || !current.mounted) return false;
+    if (!current._menuController.isOpen) return false;
+    current._menuController.close();
+    return true;
+  }
+}
+
 class MenuChangeNotifier extends InheritedWidget {
   final void Function(void Function()) registerPendingChange;
   final MenuState menuState;
@@ -149,6 +172,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
   @override
   void dispose() {
+    if (identical(OpenPopupMenuTracker._current, this)) {
+      OpenPopupMenuTracker._current = null;
+    }
     _unsubscribeRawChannels();
     _popupAnchorFocusNode.dispose();
     _firstItemFocusNode.dispose();
@@ -355,11 +381,15 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       alignmentOffset: Offset.zero,
       consumeOutsideTap: true,
       onOpen: () {
+        OpenPopupMenuTracker._current = this;
         if (_showSent) return;
         _showSent = true;
         widget.sendMenuShow(state, null);
       },
       onClose: () {
+        if (identical(OpenPopupMenuTracker._current, this)) {
+          OpenPopupMenuTracker._current = null;
+        }
         _sendPendingChanges();
         _openedFromVisibleFlag = false;
         _pendingContextMenuPosition = null;

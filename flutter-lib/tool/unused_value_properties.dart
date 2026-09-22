@@ -15,6 +15,10 @@
 // Without `--include-tests` a property read only by a test still counts as unused, which is the
 // question the generator wants answered; the summary reports those separately either way.
 
+// The Element2 API (`analyzer`'s in-progress replacement for the old `Element` model) is what this
+// script is built on; there is no non-experimental way to resolve a written vs. read identifier yet.
+// ignore_for_file: experimental_member_use
+
 import 'dart:convert';
 import 'dart:io';
 

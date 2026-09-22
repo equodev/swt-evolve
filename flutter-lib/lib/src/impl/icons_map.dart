@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+// `FontAwesomeIcons.*` is a `FaIconData` since font_awesome_flutter 11 — a wrapper the package added
+// to force its icons through `FaIcon`. We unwrap to the plain `IconData` it holds: everything here
+// renders through one `Icon`, and image_utils already compensates the non-square metrics that
+// `FaIcon` would otherwise handle (see its isFontAwesome branch).
 final Map<String, IconData> iconMap = {
   // Basic UI Icons
   'home': Icons.home,
@@ -216,13 +220,13 @@ final Map<String, IconData> iconMap = {
   'classf_obj': Icons.insert_drive_file,
   'file_obj': Icons.insert_drive_file_outlined,
   'text': Icons.text_snippet,
-  'xmldoc': FontAwesomeIcons.code,
+  'xmldoc': FontAwesomeIcons.code.data,
   //'sample': Icons.find_in_page_outlined,
   //'plugin_depend': Icons.extension_outlined,
   'plugin_javasearch': Icons.extension,
-  //'package': FontAwesomeIcons.folderTree,
+  //'package': FontAwesomeIcons.folderTree.data,
   'save_edit': Icons.save,
-  'saveall_edit': FontAwesomeIcons.floppyDisk,
+  'saveall_edit': FontAwesomeIcons.floppyDisk.data,
   'undo_edit': Icons.undo,
   'redo_edit': Icons.redo,
   'console_view': Icons.terminal,
@@ -241,14 +245,14 @@ final Map<String, IconData> iconMap = {
   'external_tools': Icons.play_arrow_outlined,
   'new_persp': Icons.view_quilt,
   'synchronize_communication_settings': Icons.lan_outlined,
-  'virtualize_ieds': FontAwesomeIcons.fileCircleXmark,
-  'implement_ieds': FontAwesomeIcons.fileCirclePlus,
+  'virtualize_ieds': FontAwesomeIcons.fileCircleXmark.data,
+  'implement_ieds': FontAwesomeIcons.fileCirclePlus.data,
   'overview': Icons.preview_outlined,
   'delete_logical_nodes': Icons.delete_forever,
-  'init_connection': FontAwesomeIcons.plugCircleCheck,
-  'connection': FontAwesomeIcons.plug,
-  'remove_connection': FontAwesomeIcons.plugCircleXmark,
-  'dashboard': FontAwesomeIcons.tableColumns,
+  'init_connection': FontAwesomeIcons.plugCircleCheck.data,
+  'connection': FontAwesomeIcons.plug.data,
+  'remove_connection': FontAwesomeIcons.plugCircleXmark.data,
+  'dashboard': FontAwesomeIcons.tableColumns.data,
   'play_24': Icons.play_arrow,
   'stop_24': Icons.stop,
   'stop_24_disabled': Icons.stop,
@@ -397,7 +401,7 @@ final List<MapEntry<RegExp, IconData>> _fallbackPatterns = [
   MapEntry(RegExp(r'^(export.*)$'), Icons.upload_file),
   MapEntry(RegExp(r'^(archive|zip.*)$'), Icons.archive),
   MapEntry(RegExp(r'^(unarchive|unzip.*)$'), Icons.unarchive),
-  MapEntry(RegExp(r'^(schema|var_cntnt_prvdr)$'), FontAwesomeIcons.folderTree),
+  MapEntry(RegExp(r'^(schema|var_cntnt_prvdr)$'), FontAwesomeIcons.folderTree.data),
   MapEntry(RegExp(r'^(smart|smartmode.*)$'), Icons.auto_fix_high),
   MapEntry(RegExp(r'^(focus|focus_disabled|focus-disabled)$'), Icons.adjust),
 ];

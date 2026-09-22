@@ -151,18 +151,20 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       );
 
     return wrap(
-      Opacity(
-        opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
-        child: Container(
-          constraints: constraints,
-          padding: padding,
-          decoration: backgroundColor != null
-              ? BoxDecoration(color: backgroundColor)
-              : null,
-          alignment: hasValidBounds
-              ? getAlignmentFromTextAlign(textAlign)
-              : null,
-          child: child,
+      exposeSemanticsTapAction(
+        Opacity(
+          opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
+          child: Container(
+            constraints: constraints,
+            padding: padding,
+            decoration: backgroundColor != null
+                ? BoxDecoration(color: backgroundColor)
+                : null,
+            alignment: hasValidBounds
+                ? getAlignmentFromTextAlign(textAlign)
+                : null,
+            child: child,
+          ),
         ),
       ),
     );

@@ -20,7 +20,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.9.0
-  flutter: "^3.35.7"
+  flutter: "^3.44.4"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -43,7 +43,7 @@ dependencies:
   flutter_svg: ^2.1.0
   json_annotation: ^4.9.0
   image: ^4.0.17
-  font_awesome_flutter: ^10.9.0
+  font_awesome_flutter: ^11.0.0
   theme_tailor_annotation: ^3.1.1
   web: ^1.1.1
 

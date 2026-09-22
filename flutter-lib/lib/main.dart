@@ -40,6 +40,8 @@ import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
 import 'bench.dart' as bench;
 import 'test_harness.dart' as test_harness;
+import 'semantics_ghost_guard_stub.dart'
+    if (dart.library.js_interop) 'semantics_ghost_guard_web.dart';
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
@@ -95,6 +97,7 @@ void main(List<String> args) async {
   if (enableTestSemantics) {
     SemanticsBinding.instance.ensureSemantics();
   }
+  startSemanticsGhostNodeGuard();
   // Every topology, not just under a Display: the Image channels are keyed by remoteRef rather than
   // by widget, and an off-screen engine never reaches the Display branch below.
   _registerImageReleaseListener();

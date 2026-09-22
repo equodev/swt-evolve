@@ -46,6 +46,43 @@
     window.evolve.enableTestSemantics = "{{EQUO_ENABLE_TEST_SEMANTICS}}" === "true";
   </script>
   <script>
+    // Chromium reports navigator.language from the host's locale, so a glibc locale carrying a
+    // modifier (ca_ES@valencia, sr_RS@latin, en_US@posix) arrives verbatim as "ca-ES@valencia" --
+    // not a valid BCP-47 tag. The engine hands that to `new Intl.Locale(...)` while it boots, which
+    // throws RangeError and leaves the app dead before its first frame: a blank page, no Flutter
+    // view, nothing in the console but that error. Drop the part Intl cannot parse before the
+    // engine starts. A tag that already parses is left exactly as the browser reported it.
+    (function () {
+      function parses(tag) {
+        try { new Intl.Locale(tag); return true; } catch (e) { return false; }
+      }
+      function repair(tag) {
+        if (typeof tag !== 'string' || tag === '') return null;
+        if (parses(tag)) return tag;
+        var base = tag.split('@')[0];
+        return parses(base) ? base : null;
+      }
+      try {
+        var reported = navigator.languages || [];
+        var repaired = [];
+        for (var i = 0; i < reported.length; i++) {
+          var tag = repair(reported[i]);
+          if (tag !== null && repaired.indexOf(tag) < 0) repaired.push(tag);
+        }
+        var primary = repair(navigator.language) || repaired[0] || 'en-US';
+        if (repaired.length === 0) repaired.push(primary);
+        if (primary !== navigator.language) {
+          Object.defineProperty(navigator, 'language', { value: primary, configurable: true });
+        }
+        if (repaired.join(',') !== Array.prototype.join.call(reported, ',')) {
+          Object.defineProperty(navigator, 'languages', { value: repaired, configurable: true });
+        }
+      } catch (e) {
+        // A browser that refuses the redefinition is no worse off than without this block.
+      }
+    })();
+  </script>
+  <script>
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);
   </script>
 </head>
