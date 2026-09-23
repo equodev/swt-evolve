@@ -30,6 +30,7 @@ class TextSerializeTest extends SerializeTestBase {
                .containsEntry("message", json(w.getMessage()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("editable").equalsTo(w.getEditable(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
@@ -43,7 +44,6 @@ class TextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

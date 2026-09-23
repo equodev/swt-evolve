@@ -29,6 +29,7 @@ class BrowserSerializeTest extends SerializeTestBase {
                .containsEntry("text", json(w.getText()))
                .containsEntry("url", json(w.getUrl()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("javascriptEnabled").equalsTo(w.getJavascriptEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
@@ -41,7 +42,6 @@ class BrowserSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

@@ -27,6 +27,7 @@ class ExpandBarSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ExpandBar")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("spacing").equalsTo(w.getSpacing(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
@@ -39,7 +40,6 @@ class ExpandBarSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

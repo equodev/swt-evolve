@@ -27,6 +27,7 @@ class SpinnerSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Spinner")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("digits").equalsTo(w.getDigits(), orAbsentIf0));
         assertJ.satisfies(node("increment").equalsTo(w.getIncrement(), orAbsentIf0));
@@ -45,7 +46,6 @@ class SpinnerSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

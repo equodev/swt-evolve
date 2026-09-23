@@ -647,6 +647,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final bounds = getBounds();
     final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
     final hasVScroll = hasStyle(state.style, SWT.V_SCROLL);
+    final showHBar = hasHScroll && (state.horizontalBar?.visible ?? true);
+    final showVBar = hasVScroll && (state.verticalBar?.visible ?? true);
     final contentSize = _computeContentSize();
     final alwaysShow = state.alwaysShowScrollBars ?? false;
 
@@ -681,12 +683,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       contentLayer = ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(
           dragDevices: const <PointerDeviceKind>{},
+          scrollbars: false,
         ),
         child: contentLayer,
       );
     }
 
-    if (hasHScroll) {
+    if (showHBar) {
       contentLayer = Scrollbar(
         controller: _horizontalController,
         thumbVisibility: alwaysShow,
@@ -694,7 +697,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         child: contentLayer,
       );
     }
-    if (hasVScroll) {
+    if (showVBar) {
       contentLayer = Scrollbar(
         controller: _verticalController,
         thumbVisibility: alwaysShow,
@@ -711,8 +714,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       onKey: _handleKeyEvent,
       child: Padding(
         padding: EdgeInsets.only(
-          right: hasVScroll ? trackSize : 0,
-          bottom: hasHScroll ? trackSize : 0,
+          right: showVBar ? trackSize : 0,
+          bottom: showHBar ? trackSize : 0,
         ),
         child: Container(),
       ),
@@ -730,7 +733,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           child: Stack(
             children: [
               Positioned.fill(child: contentLayer),
-              ..._marginStrips(hasVScroll ? trackSize : 0, hasHScroll ? trackSize : 0),
+              ..._marginStrips(showVBar ? trackSize : 0, showHBar ? trackSize : 0),
               Positioned.fill(child: interactionLayer),
             ],
           ),

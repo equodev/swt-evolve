@@ -28,6 +28,7 @@ class ButtonSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Button")
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
@@ -42,7 +43,6 @@ class ButtonSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

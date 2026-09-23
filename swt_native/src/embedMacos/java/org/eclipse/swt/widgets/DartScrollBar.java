@@ -766,7 +766,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 
     int selection;
 
-    boolean visible;
+    boolean visible = true;
 
     public Scrollable _parent() {
         return parent;

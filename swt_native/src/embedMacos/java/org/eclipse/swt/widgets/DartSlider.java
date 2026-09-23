@@ -567,6 +567,8 @@ public class DartSlider extends DartControl implements ISlider {
         return selection;
     }
 
+    final LatestEvent dragSelection = new LatestEvent();
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
@@ -582,17 +584,15 @@ public class DartSlider extends DartControl implements ISlider {
                 sendSelectionEvent(SWT.Selection, event, true);
             });
         });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                Event event = new Event();
-                event.detail = SWT.DRAG;
-                event.widget = getApi();
-                setSelection(e.index);
-                sendSelectionEvent(SWT.Selection, event, true);
-            });
-        });
+        FlutterBridge.on(this, "Selection", "Selection", sent -> dragSelection.post(getDisplay(), sent, e -> {
+            if (isDisposed())
+                return;
+            Event event = new Event();
+            event.detail = SWT.DRAG;
+            event.widget = getApi();
+            setSelection(e.index);
+            sendSelectionEvent(SWT.Selection, event, true);
+        }));
     }
 
     public Slider getApi() {

@@ -29,6 +29,7 @@ class ListSerializeTest extends SerializeTestBase {
                .hasEntrySatisfying("items", p -> assertThatJson(p).isArray()
                                                                   .hasSameSizeAs(w.getItems()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
@@ -40,7 +41,6 @@ class ListSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

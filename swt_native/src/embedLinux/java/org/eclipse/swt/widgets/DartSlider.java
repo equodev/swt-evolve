@@ -482,6 +482,25 @@ public class DartSlider extends DartControl implements ISlider {
         if (minimum < 0 || maximum < 0 || thumb < 1 || increment < 1 || pageIncrement < 1)
             return;
         thumb = Math.min(thumb, maximum - minimum);
+        if (!java.util.Objects.equals(this.thumb, thumb))
+            getValue().markDirty(VSlider.THUMB);
+        if (!java.util.Objects.equals(this.minimum, minimum))
+            getValue().markDirty(VSlider.MINIMUM);
+        if (!java.util.Objects.equals(this.maximum, maximum))
+            getValue().markDirty(VSlider.MAXIMUM);
+        if (!java.util.Objects.equals(this.increment, increment))
+            getValue().markDirty(VSlider.INCREMENT);
+        if (!java.util.Objects.equals(this.pageIncrement, pageIncrement))
+            getValue().markDirty(VSlider.PAGE_INCREMENT);
+        this.thumb = thumb;
+        this.minimum = minimum;
+        this.maximum = maximum;
+        this.increment = increment;
+        this.pageIncrement = pageIncrement;
+        int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
+        if (this.selection != clamped)
+            getValue().markDirty(VSlider.SELECTION);
+        this.selection = clamped;
     }
 
     int increment;
@@ -532,6 +551,8 @@ public class DartSlider extends DartControl implements ISlider {
         return thumb;
     }
 
+    final LatestEvent dragSelection = new LatestEvent();
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
@@ -547,17 +568,15 @@ public class DartSlider extends DartControl implements ISlider {
                 sendSelectionEvent(SWT.Selection, event, true);
             });
         });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                Event event = new Event();
-                event.detail = SWT.DRAG;
-                event.widget = getApi();
-                setSelection(e.index);
-                sendSelectionEvent(SWT.Selection, event, true);
-            });
-        });
+        FlutterBridge.on(this, "Selection", "Selection", sent -> dragSelection.post(getDisplay(), sent, e -> {
+            if (isDisposed())
+                return;
+            Event event = new Event();
+            event.detail = SWT.DRAG;
+            event.widget = getApi();
+            setSelection(e.index);
+            sendSelectionEvent(SWT.Selection, event, true);
+        }));
     }
 
     public Slider getApi() {

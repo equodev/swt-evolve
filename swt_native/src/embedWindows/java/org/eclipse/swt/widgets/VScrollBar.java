@@ -75,6 +75,7 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).thumb = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartScrollBar) impl).getVisible();
     }

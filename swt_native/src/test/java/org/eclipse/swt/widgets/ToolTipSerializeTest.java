@@ -28,9 +28,9 @@ class ToolTipSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "ToolTip")
                .containsEntry("message", json(w.getMessage()))
                .containsEntry("text", json(w.getText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("location").equalsTo(value(w).getLocation(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

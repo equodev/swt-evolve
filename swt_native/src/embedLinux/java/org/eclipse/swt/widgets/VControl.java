@@ -207,6 +207,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).touchEnabled = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public Boolean getVisible() {
         return ((DartControl) impl).getVisible();
     }

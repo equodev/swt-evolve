@@ -28,6 +28,7 @@ class LinkSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Link")
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("linkForeground").equalsTo(w.getLinkForeground(), orAbsentIfNull));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
@@ -39,7 +40,6 @@ class LinkSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

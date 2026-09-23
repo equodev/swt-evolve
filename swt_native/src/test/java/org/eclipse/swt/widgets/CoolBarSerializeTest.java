@@ -29,6 +29,7 @@ class CoolBarSerializeTest extends SerializeTestBase {
                .hasEntrySatisfying("itemSizes", p -> assertThatJson(p).isArray()
                                                                       .hasSameSizeAs(w.getItemSizes()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("itemOrder").equalsTo(w.getItemOrder(), orAbsentIfNull));
         assertJ.satisfies(node("wrapIndices").equalsTo(w.getWrapIndices(), orAbsentIfNull));
@@ -42,7 +43,6 @@ class CoolBarSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test

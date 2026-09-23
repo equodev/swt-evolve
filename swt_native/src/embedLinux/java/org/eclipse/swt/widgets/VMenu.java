@@ -81,6 +81,7 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).parentMenu = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartMenu) impl).getVisible();
     }
