@@ -214,7 +214,9 @@ class GCDrawer extends GCDrawerBase {
           _lateLoadedImages.clear();
         }
 
-        if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
+        // The committed frame, empty included: a cycle that drew nothing has to blank the control,
+        // not leave the owner rendering the last frame that had content.
+        onGCDispose?.call(List.from(shapes));
         onShapesUpdated?.call(shapes);
       } finally {
         thisCommit.complete();
