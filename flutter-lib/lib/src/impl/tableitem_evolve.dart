@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
 import '../gen/widget.dart';
 import '../gen/event.dart';
@@ -527,7 +528,9 @@ class _CellHoverZoom extends StatefulWidget {
 }
 
 class _CellHoverZoomState extends State<_CellHoverZoom> {
+  final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
+  ScrollableState? _scrollable;
 
   bool get _showing => _entry != null;
 
@@ -537,45 +540,73 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(_CellHoverZoom oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Keeps the copy on the cell's current content. Deferred because an overlay entry is a sibling
+    // of the table, not a descendant: marking it dirty from inside the table's own build throws.
+    if (_entry != null) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => _entry?.markNeedsBuild());
+    }
+  }
+
   void _remove() {
     _entry?.remove();
     _entry = null;
+    _scrollable = null;
   }
 
   void _show() {
     if (_showing) return;
     final overlay = Overlay.maybeOf(context);
     final box = context.findRenderObject() as RenderBox?;
-    final overlayBox = overlay?.context.findRenderObject() as RenderBox?;
-    if (overlay == null || box == null || overlayBox == null || !box.hasSize) return;
+    if (overlay == null || box == null || !box.hasSize) return;
 
-    final origin = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
-    final size = box.size;
-    final entry = OverlayEntry(
-      builder: (_) => Positioned(
-        left: origin.dx,
-        top: origin.dy,
-        width: size.width,
-        height: size.height,
+    _scrollable = Scrollable.maybeOf(context);
+    final entry = OverlayEntry(builder: (_) => _buildCopy());
+    overlay.insert(entry);
+    setState(() => _entry = entry);
+  }
+
+  Widget _buildCopy() {
+    final cell = context.findRenderObject() as RenderBox?;
+    if (cell == null || !cell.hasSize) return const SizedBox.shrink();
+
+    Widget copy = _GrowIn(
+      scale: widget.theme.cellHoverZoomScale,
+      duration: widget.theme.cellHoverZoomDuration,
+      alignment: widget.alignment,
+      child: widget.child,
+    );
+    final viewport = _viewportRect(cell);
+    if (viewport != null) copy = ClipRect(clipper: _FixedRect(viewport), child: copy);
+
+    return Positioned(
+      width: cell.size.width,
+      height: cell.size.height,
+      // The follower re-resolves the cell's transform every frame, so the copy rides the table's
+      // scroll instead of staying where the pointer entered, and stops painting once the cell goes.
+      child: CompositedTransformFollower(
+        link: _link,
+        showWhenUnlinked: false,
         // The real cell underneath still owns every gesture; this is paint only.
         child: IgnorePointer(
           // The overlay is outside any Material, where the inherited DefaultTextStyle is the
           // debug one that underlines text in yellow. A transparent Material restores the
           // theme's own text style without painting anything.
-          child: Material(
-            type: MaterialType.transparency,
-            child: _GrowIn(
-              scale: widget.theme.cellHoverZoomScale,
-              duration: widget.theme.cellHoverZoomDuration,
-              alignment: widget.alignment,
-              child: widget.child,
-            ),
-          ),
+          child: Material(type: MaterialType.transparency, child: copy),
         ),
       ),
     );
-    overlay.insert(entry);
-    setState(() => _entry = entry);
+  }
+
+  /// The table body's visible rect, in the cell's own coordinates -- what keeps a copy anchored to a
+  /// half-scrolled row from painting over the header. Null while the cell is not inside a viewport.
+  Rect? _viewportRect(RenderBox cell) {
+    final box = _scrollable?.context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return (box.localToGlobal(Offset.zero) & box.size)
+        .shift(-cell.localToGlobal(Offset.zero));
   }
 
   void _hide() {
@@ -590,10 +621,25 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
     return MouseRegion(
       onEnter: (_) => _show(),
       onExit: (_) => _hide(),
-      // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
-      child: Opacity(opacity: _showing ? 0.0 : 1.0, child: widget.child),
+      child: CompositedTransformTarget(
+        link: _link,
+        // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
+        child: Opacity(opacity: _showing ? 0.0 : 1.0, child: widget.child),
+      ),
     );
   }
+}
+
+class _FixedRect extends CustomClipper<Rect> {
+  const _FixedRect(this.rect);
+
+  final Rect rect;
+
+  @override
+  Rect getClip(Size size) => rect;
+
+  @override
+  bool shouldReclip(_FixedRect oldClipper) => oldClipper.rect != rect;
 }
 
 /// Animates from the cell's own size up to [scale] as soon as it is mounted, so the overlay copy
