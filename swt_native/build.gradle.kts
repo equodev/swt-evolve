@@ -203,7 +203,12 @@ val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUt
 // built for an older SWT release can leave them out and still work -- SWT_AWT falls back to native
 // reparenting, Config to a Throwable-based stack read. Excluding them is what lets the rest of the
 // tree compile at --release 8, where those packages are not visible at all.
-val jdk9OnlySources = listOf("**/dev/equo/swt/awt/**", "**/dev/equo/swt/jdk9/**")
+//
+// javafx/embed/swt (FXCanvas) is the same case: it opens the host's javafx.graphics module to this
+// bundle through java.lang.Module, which does not exist before 9, and the whole feature embeds modern
+// JavaFX (21 needs Java 17+), so it can never run on a pre-9 SWT release. It is left out of those
+// fragments entirely -- there is nothing to fall back to, and nothing that could use it there.
+val jdk9OnlySources = listOf("**/dev/equo/swt/awt/**", "**/dev/equo/swt/jdk9/**", "**/javafx/embed/swt/**")
 
 // The oldest JDK the SWT release being built for supports, from gradle/versions/{ver}.properties.
 val targetJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()?.takeIf { it < 21 }

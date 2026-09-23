@@ -47,11 +47,15 @@ import com.sun.javafx.stage.EmbeddedWindow;
  *
  * <h2>How this differs from upstream</h2>
  * <ul>
- *   <li><b>Headless toolkit.</b> JavaFX is started with the Monocle/Headless
- *       Glass platform and the software Prism pipeline, so it never creates a
- *       real native window or seizes the platform UI thread (on macOS, the main
- *       thread already owned by SWT/Flutter via {@code -XstartOnFirstThread}).
- *       The same headless path is used on Windows, Linux and macOS.</li>
+ *   <li><b>No window, whichever Glass backend.</b> Nothing here ever opens one: the
+ *       scene is rasterised into an image by {@link Scene#snapshot}, never onto a
+ *       screen, and all this canvas takes from Glass is the JavaFX thread and its
+ *       pulses. So the host's own backend (Win/Gtk) serves, and Prism picks its own
+ *       pipeline. Monocle/Headless is the <em>exception</em>, not the default — it does
+ *       not ship with {@code javafx.graphics} and is absent from most host
+ *       applications. It is asked for only where the host's backend cannot work at
+ *       all: macOS, whose Glass seizes the main thread SWT runs its loop on, and a
+ *       machine with no display server. See {@code needsMonocle()}.</li>
  *   <li><b>snapshot() rendering.</b> Under headless Monocle the embedded scene's
  *       {@code repaint()}/{@code getPixels()} pulse does not deliver frames, so we
  *       render with the synchronous {@link Scene#snapshot} API instead and cache
@@ -281,6 +285,7 @@ public class FXCanvas extends Canvas {
         if (fxHostUnavailable) {
             return false;
         }
+        openFxInternals();
         try {
             hostContainer = new HostContainer();
             return true;
@@ -288,6 +293,59 @@ public class FXCanvas extends Canvas {
             fxHostUnavailable = true;
             warnUnavailable(t);
             return false;
+        }
+    }
+
+    /** Packages {@code HostContainer} and the embedded-stage plumbing need to reach. */
+    private static final String[] FX_EMBED_PACKAGES = {
+        "com.sun.javafx.embed",
+        "com.sun.javafx.cursor",
+        "com.sun.javafx.stage",
+        "com.sun.javafx.application",
+        "com.sun.javafx.tk",
+    };
+
+    private static final java.util.concurrent.atomic.AtomicBoolean FX_OPEN_TRIED =
+            new java.util.concurrent.atomic.AtomicBoolean();
+
+    /**
+     * Adds the embedding packages of the host's {@code javafx.graphics} to this bundle's module, so
+     * that defining {@code HostContainer implements HostInterface} passes the JVM's access check.
+     *
+     * <p>Command-line {@code --add-exports} cannot do this: it is applied to the boot layer, while a
+     * host like e(fx)clipse builds its own {@code ModuleLayer} at runtime. Mutating the {@code Module}
+     * object works whatever layer it lives in — but {@code Module.addExports} is caller-sensitive, so
+     * we go through {@code implAddExports}, which needs {@code java.lang} opened to us. That one flag
+     * <em>does</em> work from the command line, because {@code java.base} is always in the boot
+     * layer:</p>
+     *
+     * <pre>--add-opens=java.base/java.lang=ALL-UNNAMED</pre>
+     *
+     * <p>Without it this is a no-op and the canvas degrades to blank exactly as before.</p>
+     */
+    private static void openFxInternals() {
+        if (!FX_OPEN_TRIED.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            Module fx = Platform.class.getModule();
+            Module self = FXCanvas.class.getModule();
+            // JavaFX on the classpath lands in the unnamed module, where no access control applies.
+            if (!fx.isNamed()) {
+                return;
+            }
+            java.lang.reflect.Method implAddExports =
+                    Module.class.getDeclaredMethod("implAddExports", String.class, Module.class);
+            implAddExports.setAccessible(true);
+            for (String pkg : FX_EMBED_PACKAGES) {
+                if (fx.getPackages().contains(pkg) && !fx.isExported(pkg, self)) {
+                    implAddExports.invoke(fx, pkg, self);
+                }
+            }
+        } catch (Throwable t) {
+            // Left closed — ensureHost() will report the blank canvas with the real cause.
+            System.err.println("[FXCanvas] could not open JavaFX internals to this bundle "
+                    + "(add --add-opens=java.base/java.lang=ALL-UNNAMED to enable): " + t);
         }
     }
 
@@ -305,16 +363,80 @@ public class FXCanvas extends Canvas {
         if (!TOOLKIT_STARTED.compareAndSet(false, true)) {
             return;
         }
-        // Headless Monocle + software Prism: render the scene off-screen without
-        // a real window or the macOS main thread (owned by SWT/Flutter).
-        setIfAbsent("glass.platform", "Monocle");
-        setIfAbsent("monocle.platform", "Headless");
-        setIfAbsent("prism.order", "sw");
+        // The host's own Glass backend is the normal path. Nothing here ever opens a
+        // window: the scene is rasterised into an image by snapshot(), never onto a
+        // screen, so Win/Mac/Gtk all serve — all this canvas takes from Glass is the
+        // JavaFX thread and its pulses.
+        //
+        // Monocle is the exception, for a machine with no display at all to talk to.
+        // It does not ship with javafx.graphics — only a separate artifact carries it —
+        // so it is absent from practically every host application, and naming it
+        // unconditionally made Glass resolve com.sun.glass.ui.monocle.MonoclePlatformFactory,
+        // fail, and hand back a null factory, leaving every canvas in the product blank.
+        //
+        // Anywhere this reads the machine wrong, -Dglass.platform on the command line still
+        // wins — every write below is set-if-absent.
+        if (needsMonocle() && monocleAvailable()) {
+            setIfAbsent("glass.platform", "Monocle");
+            setIfAbsent("monocle.platform", "Headless");
+            // Nothing is going to hand a headless Glass a GPU, so the software pipeline is
+            // the only one that can serve. With a real backend, let Prism choose (d3d/es2,
+            // falling back to sw by itself where there is no usable device).
+            setIfAbsent("prism.order", "sw");
+        }
         setIfAbsent("prism.vsync", "false");
         try {
             Platform.startup(() -> {});
         } catch (IllegalStateException alreadyStarted) {
             // Toolkit already running — fine.
+        }
+    }
+
+    /**
+     * Whether the host's own Glass backend cannot drive this canvas, so the headless one is
+     * the only candidate left.
+     *
+     * <p><b>macOS.</b> Glass there adopts the <em>main</em> thread as the JavaFX application
+     * thread — the same thread SWT runs its event loop on — and offers no alternative. That
+     * loop is pure Java: {@code DartDisplay.readAndDispatch()} runs timers, paints and async
+     * messages and then parks in {@code sleep()} on a semaphore, so it never services the
+     * native run loop Glass posts to and no {@code Platform.runLater} ever runs. Measured on a
+     * live application: the main thread renamed "JavaFX Application Thread" and parked in
+     * {@code DartDisplay.sleep}, with not a single frame drawn. It is the same dead end that
+     * {@code javafx.embed.isEventThread=true} leads to, reached without asking for it.</p>
+     *
+     * <p><b>No display server.</b> A CI worker has nothing for a native backend to talk to.</p>
+     */
+    private static boolean needsMonocle() {
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+        if (os.contains("mac")) {
+            return true;
+        }
+        if (os.startsWith("windows")) {
+            return false;
+        }
+        // Linux: the host Glass backend is Gtk, and Gtk's <clinit> matches the SWT-GTK version.
+        // Evolve renders via Flutter and never initialises native GTK, so SWT reports GTK major
+        // version 0 and GtkApplication throws "SWT-GTK uses unsupported major GTK version 0".
+        // The Gtk backend can therefore never drive this canvas under Evolve — display or not —
+        // so Monocle (headless, offscreen snapshot) is the only viable backend on Linux.
+        return true;
+    }
+
+    /**
+     * Whether this JavaFX carries the headless Monocle Glass platform.
+     *
+     * <p>Probed through the loader that defined {@code javafx.application.Platform}, because
+     * that is the loader Glass itself resolves the platform factory with — under OSGi, or when
+     * the host loads JavaFX into its own {@code ModuleLayer}, it is not this bundle's.</p>
+     */
+    private static boolean monocleAvailable() {
+        try {
+            Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory", false,
+                    Platform.class.getClassLoader());
+            return true;
+        } catch (Throwable notThere) {
+            return false;
         }
     }
 
