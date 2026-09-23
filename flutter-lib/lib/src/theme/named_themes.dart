@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 import 'theme.dart';
+import 'type_scales.dart';
 import 'theme_extensions/button_theme_extension.dart';
 import 'theme_extensions/ccombo_theme_extension.dart';
 import 'theme_extensions/combo_theme_extension.dart';
@@ -31,6 +32,19 @@ class NamedTheme {
   final ThemeData Function(ThemeData theme)? lightWidgetOverrides;
   final ThemeData Function(ThemeData theme)? darkWidgetOverrides;
 
+  /// The type scale this theme draws in. Null means the shared one, which is what every theme
+  /// did before this existed.
+  ///
+  /// A *named* scale rather than a bare function, because the Java size model mirrors these sizes
+  /// for `computeSize` and is keyed by the scale's name: naming it is what lets the measurement
+  /// run once per distinct set of sizes instead of once per theme. Themes that want the same
+  /// sizes share one scale and one measurement.
+  ///
+  /// The scale is applied *before* the per-widget extensions are built, because they take their
+  /// fonts from the text theme — a size changed afterwards would leave every widget still
+  /// measuring and drawing the old one.
+  final TypeScale? typeScale;
+
   /// Whether focus rings and focus-coloured borders show when the flag is not set.
   final bool focusIndicators;
 
@@ -43,8 +57,12 @@ class NamedTheme {
     this.darkTitleBarColor,
     this.lightWidgetOverrides,
     this.darkWidgetOverrides,
+    this.typeScale,
     this.focusIndicators = false,
   });
+
+  /// The type sizes this theme wants, or [base] untouched when it does not care.
+  TextTheme applyTypeSizes(TextTheme base) => typeScale?.apply(base) ?? base;
 
   /// The title-bar colour for [dark], or null when this theme does not specify one.
   Color? titleBarColor(bool dark) => dark ? darkTitleBarColor : lightTitleBarColor;
@@ -61,6 +79,19 @@ final Map<String, NamedTheme> kNamedThemes = {
         createColorSchemeExtension(createLightColorScheme()),
     darkColorSchemeExtension:
         createColorSchemeExtension(createDarkColorScheme()),
+  ),
+  // The shared palette with the type one step down. Vendor-neutral name on purpose: any POC whose
+  // layouts were sized against native SWT — which draws smaller than the shared scale, so a pane
+  // the application pinned to a fixed pixel width clips our text — can select it with
+  // -Dswt.evolve.theme_name=compact.
+  'compact': NamedTheme(
+    lightColorScheme: createLightColorScheme(),
+    darkColorScheme: createDarkColorScheme(),
+    lightColorSchemeExtension:
+        createColorSchemeExtension(createLightColorScheme()),
+    darkColorSchemeExtension:
+        createColorSchemeExtension(createDarkColorScheme()),
+    typeScale: kCompactTypeScale,
   ),
   'hb': NamedTheme(
     lightColorScheme: _hbLightScheme(),

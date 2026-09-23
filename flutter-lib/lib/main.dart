@@ -506,6 +506,7 @@ class EvolveApp extends StatelessWidget {
               overrideColorScheme: namedTheme.lightColorScheme,
               overrideColorSchemeExtension: namedTheme.lightColorSchemeExtension
                   ?? createColorSchemeExtension(namedTheme.lightColorScheme),
+              overrideTypeSizes: namedTheme.typeScale?.apply,
             ),
             dark: false,
           );
@@ -515,6 +516,7 @@ class EvolveApp extends StatelessWidget {
               overrideColorScheme: darkScheme,
               overrideColorSchemeExtension: namedTheme.darkColorSchemeExtension
                   ?? createColorSchemeExtension(darkScheme),
+              overrideTypeSizes: namedTheme.typeScale?.apply,
             ),
             dark: true,
           );
