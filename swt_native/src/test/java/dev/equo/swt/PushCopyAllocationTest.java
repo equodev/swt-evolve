@@ -98,7 +98,7 @@ class PushCopyAllocationTest {
 
     @Test
     void flushOfSeveralWidgets_copiesThePayloadOnlyForTheTransport() {
-        Composite parent = new Composite(Mocks.swtShell(), SWT.NONE);
+        Composite parent = new Composite(Mocks.shell(), SWT.NONE);
         double copies = copiesPerWireByte(chars -> {
             Button first = button(parent, chars);
             Button second = button(parent, chars);

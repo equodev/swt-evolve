@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,17 @@ public class FontListTest {
     static void registerFaces() {
         FontMetricsUtil.registerFontSubstitution(FACE_A, "Liberation Sans");
         FontMetricsUtil.registerFontSubstitution(FACE_B, "Liberation Sans");
+    }
+
+    /**
+     * The substitution table is global, and the size suite derives its cases from it — leaving these
+     * two behind gave that suite eight more font variations, so its case count depended on whether
+     * this class had run first.
+     */
+    @AfterAll
+    static void unregisterFaces() {
+        FontMetricsUtil.removeFontSubstitution(FACE_A);
+        FontMetricsUtil.removeFontSubstitution(FACE_B);
     }
 
     private static String[] namesOf(FontData[] fonts) {

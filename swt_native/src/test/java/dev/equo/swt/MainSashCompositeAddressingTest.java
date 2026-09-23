@@ -67,7 +67,7 @@ class MainSashCompositeAddressingTest {
     @Test
     @DisplayName("an update to the main sash area travels under the name its description gave it")
     void updateIsAddressedByTheDescribedName() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite perspective = new Composite(shell, SWT.NONE);
         Composite sash = new Composite(perspective, SWT.NONE);
         sash.setLayout(new ConfigMainSashCompositeTest.FakeSashLayout());

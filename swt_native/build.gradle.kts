@@ -267,65 +267,14 @@ sourceSets {
         }
     }
 
-    // The default `main` backend is whole-tree Flutter (desk/web), but the unit-test suite
-    // (serialize round-trips + Mocks) is written against the EMBEDDED Swt* classes. So compile and
-    // run `test` against the embedded backend for the current OS (src/main + src/embed<OS>) rather
-    // than against `main`. Dependencies come from the test* configurations; webShared adds
-    // the production WebFlutterServer the web comm benchmark drives.
-    val embedBackend = getByName("embed${currentOs.replaceFirstChar { it.titlecase() }}")
-    test {
-        compileClasspath = configurations["testCompileClasspath"] + embedBackend.output + webShared.output
-        runtimeClasspath = output + configurations["testRuntimeClasspath"] + embedBackend.output + webShared.output
-        // The committed WorkbenchTree bench fixture is generated against the DEFAULT SWT and bakes
-        // in APIs newer than the oldest supported versions (e.g. CTabFolder.setSelectionBarThickness,
-        // added in 3.121). The whole bench suite is tagged 'bench' and never runs in the version
-        // `test` job — it only needs to compile — so on sub-3.121 builds we skip compiling it.
-        // 3.121+ (including the default) keep compiling bench unchanged.
-        val swtMinor = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
-        if (swtMinor < 121) java { exclude("dev/equo/swt/bench/**") }
-        // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the tests
-        // covering that constructor cannot compile against older SWT.
-        if (swtMinor < 129) java {
-            exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java")
-            exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
-        }
-        // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
-        // cannot compile against older baselines. Layout subclassing itself stays covered there by
-        // LayoutSubclassTest, which does not touch BorderLayout.
-        if (swtMinor < 119) java { exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java") }
-    }
-
-    // Native-family integration test source set: the SAME test code (src/test/java), but compiled
-    // against the whole-tree-Flutter Java backend (src/main + src/native + src/native<currentOs>)
-    // instead of the embedded one — so 'flutter-it' tests exercise the native/web server logic,
-    // under EITHER render client (-Dharness.client=native|web, see `nativeTest` below).
-    // Driven by the `nativeTest` task.
     val nativeBackend = getByName("native${currentOs.replaceFirstChar { it.titlecase() }}")
-    create("nativeTest") {
+
+    // `test` is the whole-tree-Flutter suite: the backend that ships, so it is what `./gradlew test`
+    // and `build` run. Compiled against src/main + src/native + src/native<currentOs>; everything in
+    // it runs, tags only say what to leave out.
+    test {
         java {
-            // src/test/java: the shared suite — flutter-it tests there (named *FlutterTest by
-            // convention) must also compile against the EMBEDDED backend the default `test` task
-            // uses, so they reach web-only classes by reflection (see DisplayWakeFlutterTest).
-            // Plus MockFlutterBridge, a portable no-op FlutterBridge DartMocks.dartTable() reuses.
-            // src/nativeTest/java: tests that CANNOT compile against embedded — the whole
-            // dev/equo/swt/size package (needs a pure-Flutter Display/Shell/Table that only exists
-            // in this backend, see DartMocks) plus tests that sub-class the native-only Display
-            // bridges (DeskDisplayBridge/WebDisplayBridge) for their test seams. Compiled only
-            // here, never by the default `test` source set.
-            setSrcDirs(listOf("src/test/java", "src/nativeTest/java"))
-            // Only the harness + flutter-it tests (named *FlutterTest by convention) plus
-            // MockFlutterBridge from src/test/java, and everything under dev/equo/swt/size: the
-            // rest of src/test/java (Mocks, SerializeTestBase, …) imports native-only Swt*
-            // classes absent from this backend.
-            include("dev/equo/swt/harness/**", "**/*FlutterTest.java",
-                    // *NativeTest: plain unit tests of Dart*/V* classes that only exist in this
-                    // backend — no live renderer, unlike the *FlutterTest integration tests.
-                    "**/*NativeTest.java",
-                    "dev/equo/swt/MockFlutterBridge.java",
-                    "dev/equo/swt/size/**",
-                    "org/eclipse/swt/widgets/DartMocks.java",
-                    // Test-only stand-in for the real Eclipse e4 workbench class.
-                    "org/eclipse/e4/ui/workbench/renderers/swt/**")
+            setSrcDirs(listOf("src/test/java"))
             // Mac*NativeTest: assert against Cocoa itself, so they only compile where the per-OS
             // backend carries org.eclipse.swt.internal.cocoa. An @EnabledOnOs would skip the run
             // but the source still has to compile on every runner.
@@ -334,39 +283,64 @@ sourceSets {
             // (absent in 3.131), so the test covering that path cannot compile against older SWT.
             val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
             if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+            // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
+            // tests covering that constructor cannot compile against older SWT.
+            if (swtMinorNative < 129) {
+                exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java")
+                exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
+            }
+            // The committed WorkbenchTree bench fixture is generated against the DEFAULT SWT and
+            // bakes in APIs newer than the oldest supported versions (e.g.
+            // CTabFolder.setSelectionBarThickness, added in 3.121). The bench suite is tagged
+            // 'bench' and never runs in a version job — it only needs to compile — so below that
+            // baseline it is dropped rather than made to compile.
+            if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
+            // cannot compile against older baselines. Layout subclassing itself stays covered by
+            // LayoutSubclassTest, which does not touch BorderLayout.
+            if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
         }
-        resources {
-            srcDirs("src/test/resources")
-            include("images/**")
-        }
+        // src/test/resources is this source set's own by convention; the per-OS blocks above add the
+        // .css/.png/SWTMessages that sit beside the generated Java.
         compileClasspath += nativeBackend.output + nativeBackend.compileClasspath
         runtimeClasspath += output + nativeBackend.output + nativeBackend.runtimeClasspath
     }
+
+    // What is left of the embedded suite: the tests whose subject is Dart and Swt widgets coexisting
+    // in one Display, which only the embed<OS> backend can host. Retired with that backend; kept
+    // runnable locally in the meantime.
+    val embedBackend = getByName("embed${currentOs.replaceFirstChar { it.titlecase() }}")
+    create("embedTest") {
+        java { setSrcDirs(listOf("src/embedTest/java")) }
+        resources { srcDirs("src/test/resources") }
+        compileClasspath += embedBackend.output + webShared.output
+        runtimeClasspath += output + embedBackend.output + webShared.output
+    }
 }
 
-// nativeTest reuses the test dependencies (JUnit, AssertJ, Mockito, Gson, …) and annotation processor.
-configurations["nativeTestImplementation"].extendsFrom(configurations["testImplementation"])
-configurations["nativeTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
-configurations["nativeTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
+// embedTest reuses the test dependencies (JUnit, AssertJ, Mockito, Gson, …) and annotation processor.
+configurations["embedTestImplementation"].extendsFrom(configurations["testImplementation"])
+configurations["embedTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
+configurations["embedTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
 
 run {
     val jfaceVersion: String by project
     val coreCommandsVersion: String by project
     val equinoxCommonVersion: String by project
     dependencies {
-        "nativeTestImplementation"("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
+        "testImplementation"("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
             exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
         }
-        "nativeTestImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
-        "nativeTestImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
+        "testImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
+        "testImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
     }
 }
 
 val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
 if (chromiumMode) {
     dependencies {
-        "nativeTestRuntimeOnly"(libs.equo.chromium)
-        "nativeTestRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
+        "testRuntimeOnly"(libs.equo.chromium)
+        "testRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
     }
 }
 
@@ -589,23 +563,44 @@ val verifyJarJavaLevel by tasks.registering {
     }
 }
 
-// Coverage is only consumed from nativeTest (the web backend, merged into swt_eclipse_tests' combined
-// report). Instrumenting the embedded `test` task is unnecessary and perturbs its shared static state
-// (Config routing), causing order-dependent failures — keep JaCoCo off everywhere except nativeTest.
+// Coverage is only consumed from the native suite (merged into swt_eclipse_tests' combined report).
+// Instrumenting the embedded one is unnecessary and perturbs its shared static state (Config
+// routing), causing order-dependent failures — keep JaCoCo off everywhere except `test`.
 tasks.withType<Test>().configureEach {
     extensions.configure(org.gradle.testing.jacoco.plugins.JacocoTaskExtension::class) {
-        isEnabled = name == "nativeTest"
+        isEnabled = name == "test"
     }
 }
 
-tasks.test {
+/**
+ * The tags a run skips: the ones whose tests are known to be *broken*, plus whatever the caller
+ * added with -DexcludeTags=a,b. -DrunBroken=true opts the broken ones back in, to work on them.
+ *
+ * Broken-tag defaults belong to the task, not to each caller's command line, or only that one
+ * caller gets them and a local run disagrees with the pipeline. A tag excluded because the *runner*
+ * cannot do the work stays on the invocation instead — 'metal' needs a GPU-backed Flutter engine,
+ * absent from the CI VMs but present on a developer machine, so it is not defaulted here.
+ */
+fun excludedTags(vararg brokenTags: String): Array<String> {
+    val broken = if (System.getProperty("runBroken") == "true") emptyList() else brokenTags.asList()
+    val requested = System.getProperty("excludeTags")
+        ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty) ?: emptyList()
+    return (broken + requested).toTypedArray()
+}
+
+tasks.register<Test>("embedTest") {
+    group = "verification"
+    description = "Runs what is left of the embedded suite: the tests whose subject is Dart and Swt " +
+            "widgets coexisting in one Display. Not run by CI; kept for local runs while that " +
+            "backend is still shipped."
+    testClassesDirs = sourceSets["embedTest"].output.classesDirs
+    classpath = sourceSets["embedTest"].runtimeClasspath
     useJUnitPlatform {
         // Bench tests are slow + write artifacts; always excluded from the default test run.
         excludeTags("bench")
         // Flutter integration tests need a Flutter web build + Chrome; not run by default.
         excludeTags("flutter-it")
-        val excludeTagsProp = System.getProperty("excludeTags")
-        if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
+        excludeTags(*excludedTags())
     }
     configureTestLogging()
     dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
@@ -626,22 +621,40 @@ tasks.test {
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
-tasks.register<Test>("nativeTest") {
+tasks.test {
     group = "verification"
     description = "Runs the tests that need the whole-tree-Flutter (native/web) Java backend — every " +
             "widget, including Display/Shell, is Dart-backed, no Swt* classes involved. That is the " +
             "Flutter integration tests (tagged 'flutter-it', defaulting to the WEB render client, " +
             "headless Chrome + CanvasKit; pass -Dharness.client=native for the desktop Flutter engine) " +
             "plus the renderer-free unit tests of native-only classes (tagged 'native-unit')."
-    testClassesDirs = sourceSets["nativeTest"].output.classesDirs
-    classpath = if (chromiumMode)
-        sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["nativeTest"].runtimeClasspath
-    else
-        sourceSets["nativeTest"].runtimeClasspath
+    // One JVM holds the whole suite plus a headless browser and its comm; Gradle's 512m default
+    // dies mid-run with OutOfMemoryError, blamed on whatever allocated next. Allocation rate, not
+    // retention: a mixed collection returns this suite to 12-15M, and the peak simply tracks the
+    // ceiling given (974M of 1024M, 1423M of 2048M). The number buys the collector headroom, so it
+    // is headroom that can be traded away: -DtestHeap=1g is what lets several forks share a
+    // container, and the suite is green on it.
+    maxHeapSize = System.getProperty("testHeap") ?: "2g"
+    // Each fork is its own JVM with its own browser on an ephemeral port, so the shared statics
+    // this suite is sensitive to (the mock display registry, FlutterBridge's dirty set) cannot
+    // cross between them. Off by default all the same, because how many fit depends on the machine:
+    // the callers that know their own headroom (preMerge, the CI job) pass -DtestForks.
+    // Capped by the cores actually visible to this JVM: a caller asking for more than the machine
+    // (or the container's quota) has just adds JVMs that wait for each other.
+    maxParallelForks = (System.getProperty("testForks")?.toIntOrNull() ?: 1)
+        .coerceIn(1, Runtime.getRuntime().availableProcessors())
+    if (chromiumMode)
+        classpath = sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["test"].runtimeClasspath
     useJUnitPlatform {
-        includeTags("flutter-it", "native-unit")
-        val excludeTagsProp = System.getProperty("excludeTags")
-        if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
+        // Everything in the source set runs; tags only say what to leave out. An includeTags list
+        // here meant a class had to be tagged to run at all, and one that was not was compiled and
+        // then silently skipped.
+        excludeTags("bench")
+        // 'web-known-broken': the widget-size suite the web/CanvasKit client cannot measure
+        // correctly yet — part of it needs the native image decoder this backend deliberately does
+        // not ship, the rest is real Java-vs-Flutter measurement drift. Tracked on its own; until
+        // it is fixed no run wants it.
+        excludeTags(*excludedTags("web-known-broken"))
     }
     configureTestLogging()
     if (System.getProperty("skipFlutterLib") == null)
@@ -659,14 +672,24 @@ tasks.register<Test>("nativeTest") {
     // mode; harmless (unused) for the default headless-browser web client.
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
+    // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
+    // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
+            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
     // equo.swt.diff: lets this suite run against either way of delivering state, so the whole
     // end-to-end path can be compared between them rather than only the Java side.
-    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff")
+    // fontsize.seed: FontSizeTest fuzzes over random sizes and texts and prints the seed it used,
+    // so a red run can be repeated with -Dfontsize.seed=<the printed value>. Read in the test JVM,
+    // so it has to be forwarded rather than left on the Gradle one.
+    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "fontsize.seed")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
 // 'bench'-tagged test run, full logging, and always-rerun. Per-task specifics (deps, jvmArgs,
 // system properties) are layered on by the caller.
+// It measures the comm protocol against the whole-tree-Flutter backend, in desk and web mode both,
+// so it runs from the `test` source set.
 fun Test.configureCommBench() {
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs
@@ -757,11 +780,57 @@ val pub = tasks.register<Exec>("pubGet") {
     commandLine = flutterCmd() + listOf("pub", "get")
 }
 
+/**
+ * What the Dart-side checks read. Neither `flutter analyze` nor `flutter test` produces a file, so
+ * without this they re-run on every invocation — together about 55s that a `preMerge` changing only
+ * Java was paying for nothing. The stamp gives Gradle an output to compare so an unchanged Dart tree
+ * skips both.
+ */
+fun Task.dartSourcesAsInputs() {
+    // dartRunner writes the .g.dart/.tailor.dart files into lib/, so anything reading lib/ runs
+    // after it. These checks always did; declaring the inputs is what made Gradle notice.
+    dependsOn("dartRunner")
+    inputs.dir("../flutter-lib/lib").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir("../flutter-lib/test").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file("../flutter-lib/pubspec.yaml")
+    inputs.file("../flutter-lib/analysis_options.yaml")
+    outputs.file(layout.buildDirectory.file("stamps/$name.stamp"))
+}
+
+fun Task.stampOnSuccess() = doLast {
+    val stamp = layout.buildDirectory.file("stamps/$name.stamp").get().asFile
+    stamp.parentFile.mkdirs()
+    stamp.writeText(System.currentTimeMillis().toString())
+}
+
 tasks.register<Exec>("analyze") {
     group = "build"
     description = "Flutter analyze"
     workingDir = file("../flutter-lib")
     commandLine = flutterCmd() + listOf("analyze")
+    dartSourcesAsInputs()
+    stampOnSuccess()
+}
+
+tasks.register<Exec>("flutterTest") {
+    group = "verification"
+    description = "Runs the Dart unit tests in flutter-lib (analyze answers whether the Dart side " +
+            "is sound; this answers whether it behaves)."
+    workingDir = file("../flutter-lib")
+    dependsOn(pub)
+    // `flutter test` sizes its pool at cores/2 and, on Linux, reads the node's cores rather than
+    // the container's quota, which oversubscribes a shared runner badly. availableProcessors() is
+    // the number that respects a cgroup quota, so it is both the safe one in a container and the
+    // whole machine on a workstation.
+    val jobs = System.getProperty("flutterTestJobs") ?: System.getenv("FLUTTER_TEST_JOBS")
+        ?: Runtime.getRuntime().availableProcessors().toString()
+    // 'bench' is the Dart side of the tag the Java suite already excludes: measurements that print
+    // rather than assert. -DrunDartBench=true runs them.
+    val benchTags = if (System.getProperty("runDartBench") == "true") emptyList()
+                    else listOf("--exclude-tags=bench")
+    commandLine = flutterCmd() + listOf("test", "--concurrency=$jobs") + benchTags
+    dartSourcesAsInputs()
+    stampOnSuccess()
 }
 
 val dart = tasks.register<Exec>("dartRunner") {

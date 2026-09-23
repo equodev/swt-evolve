@@ -206,7 +206,7 @@ class DiffFrameTest {
     }
 
     private Label newLabel() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("before");

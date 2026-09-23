@@ -60,7 +60,7 @@ class DeliveryAuditTest {
     @Test
     @DisplayName("the observer sees the frames the widget tree sends")
     void observesFrames() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("before");
@@ -78,7 +78,7 @@ class DeliveryAuditTest {
     @Test
     @DisplayName("no observer, no observation - the hook is inert while unset")
     void inertWhenUnset() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         settle(parent);
@@ -106,7 +106,7 @@ class DeliveryAuditTest {
         org.junit.jupiter.api.Assumptions.assumeFalse(Serializer.diffEnabled,
                 "derivation from consecutive payloads requires whole payloads");
 
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("before");
@@ -130,7 +130,7 @@ class DeliveryAuditTest {
     @Test
     @DisplayName("re-setting the same value sends nothing")
     void sameValueSendsNothing() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("stable");
@@ -154,7 +154,7 @@ class DeliveryAuditTest {
     @Test
     @DisplayName("every frame after the first carries a real change")
     void framesCarryChanges() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("one");

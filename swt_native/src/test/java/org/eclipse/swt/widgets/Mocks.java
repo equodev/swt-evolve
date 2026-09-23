@@ -1,189 +1,94 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.FlutterNative;
 import dev.equo.swt.MockFlutterBridge;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
-import org.eclipse.swt.custom.SwtCTabFolder;
 import org.eclipse.swt.graphics.*;
 import org.instancio.Instancio;
-import org.instancio.InstancioObjectApi;
-import org.instancio.Select;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
+/**
+ * The whole-tree-Flutter twin of the embedded {@code Mocks} in {@code src/test/java}: same surface,
+ * every widget backed by {@code Dart*} instead of {@code Swt*}, because this backend has no
+ * {@code Swt*} implementation at all — Display and Shell included.
+ *
+ * <p>Two source sets, one class name. A test migrates from the embedded suite to this one by being
+ * moved; which fixture it binds to is decided by which source set compiles it.
+ *
+ * <p>It is the simpler of the two. The embedded fixture reaches its host through reflection because
+ * {@code SwtShell}/{@code SwtDisplay} are generated per OS and their method names differ;
+ * {@code DartShell}/{@code DartDisplay} are one shared implementation in {@code src/native/java},
+ * so plain Mockito is enough.
+ *
+ * <p><b>The display comes from {@link DartMocks} rather than from here.</b> {@code DartDisplay}
+ * keeps a static registry, and {@code checkDisplay} reads {@code getImpl().thread} off every entry
+ * in it before letting a real {@code Display} be built. A second mock display, or one taken out of
+ * the registry between tests, is enough to stop every later renderer test from opening a display at
+ * all. One mock, registered once, is what the suite already runs with.
+ */
 public class Mocks implements BeforeEachCallback, AfterEachCallback {
 
-    private static Display display;
-    private final boolean nativeBridge;
-    public MockedStatic<SwtEmbeddedBridge> bridge;
-    public MockedStatic<FlutterNative> flutterNative;
-
     private Mocks() {
-        this(false);
-    }
-
-    private Mocks(boolean nativeBridge) {
-        this.nativeBridge = nativeBridge;
-    }
-
-    public static Mocks withNativeBridge() {
-        return new Mocks(true);
-    }
-
-    public static Mocks noNativeBridge() {
-        return new Mocks(false);
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
-        if (!nativeBridge) {
-            System.setProperty("dev.equo.swt.loadLibrary", "false");
-            bridge = Mockito.mockStatic(SwtEmbeddedBridge.class);
-            bridge.when(() -> SwtEmbeddedBridge.of(any())).thenCallRealMethod();
-            flutterNative = Mockito.mockStatic(FlutterNative.class);
-        }
+    public void beforeEach(ExtensionContext context) {
+        System.setProperty("dev.equo.swt.loadLibrary", "false");
+        DartMocks.resetDisplayState();
     }
 
+    /**
+     * Deliberately does not touch the display registry — see the class note. The mock display is
+     * shared and outlives every test, exactly as {@code DartMocks} has always left it.
+     *
+     */
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
-        if (bridge != null) {
-            bridge.close();
-            if (flutterNative != null) {
-                flutterNative.close();
-                flutterNative = null;
-            }
-            System.clearProperty("dev.equo.swt.loadLibrary");
-        }
-        if (display != null) {
-            Mocks.dispose(display);
-            display = null;
-        }
+    public void afterEach(ExtensionContext context) {
+        // Left set, not cleared: the suite runs with -Ddev.equo.swt.loadLibrary=false on the task,
+        // and clearing it here wiped that for every later test in the same JVM. The ones that build
+        // a Display bridge then reached the platform init, which on a runner without the native SWT
+        // library dies in GTK's class initializer.
+        System.setProperty("dev.equo.swt.loadLibrary", "false");
     }
 
-    public static void verifySetBounds(MockedStatic<FlutterNative> flutterNative, int x, int y, int w, int h, int vx, int vy, int vw, int vh) {
-        flutterNative.verify(() -> FlutterNative.setBounds(anyLong(), eq(y), eq(y), eq(w), eq(h), eq(vx), eq(vy), eq(vw), eq(vh)));
+    // --- host ----------------------------------------------------------------------------------
+
+    public static Shell shell() {
+        return DartMocks.dartShell();
     }
 
-    public static void verifyNoSetBounds(MockedStatic<FlutterNative> flutterNative) {
-        flutterNative.verify(() -> FlutterNative.setBounds(anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()), never());
+    public static Shell shell(Display display) {
+        return DartMocks.dartShell(display);
     }
 
-    public static Shell swtShell() {
-        Display display = swtDisplay();
-        return swtShell(display);
+    public static Display display() {
+        return DartMocks.dartDisplay();
     }
 
-    public static Shell swtShell(Display display) {
-        Shell shell = mock(Shell.class);
-        SwtShell swtShell = mock(SwtShell.class);
-        when(shell.getImpl()).thenReturn(swtShell);
-        swtShell.display = display;
-        when(shell.getDisplay()).thenReturn(display);
-        when(shell.getShell()).thenReturn(shell);
-        when(shell.isEnabled()).thenReturn(true);
-        Color bg = new Color(display, red(), green(), blue());
-        when(shell.getBackground()).thenReturn(bg);
-        whenInvokedReturn(SwtControl.class, "getBackgroundColor", shell.getImpl(), bg); // Windows and macOS
-        when(swtShell._display()).thenCallRealMethod();
-        when(swtShell._getChildren()).thenReturn(new Control[0]);
-        when(swtShell.menuShell()).thenReturn((Decorations) shell);
-        whenInvokedReturn(SwtShell.class, "getShell", swtShell, shell); // Windows and macOS
-        whenInvokedReturn(SwtShell.class, "_getShell", swtShell, shell);  // Linux
-        return shell;
+    public static Device device() {
+        return display();
     }
 
-    private static void whenInvokedReturn(Class<?> swtShellClass, String method, Object thisObj, Object returnObj) {
-        try {
-            Method getShell = swtShellClass.getDeclaredMethod(method);
-            when(getShell.invoke(thisObj)).thenReturn(returnObj);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+    public static Control control() {
+        return shell();
     }
 
-    public static Display swtDisplay() {
-        if (display != null)
-            return display;
-        Display display = mock(Display.class);
-        SwtDisplay swtDisplay = mock(SwtDisplay.class);
-        when(swtDisplay.isValidThread()).thenReturn(true);
-        swtDisplay.thread = Thread.currentThread();
-        SwtDisplay.Default = display;
-        SwtDisplay.register(display);
-        when(display.getThread()).thenCallRealMethod();
-        when(display.getImpl()).thenReturn(swtDisplay);
-        try { // mac only
-            Method getSystemColor = SwtDisplay.class.getDeclaredMethod("getWidgetColor", int.class);
-            Color widgetColor = new Color(display, 10, 10, 10);
-            when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(widgetColor);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        when(display.getDPI()).thenReturn(dev.equo.swt.FontMetricsUtil.hostScreenDPI());
-        Color systemColor = new Color(display, red(), green(), blue());
-        when(display.getSystemColor(anyInt())).thenReturn(systemColor);
-        when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
-        when(swtDisplay.getThread()).thenCallRealMethod();
-        Monitor monitor = mock(Monitor.class);
-        when(monitor.getClientArea()).thenReturn(new Rectangle(0, 0, 1280, 720));
-        when(display.getMonitors()).thenReturn(new Monitor[] {monitor});
-        org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
-
-        try {
-            Field field = SwtDevice.class.getDeclaredField("dpi");
-            field.setAccessible(true);
-            field.set(swtDisplay, mock(Point.class));
-        } catch (NoSuchFieldException e) {
-            // Field doesn't exist on Windows, only on Linux and macOS
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-        Mocks.display = display;
-        return display;
-    }
-
-    public static Composite swtComposite(Composite parent) {
-        Composite w = mock(Composite.class);
-        when(w.getParent()).thenReturn(parent);
-        SwtComposite impl = mock(SwtComposite.class);
-        when(w.getImpl()).thenReturn(impl);
-        Display display = swtDisplay();
-        when(impl._display()).thenReturn(display);
-        when(impl._getChildren()).thenReturn(new Control[0]);
-        return w;
-    }
+    // --- containers ----------------------------------------------------------------------------
 
     public static Composite composite() {
         Composite w = mock(Composite.class);
         DartComposite impl = mock(DartComposite.class);
+        ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
-        Display display = swtDisplay();
-        when(impl._display()).thenReturn(display);
-        when(impl._getChildren()).thenReturn(new Control[0]);
-        return w;
-    }
-
-    public static Device device() {
-        return swtDisplay();
-    }
-
-    public static CTabFolder swtCTabFolder(Composite parent) {
-        CTabFolder w = mock(CTabFolder.class);
-        when(w.getParent()).thenReturn(parent);
-        SwtCTabFolder impl = mock(SwtCTabFolder.class);
-        when(impl.getApi()).thenReturn(w);
-        when(w.getImpl()).thenReturn(impl);
-        Display display = swtDisplay();
-        when(impl._display()).thenReturn(display);
+        when(impl._display()).thenReturn(display());
         when(impl._getChildren()).thenReturn(new Control[0]);
         return w;
     }
@@ -191,9 +96,9 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
     public static CTabFolder cTabFolder() {
         CTabFolder w = mock(CTabFolder.class);
         DartCTabFolder impl = mock(DartCTabFolder.class);
+        ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
-        Display display = swtDisplay();
-        when(impl._display()).thenReturn(display);
+        when(impl._display()).thenReturn(display());
         when(impl._getChildren()).thenReturn(new Control[0]);
         return w;
     }
@@ -201,125 +106,86 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
     public static ToolBar toolBar() {
         ToolBar w = mock(ToolBar.class);
         DartToolBar impl = mock(DartToolBar.class);
+        ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
         when(w.isEnabled()).thenReturn(true);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = swtDisplay();
-        //when(w.getDisplay()).thenReturn(display);
-        when(impl._display()).thenReturn(display);
+        when(impl._display()).thenReturn(display());
         return w;
     }
 
     public static TabFolder tabFolder() {
         TabFolder w = mock(TabFolder.class);
         DartTabFolder impl = mock(DartTabFolder.class);
+        ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = swtDisplay();
-        when(impl._display()).thenReturn(display);
+        when(impl._display()).thenReturn(display());
         when(impl._getChildren()).thenReturn(new Control[0]);
         doNothing().when(impl).createItem(any(TabItem.class), anyInt());
-        // Pre-3.117 GTK TabItem.setToolTipText reaches a Shell via parent.getImpl()._getShell()
-        // (see the same stub on table()/tree()); absent on other versions, hence the reflection guard.
-        whenInvokedReturn(DartControl.class, "_getShell", impl, swtShell());
         return w;
     }
 
     public static CoolBar coolBar() {
         CoolBar w = mock(CoolBar.class);
         DartCoolBar impl = mock(DartCoolBar.class);
+        ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = swtDisplay();
+        Display display = display();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         when(impl._getChildren()).thenReturn(new Control[0]);
         doNothing().when(impl).createItem(any(CoolItem.class), anyInt());
-        try { // fixPoint method exists in Linux and macOS
-            Method fixPoint = DartCoolBar.class.getDeclaredMethod("fixPoint", int.class, int.class);
-            fixPoint.setAccessible(true);
-            when(fixPoint.invoke(impl, anyInt(), anyInt())).thenAnswer(invocation -> {
-                int x = invocation.getArgument(0);
-                int y = invocation.getArgument(1);
-                return new Point(x, y);
-            });
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        return w;
-    }
-
-    public static Table table() {
-        Table w = mock(Table.class);
-        DartTable impl = mock(DartTable.class);
-        try { // Windows only
-            Method checkData = DartTable.class.getDeclaredMethod("checkData", TableItem.class, boolean.class);
-            when(checkData.invoke(impl, any(TableItem.class), anyBoolean())).thenReturn(true);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        try { // Linux and macOS
-            Method checkData = DartTable.class.getDeclaredMethod("checkData", TableItem.class);
-            when(checkData.invoke(impl, any(TableItem.class))).thenReturn(true);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        when(w.getImpl()).thenReturn(impl);
-        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = swtDisplay();
-        when(w.getDisplay()).thenReturn(display);
-        when(impl._display()).thenReturn(display);
-        // Pre-3.117 GTK TableColumn.setToolTipText reaches a Shell via parent.getImpl()._getShell()
-        // (dropped upstream in 3.117); absent on other versions, hence the reflection guard.
-        whenInvokedReturn(DartControl.class, "_getShell", impl, swtShell());
-        return w;
-    }
-
-    public static Tree tree() {
-        Tree w = mock(Tree.class);
-        DartTree impl = mock(DartTree.class);
-        try { // Windows only
-            Method checkData = DartTree.class.getDeclaredMethod("checkData", TreeItem.class, boolean.class);
-            when(checkData.invoke(impl, any(TreeItem.class), anyBoolean())).thenReturn(true);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        try { // Linux and macOS
-            Method checkData = DartTree.class.getDeclaredMethod("checkData", TreeItem.class);
-            when(checkData.invoke(impl, any(TreeItem.class))).thenReturn(true);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        when(w.getImpl()).thenReturn(impl);
-        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = swtDisplay();
-        when(w.getDisplay()).thenReturn(display);
-        when(impl._display()).thenReturn(display);
-        // Pre-3.117 GTK TreeColumn.setToolTipText reaches a Shell via parent.getImpl()._getShell()
-        // (same upstream boundary as TableColumn); absent on other versions, hence the reflection guard.
-        whenInvokedReturn(DartControl.class, "_getShell", impl, swtShell());
-        return w;
-    }
-
-    public static Text text() {
-        Text w = mock(Text.class);
-        DartControl impl = mock(DartControl.class);
-
-        when(w.getImpl()).thenReturn((IText) impl);
-        when(impl._display()).thenReturn(swtDisplay());
-        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        when(impl.getTouchEnabled()).thenReturn(false);
-
         return w;
     }
 
     public static ExpandBar expandBar() {
         ExpandBar w = mock(ExpandBar.class);
         DartExpandBar impl = mock(DartExpandBar.class);
+        ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = swtDisplay();
+        Display display = display();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         doNothing().when(impl).createItem(any(ExpandItem.class), anyInt(), anyInt());
         return w;
     }
 
-    public static Control control() {
-        return swtShell();
+    public static Table table() {
+        return DartMocks.dartTable();
     }
 
-    public static Accessible accessible() { // TODO: Enabled AccessibleSerializeTest
+    public static Tree tree() {
+        return DartMocks.dartTree();
+    }
+
+    public static Text text() {
+        Text w = mock(Text.class);
+        DartControl impl = mock(DartControl.class);
+        ((DartWidget) impl).display = display();
+        when(w.getImpl()).thenReturn((IText) impl);
+        when(impl._display()).thenReturn(display());
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        when(impl.getTouchEnabled()).thenReturn(false);
+        return w;
+    }
+
+    public static Canvas canvas() {
+        Canvas w = mock(Canvas.class);
+        DartCanvas impl = mock(DartCanvas.class);
+        ((DartWidget) impl).display = display();
+        when(w.getImpl()).thenReturn(impl);
+        when(impl._display()).thenReturn(display());
+        return w;
+    }
+
+    public static Canvas drawable() {
+        return canvas();
+    }
+
+    public static Accessible accessible() {
         Control ctrl = control();
         Accessible w = mock(Accessible.class);
         DartAccessible impl = mock(DartAccessible.class);
@@ -329,27 +195,13 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
     }
 
     public static Menu menu() {
-        return new Menu(swtShell());
+        return new Menu(shell());
     }
+
+    // --- values --------------------------------------------------------------------------------
 
     public static int index() {
         return 0;
-    }
-
-    public static Canvas canvas() {
-        Canvas w = mock(Canvas.class);
-        InstancioObjectApi<Canvas> inst = Instancio.ofObject(w);
-        if ("gtk".equals(org.eclipse.swt.SWT.getPlatform())) {
-            inst = inst.set(Select.field(Widget.class, "handle"), Instancio.gen().longs().range(1L, Long.MAX_VALUE).get());
-        } else if ("win32".equals(org.eclipse.swt.SWT.getPlatform())) {
-            inst = inst.set(Select.field(Control.class, "handle"), Instancio.gen().longs().range(1L, Long.MAX_VALUE).get());
-        }
-        inst.fill();
-        DartCanvas impl = mock(DartCanvas.class);
-        when(w.getImpl()).thenReturn(impl);
-        Display display = swtDisplay();
-        when(impl._display()).thenReturn(display);
-        return w;
     }
 
     public static int aInt() {
@@ -380,18 +232,7 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         return Instancio.gen().ints().range(10, 100).get();
     }
 
-    public static Canvas drawable() {
-        return canvas();
+    public static FontData fontData() {
+        return new FontData("Arial", 12, org.eclipse.swt.SWT.NORMAL);
     }
-
-    public static org.eclipse.swt.graphics.FontData fontData() {
-        return new org.eclipse.swt.graphics.FontData("Arial", 12, org.eclipse.swt.SWT.NORMAL);
-    }
-
-    public static void dispose(Display current) {
-        if (SwtDisplay.Default == current)
-            SwtDisplay.Default = null;
-        SwtDisplay.deregister(current);
-    }
-
 }

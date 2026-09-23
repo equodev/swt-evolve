@@ -11,7 +11,7 @@ class TreeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Tree() {
-        Tree w = new Tree(swtShell(), SWT.NONE);
+        Tree w = new Tree(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class TreeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Tree() {
-        Tree w = new Tree(swtShell(), SWT.NONE);
+        Tree w = new Tree(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -46,7 +46,7 @@ class TreeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Tree() {
-        Tree w = new Tree(swtShell(), SWT.NONE);
+        Tree w = new Tree(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

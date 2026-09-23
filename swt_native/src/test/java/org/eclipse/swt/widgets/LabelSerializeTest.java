@@ -11,7 +11,7 @@ class LabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Label() {
-        Label w = new Label(swtShell(), SWT.NONE);
+        Label w = new Label(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class LabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Label() {
-        Label w = new Label(swtShell(), SWT.NONE);
+        Label w = new Label(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -44,7 +44,7 @@ class LabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Label() {
-        Label w = new Label(swtShell(), SWT.NONE);
+        Label w = new Label(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

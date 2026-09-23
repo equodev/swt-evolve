@@ -18,7 +18,7 @@ class TextEchoCharSerializeTest extends SerializeTestBase {
 
     @Test
     void setEchoChar_on_a_populated_text_serializes_code_units() {
-        Text w = new Text(swtShell(), SWT.SINGLE | SWT.BORDER);
+        Text w = new Text(shell(), SWT.SINGLE | SWT.BORDER);
         w.setText("secret");
         w.setEchoChar((char) 8226);
 
@@ -37,7 +37,7 @@ class TextEchoCharSerializeTest extends SerializeTestBase {
 
     @Test
     void clearing_the_echo_char_keeps_the_real_text() {
-        Text w = new Text(swtShell(), SWT.SINGLE | SWT.BORDER);
+        Text w = new Text(shell(), SWT.SINGLE | SWT.BORDER);
         w.setEchoChar((char) 8226);
         w.setText("secret");
         w.setEchoChar((char) 0);

@@ -18,7 +18,7 @@ class CComboTooltipSerializeTest extends SerializeTestBase {
 
     @Test
     void setData_populates_serialized_itemTooltips() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         w.setItems(new String[] {"click", "sendKeys"});
         String[] tooltips = {"<h4>click</h4><p>Clicks it.</p>", "Types keys."};
         w.setData(ITEM_TOOLTIPS_KEY, tooltips);
@@ -31,7 +31,7 @@ class CComboTooltipSerializeTest extends SerializeTestBase {
 
     @Test
     void setData_updates_serialized_itemTooltips() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         w.setData(ITEM_TOOLTIPS_KEY, new String[] {"first"});
         w.setData(ITEM_TOOLTIPS_KEY, new String[] {"second", "third"});
 

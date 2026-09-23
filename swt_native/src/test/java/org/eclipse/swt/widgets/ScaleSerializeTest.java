@@ -11,7 +11,7 @@ class ScaleSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Scale() {
-        Scale w = new Scale(swtShell(), SWT.NONE);
+        Scale w = new Scale(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ScaleSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Scale() {
-        Scale w = new Scale(swtShell(), SWT.NONE);
+        Scale w = new Scale(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -45,7 +45,7 @@ class ScaleSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Scale() {
-        Scale w = new Scale(swtShell(), SWT.NONE);
+        Scale w = new Scale(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

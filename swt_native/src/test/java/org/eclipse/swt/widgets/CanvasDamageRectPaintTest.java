@@ -33,10 +33,7 @@ import static org.mockito.Mockito.doAnswer;
  * Lives in org.eclipse.swt.widgets so the mocked display's package-private
  * {@code sendEvent(EventTable, Event)} can be wired to really dispatch.
  */
-// The damage-rect plumbing is shared main-source code (ControlHelper) and one platform pins it.
-// The Linux/Windows embed backends route Canvas construction into real GTK/GDI, which cannot run
-// under the mocked headless display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
+// The damage-rect plumbing is shared main-source code (ControlHelper), identical on every backend.
 @ExtendWith(Mocks.class)
 class CanvasDamageRectPaintTest {
 
@@ -66,9 +63,9 @@ class CanvasDamageRectPaintTest {
     }
 
     private Shell shell() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
             if (ev != null && (ev.type == SWT.Paint || ev.type == SWT.Resize)) {

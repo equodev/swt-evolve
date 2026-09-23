@@ -100,9 +100,9 @@ class CTabFolderChevronOverlapTest {
     }
 
     private CTabFolder folderShowingAChevron() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.getBounds()).thenReturn(new Rectangle(0, 0, 1920, 1080));
-        Shell shell = Mocks.swtShell(display);
+        Shell shell = Mocks.shell(display);
         CTabFolder folder = new CTabFolder(shell, SWT.CLOSE);
         folder.setBounds(0, 0, FOLDER_WIDTH, 200);
         for (int i = 1; i <= 5; i++) {

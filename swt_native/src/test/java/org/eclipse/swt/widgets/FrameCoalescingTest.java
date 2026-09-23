@@ -83,7 +83,7 @@ class FrameCoalescingTest {
     @Test
     @DisplayName("a widget other than Table is never held back")
     void onlyTableIsCoalesced() throws InterruptedException {
-        Label label = new Label(Mocks.swtShell(), 0);
+        Label label = new Label(Mocks.shell(), 0);
         label.setData("dev.equo.swt.new", false);
         FlutterBridge.update();
         Thread.sleep(PAST_THE_FRAME_MS);
@@ -121,7 +121,7 @@ class FrameCoalescingTest {
 
     /** A Table past its first send, so later changes are pushes on its own channel. */
     private static Table newTable() {
-        Table table = new Table(Mocks.swtShell(), 0);
+        Table table = new Table(Mocks.shell(), 0);
         for (int i = 0; i < 30; i++) new TableItem(table, 0);
         table.setData("dev.equo.swt.new", false);
         FlutterBridge.update();

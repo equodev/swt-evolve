@@ -11,7 +11,7 @@ class CComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_CCombo() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class CComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_CCombo() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -50,7 +50,7 @@ class CComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_CCombo() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

@@ -54,7 +54,7 @@ class BrowserNavigateReplayTest {
         Config.useEquo(Browser.class);
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
-        shell = Mocks.swtShell();
+        shell = Mocks.shell();
     }
 
     // Dispose what was built under force_equo before restoring the default, so nothing leaks out.

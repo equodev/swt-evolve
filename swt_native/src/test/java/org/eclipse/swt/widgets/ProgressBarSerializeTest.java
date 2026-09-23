@@ -11,7 +11,7 @@ class ProgressBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ProgressBar() {
-        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ProgressBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ProgressBar() {
-        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -45,7 +45,7 @@ class ProgressBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_ProgressBar() {
-        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

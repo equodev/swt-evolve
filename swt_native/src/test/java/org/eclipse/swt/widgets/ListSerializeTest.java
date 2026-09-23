@@ -11,7 +11,7 @@ class ListSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_List() {
-        List w = new List(swtShell(), SWT.NONE);
+        List w = new List(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ListSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_List() {
-        List w = new List(swtShell(), SWT.NONE);
+        List w = new List(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -45,7 +45,7 @@ class ListSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_List() {
-        List w = new List(swtShell(), SWT.NONE);
+        List w = new List(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

@@ -11,7 +11,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_DateTime() {
-        DateTime w = new DateTime(swtShell(), SWT.NONE);
+        DateTime w = new DateTime(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_DateTime() {
-        DateTime w = new DateTime(swtShell(), SWT.NONE);
+        DateTime w = new DateTime(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -49,7 +49,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_DateTime() {
-        DateTime w = new DateTime(swtShell(), SWT.NONE);
+        DateTime w = new DateTime(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

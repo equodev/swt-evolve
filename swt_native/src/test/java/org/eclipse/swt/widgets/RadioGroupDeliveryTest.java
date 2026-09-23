@@ -36,7 +36,7 @@ class RadioGroupDeliveryTest {
     @Test
     @DisplayName("web path: deselected sibling must be communicated when parent is also dirty")
     void deselectionDeliveredOnWebPath() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite group = new Composite(shell, SWT.NONE);
         Button r1 = new Button(group, SWT.RADIO);
         r1.setText("Option 1");
@@ -90,7 +90,7 @@ class RadioGroupDeliveryTest {
     @Test
     @DisplayName("web path: the radio that was picked must be communicated as selected")
     void selectionDeliveredOnWebPath() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite group = new Composite(shell, SWT.NONE);
         Button r1 = new Button(group, SWT.RADIO);
         r1.setText("Option 1");

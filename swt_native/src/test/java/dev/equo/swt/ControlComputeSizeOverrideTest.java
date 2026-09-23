@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * SWT lets an application size itself by overriding {@code computeSize(int,int,boolean)}, and the
@@ -45,21 +45,21 @@ public class ControlComputeSizeOverrideTest {
 
     @Test
     public void threeArgComputeSize_usesTheSubclassOverride() {
-        Composite glue = zeroSized(new Composite(swtShell(), SWT.NONE));
+        Composite glue = zeroSized(new Composite(shell(), SWT.NONE));
 
         assertThat(glue.computeSize(SWT.DEFAULT, SWT.DEFAULT, true)).isEqualTo(new Point(0, 0));
     }
 
     @Test
     public void twoArgComputeSize_usesTheSubclassOverride() {
-        Composite glue = zeroSized(new Composite(swtShell(), SWT.NONE));
+        Composite glue = zeroSized(new Composite(shell(), SWT.NONE));
 
         assertThat(glue.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(0, 0));
     }
 
     @Test
     public void twoArgComputeSize_returnsTheNativeDefaultForACompositeThatOverridesNothing() {
-        Composite plain = new Composite(swtShell(), SWT.NONE);
+        Composite plain = new Composite(shell(), SWT.NONE);
 
         // DEFAULT_WIDTH x DEFAULT_HEIGHT, exactly what SwtComposite.computeSizeInPixels hands back.
         assertThat(plain.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 64));

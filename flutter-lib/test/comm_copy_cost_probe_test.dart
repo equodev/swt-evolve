@@ -5,6 +5,9 @@
 // the comm layer's own. The slope between the two largest sizes is the part that grows with the
 // payload, which is where a copy shows.
 
+@Tags(['bench'])
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';

@@ -26,13 +26,10 @@ import static org.eclipse.swt.widgets.Mocks.device;
  * construction; here the GC draws on that Image directly, and a constructor that throws never hands
  * it to anyone who could dispose it — its Flutter-side remote ref is released only from dispose().
  *
- * <p>Not run on the GTK backend: there {@code Image#isDisposed()} is {@code surface == 0}, and this
- * constructor never calls {@code init(width, height)} — the only place that sets {@code surface} —
- * so the image reports itself disposed and {@code new GC(image)} fails with ERROR_GRAPHIC_DISPOSED
- * before the drawer is ever called. That is a separate defect in the same constructor, tracked on
- * its own; the dispose contract asserted here is platform-independent.
+ * <p>The dispose contract asserted here is platform-independent. {@code surface}, and the
+ * ERROR_GRAPHIC_DISPOSED this used to hit before the drawer ran, belong to the embedded GTK image;
+ * the whole-tree-Flutter {@code DartImage} this compiles against has no such field.
  */
-@DisabledOnOs(OS.LINUX)
 class ImageGcDrawerFailureTest extends SerializeTestBase {
 
     private boolean bootstrapped;

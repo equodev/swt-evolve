@@ -78,7 +78,7 @@ public final class BenchPayloads {
     static {
         FlutterBridge.set(new MockFlutterBridge());
         Config.forceEquo();
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         SMALL  = Shape.live("small",  implOf(buildSmall(shell)));
         MEDIUM = Shape.live("medium", implOf(buildMedium(shell)));
         LARGE  = Shape.live("large",  implOf(buildLarge(shell)));

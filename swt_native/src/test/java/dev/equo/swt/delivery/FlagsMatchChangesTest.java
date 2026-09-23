@@ -99,7 +99,7 @@ class FlagsMatchChangesTest {
     }
 
     private void check(Case c) {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Widget widget = c.create().apply(parent, c.style());
         settle(parent);

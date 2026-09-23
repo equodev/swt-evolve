@@ -1877,7 +1877,8 @@ public class DartShell extends DartDecorations implements IShell {
             return false;
         org.eclipse.swt.widgets.DisplayBridge db = (org.eclipse.swt.widgets.DisplayBridge) getBridge();
         org.eclipse.swt.widgets.Control target = _firstFocusable(false);
-        // Table/Tree/List are childless Composites the walk steps past; a container only qualifies once nothing else can.
+        // Table/Tree/List hold no Control children, so the walk steps past them; they get a
+        // second pass, once nothing with real children can take the focus.
         if (target == null)
             target = _firstFocusable(true);
         if (target == null)
@@ -1895,9 +1896,13 @@ public class DartShell extends DartDecorations implements IShell {
                 continue;
             boolean container = c instanceof org.eclipse.swt.widgets.Composite && !(((org.eclipse.swt.widgets.Composite) c).getImpl() instanceof DartCanvas);
             boolean focusable = c.getVisible() && c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0 && c.getImpl() instanceof DartControl;
+            // By kind, not by "has no children": a CTabFolder, ToolBar or CoolBar is childless
+            // too, and focusing one puts every folder above it on the active path, which sends
+            // them SWT.Activate. An unselected CTabFolder then reports itself as highlighted.
+            boolean takesFocusWithoutChildren = c instanceof org.eclipse.swt.widgets.Table || c instanceof org.eclipse.swt.widgets.Tree || c instanceof org.eclipse.swt.widgets.List;
             if (container) {
                 org.eclipse.swt.widgets.Control[] kids = ((DartComposite) ((org.eclipse.swt.widgets.Composite) c).getImpl())._getChildren();
-                if (containers && kids.length == 0 && focusable)
+                if (containers && takesFocusWithoutChildren && focusable)
                     return c;
                 for (int i = kids.length - 1; i >= 0; i--) stack.add(0, kids[i]);
             } else if (focusable) {

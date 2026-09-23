@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * There is no OS focus machinery behind this backend, so an embedding workbench never sees the
@@ -29,7 +29,7 @@ public class ControlActivationTest extends SerializeTestBase {
      */
     @Test
     void activationStopsAtTheShellAndSurvivesADisposedControl() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Tree tree = new Tree(parent, SWT.NONE);
         DartControl impl = (DartControl) tree.getImpl();
         tree.dispose();

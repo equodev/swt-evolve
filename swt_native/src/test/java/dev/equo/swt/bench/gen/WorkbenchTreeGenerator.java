@@ -77,7 +77,7 @@ public class WorkbenchTreeGenerator extends SerializeTestBase {
 
     @Test
     void generate() throws Exception {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         String source = new Builder().buildAndEmit(shell);
         Path out = Paths.get(System.getProperty("wb.out",
                 "src/test/java/dev/equo/swt/bench/WorkbenchTree.java"));

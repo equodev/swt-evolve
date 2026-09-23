@@ -25,7 +25,6 @@ import static org.mockito.Mockito.doAnswer;
  * Every op is drawn with the alpha in force when the application issued it, and alpha 0 (draw
  * nothing) has to be distinguishable from an alpha nobody set (draw opaque).
  */
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class GCAlphaTest {
 
@@ -56,7 +55,7 @@ class GCAlphaTest {
 
     /** A GC on a Dart-backed Canvas — the drawable an application paints through. */
     private GC freshGc() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         doAnswer(inv -> {
             asyncQueue.add(inv.getArgument(0));

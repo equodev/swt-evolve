@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * {@link Item} is one of the few SWT widgets that permits subclassing outside SWT — its
@@ -44,14 +44,14 @@ public class ItemSubclassTest {
 
     @Test
     public void subclassedItem_hasAnImplementation() {
-        SubclassedItem item = new SubclassedItem(new Composite(swtShell(), SWT.NONE));
+        SubclassedItem item = new SubclassedItem(new Composite(shell(), SWT.NONE));
 
         assertThat(item.getImpl()).as("impl of an application subclass of Item").isNotNull();
     }
 
     @Test
     public void subclassedItem_carriesData() {
-        SubclassedItem item = new SubclassedItem(new Composite(swtShell(), SWT.NONE));
+        SubclassedItem item = new SubclassedItem(new Composite(shell(), SWT.NONE));
 
         assertThatCode(() -> item.setData("element")).doesNotThrowAnyException();
         assertThat(item.getData()).isEqualTo("element");
@@ -59,7 +59,7 @@ public class ItemSubclassTest {
 
     @Test
     public void subclassedItem_carriesText() {
-        SubclassedItem item = new SubclassedItem(new Composite(swtShell(), SWT.NONE));
+        SubclassedItem item = new SubclassedItem(new Composite(shell(), SWT.NONE));
 
         item.setText("sample.Common");
         assertThat(item.getText()).isEqualTo("sample.Common");

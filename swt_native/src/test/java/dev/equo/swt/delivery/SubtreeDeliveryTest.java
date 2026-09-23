@@ -66,7 +66,7 @@ class SubtreeDeliveryTest {
     @Test
     @DisplayName("two changes at different depths travel as two updates in one message")
     void rootAndGrandchildInOneFlush() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite a = new Composite(shell, SWT.NONE);
         Composite b = new Composite(a, SWT.NONE);
         Label c = new Label(a, SWT.NONE);
@@ -102,7 +102,7 @@ class SubtreeDeliveryTest {
     @Test
     @DisplayName("a change under an ancestor that is going whole still travels inside it")
     void grandchildUnderAWholeAncestor() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite a = new Composite(shell, SWT.NONE);
         Composite b = new Composite(a, SWT.NONE);
         Label c = new Label(a, SWT.NONE);
@@ -133,7 +133,7 @@ class SubtreeDeliveryTest {
     @Test
     @DisplayName("the same two changes in separate flushes travel as themselves")
     void rootAndGrandchildSeparately() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite a = new Composite(shell, SWT.NONE);
         Composite b = new Composite(a, SWT.NONE);
         Label d = new Label(b, SWT.NONE);
@@ -171,7 +171,12 @@ class SubtreeDeliveryTest {
     }
 
     private void settle(Widget widget) {
+        // Building the tree leaves its host Shell dirty, and this backend has the host Dart-backed
+        // too: a widget with a dirty ancestor is expected to travel inside it, so its own frame is
+        // suppressed and nothing is ever stamped delivered. Drain that, then stamp the subtree.
+        FlutterBridge.update();
         markKnown(widget);
+        bridge.dirty((DartWidget) widget.getImpl());
         FlutterBridge.update();
         bridge.comm.sent.clear();
     }

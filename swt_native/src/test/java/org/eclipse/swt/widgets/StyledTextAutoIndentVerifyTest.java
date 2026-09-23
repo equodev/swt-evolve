@@ -24,7 +24,6 @@ import static org.mockito.Mockito.doAnswer;
  * applies the keystroke optimistically and forwards it as a Modify, so the rewritten text — and the
  * caret position it implies — is only known after the widget has run its Verify listeners.
  */
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextAutoIndentVerifyTest {
 
@@ -54,9 +53,9 @@ class StyledTextAutoIndentVerifyTest {
     }
 
     private StyledText styledText() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
             if (ev != null && (ev.type == SWT.KeyDown || ev.type == SWT.KeyUp

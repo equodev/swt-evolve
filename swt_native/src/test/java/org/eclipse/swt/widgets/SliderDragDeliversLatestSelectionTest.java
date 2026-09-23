@@ -42,9 +42,9 @@ class SliderDragDeliversLatestSelectionTest {
     }
 
     private Slider slider() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             EventTable table = inv.getArgument(0);
             Event event = inv.getArgument(1);

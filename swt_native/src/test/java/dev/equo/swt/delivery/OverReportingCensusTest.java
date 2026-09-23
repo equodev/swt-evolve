@@ -100,7 +100,7 @@ class OverReportingCensusTest {
                 Object argument = cannedArgument(setter);
                 if (argument == null) continue;
 
-                Shell shell = Mocks.swtShell();
+                Shell shell = Mocks.shell();
                 Composite parent = new Composite(shell, SWT.NONE);
                 Widget widget = subject.create().apply(parent, subject.style());
                 try {
@@ -153,7 +153,7 @@ class OverReportingCensusTest {
     }
 
     private static List<Method> settersOf(Subject subject) {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Class<?> type = subject.create().apply(parent, subject.style()).getClass();
         dispose(parent);

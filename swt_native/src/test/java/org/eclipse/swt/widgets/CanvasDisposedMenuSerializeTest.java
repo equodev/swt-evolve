@@ -14,7 +14,7 @@ class CanvasDisposedMenuSerializeTest extends SerializeTestBase {
     // the same path also feeds widget arrays, where a null element is undecodable on the client.
     @Test
     void should_serialize_a_disposed_Menu_as_an_identity_stub() {
-        Canvas w = new Canvas(swtShell(), SWT.NONE);
+        Canvas w = new Canvas(shell(), SWT.NONE);
         Menu menu = new Menu(w);
         w.setMenu(menu);
         menu.dispose();

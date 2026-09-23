@@ -10,7 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.nio.charset.StandardCharsets;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 @ExtendWith(Mocks.class)
 @ExtendWith(MockFlutterBridge.Extension.class)
@@ -38,7 +38,7 @@ public class DisabledControlPayloadTest {
 
     @Test
     public void disabledTable_reportsEnabledFalse() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Table table = new Table(parent, SWT.CHECK);
         new TableItem(table, SWT.NONE).setText("Go to declaration");
 
@@ -49,7 +49,7 @@ public class DisabledControlPayloadTest {
 
     @Test
     public void disabledText_reportsEnabledFalse() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Text text = new Text(parent, SWT.SINGLE);
 
         text.setEnabled(false);
@@ -59,7 +59,7 @@ public class DisabledControlPayloadTest {
 
     @Test
     public void childOfDisabledParent_reportsItsOwnFlag() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Table table = new Table(parent, SWT.CHECK);
 
         parent.setEnabled(false);
@@ -69,7 +69,7 @@ public class DisabledControlPayloadTest {
 
     @Test
     public void enabledControl_stillReportsEnabledTrue() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Table table = new Table(parent, SWT.CHECK);
 
         assertThatJson(payloadOf(table)).node("enabled").isEqualTo(true);

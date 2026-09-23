@@ -54,7 +54,7 @@ class SashFormWeightsSyncTest {
     }
 
     private SashForm sashForm() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         org.eclipse.swt.widgets.Display display = shell.getDisplay();
         // The weights hook hops through asyncExec; run it inline on the mocked Display.
         doAnswer(inv -> {

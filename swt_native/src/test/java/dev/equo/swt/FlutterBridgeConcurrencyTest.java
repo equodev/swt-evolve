@@ -9,11 +9,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * Regression test for the {@code dirty}-set race in {@link FlutterBridge#update()}.
@@ -26,7 +27,7 @@ public class FlutterBridgeConcurrencyTest extends SerializeTestBase {
         // A pool of real Dart widgets so update() exercises its full (post-snapshot) path.
         List<DartWidget> widgets = new ArrayList<>();
         for (int i = 0; i < 32; i++) {
-            widgets.add((DartWidget) new Button(swtShell(), SWT.PUSH).getImpl());
+            widgets.add((DartWidget) new Button(shell(), SWT.PUSH).getImpl());
         }
         FlutterBridge.clearDirty();
 
@@ -54,9 +55,15 @@ public class FlutterBridgeConcurrencyTest extends SerializeTestBase {
         }
 
         // Reader: the code under test. Snapshots `dirty` on every call.
+        //
+        // Bounded by a deadline as well as by a pass count: three busy threads want three cores, and
+        // on a runner that has fewer the reader is simply slow. Its throughput is not what this
+        // asserts - the overlap is - so running out of time has to end the loop rather than fail it.
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         Thread reader = new Thread(() -> {
             try {
                 for (int i = 0; i < 5_000 && failure.get() == null; i++) {
+                    if (System.nanoTime() - deadline > 0) break;
                     FlutterBridge.update();
                 }
             } catch (Throwable t) {
@@ -67,7 +74,7 @@ public class FlutterBridgeConcurrencyTest extends SerializeTestBase {
         try {
             writers.forEach(Thread::start);
             reader.start();
-            reader.join(15_000);
+            reader.join(30_000);
         } finally {
             stop.set(true);
             for (Thread writer : writers) writer.join(5_000);

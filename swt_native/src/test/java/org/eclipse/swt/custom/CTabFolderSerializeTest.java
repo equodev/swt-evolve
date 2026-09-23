@@ -11,7 +11,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_CTabFolder() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_CTabFolder() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -61,7 +61,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_CTabFolder() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

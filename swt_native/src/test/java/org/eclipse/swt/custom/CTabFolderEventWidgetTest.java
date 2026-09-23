@@ -46,7 +46,7 @@ class CTabFolderEventWidgetTest {
 
     @Test
     void everyFolderEventCarriesTheFolder() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         CTabFolder folder = new CTabFolder(shell, SWT.NONE);
         new CTabItem(folder, SWT.CLOSE);
         List<CTabFolderEvent> events = new ArrayList<>();

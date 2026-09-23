@@ -11,7 +11,7 @@ class SliderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Slider() {
-        Slider w = new Slider(swtShell(), SWT.NONE);
+        Slider w = new Slider(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class SliderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Slider() {
-        Slider w = new Slider(swtShell(), SWT.NONE);
+        Slider w = new Slider(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -48,7 +48,7 @@ class SliderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Slider() {
-        Slider w = new Slider(swtShell(), SWT.NONE);
+        Slider w = new Slider(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

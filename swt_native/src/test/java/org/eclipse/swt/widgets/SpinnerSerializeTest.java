@@ -11,7 +11,7 @@ class SpinnerSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Spinner() {
-        Spinner w = new Spinner(swtShell(), SWT.NONE);
+        Spinner w = new Spinner(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class SpinnerSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Spinner() {
-        Spinner w = new Spinner(swtShell(), SWT.NONE);
+        Spinner w = new Spinner(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -50,7 +50,7 @@ class SpinnerSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Spinner() {
-        Spinner w = new Spinner(swtShell(), SWT.NONE);
+        Spinner w = new Spinner(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

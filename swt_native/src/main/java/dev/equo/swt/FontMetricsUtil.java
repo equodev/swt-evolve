@@ -17,6 +17,15 @@ public final class FontMetricsUtil {
         fontNameSubstitutions.put(from, to);
     }
 
+    /**
+     * Drops a registered substitution. Test support: this table is global and read by anything that
+     * enumerates the fonts on offer, so a test that adds to it has to put it back or it changes what
+     * later tests in the same JVM see.
+     */
+    static void removeFontSubstitution(String from) {
+        fontNameSubstitutions.remove(from);
+    }
+
     /** Return the substituted font name, or the original if no substitution is registered. */
     public static String substituteFontName(String name) {
         return fontNameSubstitutions.getOrDefault(name, name);

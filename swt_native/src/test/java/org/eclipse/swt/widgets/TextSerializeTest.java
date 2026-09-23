@@ -11,7 +11,7 @@ class TextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Text() {
-        Text w = new Text(swtShell(), SWT.NONE);
+        Text w = new Text(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class TextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Text() {
-        Text w = new Text(swtShell(), SWT.NONE);
+        Text w = new Text(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -48,7 +48,7 @@ class TextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Text() {
-        Text w = new Text(swtShell(), SWT.NONE);
+        Text w = new Text(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

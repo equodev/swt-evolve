@@ -27,7 +27,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void isDispatchThreadMatchesTheDisplaysOwnThread() throws InterruptedException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
         assertThat(wrapper.isDispatchThread()).isTrue();
@@ -41,7 +41,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void isDispatchThreadIsFalseOnceTheDisplayIsDisposed() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.isDisposed()).thenReturn(true);
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
@@ -50,7 +50,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void scheduleDispatchRunsThroughTheDisplaysAsyncExec() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
         Runnable task = () -> {};
@@ -61,7 +61,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void scheduleDispatchIsANoOpOnceTheDisplayIsDisposed() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.isDisposed()).thenReturn(true);
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
@@ -79,7 +79,7 @@ class EvolveDispatcherWrapperTest {
     @Test
     void scheduleDispatchRetriesInsteadOfLosingTheTaskWhenTheDisplayIsNotYetInitialized()
             throws InterruptedException, java.lang.reflect.InvocationTargetException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         AtomicBoolean firstAttempt = new AtomicBoolean(true);
         CountDownLatch dispatched = new CountDownLatch(2);
         org.mockito.Mockito.doAnswer(inv -> {
@@ -105,7 +105,7 @@ class EvolveDispatcherWrapperTest {
      */
     @Test
     void secondaryLoopEnterBlocksUntilExitIsCalledFromAnotherThread() throws InterruptedException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         // Unstubbed readAndDispatch()/sleep() both default to false on a Mockito mock, which would
         // busy-spin enter()'s loop; give sleep() a small real pause so the loop behaves like a real
         // Display parking between empty polls.
@@ -138,13 +138,13 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void secondaryLoopExitBeforeEnterReturnsFalse() {
-        SecondaryLoop loop = new EvolveSwingHost.EvolveSecondaryLoop(Mocks.swtDisplay());
+        SecondaryLoop loop = new EvolveSwingHost.EvolveSecondaryLoop(Mocks.display());
         assertThat(loop.exit()).isFalse();
     }
 
     @Test
     void secondaryLoopEnterTwiceRejectsTheSecondCall() throws InterruptedException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.sleep()).thenAnswer(inv -> {
             Thread.sleep(2);
             return true;

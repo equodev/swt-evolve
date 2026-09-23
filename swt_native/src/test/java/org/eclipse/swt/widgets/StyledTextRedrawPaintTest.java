@@ -31,10 +31,7 @@ import static org.mockito.Mockito.doAnswer;
  * coalesced through {@code asyncExec}, which the test captures and pumps.
  */
 // The redraw->paint chain under test (the DartComposite redraw override, ControlHelper.paint,
-// firePaint) is shared main-source code, identical on every backend; one platform pins it. On the
-// Linux/Windows embed backends, StyledText.setText routes renderer font metrics into real
-// GTK/Pango / GDI, which cannot run under the mocked headless display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
+// firePaint) is shared main-source code, identical on every backend.
 @ExtendWith(Mocks.class)
 class StyledTextRedrawPaintTest {
 
@@ -64,9 +61,9 @@ class StyledTextRedrawPaintTest {
     }
 
     private StyledText styledText() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         // Dispatch only the events this test is about: Paint (the delivery under test) and
         // Resize (establishes the client area). Everything else stays a mock no-op — the full
         // text-change pipeline takes platform-specific paths that don't run under the mocked

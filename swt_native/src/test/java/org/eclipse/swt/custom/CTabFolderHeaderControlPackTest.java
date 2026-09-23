@@ -63,7 +63,7 @@ class CTabFolderHeaderControlPackTest {
 
     @Test
     void layingOutTheHeaderLeavesTheTopRightControlAtItsPackedSize() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         CTabFolder folder = new CTabFolder(shell, SWT.NONE);
         folder.setBounds(0, 0, 400, 200);
         CTabItem item = new CTabItem(folder, SWT.NONE);

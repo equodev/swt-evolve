@@ -27,7 +27,7 @@ class FigureCanvasPaintTest extends SerializeTestBase {
         // Registers the default Display that new GC(control) resolves its device from. Called before
         // any other mock is built: it stubs internally, and interleaving that with the stubbing below
         // makes Mockito report an UnfinishedStubbingException against an unrelated line.
-        Mocks.swtDisplay();
+        Mocks.display();
 
         Rectangle bounds = new Rectangle(0, 0, 100, 100);
         FigureCanvas api = mock(FigureCanvas.class);
@@ -46,7 +46,7 @@ class FigureCanvasPaintTest extends SerializeTestBase {
     // The guard that keeps the request above affordable now that every Control makes it.
     @Test
     void a_control_that_listens_for_no_paint_is_sent_none() {
-        Mocks.swtDisplay();
+        Mocks.display();
 
         Rectangle bounds = new Rectangle(0, 0, 100, 100);
         Canvas api = mock(Canvas.class);

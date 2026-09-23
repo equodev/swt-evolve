@@ -11,7 +11,7 @@ class ToolBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ToolBar() {
-        ToolBar w = new ToolBar(swtShell(), SWT.NONE);
+        ToolBar w = new ToolBar(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ToolBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ToolBar() {
-        ToolBar w = new ToolBar(swtShell(), SWT.NONE);
+        ToolBar w = new ToolBar(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -43,7 +43,7 @@ class ToolBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_ToolBar() {
-        ToolBar w = new ToolBar(swtShell(), SWT.NONE);
+        ToolBar w = new ToolBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

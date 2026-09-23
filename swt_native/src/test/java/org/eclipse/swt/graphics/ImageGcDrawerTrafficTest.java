@@ -31,10 +31,7 @@ import static org.eclipse.swt.widgets.Mocks.device;
  * throws) starves the rest of the UI. Nothing needs the drawer before the ops are flushed, so it
  * must not be started until something actually wants pixels back.
  *
- * <p>Not run on the GTK backend, for the reason given in {@link ImageGcDrawerFailureTest}: there the
- * image reports itself disposed and {@code new GC(image)} fails before the drawer is reached.
  */
-@DisabledOnOs(OS.LINUX)
 class ImageGcDrawerTrafficTest extends SerializeTestBase {
 
     private boolean bootstrapped;

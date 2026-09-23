@@ -57,9 +57,9 @@ class ComboSelectionFiresModifyTest {
 
     /** A file-size unit combo sitting on "MB", the shape the reported dialog uses. */
     private Combo sizeUnitCombo() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         // Deliver events to the widget's listeners, like the real display does.
         doAnswer(inv -> {
             EventTable table = inv.getArgument(0);

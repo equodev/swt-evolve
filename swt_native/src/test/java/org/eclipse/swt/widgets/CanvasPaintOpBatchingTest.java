@@ -33,9 +33,7 @@ import static org.mockito.Mockito.doAnswer;
  * {@code sendEvent(EventTable, Event)} can be wired to really dispatch.
  */
 // The batching under test lives in shared main-source code (FlutterBridge), identical on every
-// backend; one platform pins it. The Linux/Windows embed backends route Canvas construction into
-// real GTK/GDI, which cannot run under the mocked headless display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
+// backend.
 @ExtendWith(Mocks.class)
 class CanvasPaintOpBatchingTest {
 
@@ -67,9 +65,9 @@ class CanvasPaintOpBatchingTest {
     }
 
     private Canvas canvas() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
             if (ev != null && (ev.type == SWT.Paint || ev.type == SWT.Resize)) {

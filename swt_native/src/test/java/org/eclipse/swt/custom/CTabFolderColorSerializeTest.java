@@ -22,7 +22,7 @@ class CTabFolderColorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_CTabFolder_with_swtColor() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         Config.useEclipse(Color.class);
         Color color = new Color(device(), red(), green(), blue());
         w.setSelectionBackground(color);

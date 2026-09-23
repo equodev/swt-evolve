@@ -53,21 +53,21 @@ class CompositeCanvasStateTest {
     @Test
     @DisplayName("a Composite carries the CANVAS state bit")
     void compositeIsACanvas() {
-        Composite composite = new Composite(Mocks.swtShell(), SWT.NONE);
+        Composite composite = new Composite(Mocks.shell(), SWT.NONE);
         assertThat(composite.state & DartWidget.CANVAS).isNotZero();
     }
 
     @Test
     @DisplayName("a Canvas carries the CANVAS state bit")
     void canvasIsACanvas() {
-        Canvas canvas = new Canvas(Mocks.swtShell(), SWT.NONE);
+        Canvas canvas = new Canvas(Mocks.shell(), SWT.NONE);
         assertThat(canvas.state & DartWidget.CANVAS).isNotZero();
     }
 
     @Test
     @DisplayName("a Canvas asked for SWT.DOUBLE_BUFFERED keeps it — draw2d reads this style")
     void canvasKeepsDoubleBuffered() {
-        Canvas canvas = new Canvas(Mocks.swtShell(), SWT.DOUBLE_BUFFERED);
+        Canvas canvas = new Canvas(Mocks.shell(), SWT.DOUBLE_BUFFERED);
         assertThat(canvas.getStyle() & SWT.DOUBLE_BUFFERED).isNotZero();
     }
 }

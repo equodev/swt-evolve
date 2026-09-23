@@ -8,16 +8,15 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 class TreeHoverTooltipTest extends SerializeTestBase {
 
     private static final int RENDERED_HEADER_HEIGHT = 32;
 
     @Test
-    @DisabledOnOs(OS.LINUX)
     void hovering_a_row_shows_that_rows_tooltip() {
-        Tree tree = new Tree(swtShell(), SWT.BORDER);
+        Tree tree = new Tree(shell(), SWT.BORDER);
         tree.setHeaderVisible(true);
 
         TreeItem item1 = new TreeItem(tree, SWT.NONE);

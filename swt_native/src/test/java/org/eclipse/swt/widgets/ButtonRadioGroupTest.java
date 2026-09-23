@@ -37,7 +37,7 @@ class ButtonRadioGroupTest extends SerializeTestBase {
     @Test
     @DisplayName("only one radio in a Composite stays selected at a time")
     void radioGroupIsExclusive() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite group = new Composite(shell, SWT.NONE);
 
         Button r1 = new Button(group, SWT.RADIO);

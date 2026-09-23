@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextVerifyKeyDispatchTest {
 
@@ -50,9 +49,9 @@ class StyledTextVerifyKeyDispatchTest {
     }
 
     private StyledText styledText() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
             if (ev != null && (ev.type == SWT.KeyDown || ev.type == SWT.KeyUp

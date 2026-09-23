@@ -59,7 +59,7 @@ class WidgetRefreshRecoveryTest {
     @Test
     @DisplayName("asking for a widget by id sends that widget's state")
     void refreshResendsTheWidget() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("current");
@@ -77,7 +77,7 @@ class WidgetRefreshRecoveryTest {
     @Test
     @DisplayName("asking for a widget that no longer exists is quiet")
     void refreshForUnknownIdIsIgnored() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         settle(parent);
 
@@ -95,7 +95,7 @@ class WidgetRefreshRecoveryTest {
     @Test
     @DisplayName("asking for a disposed widget is quiet")
     void refreshForDisposedWidgetIsIgnored() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("gone");

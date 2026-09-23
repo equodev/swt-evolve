@@ -47,7 +47,7 @@ class CTabFolderMinMaxStateTest {
     }
 
     private CTabFolder folder() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         CTabFolder folder = new CTabFolder(shell, SWT.NONE);
         folder.setMinimizeVisible(true);
         folder.setMaximizeVisible(true);

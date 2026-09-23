@@ -9,7 +9,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
  * A {@code CTabFolder} is not in that position — its child's bounds already start below the tab
  * strip — so adding the strip a second time double-counts it.
  */
-@DisabledOnOs(OS.LINUX)
 class ControlToDisplayTabFolderTrimTest extends SerializeTestBase {
 
     /** What Sizes.computeTrim reports above a CTabFolder's client area. */
@@ -40,7 +39,7 @@ class ControlToDisplayTabFolderTrimTest extends SerializeTestBase {
      * from the control accumulates -- not the mock's answer for where the shell sits.
      */
     private static Shell echoingShell() {
-        Shell shell = swtShell();
+        Shell shell = shell();
         when(shell.toDisplay(anyInt(), anyInt()))
                 .thenAnswer(call -> new Point(call.getArgument(0), call.getArgument(1)));
         return shell;
