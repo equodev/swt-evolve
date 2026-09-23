@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/theme/theme.dart';
+import './java_value_class.dart';
 
 /// Generates dev/equo/swt/size/CanvasTheme.java from the app's own default dark ColorScheme —
 /// surface, the color CanvasThemeExtension.backgroundColor resolves to for a genuinely
@@ -79,7 +80,13 @@ void writeCanvasThemeFile() {
     ' * background it is drawn on, or an application that sets neither inherits one of each theme.',
   );
   buffer.writeln(' */');
-  buffer.writeln('public record CanvasTheme(int red, int green, int blue) {');
+  buffer.write(
+    javaValueClass('CanvasTheme', const [
+      ('int', 'red'),
+      ('int', 'green'),
+      ('int', 'blue'),
+    ]),
+  );
   buffer.writeln('    public static CanvasTheme getDarkSurface() {');
   buffer.writeln('        return new CanvasTheme($red, $green, $blue);');
   buffer.writeln('    }');

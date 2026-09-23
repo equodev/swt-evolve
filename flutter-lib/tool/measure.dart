@@ -8,6 +8,9 @@ import 'package:swtflutter/src/theme/theme.dart';
 import 'dart:ui' as ui;
 
 import 'package:swtflutter/screenshot.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
+
+import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
 import 'measure_data.dart';
 
@@ -1838,13 +1841,18 @@ class WidgetMeasurer {
         final emptyTextAffectsSizing =
             constants['emptyTextAffectsSizing'] as bool;
 
-        // Text-based widget - calculate size based on text, image, spacing, and padding
-        if (hasAnyTextBasedWidget) {
-          buffer.writeln(
-            '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);',
-          );
-        }
-        if (hasAnyImageSupport) {
+        // Text-based widget - calculate size based on text, image, spacing, and padding.
+        //
+        // CLabel goes image-first: it renders only its image when the text is empty, so whether
+        // there is one decides whether empty text is measured at all. Sound only while the image
+        // call does not itself read m.textStyle.
+        final imageBeforeText =
+            widgetType == 'CLabel' &&
+            hasAnyImageSupport &&
+            (isFixedIconSizeWidget || !isIconImageWidget);
+
+        void writeImage() {
+          if (!hasAnyImageSupport) return;
           if (isFixedIconSizeWidget) {
             buffer.writeln('${indent}m.image = computeImage(widget);');
           } else if (isIconImageWidget) {
@@ -1855,6 +1863,26 @@ class WidgetMeasurer {
             buffer.writeln('${indent}m.image = computeImage(widget);');
           }
         }
+
+        if (imageBeforeText) writeImage();
+        if (hasAnyTextBasedWidget) {
+          if (imageBeforeText) {
+            buffer.writeln(
+              "$indent// With an image set, Dart's empty-text branch never runs (it shows only the image) --",
+            );
+            buffer.writeln(
+              "$indent// so empty text reserves a line only when there's no image to take that branch instead.",
+            );
+            buffer.writeln(
+              '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING && widget.getImage() == null);',
+            );
+          } else {
+            buffer.writeln(
+              '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);',
+            );
+          }
+        }
+        if (!imageBeforeText) writeImage();
 
         final imageUsesMax = constants['imageUsesMax'] as bool;
         final imageSpacing = constants['imageSpacing'] as double;
@@ -2240,7 +2268,18 @@ class WidgetMeasurer {
       buffer.writeln(
         '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing) {',
       );
+      if (widgetType == 'CLabel') {
+        buffer.writeln(
+          "        // Dart treats a null text field the same as \"\" (state.text ?? ''); match that here so an",
+        );
+        buffer.writeln(
+          "        // untouched (never setText()) CLabel sizes the same as one explicitly set to \"\".",
+        );
+      }
       buffer.writeln('        String text = widget.getText();');
+      if (widgetType == 'CLabel') {
+        buffer.writeln('        if (text == null) text = "";');
+      }
       if (widgetType == 'Link') {
         buffer.writeln('        if (text != null) {');
         buffer.writeln('            text = text.replaceAll("<[^>]+>", "");');
@@ -2251,13 +2290,18 @@ class WidgetMeasurer {
         buffer.writeln(
           '        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {',
         );
-        buffer.writeln('            text = "*".repeat(text.length());');
+        // String.repeat is Java 11; src/main compiles at the oldest release's level.
+        buffer.writeln(
+          '            text = dev.equo.swt.Java8.repeat("*", text.length());',
+        );
         buffer.writeln('        }');
       }
 
       // Use parameter to decide whether empty text should be measured
       buffer.writeln(
-        '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
+        widgetType == 'CLabel'
+            ? '        if (emptyTextAffectsSizing || !text.isEmpty()) {'
+            : '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
       );
 
       buffer.writeln(
@@ -3045,8 +3089,10 @@ class WidgetMeasurer {
 
     if (allStylesSameForAllThemes) {
       // Simple case: single textStyle across all styles (or no text at all)
-      buffer.writeln(
-        'public record ${widgetClass}Theme (TextStyle textStyle) {',
+      buffer.write(
+        javaValueClass('${widgetClass}Theme', const [
+          ('TextStyle', 'textStyle'),
+        ]),
       );
       buffer.writeln('    public static ${widgetClass}Theme get() {');
       buffer.writeln(
@@ -3098,8 +3144,10 @@ class WidgetMeasurer {
       // Complex case: different textStyles per style
       buffer.writeln('import java.util.Map;');
       buffer.writeln();
-      buffer.writeln(
-        'public record ${widgetClass}Theme (Map<String, TextStyle> textStyles) {',
+      buffer.write(
+        javaValueClass('${widgetClass}Theme', const [
+          ('Map<String, TextStyle>', 'textStyles'),
+        ]),
       );
       buffer.writeln('    public static ${widgetClass}Theme get() {');
       buffer.writeln(
@@ -3141,7 +3189,9 @@ class WidgetMeasurer {
         buffer.writeln(
           '    public static ${widgetClass}Theme get${themeName}Theme() {',
         );
-        buffer.writeln('        return new ${widgetClass}Theme(Map.of(');
+        buffer.writeln(
+          '        Map<String, TextStyle> styles = new java.util.HashMap<>();',
+        );
 
         final entries = <String>[];
         for (var styleEntry in stylesMap.entries) {
@@ -3155,12 +3205,14 @@ class WidgetMeasurer {
           final fontWeight = textStyle['fontWeight'] ?? 400;
           final fontItalic = textStyle['fontItalic'] ?? false;
           entries.add(
-            '            "$styleName", new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight${themeName != 'Default' && (textStyle['height'] ?? 0.0) != 0.0 ? ', ${textStyle['height']}' : ''})',
+            '        styles.put("$styleName", new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight${themeName != 'Default' && (textStyle['height'] ?? 0.0) != 0.0 ? ', ${textStyle['height']}' : ''}));',
           );
         }
 
-        buffer.writeln(entries.join(',\n'));
-        buffer.writeln('        ));');
+        buffer.writeln(entries.join('\n'));
+        buffer.writeln(
+          '        return new ${widgetClass}Theme(java.util.Collections.unmodifiableMap(styles));',
+        );
         buffer.writeln('    }');
         buffer.writeln();
       }
@@ -3178,7 +3230,10 @@ class WidgetMeasurer {
       widgetType[0].toLowerCase() + widgetType.substring(1);
 }
 
-// Test app that runs measurements
+// Test app that runs measurements.
+//
+// Keep its window visible for the whole run: macOS stops producing frames for an occluded window,
+// and a run measures one case per frame, so it silently stalls until the window comes back.
 class MeasurementApp extends StatefulWidget {
   final WidgetMeasurer measurer;
 
@@ -3191,6 +3246,16 @@ class MeasurementApp extends StatefulWidget {
 class _MeasurementAppState extends State<MeasurementApp> {
   GlobalKey _key = GlobalKey();
   bool _isRunning = false;
+
+  /// Starts the next case on an empty registry, under a key nothing has been built with.
+  ///
+  /// Every case builds its own value for the same widget and none of them carry an id, so they all
+  /// address one registry channel. The registry answers with the value it already holds for a
+  /// channel, so without this each case would be measured rendering the first case's state.
+  void _startNextCase() {
+    VRegistry.instance.clear();
+    _key = GlobalKey();
+  }
 
   @override
   void initState() {
@@ -3223,7 +3288,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
     if ((phaseChanged || widget.measurer.hasMoreCases()) &&
         !widget.measurer.isPaused) {
       setState(() {
-        _key = GlobalKey();
+        _startNextCase();
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3251,7 +3316,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
     widget.measurer.isFinished = wasFinished;
 
     setState(() {
-      _key = GlobalKey();
+      _startNextCase();
     });
   }
 
@@ -3269,7 +3334,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
   void _onPrevious() {
     setState(() {
       widget.measurer.goToPrevious();
-      _key = GlobalKey();
+      _startNextCase();
     });
     // Measure the case after navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3280,7 +3345,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
   void _onNext() {
     setState(() {
       widget.measurer.goToNext();
-      _key = GlobalKey();
+      _startNextCase();
     });
     // Measure the case after navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3292,7 +3357,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
     if (index != null) {
       setState(() {
         widget.measurer.goToGlobalIndex(index);
-        _key = GlobalKey();
+        _startNextCase();
       });
       // Measure the selected case
       WidgetsBinding.instance.addPostFrameCallback((_) {
