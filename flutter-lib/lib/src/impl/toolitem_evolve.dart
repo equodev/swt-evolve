@@ -132,11 +132,34 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     );
   }
 
-  /// True when the icon pack answered for this image: the replacement arrives as SVG content, and
-  /// the resolver drops the filename once it has.
-  static bool _isReplaced(VImage? image) => image?.svgContent?.isNotEmpty ?? false;
+  /// True when Evolve substitutes its own artwork for this image, by either route: an external pack
+  /// is resolved in Java and arrives as SVG content, while the bundled set and the icon map are
+  /// resolved here, by filename. The second answer is asynchronous, so [_warmReplacements] has to
+  /// have run for it to be known — until then this reads false and the item draws what it always did.
+  bool _isReplaced(VImage? image) {
+    if (image == null) return false;
+    if (image.svgContent?.isNotEmpty ?? false) return true;
+    return ImageUtils.replacedByName(image.filename) ?? false;
+  }
+
+  /// Resolves the by-filename answer for every image this item can draw, so the choice made on the
+  /// first hover is already informed. Rebuilds once per newly resolved name.
+  void _warmReplacements() {
+    for (final image in [state.image, state.hotImage, state.disabledImage]) {
+      final filename = image?.filename;
+      if (filename == null || filename.isEmpty) continue;
+      if ((image!.svgContent?.isNotEmpty ?? false) ||
+          ImageUtils.replacedByName(filename) != null) {
+        continue;
+      }
+      ImageUtils.resolveReplacedByName(filename).then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   VImage? _getImageForState(bool enabled) {
+    _warmReplacements();
     if (!enabled && state.disabledImage != null) {
       // An application names its disabled icon as a second file, which the pack often has no
       // counterpart for. Drawing it would put the application's own artwork next to siblings that
@@ -146,7 +169,10 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       return useOwn ? state.disabledImage : state.image;
     }
     if (enabled && _isHovered && state.hotImage != null) {
-      return state.hotImage;
+      // As the disabled state above: the pack rarely covers the application's second, hot filename,
+      // and hover feedback is the zoom and the highlight, never a different picture.
+      final useOwn = _isReplaced(state.hotImage) || !_isReplaced(state.image);
+      return useOwn ? state.hotImage : state.image;
     }
     return state.image;
   }

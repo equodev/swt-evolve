@@ -15,6 +15,37 @@ class ImageUtils {
   // Cache for async image loading Futures to prevent recreation on every rebuild
   static final Map<String, Future<Widget?>> _futureCache = {};
   static final Map<String, DecorationImage> _backgroundImageCache = {};
+  static final Map<String, bool> _replacedByName = {};
+  static final Map<String, Future<bool>> _replacedByNamePending = {};
+
+  /// Whether Evolve substitutes its own artwork for the icon named [filename] — the bundled set or
+  /// the icon map, the same lookup [buildVImageAsync] performs, remembered so a caller that has to
+  /// choose *which* image to draw can ask without resolving again.
+  ///
+  /// Null while the answer is still unknown: the bundle lookup is asynchronous, so a caller
+  /// deciding inside `build()` gets an answer only once [resolveReplacedByName] has run.
+  static bool? replacedByName(String? filename) =>
+      (filename == null || filename.isEmpty) ? null : _replacedByName[filename];
+
+  /// Resolves and remembers [replacedByName]. Safe to call repeatedly; the lookup runs once.
+  static Future<bool> resolveReplacedByName(String filename) {
+    final known = _replacedByName[filename];
+    if (known != null) return Future.value(known);
+    return _replacedByNamePending[filename] ??= _resolveReplacedByName(filename);
+  }
+
+  static Future<bool> _resolveReplacedByName(String filename) async {
+    var replaced = false;
+    try {
+      replaced = await AssetsManager.loadReplacement(filename) != null;
+    } catch (_) {
+      // Treated as "no replacement", same as buildVImageAsync does.
+    }
+    replaced = replaced || buildIconWidget(filename) != null;
+    _replacedByName[filename] = replaced;
+    _replacedByNamePending.remove(filename);
+    return replaced;
+  }
 
   /// SWT tiles a Control's backgroundImage at native size (unlike buildVImage's
   /// BoxFit.contain path for icons/labels).
@@ -686,6 +717,8 @@ class ImageUtils {
     _imageCache.clear();
     _futureCache.clear();
     _backgroundImageCache.clear();
+    _replacedByName.clear();
+    _replacedByNamePending.clear();
   }
 
   static Map<String, int> getCacheStats() => {
