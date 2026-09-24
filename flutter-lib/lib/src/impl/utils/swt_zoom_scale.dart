@@ -34,15 +34,18 @@ class SwtZoomScale extends StatelessWidget {
           final h = constraints.hasBoundedHeight
               ? constraints.maxHeight / scale
               : double.infinity;
-          return Transform.scale(
-            scale: scale,
+          // The box that widens the constraints stays above the transform: a RenderBox refuses a
+          // pointer outside its own size, so below the transform it would measure the laid-out
+          // space against the view's, dropping every control past `view * scale`.
+          return OverflowBox(
             alignment: Alignment.topLeft,
-            child: OverflowBox(
+            minWidth: 0,
+            maxWidth: w,
+            minHeight: 0,
+            maxHeight: h,
+            child: Transform.scale(
+              scale: scale,
               alignment: Alignment.topLeft,
-              minWidth: 0,
-              maxWidth: w,
-              minHeight: 0,
-              maxHeight: h,
               child: SizedBox(
                 width: w.isFinite ? w : null,
                 height: h.isFinite ? h : null,
