@@ -4998,6 +4998,10 @@ public final class DartGC extends DartResource implements IGC {
      * A rectangular clip replaces any shape a previous setClipping put in force.
      */
     void clearClipShape() {
+        if (clippingPath != null)
+            getValue().markDirty(VGC.CLIPPING_PATH);
+        if (clippingRects != null)
+            getValue().markDirty(VGC.CLIPPING_RECTS);
         clippingPath = null;
         clippingRects = null;
     }

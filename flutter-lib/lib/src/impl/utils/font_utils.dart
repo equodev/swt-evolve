@@ -104,40 +104,6 @@ class FontUtils {
     );
   }
 
-  /// Get font properties as a map for easy access
-  static Map<String, dynamic> getFontProperties(VFont? vFont) {
-    if (vFont == null) {
-      return {'name': null, 'height': null, 'style': null, 'locale': null};
-    }
-
-    final fontDataList = vFont.fontData;
-    if (fontDataList == null || fontDataList.isEmpty) {
-      return {'name': null, 'height': null, 'style': null, 'locale': null};
-    }
-
-    final fontData = fontDataList.first;
-    return {
-      'name': fontData.name,
-      'height': fontData.height,
-      'style': fontData.style,
-      'locale': fontData.locale,
-    };
-  }
-
-  /// Print font data for debugging
-  static void printFontData(VFont? vFont, {String? context}) {
-    final prefix = context != null ? '[$context] ' : '';
-    final props = getFontProperties(vFont);
-
-    print('${prefix}=== FONT DATA ===');
-    print('${prefix}Font available: ${vFont != null}');
-    print('${prefix}Font name: ${props['name']}');
-    print('${prefix}Font height: ${props['height']}');
-    print('${prefix}Font style: ${props['style']}');
-    print('${prefix}Font locale: ${props['locale']}');
-    print('${prefix}==================');
-  }
-
   /// Print color data for debugging
   static void printColorData(
     VColor? vColor, {

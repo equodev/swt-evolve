@@ -25,6 +25,7 @@ public class VFontData {
         ((DartFontData) impl).getApi().height = value;
     }
 
+    @JsonAttribute(ignore = true)
     public String getLocale() {
         return ((DartFontData) impl).getLocale();
     }

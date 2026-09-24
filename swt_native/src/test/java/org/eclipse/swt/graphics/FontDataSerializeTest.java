@@ -23,8 +23,7 @@ class FontDataSerializeTest extends SerializeTestBase {
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
-        assertJ.containsEntry("locale", json(w.getLocale()))
-               .containsEntry("name", json(w.getName()))
+        assertJ.containsEntry("name", json(w.getName()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("height").equalsTo(w.getHeight(), orAbsentIf0));
     }

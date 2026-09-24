@@ -706,17 +706,15 @@ class GCDrawer extends GCDrawerBase {
     );
 
     final childClip = _childClip;
+    final textShape = TextShape(processedText, Offset(x, y), textStyle, childClip);
 
     if (!transparent) {
-      final tp = TextPainter(
-        text: TextSpan(text: processedText, style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final tp = textShape.painter;
       _addShape(RectShape(Rect.fromLTWH(x, y, tp.width, tp.height),
           applyAlpha(textBackgroundColor), 0, lineCap, lineJoin,
           isFilled: true, clipRect: childClip));
     }
-    _addShape(TextShape(processedText, Offset(x, y), textStyle, childClip));
+    _addShape(textShape);
   }
 
   String _processTextFlags(String text, int flags) {
@@ -884,7 +882,7 @@ class GCDrawer extends GCDrawerBase {
       OvalShape s => OvalShape(
           s.rect.translate(offset.dx, offset.dy), s.color, s.strokeWidth,
           isFilled: s.isFilled, clipRect: clipArea),
-      TextShape s => TextShape(s.text, s.off + offset, s.style, clipArea),
+      TextShape s => s.translated(offset, clipArea),
       PointShape s => PointShape(s.point + offset, s.color, clipArea),
       PolygonShape s => PolygonShape(
           _translatePoints(s.points, offset), s.color, s.strokeWidth,
@@ -1506,20 +1504,28 @@ class TransformShape extends Shape {
 
 class TextShape extends Shape {
   TextShape(this.text, this.off, this.style, [this.clipRect]);
+  TextShape._withPainter(this.text, this.off, this.style, this.clipRect, TextPainter painter)
+      : _painter = painter;
   final String text;
   final Offset off;
   final TextStyle style;
   @override
   final Rect? clipRect;
 
+  // Laid out once: the scene repaints every shape each frame, and text layout dominates that cost.
+  TextPainter? _painter;
+  TextPainter get painter => _painter ??= TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr)
+    ..layout();
+
+  TextShape translated(Offset offset, Rect clipArea) =>
+      TextShape._withPainter(text, off + offset, style, clipArea, painter);
+
   @override
   void draw(ui.Canvas c) {
     if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
-    final tp = TextPainter(
-        text: TextSpan(text: text, style: style),
-        textDirection: TextDirection.ltr)
-      ..layout();
-    tp.paint(c, off);
+    painter.paint(c, off);
     if (clipRect != null) c.restore();
   }
 

@@ -523,7 +523,7 @@ public class SerializeTestBase {
                                 .containsEntry("name", FontMetricsUtil.substituteFontName(fd.getName()))
                                 .containsEntry("height", fd.getHeight())
                                 .containsEntry("style", fd.getStyle())
-                                .containsEntry("locale", fd.getLocale());
+                                .doesNotContainKey("locale");
                     } else {
                         assertThatJson(n).node(field + ".fontData").isArray().isEmpty();
                     }

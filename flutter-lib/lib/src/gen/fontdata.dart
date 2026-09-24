@@ -8,7 +8,6 @@ class VFontData {
   VFontData.empty();
 
   int height = 0;
-  String locale = "";
   String name = "";
   int style = 0;
 

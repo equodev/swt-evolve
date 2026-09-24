@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../comm/comm.dart';
+import '../comm/delivery_gate.dart';
 import '../gen/gc.dart';
+import '../gen/widgets.dart';
 
 abstract class GCDrawerBase {
   VGC state;
@@ -10,16 +12,31 @@ abstract class GCDrawerBase {
   final Map<String, Object> _handlerTokens = {};
 
   GCDrawerBase(this.state) {
-    _handlerTokens["${state.swt}/${state.id}"] = EquoCommService.on(
-      "${state.swt}/${state.id}",
-      _trackChanges,
-    );
+    final stateChannel = "${state.swt}/${state.id}";
+    _handlerTokens[stateChannel] = EquoCommService.onRaw(stateChannel, (raw) {
+      try {
+        final map = raw is String
+            ? jsonDecode(raw) as Map<String, dynamic>
+            : raw as Map<String, dynamic>;
+        _trackChanges(map);
+      } catch (e) {
+        print('[GC DrawerBase] Error in state: $e');
+      }
+    });
     _registerOps();
   }
 
-  void _trackChanges(VGC newState) {
-    state = newState;
-    onStateChanged(newState);
+  /// Takes a whole description of the GC, or a change to the one already held.
+  ///
+  /// Java sends a change only when this channel still holds the state it was computed from: the
+  /// same GC described it last, and the channel delivers in order.
+  void _trackChanges(Map<String, dynamic> frame) {
+    if (frame.containsKey(kChangedKeys)) {
+      state.mergeJson(frame);
+    } else {
+      state = mapWidgetValue(frame) as VGC;
+    }
+    onStateChanged(state);
   }
 
   void onStateChanged(VGC newState) {}

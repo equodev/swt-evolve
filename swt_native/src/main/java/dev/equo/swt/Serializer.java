@@ -499,6 +499,75 @@ public class Serializer {
         }
     }
 
+    /** Whether a resource may be described by what changed, under the same rule as a widget. */
+    public static boolean mayDiffResources() {
+        return mayReference();
+    }
+
+    /**
+     * Writes {@code impl} whole behind {@code prefix}, with a write stamp of its own, and returns the
+     * stamp: the state a later {@link #toDiff(byte[], DartResource, long, Lent)} is relative to.
+     */
+    public long toStamped(byte[] prefix, DartResource impl, Lent sink) {
+        written.get().clear();
+        depth.get()[0] = 0;
+        JsonWriter writer = borrowWriter();
+        try {
+            writePrefix(writer, prefix);
+            Object value = impl.getValue();
+            long seq = writeBodyWithId(dsl, writer, FlutterBridge.id(impl), FlutterBridge.widgetName(impl),
+                    (FormatConverter) dsl.tryFindWriter(value.getClass()), value, null, true);
+            sink.accept(writer.getByteBuffer(), writer.size());
+            return seq;
+        } finally {
+            writerPool.get().addFirst(writer);
+        }
+    }
+
+    /**
+     * Writes {@code impl} behind {@code prefix} as the properties that changed since {@code base},
+     * the stamp of the state the far side holds, and returns the new stamp. The frame has the shape
+     * {@link #toDiff(DartWidget)} gives a widget, so the far side merges it the same way.
+     */
+    public long toDiff(byte[] prefix, DartResource impl, long base, Lent sink) {
+        written.get().clear();
+        depth.get()[0] = 0;
+        JsonWriter writer = borrowWriter();
+        try {
+            writePrefix(writer, prefix);
+            VResource value = impl.getValue();
+            long seq = writeSeq.incrementAndGet();
+            writer.writeByte((byte) '{');
+            writeKeyValue(writer, "id", FlutterBridge.id(impl));
+            writeKeyValue(writer, "swt", FlutterBridge.widgetName(impl));
+            writeKeyValue(writer, "_s", seq);
+            writeKeyValue(writer, "_b", base);
+            writeKey(writer, "_d");
+            writer.writeByte((byte) '[');
+            boolean first = true;
+            for (String key : value.changedKeys()) {
+                if (!first) writer.writeByte((byte) ',');
+                first = false;
+                StringConverter.serialize(key, writer);
+            }
+            writer.writeByte((byte) ']');
+            writer.writeByte((byte) ',');
+            // The resource being described is this one; everything its properties name is nested.
+            depth.get()[0]++;
+            try {
+                value.writeDiff(writer);
+            } finally {
+                depth.get()[0]--;
+            }
+            // Every pair leaves a trailing comma; the last one becomes the closing brace.
+            writer.getByteBuffer()[writer.size() - 1] = '}';
+            sink.accept(writer.getByteBuffer(), writer.size());
+            return seq;
+        } finally {
+            writerPool.get().addFirst(writer);
+        }
+    }
+
     /**
      * Writes one {@code "key":value,} pair of a partial update.
      *
@@ -625,9 +694,10 @@ public class Serializer {
      *     the same id is dropped. A body that changes after it is first sent therefore needs a
      *     stamp; one that never changes does not, and is cheaper without.
      */
-    private static void writeBodyWithId(DslJson json, JsonWriter writer, long id, String swtName,
+    private static long writeBodyWithId(DslJson json, JsonWriter writer, long id, String swtName,
                                          FormatConverter converter, Object value, Integer style,
                                          boolean stamped) {
+        long seq = 0;
         boolean alwaysSerialize = !json.omitDefaults;
         writer.writeByte((byte)'{');
         writer.writeByte((byte)'"'); writer.writeAscii(name_id); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
@@ -638,11 +708,12 @@ public class Serializer {
         if (stamped) {
             writer.writeByte((byte)',');
             writer.writeByte((byte)'"'); writer.writeAscii(name_seq); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-            NumberConverter.serialize(writeSeq.incrementAndGet(), writer);
+            seq = writeSeq.incrementAndGet();
+            NumberConverter.serialize(seq, writer);
         }
         if (converter == null) {
             writer.writeByte((byte)'}');
-            return;
+            return seq;
         }
         writer.writeByte((byte)',');
         if (style != null) {
@@ -653,6 +724,7 @@ public class Serializer {
         if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';
+        return seq;
     }
 
 }

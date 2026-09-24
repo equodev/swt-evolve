@@ -123,7 +123,9 @@ public abstract class FlutterBridge {
             Serializer.forgetDelivery(widget.getValue());
             bridge.dirty(widget);
         } else if (w instanceof DartResource) {
-            bridge.dirty((DartResource) w);
+            DartResource resource = (DartResource) w;
+            resource.getValue().sent(0, 0L);
+            bridge.dirty(resource);
         }
     }
 
@@ -532,6 +534,10 @@ public abstract class FlutterBridge {
                                         byte[] header = CommService.frameHeader(event);
                                         serializer.toDiff(header, (DartWidget) widget, (buffer, length) ->
                                                 sendBytes(comm, event, buffer, header.length, length));
+                                    } else if (widget instanceof DartGC) {
+                                        byte[] header = CommService.frameHeader(event);
+                                        writeGCState(comm, (DartGC) widget, header, (buffer, length) ->
+                                                sendBytes(comm, event, buffer, header.length, length));
                                     } else
                                         serializeAndSend(comm, event, getApi(widget));
                                 } catch (IOException e) {
@@ -916,7 +922,13 @@ public abstract class FlutterBridge {
         try {
             // The GC's state has to precede the op drawn with it, and on the same frame.
             synchronized (dirty) {
-                if (dirty.remove(gc)) addToBatch(batch, event(gc), getApi(gc));
+                if (dirty.remove(gc)) {
+                    String stateEvent = event(gc);
+                    writeGCState(comm, gc, NO_PREFIX, (buffer, length) -> {
+                        DebugLog.logSend(stateEvent, buffer, 0, length);
+                        batch.add(stateEvent, buffer, 0, length);
+                    });
+                }
             }
             addToBatch(batch, eventName(gc, event), args);
         } catch (IOException e) {
@@ -924,6 +936,35 @@ public abstract class FlutterBridge {
             return;
         }
         if (GC_DISPOSE.equals(event) || batch.byteSize() >= MAX_BATCH_BYTES) flushOpBatch(gc);
+    }
+
+    private static final byte[] NO_PREFIX = new byte[0];
+
+    /**
+     * The stamp of the GC state each drawable's channel was last given. Every GC of a control writes
+     * to the control's one channel, so a GC may send only what changed while no other GC of that
+     * control has written since.
+     */
+    private static final Map<Object, Long> gcStateSeq = new java.util.WeakHashMap<>();
+
+    /**
+     * Writes a GC's state as what changed since its channel last got it, or whole when the channel
+     * holds something else: a GC that has not written yet, or another GC of the same control.
+     */
+    private static void writeGCState(CommService comm, DartGC gc, byte[] prefix, Serializer.Lent sink) {
+        VResource value = gc.getValue();
+        int connection = comm == null ? 0 : comm.connectionId();
+        // Id 0 is shared by every GC on a drawable that is neither a control nor an image.
+        Object channel = id(gc) == 0 ? null : gc._drawable();
+        synchronized (gcStateSeq) {
+            Long held = channel == null ? null : gcStateSeq.get(channel);
+            long base = value.sentSeq(connection);
+            boolean diff = Serializer.mayDiffResources() && base != 0 && held != null && held == base
+                    && value.anyDirty();
+            long seq = diff ? serializer.toDiff(prefix, gc, base, sink) : serializer.toStamped(prefix, gc, sink);
+            value.sent(connection, seq);
+            if (channel != null) gcStateSeq.put(channel, seq);
+        }
     }
 
     /** Terminates a paint: Flutter commits the staged ops when it arrives. */
