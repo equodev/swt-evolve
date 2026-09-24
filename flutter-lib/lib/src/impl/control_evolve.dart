@@ -135,6 +135,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // Bounds arrive here, not through didUpdateWidget: a parent's copy of a child carries identity
     // only, so a changed value reaches the widget on its own channel.
     if (_gcOverlaySubscribed) _requestInitialPaint();
+    // Hiding drops the MouseRegion without an exit, so nothing else would end the hover.
+    if (state.visible == false) {
+      _hoverTimer?.cancel();
+      _removeTooltip();
+    }
   }
 
   @override
@@ -164,7 +169,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   bool _gcOverlaySubscribed = false;
 
   void onGCOverlaySubscribed() {
-    if (_gcOverlaySubscribed) return;
+    // A second subscription is a new, empty overlay: the previous one was dropped along with a
+    // hidden subtree, and Java does not know its drawing went with it.
+    if (_gcOverlaySubscribed) {
+      requestFullRepaint();
+      return;
+    }
     _gcOverlaySubscribed = true;
     _requestInitialPaint();
   }
