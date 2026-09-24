@@ -67,6 +67,42 @@ public final class FontMetricsUtil {
         return result.toArray(new FontData[0]);
     }
 
+    /**
+     * Under the desktop surface text is painted by the host's own font stack, not by the fonts the
+     * web client bundles and substitutes, so it has to be measured with metrics taken from that
+     * stack. Each desktop jar carries them as this class, built from the embedded backend's table
+     * for the same OS; the web and embedded builds do not have it and never run that surface.
+     */
+    private static final String DESKTOP_METRICS_CLASS = "dev.equo.swt.GenDesktopFontMetrics";
+
+    private static volatile java.util.Map<String, Metrics> desktopMetrics;
+
+    @SuppressWarnings("unchecked")
+    private static java.util.Map<String, Metrics> desktopMetrics() {
+        java.util.Map<String, Metrics> table = desktopMetrics;
+        if (table == null) {
+            try {
+                table = (java.util.Map<String, Metrics>) Class.forName(DESKTOP_METRICS_CLASS).getField("DATA").get(null);
+            } catch (ReflectiveOperationException e) {
+                table = java.util.Collections.emptyMap();
+            }
+            desktopMetrics = table;
+        }
+        return table;
+    }
+
+    /**
+     * The metrics for a font id ({@link #getId}): the host's own under the desktop surface when it
+     * has them, otherwise the shared table, which also holds the fonts every surface bundles.
+     */
+    public static Metrics metrics(String fontId) {
+        if (ConfigFlags.isDesktopMode()) {
+            Metrics m = desktopMetrics().get(fontId);
+            if (m != null) return m;
+        }
+        return GenFontMetrics.DATA.get(fontId);
+    }
+
     /** A typographic point is 1/72", the unit an SWT {@code FontData} height is given in. */
     private static final double POINTS_PER_INCH = 72.0;
 
@@ -120,8 +156,8 @@ public final class FontMetricsUtil {
     public static int[] computeFontMetrics(Font font) {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
-        Metrics m = GenFontMetrics.DATA.get(getId(fd));
-        if (m == null) m = GenFontMetrics.DATA.get("Verdana-0-3");
+        Metrics m = metrics(getId(fd));
+        if (m == null) m = metrics("Verdana-0-3");
         if (m == null) return null;
         Display display = Display.getCurrent();
         int h = effectiveHeight(fd, display);
@@ -284,16 +320,16 @@ public final class FontMetricsUtil {
     }
 
     private static double lineHeight(String fontId, int fontSize, double fontHeight) {
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
-        if (metrics == null) metrics = GenFontMetrics.DATA.get("System-0-3");
+        Metrics metrics = metrics(fontId);
+        if (metrics == null) metrics = metrics("System-0-3");
         if (metrics == null) return fontSize;
         return fontHeight != 0 ? fontHeight * fontSize : metrics.height() * fontSize;
     }
 
     private static double measureLine(String text, String fontId, int fontSize) {
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = metrics(fontId);
         if (metrics == null)
-            metrics = GenFontMetrics.DATA.get("System-0-3");
+            metrics = metrics("System-0-3");
         if (metrics == null)
             return 0;
 
@@ -359,7 +395,7 @@ public final class FontMetricsUtil {
      * @return MetricsPerSize-like object with fields ascent, descent, height, avgCharWidth, glyphWidths
      */
     private static Metrics getMetrics(String fontName, int size) {
-        Metrics m = GenFontMetrics.DATA.get(fontName);
+        Metrics m = metrics(fontName);
         if (m == null) return null;
 
         // exact hit

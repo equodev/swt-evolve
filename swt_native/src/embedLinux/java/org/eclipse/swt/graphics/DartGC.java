@@ -2060,6 +2060,9 @@ public final class DartGC extends DartResource implements IGC {
                 this.font = data.font = Display.getCurrent().getSystemFont();
                 getValue().markDirty(VGC.FONT);
             }
+        } else if (this.font == null) {
+            this.font = data.font;
+            getValue().markDirty(VGC.FONT);
         }
         GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
         if (imageCtx != null) {

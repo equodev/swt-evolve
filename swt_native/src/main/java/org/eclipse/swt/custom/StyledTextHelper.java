@@ -2,7 +2,6 @@ package org.eclipse.swt.custom;
 
 import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.GenFontMetrics;
 import dev.equo.swt.Metrics;
 import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
@@ -685,10 +684,10 @@ public class StyledTextHelper {
         int fontSizePoints = fd.getHeight();
         double fontSizePixels = fontSizePoints * dpiScale();
 
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = FontMetricsUtil.metrics(fontId);
         if (metrics == null) {
             String baseFontId = fd.getName() + "-0-3";
-            metrics = GenFontMetrics.DATA.get(baseFontId);
+            metrics = FontMetricsUtil.metrics(baseFontId);
         }
 
         if (metrics == null) {
@@ -758,10 +757,10 @@ public class StyledTextHelper {
         int fontSizePoints = fd.getHeight();
         double fontSizePixels = fontSizePoints * dpiScale();
 
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = FontMetricsUtil.metrics(fontId);
         if (metrics == null) {
             String baseFontId = fd.getName() + "-0-3";
-            metrics = GenFontMetrics.DATA.get(baseFontId);
+            metrics = FontMetricsUtil.metrics(baseFontId);
         }
 
         if (metrics == null) {
@@ -813,10 +812,10 @@ public class StyledTextHelper {
         int fontSizePoints = fd.getHeight();
         double fontSizePixels = fontSizePoints * dpiScale();
 
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = FontMetricsUtil.metrics(fontId);
         if (metrics == null) {
             String baseFontId = fd.getName() + "-0-3";
-            metrics = GenFontMetrics.DATA.get(baseFontId);
+            metrics = FontMetricsUtil.metrics(baseFontId);
         }
 
         if (metrics == null) {
@@ -849,10 +848,10 @@ public class StyledTextHelper {
         int fontSizePoints = fd.getHeight();
         double fontSizePixels = fontSizePoints * dpiScale();
 
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = FontMetricsUtil.metrics(fontId);
         if (metrics == null) {
             String baseFontId = fd.getName() + "-0-3";
-            metrics = GenFontMetrics.DATA.get(baseFontId);
+            metrics = FontMetricsUtil.metrics(baseFontId);
         }
 
         if (metrics == null) {
@@ -883,10 +882,10 @@ public class StyledTextHelper {
         int fontSizePoints = fd.getHeight();
         double fontSizePixels = fontSizePoints * dpiScale();
 
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = FontMetricsUtil.metrics(fontId);
         if (metrics == null) {
             String baseFontId = fd.getName() + "-0-3";
-            metrics = GenFontMetrics.DATA.get(baseFontId);
+            metrics = FontMetricsUtil.metrics(baseFontId);
         }
 
         if (metrics == null) {
@@ -917,10 +916,10 @@ public class StyledTextHelper {
         int fontSizePoints = fd.getHeight();
         double fontSizePixels = fontSizePoints * dpiScale();
 
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = FontMetricsUtil.metrics(fontId);
         if (metrics == null) {
             String baseFontId = fd.getName() + "-0-3";
-            metrics = GenFontMetrics.DATA.get(baseFontId);
+            metrics = FontMetricsUtil.metrics(baseFontId);
         }
 
         if (metrics == null) {

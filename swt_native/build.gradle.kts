@@ -214,6 +214,21 @@ val jdk9OnlySources = listOf("**/dev/equo/swt/awt/**", "**/dev/equo/swt/jdk9/**"
 val targetJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()?.takeIf { it < 21 }
 val dropJdk9Sources = targetJavaRelease != null && targetJavaRelease < 9
 
+// The desktop surface paints text with the host's own font stack, which is what the embedded
+// backend's table for the same OS was measured on. Each native<OS> tree gets that table as
+// GenDesktopFontMetrics, beside the shared GenFontMetrics the web surface measures with (see
+// FontMetricsUtil.metrics).
+val desktopFontMetrics = oss.filter { it.startsWith("native") }.associateWith { os ->
+    tasks.register<Copy>("${os}DesktopFontMetrics") {
+        from("src/embed${os.removePrefix("native")}/java/dev/equo/swt/GenFontMetrics.java") {
+            into("dev/equo/swt")
+            rename { "GenDesktopFontMetrics.java" }
+            filter { it.replace("GenFontMetrics", "GenDesktopFontMetrics") }
+        }
+        into(layout.buildDirectory.dir("generated/desktopFontMetrics/$os"))
+    }
+}
+
 sourceSets {
     main {
         java {
@@ -222,6 +237,7 @@ sourceSets {
                 "src/native/java",
                 "src/native${currentOs.replaceFirstChar { it.titlecase() }}/java"
             ))
+            srcDir(desktopFontMetrics.getValue("native${currentOs.replaceFirstChar { it.titlecase() }}"))
             exclude(nativeFlutterExcludes)
             if (dropJdk9Sources) exclude(jdk9OnlySources)
         }
@@ -252,6 +268,7 @@ sourceSets {
                 if (os.startsWith("native") || os == "web") {
                     exclude(nativeFlutterExcludes)
                 }
+                desktopFontMetrics[os]?.let { srcDir(it) }
                 if (dropJdk9Sources) exclude(jdk9OnlySources)
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
