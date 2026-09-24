@@ -9,6 +9,7 @@ import '../impl/menu_evolve.dart';
 import '../impl/decorations_align.dart';
 import '../impl/utils/pointer.dart';
 import '../impl/widget_config.dart';
+import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 
 class DecorationsMenuData extends InheritedWidget {
@@ -139,6 +140,13 @@ class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
     extends CanvasImpl<T, V> {
   @override
   bool get hostsAppColoredContent => false;
+
+  /// A Decorations is a Canvas only by SWT's class hierarchy: it hosts controls, it is not a
+  /// drawing surface. Falling back to the Canvas drawing surface would paint a colour no Composite
+  /// inside ever falls back to, so every one of them would read as an opaque block on it.
+  @override
+  Color get themeSurfaceColor =>
+      Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
 
   @override
   Widget build(BuildContext context) {

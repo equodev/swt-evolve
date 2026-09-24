@@ -51,6 +51,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   CanvasThemeExtension get _theme =>
       Theme.of(context).extension<CanvasThemeExtension>()!;
 
+  /// What this control falls back to when the application set no background of its own: the
+  /// theme's drawing surface. A Decorations hosts controls instead of drawings and overrides it.
+  Color get themeSurfaceColor => _theme.backgroundColor;
+
   /// A control clipped to a region takes a different colour from the theme, not a different rule:
   /// the shape is the whole drawing, and the window background an ordinary control falls back to
   /// would paint it in the colour of the application behind it. The workbench outlines where a
@@ -60,7 +64,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         background: state.background,
         defaultColor: state.region != null
             ? Theme.of(context).extension<DisplayThemeExtension>()!.dragFeedbackColor
-            : _theme.backgroundColor,
+            : themeSurfaceColor,
       )!;
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
