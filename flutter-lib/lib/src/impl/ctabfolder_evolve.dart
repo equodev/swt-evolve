@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
+import '../comm/v_registry.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/ctabfolder.dart';
@@ -305,20 +306,25 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return state.items!.whereType<VCTabItem>().map((e) => tabBody(e)).toList();
   }
 
+  /// The page's bounds can arrive on its own channel after the folder has rebuilt - a page laid out
+  /// a turn after its folder was resized updates only the page - so the body is sized on every
+  /// change there, not when the folder last built.
   Widget tabBody(VCTabItem e) {
     if (e.control != null) {
       final control = e.control!;
-
-      if (hasBounds(control.bounds)) {
-        final bounds = control.bounds!;
-        return SizedBox(
-          width: bounds.width.toDouble(),
-          height: bounds.height.toDouble(),
-          child: mapWidgetFromValue(control),
-        );
-      } else {
-        return SizedBox.expand(child: mapWidgetFromValue(control));
-      }
+      return ListenableBuilder(
+        listenable: VRegistry.instance.changesOn([VRegistry.channelOf(control)]),
+        builder: (context, page) {
+          final bounds = control.bounds;
+          if (!hasBounds(bounds)) return SizedBox.expand(child: page);
+          return SizedBox(
+            width: bounds!.width.toDouble(),
+            height: bounds.height.toDouble(),
+            child: page,
+          );
+        },
+        child: mapWidgetFromValue(control),
+      );
     }
     return Container();
   }
