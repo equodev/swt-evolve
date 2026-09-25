@@ -350,6 +350,22 @@ run {
         }
         "testImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
         "testImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
+
+        // FXCanvasSwtThreadDispatchNativeTest drives the FXCanvas SWT-thread dispatch against a
+        // live JavaFX toolkit. It needs JavaFX + headless Monocle on the test classpath (unnamed
+        // module), exactly as a product ships the FX jars alongside.
+        val javafxVersion = libs.versions.javafx.get()
+        val javafxClassifier = when (currentOs) {
+            "macos" -> if (getSwtArch(arch) == "aarch64") "mac-aarch64" else "mac"
+            "windows" -> "win"
+            else -> if (getSwtArch(arch) == "aarch64") "linux-aarch64" else "linux"
+        }
+        "testImplementation"("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
+        "testImplementation"("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
+        "testImplementation"("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
+        "testRuntimeOnly"("org.testfx:openjfx-monocle:${libs.versions.openjfx.monocle.get()}") {
+            isTransitive = false
+        }
     }
 }
 
