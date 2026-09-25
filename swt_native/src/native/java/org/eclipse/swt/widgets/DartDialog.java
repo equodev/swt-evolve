@@ -318,7 +318,8 @@ public abstract class DartDialog implements IDialog {
                 done[0] = true;
             });
         }
-        DartShell shell = (parent != null && parent.getImpl() instanceof DartShell) ? (DartShell) parent.getImpl() : null;
+        Shell host = dialogHost();
+        DartShell shell = (host != null && host.getImpl() instanceof DartShell) ? (DartShell) host.getImpl() : null;
         if (shell != null)
             shell.addDialog(this);
         while (!done[0]) {
@@ -330,6 +331,20 @@ public abstract class DartDialog implements IDialog {
         if (shell != null)
             shell.removeDialog(this);
         return response[0];
+    }
+
+    Shell dialogHost() {
+        Shell host = parent;
+        while (host != null && !host.isDisposed() && !host.getVisible()) {
+            Composite up = host.getParent();
+            host = up instanceof Shell ? (Shell) up : null;
+        }
+        if (host == null && parent != null) {
+            Shell active = parent.getDisplay().getActiveShell();
+            if (active != null && active.getVisible())
+                host = active;
+        }
+        return host != null && !host.isDisposed() ? host : parent;
     }
 
     public Dialog getApi() {
