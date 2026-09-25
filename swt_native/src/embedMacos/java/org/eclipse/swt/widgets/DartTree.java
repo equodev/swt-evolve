@@ -1628,6 +1628,16 @@ public class DartTree extends DartComposite implements ITree {
                     showItem(items[i], false);
             }
         }
+        java.util.List<TreeItem> kept = new java.util.ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            if (items[i] != null && !items[i].isDisposed())
+                kept.add(items[i]);
+        }
+        TreeItem[] newSelection = kept.toArray(new TreeItem[0]);
+        if (!java.util.Arrays.equals(selection, newSelection)) {
+            selection = newSelection;
+            getValue().markDirty(VTree.SELECTION);
+        }
         ignoreSelect = true;
         ignoreSelect = false;
     }
