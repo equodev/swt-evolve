@@ -711,6 +711,7 @@ public class Config {
 
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
+        desktopIsDark = null;
         return configFlags;
     }
 
@@ -921,10 +922,33 @@ public class Config {
         return debug;
     }
 
-    /** System colors go dark only when the theme also colors Canvas/GC content, or they clash with the application's fixed colors. */
+    /**
+     * Whether the widget/list system colors use the dark scheme. A dark theme that also colors
+     * Canvas/GC content makes them dark. When the application keeps its own canvas colors they follow
+     * the desktop's appearance, as native SWT reports them; applications read dark mode off them.
+     * <p>
+     * An application that mixes them with fixed colors such as {@code COLOR_WHITE}, and so needs one
+     * light scheme under a dark theme, keeps them light with {@code -Dswt.evolve.system_colors=light}.
+     */
     public static boolean systemColorsAreDark() {
         ConfigFlags flags = getConfigFlags();
-        return "dark".equals(flags.force_theme) && flags.disable_swt_canvas_colors && !flags.use_swt_colors;
+        if (!"dark".equals(flags.force_theme) || flags.use_swt_colors)
+            return false;
+        if (flags.disable_swt_canvas_colors)
+            return true;
+        return !"light".equalsIgnoreCase(System.getProperty("swt.evolve.system_colors")) && desktopIsDark();
+    }
+
+    /** Read once per configuration: the lookup spawns a process and system colors are queried per paint. */
+    private static volatile Boolean desktopIsDark;
+
+    private static boolean desktopIsDark() {
+        Boolean dark = desktopIsDark;
+        if (dark == null) {
+            dark = "dark".equals(EclipseWorkspaceTheme.osAppearance.get());
+            desktopIsDark = dark;
+        }
+        return dark;
     }
 
 }

@@ -15,9 +15,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins {@link Display#getSystemColor(int)}'s widget and list colors to the scheme the application's
- * Canvas/GC content is painted in. They follow a dark {@code force_theme} only when the theme also
- * colors that content ({@code disable_swt_canvas_colors}); an application painting in its own colors
- * mixes them with fixed ones such as {@code COLOR_WHITE}, so they keep the light scheme.
+ * Canvas/GC content is painted in. They follow a dark {@code force_theme} when the theme also colors
+ * that content ({@code disable_swt_canvas_colors}). An application painting in its own colors gets the
+ * desktop's scheme ({@code ConfigSystemColorsTest}), unless it mixes them with fixed ones such as
+ * {@code COLOR_WHITE} and keeps them light with {@code swt.evolve.system_colors=light}.
  *
  * <p>The dark values are the app's default dark {@code ColorScheme.surface}/{@code onSurface}, mirrored
  * in {@code CanvasTheme}.
@@ -25,12 +26,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("flutter-it")
 class DisplaySystemColorThemeFlutterTest {
 
+    private static final String SYSTEM_COLORS = "swt.evolve.system_colors";
+
     private Display display;
     private ConfigFlags savedFlags;
+    private String savedSystemColors;
 
     @BeforeEach
     void setUp() {
         savedFlags = Config.getConfigFlags();
+        savedSystemColors = System.getProperty(SYSTEM_COLORS);
     }
 
     @AfterEach
@@ -38,6 +43,8 @@ class DisplaySystemColorThemeFlutterTest {
         if (display != null && !display.isDisposed())
             display.dispose();
         FlutterBridge.set(null);
+        if (savedSystemColors == null) System.clearProperty(SYSTEM_COLORS);
+        else System.setProperty(SYSTEM_COLORS, savedSystemColors);
         Config.setConfigFlags(savedFlags);
     }
 
@@ -131,7 +138,8 @@ class DisplaySystemColorThemeFlutterTest {
     }
 
     @Test
-    void widgetBackgroundKeepsLightDefaultWhenTheCanvasKeepsTheApplicationsColors() {
+    void widgetBackgroundKeepsLightDefaultWhenLightSystemColorsAreRequested() {
+        System.setProperty(SYSTEM_COLORS, "light");
         forceTheme("dark");
 
         assertThat(rgb(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND)))
@@ -140,7 +148,8 @@ class DisplaySystemColorThemeFlutterTest {
     }
 
     @Test
-    void listColorsKeepLightDefaultWhenTheCanvasKeepsTheApplicationsColors() {
+    void listColorsKeepLightDefaultWhenLightSystemColorsAreRequested() {
+        System.setProperty(SYSTEM_COLORS, "light");
         forceTheme("dark");
 
         assertThat(rgb(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND))).isEqualTo(new int[] { 255, 255, 255 });
