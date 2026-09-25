@@ -1753,10 +1753,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Menu getMenuBar() {
         checkDevice();
+        if (!Config.getConfigFlags().system_menu_bar)
+            return null;
         if (appMenuBar != null)
             return appMenuBar;
         appMenuBar = new Menu(this.getApi());
-        // the menubar will be updated when the Shell or the application activates.
         return appMenuBar;
     }
 
