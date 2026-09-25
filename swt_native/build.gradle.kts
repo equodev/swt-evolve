@@ -82,9 +82,12 @@ fun resolveOnPath(name: String): String = findOnPath(name) ?: name
 // flutter-lib so it resolves correctly). Otherwise fall back to the global
 // flutter/dart on PATH — which is what CI uses, since fvm isn't installed there.
 val fvmExe: String? by lazy {
-    if (file("../flutter-lib/.fvmrc").exists())
-        findOnPath(if (isWindowsOs) "fvm.bat" else "fvm")
-    else null
+    if (!file("../flutter-lib/.fvmrc").exists()) null
+    // Both spellings on Windows: chocolatey's package installs fvm.exe, and looking only for
+    // fvm.bat silently falls through to whatever global Flutter is on PATH — which is how the
+    // Windows VM kept building against the version it was provisioned with instead of .fvmrc's.
+    else if (isWindowsOs) findOnPath("fvm.bat") ?: findOnPath("fvm.exe")
+    else findOnPath("fvm")
 }
 val flutterExePath: String by lazy { resolveOnPath(if (isWindowsOs) "flutter.bat" else "flutter") }
 val dartExePath: String by lazy { resolveOnPath(if (isWindowsOs) "dart.bat" else "dart") }
