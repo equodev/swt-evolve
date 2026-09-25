@@ -14,11 +14,12 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link Display#getSystemColor(int)}'s widget and list colors to the scheme the application's
- * Canvas/GC content is painted in. They follow a dark {@code force_theme} when the theme also colors
- * that content ({@code disable_swt_canvas_colors}). An application painting in its own colors gets the
- * desktop's scheme ({@code ConfigSystemColorsTest}), unless it mixes them with fixed ones such as
- * {@code COLOR_WHITE} and keeps them light with {@code swt.evolve.system_colors=light}.
+ * Pins {@link Display#getSystemColor(int)}'s widget and list colors to the scheme the theme paints
+ * in, whether or not the theme also colors Canvas/GC content ({@code disable_swt_canvas_colors}) —
+ * an application coloring its own widgets from this palette has to be handed the scheme it will be
+ * painted against. An application that instead mixes them with fixed colors such as
+ * {@code COLOR_WHITE} keeps them light with {@code swt.evolve.system_colors=light}
+ * ({@code ConfigSystemColorsTest} covers the rule itself).
  *
  * <p>The dark values are the app's default dark {@code ColorScheme.surface}/{@code onSurface}, mirrored
  * in {@code CanvasTheme}.
@@ -135,6 +136,24 @@ class DisplaySystemColorThemeFlutterTest {
 
         assertThat(new int[] { background.getRed(), background.getGreen(), background.getBlue() })
                 .isEqualTo(new int[] { 255, 255, 255 });
+    }
+
+    /**
+     * Eclipse Forms takes the background of every container it creates from
+     * {@code COLOR_LIST_BACKGROUND} ({@code FormColors.initialize}) and its foreground from
+     * {@code COLOR_LIST_FOREGROUND}, then sets that pair on each one. Handing it the light pair under
+     * a dark theme paints the whole form's chrome light over dark content.
+     */
+    @Test
+    void listColorsFollowADarkThemeWhenTheCanvasKeepsTheApplicationsColors() {
+        forceTheme("dark");
+
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND)))
+                .as("a container colored from this must not come out light on a dark theme")
+                .isEqualTo(new int[] { 31, 41, 55 });
+        assertThat(rgb(display.getSystemColor(SWT.COLOR_LIST_FOREGROUND)))
+                .as("the text on it comes from the same pair, so it must be legible against it")
+                .isEqualTo(new int[] { 249, 250, 251 });
     }
 
     @Test

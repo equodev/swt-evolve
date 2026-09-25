@@ -9,9 +9,9 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * An application that keeps its own Canvas/GC colors gets the system colors native SWT would report:
- * the desktop's appearance. One that mixes them with fixed colors such as {@code COLOR_WHITE} keeps
- * them light under a dark theme with {@code swt.evolve.system_colors=light}.
+ * The widget/list system colors report the scheme the theme paints in, whatever the desktop looks
+ * like. One that mixes them with fixed colors such as {@code COLOR_WHITE} keeps them light under a
+ * dark theme with {@code swt.evolve.system_colors=light}.
  */
 class ConfigSystemColorsTest {
 
@@ -38,28 +38,49 @@ class ConfigSystemColorsTest {
     }
 
     @Test
-    void applicationColorsFollowADarkDesktop() {
+    void applicationColorsAreDarkUnderADarkTheme() {
         start("dark", false, false, "dark");
 
         assertThat(Config.systemColorsAreDark()).isTrue();
     }
 
     @Test
-    void applicationColorsFollowALightDesktop() {
+    void aDarkThemeForcedOnALightDesktopStillReportsDarkColors() {
         start("dark", false, false, "light");
 
-        assertThat(Config.systemColorsAreDark()).isFalse();
+        assertThat(Config.systemColorsAreDark())
+                .as("an application coloring its containers from this palette must get the scheme "
+                        + "the theme paints in, or it paints them light on a dark theme")
+                .isTrue();
     }
 
     @Test
-    void applicationColorsStayLightWhenTheDesktopCannotBeRead() {
+    void aDarkThemeReportsDarkColorsWhenTheDesktopCannotBeRead() {
         start("dark", false, false, null);
 
-        assertThat(Config.systemColorsAreDark()).isFalse();
+        assertThat(Config.systemColorsAreDark()).isTrue();
     }
 
     @Test
-    void lightSystemColorsStayLightOnADarkDesktop() {
+    void theDesktopAppearanceIsNeverRead() {
+        int[] reads = { 0 };
+        start("dark", false, false, "light");
+        EclipseWorkspaceTheme.osAppearance = () -> {
+            reads[0]++;
+            return "light";
+        };
+
+        Config.systemColorsAreDark();
+        Config.systemColorsAreDark();
+
+        assertThat(reads[0])
+                .as("the desktop already decides force_theme when nothing else does; reading it "
+                        + "again here would undo a theme forced against it")
+                .isZero();
+    }
+
+    @Test
+    void lightSystemColorsStayLightUnderADarkTheme() {
         System.setProperty(SYSTEM_COLORS, "light");
         start("dark", false, false, "dark");
 
@@ -85,22 +106,6 @@ class ConfigSystemColorsTest {
         start("dark", true, true, "dark");
 
         assertThat(Config.systemColorsAreDark()).isFalse();
-    }
-
-    @Test
-    void desktopIsReadOncePerConfiguration() {
-        int[] reads = { 0 };
-        start("dark", false, false, "dark");
-        EclipseWorkspaceTheme.osAppearance = () -> {
-            reads[0]++;
-            return "dark";
-        };
-        Config.setConfigFlags(Config.getConfigFlags());
-
-        Config.systemColorsAreDark();
-        Config.systemColorsAreDark();
-
-        assertThat(reads[0]).isEqualTo(1);
     }
 
     private static void start(String theme, boolean themedCanvas, boolean useSwtColors, String desktop) {

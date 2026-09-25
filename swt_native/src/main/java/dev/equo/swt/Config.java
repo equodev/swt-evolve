@@ -711,7 +711,6 @@ public class Config {
 
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
-        desktopIsDark = null;
         return configFlags;
     }
 
@@ -923,9 +922,14 @@ public class Config {
     }
 
     /**
-     * Whether the widget/list system colors use the dark scheme. A dark theme that also colors
-     * Canvas/GC content makes them dark. When the application keeps its own canvas colors they follow
-     * the desktop's appearance, as native SWT reports them; applications read dark mode off them.
+     * Whether the widget/list system colors use the dark scheme. A dark theme makes them dark, the
+     * way a dark desktop does natively: an application that colors its own widgets from this palette
+     * — Eclipse Forms takes its container background from {@code COLOR_LIST_BACKGROUND} — has to be
+     * handed the scheme the theme actually paints in, or it colors them for the other one.
+     * <p>
+     * The desktop's own appearance is not consulted: it already decides {@code force_theme} when
+     * nothing else does, so reading it again here would keep the colors light exactly when a theme
+     * was forced against it.
      * <p>
      * An application that mixes them with fixed colors such as {@code COLOR_WHITE}, and so needs one
      * light scheme under a dark theme, keeps them light with {@code -Dswt.evolve.system_colors=light}.
@@ -936,19 +940,7 @@ public class Config {
             return false;
         if (flags.disable_swt_canvas_colors)
             return true;
-        return !"light".equalsIgnoreCase(System.getProperty("swt.evolve.system_colors")) && desktopIsDark();
-    }
-
-    /** Read once per configuration: the lookup spawns a process and system colors are queried per paint. */
-    private static volatile Boolean desktopIsDark;
-
-    private static boolean desktopIsDark() {
-        Boolean dark = desktopIsDark;
-        if (dark == null) {
-            dark = "dark".equals(EclipseWorkspaceTheme.osAppearance.get());
-            desktopIsDark = dark;
-        }
-        return dark;
+        return !"light".equalsIgnoreCase(System.getProperty("swt.evolve.system_colors"));
     }
 
 }
