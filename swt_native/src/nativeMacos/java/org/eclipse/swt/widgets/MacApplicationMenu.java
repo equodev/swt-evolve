@@ -129,7 +129,13 @@ final class MacApplicationMenu {
         String appName = applicationName();
         // The Display's own menu bar, not a Shell's: it needs no Decorations parent and so exists
         // before any window does, which is when an application asks for the menu to contribute to.
-        Menu holder = display.getMenuBar();
+        // Taken from the Display itself rather than through getMenuBar(), which answers the native
+        // contract and so is null where no OS menu bar shows it -- the client draws this menu out of
+        // the same bar either way.
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        if (impl.appMenuBar == null || impl.appMenuBar.isDisposed())
+            impl.appMenuBar = new Menu(display);
+        Menu holder = impl.appMenuBar;
         MenuItem appItem = new MenuItem(holder, SWT.CASCADE, 0);
         appItem.setText(appName);
         Menu appMenu = new Menu(appItem);
@@ -153,7 +159,7 @@ final class MacApplicationMenu {
         new MenuItem(appMenu, SWT.SEPARATOR);
         action(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
 
-        ((DartDisplay) display.getImpl()).appMenu = appMenu;
+        impl.appMenu = appMenu;
         contributions = appMenu;
         systemMenu = holder;
         return systemMenu;
