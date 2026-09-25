@@ -162,8 +162,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       // every other control. The GC's colors stay with the shapes: taking them here made an
       // owner-drawn control erase in the application's color while the trim around it used the
       // theme's, leaving the control as a visible block against its host.
+      // A Canvas with no ground of its own erases to nothing rather than to the theme's drawing
+      // surface: that surface is not what the surrounding Composite paints, so erasing to it is
+      // what turns a Canvas the size of its own label into a block hugging the text.
       final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      if (canvasState != null) return canvasState.bg;
+      if (canvasState != null) return canvasState.ownGround ?? Colors.transparent;
       return Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
     }
     return Colors.transparent;

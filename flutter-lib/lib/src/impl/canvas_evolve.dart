@@ -55,17 +55,24 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   /// theme's drawing surface. A Decorations hosts controls instead of drawings and overrides it.
   Color get themeSurfaceColor => _theme.backgroundColor;
 
-  /// A control clipped to a region takes a different colour from the theme, not a different rule:
-  /// the shape is the whole drawing, and the window background an ordinary control falls back to
-  /// would paint it in the colour of the application behind it. The workbench outlines where a
-  /// dragged view would dock this way — a window-sized shell with no children whose region is a
-  /// few thin bars — so the bars would simply disappear.
-  Color get bg => getBackgroundColor(
-        background: state.background,
-        defaultColor: state.region != null
-            ? Theme.of(context).extension<DisplayThemeExtension>()!.dragFeedbackColor
-            : themeSurfaceColor,
-      )!;
+  /// The ground this Canvas has of its own, and null when it has none. [themeSurfaceColor] is not
+  /// one: it is the surface a drawing is drawn *on*, not what the surrounding Composite paints, so
+  /// behind a Canvas the size of its own label it reads as a block hugging the text.
+  Color? get ownGround {
+    final resolved = getBackgroundColor(background: state.background, defaultColor: null);
+    if (resolved != null) return resolved;
+    // A control clipped to a region takes a different colour from the theme, not a different rule:
+    // the shape is the whole drawing, and the window background an ordinary control falls back to
+    // would paint it in the colour of the application behind it. The workbench outlines where a
+    // dragged view would dock this way — a window-sized shell with no children whose region is a
+    // few thin bars — so the bars would simply disappear.
+    if (state.region != null) {
+      return Theme.of(context).extension<DisplayThemeExtension>()!.dragFeedbackColor;
+    }
+    return null;
+  }
+
+  Color get bg => ownGround ?? themeSurfaceColor;
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
 
@@ -359,7 +366,11 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // drawing, not over it -- a JFace ruler both sets its own background AND draws digits via
         // GC on top of it, and painting the color as `child`/`_paintBackground`'s own layer (which
         // sits above the GC overlay below) would hide that drawing.
-        if (state.hasOwnBackground ?? false) Positioned.fill(child: ColoredBox(color: bg)),
+        // Only a ground the Canvas actually has ([ownGround]): where the application's colour was
+        // discarded there is none, and standing the theme's drawing surface in for it would paint
+        // a block the surrounding Composite is not painted in.
+        if ((state.hasOwnBackground ?? false) && ownGround != null)
+          Positioned.fill(child: ColoredBox(color: ownGround!)),
         Positioned.fill(child: IgnorePointer(child: gcWidget)),
         child,
       ],
