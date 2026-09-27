@@ -12,6 +12,8 @@ import 'dart:js_interop_unsafe';
 ///   const all  = window.evolveTest.queryAllStates();        // String, JSON map {swt/id: V*}
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
 void registerTestQueryJsApi({
+  required String Function() styledTextPerfJson,
+  required String? Function(int) renderFactsJson,
   required String? Function(int) queryStateJson,
   required String Function() queryAllStatesJson,
   required String Function() queryTreeItemsJson,
@@ -23,6 +25,14 @@ void registerTestQueryJsApi({
   api.setProperty(
     'queryState'.toJS,
     ((JSNumber targetId) => queryStateJson(targetId.toDartInt)?.toJS).toJS,
+  );
+  api.setProperty(
+    'renderFacts'.toJS,
+    ((JSNumber targetId) => renderFactsJson(targetId.toDartInt)?.toJS).toJS,
+  );
+  api.setProperty(
+    'styledTextPerf'.toJS,
+    (() => styledTextPerfJson().toJS).toJS,
   );
   api.setProperty(
     'queryAllStates'.toJS,

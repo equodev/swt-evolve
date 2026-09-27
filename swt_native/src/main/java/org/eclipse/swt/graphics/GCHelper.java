@@ -7,6 +7,11 @@ import org.eclipse.swt.widgets.Display;
 
 public class GCHelper {
 
+    public static Drawable drawableOf(DartGC gc) {
+        return gc == null ? null : gc.drawable;
+    }
+
+
     public static FontMetrics createFontMetrics(Font font) {
         Font resolved = font != null ? font : systemFont();
         int[] metrics = resolved != null ? FontMetricsUtil.computeFontMetrics(resolved) : null;
@@ -337,6 +342,8 @@ public class GCHelper {
             future.complete(null);
             if (display != null && !display.isDisposed()) display.wake();
         });
+        // A readback answers for the state Java already holds, so what is pending goes out first.
+        dev.equo.swt.FlutterBridge.update();
         if (widget instanceof org.eclipse.swt.widgets.DartWidget)
             dev.equo.swt.FlutterBridge.send((org.eclipse.swt.widgets.DartWidget) widget, eventName, args);
         else if (widget instanceof DartResource)

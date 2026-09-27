@@ -41,6 +41,11 @@ public final class HeadlessChrome implements AutoCloseable {
         return process;
     }
 
+    /** The throwaway profile directory, where Chrome writes {@code DevToolsActivePort}. */
+    public Path profileDir() {
+        return profileDir;
+    }
+
     /**
      * Locate a Chrome/Chromium executable: an explicit path {@code override} first (a real executable;
      * blank or {@code "none"} is ignored), otherwise the usual per-OS install locations. Returns
@@ -77,6 +82,12 @@ public final class HeadlessChrome implements AutoCloseable {
      */
     public static HeadlessChrome launch(String binary, String url, boolean headless, boolean verbose, Io io)
             throws IOException {
+        return launch(binary, url, headless, verbose, io, new String[0]);
+    }
+
+    /** {@link #launch(String, String, boolean, boolean, Io)} with additional command-line switches. */
+    public static HeadlessChrome launch(String binary, String url, boolean headless, boolean verbose, Io io,
+            String... extraArgs) throws IOException {
         // Unique, throwaway profile per run so Chrome's per-user-data-dir singleton can't hand the URL
         // to an already-running instance, and an unclean exit can't leave a crash-restore flag.
         Path profileDir = Files.createTempDirectory("equo-chrome-profile-");
@@ -87,7 +98,13 @@ public final class HeadlessChrome implements AutoCloseable {
             cmd.add("--enable-logging=stderr");
             cmd.add("--v=1");
         }
-        cmd.add("--disable-gpu");
+        // CanvasKit without GL draws browser-decoded images as nothing; SwiftShader gives
+        // GPU-less machines a GL context.
+        if (Boolean.getBoolean("dev.equo.swt.web.softwareGl")) {
+            cmd.add("--use-gl=angle");
+            cmd.add("--use-angle=swiftshader");
+        }
+        cmd.add("--enable-unsafe-swiftshader");
         cmd.add("--no-first-run");
         cmd.add("--no-default-browser-check");
         cmd.add("--hide-crash-restore-bubble");
@@ -109,6 +126,7 @@ public final class HeadlessChrome implements AutoCloseable {
                 + "OptimizationHintsFetching,OptimizationTargetPrediction,Translate,MediaRouter,"
                 + "InterestFeedContentSuggestions,CalculateNativeWinOcclusion");
         cmd.add("--user-data-dir=" + profileDir);
+        for (String arg : extraArgs) cmd.add(arg);
         cmd.add(url);
         ProcessBuilder pb = new ProcessBuilder(cmd);
         if (io == Io.INHERIT) {

@@ -3,6 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
@@ -197,6 +198,8 @@ public class CTabFolderHelper {
 
     public static boolean updateItems(DartCTabFolder obj, int showIndex) {
         GC gc = new GC(obj.getApi());
+        // Measurement only: disposing it must not announce a paint cycle to Flutter (as in TreeHelper).
+        if (gc.getImpl() instanceof DartGC) ((DartGC) gc.getImpl()).silentDispose = true;
         if (!obj.single && !obj.mru && showIndex != -1) {
             int firstIndex = showIndex;
             if (obj.priority[0] < showIndex) {

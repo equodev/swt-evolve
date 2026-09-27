@@ -69,7 +69,7 @@ class GCFreshStateNativeTest {
         int op = wire.indexOf("GC/" + canvas.hashCode() + "/fillRectangleintintintint");
         assertThat(op).as("sanity: the paint's fill reached the wire").isNotNegative();
         String before = wire.substring(0, op);
-        return before.contains("\"alpha\"") ? before : null;
+        return before.contains("\"swt\":\"GC\"") ? before : null;
     }
 
     @Test
@@ -86,10 +86,11 @@ class GCFreshStateNativeTest {
         // The canvas's own background: a control GC starts from the control it was opened
         // on, so the literal that used to stand here only matched while the GC ignored it.
         Color canvasBg = canvas.getBackground();
-        assertThat(state).contains(String.format("\"background\":{\"alpha\":255,\"blue\":%d,\"green\":%d,\"red\":%d}",
+        assertThat(state).contains(String.format("\"background\":{\"a\":255,\"b\":%d,\"g\":%d,\"r\":%d}",
                 canvasBg.getBlue(), canvasBg.getGreen(), canvasBg.getRed()));
-        assertThat(state).contains("\"foreground\":{\"alpha\":255,\"blue\":0,\"green\":0,\"red\":0}");
-        assertThat(state).contains("\"alpha\":255");
+        assertThat(state).contains("\"foreground\":{\"a\":255,\"b\":0,\"g\":0,\"r\":0}");
+        // A whole description replaces what the client holds, so an alpha left out is the default.
+        assertThat(state).doesNotContain("\"alpha\":40");
         assertThat(state).doesNotContain("\"clipping\":").doesNotContain("\"transform\"");
     }
 
@@ -105,6 +106,6 @@ class GCFreshStateNativeTest {
 
         String state = stateBeforeFirstOp();
         assertThat(state).as("a clear in the default colour must not reuse the previous background").isNotNull();
-        assertThat(state).contains("\"background\":{\"alpha\":255,\"blue\":255,\"green\":255,\"red\":255}");
+        assertThat(state).contains("\"background\":{\"a\":255,\"b\":255,\"g\":255,\"r\":255}");
     }
 }

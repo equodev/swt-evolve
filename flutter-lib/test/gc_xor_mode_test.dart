@@ -85,7 +85,7 @@ void main() {
   void setForegroundWhite() => _deliver('GC/$gcId/state', {
         'swt': 'GC',
         'id': gcId,
-        'foreground': {'red': 255, 'green': 255, 'blue': 255, 'alpha': 255},
+        'foreground': {'r': 255, 'g': 255, 'b': 255, 'a': 255},
       });
 
   test('a white line drawn in XOR mode inverts the white backdrop to black', () async {

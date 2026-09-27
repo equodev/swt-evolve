@@ -3381,11 +3381,12 @@ public final class DartGC extends DartResource implements IGC {
             // Display#sleep() blocks until an event arrives with no timeout of its own —
             // without this timerExec, a display with nothing else happening never wakes to
             // re-check the deadline below, and the wait hangs indefinitely instead of
-            // bailing after 5s (see DartImage#getImageData(int), which needs the same).
-            long deadline = System.nanoTime() + 5_000_000_000L;
+            // bailing (see DartImage#getImageData(int), which needs the same). 30s, as the
+            // pixel readback allows: a GPU-less browser can take seconds over a first render.
+            long deadline = System.nanoTime() + 30_000_000_000L;
             Runnable wakeOnTimeout = () -> {
             };
-            d.timerExec(5000, wakeOnTimeout);
+            d.timerExec(30000, wakeOnTimeout);
             try {
                 while (!snapshotFuture.isDone() && !d.isDisposed() && System.nanoTime() < deadline) {
                     if (!d.readAndDispatch())

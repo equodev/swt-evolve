@@ -791,17 +791,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         checkWidget();
         if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (!(0 <= index && index < Math.max(1, ((DartTree) parent.getImpl()).columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        ((DartTree) parent.getImpl()).checkItems();
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((DartTree) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-        }
-        if (image != null) {
-        }
-        return null;
+        return Sizes.getTextBounds(this, index);
     }
 
     /**

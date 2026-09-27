@@ -37,6 +37,7 @@ class CLabelSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("leftMargin").equalsTo(w.getLeftMargin(), orAbsentIf0));
         assertJ.satisfies(node("rightMargin").equalsTo(w.getRightMargin(), orAbsentIf0));
         assertJ.satisfies(node("topMargin").equalsTo(w.getTopMargin(), orAbsentIf0));
+        assertJ.satisfies(node("caret").equalsTo(w.getCaret(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));

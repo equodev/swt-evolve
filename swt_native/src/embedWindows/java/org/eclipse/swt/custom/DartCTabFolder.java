@@ -808,6 +808,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             requestLayout();
             updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
             notifyItemCountChange();
+            getValue().markDirty(VCTabFolder.ITEMS);
             return;
         }
         CTabItem[] newItems = new CTabItem[items.length - 1];
@@ -838,6 +839,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         requestLayout();
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
         notifyItemCountChange();
+        getValue().markDirty(VCTabFolder.ITEMS);
     }
 
     /**

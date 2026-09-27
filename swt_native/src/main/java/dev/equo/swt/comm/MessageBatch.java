@@ -7,8 +7,13 @@ import java.util.Arrays;
  * A run of frames sent as one. Payloads are carried verbatim, so a batched message is
  * byte-identical to the one it replaces and the far side dispatches it on its own channel.
  *
+ * <p><b>JSON payloads only.</b> A raw-bytes payload makes the array unparseable and the client
+ * drops the whole batch, so such a frame is sent on its own.
+ *
  * <p>The batch is written straight into its wire frame, {@code [header]["channel",payload],…]}, so
  * sending it copies nothing, and {@link #clear()} keeps the buffer for the next run.
+ *
+ * <p>A repeated channel travels as the index of the entry that named it.
  */
 public final class MessageBatch {
 
@@ -24,6 +29,8 @@ public final class MessageBatch {
     private String firstEvent;
     private int firstPayloadStart;
     private int firstPayloadLength;
+    /** Channel name -> the entry that spelled it out, for the repeats that follow. */
+    private final java.util.HashMap<String, Integer> namedAt = new java.util.HashMap<>();
 
     public MessageBatch() {
         clear();
@@ -41,12 +48,19 @@ public final class MessageBatch {
         ensure(size + 2 * name.length + Math.max(length, NULL.length) + 8);
         if (count > 0) buffer[size++] = ',';
         buffer[size++] = '[';
-        buffer[size++] = '"';
-        for (byte b : name) {
-            if (b == '"' || b == '\\') buffer[size++] = '\\';
-            buffer[size++] = b;
+        Integer namedBy = namedAt.get(event);
+        if (namedBy != null) {
+            // Already spelled out by an earlier entry: point at it instead of repeating it.
+            for (byte b : namedBy.toString().getBytes(StandardCharsets.UTF_8)) buffer[size++] = b;
+        } else {
+            namedAt.put(event, count);
+            buffer[size++] = '"';
+            for (byte b : name) {
+                if (b == '"' || b == '\\') buffer[size++] = '\\';
+                buffer[size++] = b;
+            }
+            buffer[size++] = '"';
         }
-        buffer[size++] = '"';
         buffer[size++] = ',';
         if (count == 0) {
             firstEvent = event;
@@ -89,6 +103,7 @@ public final class MessageBatch {
         size = HEADER.length + 1;
         count = 0;
         firstEvent = null;
+        namedAt.clear();
     }
 
     /**

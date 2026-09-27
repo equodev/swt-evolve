@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import 'package:flutter/services.dart';
@@ -457,6 +458,31 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   ) {
     if (columns.isEmpty) return [];
     final isCheckMode = StyleBits(state.style).has(SWT.CHECK);
+    // What the widths are measured from; see [_computeContentWidthWithoutColumns].
+    final inputs = <Object?>[
+      isCheckMode, theme, Theme.of(context), state.font, state.foreground,
+      for (final column in columns) column.width,
+    ];
+    void collect(List<VWidget>? items, int level) {
+      if (items == null) return;
+      for (final w in items) {
+        if (w is! VTreeItem) continue;
+        inputs
+          ..add(level)
+          ..add(w.text)
+          ..add(w.font)
+          ..add(w.foreground)
+          ..add(w.image != null);
+        final texts = w.texts;
+        for (int col = 0; col < columns.length; col++) {
+          inputs.add(texts != null && col < texts.length ? texts[col] : null);
+        }
+        collect(w.items, level + 1);
+      }
+    }
+    collect(state.items, 0);
+    final cached = _preferredColumnWidths;
+    if (cached != null && listEquals(cached.inputs, inputs)) return List.of(cached.widths);
     final checkboxWidth = isCheckMode
         ? (theme.checkboxSize + theme.checkboxSpacing)
         : 0.0;
@@ -519,8 +545,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (maxWidths[i] < colMin) maxWidths[i] = colMin;
       if (i < maxWidths.length - 1) maxWidths[i] += dividerGap;
     }
+    _preferredColumnWidths = (inputs: inputs, widths: List.of(maxWidths));
     return maxWidths;
   }
+
+  ({List<Object?> inputs, List<double> widths})? _preferredColumnWidths;
 
   /// Natural width of the widest visible row. A tree with no columns has no column widths
   /// to sum, so this is the only thing a horizontal scroll range can be derived from.
@@ -530,6 +559,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     TreeThemeExtension theme,
   ) {
     final isCheckMode = StyleBits(state.style).has(SWT.CHECK);
+    // Everything a row's width is made of: a resize rebuilds the tree without changing any of it.
+    final inputs = <Object?>[
+      isCheckMode, theme, Theme.of(context), state.font, state.foreground,
+      for (final flat in flatItems) ...[
+        flat.item.text, flat.item.texts?.firstOrNull, flat.item.font, flat.item.foreground,
+        flat.level, flat.item.image != null,
+      ],
+    ];
+    final cached = _contentWidth;
+    if (cached != null && listEquals(cached.inputs, inputs)) return cached.width;
     final checkboxWidth = isCheckMode
         ? (theme.checkboxSize + theme.checkboxSpacing)
         : 0.0;
@@ -570,8 +609,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (item.image != null) width += iconSpace;
       if (width > widest) widest = width;
     }
+    _contentWidth = (inputs: inputs, width: widest);
     return widest;
   }
+
+  ({List<Object?> inputs, double width})? _contentWidth;
 
   List<double> _computeEffectiveColumnWidths(
     List<VTreeColumn> columns,

@@ -93,6 +93,13 @@ public class VWidget {
         for (String key : changed) writeProperty(writer, key);
     }
 
+    /**
+     * Writes the named properties, for a caller that has already decided which of the changed ones are worth sending.
+     */
+    public void writeDiff(JsonWriter writer, java.util.Collection<String> keys) {
+        for (String key : keys) writeProperty(writer, key);
+    }
+
     public static final String STYLE = "style";
 
     /**

@@ -138,6 +138,35 @@ void main() {
     expect(identical(drawnByTheTree, registry.valueOn('TreeItem/$_childItemId')), isTrue,
         reason: 'one widget, one object - whoever named it and whoever answered for it agree');
   });
+
+  test('an answer still lands when what rendered the widget before it moved lets go afterwards',
+      () async {
+    // A widget moved to another parent: the old parent's frame drops it, the new one names it, and
+    // the client asks. The state that drew it in the old place unmounts only after that, and stops
+    // watching the channel the answer is about to arrive on.
+    registry.register(VTree.fromJson(_tree([_rootItem([_childWhole('leaf', 10)], 10)], 10)));
+    void rendered(VChange _) {}
+    registry.watch('TreeItem/$_childItemId', rendered);
+    await _deliver('Tree/$_treeId', _tree([_rootItem(null, 20)], 20));
+    await _deliver(
+        'Tree/$_treeId',
+        _tree([
+          {
+            'swt': 'TreeItem',
+            'id': _rootItemId,
+            '_s': 30,
+            'style': SWT.NONE,
+            'texts': ['root'],
+            'items': [_reference(_childItemId, 'TreeItem')],
+          }
+        ], 30));
+
+    registry.unwatch('TreeItem/$_childItemId', rendered);
+    await _deliver('TreeItem/$_childItemId', _childWhole('leaf', 40));
+
+    expect((registry.valueOn('TreeItem/$_childItemId') as VTreeItem?)?.texts?.single, 'leaf');
+  });
+
   test('a frame refused as a description of the past still hands over what it alone describes',
       () async {
     // Where the references above came from, on an Eclipse startup. Java describes one widget twice

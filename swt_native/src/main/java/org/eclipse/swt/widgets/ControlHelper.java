@@ -12,11 +12,6 @@ import java.util.WeakHashMap;
 
 public class ControlHelper {
 
-    // True while a Flutter-originated KeyDown is being dispatched. Widgets that edit content on
-    // KeyDown (StyledText.handleKey) consult it to skip re-applying what the Flutter editor
-    // already inserted; Java-simulated keys (upstream tests, apps) keep the full SWT behavior.
-    private static final ThreadLocal<Boolean> FLUTTER_KEY = ThreadLocal.withInitial(() -> false);
-
     public static int inPaintDepth;
 
     // Area each control still owes a Paint for, unioned as redraw() calls arrive and consumed by
@@ -37,32 +32,8 @@ public class ControlHelper {
     }
 
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
-        FLUTTER_KEY.set(true);
-        try {
-            widget.sendEvent(SWT.KeyDown, event);
-        } finally {
-            FLUTTER_KEY.set(false);
-        }
+        widget.sendEvent(SWT.KeyDown, event);
         translateTraversal(widget, event);
-    }
-
-    // True while the Display is forwarding a key to the focused control, rather than that control's
-    // own channel delivering one. The client suppresses its own forward in that case, so anything
-    // it correlates per keystroke (the StyledText VerifyKey verdicts) must not count these.
-    private static final ThreadLocal<Boolean> DISPLAY_ROUTED_KEY = ThreadLocal.withInitial(() -> false);
-
-    /** {@link #sendFlutterKeyDown} for a key the Display routed to the focused control. */
-    public static void sendDisplayRoutedKeyDown(DartWidget widget, Event event) {
-        DISPLAY_ROUTED_KEY.set(true);
-        try {
-            sendFlutterKeyDown(widget, event);
-        } finally {
-            DISPLAY_ROUTED_KEY.set(false);
-        }
-    }
-
-    public static boolean isDisplayRoutedKey() {
-        return DISPLAY_ROUTED_KEY.get();
     }
 
     /**
@@ -119,49 +90,139 @@ public class ControlHelper {
         return self;
     }
 
-    public static boolean isFlutterOriginatedKey() {
-        return FLUTTER_KEY.get();
+    /**
+     * The character GTK and Win32 report for a Ctrl chord: a letter or {@code @}..{@code _} becomes
+     * its ASCII control character (Ctrl+C is 3). Cocoa reports the key's own character. The browser
+     * reports the latter everywhere, so this follows the platform the application runs on.
+     */
+    public static void applyControlCharacter(Event key) {
+        if ((key.stateMask & SWT.CTRL) == 0 || key.character > 0x7F || "cocoa".equals(SWT.getPlatform()))
+            return;
+        int c = key.character;
+        if ('a' <= c && c <= 'z')
+            c -= 'a' - 'A';
+        if ('@' <= c && c <= '_')
+            key.character = (char) (c - '@');
+    }
+
+    /** What {@link #routeKeyDown} did with a key. */
+    public static final class RoutedKey {
+        /** Whether the KeyDown was delivered, and its doit after the listeners ran. */
+        public final boolean delivered, keyDoit;
+        /** The Traverse's doit after the listeners ran, or false when the key traverses nothing. */
+        public final boolean traverseDoit;
+
+        RoutedKey(boolean delivered, boolean keyDoit, boolean traverseDoit) {
+            this.delivered = delivered;
+            this.keyDoit = keyDoit;
+            this.traverseDoit = traverseDoit;
+        }
     }
 
     /**
-     * Derives and fires an {@link SWT#Traverse} event from a Flutter-originated KeyDown, matching
-     * native SWT's key&rarr;traversal mapping (Tab/Shift+Tab, arrows, Enter, Ctrl+PageUp/Down) and the
-     * Alt+letter mnemonic. This is the whole-tree analogue of the platform's {@code translateTraversal}:
-     * it lets a Display Traverse filter (e.g. Eclipse's command key bindings, hooked via
-     * {@code Display.addFilter(SWT.Traverse, …)}) and any {@code TraverseListener} see traversal keys.
-     * Focus movement itself stays with Flutter — this only surfaces the event; it does not run SWT's
-     * traversal (unlike {@link DartControl#traverse(int, char, int, int, int, boolean)}).
-     *
-     * <p>Escape is intentionally excluded: {@link #translateTraversal} already emits it (via the full
-     * {@code Control.traverse}, so popups/dialogs still close) from {@link #sendFlutterKeyDown}, which
-     * runs first in every path. Handling it here too would fire {@code SWT.Traverse} twice.
+     * Offers a traversal key as {@link SWT#Traverse} before the KeyDown, as every platform's
+     * {@code translateTraversal} does. The client performs a Tab traversal itself.
      */
-    public static boolean sendFlutterTraverse(DartWidget widget, Event keyEvent) {
-        // A KeyDown listener can dispose the control the key was routed to — Close All Editors
-        // disposes the focused editor — and the caller's disposal guard ran before that dispatch.
-        if (widget.isDisposed())
-            return true;
-        int detail = traverseDetail(keyEvent.keyCode, keyEvent.stateMask);
-        boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(keyEvent);
+    public static RoutedKey routeKeyDown(DartControl control, Event key) {
+        key.doit = true;
+        int detail = traverseDetail(key.keyCode, key.stateMask);
+        boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(key);
         if (mnemonic)
             detail = SWT.TRAVERSE_MNEMONIC;
-        if (detail == SWT.TRAVERSE_NONE)
-            return true;
-        Event e = new Event();
-        e.character = keyEvent.character;
-        e.keyCode = keyEvent.keyCode;
-        e.stateMask = keyEvent.stateMask;
-        e.detail = detail;
-        // Arrow traversal is off by default (the focused control consumes arrows); the rest default
-        // to performing the traversal — the same doit defaults as Control.traverse(...).
-        e.doit = detail != SWT.TRAVERSE_ARROW_NEXT && detail != SWT.TRAVERSE_ARROW_PREVIOUS;
-        widget.sendEvent(SWT.Traverse, e);
-        // An Alt+letter mnemonic that a Traverse listener/filter didn't veto activates the matching
-        // widget (Button click, Label→next focus, Group→first child, TabItem select) in the shell.
-        if (mnemonic && e.doit && widget instanceof DartControl && !((DartControl) widget).getApi().isDisposed()) { DartControl dc = (DartControl) widget;
-            MnemonicHelper.dispatch(dc.getApi(), (char) keyEvent.keyCode);
+        boolean traversed = false;
+        boolean traverseDoit = false;
+        if (key.keyCode == SWT.ESC) {
+            traversed = escapeTraversal(control, key);
+        } else if (detail != SWT.TRAVERSE_NONE) {
+            Event e = new Event();
+            e.character = key.character;
+            e.keyCode = key.keyCode;
+            e.stateMask = key.stateMask;
+            e.detail = detail;
+            e.doit = traversesByDefault(control, detail);
+            control.sendEvent(SWT.Traverse, e);
+            if (control.isDisposed())
+                return new RoutedKey(false, false, false);
+            traverseDoit = e.doit;
+            if (e.doit) {
+                switch (e.detail) {
+                    // A listener that consumed the key clears the detail; Control.traverse counts it as done.
+                    case SWT.TRAVERSE_NONE:
+                    case SWT.TRAVERSE_TAB_NEXT:
+                    case SWT.TRAVERSE_TAB_PREVIOUS:
+                        traversed = true;
+                        break;
+                    case SWT.TRAVERSE_MNEMONIC:
+                        traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
-        return e.doit;
+        if (traversed || control.isDisposed())
+            return new RoutedKey(false, false, traverseDoit);
+        control.sendEvent(SWT.KeyDown, key);
+        return new RoutedKey(true, key.doit, traverseDoit);
+    }
+
+    /**
+     * Mirrors {@code SwtControl/SwtComposite.traversalCode}: arrows stay in the control, and a
+     * key-listening Canvas keeps every key unless a Traverse listener lets it go.
+     */
+    private static boolean traversesByDefault(DartControl control, int detail) {
+        if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
+            return false;
+        if (control.getApi() instanceof Canvas) {
+            if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0)
+                return false;
+            if (control.hooks(SWT.KeyDown) || control.hooks(SWT.KeyUp))
+                return false;
+        }
+        return true;
+    }
+
+    public static boolean isModifierKey(int keyCode) {
+        return keyCode == SWT.SHIFT || keyCode == SWT.CTRL || keyCode == SWT.ALT || keyCode == SWT.COMMAND;
+    }
+
+    /** Escape runs the whole traversal, so a dialog closes on it. */
+    private static boolean escapeTraversal(DartControl origin, Event keyEvent) {
+        Control start = resolveTraverseStart(origin);
+        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
+            return false;
+        Event event = new Event();
+        event.character = keyEvent.character;
+        event.keyCode = keyEvent.keyCode;
+        event.keyLocation = keyEvent.keyLocation;
+        event.stateMask = keyEvent.stateMask;
+        event.doit = true;
+        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
+    }
+
+    /**
+     * {@code count} is lines, positive up; a pixel scroll arrives in {@code detail}, positive down,
+     * and moves the bar by those pixels. Listeners always see {@code detail} as SCROLL_LINE.
+     */
+    public static void handleMouseWheel(DartControl control, Event e) {
+        int pixels = e.detail;
+        e.detail = SWT.SCROLL_LINE;
+        e.doit = true;
+        control.sendEvent(SWT.MouseWheel, e);
+        if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
+            return;
+        ScrollBar bar = ((Scrollable) control.getApi()).getVerticalBar();
+        if (bar == null || !bar.getEnabled())
+            return;
+        int max = bar.getMaximum() - bar.getThumb();
+        int step = pixels != 0 ? pixels : -e.count * bar.getIncrement();
+        int selection = Math.max(bar.getMinimum(), Math.min(max, bar.getSelection() + step));
+        if (selection == bar.getSelection())
+            return;
+        bar.setSelection(selection);
+        Event scrolled = new Event();
+        scrolled.detail = step < 0 ? SWT.ARROW_UP : SWT.ARROW_DOWN;
+        bar.notifyListeners(SWT.Selection, scrolled);
     }
 
     /** Answers the client's held context menu after the MenuDetect listeners have run. */
@@ -191,8 +252,7 @@ public class ControlHelper {
 
     private static int traverseDetail(int keyCode, int stateMask) {
         switch (keyCode) {
-            // Escape is handled by translateTraversal() (from sendFlutterKeyDown, which runs first),
-            // so it is deliberately not mapped here — see sendFlutterTraverse's javadoc.
+            // Escape runs the whole traversal instead; see escapeTraversal.
             case SWT.CR:
                 return SWT.TRAVERSE_RETURN;
             case SWT.ARROW_DOWN:
@@ -299,6 +359,8 @@ public class ControlHelper {
         // ones paint themselves. Answering one that listens for nothing still builds a GC and
         // disposes it -- a whole VGC push per control, for no drawing.
         if (!c.hooks(SWT.Paint)) return;
+        // The client only asks when its view is stale, so the bridge's record of it is out of date.
+        dev.equo.swt.FlutterBridge.forgetWhatIsShown(c.getApi());
         if (c.drawCount > 0 || paintQueued.contains(c)) return;
         damageAll(c);
         firePaint(c);
@@ -310,7 +372,6 @@ public class ControlHelper {
      */
     public static void markDamaged(DartControl c) {
         if (c.hooks(SWT.Paint)) {
-            skipStateEchoAfterPaint.remove(c);
             paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
@@ -319,7 +380,6 @@ public class ControlHelper {
     /** As {@link #markDamaged(DartControl)}, for an invalidation that named the area it dirtied. */
     public static void markDamaged(DartControl c, int x, int y, int width, int height) {
         if (c.hooks(SWT.Paint)) {
-            skipStateEchoAfterPaint.remove(c);
             paint(c, x, y, width, height);
         }
         markOwnerDrawnCellsDamaged(c);
@@ -334,6 +394,7 @@ public class ControlHelper {
      * and narrowing it to the rows the rectangle covers would mean mapping pixels back to rows here.
      */
     private static void markOwnerDrawnCellsDamaged(DartControl c) {
+        markListenerProvidedStyles(c);
         if (!c.hooks(SWT.PaintItem)) {
             return;
         }
@@ -342,23 +403,24 @@ public class ControlHelper {
         }
     }
 
-    // Controls whose next scheduled Paint must not echo their state back to the client.
-    private static final Set<DartControl> skipStateEchoAfterPaint =
-            Collections.newSetFromMap(new WeakHashMap<>());
+    /** Listener-provided StyledText styles are derived while painting, so only a repaint announces them. */
+    private static void markListenerProvidedStyles(DartControl c) {
+        if (!(c.getApi() instanceof org.eclipse.swt.custom.StyledText))
+            return;
+        if (!c.hooks(org.eclipse.swt.custom.ST.LineGetStyle)
+                && !c.hooks(org.eclipse.swt.custom.ST.LineGetBackground)
+                // A band of styles around the viewport changes on scroll even when the styles do not.
+                && !stylesAreBanded(c))
+            return;
+        c.getValue().markDirty(org.eclipse.swt.custom.VStyledText.RENDERER);
+        c.getValue().markDirty(org.eclipse.swt.custom.VStyledText.STYLES);
+        // The names are names in that palette, so they are never left behind by it.
+        c.getValue().markDirty(org.eclipse.swt.custom.VStyledText.STYLE_INDEX);
+    }
 
-    /**
-     * Repaints without serializing the widget back, for an invalidation the client provoked by
-     * reporting something it is already showing. {@link dev.equo.swt.FlutterBridge#withoutDirty}
-     * applied to the Paint this schedules rather than to the calling stack.
-     */
-    public static void markDamagedWithoutStateEcho(DartControl c, int x, int y, int width, int height) {
-        if (!c.hooks(SWT.Paint)) return;
-        synchronized (pendingDamage) {
-            if (!paintQueued.contains(c) || skipStateEchoAfterPaint.contains(c)) {
-                skipStateEchoAfterPaint.add(c);
-            }
-        }
-        paint(c, x, y, width, height);
+    private static boolean stylesAreBanded(DartControl c) {
+        return org.eclipse.swt.custom.StyledTextHelper.stylesAreBanded(
+                (org.eclipse.swt.custom.StyledText) c.getApi());
     }
 
     public static void paint(DartControl c) {
@@ -412,10 +474,10 @@ public class ControlHelper {
             if (c.drawCount > 0)
                 return;
             firePaint(c);
-            if (!skipStateEchoAfterPaint.remove(c))
-                c.dirty();
         });
     }
+
+
 
     private static void firePaint(DartControl c) {
         if (c.isDisposed()) return;
@@ -612,4 +674,5 @@ public class ControlHelper {
                 return true;
         return false;
     }
+
 }

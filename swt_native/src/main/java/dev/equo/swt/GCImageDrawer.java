@@ -7,7 +7,11 @@ import org.eclipse.swt.widgets.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -50,6 +54,22 @@ public class GCImageDrawer extends EmbeddedBridge {
     /** Ops buffered until Flutter's GCDrawer listeners are registered. */
     private final List<Runnable> pendingOps = new ArrayList<>();
     private boolean opsReady = false;
+    /** Run once this drawer's queued ops have been sent, or dropped. */
+    private final List<Runnable> afterOps = new ArrayList<>();
+    /** Drawers whose queued ops have not been sent yet. */
+    private static final java.util.Set<GCImageDrawer> holdingOps = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+
+    private static byte[] gcDispose(long remoteRef, boolean wantPixels, boolean retain) {
+        return ("{\"ref\":" + remoteRef
+                + ",\"pixels\":" + wantPixels
+                + ",\"retain\":" + retain + "}")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /** The id the Flutter side addresses this drawer's GC frames to. */
+    public long channelId() {
+        return gcId;
+    }
 
     public GCImageDrawer() {
         super(null);
@@ -101,7 +121,45 @@ public class GCImageDrawer extends EmbeddedBridge {
             op.run();
         } else {
             pendingOps.add(op);
+            holdingOps.add(this);
         }
+    }
+
+    /**
+     * Runs {@code then} once every op queued so far on any drawer has been sent. Releasing an
+     * Image's render must wait for this: a drawer that has not started yet may hold a draw of it,
+     * which would otherwise reach the render side after the release and draw nothing.
+     */
+    public static void afterQueuedOps(Runnable then) {
+        FlutterBridge.flushOpBatches();
+        List<GCImageDrawer> waiting;
+        synchronized (holdingOps) {
+            waiting = new ArrayList<>(holdingOps);
+        }
+        if (waiting.isEmpty()) {
+            then.run();
+            return;
+        }
+        java.util.concurrent.atomic.AtomicInteger left = new java.util.concurrent.atomic.AtomicInteger(waiting.size());
+        Runnable countDown = () -> {
+            if (left.decrementAndGet() == 0) then.run();
+        };
+        for (GCImageDrawer drawer : waiting) drawer.whenOpsGone(countDown);
+    }
+
+    private synchronized void whenOpsGone(Runnable r) {
+        if (opsReady || pendingOps.isEmpty()) r.run();
+        else afterOps.add(r);
+    }
+
+    private void opsGone() {
+        holdingOps.remove(this);
+        List<Runnable> run;
+        synchronized (this) {
+            run = new ArrayList<>(afterOps);
+            afterOps.clear();
+        }
+        for (Runnable r : run) r.run();
     }
 
     /**
@@ -115,6 +173,7 @@ public class GCImageDrawer extends EmbeddedBridge {
             op.run();
         }
         pendingOps.clear();
+        opsGone();
     }
 
     public void initFlutterView(long gcId, Image dartImage, Consumer<ByteBuffer> onImageResult) {
@@ -143,6 +202,7 @@ public class GCImageDrawer extends EmbeddedBridge {
         CommService comm = resolvedComm;
         if (comm == null && (!nativeWindowAvailable || !loadNativeLibrary())) {
             cancelAndWake(dartImage);
+            opsGone();
             return;
         }
         // Serialized synchronously, before endDrawCycle mints this cycle's ref, so it captures the
@@ -171,6 +231,7 @@ public class GCImageDrawer extends EmbeddedBridge {
                         System.err.println("[GCImageDrawer] Engine did not answer ClientReady within "
                                 + CLIENT_READY_TIMEOUT_SECONDS + "s — off-screen GC will be a no-op: " + err);
                         cancelAndWake(dartImage);
+                        opsGone();
                         return;
                     }
                     try {
@@ -188,6 +249,7 @@ public class GCImageDrawer extends EmbeddedBridge {
             nativeWindowAvailable = false;
             System.err.println("[GCImageDrawer] Native Flutter window unavailable — off-screen GC will be a no-op: " + e.getMessage());
             cancelAndWake(dartImage);
+            opsGone();
         }
     }
 
@@ -236,11 +298,10 @@ public class GCImageDrawer extends EmbeddedBridge {
                 if (sink != null) sink.accept(bytes);
             });
         }
-        byte[] payload = ByteBuffer.allocate(9)
-                .putLong(remoteRef)
-                .put((byte) (wantPixels ? 1 : 0))
-                .array();
-        queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        byte[] payload = gcDispose(remoteRef, wantPixels, false);
+        if (!FlutterBridge.flushBufferedOpsWith(this, "gcDispose", payload)) {
+            queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        }
         Image image = dartImage;
         if (image == null || remoteRef == 0) return wantPixels;
         if (image.isDisposed()) {
@@ -248,7 +309,10 @@ public class GCImageDrawer extends EmbeddedBridge {
             // dispose it and release the ref the render is about to register. Release it here.
             queueOp(() -> c.send("Image/releaseRemoteRef", ByteBuffer.allocate(8).putLong(remoteRef).array()));
         } else if (image.getImpl() instanceof DartImage) {
-            ((DartImage) image.getImpl())._adoptRemoteRender(remoteRef, c);
+            DartImage dart = (DartImage) image.getImpl();
+            // Its pixels change, so a client must be sent the image again, not just its name.
+            Serializer.forgetResource(dart.getValue());
+            dart._adoptRemoteRender(remoteRef, c);
         }
         return wantPixels;
     }
@@ -260,8 +324,10 @@ public class GCImageDrawer extends EmbeddedBridge {
     public void sendGcDispose() {
         start();
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
-        byte[] payload = ByteBuffer.allocate(9).putLong(0L).put((byte) 0).array();
-        queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        byte[] payload = gcDispose(0L, false, false);
+        if (!FlutterBridge.flushBufferedOpsWith(this, "gcDispose", payload)) {
+            queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        }
     }
 
     /**
@@ -272,6 +338,7 @@ public class GCImageDrawer extends EmbeddedBridge {
      */
     public void startForPendingReply() {
         start();
+        FlutterBridge.flushBufferedOps(this);
     }
 
     /**
@@ -284,7 +351,9 @@ public class GCImageDrawer extends EmbeddedBridge {
         if (started) {
             sendGcDispose();
         } else {
+            FlutterBridge.discardBufferedOps(this);
             pendingOps.clear();
+            opsGone();
         }
     }
 
@@ -298,6 +367,7 @@ public class GCImageDrawer extends EmbeddedBridge {
      */
     public void requestRenderSnapshot(Consumer<ByteBuffer> onSnapshot) {
         start();
+        FlutterBridge.flushBufferedOps(this);
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
         String snapshotEvent = "GC/" + gcId + "/imageSnapshotResult";
         c.on(snapshotEvent, ByteBuffer.class, bytes -> {

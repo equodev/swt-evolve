@@ -23,7 +23,6 @@ public class VStyledText extends VCanvas {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int getAlignment() {
         return ((DartStyledText) impl).getAlignment();
     }
@@ -49,7 +48,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).bidiColoring = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getBlockSelection() {
         return ((DartStyledText) impl).getBlockSelection();
     }
@@ -58,7 +56,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).blockSelection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Rectangle getBlockSelectionBounds() {
         return ((DartStyledText) impl).blockSelectionBounds;
     }
@@ -146,7 +143,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).horizontalScrollOffset = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getIndent() {
         return ((DartStyledText) impl).getIndent();
     }
@@ -155,7 +151,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).indent = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getJustify() {
         return ((DartStyledText) impl).getJustify();
     }
@@ -172,7 +167,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).leftMargin = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getLineSpacing() {
         return ((DartStyledText) impl).getLineSpacing();
     }
@@ -215,7 +209,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).rightMargin = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Point getSelection() {
         return ((DartStyledText) impl).getSelection();
     }
@@ -240,21 +233,13 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).selectionForeground = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Point getSelectionRange() {
         return ((DartStyledText) impl).selectionRange;
     }
 
     public void setSelectionRange(Point value) {
         ((DartStyledText) impl).selectionRange = value;
-    }
-
-    @JsonAttribute(ignore = true)
-    public int[] getSelectionRanges() {
-        return ((DartStyledText) impl).selectionRanges;
-    }
-
-    public void setSelectionRanges(int[] value) {
-        ((DartStyledText) impl).selectionRanges = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -281,7 +266,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).setStyleRanges(value);
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getTabStops() {
         return ((DartStyledText) impl).tabs;
     }
@@ -358,7 +342,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).wordWrap = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getWrapIndent() {
         return ((DartStyledText) impl).getWrapIndent();
     }
@@ -380,11 +363,47 @@ public class VStyledText extends VCanvas {
     public void setRenderer(VStyledTextRenderer value) {
     }
 
+    public int[] getSelectionRanges() {
+        return ((DartStyledText) impl).getSelectionRanges();
+    }
+
+    public void setSelectionRanges(int[] value) {
+    }
+
+    public int[] getCaretOffsets() {
+        return ((DartStyledText) impl).caretOffsets;
+    }
+
+    public void setCaretOffsets(int[] value) {
+    }
+
+    public StyleRange[] getStyles() {
+        return ((DartStyledText) impl).wireStyles();
+    }
+
+    public void setStyles(StyleRange[] value) {
+    }
+
+    public int[] getStyleIndex() {
+        return ((DartStyledText) impl).wireStyleIndex();
+    }
+
+    public void setStyleIndex(int[] value) {
+    }
+
+    public static final String ALIGNMENT = "alignment";
+
     public static final String ALWAYS_SHOW_SCROLL_BARS = "alwaysShowScrollBars";
+
+    public static final String BLOCK_SELECTION = "blockSelection";
+
+    public static final String BLOCK_SELECTION_BOUNDS = "blockSelectionBounds";
 
     public static final String BOTTOM_MARGIN = "bottomMargin";
 
     public static final String CARET_OFFSET = "caretOffset";
+
+    public static final String CARET_OFFSETS = "caretOffsets";
 
     public static final String DOUBLE_CLICK_ENABLED = "doubleClickEnabled";
 
@@ -392,7 +411,13 @@ public class VStyledText extends VCanvas {
 
     public static final String HORIZONTAL_PIXEL = "horizontalPixel";
 
+    public static final String INDENT = "indent";
+
+    public static final String JUSTIFY = "justify";
+
     public static final String LEFT_MARGIN = "leftMargin";
+
+    public static final String LINE_SPACING = "lineSpacing";
 
     public static final String MARGIN_COLOR = "marginColor";
 
@@ -400,11 +425,19 @@ public class VStyledText extends VCanvas {
 
     public static final String RIGHT_MARGIN = "rightMargin";
 
+    public static final String SELECTION = "selection";
+
     public static final String SELECTION_BACKGROUND = "selectionBackground";
 
     public static final String SELECTION_FOREGROUND = "selectionForeground";
 
-    public static final String SELECTION_RANGE = "selectionRange";
+    public static final String SELECTION_RANGES = "selectionRanges";
+
+    public static final String STYLE_INDEX = "styleIndex";
+
+    public static final String STYLES = "styles";
+
+    public static final String TAB_STOPS = "tabStops";
 
     public static final String TABS = "tabs";
 
@@ -416,11 +449,22 @@ public class VStyledText extends VCanvas {
 
     public static final String WORD_WRAP = "wordWrap";
 
+    public static final String WRAP_INDENT = "wrapIndent";
+
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
+            case "alignment":
+                Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
             case "alwaysShowScrollBars":
                 Serializer.writeKeyValue(writer, "alwaysShowScrollBars", getAlwaysShowScrollBars());
+                return;
+            case "blockSelection":
+                Serializer.writeKeyValue(writer, "blockSelection", getBlockSelection());
+                return;
+            case "blockSelectionBounds":
+                Serializer.writeKeyValue(writer, "blockSelectionBounds", getBlockSelectionBounds());
                 return;
             case "bottomMargin":
                 Serializer.writeKeyValue(writer, "bottomMargin", getBottomMargin());
@@ -437,8 +481,17 @@ public class VStyledText extends VCanvas {
             case "horizontalPixel":
                 Serializer.writeKeyValue(writer, "horizontalPixel", getHorizontalPixel());
                 return;
+            case "indent":
+                Serializer.writeKeyValue(writer, "indent", getIndent());
+                return;
+            case "justify":
+                Serializer.writeKeyValue(writer, "justify", getJustify());
+                return;
             case "leftMargin":
                 Serializer.writeKeyValue(writer, "leftMargin", getLeftMargin());
+                return;
+            case "lineSpacing":
+                Serializer.writeKeyValue(writer, "lineSpacing", getLineSpacing());
                 return;
             case "marginColor":
                 Serializer.writeKeyValue(writer, "marginColor", getMarginColor());
@@ -446,14 +499,17 @@ public class VStyledText extends VCanvas {
             case "rightMargin":
                 Serializer.writeKeyValue(writer, "rightMargin", getRightMargin());
                 return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
             case "selectionBackground":
                 Serializer.writeKeyValue(writer, "selectionBackground", getSelectionBackground());
                 return;
             case "selectionForeground":
                 Serializer.writeKeyValue(writer, "selectionForeground", getSelectionForeground());
                 return;
-            case "selectionRange":
-                Serializer.writeKeyValue(writer, "selectionRange", getSelectionRange());
+            case "tabStops":
+                Serializer.writeKeyValue(writer, "tabStops", getTabStops());
                 return;
             case "tabs":
                 Serializer.writeKeyValue(writer, "tabs", getTabs());
@@ -470,8 +526,23 @@ public class VStyledText extends VCanvas {
             case "wordWrap":
                 Serializer.writeKeyValue(writer, "wordWrap", getWordWrap());
                 return;
+            case "wrapIndent":
+                Serializer.writeKeyValue(writer, "wrapIndent", getWrapIndent());
+                return;
             case "renderer":
                 Serializer.writeKeyValue(writer, "renderer", getRenderer());
+                return;
+            case "selectionRanges":
+                Serializer.writeKeyValue(writer, "selectionRanges", getSelectionRanges());
+                return;
+            case "caretOffsets":
+                Serializer.writeKeyValue(writer, "caretOffsets", getCaretOffsets());
+                return;
+            case "styles":
+                Serializer.writeKeyValue(writer, "styles", getStyles());
+                return;
+            case "styleIndex":
+                Serializer.writeKeyValue(writer, "styleIndex", getStyleIndex());
                 return;
         }
         super.writeProperty(writer, key);

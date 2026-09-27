@@ -127,7 +127,8 @@ class PushCopyAllocationTest {
         });
         String json = "\"" + "x".repeat(2 * TEXT_CHARS) + "\"";
         assertThat(client.lastEvent()).isEqualTo(MessageBatch.EVENT);
-        assertThat(client.lastPayload()).isEqualTo("[[\"GC/1/drawText\"," + json + "],[\"GC/1/drawText\"," + json + "]]");
+        // A repeated channel travels as the index of the entry that named it (see MessageBatch).
+        assertThat(client.lastPayload()).isEqualTo("[[\"GC/1/drawText\"," + json + "],[0," + json + "]]");
         assertThat(copies).as("payload copies per push, batch of owned payloads").isLessThan(1.5);
     }
 

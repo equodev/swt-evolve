@@ -11,21 +11,19 @@
 /// per-control forwarding remains the sole path — unchanged.
 bool displayLevelKeyForwardingActive = false;
 
-/// The widget that currently owns the keyboard, or `null` when none does.
-Object? _keyOwningEditor;
+/// The canvas editor (a StyledText) that holds keyboard focus, or `null`.
+Object? _focusedCanvasEditor;
 
-/// True while a focused widget runs its own keyboard pipeline (today: StyledText) and the
-/// top-level handler stays out of its way. The owner must then forward *every* keystroke it sees,
-/// whatever mode it is in: nothing else forwards them.
-bool get focusedEditorHandlesOwnKeys => _keyOwningEditor != null;
+/// True while a canvas editor holds keyboard focus; the browser must then not move DOM focus on
+/// Tab, since the editor's Traverse listeners decide.
+bool get canvasEditorFocused => _focusedCanvasEditor != null;
 
-/// Claims (or releases) keyboard ownership for [editor]. A release only takes effect for the
-/// current owner, so a blur cannot clear the claim a newly focused editor just made — the two
-/// arrive in no guaranteed order.
-void setEditorKeyOwnership(Object editor, bool owns) {
-  if (owns) {
-    _keyOwningEditor = editor;
-  } else if (identical(_keyOwningEditor, editor)) {
-    _keyOwningEditor = null;
+/// Records that [editor] gained or lost focus. A loss only counts for the current holder, so a blur
+/// cannot clear what a newly focused editor just set — the two arrive in no guaranteed order.
+void setCanvasEditorFocus(Object editor, bool focused) {
+  if (focused) {
+    _focusedCanvasEditor = editor;
+  } else if (identical(_focusedCanvasEditor, editor)) {
+    _focusedCanvasEditor = null;
   }
 }

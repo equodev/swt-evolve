@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import '../comm/v_registry.dart';
 import '../gen/control.dart';
 import '../gen/rectangle.dart';
 import '../gen/droptarget.dart';
@@ -19,6 +20,8 @@ import '../impl/focus_requests.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
+import 'utils/perf_marks.dart';
+import 'utils/round_trip_timing.dart';
 import 'utils/hosted_context_menu.dart';
 import '../custom/rich_tooltip.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
@@ -230,6 +233,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _lastMouseMoveMs = now;
       event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
+      // After the send, not around it: this times the round trip the move starts.
+      RoundTripTiming.trace();
     }
   }
 
@@ -292,6 +297,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _lastDragMoveMs = now;
       event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
+      RoundTripTiming.trace();
     }
   }
 
@@ -384,6 +390,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     return null;
   }
+
+  /// Pointers pressed on this control's own scroll bars, which are not forwarded as mouse events:
+  /// a native scroll bar is outside the client area.
+  final Set<int> scrollBarPointers = {};
 
   /// Records the SWT button/count pair a pointer-down carries, chaining consecutive same-button
   /// downs inside the double-click window. Both interaction chromes funnel through here — [wrap]
@@ -606,6 +616,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   Widget wrap(Widget widget) {
+    // Every Control build ends here, so this counts real rebuilds, which a duration mark cannot see.
+    perfCount('${state.swt}.build');
     final hoverDepth = ControlNestingScope.depthOf(context);
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
@@ -670,6 +682,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     widget = Listener(
       onPointerDown: (e) {
+        if (scrollBarPointers.contains(e.pointer)) return;
         takeFocusOnPress();
         registerPointerDown(e);
         if (forwardsControlMouseDown) {
@@ -690,6 +703,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       },
       onPointerUp: (e) {
         forgetDragDetect(e.pointer);
+        if (scrollBarPointers.remove(e.pointer)) return;
         final event = VEvent()
           ..button = swtButton
           ..x = e.localPosition.dx.round()
@@ -698,8 +712,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
         this.widget.sendMouseMouseUp(state, event);
       },
-      onPointerCancel: (e) => forgetDragDetect(e.pointer),
+      onPointerCancel: (e) {
+        forgetDragDetect(e.pointer);
+        scrollBarPointers.remove(e.pointer);
+      },
       onPointerMove: (e) {
+        if (scrollBarPointers.contains(e.pointer)) return;
         maybeSendDragDetect(e);
         final event = VEvent()
           ..x = e.localPosition.dx.round()
@@ -709,14 +727,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       child: MouseRegion(
         onEnter: (e) {
           _lastPointerCrossing = e.localPosition;
-          if (ActiveDragTracker.isSuppressingHover) return;
           HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
         },
         onExit: (e) {
           _lastPointerCrossing = e.localPosition;
           _hoverTimer?.cancel();
           _removeTooltip();
-          if (ActiveDragTracker.isSuppressingHover) return;
           HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
         },
         onHover: (e) {
@@ -826,11 +842,23 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       child: Stack(
         children: [
           child,
-          HostedContextMenu(child: MenuSwt(key: _menuKey, value: menu)),
+          _contextMenuFor(menu),
         ],
       ),
     );
   }
+
+  /// Reuses the widget for the same menu: rebuilding the anchor re-lays out its overlay.
+  Widget _contextMenuFor(VMenu menu) {
+    final channel = VRegistry.channelOf(menu);
+    final held = _contextMenu;
+    if (held != null && held.channel == channel) return held.widget;
+    final widget = HostedContextMenu(child: MenuSwt(key: _menuKey, value: menu));
+    _contextMenu = (channel: channel, widget: widget);
+    return widget;
+  }
+
+  ({String channel, Widget widget})? _contextMenu;
 }
 
 /// Places a tooltip the way the platform does: top-left corner just below and right of the

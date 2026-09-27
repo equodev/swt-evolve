@@ -123,7 +123,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
           if (ready) parentState.notifyGCReady(state as VGC);
-          _drawer.widgetBoundaryKey = parentState.widgetBoundaryKey;
+          _drawer.widgetContext = element;
           return false;
         }
       }
@@ -180,9 +180,13 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         : List.unmodifiable(_snapshot);
     // No shapes to paint over: skip the backdrop, it was redundantly occluding the
     // Control/Canvas's own background (including any inherited backgroundImage).
-    final Widget painted = CustomPaint(
-      size: bounds,
-      painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
+    // Its own layer: what Java paints into a control changes on Java's schedule, not its
+    // neighbours'.
+    final Widget painted = RepaintBoundary(
+      child: CustomPaint(
+        size: bounds,
+        painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
+      ),
     );
     // Expose any text painted via the GC (drawString/drawText) as an aria-label so
     // canvas-drawn controls (e.g. custom buttons) are identifiable in devtools / E2E,

@@ -144,6 +144,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
      *   this.bridge = EmbeddedBridge.of(gcId, dartImage, onImageResult);
      */
     public static GCImageDrawer of(long gcId, Image dartImage, Consumer<java.nio.ByteBuffer> onImageResult) {
+        // One drawer per GC, not per Image: sharing one leaves the sides disagreeing on which is live.
         GCImageDrawer drawer = new GCImageDrawer();
         drawer.initFlutterView(gcId, dartImage, onImageResult);
         return drawer;

@@ -61,7 +61,7 @@ class FrameCoalescingTest {
         assertThat(afterFirst).as("the first change goes out on the turn it happened").isPositive();
 
         for (int i = 1; i <= BURST; i++) {
-            table.setSelection(i % 30);
+            table.setSelection(i % 29);
             FlutterBridge.updateFrame();
         }
         // An order of magnitude, not an exact count: how many frames the burst spans depends on the
@@ -71,7 +71,8 @@ class FrameCoalescingTest {
                 .isLessThan(BURST / 10);
 
         int beforeHeld = framesFor(table);
-        table.setSelection(7);
+        // A value the burst never set: one the client already holds is rightly not sent again.
+        table.setSelection(29);
         FlutterBridge.updateFrame();
         Thread.sleep(PAST_THE_FRAME_MS);
         FlutterBridge.updateFrame();

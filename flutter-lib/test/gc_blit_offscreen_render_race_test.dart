@@ -34,11 +34,9 @@ Uint8List _frame(String actionId, List<int> body) {
 
 List<int> _json(Object o) => utf8.encode(jsonEncode(o));
 
-/// What GCImageDrawer.endDrawCycle puts on the wire: the ref, then the "send the pixels back" flag.
-List<int> _gcDisposeBody(int ref, {bool wantPixels = false}) =>
-    (ByteData(9)..setInt64(0, ref, Endian.big)..setUint8(8, wantPixels ? 1 : 0))
-        .buffer
-        .asUint8List();
+/// The gcDispose body GCImageDrawer.endDrawCycle puts on the wire.
+List<int> _gcDisposeBody(int ref, {bool wantPixels = false, bool retain = false}) =>
+    _json({'ref': ref, 'pixels': wantPixels, 'retain': retain});
 
 List<int> _refBody(int ref) =>
     (ByteData(8)..setInt64(0, ref, Endian.big)).buffer.asUint8List();
@@ -140,9 +138,11 @@ void main() {
     final rasters = _rasterShapes(committed);
     expect(rasters, isNotEmpty,
         reason: 'the blit must reach the scene as a raster shape');
-    expect(rasters.single.image, isNotNull,
+    // An unread render stays a picture; either form paints the figure, neither is a blank canvas.
+    final blit = rasters.single;
+    expect(blit.image ?? blit.remotePicture, isNotNull,
         reason: 'the blit carries no pixels, so the figure is painted only if remoteRef '
-            '$ref resolved to the off-screen render; a null image is a blank canvas');
-    expect(rasters.single.destRect, const Rect.fromLTWH(5, 9, 40, 30));
+            '$ref resolved to the off-screen render; carrying neither is a blank canvas');
+    expect(blit.destRect, const Rect.fromLTWH(5, 9, 40, 30));
   });
 }

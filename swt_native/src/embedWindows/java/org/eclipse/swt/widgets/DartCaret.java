@@ -377,9 +377,13 @@ public class DartCaret extends DartWidget implements ICaret {
         if (samePosition && sameExtent && isCurrentCaret())
             return;
         this.x = x;
+        getValue().markDirty(VCaret.BOUNDS);
         this.y = y;
+        getValue().markDirty(VCaret.BOUNDS);
         this.width = width;
+        getValue().markDirty(VCaret.BOUNDS);
         this.height = height;
+        getValue().markDirty(VCaret.BOUNDS);
         if (sameExtent) {
             moved = true;
             if (isVisible && hasFocus())
@@ -470,6 +474,7 @@ public class DartCaret extends DartWidget implements ICaret {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.image = image;
+        getValue().markDirty(VCaret.BOUNDS);
         if (isVisible && hasFocus())
             resize();
     }
@@ -498,7 +503,9 @@ public class DartCaret extends DartWidget implements ICaret {
         if (this.x == x && this.y == y && isCurrentCaret())
             return;
         this.x = x;
+        getValue().markDirty(VCaret.BOUNDS);
         this.y = y;
+        getValue().markDirty(VCaret.BOUNDS);
         moved = true;
         if (isVisible && hasFocus())
             move();
@@ -547,7 +554,9 @@ public class DartCaret extends DartWidget implements ICaret {
         if (this.width == width && this.height == height && isCurrentCaret())
             return;
         this.width = width;
+        getValue().markDirty(VCaret.BOUNDS);
         this.height = height;
+        getValue().markDirty(VCaret.BOUNDS);
         resized = true;
         if (isVisible && hasFocus())
             resize();

@@ -184,6 +184,30 @@ class DiffFrameTest {
         assertThat(Serializer.canDiff(impl)).isFalse();
     }
 
+    @Test
+    @DisplayName("a change back to what an update sent, after a whole description, is sent")
+    void changeBackAfterAWholeDescriptionIsSent() {
+        Label label = newLabel();
+        DartLabel impl = (DartLabel) label.getImpl();
+        sendWhole(label);
+
+        label.setText("A");
+        serializer.toDiff(impl);
+        Serializer.markDelivered();
+        // Sent whole, so the client now holds "B".
+        label.setText("B");
+        sendWhole(label);
+
+        label.setText("A");
+        byte[] diff = serializer.toDiff(impl);
+
+        assertThat(diff)
+                .as("the client holds B; skipping A as a repeat of the last update left a resized "
+                        + "tree drawn at the size the whole description carried")
+                .isNotNull();
+        assertThat(new String(diff, StandardCharsets.UTF_8)).contains("\"text\":\"A\"");
+    }
+
     // ---- harness ----
 
     /** Sends the widget whole and returns the stamp that state carries. */
@@ -203,6 +227,64 @@ class DiffFrameTest {
         int end = at;
         while (end < json.length() && Character.isDigit(json.charAt(end))) end++;
         return Long.parseLong(json.substring(at, end));
+    }
+
+    @Test
+    @DisplayName("a property changed back to what the client holds is not sent at all")
+    void aChangeThatIsNotADifferenceIsDropped() {
+        Label label = newLabel();
+        DartLabel impl = (DartLabel) label.getImpl();
+        sendWhole(label);
+        // The diff baseline is recorded when a property is sent as a change, so this one travels.
+        label.setText("settled");
+        assertThat(serializer.toDiff(impl)).isNotNull();
+
+        // As a layout pass does to bounds: dirty, but equal to the baseline by the flush.
+        label.setText("mid");
+        label.setText("settled");
+
+        assertThat(serializer.toDiff(impl))
+                .as("nothing the client does not hold, so no frame: the message is the whole cost")
+                .isNull();
+        assertThat(impl.getValue().anyDirty())
+                .as("and it stops being dirty, or it is reconsidered on every later flush")
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("a real change is still sent")
+    void aRealDifferenceStillTravels() {
+        Label label = newLabel();
+        DartLabel impl = (DartLabel) label.getImpl();
+        sendWhole(label);
+
+        label.setText("mid");
+        label.setText("after");
+
+        String diff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
+        assertThat(diff).contains("\"_d\":[\"text\"]").contains("\"after\"");
+    }
+
+    @Test
+    @DisplayName("a dropped update leaves the write stamp where it was")
+    void droppingAnUpdateDoesNotMoveTheBase() {
+        Label label = newLabel();
+        DartLabel impl = (DartLabel) label.getImpl();
+        sendWhole(label);
+        label.setText("settled");
+        serializer.toDiff(impl);
+        Serializer.markDelivered();
+        long sentAt = impl.getValue().sentSeq(CLIENT);
+
+        label.setText("mid");
+        label.setText("settled");
+        assertThat(serializer.toDiff(impl)).isNull();
+
+        label.setText("after");
+        String diff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
+        assertThat(diff)
+                .as("the next real update is still measured from the last frame the client received")
+                .contains("\"_b\":" + sentAt);
     }
 
     private Label newLabel() {

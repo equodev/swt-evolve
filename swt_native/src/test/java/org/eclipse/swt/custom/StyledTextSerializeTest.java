@@ -31,22 +31,32 @@ class StyledTextSerializeTest extends SerializeTestBase {
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("alwaysShowScrollBars").equalsTo(w.getAlwaysShowScrollBars(), orAbsentIfFalse));
+        assertJ.satisfies(node("blockSelection").equalsTo(w.getBlockSelection(), orAbsentIfFalse));
+        assertJ.satisfies(node("blockSelectionBounds").equalsTo(value(w).getBlockSelectionBounds(), orAbsentIfNull));
         assertJ.satisfies(node("bottomMargin").equalsTo(w.getBottomMargin(), orAbsentIf0));
         assertJ.satisfies(node("caretOffset").equalsTo(w.getCaretOffset(), orAbsentIf0));
         assertJ.satisfies(node("doubleClickEnabled").equalsTo(w.getDoubleClickEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("editable").equalsTo(w.getEditable(), orAbsentIfFalse));
         assertJ.satisfies(node("horizontalPixel").equalsTo(w.getHorizontalPixel(), orAbsentIf0));
+        assertJ.satisfies(node("indent").equalsTo(w.getIndent(), orAbsentIf0));
+        assertJ.satisfies(node("justify").equalsTo(w.getJustify(), orAbsentIfFalse));
         assertJ.satisfies(node("leftMargin").equalsTo(w.getLeftMargin(), orAbsentIf0));
+        assertJ.satisfies(node("lineSpacing").equalsTo(w.getLineSpacing(), orAbsentIf0));
         assertJ.satisfies(node("marginColor").equalsTo(w.getMarginColor(), orAbsentIfNull));
         assertJ.satisfies(node("rightMargin").equalsTo(w.getRightMargin(), orAbsentIf0));
+        assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("selectionBackground").equalsTo(w.getSelectionBackground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
-        assertJ.satisfies(node("selectionRange").equalsTo(value(w).getSelectionRange(), orAbsentIfNull));
+        assertJ.satisfies(node("selectionRanges").equalsTo(w.getSelectionRanges(), orAbsentIfNull));
+        assertJ.satisfies(node("tabStops").equalsTo(w.getTabStops(), orAbsentIfNull));
         assertJ.satisfies(node("tabs").equalsTo(w.getTabs(), orAbsentIf0));
         assertJ.satisfies(node("topMargin").equalsTo(w.getTopMargin(), orAbsentIf0));
         assertJ.satisfies(node("topPixel").equalsTo(w.getTopPixel(), orAbsentIf0));
         assertJ.satisfies(node("wordWrap").equalsTo(w.getWordWrap(), orAbsentIfFalse));
+        assertJ.satisfies(node("wrapIndent").equalsTo(w.getWrapIndent(), orAbsentIf0));
+        assertJ.satisfies(node("caret").equalsTo(w.getCaret(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));

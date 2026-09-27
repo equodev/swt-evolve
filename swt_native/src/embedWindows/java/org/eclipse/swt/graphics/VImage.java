@@ -119,10 +119,7 @@ public class VImage extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartImage.class, (JsonWriter.WriteObject<DartImage>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
+                Serializer.writeResourceWithReference(json, writer, impl);
             });
             json.registerReader(DartImage.class, (JsonReader.ReadObject<DartImage>) reader -> {
                 return null;

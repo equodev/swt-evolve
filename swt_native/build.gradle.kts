@@ -316,6 +316,8 @@ sourceSets {
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
+            // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
+            if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
@@ -468,6 +470,9 @@ val handWrittenInGeneratedTrees = listOf(
     "**/WidgetSpy.java",
     "**/MacApplicationMenu.java",
     "**/MacMenuBar.java",
+    "**/TextLayoutMeasurement.java",
+    "**/StyledTextMeasurements.java",
+    "**/ImeHelper.java",
 )
 
 // The oldest JDK any enabled release runs on. Hand-written code is shared by every one of them, so
@@ -694,6 +699,9 @@ tasks.test {
         dependsOn("webFlutterLib")
     systemProperty("harness.client", "web")
     systemProperty("dev.equo.swt.loadLibrary", "false")
+    // An exception in a Display runnable must fail the test that caused it; the crash dialog's
+    // modal loop would instead block the run until the task times out.
+    systemProperty("dev.equo.swt.crashReport.disabled", "true")
     systemProperty("dev.equo.swt.mode", if (chromiumMode) "chromium" else "web")
     // The Browser scripting / same-origin cases (evaluate, BrowserFunction,
     // Title/StatusText, redirect) need the iframe content to be same-origin,
@@ -715,7 +723,8 @@ tasks.test {
     // fontsize.seed: FontSizeTest fuzzes over random sizes and texts and prints the seed it used,
     // so a red run can be repeated with -Dfontsize.seed=<the printed value>. Read in the test JVM,
     // so it has to be forwarded rather than left on the Gradle one.
-    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "fontsize.seed")
+    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "fontsize.seed",
+        "dev.equo.swt.debug")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the

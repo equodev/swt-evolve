@@ -20,9 +20,8 @@ import static org.mockito.Mockito.doAnswer;
 /**
  * A VerifyListener may <em>rewrite</em> the text of an edit, not just veto it: JFace runs every
  * {@code IAutoEditStrategy} inside {@code TextViewer.verifyText} and hands the result back through
- * {@code VerifyEvent.text} (auto-indent, bracket auto-close, tabs-to-spaces). The Flutter editor
- * applies the keystroke optimistically and forwards it as a Modify, so the rewritten text — and the
- * caret position it implies — is only known after the widget has run its Verify listeners.
+ * {@code VerifyEvent.text} (auto-indent, bracket auto-close, tabs-to-spaces). The client only
+ * forwards the key; the widget applies the edit.
  */
 @ExtendWith(Mocks.class)
 class StyledTextAutoIndentVerifyTest {
@@ -83,16 +82,12 @@ class StyledTextAutoIndentVerifyTest {
         }
     }
 
-    /**
-     * The Modify the Flutter editor sends after applying a keystroke locally: a range replacement
-     * carrying only what the render side inserted.
-     */
-    private void fireFlutterModify(StyledText st, int start, int end, String text) {
+    private void pressEnterFromFlutter(StyledText st, int caret) {
+        st.setCaretOffset(caret);
         Event e = new Event();
-        e.start = start;
-        e.end = end;
-        e.text = text;
-        bridge.comm.fireContaining("/" + st.hashCode() + "/Modify/Modify", e);
+        e.keyCode = SWT.CR;
+        e.character = SWT.CR;
+        bridge.comm.fireContaining("/" + st.hashCode() + "/Key/KeyDown", e);
         pumpAsync();
     }
 
@@ -122,7 +117,7 @@ class StyledTextAutoIndentVerifyTest {
         StyledText st = styledText();
         installAutoIndent(st);
 
-        fireFlutterModify(st, 15, 15, "\n");
+        pressEnterFromFlutter(st, 15);
 
         assertThat(st.getText())
                 .as("the auto-indent strategy's rewrite must be the text the document keeps")
@@ -130,12 +125,12 @@ class StyledTextAutoIndentVerifyTest {
     }
 
     @Test
-    @DisplayName("the caret follows the rewritten text, not the keystroke the client sent")
+    @DisplayName("the caret follows the rewritten text, not the keystroke")
     void caretFollowsRewrittenText() {
         StyledText st = styledText();
         installAutoIndent(st);
 
-        fireFlutterModify(st, 15, 15, "\n");
+        pressEnterFromFlutter(st, 15);
 
         assertThat(st.getCaretOffset())
                 .as("the new line carries one tab, so the caret belongs after it (17), not "

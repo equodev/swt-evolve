@@ -8,6 +8,22 @@ import org.eclipse.swt.graphics.Point;
 
 public class ComboHelper {
 
+    /** Asks the Segments listeners for the segments of {@code text}; the separators are not drawn. */
+    public static void sendSegments(DartCombo combo, String text) {
+        if (combo.isDisposed() || text == null || (!combo.hooks(SWT.Segments) && !combo.filters(SWT.Segments)))
+            return;
+        Event event = new Event();
+        event.text = text;
+        combo.sendEvent(SWT.Segments, event);
+        int[] segments = event.segments;
+        if (segments == null)
+            return;
+        for (int i = 1; i < segments.length; i++) {
+            if (segments[i] < segments[i - 1] || segments[i] > text.length())
+                combo.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+    }
+
     public static void copy(DartCombo combo) {
         if ((combo.getApi().style & SWT.PASSWORD) != 0)
             return;

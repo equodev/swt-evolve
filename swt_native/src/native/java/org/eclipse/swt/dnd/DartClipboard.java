@@ -296,6 +296,9 @@ public class DartClipboard implements IClipboard {
         if (transfer == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         int type = (clipboards & DND.CLIPBOARD) != 0 ? DND.CLIPBOARD : DND.SELECTION_CLIPBOARD;
+        if (type == DND.CLIPBOARD && transfer instanceof TextTransfer) {
+            _syncTextFromSystemClipboard();
+        }
         Object[] data = _webClipboardData.get(type);
         Transfer[] transfers = _webClipboardTransfers.get(type);
         if (data == null || transfers == null)
@@ -642,16 +645,41 @@ public class DartClipboard implements IClipboard {
         return false;
     }
 
-    private static void _writeTextToSystemClipboard(Object[] data, Transfer[] dataTypes) {
+    private void _writeTextToSystemClipboard(Object[] data, Transfer[] dataTypes) {
+        org.eclipse.swt.widgets.DisplayBridge bridge = _displayBridge();
         for (int i = 0; i < dataTypes.length; i++) {
             if (dataTypes[i] instanceof TextTransfer && data[i] instanceof String) {
-                try {
-                    java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new java.awt.datatransfer.StringSelection((String) data[i]), null);
-                } catch (java.awt.HeadlessException ignored) {
-                }
+                if (bridge != null)
+                    bridge.writeClipboardText((String) data[i]);
+                else
+                    org.eclipse.swt.widgets.DisplayBridge.writeSystemClipboardText((String) data[i]);
                 return;
             }
         }
+    }
+
+    private void _syncTextFromSystemClipboard() {
+        org.eclipse.swt.widgets.DisplayBridge bridge = _displayBridge();
+        String text = bridge == null ? null : bridge.readClipboardText();
+        if (text == null)
+            return;
+        Object[] data = _webClipboardData.get(DND.CLIPBOARD);
+        Transfer[] transfers = _webClipboardTransfers.get(DND.CLIPBOARD);
+        if (data != null && transfers != null) {
+            for (int i = 0; i < transfers.length; i++) {
+                if (transfers[i] instanceof TextTransfer && text.equals(data[i]))
+                    return;
+            }
+        }
+        _webClipboardData.put(DND.CLIPBOARD, new Object[] { text });
+        _webClipboardTransfers.put(DND.CLIPBOARD, new Transfer[] { TextTransfer.getInstance() });
+    }
+
+    private org.eclipse.swt.widgets.DisplayBridge _displayBridge() {
+        if (display == null || !(display.getImpl() instanceof org.eclipse.swt.widgets.DartDisplay))
+            return null;
+        Object bridge = ((org.eclipse.swt.widgets.DartDisplay) display.getImpl()).getDisplayBridge();
+        return bridge instanceof org.eclipse.swt.widgets.DisplayBridge ? (org.eclipse.swt.widgets.DisplayBridge) bridge : null;
     }
 
     public Clipboard getApi() {

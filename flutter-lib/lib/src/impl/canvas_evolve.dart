@@ -235,7 +235,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
           );
         }
       },
-      child: _wrapWithScrollbars(base),
+      child: wrapWithScrollbars(base),
     );
 
     if (hasActiveChildren) return content;
@@ -377,7 +377,14 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  Widget _wrapWithScrollbars(Widget base) {
+  /// Claims presses on the bar so the control does not also take them (see [scrollBarPointers]).
+  Widget _claimsPointers(Widget bar) => Listener(
+        onPointerDown: (e) => scrollBarPointers.add(e.pointer),
+        child: bar,
+      );
+
+  /// [onWheel], when given, replaces the default wheel handling.
+  Widget wrapWithScrollbars(Widget base, {void Function(PointerScrollEvent event)? onWheel}) {
     final hBar = state.horizontalBar;
     final vBar = state.verticalBar;
     final showHBar = hBar != null && hBar.visible != false && _isScrollable(hBar);
@@ -386,7 +393,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     if (!showVBar && !showHBar) {
       return Listener(
         onPointerSignal: (event) {
-          if (event is PointerScrollEvent) {
+          if (event is PointerScrollEvent && onWheel != null) {
+            onWheel(event);
+          } else if (event is PointerScrollEvent) {
             widget.sendMouseWheelMouseWheel(
               state,
               VEvent()
@@ -420,7 +429,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final hasActiveChild = state.children != null && state.children!.isNotEmpty;
     return Listener(
       onPointerSignal: (event) {
-        if (event is PointerScrollEvent) {
+        if (event is PointerScrollEvent && onWheel != null) {
+          onWheel(event);
+        } else if (event is PointerScrollEvent) {
           final now = DateTime.now().millisecondsSinceEpoch;
           if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
             _handleMouseWheel(event);
@@ -436,7 +447,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
               right: 0,
               bottom: showHBar ? _kBarSize : 0,
               width: _kBarSize,
-              child: _CanvasScrollBar(
+              child: _claimsPointers(_CanvasScrollBar(
                 bar: vBar!,
                 vertical: true,
                 onSelection: _sendSelection,
@@ -445,7 +456,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
                   _isSnapping = false;
                   setState(() => _localVScrollPx = px);
                 },
-              ),
+              )),
             ),
           if (showHBar)
             Positioned(
@@ -453,7 +464,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
               right: showVBar ? _kBarSize : 0,
               bottom: 0,
               height: _kBarSize,
-              child: _CanvasScrollBar(
+              child: _claimsPointers(_CanvasScrollBar(
                 bar: hBar!,
                 vertical: false,
                 onSelection: _sendSelection,
@@ -462,7 +473,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
                   _isSnapping = false;
                   setState(() => _localHScrollPx = px);
                 },
-              ),
+              )),
             ),
           if (showVBar && showHBar)
             Positioned(
@@ -470,8 +481,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
               bottom: 0,
               width: _kBarSize,
               height: _kBarSize,
+              // The corner between the bars is no more the client area than the bars are.
               child: Listener(
                 behavior: HitTestBehavior.opaque,
+                onPointerDown: (e) => scrollBarPointers.add(e.pointer),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -510,6 +523,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return max - min > thumb;
   }
 
+  void sendScrollBarSelection(VScrollBar bar, int newValue, int detail) =>
+      _sendSelection(bar, newValue, detail);
+
   void _sendSelection(VScrollBar bar, int newValue, int detail) {
     EquoCommService.sendPayload(
       "ScrollBar/${bar.id}/Selection/Selection",
@@ -531,11 +547,12 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
   }
 
+  /// Also reads the long key spellings, so an unabbreviated payload is not taken for opaque black.
   Color rgbMapToColor(Map<String, dynamic> m) => Color.fromARGB(
-    (m['alpha'] ?? 255) as int,
-    (m['red'] ?? 0) as int,
-    (m['green'] ?? 0) as int,
-    (m['blue'] ?? 0) as int,
+    (m['a'] ?? m['alpha'] ?? 255) as int,
+    (m['r'] ?? m['red'] ?? 0) as int,
+    (m['g'] ?? m['green'] ?? 0) as int,
+    (m['b'] ?? m['blue'] ?? 0) as int,
   );
 }
 
@@ -551,6 +568,24 @@ double _confine(double value, double lo, double hi) {
   if (hi <= 0) return 0;
   if (hi <= lo) return hi;
   return value.clamp(lo, hi);
+}
+
+/// The selection that puts a scroll bar's thumb centred on [at], a position along its track;
+/// null when the bar has nowhere to go.
+@visibleForTesting
+int? scrollBarSelectionAt(
+  double at, {
+  required double trackSize,
+  required double thumbSize,
+  required int minimum,
+  required int maximum,
+  required int thumb,
+}) {
+  final scrollRange = maximum - minimum - thumb;
+  final travel = trackSize - thumbSize;
+  if (scrollRange <= 0 || travel <= 0) return null;
+  final offset = (at - thumbSize / 2).clamp(0.0, travel);
+  return (minimum + offset / travel * scrollRange).round().clamp(minimum, maximum - thumb);
 }
 
 class _CanvasScrollBar extends StatefulWidget {
@@ -651,8 +686,9 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   void _onDragStart(DragStartDetails details) {
     _dragStartPointerOffset =
         widget.vertical ? details.localPosition.dy : details.localPosition.dx;
-    _dragStartSelection = _selection;
-    _currentDragSelection = _selection;
+    // From where the thumb is shown, which a press on the track may already have moved.
+    _dragStartSelection = _displaySelection;
+    _currentDragSelection = _displaySelection;
     widget.onDragPixelDelta?.call(0.0);
     widget.onDragStateChanged?.call(true);
     _showBar();
@@ -677,6 +713,26 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
       final sel = _currentDragSelection;
       if (sel != null) widget.onSelection(widget.bar, sel, 0);
     });
+  }
+
+  /// Centres the thumb under a track press, so a drag that follows carries on from there.
+  void _onTrackPress(PointerDownEvent event, double trackSize) {
+    if (event.buttons != kPrimaryButton) return;
+    final at = widget.vertical ? event.localPosition.dy : event.localPosition.dx;
+    final thumbOff = _thumbOffset(trackSize);
+    if (at >= thumbOff && at <= thumbOff + _thumbSize(trackSize)) return;
+    final target = scrollBarSelectionAt(
+      at,
+      trackSize: trackSize,
+      thumbSize: _thumbSize(trackSize),
+      minimum: _minimum,
+      maximum: _maximum,
+      thumb: _thumb,
+    );
+    if (target == null || target == _displaySelection) return;
+    setState(() => _currentDragSelection = target);
+    _showBar();
+    widget.onSelection(widget.bar, target, 0);
   }
 
   void _onDragEnd(DragEndDetails details) {
@@ -733,6 +789,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
         );
 
         return MouseRegion(
+          // The platform arrow, whatever cursor the owning control shows.
+          cursor: SystemMouseCursors.basic,
           onEnter: (_) {
             setState(() => _hovered = true);
             _showBar();
@@ -741,31 +799,34 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
             setState(() => _hovered = false);
             _scheduleHide();
           },
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onVerticalDragStart: (widget.vertical && enabled) ? _onDragStart : null,
-            onVerticalDragUpdate: (widget.vertical && enabled)
-                ? (d) => _onDragUpdate(d, trackSize)
-                : null,
-            onVerticalDragEnd:
-                (widget.vertical && enabled) ? (d) => _onDragEnd(d) : null,
-            onVerticalDragCancel:
-                (widget.vertical && enabled) ? _onDragCancel : null,
-            onHorizontalDragStart:
-                (!widget.vertical && enabled) ? _onDragStart : null,
-            onHorizontalDragUpdate: (!widget.vertical && enabled)
-                ? (d) => _onDragUpdate(d, trackSize)
-                : null,
-            onHorizontalDragEnd:
-                (!widget.vertical && enabled) ? (d) => _onDragEnd(d) : null,
-            onHorizontalDragCancel:
-                (!widget.vertical && enabled) ? _onDragCancel : null,
-            child: AnimatedOpacity(
-              opacity: _opacity,
-              duration: const Duration(milliseconds: 200),
-              child: CustomPaint(
-                painter: painter,
-                size: Size(constraints.maxWidth, constraints.maxHeight),
+          child: Listener(
+            onPointerDown: enabled ? (e) => _onTrackPress(e, trackSize) : null,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onVerticalDragStart: (widget.vertical && enabled) ? _onDragStart : null,
+              onVerticalDragUpdate: (widget.vertical && enabled)
+                  ? (d) => _onDragUpdate(d, trackSize)
+                  : null,
+              onVerticalDragEnd:
+                  (widget.vertical && enabled) ? (d) => _onDragEnd(d) : null,
+              onVerticalDragCancel:
+                  (widget.vertical && enabled) ? _onDragCancel : null,
+              onHorizontalDragStart:
+                  (!widget.vertical && enabled) ? _onDragStart : null,
+              onHorizontalDragUpdate: (!widget.vertical && enabled)
+                  ? (d) => _onDragUpdate(d, trackSize)
+                  : null,
+              onHorizontalDragEnd:
+                  (!widget.vertical && enabled) ? (d) => _onDragEnd(d) : null,
+              onHorizontalDragCancel:
+                  (!widget.vertical && enabled) ? _onDragCancel : null,
+              child: AnimatedOpacity(
+                opacity: _opacity,
+                duration: const Duration(milliseconds: 200),
+                child: CustomPaint(
+                  painter: painter,
+                  size: Size(constraints.maxWidth, constraints.maxHeight),
+                ),
               ),
             ),
           ),

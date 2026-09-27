@@ -55,6 +55,27 @@ public class TextHelper {
         }
     }
 
+    /**
+     * Asks the Segments listeners for the segments of the current text, as GTK does after every edit.
+     * The separators are not drawn: the rendered text is the text without them.
+     */
+    public static void sendSegments(DartText text) {
+        if (text.isDisposed() || (!text.hooks(SWT.Segments) && !text.filters(SWT.Segments)))
+            return;
+        String string = text.getText();
+        Event event = new Event();
+        event.text = string;
+        event.segments = text.segments;
+        text.sendEvent(SWT.Segments, event);
+        text.segments = event.segments;
+        if (text.segments == null)
+            return;
+        for (int i = 1; i < text.segments.length; i++) {
+            if (text.segments[i] < text.segments[i - 1] || text.segments[i] > string.length())
+                text.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+    }
+
     public static void applySegments(DartText text) {
         /*
          * It is possible (but unlikely), that application code could have

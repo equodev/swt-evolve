@@ -981,21 +981,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Color getBackground() {
         checkWidget();
-        if (this._background != null) {
-            return this._background;
-        }
-        //                if (backgroundAlpha != 0) {
-        //                    Control control = findBackgroundControl();
-        //                    if (control == null)
-        //                        control = this.getApi();
-        //                    if (control != null && control != this.getApi()) {
-        //                        return control.getImpl().getBackgroundColor();
-        //                    }
-        //                }
-        if (parent != null) {
-            return parent.getImpl().getBackgroundColor();
-        }
-        return defaultBackground();
+        Color explicit = getExplicitBackground();
+        return explicit != null ? explicit : defaultBackground();
     }
 
     public Color getBackgroundColor() {
@@ -4202,7 +4189,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 FlutterBridge bridge = getBridge();
                 boolean hadFocus = bridge != null && bridge.hasFocus(this);
                 if (bridge != null)
-                    bridge.setFocus(this);
+                    bridge.clientFocused(this);
                 if (!hadFocus) {
                     sendFocusEvent(SWT.FocusIn);
                     ControlHelper.sendActivateToAncestors(this);
@@ -4324,7 +4311,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.MouseWheel, e);
+                ControlHelper.handleMouseWheel(this, e);
             });
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {

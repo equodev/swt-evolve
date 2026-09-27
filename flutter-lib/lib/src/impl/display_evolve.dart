@@ -1,3 +1,5 @@
+import 'utils/composed_text_input.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
@@ -59,6 +61,32 @@ class _DisplaySwtState extends State<DisplaySwt> {
     displayLevelKeyForwardingActive = true;
     _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
+    _listenToClipboardRequests();
+  }
+
+  /// The browser's clipboard is the user's: Java writes it on a copy and reads it on a paste.
+  void _listenToClipboardRequests() {
+    final id = widget.value.id;
+    EquoCommService.onRaw('Display/$id/Clipboard/write', (args) {
+      final text = _decode(args)?['text'];
+      if (text is String) Clipboard.setData(ClipboardData(text: text));
+    });
+    EquoCommService.onRaw('Display/$id/Clipboard/read', (args) async {
+      final reqId = _decode(args)?['reqId'];
+      String? text;
+      try {
+        text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+      } catch (_) {
+        text = null;
+      }
+      EquoCommService.sendPayload(
+          'Display/$id/Clipboard/contents', {'reqId': reqId, 'text': text});
+    });
+  }
+
+  static Map<String, dynamic>? _decode(dynamic args) {
+    final decoded = args is String ? jsonDecode(args) : args;
+    return decoded is Map<String, dynamic> ? decoded : null;
   }
 
   @override
@@ -73,12 +101,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
   /// Returns false so the keystroke still reaches Flutter's own widgets (text editing, tree
   /// navigation, etc.) — this only mirrors the key to SWT, it never consumes it.
   bool _forwardKeyToSwt(KeyEvent event) {
-    // A focused editor that runs its own keyboard pipeline (StyledText) forwards its own events;
-    // staying out entirely avoids racing its per-key editing/content sync. It still reaches Display
-    // filters through its own forwarding.
-    if (focusedEditorHandlesOwnKeys) return false;
     final int id = widget.value.id ?? 0;
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
+      if (compositionOwnsKey(event.character ?? '')) return false;
       final v = mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
         EquoCommService.sendPayload('Display/$id/Key/KeyDown', v);
@@ -305,10 +331,11 @@ class _DisplaySwtState extends State<DisplaySwt> {
       return WindowOriginScope(
         origin: mainOrigin,
         child: Stack(children: [
+        // Each window on its own layer, so a repaint inside one shell does not repaint the others.
         for (final s in mainShells)
           KeyedSubtree(
             key: ValueKey(s.id),
-            child: Positioned.fill(child: gen.mapWidgetFromValue(s)),
+            child: Positioned.fill(child: RepaintBoundary(child: gen.mapWidgetFromValue(s))),
           ),
         for (final popup in (_display.popups ?? []))
           KeyedSubtree(

@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -296,6 +297,9 @@ public class DartCanvas extends DartComposite implements ICanvas {
      */
     public void setCaret(Caret caret) {
         checkWidget();
+        if (!java.util.Objects.equals(this.caret, caret)) {
+            getValue().markDirty(VCanvas.CARET);
+        }
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
         this.caret = newCaret;
@@ -358,18 +362,13 @@ public class DartCanvas extends DartComposite implements ICanvas {
     }
 
     @Override
-    public Color getBackground() {
-        checkWidget();
-        return _background != null ? _background : defaultBackground();
-    }
-
-    @Override
     Color defaultBackground() {
         return ((DartDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
     }
 
     protected void _hookEvents() {
         super._hookEvents();
+        ImeHelper.hookComposition(this);
     }
 
     public Canvas getApi() {

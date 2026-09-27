@@ -564,6 +564,7 @@ public class DartTree extends DartComposite implements ITree {
             event.detail = 0;
             sendEvent(SWT.EmptinessChanged, event);
         }
+        getValue().markDirty(VTree.ITEMS);
     }
 
     @Override
@@ -783,6 +784,7 @@ public class DartTree extends DartComposite implements ITree {
             event.detail = 1;
             sendEvent(SWT.EmptinessChanged, event);
         }
+        getValue().markDirty(VTree.ITEMS);
     }
 
     @Override
@@ -1448,6 +1450,7 @@ public class DartTree extends DartComposite implements ITree {
         ignoreSelect = true;
         ignoreSelect = false;
         setScrollWidth();
+        getValue().markDirty(VTree.ITEMS);
     }
 
     /**

@@ -493,7 +493,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        return 0;
+        return imageIndent;
     }
 
     @Override

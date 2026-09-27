@@ -615,7 +615,8 @@ public class DartText extends DartScrollable implements IText {
             line++;
         int lh = (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize("Ag", getFont()).y());
         int x = lineBefore.isEmpty() ? 0 : (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize(lineBefore, getFont()).x());
-        return new Point(x, line * (lh > 0 ? lh : 1));
+        // Relative to the visible area, as the text view scrolls it.
+        return new Point(x, line * (lh > 0 ? lh : 1) - getTopPixel());
     }
 
     /**

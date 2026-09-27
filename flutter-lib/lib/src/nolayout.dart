@@ -52,7 +52,7 @@ class NoLayout extends StatelessWidget {
       child: CustomMultiChildLayout(
         delegate: _AbsoluteLayoutDelegate(children, composite,
             relayout: VRegistry.instance
-                .changesOn(children.map(VRegistry.channelOf))),
+                .boundsChangesOn(children.map(VRegistry.channelOf))),
         children: [
           for (var child in children.reversed)
             LayoutId(
@@ -135,7 +135,7 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   /// [child] is the widget itself, not a copy of it: the list this delegate was built from holds
   /// the objects the registry holds, so what it reads here is whatever that child was last told —
   /// including by an update the composite never heard about. Keeping up with those is what
-  /// [VRegistry.changesOn] is passed as `relayout` for.
+  /// [VRegistry.boundsChangesOn] is passed as `relayout` for.
   VRectangle? _boundsOf(VControl child) => child.bounds;
 
   /// The declared bounds, grown to at least cover every child's own bottom-right

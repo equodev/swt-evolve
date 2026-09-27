@@ -24,10 +24,10 @@ class ColorSerializeTest extends SerializeTestBase {
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.isNotEmpty();
-        assertJ.satisfies(node("alpha").equalsTo(w.getAlpha(), orAbsentIf0));
-        assertJ.satisfies(node("blue").equalsTo(w.getBlue(), orAbsentIf0));
-        assertJ.satisfies(node("green").equalsTo(w.getGreen(), orAbsentIf0));
-        assertJ.satisfies(node("red").equalsTo(w.getRed(), orAbsentIf0));
+        assertJ.satisfies(node("a").equalsTo(w.getAlpha(), orAbsentIf0));
+        assertJ.satisfies(node("b").equalsTo(w.getBlue(), orAbsentIf0));
+        assertJ.satisfies(node("g").equalsTo(w.getGreen(), orAbsentIf0));
+        assertJ.satisfies(node("r").equalsTo(w.getRed(), orAbsentIf0));
     }
 
     VColor value(Color w) {

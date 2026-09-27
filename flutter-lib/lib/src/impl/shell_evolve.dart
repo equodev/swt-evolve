@@ -602,7 +602,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     return Positioned(
       left: offset.dx,
       top: offset.dy,
-      child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+      child: RepaintBoundary(
+        child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+      ),
     );
   }
 }

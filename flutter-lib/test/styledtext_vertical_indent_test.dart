@@ -36,7 +36,7 @@ TextShape _shape({TextEditingState? editingState, CaretInfo? caret}) =>
       _lineHeight,
     );
 
-TextEditingState _indentLineOne() => const TextEditingState(
+TextEditingState _indentLineOne() => TextEditingState(
   characterRanges: [],
   lineProperties: {1: LineProperties(verticalIndent: _vIndent)},
 );

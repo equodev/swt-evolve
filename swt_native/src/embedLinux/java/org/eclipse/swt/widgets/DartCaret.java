@@ -358,9 +358,13 @@ public class DartCaret extends DartWidget implements ICaret {
         if (isFocus && isVisible)
             hideCaret();
         this.x = x;
+        getValue().markDirty(VCaret.BOUNDS);
         this.y = y;
+        getValue().markDirty(VCaret.BOUNDS);
         this.width = width;
+        getValue().markDirty(VCaret.BOUNDS);
         this.height = height;
+        getValue().markDirty(VCaret.BOUNDS);
         ((DartCanvas) parent.getImpl()).updateCaret();
         if (isFocus && isVisible)
             showCaret();
@@ -443,6 +447,7 @@ public class DartCaret extends DartWidget implements ICaret {
         if (isFocus && isVisible)
             hideCaret();
         this.image = image;
+        getValue().markDirty(VCaret.BOUNDS);
         if (isFocus && isVisible)
             showCaret();
     }

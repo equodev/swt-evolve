@@ -313,7 +313,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     if (e.control != null) {
       final control = e.control!;
       return ListenableBuilder(
-        listenable: VRegistry.instance.changesOn([VRegistry.channelOf(control)]),
+        listenable: VRegistry.instance.boundsChangesOn([VRegistry.channelOf(control)]),
         builder: (context, page) {
           final bounds = control.bounds;
           if (!hasBounds(bounds)) return SizedBox.expand(child: page);

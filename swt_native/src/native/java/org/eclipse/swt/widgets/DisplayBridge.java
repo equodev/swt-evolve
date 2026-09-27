@@ -189,9 +189,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 }
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
-                // Push on the very first ClientReady (it bootstraps the Flutter tree); otherwise only
-                // when something actually changed, so a repeated identical viewport doesn't feed a loop.
-                if (changed || first) sendDisplayUpdate(display);
+                // Only for a client that holds nothing (first ClientReady, or a page refresh): a
+                // viewport change resizes shells, which travel on their own; the Display has no bounds.
+                if (first || p.isFirst) sendDisplayUpdate(display);
             };
             // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
             // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
@@ -204,6 +204,31 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.getThread() == Thread.currentThread()) apply.run();
             else api.asyncExec(apply);
         });
+    }
+
+    public void writeClipboardText(String text) {
+        writeSystemClipboardText(text);
+    }
+
+    /** The JVM's own clipboard, for a Display with no bridge of its own (a test harness injects one). */
+    public static void writeSystemClipboardText(String text) {
+        try {
+            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .setContents(new java.awt.datatransfer.StringSelection(text), null);
+        } catch (java.awt.HeadlessException | IllegalStateException ignored) {
+        }
+    }
+
+    /** Null when there is no text or it cannot be read. */
+    public String readClipboardText() {
+        try {
+            Object data = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .getData(java.awt.datatransfer.DataFlavor.stringFlavor);
+            return data instanceof String ? (String) data : null;
+        } catch (java.awt.HeadlessException | IllegalStateException
+                | java.awt.datatransfer.UnsupportedFlavorException | java.io.IOException ignored) {
+            return null;
+        }
     }
 
     /**
@@ -230,6 +255,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Display api = display.getApi();
         if (api == null || api.isDisposed())
             return;
+        ControlHelper.applyControlCharacter(ev);
         // Arrives on the comm thread; hop to the Display thread like every other inbound event.
         api.asyncExec(() -> {
             if (api.isDisposed())
@@ -240,18 +266,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             DartControl dc = (DartControl) focus.getImpl();
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
-                ev.doit = true;
-                ControlHelper.sendDisplayRoutedKeyDown(dc, ev);
-                if (vetoable) {
+                ControlHelper.RoutedKey routed = ControlHelper.routeKeyDown(dc, ev);
+                // A modifier press edits nothing, so the client holds no proposal for it to answer.
+                if (vetoable && !ControlHelper.isModifierKey(ev.keyCode)) {
                     dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
-                            dev.equo.swt.Java8.map("doit", ev.doit));
+                            dev.equo.swt.Java8.map("doit", routed.delivered && routed.keyDoit));
                 }
-                // Surface the traversal (Tab/arrows/Esc/Enter/Page) as SWT.Traverse too, so a Display
-                // Traverse filter (Eclipse command bindings) and TraverseListeners see it.
-                boolean traverseDoit = ControlHelper.sendFlutterTraverse(dc, ev);
                 // The client traverses at Display level, so the verdict goes there, not to the control.
                 if (ControlHelper.isGatedTraversal(ev)) {
-                    sendDisplayGate(display, "traverse/verdict", "doit", traverseDoit);
+                    sendDisplayGate(display, "traverse/verdict", "doit", routed.traverseDoit);
                 }
             } else {
                 dc.sendEvent(org.eclipse.swt.SWT.KeyUp, ev);
@@ -946,7 +969,44 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             new FocusGate("modify", org.eclipse.swt.SWT.Verify, DartText.class));
 
     @Override
+    public void clientFocused(DartControl widget) {
+        focusRequested = widget;
+        setFocus(widget);
+    }
+
+    /** For each shell, the shell that was active when it became active. */
+    private final java.util.Map<Shell, Shell> activatedFrom = new java.util.WeakHashMap<>();
+    /** The shell focus was last in; kept when the focus is cleared, as a disposing shell's is. */
+    private java.lang.ref.WeakReference<Shell> lastFocusShell = new java.lang.ref.WeakReference<>(null);
+
+    /**
+     * The shell to return to when {@code shell} goes away, or null when it was not the active one:
+     * the shell it took over from, skipping any that are gone or hidden since, as a window manager does.
+     */
+    public Shell shellToReturnTo(Shell shell) {
+        if (lastFocusShell.get() != shell)
+            return null;
+        Shell before = activatedFrom.get(shell);
+        for (int hops = 0; before != null && hops < 64; hops++) {
+            if (before != shell && !before.isDisposed() && before.isVisible())
+                return before;
+            before = activatedFrom.get(before);
+        }
+        return null;
+    }
+
+    private static Shell shellOf(DartControl control) {
+        Control api = control == null ? null : control.getApi();
+        return api == null || api.isDisposed() ? null : api.getShell();
+    }
+
+    @Override
     public boolean setFocus(DartControl widget) {
+        Shell from = shellOf(focused), to = shellOf(widget);
+        if (from != null && to != null && from != to)
+            activatedFrom.put(to, from);
+        if (to != null)
+            lastFocusShell = new java.lang.ref.WeakReference<>(to);
         focused = widget;
         Control api = widget == null ? null : widget.getApi();
         boolean live = api != null && !api.isDisposed();
@@ -985,7 +1045,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Control api = widget == null ? null : widget.getApi();
         if (api == null || api.isDisposed())
             return;
-        if (!isCellEditorControl(api))
+        if (!isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText))
             return;
         if (widget == focusRequested)
             return;
@@ -1010,7 +1070,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * and the cause is the focus move itself rather than the transport (a run with the transport intact
      * and only the move disabled is green). A cell editor is the case the render side genuinely cannot
      * resolve on its own -- it is created, placed and focused inside one event-loop pass, with no user
-     * gesture anywhere -- so it is the one that is honoured until the general case is understood.
+     * gesture anywhere -- so it is the one that is honoured until the general case is understood. A
+     * StyledText is honoured too: an editor is focused by its part's activation, and without the
+     * client's focus it shows no caret and composes no input.
      */
     private static boolean isCellEditorControl(Control control) {
         Composite parent = control.getParent();

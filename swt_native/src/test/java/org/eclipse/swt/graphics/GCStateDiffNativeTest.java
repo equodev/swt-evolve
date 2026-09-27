@@ -1,7 +1,6 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.MessageBatch;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
@@ -56,28 +55,10 @@ class GCStateDiffNativeTest {
     private List<String> stateFrames() {
         String channel = "GC/" + canvas.hashCode();
         List<String> frames = new ArrayList<>();
-        for (RecordingComm.Frame f : bridge.comm.sent) {
-            if (channel.equals(f.event)) {
-                frames.add(f.json);
-            } else if (MessageBatch.EVENT.equals(f.event)) {
-                String entry = "[\"" + channel + "\",";
-                for (int at = f.json.indexOf(entry); at >= 0; at = f.json.indexOf(entry, at + 1)) {
-                    frames.add(objectAt(f.json, at + entry.length()));
-                }
-            }
+        for (String[] entry : dev.equo.swt.harness.BatchEntries.of(bridge.comm.sent)) {
+            if (channel.equals(entry[0])) frames.add(entry[1]);
         }
         return frames;
-    }
-
-    /** The JSON object starting at {@code start}, by brace depth; the frames hold no braces in strings. */
-    private static String objectAt(String json, int start) {
-        int depth = 0;
-        for (int i = start; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (c == '{') depth++;
-            else if (c == '}' && --depth == 0) return json.substring(start, i + 1);
-        }
-        throw new IllegalStateException("unterminated object at " + start);
     }
 
     @Test
@@ -104,7 +85,9 @@ class GCStateDiffNativeTest {
         first.dispose();
         bridge.comm.sent.clear();
 
+        // A description the client already holds is not sent again, so this one has to differ.
         GC second = new GC(canvas);
+        second.setForeground(canvas.getDisplay().getSystemColor(SWT.COLOR_RED));
         second.fillRectangle(0, 0, 10, 10);
         second.dispose();
 

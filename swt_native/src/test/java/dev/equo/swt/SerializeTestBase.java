@@ -437,11 +437,12 @@ public class SerializeTestBase {
                 if (value == def)
                     assertThatJson(n).node(field).isAbsent();
                 else
+                    // Colour keys travel abbreviated (ValueCreator#ShortWireNames).
                     assertThatJson(n).node(field).isObject()
-                            .containsEntry("red", value.getRed())
-                            .containsEntry("green", value.getGreen())
-                            .containsEntry("blue", value.getBlue())
-                            .containsEntry("alpha", value.getAlpha());
+                            .containsEntry("r", value.getRed())
+                            .containsEntry("g", value.getGreen())
+                            .containsEntry("b", value.getBlue())
+                            .containsEntry("a", value.getAlpha());
             };
         }
 
@@ -450,8 +451,10 @@ public class SerializeTestBase {
                 if (value == def)
                     assertThatJson(n).node(field).isAbsent();
                 else
+                    // What the caret is on the wire for: the client paints one of that size.
                     assertThatJson(n).node(field).isObject()
-                            .containsEntry("visible", Boolean.TRUE);
+                            .containsEntry("swt", "Caret")
+                            .containsKey("bounds");
             };
         }
 

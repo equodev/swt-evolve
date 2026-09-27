@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 import 'dart:typed_data';
 
+import '../impl/utils/perf_marks.dart';
+
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import 'comm_api.dart' show CommCallback;
@@ -144,7 +146,29 @@ abstract class EquoCommBase {
     });
   }
 
+  /// Pushes deferred until after the frame, flushed before any other send so Java never sees an
+  /// event ahead of the state it was made against.
+  static final Set<void Function()> _owed = {};
+  static bool _paying = false;
+
+  static void owe(void Function() push) => _owed.add(push);
+
+  static void payOwed() {
+    if (_paying || _owed.isEmpty) return;
+    _paying = true;
+    try {
+      final due = _owed.toList();
+      _owed.clear();
+      for (final push in due) {
+        push();
+      }
+    } finally {
+      _paying = false;
+    }
+  }
+
   void _enqueue(Uint8List frame) {
+    payOwed();
     if (recordSentFrames) _sent.add(frame);
     if (_open) {
       rawSend(frame);
@@ -254,11 +278,42 @@ abstract class EquoCommBase {
     return null;
   }
 
+  /// GC descriptions by name: the sender defines one under `_gd` and refers to it by `_gr` after.
+  final Map<int, Map<String, dynamic>> _gcNames = {};
+
+  /// [payload] with a named GC description filled back in, or unchanged when it carries none.
+  Object? _namedGcState(Object? payload) {
+    if (payload is! Map) return payload;
+    final defined = payload['_gd'];
+    if (defined is int) {
+      final described = Map<String, dynamic>.from(payload.cast<String, dynamic>())
+        ..remove('_gd')
+        ..remove('id');
+      _gcNames[defined] = described;
+      return Map<String, dynamic>.from(payload.cast<String, dynamic>())..remove('_gd');
+    }
+    final named = payload['_gr'];
+    if (named is! int) return payload;
+    final described = _gcNames[named];
+    // An unknown name passes through unchanged rather than dropping the frame's ops.
+    if (described == null) return payload;
+    return <String, dynamic>{...described, 'id': payload['id']};
+  }
+
   Future<void> _applyBatch(List entries) async {
-    for (final entry in entries) {
-      if (entry is! List || entry.length != 2 || entry[0] is! String) continue;
-      final name = entry[0] as String;
-      final delivered = _deliverDecoded(name, entry[1]);
+    // Later entries on a channel carry the index of the entry that spelled it out. Indexed by
+    // position, so a malformed entry leaves a hole instead of shifting later channels.
+    final names = List<String?>.filled(entries.length, null);
+    for (var i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry is! List || entry.length != 2) continue;
+      final first = entry[0];
+      final String? name = first is String
+          ? first
+          : (first is int && first >= 0 && first < i ? names[first] : null);
+      if (name == null) continue;
+      names[i] = name;
+      final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
       if (delivered == null) {
         _hold(name, entry[1]);
       } else {
@@ -316,8 +371,17 @@ abstract class EquoCommBase {
     _enqueueApply(actionId, () => onSuccess(payload));
   }
 
+  /// Action ids whose queue wait is measured every time rather than sampled.
+  static final Set<String> queueTracedActions = {};
+
   void _enqueueApply(String actionId, FutureOr<void> Function() apply) {
+    final queuedAt = perfNow();
     _applyQueue.add(() {
+      if (queueTracedActions.contains(actionId)) {
+        perfSpan('queueWait:$actionId', queuedAt, perfNow());
+      } else {
+        perfSpanSampled('Comm.queueWait', queuedAt, perfNow());
+      }
       try {
         final applied = apply();
         if (applied is Future) {

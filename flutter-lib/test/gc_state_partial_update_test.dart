@@ -30,8 +30,7 @@ void main() {
     EquoCommService.commForTesting.receiveBinary(out);
   }
 
-  Map<String, dynamic> colour(int r, int g, int b) =>
-      {'red': r, 'green': g, 'blue': b, 'alpha': 255};
+  Map<String, dynamic> colour(int r, int g, int b) => {'r': r, 'g': g, 'b': b, 'a': 255};
 
   Map<String, dynamic> clip(int x, int y, int w, int h) =>
       {'x': x, 'y': y, 'width': w, 'height': h};

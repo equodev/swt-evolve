@@ -86,7 +86,7 @@ class GCPatternNativeTest {
         gc.dispose();
 
         assertThat(wire())
-                .contains("\"color1\":{\"alpha\":255,\"blue\":0,\"green\":0,\"red\":255}")
+                .contains("\"color1\":{\"a\":255,\"b\":0,\"g\":0,\"r\":255}")
                 .contains("\"startX\":1.0").contains("\"startY\":2.0")
                 .contains("\"endX\":30.0").contains("\"endY\":40.0");
     }

@@ -125,9 +125,14 @@ class CanvasPaintOpBatchingTest {
         assertThat(gcFrames())
                 .as("frames for a single %d-op paint", OPS_PER_PAINT)
                 .hasSize(1);
-        assertThat(countOccurrences(wire, "drawLineintintintint"))
+        // Counted by payload, as a repeated channel is named once (MessageBatch); y2 because a
+        // zero-valued field is omitted and the first line has x1 = 0.
+        assertThat(countOccurrences(wire, "\"y2\":10"))
                 .as("draw ops that reached the wire")
                 .isEqualTo(OPS_PER_PAINT);
+        assertThat(countOccurrences(wire, "drawLineintintintint"))
+                .as("and the channel they share is named once, not once per op")
+                .isEqualTo(1);
     }
 
     @Test

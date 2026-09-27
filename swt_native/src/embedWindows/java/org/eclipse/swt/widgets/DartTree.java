@@ -637,6 +637,7 @@ public class DartTree extends DartComposite implements ITree {
             event.detail = 0;
             sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
         }
+        getValue().markDirty(VTree.ITEMS);
     }
 
     void createItemToolTips() {

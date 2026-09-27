@@ -42,8 +42,10 @@ VStyledText _styledText({required bool barVisible}) => VStyledText()
     ..width = _width.toInt()
     ..height = _height.toInt());
 
-final Finder _anyScrollbar =
-    find.byWidgetPredicate((w) => w is RawScrollbar, skipOffstage: false);
+// Flutter's scrollbar or the Canvas-drawn one StyledText shares: only whether one is drawn matters.
+final Finder _anyScrollbar = find.byWidgetPredicate(
+    (w) => w is RawScrollbar || w.runtimeType.toString() == '_CanvasScrollBar',
+    skipOffstage: false);
 
 Future<void> _pump(WidgetTester tester, VStyledText value) async {
   await tester.pumpWidget(EvolveApp(

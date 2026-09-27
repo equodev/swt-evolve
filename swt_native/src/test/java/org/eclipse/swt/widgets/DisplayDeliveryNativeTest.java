@@ -186,6 +186,29 @@ class DisplayDeliveryNativeTest {
         return frames.get(frames.size() - 1).json;
     }
 
+    @Test
+    @DisplayName("a reconnecting client is told the Display again, even though nothing changed")
+    void reconnectingClientIsToldTheDisplay() {
+        TestWebBridge web = install();
+        Shell shell = new Shell(display);
+        shell.setVisible(true);
+        assertThat(latestDisplayState(web)).contains("\"id\":" + shell.hashCode());
+
+        // A refreshed page holds nothing: it must be told which shells exist, whatever the previous
+        // client was told.
+        web.sendDisplayUpdate((DartDisplay) display.getImpl());
+        int before = displayFrameCount(web);
+        web.comm.reconnect();
+        web.sendDisplayUpdate((DartDisplay) display.getImpl());
+
+        assertThat(displayFrameCount(web))
+                .as("a reconnected client was told nothing, so it has no shells to draw")
+                .isGreaterThan(before);
+        assertThat(latestDisplayState(web))
+                .as("and what it is told must still describe the shells that exist")
+                .contains("\"id\":" + shell.hashCode());
+    }
+
     private TestWebBridge install() {
         FlutterBridge.set(new RecordingBridge());
         display = new Display();
@@ -197,8 +220,12 @@ class DisplayDeliveryNativeTest {
         return bridge;
     }
 
+    private static int displayFrameCount(TestWebBridge web) {
+        return (int) web.comm.sent.stream().filter(f -> f.event.startsWith("Display/")).count();
+    }
+
     private static final class TestWebBridge extends WebDisplayBridge {
-        final RecordingComm comm = new RecordingComm();
+        final ReconnectableComm comm = new ReconnectableComm();
 
         TestWebBridge(DartDisplay display) {
             super(display);
@@ -212,6 +239,20 @@ class DisplayDeliveryNativeTest {
         @Override
         protected void start(DartDisplay display) {
             registerDisplayClientReady(display);
+        }
+    }
+
+    /** A comm whose client can go away and come back, as a page refresh makes it. */
+    private static final class ReconnectableComm extends RecordingComm {
+        private int connection = 1;
+
+        void reconnect() {
+            connection++;
+        }
+
+        @Override
+        public int connectionId() {
+            return connection;
         }
     }
 }

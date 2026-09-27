@@ -53,6 +53,9 @@ VShell _$VShellFromJson(Map<String, dynamic> json) => VShell()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..caret = json['caret'] == null
+      ? null
+      : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
   ..menuBar = json['menuBar'] == null
       ? null
       : VMenu.fromJson(json['menuBar'] as Map<String, dynamic>)
@@ -92,6 +95,7 @@ Map<String, dynamic> _$VShellToJson(VShell instance) => <String, dynamic>{
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
+  'caret': ?instance.caret,
   'menuBar': ?instance.menuBar,
   'text': ?instance.text,
   'dialogs': ?instance.dialogs,

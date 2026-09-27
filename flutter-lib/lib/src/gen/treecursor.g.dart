@@ -52,7 +52,10 @@ VTreeCursor _$VTreeCursorFromJson(Map<String, dynamic> json) => VTreeCursor()
   ..backgroundMode = (json['backgroundMode'] as num?)?.toInt()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList();
+      .toList()
+  ..caret = json['caret'] == null
+      ? null
+      : VCaret.fromJson(json['caret'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VTreeCursorToJson(VTreeCursor instance) =>
     <String, dynamic>{
@@ -79,4 +82,5 @@ Map<String, dynamic> _$VTreeCursorToJson(VTreeCursor instance) =>
       'verticalBar': ?instance.verticalBar,
       'backgroundMode': ?instance.backgroundMode,
       'children': ?instance.children,
+      'caret': ?instance.caret,
     };

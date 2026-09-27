@@ -66,25 +66,37 @@ public class TableSizes {
         int widest = 0;
         for (TableItem item : table.getItems()) {
             if (item == null) continue;
-            TextStyle ts;
-            if (!Config.getConfigFlags().use_swt_fonts || ((DartTableItem) item.getImpl()).getExplicitFont() == null) {
-                ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
-            } else {
-                ts = TextStyle.from(item.getFont());
-            }
-            int cellWidth = 0;
-            String text = item.getText();
-            if (text != null && !text.isEmpty()) {
-                cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
-            }
-            if (item.getImage() != null) {
-                cellWidth += ts.size() + CELL_PADDING_LEFT;
-            }
-            widest = Math.max(widest, cellWidth);
+            widest = Math.max(widest, getCellContentWidth(item));
         }
         if (widest == 0) return 0;
         if ((table.getStyle() & SWT.CHECK) != 0) widest += CHECKBOX_WIDTH + CELL_PADDING_LEFT;
         return widest + CELL_PADDING_HORIZONTAL + CELL_MARGIN;
+    }
+
+    /** The width the first cell's image and text take, without the cell's padding. */
+    public static int getCellContentWidth(TableItem item) {
+        TextStyle ts;
+        if (!Config.getConfigFlags().use_swt_fonts || ((DartTableItem) item.getImpl()).getExplicitFont() == null) {
+            ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
+        } else {
+            ts = TextStyle.from(item.getFont());
+        }
+        int cellWidth = 0;
+        String text = item.getText();
+        if (text != null && !text.isEmpty()) {
+            cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
+        }
+        if (item.getImage() != null) {
+            cellWidth += ts.size() + CELL_PADDING_LEFT;
+        }
+        return cellWidth;
+    }
+
+    /** Where the first cell's content starts: after the checkbox, if any, and the cell's padding. */
+    public static int getLeadingInset(DartTable table) {
+        int inset = CELL_PADDING_LEFT;
+        if ((table.getStyle() & SWT.CHECK) != 0) inset += CHECKBOX_WIDTH + CELL_PADDING_LEFT;
+        return inset;
     }
 
     public static int getPreferredHeight(DartTable table) {

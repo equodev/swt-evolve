@@ -72,7 +72,7 @@ class ImageUtils {
   // later drawImage() can reuse them instead of round-tripping PNG bytes (see GCImageDrawer.java).
   // Java mints the refs and hands one down with gcDispose, so it can treat a render as owned by
   // Flutter without waiting for an answer.
-  static final Map<int, ui.Image> _remoteImageCache = {};
+  static final Map<int, RemoteRender> _remoteImageCache = {};
 
   /// Whether [ref]'s picture is already rendered and held here. A ref is minted once per render
   /// and never reused, so a hit can only be that render's own output — nothing still queued can
@@ -81,20 +81,31 @@ class ImageUtils {
 
   static void registerRemoteImage(int ref, ui.Image image) {
     final previous = _remoteImageCache[ref];
-    _remoteImageCache[ref] = image;
+    _remoteImageCache[ref] = RemoteRender.ofImage(image);
     previous?.dispose();
   }
+
+  /// Holds a render as a picture; pixels are made only when something reads them.
+  static void registerRemotePicture(int ref, ui.Picture picture, int width, int height,
+      {int depth = 0}) {
+    final previous = _remoteImageCache[ref];
+    _remoteImageCache[ref] = RemoteRender(picture, width, height, depth);
+    previous?.dispose();
+  }
+
+  /// The render behind [ref], still as a picture where it never needed to be pixels.
+  static RemoteRender? remoteRender(int ref) => _remoteImageCache[ref];
 
   /// The rendered pixels behind [ref], PNG-encoded — the answer to Java's explicit
   /// `Image/requestPixels`. Null when nothing is registered under that ref.
   static Future<Uint8List?> encodeRemoteImagePng(int ref) async {
-    final image = _remoteImageCache[ref];
-    if (image == null) {
-      print('[Image] no ui.Image registered for remoteRef $ref');
+    final render = _remoteImageCache[ref];
+    if (render == null) {
+      print('[Image] no render registered for remoteRef $ref');
       return null;
     }
-    final data = await image.toByteData(format: ui.ImageByteFormat.png);
-    return data?.buffer.asUint8List();
+    final data = (await render.rasterise()).toByteData(format: ui.ImageByteFormat.png);
+    return (await data)?.buffer.asUint8List();
   }
 
   static void releaseRemoteImage(int ref) {
@@ -758,9 +769,9 @@ class ImageUtils {
     final remoteRef = image?.remoteRef;
     if (remoteRef != null) {
       final cached = _remoteImageCache[remoteRef];
-      // clone() avoids one reader's dispose() invalidating other concurrent readers of the same cached image.
-      if (cached != null) return cached.clone();
-      print('No cached ui.Image for remoteRef $remoteRef; falling back to decode');
+      // clone() so one reader's dispose() does not invalidate other readers of the cached image.
+      if (cached != null) return (await cached.rasterise()).clone();
+      print('No cached render for remoteRef $remoteRef; falling back to decode');
     }
 
     if (image?.imageData?.data == null) {
@@ -780,5 +791,42 @@ class ImageUtils {
       print('Error decoding VImage to ui.Image: $e');
       return null;
     }
+  }
+}
+
+/// A GC render kept as a picture, rasterised at most once and only when its pixels are read.
+class RemoteRender {
+  RemoteRender(this.picture, this.width, this.height, [this.depth = 0]);
+
+  RemoteRender.ofImage(ui.Image image)
+      : picture = null,
+        width = image.width,
+        height = image.height,
+        depth = 0,
+        _raster = image;
+
+  final ui.Picture? picture;
+  final int width, height;
+
+  /// How many earlier renders [picture] draws inside itself as its base.
+  final int depth;
+  ui.Image? _raster;
+
+  bool get hasPixels => _raster != null;
+
+  Future<ui.Image> rasterise() async => rasteriseSync();
+
+  /// Uses [ui.Picture.toImageSync]: the image stays on the GPU, so a blit never reads pixels back.
+  ui.Image rasteriseSync() {
+    final made = _raster;
+    if (made != null) return made;
+    return _raster = picture!.toImageSync(width, height);
+  }
+
+  void dispose() {
+    _raster?.dispose();
+    _raster = null;
+    // The picture is not disposed: committed display lists may still draw it, and it cannot be
+    // cloned. The engine reclaims it once unreferenced.
   }
 }

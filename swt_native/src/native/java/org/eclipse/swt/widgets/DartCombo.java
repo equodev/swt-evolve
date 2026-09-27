@@ -172,6 +172,7 @@ public class DartCombo extends DartComposite implements ICombo {
         newItems[index] = string;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
+        ComboHelper.sendSegments(this, string);
     }
 
     /**
@@ -371,6 +372,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (selection.x == selection.y)
             return;
         copyToClipboard(getText(selection.x, selection.y));
+        ComboHelper.sendSegments(this, getText());
     }
 
     @Override
@@ -424,6 +426,7 @@ public class DartCombo extends DartComposite implements ICombo {
         start += newText.length();
         setSelection(new Point(start, start));
         sendEvent(SWT.Modify);
+        ComboHelper.sendSegments(this, getText());
     }
 
     @Override
@@ -457,8 +460,13 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (index == -1)
             return;
-        if (index == getSelectionIndex())
-            selectedIndex = -1;
+        {
+            if (index == getSelectionIndex()) {
+                selectedIndex = -1;
+                this.text = "";
+                getValue().markDirty(VCombo.TEXT);
+            }
+        }
         if (index == getSelectionIndex()) {
             if ((getApi().style & SWT.READ_ONLY) != 0) {
                 sendEvent(SWT.Modify);
@@ -918,6 +926,7 @@ public class DartCombo extends DartComposite implements ICombo {
         start += newText.length();
         setSelection(new Point(start, start));
         sendEvent(SWT.Modify);
+        ComboHelper.sendSegments(this, getText());
     }
 
     @Override
@@ -963,17 +972,12 @@ public class DartCombo extends DartComposite implements ICombo {
         System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
         items = newItems;
         if (index == selectedIndex) {
-            // GTK/Win32 clear the selection when the selected item is removed; Cocoa reselects the
-            // item now at that index. getPlatform() reflects the host, matching the parity tests.
-            if ("cocoa".equals(SWT.getPlatform()) && index < items.length) {
-                selectedIndex = index;
-            } else {
-                selectedIndex = -1;
-                // Clearing the selection clears the shown text and fires Modify.
-                if (text != null && !text.isEmpty()) {
-                    text = "";
-                    sendEvent(SWT.Modify);
-                }
+            // Removing the selected item leaves nothing selected, as GTK and Win32 do, whatever
+            // the host; clearing it clears the shown text and fires Modify.
+            selectedIndex = -1;
+            if (text != null && !text.isEmpty()) {
+                text = "";
+                sendEvent(SWT.Modify);
             }
         } else if (index < selectedIndex) {
             selectedIndex--;
@@ -1284,6 +1288,7 @@ public class DartCombo extends DartComposite implements ICombo {
         }
         this.items = newValue;
         ignoreSelection = false;
+        for (String item : this.items) ComboHelper.sendSegments(this, item);
     }
 
     /**
@@ -1402,6 +1407,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setText(string, true);
+        ComboHelper.sendSegments(this, getText());
     }
 
     void setText(String string, boolean notify) {

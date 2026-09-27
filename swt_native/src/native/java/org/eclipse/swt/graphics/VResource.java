@@ -88,6 +88,13 @@ public class VResource {
     }
 
     /**
+     * Writes the named properties, for a caller that has already decided which of the changed ones are worth sending.
+     */
+    public void writeDiff(JsonWriter writer, java.util.Collection<String> keys) {
+        for (String key : keys) writeProperty(writer, key);
+    }
+
+    /**
      * Writes one property by its wire name. Each class handles the properties it declares and passes the rest up, so a subclass never has to know what it inherited. A name nothing recognises writes nothing: it can only have come from a version that knows a property this one does not.
      */
     protected void writeProperty(JsonWriter writer, String key) {

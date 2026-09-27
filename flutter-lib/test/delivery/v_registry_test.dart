@@ -319,6 +319,59 @@ void main() {
     });
   });
 
+  group('a layout that places its children by their bounds', () {
+    // Only a child's move may relayout its composite: a layout pass repaints up to the nearest boundary.
+    Future<int> ticksDuring(Future<void> Function() delivery) async {
+      var ticks = 0;
+      final listenable = registry.boundsChangesOn([_channel]);
+      void count() => ticks++;
+      listenable.addListener(count);
+      await delivery();
+      listenable.removeListener(count);
+      return ticks;
+    }
+
+    Map<String, dynamic> bounds(int width, {required int seq, required int base}) => {
+          'swt': 'Label', 'id': _id, '_s': seq, '_b': base, '_d': ['bounds'],
+          'bounds': {'x': 0, 'y': 0, 'width': width, 'height': 20},
+        };
+
+    test('is not asked to run again for a change that moves nothing', () async {
+      registry.register(_label('before'));
+      final ticks = await ticksDuring(() => _deliver(_channel, _partial('after', seq: 2, base: 1)));
+      expect(ticks, 0, reason: 'the text changed; where the label is did not');
+    });
+
+    test('is asked to run again when a child moves', () async {
+      registry.register(_label('label'));
+      final ticks = await ticksDuring(() => _deliver(_channel, bounds(80, seq: 2, base: 1)));
+      expect(ticks, 1);
+    });
+
+    test('is asked to run again when a child arrives whole', () async {
+      registry.register(_label('label'));
+      final ticks = await ticksDuring(() => _deliver(_channel, _whole('replaced', 2)));
+      expect(ticks, 1, reason: 'a whole widget may have moved as well');
+    });
+
+    test('is not asked to run again for its holder when what it holds changes', () async {
+      registry.register(VComposite()
+        ..swt = 'Composite'
+        ..id = 7
+        ..seq = 1
+        ..style = SWT.NONE
+        ..children = [_label('inside a parent')]);
+      var ticks = 0;
+      final holder = registry.boundsChangesOn(['Composite/7']);
+      void count() => ticks++;
+      holder.addListener(count);
+      // Nothing renders the label on its own, so the parent is told on its behalf.
+      await _deliver(_channel, _partial('changed', seq: 2, base: 1));
+      holder.removeListener(count);
+      expect(ticks, 0, reason: 'what the holder draws changed, not where the holder is');
+    });
+  });
+
   group('watching a widget that has not arrived', () {
     test('the interest is honoured once it does', () async {
       var told = 0;

@@ -869,6 +869,7 @@ public class DartTable extends DartComposite implements ITable {
         getValue().markDirty(VTable.ITEMS);
         if (items.length == 0)
             setTableEmpty();
+        getValue().markDirty(VTable.ITEMS);
     }
 
     void fixCheckboxImageList(boolean fixScroll) {
@@ -1636,6 +1637,7 @@ public class DartTable extends DartComposite implements ITable {
         getValue().markDirty(VTable.ITEMS);
         if (items.length == 0)
             setTableEmpty();
+        getValue().markDirty(VTable.ITEMS);
     }
 
     /**
@@ -1673,6 +1675,7 @@ public class DartTable extends DartComposite implements ITable {
         getValue().markDirty(VTable.ITEMS);
         if (items.length == 0)
             setTableEmpty();
+        getValue().markDirty(VTable.ITEMS);
     }
 
     /**
@@ -1720,6 +1723,7 @@ public class DartTable extends DartComposite implements ITable {
         }
         if (items.length == 0)
             setTableEmpty();
+        getValue().markDirty(VTable.ITEMS);
     }
 
     /**

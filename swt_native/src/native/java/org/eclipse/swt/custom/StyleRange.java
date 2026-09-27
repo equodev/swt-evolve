@@ -33,7 +33,7 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.MINIMAL)
 public class StyleRange extends TextStyle implements Cloneable {
 
     /**

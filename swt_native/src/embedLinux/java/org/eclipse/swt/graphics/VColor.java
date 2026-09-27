@@ -15,7 +15,7 @@ public class VColor extends VResource {
         super(impl);
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
+    @JsonAttribute(name = "a", includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getAlpha() {
         return ((IColor) impl).getAlpha();
     }
@@ -23,6 +23,7 @@ public class VColor extends VResource {
     public void setAlpha(int value) {
     }
 
+    @JsonAttribute(name = "b")
     public int getBlue() {
         return ((IColor) impl).getBlue();
     }
@@ -30,6 +31,7 @@ public class VColor extends VResource {
     public void setBlue(int value) {
     }
 
+    @JsonAttribute(name = "g")
     public int getGreen() {
         return ((IColor) impl).getGreen();
     }
@@ -37,6 +39,7 @@ public class VColor extends VResource {
     public void setGreen(int value) {
     }
 
+    @JsonAttribute(name = "r")
     public int getRed() {
         return ((IColor) impl).getRed();
     }
@@ -44,28 +47,28 @@ public class VColor extends VResource {
     public void setRed(int value) {
     }
 
-    public static final String ALPHA = "alpha";
+    public static final String A = "a";
 
-    public static final String BLUE = "blue";
+    public static final String B = "b";
 
-    public static final String GREEN = "green";
+    public static final String G = "g";
 
-    public static final String RED = "red";
+    public static final String R = "r";
 
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
-            case "alpha":
-                Serializer.writeKeyValue(writer, "alpha", getAlpha());
+            case "a":
+                Serializer.writeKeyValue(writer, "a", getAlpha());
                 return;
-            case "blue":
-                Serializer.writeKeyValue(writer, "blue", getBlue());
+            case "b":
+                Serializer.writeKeyValue(writer, "b", getBlue());
                 return;
-            case "green":
-                Serializer.writeKeyValue(writer, "green", getGreen());
+            case "g":
+                Serializer.writeKeyValue(writer, "g", getGreen());
                 return;
-            case "red":
-                Serializer.writeKeyValue(writer, "red", getRed());
+            case "r":
+                Serializer.writeKeyValue(writer, "r", getRed());
                 return;
         }
         super.writeProperty(writer, key);

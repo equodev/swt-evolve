@@ -55,6 +55,59 @@ public class WebDisplayBridge extends DisplayBridge {
         DisplayBridgePlatform.init();
     }
 
+    /** How long a paste waits for the browser to hand over its clipboard. */
+    private static final long CLIPBOARD_READ_TIMEOUT_MS = Long.getLong("dev.equo.swt.web.clipboardTimeoutMs", 5000);
+
+    private final java.util.Map<String, java.util.concurrent.CompletableFuture<String>> clipboardReads =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private long clipboardDisplayId;
+
+    private void registerClipboard(long displayId) {
+        clipboardDisplayId = displayId;
+        comm().on("Display/" + displayId + "/Clipboard/contents", java.util.Map.class, reply -> {
+            if (reply == null) return;
+            java.util.concurrent.CompletableFuture<String> read = clipboardReads.remove(String.valueOf(reply.get("reqId")));
+            if (read != null) read.complete(reply.get("text") instanceof String ? (String) reply.get("text") : null);
+        });
+    }
+
+    /** The browser's clipboard is the user's. */
+    @Override
+    public void writeClipboardText(String text) {
+        try {
+            serializeAndSend("Display/" + clipboardDisplayId + "/Clipboard/write", dev.equo.swt.Java8.map("text", text));
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Blocks without pumping the event loop: a paste runs inside a KeyDown dispatch, and pumping would
+     * deliver the rest of the keystroke before the paste's edits. The answer arrives on the comm thread.
+     */
+    @Override
+    public String readClipboardText() {
+        String reqId = java.util.UUID.randomUUID().toString();
+        java.util.concurrent.CompletableFuture<String> read = new java.util.concurrent.CompletableFuture<>();
+        clipboardReads.put(reqId, read);
+        try {
+            serializeAndSend("Display/" + clipboardDisplayId + "/Clipboard/read", dev.equo.swt.Java8.map("reqId", reqId));
+        } catch (java.io.IOException e) {
+            clipboardReads.remove(reqId);
+            return null;
+        }
+        try {
+            return read.get(CLIPBOARD_READ_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            return null;
+        } finally {
+            clipboardReads.remove(reqId);
+        }
+    }
+
     /**
      * SPI implementation backing {@link FlutterBridgeSpi#getWebServerUrl(Object)}.
      * Returns null when the display is null, isn't a web surface, or has no web server yet.
@@ -93,6 +146,7 @@ public class WebDisplayBridge extends DisplayBridge {
         registerDisplayClientReady(display);
         registerDisplayKeyEvents(display);
         registerWindowControls(display);
+        registerClipboard(displayId);
 
         int port = comm.getPort();
 

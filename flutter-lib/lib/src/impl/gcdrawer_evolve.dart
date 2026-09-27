@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -8,6 +9,7 @@ import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../comm/comm.dart';
+import 'utils/perf_marks.dart';
 import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/gcdrawer.dart';
@@ -20,6 +22,7 @@ import 'assets_manager.dart';
 import 'color_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'styledtext_evolve.dart';
 import 'widget_config.dart';
 
 // ─────────────────────────────────────────────
@@ -46,16 +49,39 @@ class GCDrawer extends GCDrawerBase {
   BuildContext? _context;
   CanvasThemeExtension? _canvasTheme;
 
-  // Standalone image mode state
+  // Standalone image mode state.
   ui.Image? _baseImage;
+
+  /// The base as a display list while it never had to become pixels (a web readback is costly).
+  ui.Picture? _basePicture;
+
+  /// Nesting depth of [_basePicture]; at [_maxBaseDepth] it is flattened to pixels.
+  int _baseDepth = 0;
+  static const int _maxBaseDepth = 8;
+
   int _imgWidth = 0;
   int _imgHeight = 0;
   final List<Future<Shape>> _pendingImages = [];
   Completer<void>? _baseImageCompleter;
 
-  // Set by GCImpl when the parent WidgetSwtState provides a RepaintBoundary key.
-  // Used in copyArea to capture the widget's actual rendered pixels via toImageSync().
-  GlobalKey? widgetBoundaryKey;
+  /// The control this GC draws on, set by GCImpl; null for an Image's GC.
+  BuildContext? widgetContext;
+
+  /// The control's pixels as they are on screen, read from the nearest repaint boundary that holds
+  /// it, with the control's offset inside that capture. [ui.Picture.toImageSync]-backed: it reads
+  /// the frame already rasterised, so it is safe while the SWT thread waits for the answer.
+  ({ui.Image image, Offset offset})? _captureWidget() {
+    final context = widgetContext;
+    final box = context != null && context.mounted ? context.findRenderObject() : null;
+    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    RenderObject? boundary = box;
+    while (boundary != null && boundary is! RenderRepaintBoundary) {
+      boundary = boundary.parent;
+    }
+    if (boundary is! RenderRepaintBoundary) return null;
+    final offset = MatrixUtils.transformPoint(box.getTransformTo(boundary), Offset.zero);
+    return (image: boundary.toImageSync(pixelRatio: 1.0), offset: offset);
+  }
 
   List<Shape> _staging = [];
 
@@ -81,29 +107,43 @@ class GCDrawer extends GCDrawerBase {
         super(state) {
     _localTokens["${state.swt}/${state.id}/imageInit"] =
         EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
-      _baseImageCompleter = Completer<void>();
-      _handleImageInit(payload).then(
-        (_) => _baseImageCompleter!.complete(),
-        onError: (e) => _baseImageCompleter!.completeError(e),
+      final completer = Completer<void>();
+      _baseImageCompleter = completer;
+      // Only awaited when a cycle ends; the frame queue reports a failure instead.
+      completer.future.catchError((Object _) {});
+      final ready = _handleImageInit(payload).then(
+        (_) => completer.complete(),
+        onError: (Object e) => completer.completeError(e),
       );
+      // Returned so the next frame waits: ops such as copyArea read the base, not just draw over it.
+      return ready;
     });
-    // Java-minted remoteRef (8 big-endian bytes) plus one flag byte, set only when the Java side
-    // still needs the pixels themselves (a native SwtImage mirror to fill).
-    _localTokens["${state.swt}/${state.id}/gcDispose"] = _rawByteChannel;
-    EquoCommService.onBytes("${state.swt}/${state.id}/gcDispose", (payload) async {
-      final ref = _readInt64BE(ByteData.sublistView(payload), 0);
-      final wantPixels = payload.length > 8 && payload[8] != 0;
+    // JSON, so it can travel in the same message as the ops it ends.
+    _localTokens["${state.swt}/${state.id}/gcDispose"] =
+        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (raw) async {
+      final payload = (raw is String ? jsonDecode(raw) : raw) as Map;
+      final ref = (payload['ref'] as num).toInt();
+      final wantPixels = payload['pixels'] == true;
+      // Java keeps one drawer per Image: the next GC on it draws on top of this render.
+      final retain = payload['retain'] == true;
       final myGeneration = ++_gcDisposeGeneration;
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
       if (myGeneration != _gcDisposeGeneration) return;
+      if (retain && ref == 0) {
+        // Abandoned: the Image keeps its previous render. Staged images belong to
+        // _lateLoadedImages, so they are not disposed here.
+        _staging = [];
+        return;
+      }
       shapes
         ..clear()
         ..addAll(_staging);
       _staging = [];
-      await _renderAndSend(ref, wantPixels);
+      await _renderAndSend(ref, wantPixels, retain: retain);
+      if (retain) return;
       onDisposed?.call();
-      // One-shot drawer: nothing reuses this gcId after this point, so tear down now.
+      // Nothing reuses this gcId after this point, so tear down now.
       dispose();
     });
     // Non-terminal: renders the current draw state (staged + already-committed shapes) without
@@ -730,7 +770,14 @@ class GCDrawer extends GCDrawerBase {
   Future<void> _handleImageInit(dynamic payload) async {
     final vImage = VImage.fromJson(
         payload as Map<String, dynamic>);
-    _baseImage = await ImageUtils.decodeVImageToUIImage(vImage);
+    final ref = vImage.remoteRef;
+    final render = ref == null ? null : ImageUtils.remoteRender(ref);
+    final picture = render?.picture;
+    if (render != null && picture != null && !render.hasPixels && render.depth < _maxBaseDepth) {
+      _adoptBasePicture(picture, render.depth);
+    } else {
+      _adoptBaseImage(await ImageUtils.decodeVImageToUIImage(vImage));
+    }
     // Size comes from the Image's own metadata, which rides every push. The pixel payload is
     // omitted whenever Flutter already owns the content (remoteRef), so it cannot be the source of
     // truth for how big the canvas is.
@@ -738,14 +785,38 @@ class GCDrawer extends GCDrawerBase {
     _imgHeight = vImage.height ?? vImage.imageData?.height ?? _baseImage?.height ?? 0;
   }
 
-  Future<ui.Image> _paintToImage(List<Shape> shapesToRender) async {
-    final w = _imgWidth > 0 ? _imgWidth : 1;
-    final h = _imgHeight > 0 ? _imgHeight : 1;
+  void _adoptBaseImage(ui.Image? image) {
+    final previous = _baseImage;
+    _baseImage = image;
+    _basePicture = null;
+    _baseDepth = 0;
+    previous?.dispose();
+  }
 
-    final recorder = ui.PictureRecorder();
-    final canvas = ui.Canvas(recorder);
+  /// Not disposed here: committed display lists may still draw it (see [RemoteRender.dispose]).
+  void _adoptBasePicture(ui.Picture picture, int depth) {
+    _baseImage?.dispose();
+    _baseImage = null;
+    _basePicture = picture;
+    _baseDepth = depth;
+  }
 
-    if (_baseImage != null) {
+  /// Whether an opaque op in [shapesToRender] paints over the whole image, hiding the base.
+  bool _hidesBase(List<Shape> shapesToRender) {
+    final whole = ui.Rect.fromLTWH(0, 0, (_imgWidth > 0 ? _imgWidth : 1).toDouble(),
+        (_imgHeight > 0 ? _imgHeight : 1).toDouble());
+    for (final shape in shapesToRender) {
+      final covered = shape.opaqueCoverage;
+      if (covered != null && _containsRect(covered, whole)) return true;
+    }
+    return false;
+  }
+
+  void _drawBase(ui.Canvas canvas, int w, int h) {
+    final picture = _basePicture;
+    if (picture != null) {
+      canvas.drawPicture(picture);
+    } else if (_baseImage != null) {
       canvas.drawImage(_baseImage!, ui.Offset.zero, ui.Paint());
     } else {
       canvas.drawRect(
@@ -753,14 +824,38 @@ class GCDrawer extends GCDrawerBase {
         ui.Paint()..color = const ui.Color(0xFFFFFFFF),
       );
     }
-
-    for (final shape in shapesToRender) {
-      shape.draw(canvas);
-    }
-
-    final picture = recorder.endRecording();
-    return picture.toImage(w, h);
   }
+
+  Future<ui.Image> _paintToImage(List<Shape> shapesToRender) async {
+    final w = _imgWidth > 0 ? _imgWidth : 1;
+    final h = _imgHeight > 0 ? _imgHeight : 1;
+
+    final picture = perfMarkValueDetail('GC.recordPicture', () {
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      _drawBase(canvas, w, h);
+      for (final shape in shapesToRender) {
+        shape.draw(canvas);
+      }
+      return recorder.endRecording();
+    });
+    return perfMarkValue('GC.rasterise', () => picture.toImage(w, h));
+  }
+
+  ui.Picture _paintToPicture(List<Shape> shapesToRender, {bool drawBase = true}) {
+    final w = _imgWidth > 0 ? _imgWidth : 1;
+    final h = _imgHeight > 0 ? _imgHeight : 1;
+    return perfMarkValueDetail('GC.recordPicture', () {
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      if (drawBase) _drawBase(canvas, w, h);
+      for (final shape in shapesToRender) {
+        shape.draw(canvas);
+      }
+      return recorder.endRecording();
+    });
+  }
+
 
   Future<Uint8List?> _paintToPngBytes(List<Shape> shapesToRender) async {
     final image = await _paintToImage(shapesToRender);
@@ -777,17 +872,32 @@ class GCDrawer extends GCDrawerBase {
   /// Renders the drawn state and keeps it here, registered under the ref Java minted. Nothing
   /// crosses back unless [wantPixels] — the pixels are fetched later, and only if some Java caller
   /// actually reads them (see `Image/requestPixels` in main.dart).
-  Future<void> _renderAndSend(int ref, bool wantPixels) async {
+  Future<void> _renderAndSend(int ref, bool wantPixels, {bool retain = false}) async {
     // Abandoned draw: nobody will ever read this render, so skip painting it. A hot path, since
     // JFace rebuilds its buffer Image on every repaint.
     if (ref == 0 && !wantPixels) {
-      _unregisterImageListeners();
+      if (!retain) _unregisterImageListeners();
       return;
     }
-    final image = await _paintToImage(shapes);
-    if (ref != 0) ImageUtils.registerRemoteImage(ref, image);
+    // Registered as a picture; only a reader that needs pixels rasterises it.
+    final hidesBase = _hidesBase(shapes);
+    final picture = _paintToPicture(shapes, drawBase: !hidesBase);
+    final depth = hidesBase || _basePicture == null ? 0 : _baseDepth + 1;
+    if (ref != 0) {
+      ImageUtils.registerRemotePicture(ref, picture, _imgWidth > 0 ? _imgWidth : 1,
+          _imgHeight > 0 ? _imgHeight : 1, depth: depth);
+    }
+    // A retained drawer's next base stays a picture until it nests [_maxBaseDepth] deep.
+    final flatten = retain && depth >= _maxBaseDepth;
+    final needsPixels = wantPixels || flatten || ref == 0;
+    final image = needsPixels
+        ? (ref != 0
+            ? ImageUtils.remoteRender(ref)!.rasteriseSync()
+            : perfMarkValue('GC.rasterise', () => picture.toImageSync(
+                _imgWidth > 0 ? _imgWidth : 1, _imgHeight > 0 ? _imgHeight : 1)))
+        : null;
     if (wantPixels) {
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final byteData = await image!.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData?.buffer.asUint8List();
       // Binary path: raw PNG bytes, no base64 (the comm channel carries them verbatim).
       if (pngBytes != null) {
@@ -795,7 +905,19 @@ class GCDrawer extends GCDrawerBase {
       }
     }
     // Unregistered: nothing here owns it, so nothing would ever dispose it.
-    if (ref == 0) image.dispose();
+    if (ref == 0) image!.dispose();
+    if (retain) {
+      // This render becomes the next base and already contains its ops, so they are dropped.
+      if (ref == 0) {
+        _adoptBaseImage(null);
+      } else if (flatten) {
+        _adoptBaseImage(image!.clone());
+      } else {
+        _adoptBasePicture(picture, depth);
+      }
+      shapes.clear();
+      return;
+    }
     _unregisterImageListeners();
   }
 
@@ -834,6 +956,7 @@ class GCDrawer extends GCDrawerBase {
   @visibleForTesting
   static List<Shape> copyAreaShapes({
     required ui.Image? baseImage,
+    ui.Picture? basePicture,
     required List<Shape> painted,
     required Rect srcRect,
     required Offset destOffset,
@@ -841,7 +964,9 @@ class GCDrawer extends GCDrawerBase {
     final destRect = srcRect.shift(destOffset);
     return [
       // Under the shapes drawn through this GC, so the copy keeps their z-order.
-      if (baseImage != null)
+      if (basePicture != null)
+        ImageShape.picture(basePicture, srcRect, destRect, clipRect: destRect)
+      else if (baseImage != null)
         ImageShape.raster(baseImage.clone(), srcRect, destRect, clipRect: destRect),
       for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
         _translateShapeWithClip(shape, destOffset, srcRect),
@@ -912,6 +1037,9 @@ class GCDrawer extends GCDrawerBase {
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha,
           opaqueSource: s.opaqueSource, inkMask: s.inkMask),
+      ImageShape s when s.type == ImageType.picture => ImageShape.picture(
+          s.remotePicture!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
+          clipRect: clipArea, alpha: s.alpha),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
@@ -1176,6 +1304,10 @@ class GCDrawer extends GCDrawerBase {
       final x = o.x.toDouble();
       final y = o.y.toDouble();
 
+      // The raster read below is the last painted frame; state that arrived before this request
+      // is only on screen once its frame is.
+      if (WidgetsBinding.instance.hasScheduledFrame) await WidgetsBinding.instance.endOfFrame;
+
       // Determine the canvas size needed to include the area being captured.
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       final renderW = math.max(
@@ -1184,27 +1316,16 @@ class GCDrawer extends GCDrawerBase {
           _imgHeight > 0 ? _imgHeight : (y + imgH).toInt(),
           (y + imgH).toInt());
 
-      // Render: widget pixels (via RepaintBoundary) > base image > white background.
+      // Render: widget pixels > base image > white background.
       // Then apply any shapes drawn via this GC on top.
       final recorder = ui.PictureRecorder();
       final canvas = ui.Canvas(recorder);
-      if (widgetBoundaryKey != null) {
-        // Capture the widget's current raster cache synchronously.
-        // toImageSync() reads the already-rasterized frame — no GPU pass needed,
-        // so it is safe to call while the SWT main thread is blocked.
-        final ro = widgetBoundaryKey!.currentContext?.findRenderObject();
-        if (ro is RenderRepaintBoundary) {
-          final widgetImage = ro.toImageSync(pixelRatio: 1.0);
-          canvas.drawImage(widgetImage, ui.Offset.zero, ui.Paint());
-          widgetImage.dispose();
-        }
-      } else if (_baseImage != null) {
-        canvas.drawImage(_baseImage!, ui.Offset.zero, ui.Paint());
+      final captured = _captureWidget();
+      if (captured != null) {
+        canvas.drawImage(captured.image, -captured.offset, ui.Paint());
+        captured.image.dispose();
       } else {
-        canvas.drawRect(
-          Rect.fromLTWH(0, 0, renderW.toDouble(), renderH.toDouble()),
-          ui.Paint()..color = const Color(0xFFFFFFFF),
-        );
+        _drawBase(canvas, renderW, renderH);
       }
       for (final shape in [...shapes, ..._staging]) {
         shape.draw(canvas);
@@ -1243,6 +1364,7 @@ class GCDrawer extends GCDrawerBase {
   void _copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
     _staging.addAll(copyAreaShapes(
       baseImage: _baseImage,
+      basePicture: _basePicture,
       painted: _staging,
       srcRect: _getRectFromArgs(srcX, srcY, width, height),
       destOffset:
@@ -1256,6 +1378,7 @@ class GCDrawer extends GCDrawerBase {
     _unregisterImageListeners();
     _baseImage?.dispose();
     _baseImage = null;
+
     final seen = <ui.Image>{};
     disposeShapeImages(shapes, seen: seen);
     disposeShapeImages(_staging, seen: seen);
@@ -1320,9 +1443,12 @@ class _PlaceholderShape extends Shape {
 // ─────────────────────────────────────────────
 
 class ScenePainter extends CustomPainter {
-  ScenePainter(this.bg, this.shapes);
+  ScenePainter(this.bg, this.shapes, {this.originY = 0});
   final Color bg;
   final List<Shape> shapes;
+
+  /// Content y of the painted slice; shapes stay in content coordinates and the canvas is shifted.
+  final double originY;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1333,6 +1459,7 @@ class ScenePainter extends CustomPainter {
     if (ownLayer) canvas.saveLayer(Offset.zero & size, Paint());
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     canvas.save();
+    if (originY != 0) canvas.translate(0, -originY);
     for (final s in shapes) {
       if (s is RegionShape) {
         s.drawOver(canvas, bg);
@@ -1345,7 +1472,20 @@ class ScenePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(ScenePainter o) => o.bg != bg || o.shapes != shapes;
+  bool shouldRepaint(ScenePainter o) {
+    // Compare shapes, not the list: every build makes a fresh list.
+    if (o.bg != bg || o.originY != originY) return true;
+    if (o.shapes.length != shapes.length) return true;
+    for (int i = 0; i < shapes.length; i++) {
+      final was = o.shapes[i];
+      final now = shapes[i];
+      if (identical(was, now)) continue;
+      // Sound only because the painted slice is pinned by originY, not by the live clip.
+      if (now.paintsSameAs(was)) continue;
+      return true;
+    }
+    return false;
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1354,6 +1494,10 @@ class ScenePainter extends CustomPainter {
 
 abstract class Shape {
   void draw(ui.Canvas c);
+
+  /// Whether [other] would paint exactly what this shape paints. Identity by default, so a shape
+  /// that does not compare all its inputs never keeps stale pixels.
+  bool paintsSameAs(Shape other) => identical(this, other);
   @override
   String toString();
   Rect? get clipRect => null;
@@ -1478,6 +1622,20 @@ class ClipPathShape extends Shape {
   String toString() => 'ClipPath [${children.length} shapes]';
 }
 
+/// Strokes where SWT does: an odd-width or hairline stroke sits on pixel centres, so a 1-pixel
+/// line covers one row of pixels instead of half of two.
+void _strokeAligned(ui.Canvas c, double strokeWidth, bool stroked, void Function() draw) {
+  final width = strokeWidth.round();
+  if (!stroked || width.isEven && width != 0) {
+    draw();
+    return;
+  }
+  c.save();
+  c.translate(0.5, 0.5);
+  draw();
+  c.restore();
+}
+
 class TransformShape extends Shape {
   TransformShape(this.matrix, this.children, [this.clipRect]);
   final Float64List matrix;
@@ -1504,23 +1662,17 @@ class TransformShape extends Shape {
 
 class TextShape extends Shape {
   TextShape(this.text, this.off, this.style, [this.clipRect]);
-  TextShape._withPainter(this.text, this.off, this.style, this.clipRect, TextPainter painter)
-      : _painter = painter;
   final String text;
   final Offset off;
   final TextStyle style;
   @override
   final Rect? clipRect;
 
-  // Laid out once: the scene repaints every shape each frame, and text layout dominates that cost.
-  TextPainter? _painter;
-  TextPainter get painter => _painter ??= TextPainter(
-      text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr)
-    ..layout();
+  // Looked up rather than held: the shared cache disposes what it evicts.
+  TextPainter get painter => _TextLayouts.of(text, style);
 
   TextShape translated(Offset offset, Rect clipArea) =>
-      TextShape._withPainter(text, off + offset, style, clipArea, painter);
+      TextShape(text, off + offset, style, clipArea);
 
   @override
   void draw(ui.Canvas c) {
@@ -1531,6 +1683,43 @@ class TextShape extends Shape {
 
   @override
   String toString() => 'Text "$text" @ $off${clipRect != null ? " [clipped]" : ""}';
+}
+
+/// LRU of laid-out text for [TextShape]. Eviction is safe because a recorded picture keeps its own
+/// glyphs; a system font change clears it.
+class _TextLayouts {
+  static final Map<(String, TextStyle), TextPainter> _layouts = {};
+  static const int _capacity = 512;
+  static bool _watchingFonts = false;
+
+  static TextPainter of(String text, TextStyle style) {
+    if (!_watchingFonts) {
+      _watchingFonts = true;
+      PaintingBinding.instance.systemFonts.addListener(_clear);
+    }
+    final key = (text, style);
+    final held = _layouts.remove(key);
+    if (held != null) {
+      _layouts[key] = held;
+      return held;
+    }
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    _layouts[key] = painter;
+    if (_layouts.length > _capacity) {
+      _layouts.remove(_layouts.keys.first)?.dispose();
+    }
+    return painter;
+  }
+
+  static void _clear() {
+    for (final painter in _layouts.values) {
+      painter.dispose();
+    }
+    _layouts.clear();
+  }
 }
 
 class LineShape extends Shape {
@@ -1547,11 +1736,11 @@ class LineShape extends Shape {
   @override
   void draw(ui.Canvas c) {
     if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
-    c.drawLine(p1, p2, Paint()
+    _strokeAligned(c, strokeWidth, true, () => c.drawLine(p1, p2, Paint()
       ..color = color
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin));
+      ..strokeJoin = getStrokeJoin(lineJoin)));
     if (clipRect != null) c.restore();
   }
 
@@ -1572,10 +1761,10 @@ class OvalShape extends Shape {
   @override
   void draw(ui.Canvas c) {
     if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
-    c.drawOval(rect, Paint()
+    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawOval(rect, Paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-      ..strokeWidth = strokeWidth);
+      ..strokeWidth = strokeWidth));
     if (clipRect != null) c.restore();
   }
 
@@ -1617,7 +1806,7 @@ class RectShape extends Shape {
         ..strokeCap = getStrokeCap(lineCap)
         ..strokeJoin = getStrokeJoin(lineJoin);
     }
-    c.drawRect(rect, paint);
+    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawRect(rect, paint));
     if (clipRect != null) c.restore();
   }
 
@@ -1721,12 +1910,12 @@ class PathShape extends Shape {
   @override
   void draw(ui.Canvas c) {
     if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
-    c.drawPath(path, Paint()
+    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, Paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin));
+      ..strokeJoin = getStrokeJoin(lineJoin)));
     if (clipRect != null) c.restore();
   }
 
@@ -1761,12 +1950,12 @@ class PolygonShape extends Shape {
       path.lineTo(points[i].toDouble(), points[i + 1].toDouble());
     }
     path.close();
-    c.drawPath(path, Paint()
+    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, Paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin));
+      ..strokeJoin = getStrokeJoin(lineJoin)));
     if (clipRect != null) c.restore();
   }
 
@@ -1795,12 +1984,12 @@ class PolylineShape extends Shape {
     for (int i = 2; i < points.length; i += 2) {
       path.lineTo(points[i].toDouble(), points[i + 1].toDouble());
     }
-    c.drawPath(path, Paint()
+    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, Paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin));
+      ..strokeJoin = getStrokeJoin(lineJoin)));
     if (clipRect != null) c.restore();
   }
 
@@ -1840,9 +2029,9 @@ class ArcShape extends Shape {
         ..moveTo(rect.center.dx, rect.center.dy)
         ..arcTo(rect, startAngle, sweepAngle, false)
         ..close();
-      c.drawPath(path, paint);
+      _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, paint));
     } else {
-      c.drawArc(rect, startAngle, sweepAngle, false, paint);
+      _strokeAligned(c, strokeWidth, !isFilled, () => c.drawArc(rect, startAngle, sweepAngle, false, paint));
     }
     if (clipRect != null) c.restore();
   }
@@ -1874,12 +2063,12 @@ class RoundRectShape extends Shape {
         topRight: Radius.elliptical(radiusX, radiusY),
         bottomLeft: Radius.elliptical(radiusX, radiusY),
         bottomRight: Radius.elliptical(radiusX, radiusY));
-    c.drawRRect(rrect, Paint()
+    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawRRect(rrect, Paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin));
+      ..strokeJoin = getStrokeJoin(lineJoin)));
     if (clipRect != null) c.restore();
   }
 
@@ -1954,7 +2143,7 @@ class FocusRectShape extends Shape {
   String toString() => 'FocusRect $rect';
 }
 
-enum ImageType { raster, svg }
+enum ImageType { raster, svg, picture }
 
 /// What the Canvas theme allows to read as a glyph — an image small enough, and with little enough
 /// color, that it has none of the application's to keep when the Canvas is drawn in theme colors.
@@ -2005,10 +2194,14 @@ class ImageShape extends Shape {
     this.alpha = 255,
     this.opaqueSource = false,
     this.inkMask,
+    this.remotePicture,
   });
 
   /// Masks a tinted glyph by its darkness, so a light fill it carries is not flooded with the tint.
   final ColorFilter? inkMask;
+
+  /// Set when this draws a render that never had to become pixels.
+  final ui.Picture? remotePicture;
 
   /// Whether every pixel of [image] is known opaque. Only set for a picture this side rendered
   /// itself, which always starts from an opaque fill — an application bitmap may have alpha and
@@ -2035,6 +2228,13 @@ class ImageShape extends Shape {
           (clipRect == null || _containsRect(clipRect!, destRect))
       ? destRect
       : null;
+
+  factory ImageShape.picture(ui.Picture picture, Rect srcRect, Rect destRect,
+      {Rect? clipRect, int alpha = 255}) {
+    return ImageShape._(
+        type: ImageType.picture, remotePicture: picture, srcRect: srcRect,
+        destRect: destRect, clipRect: clipRect, alpha: alpha, opaqueSource: true);
+  }
 
   factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect,
       {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255}) {
@@ -2142,6 +2342,31 @@ class ImageShape extends Shape {
         }
       }
 
+      // Plain blits only: a tint, an alpha or a bundled-icon replacement needs a real image.
+      final remoteRef = vImage.remoteRef;
+      if (replacement == null && remoteRef != null && !canvasUsesThemeColors) {
+        final render = ImageUtils.remoteRender(remoteRef);
+        // Once rasterised, blit the texture: replaying the list re-runs every op on every frame.
+        final asPicture = render != null && !render.hasPixels ? render.picture : null;
+        if (asPicture != null) {
+          final src = Rect.fromLTWH(
+              (opArgs.srcX).toDouble(),
+              (opArgs.srcY).toDouble(),
+              opArgs.srcWidth == -1 ? render!.width.toDouble() : (opArgs.srcWidth).toDouble(),
+              opArgs.srcHeight == -1 ? render!.height.toDouble() : (opArgs.srcHeight).toDouble());
+          final dest = Rect.fromLTWH(
+              (opArgs.destX).toDouble(),
+              (opArgs.destY).toDouble(),
+              opArgs.destWidth == -1 ? src.width : (opArgs.destWidth).toDouble(),
+              opArgs.destHeight == -1 ? src.height : (opArgs.destHeight).toDouble());
+          // A scaled blit has to resample, which a picture draw would not do the same way.
+          if (src.width == dest.width && src.height == dest.height) {
+            return ImageShape.picture(asPicture, src, dest,
+                clipRect: clipRect, alpha: alpha);
+          }
+        }
+      }
+
       ui.Image? uiImage;
       try {
         uiImage = replacement as ui.Image? ?? await ImageUtils.decodeVImageToUIImage(vImage);
@@ -2220,6 +2445,7 @@ class ImageShape extends Shape {
     switch (type) {
       case ImageType.raster: _drawRaster(c);
       case ImageType.svg: _drawSvg(c);
+      case ImageType.picture: _drawPicture(c);
     }
     if (clipRect != null) c.restore();
   }
@@ -2258,6 +2484,17 @@ class ImageShape extends Shape {
         blit()
           ..colorFilter = inkMask
           ..blendMode = BlendMode.dstIn);
+    c.restore();
+  }
+
+  void _drawPicture(ui.Canvas c) {
+    final picture = remotePicture;
+    if (picture == null) return;
+    c.save();
+    // Clip first so a picture larger than the blit cannot spill past it.
+    c.clipRect(destRect);
+    c.translate(destRect.left - (srcRect?.left ?? 0), destRect.top - (srcRect?.top ?? 0));
+    c.drawPicture(picture);
     c.restore();
   }
 

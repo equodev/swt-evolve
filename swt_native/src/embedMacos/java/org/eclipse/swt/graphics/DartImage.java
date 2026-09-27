@@ -905,10 +905,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                         // widget/event on it instead of using an isolated per-image engine (see
                         // DisplayBridge#sharedCommFor / GCImageDrawer#resolveSharedComm) — under CI load
                         // it can queue behind unrelated traffic, so this bound is generous either way.
-                        long deadline = System.nanoTime() + 5_000_000_000L;
+                        long deadline = System.nanoTime() + 30_000_000_000L;
                         Runnable wakeOnTimeout = () -> {
                         };
-                        display.timerExec(5000, wakeOnTimeout);
+                        display.timerExec(30000, wakeOnTimeout);
                         try {
                             while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
                                 // GC(Image) uses an off-screen Flutter engine whose startup and
@@ -925,7 +925,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                         }
                     } else {
                         try {
-                            f.get(2000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                            f.get(30000, java.util.concurrent.TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
@@ -1295,7 +1295,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array()));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array())));
             }
         }
     }
@@ -1338,7 +1338,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     private void _ensureRemotePixels() {
         if (!remotePixelsStale || remoteRef == null || remoteComm == null)
             return;
-        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 5000);
+        // Generous: a GPU-less browser can take seconds to answer the first read of a kind of
+        // image, and an answer that arrives after the bound is lost.
+        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 30000);
         if (png == null || png.length == 0) {
             SWT.error(SWT.ERROR_IO, null, " [the render side did not return the pixels for image " + remoteRef + "]");
             return;

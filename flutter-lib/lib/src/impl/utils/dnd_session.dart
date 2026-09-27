@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 
 import '../../comm/comm.dart';
 import '../../gen/event.dart';
+import 'hover_arbiter.dart';
 import 'veto_gate.dart';
 
 /// Tracks whether a pointer button is held down anywhere in the app, to suppress
@@ -31,6 +32,7 @@ class ActiveDragTracker {
       _pointerDown = true;
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
       _pointerDown = false;
+      HoverExclusivityArbiter.instance.settle();
     }
   }
 }

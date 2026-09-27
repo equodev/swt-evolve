@@ -137,6 +137,10 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     void computeRuns() {
         if (lineOffsets != null)
             return;
+        if (measured != null && measured.fits(text) && getSegmentsText().length() == text.length()) {
+            lineOffsets = measured.lineOffsets();
+            return;
+        }
         String segText = getSegmentsText();
         int segLen = segText.length();
         if (segLen == 0) {
@@ -170,12 +174,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 }
             }
         }
-        // Cocoa doesn't count a trailing '\n' as an extra empty line, so it omits the final
-        // segLen offset when the text ends in a newline (the last offset already == segLen).
-        // GTK/others keep it (see TextLayout.test_getLineOffsets, which branches on isCocoa).
-        if (!("cocoa".equals(SWT.getPlatform()) && !offs.isEmpty() && offs.get(offs.size() - 1) == segLen)) {
-            offs.add(segLen);
-        }
+        // A trailing newline starts an empty last line, so its offset appears twice.
+        offs.add(segLen);
         int[] offsets = new int[offs.size()];
         for (int k = 0; k < offsets.length; k++) offsets[k] = offs.get(k);
         lineOffsets = offsets;
@@ -307,16 +307,27 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 if (opaque)
                     gc.setBackground(style.background);
                 gc.drawString(text.substring(runStart, runEnd), runX, lineY, !opaque);
-                if (style != null && (style.underline || style.strikeout)) {
+                if (style != null && (style.underline || style.strikeout || style.borderStyle != SWT.NONE)) {
                     int runWidth = (int) Math.round(_measureRange(runStart, runEnd));
+                    Color runForeground = gc.getForeground();
                     if (style.underline) {
+                        gc.setForeground(style.underlineColor != null ? style.underlineColor : runForeground);
                         int underlineY = lineY + lineHeight - 1;
                         gc.drawLine(runX, underlineY, runX + runWidth, underlineY);
                     }
                     if (style.strikeout) {
+                        gc.setForeground(style.strikeoutColor != null ? style.strikeoutColor : runForeground);
                         int strikeoutY = lineY + lineHeight / 2;
                         gc.drawLine(runX, strikeoutY, runX + runWidth, strikeoutY);
                     }
+                    if (style.borderStyle != SWT.NONE) {
+                        int lineStyle = gc.getLineStyle();
+                        gc.setForeground(style.borderColor != null ? style.borderColor : runForeground);
+                        gc.setLineStyle(style.borderStyle == SWT.BORDER_DOT ? SWT.LINE_DOT : style.borderStyle == SWT.BORDER_DASH ? SWT.LINE_DASH : SWT.LINE_SOLID);
+                        gc.drawRectangle(runX, lineY, Math.max(0, runWidth - 1), lineHeight - 1);
+                        gc.setLineStyle(lineStyle);
+                    }
+                    gc.setForeground(runForeground);
                 }
                 runStart = runEnd;
             }
@@ -327,6 +338,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     void freeRuns() {
+        measured = null;
         lineOffsets = null;
         for (int i = 0; i < stylesCount - 1; i++) {
         }
@@ -383,7 +395,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public Rectangle getBounds() {
         checkLayout();
-        computeRuns();
+        if (_measured() != null)
+            return measured.bounds(wrapWidth);
         int lineH = _effLineHeight();
         int lineCount = getLineCount();
         int[] offs = getLineOffsets();
@@ -599,6 +612,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int lineCount = getLineCount();
         if (!(0 <= lineIndex && lineIndex < lineCount))
             SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (_measured() != null)
+            return measured.lineBounds(lineIndex);
         int lineHeight = getLineMetrics(lineIndex).getHeight();
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
@@ -680,6 +695,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int length = text.length();
         if (!(0 <= offset && offset <= length))
             SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (_measured() != null)
+            return measured.location(offset, trailing);
         if (length == 0)
             return new Point(0, getVerticalIndent());
         int lineIndex = _lineOf(translateOffset(offset < length ? offset : length - 1));
@@ -751,18 +768,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         switch(movement) {
             case SWT.MOVEMENT_CLUSTER:
                 {
-                    offset += step;
-                    if (0 <= offset && offset < length) {
-                        char ch = text.charAt(offset);
-                        if (0xDC00 <= ch && ch <= 0xDFFF) {
-                            if (offset > 0) {
-                                ch = text.charAt(offset - 1);
-                                if (0xD800 <= ch && ch <= 0xDBFF)
-                                    offset += step;
-                            }
-                        }
-                    }
-                    return offset;
+                    // Grapheme clusters: a base with its combining and spacing marks is one step.
+                    java.text.BreakIterator clusters = java.text.BreakIterator.getCharacterInstance();
+                    clusters.setText(text);
+                    int next = forward ? clusters.following(offset) : clusters.preceding(offset);
+                    return next == java.text.BreakIterator.DONE ? (forward ? length : 0) : next;
                 }
             case SWT.MOVEMENT_WORD:
                 return forward ? _fwdWordEnd(offset) : _bwdWordStart(offset);
@@ -837,6 +847,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             trailing[0] = 0;
         if (length == 0)
             return 0;
+        if (_measured() != null)
+            return measured.offset(x, y, trailing);
         int lineH = _effLineHeight();
         // Inverse of getLocation: y is measured below the vertical indent.
         y -= getVerticalIndent();
@@ -1146,7 +1158,9 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public int getTextDirection() {
         checkLayout();
-        return orientation;
+        if (textDirection != SWT.AUTO_TEXT_DIRECTION)
+            return textDirection;
+        return new java.text.Bidi(text, java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).baseIsLeftToRight() ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
     }
 
     /**
@@ -1475,6 +1489,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (this.orientation == orientation)
             return;
         this.orientation = orientation;
+        textDirection = orientation;
         try {
             freeRuns();
         } finally {
@@ -1809,6 +1824,18 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public void setTextDirection(int textDirection) {
         checkLayout();
+        int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
+        textDirection &= mask;
+        if (textDirection == 0)
+            return;
+        if (textDirection != SWT.AUTO_TEXT_DIRECTION) {
+            if ((textDirection & SWT.LEFT_TO_RIGHT) != 0)
+                textDirection = SWT.LEFT_TO_RIGHT;
+            if (this.textDirection == textDirection)
+                return;
+        }
+        this.textDirection = textDirection;
+        freeRuns();
     }
 
     /**
@@ -2022,6 +2049,20 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     public TextStyle[] __styles() {
         return _styles;
+    }
+
+    int textDirection = SWT.LEFT_TO_RIGHT;
+
+    org.eclipse.swt.graphics.TextLayoutMeasurement measured;
+
+    public void setMeasurement(org.eclipse.swt.graphics.TextLayoutMeasurement measurement) {
+        freeRuns();
+        measured = measurement;
+    }
+
+    org.eclipse.swt.graphics.TextLayoutMeasurement _measured() {
+        computeRuns();
+        return measured != null && measured.fits(text) && getSegmentsText().length() == text.length() ? measured : null;
     }
 
     static boolean _isWordChar(char c) {

@@ -1020,6 +1020,7 @@ public class DartShell extends DartDecorations implements IShell {
     void releaseWidget() {
         Display savedDisplay = display;
         Composite savedParent = parent;
+        Shell returnTo = getBridge() instanceof DisplayBridge ? ((DisplayBridge) getBridge()).shellToReturnTo(this.getApi()) : null;
         super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
@@ -1032,7 +1033,12 @@ public class DartShell extends DartDecorations implements IShell {
         updateParent(false);
         ((DartDisplay) display.getImpl()).updateQuitMenu();
         lastActive = null;
-        if (savedDisplay != null && !savedDisplay.isDisposed()) {
+        // The active shell going away hands activation back to the one it took over from, at
+        // once, as a window manager does when the active window is destroyed.
+        if (returnTo != null && !returnTo.isDisposed() && returnTo.isVisible()) {
+            ((DartShell) returnTo.getImpl())._takeFocusHolder(true);
+            ((DartShell) returnTo.getImpl()).sendEvent(SWT.Activate);
+        } else if (savedDisplay != null && !savedDisplay.isDisposed()) {
             savedDisplay.asyncExec(() -> {
                 Shell savedParentShell = savedParent instanceof Shell ? (Shell) savedParent : null;
                 Shell toActivate = (savedParentShell != null && !savedParentShell.isDisposed() && savedParentShell.isVisible()) ? savedParentShell : savedDisplay.getActiveShell();
@@ -1993,8 +1999,10 @@ public class DartShell extends DartDecorations implements IShell {
                     return;
                 if (e == null)
                     return;
+                org.eclipse.swt.graphics.Rectangle _before = getApi().getBounds();
                 getApi().setBounds(e.x, e.y, e.width, e.height);
-                dirty();
+                if (_before != null && _before.x == e.x && _before.y == e.y && _before.width == e.width && _before.height == e.height)
+                    return;
                 ((DisplayBridge) getBridge()).sendDisplayUpdate((DartDisplay) display.getImpl());
             });
         });

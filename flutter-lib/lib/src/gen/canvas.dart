@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -28,6 +29,34 @@ class VCanvas extends VComposite {
   VCanvas() : this.empty();
   VCanvas.empty() {
     swt = "Canvas";
+  }
+
+  VCaret? caret;
+
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VCanvas) {
+      caret = other.caret;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'caret':
+        caret = json['caret'] == null
+            ? null
+            : VCaret.fromJson(json['caret'] as Map<String, dynamic>);
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    caret = VWidget.adoptOne(caret, adopt);
   }
 
   factory VCanvas.fromJson(Map<String, dynamic> json) =>

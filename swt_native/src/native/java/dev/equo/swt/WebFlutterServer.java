@@ -422,7 +422,12 @@ public class WebFlutterServer {
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
                             .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
                             .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()))
-                            .replace("{{EQUO_ENABLE_TEST_SEMANTICS}}", String.valueOf(enableTestSemantics));
+                            .replace("{{EQUO_ENABLE_TEST_SEMANTICS}}", String.valueOf(enableTestSemantics))
+                            // Browser-profiler marks: a runtime switch, since they are not free.
+                            .replace("{{EQUO_PERF}}",
+                                    String.valueOf(Boolean.getBoolean("dev.equo.swt.web.perf")))
+                            .replace("{{EQUO_PERF_DETAIL}}",
+                                    String.valueOf(Boolean.getBoolean("dev.equo.swt.web.perfDetail")));
                     byte[] bytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(200, bytes.length);
                     try (OutputStream os = exchange.getResponseBody()) {

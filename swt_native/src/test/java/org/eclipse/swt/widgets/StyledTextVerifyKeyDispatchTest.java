@@ -78,28 +78,13 @@ class StyledTextVerifyKeyDispatchTest {
         }
     }
 
+    /** A key typed on the client, which forwards it and leaves the edit to the widget. */
     private void typeFromFlutter(StyledText st, char character) {
-        int caret = st.getCaretOffset();
-
         Event key = new Event();
         key.keyCode = character;
         key.character = character;
         key.stateMask = 0;
         bridge.comm.fireContaining("/" + st.hashCode() + "/Key/KeyDown", key);
-        pumpAsync();
-
-        Event verify = new Event();
-        verify.keyCode = character;
-        verify.character = character;
-        verify.stateMask = 0;
-        bridge.comm.fireContaining("/" + st.hashCode() + "/VerifyKey/verifyKey", verify);
-        pumpAsync();
-
-        Event modify = new Event();
-        modify.text = String.valueOf(character);
-        modify.start = caret;
-        modify.end = caret;
-        bridge.comm.fireContaining("/" + st.hashCode() + "/Modify/Modify", modify);
         pumpAsync();
     }
 

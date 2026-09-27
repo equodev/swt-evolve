@@ -522,7 +522,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @see #syncExec
      */
     public void asyncExec(Runnable runnable) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer.asyncExec(runnable);
@@ -834,7 +834,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static void deregister(Display display) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (display == Displays[i])
                     Displays[i] = null;
@@ -1006,7 +1006,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @return the display for the given thread
      */
     public static Display findDisplay(Thread thread) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 Display display = Displays[i];
                 if (display != null && ((DartDisplay) display.getImpl()).thread == thread) {
@@ -1509,7 +1509,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getSyncThread() {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return ((DartSynchronizer) synchronizer.getImpl()).syncThread;
@@ -1851,7 +1851,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getThread() {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return thread;
@@ -2225,79 +2225,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.0
      */
     public boolean post(Event event) {
-        synchronized (DartDisplay.class) {
-            if (isDisposed())
-                error(SWT.ERROR_DEVICE_DISPOSED);
-            if (event == null)
-                error(SWT.ERROR_NULL_ARGUMENT);
-            long eventRef = 0;
-            boolean returnValue = false;
-            int[] deadKeyState = new int[1];
-            int type = event.type;
-            switch(type) {
-                case SWT.KeyDown:
-                case SWT.KeyUp:
-                    {
-                        short vKey = (short) DartDisplay.untranslateKey(event.keyCode);
-                        if (vKey == 0) {
-                            long keyLayout = getCurrentKeyLayout();
-                            if (keyLayout == 0)
-                                return false;
-                            int maxStringLength = 256;
-                            vKey = -1;
-                            char[] output = new char[maxStringLength];
-                            for (short i = 0; i <= 0x7F; i++) {
-                                deadKeyState[0] = 0;
-                                if (output[0] == event.character) {
-                                    vKey = i;
-                                    break;
-                                }
-                            }
-                            if (vKey == -1) {
-                                for (short i = 0; i <= 0x7F; i++) {
-                                    deadKeyState[0] = 0;
-                                    if (output[0] == event.character) {
-                                        vKey = i;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        /**
-                         * Bug(?) in UCKeyTranslate:  If event.keyCode doesn't map to a valid SWT constant and event.character is 0 we still need to post an event.
-                         * In Carbon, KeyTranslate eventually found a key that generated 0 but UCKeyTranslate never generates 0.
-                         * When that happens, post an event from key 127, which does nothing.
-                         */
-                        if (vKey == -1 && event.character == 0) {
-                            vKey = 127;
-                        }
-                        if (vKey != -1) {
-                        }
-                        break;
-                    }
-                case SWT.MouseDown:
-                case SWT.MouseMove:
-                case SWT.MouseUp:
-                    {
-                        if (type == SWT.MouseMove) {
-                        } else {
-                        }
-                        break;
-                    }
-                case SWT.MouseWheel:
-                    {
-                        break;
-                    }
-            }
-            if (eventRef != 0) {
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                }
-                returnValue = true;
-            }
-            return returnValue;
-        }
+        if (isDisposed())
+            error(SWT.ERROR_DEVICE_DISPOSED);
+        if (event == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        return DisplayInput.post(getApi(), event);
     }
 
     void postEvent(Event event) {
@@ -2567,7 +2499,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static void register(Display display) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] == null) {
                     Displays[i] = display;
@@ -3402,7 +3334,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (synchronizer == this.synchronizer)
             return;
         Synchronizer oldSynchronizer;
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             oldSynchronizer = this.synchronizer;
             this.synchronizer = synchronizer;
         }
@@ -3532,7 +3464,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public void syncExec(Runnable runnable) {
         Synchronizer synchronizer;
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer = this.synchronizer;
@@ -3687,7 +3619,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @see #sleep
      */
     public void wake() {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (thread == Thread.currentThread())
@@ -3703,7 +3635,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     Control findControl(boolean checkTrim) {
-        return null;
+        Point cursor = getCursorLocation();
+        return cursor == null ? null : DisplayInput.controlAt(getApi(), cursor.x, cursor.y);
     }
 
     static boolean isActivateShellOnForceFocus() {

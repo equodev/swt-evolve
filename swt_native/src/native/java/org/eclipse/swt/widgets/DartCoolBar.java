@@ -344,6 +344,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             newRows[row][0] = item;
             items = newRows;
             ((DartCoolItem) item.getImpl()).wrap = true;
+            getValue().markDirty(VCoolBar.ITEMS);
             return true;
         }
         int barWidth = getWidth();
@@ -813,6 +814,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             System.arraycopy(items, 0, newRows, 0, rowIndex);
             System.arraycopy(items, rowIndex + 1, newRows, rowIndex, newRows.length - rowIndex);
             items = newRows;
+            getValue().markDirty(VCoolBar.ITEMS);
             return true;
         }
         if (!disposed) {

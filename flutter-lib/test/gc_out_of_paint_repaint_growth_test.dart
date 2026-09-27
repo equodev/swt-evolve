@@ -82,13 +82,13 @@ void main() {
       ..id = id);
 
     // A full-width band across the top, then a later cycle repainting only the top half of it.
-    deliver('GC/$id/setBackgroundColor', {'color': {'red': 0, 'green': 0, 'blue': 255}});
+    deliver('GC/$id/setBackgroundColor', {'color': {'r': 0, 'g': 0, 'b': 255}});
     deliver('GC/$id/fillRectangleintintintint', {'x': 0, 'y': 0, 'width': 40, 'height': 400});
     deliver('GC/$id/gcDispose', {'fullRepaint': false});
     await settle();
     expect(drawer.shapes.length, 1);
 
-    deliver('GC/$id/setBackgroundColor', {'color': {'red': 255, 'green': 0, 'blue': 0}});
+    deliver('GC/$id/setBackgroundColor', {'color': {'r': 255, 'g': 0, 'b': 0}});
     deliver('GC/$id/fillRectangleintintintint', {'x': 0, 'y': 0, 'width': 40, 'height': 200});
     deliver('GC/$id/gcDispose', {'fullRepaint': false});
     await settle();

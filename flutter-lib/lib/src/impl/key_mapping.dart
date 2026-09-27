@@ -37,6 +37,8 @@ import '../gen/swt.dart';
     return (keyCode: SWT.PAGE_DOWN, character: 0);
   } else if (key == LogicalKeyboardKey.insert) {
     return (keyCode: SWT.INSERT, character: 0);
+  } else if (_modifierBit(key) != 0) {
+    return (keyCode: _modifierBit(key), character: 0);
   } else if (key == LogicalKeyboardKey.f1) {
     return (keyCode: SWT.F1, character: 0);
   } else if (key == LogicalKeyboardKey.f2) {
@@ -121,8 +123,36 @@ VEvent mapKeyEventToSwt(RawKeyEvent event) {
     ..stateMask = stateMask;
 }
 
+/// The SWT modifier a modifier key stands for, or 0 for any other key.
+int _modifierBit(LogicalKeyboardKey key) {
+  if (key == LogicalKeyboardKey.shiftLeft ||
+      key == LogicalKeyboardKey.shiftRight ||
+      key == LogicalKeyboardKey.shift) {
+    return SWT.SHIFT;
+  }
+  if (key == LogicalKeyboardKey.controlLeft ||
+      key == LogicalKeyboardKey.controlRight ||
+      key == LogicalKeyboardKey.control) {
+    return SWT.CTRL;
+  }
+  if (key == LogicalKeyboardKey.altLeft ||
+      key == LogicalKeyboardKey.altRight ||
+      key == LogicalKeyboardKey.alt) {
+    return SWT.ALT;
+  }
+  if (key == LogicalKeyboardKey.metaLeft ||
+      key == LogicalKeyboardKey.metaRight ||
+      key == LogicalKeyboardKey.meta) {
+    return SWT.COMMAND;
+  }
+  return 0;
+}
+
 /// Maps a Flutter [KeyEvent] to a [VEvent] with
 /// SWT-compatible keyCode, character and stateMask values.
+///
+/// A modifier key's own event carries SWT's state before the key changed it, which
+/// [HardwareKeyboard] has already applied, so that bit is flipped back.
 VEvent mapNewKeyEventToSwt(KeyEvent event) {
   final mapped = _mapLogicalKey(event.logicalKey, event.character);
 
@@ -132,6 +162,10 @@ VEvent mapNewKeyEventToSwt(KeyEvent event) {
   if (kb.isShiftPressed) stateMask |= SWT.SHIFT;
   if (kb.isAltPressed) stateMask |= SWT.ALT;
   if (kb.isMetaPressed) stateMask |= SWT.COMMAND;
+  final own = _modifierBit(event.logicalKey);
+  if (own != 0) {
+    stateMask = event is KeyUpEvent ? stateMask | own : stateMask & ~own;
+  }
 
   return VEvent()
     ..keyCode = mapped.keyCode

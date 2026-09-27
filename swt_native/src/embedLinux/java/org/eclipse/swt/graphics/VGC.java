@@ -34,13 +34,13 @@ public class VGC extends VResource {
         ((DartGC) impl).advanced = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
-    public int getAlpha() {
-        return ((DartGC) impl).getAlpha();
+    public Integer getAlpha() {
+        int value = ((DartGC) impl).getAlpha();
+        return value == 255 ? null : value;
     }
 
-    public void setAlpha(int value) {
-        ((DartGC) impl).alpha = value;
+    public void setAlpha(Integer value) {
+        ((DartGC) impl).alpha = value == null ? 255 : value;
     }
 
     @JsonAttribute(ignore = true)
@@ -93,12 +93,13 @@ public class VGC extends VResource {
         ((DartGC) impl).clippingRects = value;
     }
 
-    public int getFillRule() {
-        return ((DartGC) impl).getFillRule();
+    public Integer getFillRule() {
+        int value = ((DartGC) impl).getFillRule();
+        return value == 1 ? null : value;
     }
 
-    public void setFillRule(int value) {
-        ((DartGC) impl).fillRule = value;
+    public void setFillRule(Integer value) {
+        ((DartGC) impl).fillRule = value == null ? 1 : value;
     }
 
     public Font getFont() {
@@ -149,12 +150,13 @@ public class VGC extends VResource {
         ((DartGC) impl).lineAttributes = value;
     }
 
-    public int getLineCap() {
-        return ((DartGC) impl).getLineCap();
+    public Integer getLineCap() {
+        int value = ((DartGC) impl).getLineCap();
+        return value == 1 ? null : value;
     }
 
-    public void setLineCap(int value) {
-        ((DartGC) impl).lineCap = value;
+    public void setLineCap(Integer value) {
+        ((DartGC) impl).lineCap = value == null ? 1 : value;
     }
 
     public int[] getLineDash() {
@@ -165,20 +167,22 @@ public class VGC extends VResource {
         ((DartGC) impl).lineDash = value;
     }
 
-    public int getLineJoin() {
-        return ((DartGC) impl).getLineJoin();
+    public Integer getLineJoin() {
+        int value = ((DartGC) impl).getLineJoin();
+        return value == 1 ? null : value;
     }
 
-    public void setLineJoin(int value) {
-        ((DartGC) impl).lineJoin = value;
+    public void setLineJoin(Integer value) {
+        ((DartGC) impl).lineJoin = value == null ? 1 : value;
     }
 
-    public int getLineStyle() {
-        return ((DartGC) impl).getLineStyle();
+    public Integer getLineStyle() {
+        int value = ((DartGC) impl).getLineStyle();
+        return value == 1 ? null : value;
     }
 
-    public void setLineStyle(int value) {
-        ((DartGC) impl).lineStyle = value;
+    public void setLineStyle(Integer value) {
+        ((DartGC) impl).lineStyle = value == null ? 1 : value;
     }
 
     public int getLineWidth() {

@@ -12,7 +12,7 @@ import org.eclipse.swt.SWT;
  * SWT widget tree, finds the control/item whose mnemonic matches, and activates it — Button clicks,
  * Label moves focus to the following control, Group focuses its first child, TabItem selects its tab.
  *
- * <p>Invoked from {@link ControlHelper#sendFlutterTraverse} after a {@code TRAVERSE_MNEMONIC} event
+ * <p>Invoked from {@link ControlHelper#routeKeyDown} after a {@code TRAVERSE_MNEMONIC} event
  * is fired and not vetoed. Uses only public API, so it is backend-agnostic and needs no generator
  * changes.
  */

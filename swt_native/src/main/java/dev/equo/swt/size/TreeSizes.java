@@ -30,6 +30,11 @@ public class TreeSizes {
     private static final double ITEM_INDENT = 16.0;
     private static final double ITEM_INDENT_WITH_COLS = 16.0;
     private static final double EXPAND_ICON_SIZE = 12.0;
+    private static final double EXPAND_ICON_SPACING = 8.0;
+    private static final double CHECKBOX_SPACE = 18.0 + 4.0;
+    private static final int ICON_SIZE = 16;
+    private static final int ICON_SPACE = ICON_SIZE + 8;
+    private static final int TEXT_PADDING = 8;
 
     public static Point computeSize(DartTree tree, int wHint, int hHint, boolean changed) {
         int columnCount = tree.getColumnCount();
@@ -103,17 +108,46 @@ public class TreeSizes {
         return widgetWidth * gapFraction + paddingLeft + indent * level;
     }
 
+    /** Where an item's first cell content starts: after its indent, the expander and any checkbox. */
+    public static int getContentLeft(DartTree tree, TreeItem item) {
+        double left = getExpanderLeft(tree, levelOf(item)) + EXPAND_ICON_SIZE + EXPAND_ICON_SPACING;
+        if ((tree.getStyle() & SWT.CHECK) != 0) left += CHECKBOX_SPACE;
+        return (int) Math.ceil(left);
+    }
+
+    /** The size an item's image is drawn at. */
+    public static int getIconSize() {
+        return ICON_SIZE;
+    }
+
+    /** The width an image takes before the text, its spacing included. */
+    public static int getIconSpace() {
+        return ICON_SPACE;
+    }
+
+    /** The width a cell's text is shown in: the text and its padding. */
+    public static int getTextWidth(TreeItem item, int index) {
+        String text = item.getText(index);
+        TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
+        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
+        return width + TEXT_PADDING;
+    }
+
+    static int levelOf(TreeItem item) {
+        int level = 0;
+        for (TreeItem parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {
+            level++;
+        }
+        return level;
+    }
+
     public static double getExpanderWidth() {
         return EXPAND_ICON_SIZE;
     }
 
     public static boolean isOverExpander(DartTree tree, TreeItem item, int x) {
         if (item == null || item.getItemCount() == 0) return false;
-        int level = 0;
-        for (TreeItem parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {
-            level++;
-        }
-        double left = getExpanderLeft(tree, level);
+        double left = getExpanderLeft(tree, levelOf(item));
         return x >= left && x < left + EXPAND_ICON_SIZE;
     }
 }

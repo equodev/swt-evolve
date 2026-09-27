@@ -93,7 +93,8 @@ class VRegistry {
   final Map<String, Set<String>> _holdings = {};
 
   /// One per channel anything has asked to be notified about. See [changesOn].
-  final Map<String, _ChannelTick> _ticks = {};
+  /// Told when a delivery could have moved or resized the widget on that channel.
+  final Map<String, _ChannelTick> _boundsTicks = {};
 
   /// Channels an ask is already scheduled for, so several references to one widget in a single
   /// payload - a control that is both a child of its parent and the content of an item - cost one
@@ -246,15 +247,13 @@ class VRegistry {
     _applyReferenceChange(holder, before, after, null);
   }
 
-  /// Notifies whenever any of [channels] is told anything.
+  /// Notifies whenever any of [channels] is told something that could have changed its bounds.
   ///
-  /// For code that depends on a widget's state without being that widget. A composite lays its
-  /// children out from the bounds it finds on them, and a child's own update changes those bounds
-  /// with the composite never hearing about it — nothing rebuilt it, and nothing had to. This is
-  /// how such a layout asks to be re-run.
-  Listenable changesOn(Iterable<String> channels) {
+  /// Lets a layout that depends on its children's bounds re-run. Bounds only: a layout pass
+  /// repaints up to the nearest repaint boundary.
+  Listenable boundsChangesOn(Iterable<String> channels) {
     final ticks = <Listenable>[
-      for (final channel in channels) _ticks.putIfAbsent(channel, _ChannelTick.new),
+      for (final channel in channels) _boundsTicks.putIfAbsent(channel, _ChannelTick.new),
     ];
     return Listenable.merge(ticks);
   }
@@ -274,7 +273,11 @@ class VRegistry {
     node.listeners.remove(listener);
     // An entry that only ever existed to record the interest, and nothing is interested any more.
     // Leaving it would accumulate one empty entry per widget that was watched before it arrived.
-    if (node.awaitingValue && node.listeners.isEmpty) _nodes.remove(channel);
+    // One with a subscription is waiting on an answer something named it for: a widget that
+    // rendered it before a move unmounting afterwards must not drop the answer on the floor.
+    if (node.awaitingValue && node.listeners.isEmpty && node.subscription == null) {
+      _nodes.remove(channel);
+    }
   }
 
   /// Forgets a widget: its state, its listeners and its subscription.
@@ -291,7 +294,7 @@ class VRegistry {
     final subscription = node.subscription;
     if (subscription != null) EquoCommService.remove(channel, subscription);
     node.listeners.clear();
-    _ticks.remove(channel)?.dispose();
+    _boundsTicks.remove(channel)?.dispose();
     deliveryGate.forget(channel);
   }
 
@@ -304,10 +307,10 @@ class VRegistry {
     _adopting.clear();
     _referrers.clear();
     _holdings.clear();
-    for (final tick in _ticks.values) {
+    for (final tick in _boundsTicks.values) {
       tick.dispose();
     }
-    _ticks.clear();
+    _boundsTicks.clear();
   }
 
   Object? _subscribe(String channel) => EquoCommService.onRaw(channel, (payload) {
@@ -472,7 +475,7 @@ class VRegistry {
   }
 
   void _notify(String channel, VNode node, VChange change) {
-    _ticks[channel]?.tick();
+    if (change.touches('bounds')) _boundsTicks[channel]?.tick();
     // Copied before iterating: a listener may unwatch itself while being told, and a widget
     // disposing in response to an update is an ordinary thing rather than an error.
     for (final listener in List<void Function(VChange)>.of(node.listeners)) {
@@ -496,7 +499,7 @@ class VRegistry {
       if (!seen.add(holder)) continue;
       final node = _nodes[holder];
       if (node == null) continue;
-      _ticks[holder]?.tick();
+      // Not a bounds change: what the holder draws changed, not where the holder is.
       for (final listener in List<void Function(VChange)>.of(node.listeners)) {
         listener(const VChange());
       }

@@ -197,6 +197,8 @@ public class DartCombo extends DartComposite implements ICombo {
         newItems[index] = string;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
+        ComboHelper.sendSegments(this, string);
+        getValue().markDirty(VCombo.ITEMS);
     }
 
     /**
@@ -1109,21 +1111,17 @@ public class DartCombo extends DartComposite implements ICombo {
         System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
         items = newItems;
         if (index == selectedIndex) {
-            // GTK/Win32 clear the selection when the selected item is removed; Cocoa reselects the
-            // item now at that index. getPlatform() reflects the host, matching the parity tests.
-            if ("cocoa".equals(SWT.getPlatform()) && index < items.length) {
-                selectedIndex = index;
-            } else {
-                selectedIndex = -1;
-                // Clearing the selection clears the shown text and fires Modify.
-                if (text != null && !text.isEmpty()) {
-                    text = "";
-                    sendEvent(SWT.Modify);
-                }
+            // Removing the selected item leaves nothing selected, as GTK and Win32 do, whatever
+            // the host; clearing it clears the shown text and fires Modify.
+            selectedIndex = -1;
+            if (text != null && !text.isEmpty()) {
+                text = "";
+                sendEvent(SWT.Modify);
             }
         } else if (index < selectedIndex) {
             selectedIndex--;
         }
+        getValue().markDirty(VCombo.ITEMS);
     }
 
     void remove(int index, boolean notify) {
@@ -1198,6 +1196,7 @@ public class DartCombo extends DartComposite implements ICombo {
             return;
         if ((getApi().style & SWT.H_SCROLL) != 0)
             setScrollWidth(0);
+        getValue().markDirty(VCombo.ITEMS);
     }
 
     /**

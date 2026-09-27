@@ -994,7 +994,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @see #syncExec
      */
     public void asyncExec(Runnable runnable) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronized (idleLock) {
@@ -1086,7 +1086,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static void checkDisplay(Thread thread, boolean multiple) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] != null) {
                     //$NON-NLS-1$
@@ -1575,7 +1575,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static void deregister(Display display) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (display == Displays[i])
                     Displays[i] = null;
@@ -1630,7 +1630,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @return the display for the given thread
      */
     public static Display findDisplay(Thread thread) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 Display display = Displays[i];
                 if (display != null && ((SwtDisplay) display.getImpl()).thread == thread) {
@@ -2534,7 +2534,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @return the default display
      */
     public static Display getDefault() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (Default == null)
                 Default = new Display();
             return Default;
@@ -2995,7 +2995,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getSyncThread() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return ((SwtSynchronizer) synchronizer.getImpl()).syncThread;
@@ -3594,7 +3594,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getThread() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return thread;
@@ -4400,7 +4400,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @since 3.0
      */
     public boolean post(Event event) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (event == null)
@@ -4648,7 +4648,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static void register(Display display) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] == null) {
                     Displays[i] = display;
@@ -5614,7 +5614,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (synchronizer == this.synchronizer)
             return;
         Synchronizer oldSynchronizer;
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             oldSynchronizer = this.synchronizer;
             this.synchronizer = synchronizer;
         }
@@ -6141,7 +6141,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public void syncExec(Runnable runnable) {
         Synchronizer synchronizer;
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer = this.synchronizer;
@@ -6249,7 +6249,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @see #sleep
      */
     public void wake() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (thread == Thread.currentThread())

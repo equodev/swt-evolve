@@ -49,6 +49,9 @@ public class MacApplicationMenuNativeTest {
         ConfigFlags flags = Config.getConfigFlags();
         String systemMenuBar = System.getProperty(SYSTEM_MENU_BAR);
         System.setProperty(SYSTEM_MENU_BAR, "false");
+        // The suite runs with the native library switched off, which is what systemMenu() skips on.
+        String loadLibrary = System.getProperty(LOAD_LIBRARY);
+        System.clearProperty(LOAD_LIBRARY);
         Config.setConfigFlags(null);
         FlutterBridge.set(new RecordingBridge());
         Display display = new Display();
@@ -66,6 +69,8 @@ public class MacApplicationMenuNativeTest {
                 System.clearProperty(SYSTEM_MENU_BAR);
             else
                 System.setProperty(SYSTEM_MENU_BAR, systemMenuBar);
+            if (loadLibrary != null)
+                System.setProperty(LOAD_LIBRARY, loadLibrary);
             Config.setConfigFlags(flags);
         }
     }

@@ -50,6 +50,9 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..caret = json['caret'] == null
+      ? null
+      : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..backgroundImage = json['backgroundImage'] == null
       ? null
@@ -86,6 +89,7 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
+  'caret': ?instance.caret,
   'alignment': ?instance.alignment,
   'backgroundImage': ?instance.backgroundImage,
   'bottomMargin': ?instance.bottomMargin,

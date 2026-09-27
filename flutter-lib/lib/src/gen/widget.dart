@@ -5,6 +5,7 @@ import '../comm/comm.dart';
 import '../comm/v_registry.dart';
 import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
+import '../impl/utils/perf_marks.dart';
 import '../impl/widget_config.dart';
 import 'event.dart';
 import 'gc.dart';
@@ -52,7 +53,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   // GC support - any widget can have a GC overlay
   VGC? gcOverlay;
   final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
-  GlobalKey? widgetBoundaryKey;
 
   String? _onChangeChannel;
 
@@ -106,7 +106,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     if (gcOverlay == null) {
       setState(() {
         gcOverlay = gcValue;
-        widgetBoundaryKey ??= GlobalKey();
       });
     }
   }
@@ -170,8 +169,11 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   @protected
   void setValue(V value) {
     if (!mounted) return;
-    setState(() {
-      extraSetState();
+    // Profiler mark per widget kind; free unless the page asked for marks (window.evolve.perf).
+    perfMarkDetail('${state.swt}.apply', () {
+      setState(() {
+        extraSetState();
+      });
     });
   }
 

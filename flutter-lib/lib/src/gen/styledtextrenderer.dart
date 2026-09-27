@@ -39,6 +39,8 @@ class VStyledTextRenderer {
   int? tabLength;
   int? tabWidth;
   int? topIndex;
+  List<int>? lineSpacings;
+  List<String?>? bulletTexts;
 
   factory VStyledTextRenderer.fromJson(Map<String, dynamic> json) =>
       _$VStyledTextRendererFromJson(json);

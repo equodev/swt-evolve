@@ -1,6 +1,5 @@
-// Regression for the stale-echo keystroke drop (originally surfaced on StyledText) — now
-// covered uniformly by the PendingTextEchoes mixin across the editable-text widgets (Text,
-// CCombo, StyledText).
+// Guards the stale-echo keystroke drop in PendingTextEchoes (Text, CCombo). StyledText holds no
+// local text: Java is its only editor.
 //
 // An editable field applies each keystroke optimistically and forwards it to Java as a
 // Modify; Java echoes a full-state push back, but on a slow round trip the echo of an EARLIER
@@ -21,11 +20,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
-import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/ccombo_evolve.dart';
-import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
@@ -112,54 +109,5 @@ void main() {
     expect(find.text('AB'), findsOneWidget,
         reason: 'a stale echo of "A" must NOT clobber the newer local "AB"');
     expect(find.text('A'), findsNothing);
-  });
-
-  testWidgets('StyledText keeps newer keystrokes when a stale Java echo arrives',
-      (tester) async {
-    final key = GlobalKey<StyledTextImpl>();
-
-    VStyledText value(String text) => VStyledText()
-      ..swt = 'StyledText'
-      ..id = 1
-      ..style = 0
-      ..enabled = true
-      ..editable = true
-      ..caretOffset = text.length
-      ..text = text
-      ..bounds = _bounds(200, 40);
-
-    Widget appWith(VStyledText v) => _app(SizedBox(
-          width: 200,
-          height: 40,
-          child: StyledTextSwt<VStyledText>(key: key, value: v),
-        ));
-
-    await tester.pumpWidget(appWith(value('')));
-    // initState doesn't run extraSetState, so a second push is needed to build the text
-    // shape the tap enters edit mode on (in production Java always sends this push).
-    await tester.pumpWidget(appWith(value('')));
-
-    // Tap to enter edit mode (custom-painted editor — no DOM input to enterText into).
-    await tester.tap(find.byType(StyledTextSwt<VStyledText>));
-    await tester.pump();
-
-    // Type "a" then "b" as raw key events -> _handleKeyEvent inserts locally and sends a
-    // Modify per keystroke ("a", then "ab"). The explicit `character` is required: the editor
-    // inserts from RawKeyEvent.character, which a bare sendKeyEvent leaves null.
-    await simulateKeyDownEvent(LogicalKeyboardKey.keyA, character: 'a');
-    await simulateKeyUpEvent(LogicalKeyboardKey.keyA);
-    await tester.pump();
-    await simulateKeyDownEvent(LogicalKeyboardKey.keyB, character: 'b');
-    await simulateKeyUpEvent(LogicalKeyboardKey.keyB);
-    await tester.pump();
-    expect(key.currentState!.state.text, 'ab',
-        reason: 'sanity: keystrokes reached the local buffer');
-
-    // Java echoes the first Modify ("a") back after the user already typed "ab".
-    await tester.pumpWidget(appWith(value('a')));
-    await tester.pump();
-
-    expect(key.currentState!.state.text, 'ab',
-        reason: 'a stale echo of "a" must NOT clobber the newer local "ab"');
   });
 }

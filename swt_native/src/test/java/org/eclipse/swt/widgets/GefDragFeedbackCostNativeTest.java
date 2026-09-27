@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.Figure;
@@ -71,10 +72,8 @@ class GefDragFeedbackCostNativeTest {
         drag.step();
 
         List<String> states = new ArrayList<>();
-        for (RecordingComm.Frame frame : bridge.comm.sent) {
-            for (String[] entry : entries(frame.json)) {
-                if (isGcState(entry[0])) states.add(entry[1]);
-            }
+        for (String[] entry : BatchEntries.of(bridge.comm.sent)) {
+            if (isGcState(entry[0])) states.add(entry[1]);
         }
 
         assertThat(states)
@@ -95,21 +94,19 @@ class GefDragFeedbackCostNativeTest {
         Drag drag = new Drag(8);
         drag.step();
 
-        for (RecordingComm.Frame frame : bridge.comm.sent) {
-            for (String[] entry : entries(frame.json)) {
-                if (!isGcState(entry[0])) continue;
-                List<String> named = namedIn(entry[1]);
-                if (named == null) continue;
-                for (String[] property : fields(entry[1])) {
-                    if (property[0].startsWith("_") || property[0].equals("id")
-                            || property[0].equals("swt")) {
-                        continue;
-                    }
-                    assertThat(named)
-                            .as("a property the client is not told changed cannot be applied to "
-                                    + "the state it holds")
-                            .contains(property[0]);
+        for (String[] entry : BatchEntries.of(bridge.comm.sent)) {
+            if (!isGcState(entry[0])) continue;
+            List<String> named = namedIn(entry[1]);
+            if (named == null) continue;
+            for (String[] property : fields(entry[1])) {
+                if (property[0].startsWith("_") || property[0].equals("id")
+                        || property[0].equals("swt")) {
+                    continue;
                 }
+                assertThat(named)
+                        .as("a property the client is not told changed cannot be applied to "
+                                + "the state it holds")
+                        .contains(property[0]);
             }
         }
     }
@@ -261,28 +258,6 @@ class GefDragFeedbackCostNativeTest {
     }
 
     /** Splits a batch payload into its {@code (channel, body)} entries. */
-    private static List<String[]> entries(String json) {
-        List<String[]> out = new ArrayList<>();
-        int at = 0;
-        while (true) {
-            int open = json.indexOf("[\"", at);
-            if (open < 0) return out;
-            int close = json.indexOf('"', open + 2);
-            if (close < 0) return out;
-            int body = json.indexOf('{', close);
-            if (body < 0) return out;
-            int depth = 0, i = body;
-            for (; i < json.length(); i++) {
-                char c = json.charAt(i);
-                if (c == '{') depth++;
-                else if (c == '}' && --depth == 0) break;
-            }
-            out.add(new String[] {json.substring(open + 2, close),
-                    json.substring(body, Math.min(i + 1, json.length()))});
-            at = i + 1;
-        }
-    }
-
     /** The top-level {@code key}/{@code value} pairs of one body. */
     private static List<String[]> fields(String body) {
         List<String[]> out = new ArrayList<>();

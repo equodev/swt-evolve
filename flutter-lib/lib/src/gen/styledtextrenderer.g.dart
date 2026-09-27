@@ -69,7 +69,13 @@ VStyledTextRenderer _$VStyledTextRendererFromJson(Map<String, dynamic> json) =>
       ..stylesSetCount = (json['stylesSetCount'] as num?)?.toInt()
       ..tabLength = (json['tabLength'] as num?)?.toInt()
       ..tabWidth = (json['tabWidth'] as num?)?.toInt()
-      ..topIndex = (json['topIndex'] as num?)?.toInt();
+      ..topIndex = (json['topIndex'] as num?)?.toInt()
+      ..lineSpacings = (json['lineSpacings'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList()
+      ..bulletTexts = (json['bulletTexts'] as List<dynamic>?)
+          ?.map((e) => e as String?)
+          .toList();
 
 Map<String, dynamic> _$VStyledTextRendererToJson(
   VStyledTextRenderer instance,
@@ -103,6 +109,8 @@ Map<String, dynamic> _$VStyledTextRendererToJson(
   'tabLength': ?instance.tabLength,
   'tabWidth': ?instance.tabWidth,
   'topIndex': ?instance.topIndex,
+  'lineSpacings': ?instance.lineSpacings,
+  'bulletTexts': ?instance.bulletTexts,
 };
 
 VLineSizeInfo _$VLineSizeInfoFromJson(Map<String, dynamic> json) =>

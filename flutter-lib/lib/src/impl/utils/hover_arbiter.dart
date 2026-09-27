@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dnd_session.dart' show ActiveDragTracker;
+
 typedef HoverChanged = void Function(bool hovering);
 
 /// Mirrors SwtDisplay's currentControl/checkEnterExit: native SWT only ever
@@ -47,8 +49,19 @@ class HoverExclusivityArbiter {
     if (_resolveScheduled) _resolve();
   }
 
+  /// Settles what the pointer is over now that nothing holds it.
+  void settle() {
+    if (!_resolveScheduled) {
+      _resolveScheduled = true;
+      scheduleMicrotask(_resolve);
+    }
+  }
+
   void _resolve() {
     _resolveScheduled = false;
+    // A held button is SWT's implicit capture: nothing is entered or left until release, when
+    // [settle] resolves what the pointer ended up over.
+    if (ActiveDragTracker.isSuppressingHover) return;
     Object? newWinner;
     var bestDepth = -1;
     _activeDepths.forEach((owner, depth) {

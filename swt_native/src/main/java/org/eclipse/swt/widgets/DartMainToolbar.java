@@ -190,6 +190,7 @@ public class DartMainToolbar extends DartComposite {
         appliedYOffset = wrapped ? yOffset : 0;
     }
 
+
     private static DecorationsAlign decorationsAlign() {
         ConfigFlags flags = Config.getConfigFlags();
         return flags != null && flags.decorations_align != null ? flags.decorations_align : DecorationsAlign.HLEFT;

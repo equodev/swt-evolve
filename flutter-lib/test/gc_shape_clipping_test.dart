@@ -47,7 +47,7 @@ void main() {
       'id': id,
       'swt': 'GC',
       'style': 0,
-      'background': {'red': 0, 'green': 0, 'blue': 255, 'alpha': 255},
+      'background': {'r': 0, 'g': 0, 'b': 255, 'a': 255},
       ...clip,
     });
     final drawer = GCDrawer.embedded(state, onShapesUpdated: (_) {});

@@ -44,6 +44,12 @@
     window.evolve.widgetName = "{{EQUO_WIDGETNAME}}".indexOf("{{") === 0 ? "" : "{{EQUO_WIDGETNAME}}";
     window.evolve.browserProxy = "{{EQUO_BROWSER_PROXY}}" === "true";
     window.evolve.enableTestSemantics = "{{EQUO_ENABLE_TEST_SEMANTICS}}" === "true";
+    // Names the widget's own passes for the browser's profiler (User Timing), so a release build
+    // can be profiled by someone who did not compile it. Off unless asked for.
+    window.evolve.perf = "{{EQUO_PERF}}" === "true";
+    // The per-build and per-state-change marks, separately: they fire thousands of times a second
+    // and were measured costing 12.5% of busy CPU, which a profile must not pay by default.
+    window.evolve.perfDetail = "{{EQUO_PERF_DETAIL}}" === "true";
   </script>
   <script>
     // Chromium reports navigator.language from the host's locale, so a glibc locale carrying a

@@ -1,9 +1,8 @@
 // SWT parity: `Shell.setVisible(true)` shows a shell without activating it, so the control that
 // opened it keeps the keyboard. JFace relies on that for content assist — `ContentAssistant`
 // drives its `SWT.ON_TOP` proposal popup from a `VerifyKeyListener` on the StyledText, which only
-// fires while the editor still owns the keys. A shell that grabbed focus on mount broke every
-// keyboard path into the popup: the editor stopped forwarding its own keys, and the Display-level
-// forwarder they fell back to is dropped Java-side for a focused StyledText.
+// fires while the editor still holds the keyboard. A shell that grabbed focus on mount took every
+// keystroke away from the editor.
 //
 // `VDisplay.activeShellId` carries SWT's active shell, and only that shell takes focus here.
 
@@ -83,7 +82,7 @@ void _receiveJson(String actionId, Object payload) {
 
 void main() {
   /// Brings up the workbench with the editor holding the keyboard, then shows a second shell
-  /// and reports whether the editor still owns its keys.
+  /// and reports whether the editor still holds it.
   Future<bool> editorKeepsKeysWhenShellAppears(
     WidgetTester tester, {
     required int base,
@@ -101,8 +100,8 @@ void main() {
     // Click into the editor, as the user does before asking for content assist.
     await tester.tapAt(const Offset(60, 40));
     await tester.pumpAndSettle();
-    expect(focusedEditorHandlesOwnKeys, isTrue,
-        reason: 'sanity: a clicked StyledText forwards its own key events');
+    expect(canvasEditorFocused, isTrue,
+        reason: 'sanity: a clicked StyledText holds the keyboard');
 
     _receiveJson(
       'Display/$base',
@@ -114,7 +113,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    return focusedEditorHandlesOwnKeys;
+    return canvasEditorFocused;
   }
 
   testWidgets('a shell SWT did not activate leaves the keyboard with the editor',
@@ -124,8 +123,8 @@ void main() {
           base: _idsFor(1), popupIsActivated: false),
       isTrue,
       reason: 'the content assist popup is shown without activating its shell, so the '
-          'editor must keep forwarding its own keys — that is the only path that reaches '
-          "ContentAssistant's VerifyKeyListener",
+          "editor must keep the keyboard — that is the only path that reaches ContentAssistant's "
+          'VerifyKeyListener',
     );
   });
 
