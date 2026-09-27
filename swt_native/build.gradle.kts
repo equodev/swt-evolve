@@ -700,6 +700,9 @@ tasks.test {
     configureTestLogging()
     if (System.getProperty("skipFlutterLib") == null)
         dependsOn("webFlutterLib")
+    // The Flutter web bundle the suite runs against is not a declared input (with -DskipFlutterLib
+    // it comes prebuilt from outside Gradle), so a cached result could stand for a different bundle.
+    outputs.cacheIf { false }
     systemProperty("harness.client", "web")
     systemProperty("dev.equo.swt.loadLibrary", "false")
     // An exception in a Display runnable must fail the test that caused it; the crash dialog's
