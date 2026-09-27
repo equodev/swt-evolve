@@ -1,5 +1,6 @@
 package dev.equo.swt.comm;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.Serializer;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Transport-agnostic core of the binary comm protocol shared by every {@link CommService}
@@ -145,12 +147,16 @@ public abstract class AbstractBinaryCommService implements CommService {
             typed.handle(data, offset, length, serializer, logTag());
             return;
         }
-        System.err.println(logTag() + " No handler for: " + eventName);
-        // Show which same-type handlers ARE registered here: distinguishes "wrong widget id"
-        // (siblings listed) from "this widget type never registered" (nothing listed) at a glance.
+        // The same-type count distinguishes "wrong widget id" (siblings exist) from "this widget
+        // type never registered" (none). The list itself runs to hundreds of lines per miss, so it
+        // is printed only in debug mode.
         String typePrefix = eventName.substring(0, eventName.indexOf('/') + 1);
-        typedHandlers.keySet().stream().filter(k -> k.startsWith(typePrefix)).sorted()
-                .forEach(k -> System.err.println(logTag() + "   registered: " + k));
+        List<String> sameType = typedHandlers.keySet().stream().filter(k -> k.startsWith(typePrefix)).sorted()
+                .collect(Collectors.toList());
+        System.err.println(logTag() + " No handler for: " + eventName + " (" + sameType.size() + " registered for "
+                + typePrefix + "*)");
+        if (Config.isDebug())
+            sameType.forEach(k -> System.err.println(logTag() + "   registered: " + k));
     }
 
     /**
