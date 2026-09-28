@@ -443,13 +443,71 @@ public class TreeHelper {
         Image[] result = ownImages(item, count);
         OwnerDraw drawn = ownerDraw(item);
         if (drawn != null) {
+            // The row's overlay already shows what the listener drew, images included.
+            boolean overlay = OwnerDrawOverlay.isListening(item.getApi());
             for (int i = 0; i < count; i++) {
-                if (drawn.suppressed[i] || result[i] == null) {
+                if (overlay) {
+                    if (drawn.suppressed[i]) result[i] = null;
+                } else if (drawn.suppressed[i] || result[i] == null) {
                     result[i] = dartImageOrNull(drawn.images[i]);
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * The columns whose text the row's overlay paints: null for a row that is not owner-drawn, and
+     * empty for one whose overlay Flutter has not reported listening yet, which is what asks for it.
+     */
+    public static int[] getPaintedTexts(DartTreeItem item) {
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn == null) {
+            return null;
+        }
+        if (!OwnerDrawOverlay.isListening(item.getApi())) {
+            return new int[0];
+        }
+        int[] painted = new int[drawn.suppressed.length];
+        int count = 0;
+        for (int i = 0; i < drawn.suppressed.length; i++) {
+            if (drawn.suppressed[i] || ownText(item, i) == null) {
+                painted[count++] = i;
+            }
+        }
+        return java.util.Arrays.copyOf(painted, count);
+    }
+
+    /**
+     * Names every row's owner-drawn content, which only a repaint announces. Only rows already
+     * materialised: walking a virtual tree's items would create them.
+     */
+    static void nameOwnerDrawnCells(DartTree tree) {
+        if (tree.items == null) {
+            return;
+        }
+        for (TreeItem row : tree.items) {
+            nameOwnerDrawnRows(row);
+        }
+    }
+
+    private static void nameOwnerDrawnRows(TreeItem row) {
+        if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTreeItem)) {
+            return;
+        }
+        DartTreeItem item = (DartTreeItem) row.getImpl();
+        nameOwnerDrawnCells(item);
+        if (item.items != null) {
+            for (TreeItem child : item.items) {
+                nameOwnerDrawnRows(child);
+            }
+        }
+    }
+
+    static void nameOwnerDrawnCells(DartTreeItem item) {
+        item.getValue().markDirty(VTreeItem.IMAGES);
+        item.getValue().markDirty(VTreeItem.TEXTS);
+        item.getValue().markDirty(VTreeItem.PAINTED_TEXTS);
     }
 
     public static String[] getTexts(DartTreeItem item) {
@@ -460,19 +518,7 @@ public class TreeHelper {
         }
         String[] result = new String[drawn.suppressed.length];
         for (int i = 0; i < result.length; i++) {
-            String own = model != null && i < model.length ? model[i] : null;
-            // An empty cell is the absence of a model value, not a value of "". setText(1, s) on a
-            // fresh item builds the whole array and seeds strings[0] from the (empty) text, so an
-            // owner-drawn column 0 always has one -- treating it as a value would let it outrank
-            // what the PaintItem listener drew, which is the only content such a cell ever has.
-            if (own != null && own.isEmpty()) {
-                own = null;
-            }
-            // setText(0, s) leaves `strings` null and keeps the label in `text`, so column 0's model
-            // value can live there alone.
-            if (i == 0 && own == null && item.text != null && !item.text.isEmpty()) {
-                own = item.text;
-            }
+            String own = ownText(item, i);
             // Model wins only when not suppressed AND it has its own text; otherwise use what PaintItem drew.
             if (!drawn.suppressed[i] && own != null) {
                 result[i] = own;
@@ -486,6 +532,25 @@ public class TreeHelper {
             }
         }
         return result;
+    }
+
+    /** Column {@code i}'s model text, or null when the model has none for it. */
+    private static String ownText(DartTreeItem item, int i) {
+        String[] model = item.strings;
+        String own = model != null && i < model.length ? model[i] : null;
+        // An empty cell is the absence of a model value, not a value of "". setText(1, s) on a
+        // fresh item builds the whole array and seeds strings[0] from the (empty) text, so an
+        // owner-drawn column 0 always has one -- treating it as a value would let it outrank
+        // what the PaintItem listener drew, which is the only content such a cell ever has.
+        if (own != null && own.isEmpty()) {
+            own = null;
+        }
+        // setText(0, s) leaves `strings` null and keeps the label in `text`, so column 0's model
+        // value can live there alone.
+        if (i == 0 && own == null && item.text != null && !item.text.isEmpty()) {
+            own = item.text;
+        }
+        return own;
     }
 
     public static void setImages(Image[] value, DartTreeItem item) {
@@ -581,6 +646,9 @@ public class TreeHelper {
             dartGc.textCapture = null;
             dartGc.imageCapture = null;
             gc.dispose();
+        }
+        if (OwnerDrawOverlay.isListening(item.getApi())) {
+            OwnerDrawOverlay.paint(item.parent, item.getApi(), count);
         }
         return new OwnerDraw(texts, textDrawn, images, suppressed);
     }

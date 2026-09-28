@@ -479,13 +479,41 @@ public class TableHelper {
         Image[] result = ownImages(item, count);
         OwnerDraw drawn = ownerDraw(item);
         if (drawn != null) {
+            // The row's overlay already shows what the listener drew, images included.
+            boolean overlay = OwnerDrawOverlay.isListening(item.getApi());
             for (int i = 0; i < count; i++) {
-                if (drawn.suppressed[i] || result[i] == null) {
+                if (overlay) {
+                    if (drawn.suppressed[i]) result[i] = null;
+                } else if (drawn.suppressed[i] || result[i] == null) {
                     result[i] = dartImageOrNull(drawn.images[i]);
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * The columns whose text the row's overlay paints: null for a row that is not owner-drawn, and
+     * empty for one whose overlay Flutter has not reported listening yet, which is what asks for it.
+     */
+    public static int[] getPaintedTexts(DartTableItem item) {
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn == null) {
+            return null;
+        }
+        if (!OwnerDrawOverlay.isListening(item.getApi())) {
+            return new int[0];
+        }
+        String[] model = item.strings;
+        int[] painted = new int[drawn.suppressed.length];
+        int count = 0;
+        for (int i = 0; i < drawn.suppressed.length; i++) {
+            String own = model != null && i < model.length ? model[i] : null;
+            if (drawn.suppressed[i] || own == null) {
+                painted[count++] = i;
+            }
+        }
+        return Arrays.copyOf(painted, count);
     }
 
     public static String[] getTexts(DartTableItem item) {
@@ -566,10 +594,14 @@ public class TableHelper {
             if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTableItem)) {
                 continue;
             }
-            DartTableItem item = (DartTableItem) row.getImpl();
-            item.getValue().markDirty(VTableItem.IMAGES);
-            item.getValue().markDirty(VTableItem.TEXTS);
+            nameOwnerDrawnCells((DartTableItem) row.getImpl());
         }
+    }
+
+    static void nameOwnerDrawnCells(DartTableItem item) {
+        item.getValue().markDirty(VTableItem.IMAGES);
+        item.getValue().markDirty(VTableItem.TEXTS);
+        item.getValue().markDirty(VTableItem.PAINTED_TEXTS);
     }
 
     private static OwnerDraw ownerDraw(DartTableItem item) {
@@ -626,6 +658,9 @@ public class TableHelper {
             dartGc.textCapture = null;
             dartGc.imageCapture = null;
             gc.dispose();
+        }
+        if (OwnerDrawOverlay.isListening(item.getApi())) {
+            OwnerDrawOverlay.paint(item.parent, item.getApi(), count);
         }
         return new OwnerDraw(texts, textDrawn, images, suppressed);
     }

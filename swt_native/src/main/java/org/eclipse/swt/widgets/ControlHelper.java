@@ -400,6 +400,8 @@ public class ControlHelper {
         }
         if (c instanceof DartTable) {
             TableHelper.nameOwnerDrawnCells((DartTable) c);
+        } else if (c instanceof DartTree) {
+            TreeHelper.nameOwnerDrawnCells((DartTree) c);
         }
     }
 

@@ -1286,6 +1286,12 @@ public class DartTableItem extends DartItem implements ITableItem {
         return TableHelper.getTexts(this);
     }
 
+    public int[] getPaintedTexts() {
+        return TableHelper.getPaintedTexts(this);
+    }
+
+    boolean ownerDrawOverlay;
+
     public void setImages(Image[] value) {
         TableHelper.setImages(value, this);
     }

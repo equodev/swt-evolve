@@ -30,6 +30,7 @@ class VTableItem extends VItem {
   VColor? foreground;
   bool? grayed;
   List<VImage?>? images;
+  List<int>? paintedTexts;
   List<String?>? texts;
 
   @override
@@ -42,6 +43,7 @@ class VTableItem extends VItem {
       foreground = other.foreground;
       grayed = other.grayed;
       images = other.images;
+      paintedTexts = other.paintedTexts;
       texts = other.texts;
     }
   }
@@ -71,6 +73,10 @@ class VTableItem extends VItem {
               (e) =>
                   e == null ? null : VImage.fromJson(e as Map<String, dynamic>),
             )
+            .toList();
+      case 'paintedTexts':
+        paintedTexts = (json['paintedTexts'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
             .toList();
       case 'texts':
         texts = (json['texts'] as List<dynamic>?)

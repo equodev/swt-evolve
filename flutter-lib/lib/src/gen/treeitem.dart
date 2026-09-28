@@ -33,6 +33,7 @@ class VTreeItem extends VItem {
   bool? grayed;
   List<VImage?>? images;
   List<VTreeItem>? items;
+  List<int>? paintedTexts;
   List<String?>? texts;
 
   @override
@@ -47,6 +48,7 @@ class VTreeItem extends VItem {
       grayed = other.grayed;
       images = other.images;
       items = other.items;
+      paintedTexts = other.paintedTexts;
       texts = other.texts;
     }
   }
@@ -82,6 +84,10 @@ class VTreeItem extends VItem {
       case 'items':
         items = (json['items'] as List<dynamic>?)
             ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'paintedTexts':
+        paintedTexts = (json['paintedTexts'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
             .toList();
       case 'texts':
         texts = (json['texts'] as List<dynamic>?)

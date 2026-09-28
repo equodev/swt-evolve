@@ -27,6 +27,7 @@ import '../theme/theme_settings/table_theme_settings.dart';
 import '../gen/widgets.dart';
 import '../gen/rectangle.dart';
 import 'utils/double_tap_detector.dart';
+import 'owner_draw_overlay.dart';
 
 /// Below this many rows a table is built whole, so short tables keep every row's semantics node.
 const int _rowWindowFloor = 200;
@@ -597,22 +598,51 @@ class TableImpl<T extends TableSwt, V extends VTable>
                       top: window.start * rowHeight,
                       bottom: (totalRows - window.end) * rowHeight,
                     ),
-                    child: Table(
-                      columnWidths: trailingColumnWidths,
-                      border: buildBodyBorder(showLines, theme),
-                      children: [
-                        for (int i = window.start; i < window.end; i++)
-                          i < items.length
-                              ? buildRow(context, i, items[i], columns.length, theme,
-                                  showLines: showLines)
-                              : buildPendingRow(columns, rowHeight, showLines, theme),
-                      ],
+                    child: withOwnerDrawnRows(
+                      Table(
+                        columnWidths: trailingColumnWidths,
+                        border: buildBodyBorder(showLines, theme),
+                        children: [
+                          for (int i = window.start; i < window.end; i++)
+                            i < items.length
+                                ? buildRow(context, i, items[i], columns.length, theme,
+                                    showLines: showLines)
+                                : buildPendingRow(columns, rowHeight, showLines, theme),
+                        ],
+                      ),
+                      items,
+                      window,
+                      rowHeight,
                     ),
                   ),
                 );
               },
             ),
     );
+  }
+
+  /// Lays each owner-drawn row's overlay over the row it paints. A Table row has no widget of its
+  /// own to carry one, and every row in the window is [rowHeight] tall.
+  Widget withOwnerDrawnRows(
+    Widget rows,
+    List<VTableItem> items,
+    _RowWindow window,
+    double rowHeight,
+  ) {
+    final overlays = <Widget>[
+      for (int i = window.start; i < window.end && i < items.length; i++)
+        if (items[i].paintedTexts != null)
+          Positioned(
+            key: ValueKey(items[i].id),
+            top: (i - window.start) * rowHeight,
+            left: 0,
+            right: 0,
+            height: rowHeight,
+            child: OwnerDrawnRowOverlay(itemId: items[i].id),
+          ),
+    ];
+    // Always a Stack, so the rows are not remounted when the first overlay arrives.
+    return Stack(children: [rows, ...overlays]);
   }
 
   /// Rows the table has: for a VIRTUAL table, more than the rows whose data has arrived. Falls back

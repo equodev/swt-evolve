@@ -2427,6 +2427,13 @@ public class DartTree extends DartComposite implements ITree {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "PaintItem", "PaintItem", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
         FlutterBridge.on(this, "Scroll", "Scroll", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

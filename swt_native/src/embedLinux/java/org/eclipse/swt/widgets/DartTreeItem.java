@@ -1583,6 +1583,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return TreeHelper.getTexts(this);
     }
 
+    public int[] getPaintedTexts() {
+        return TreeHelper.getPaintedTexts(this);
+    }
+
+    boolean ownerDrawOverlay;
+
     public void setImages(Image[] value) {
         TreeHelper.setImages(value, this);
     }

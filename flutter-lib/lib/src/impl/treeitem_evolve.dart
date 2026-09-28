@@ -17,6 +17,7 @@ import '../gen/button.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
+import 'owner_draw_overlay.dart';
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
@@ -285,7 +286,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _wrapItemForDrag(
-            _buildItemRow(
+            _withOwnerDrawOverlay(_buildItemRow(
               context: context,
               widgetTheme: widgetTheme,
               texts: texts,
@@ -304,12 +305,27 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               nextItemSelected: nextItemSelected,
               hasMultiColumn: hasMultiColumn,
               effectiveItemHeight: effectiveItemHeight,
-            ),
+            )),
           ),
           if (expanded && hasChildren && (_context?.renderChildItems ?? true))
             ...buildChildItems(),
         ],
       ),
+    );
+  }
+
+  /// Lays what an owner-drawing Tree paints into this row over the row, not over its children.
+  Widget _withOwnerDrawOverlay(Widget row) {
+    // Always a Stack, so the row is not remounted when the overlay arrives.
+    return Stack(
+      children: [
+        row,
+        if (state.paintedTexts != null)
+          Positioned.fill(
+            key: ValueKey(state.id),
+            child: OwnerDrawnRowOverlay(itemId: state.id),
+          ),
+      ],
     );
   }
 
@@ -1097,10 +1113,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required int columnIndex,
     bool hasMultiColumn = false,
   }) {
-    final cellTextColor = getForegroundColor(
-      foreground: state.foreground,
-      defaultColor: textColor,
-    );
+    // Text the row's owner-draw overlay paints keeps its place and semantics, but is not painted
+    // twice.
+    final cellTextColor = (state.paintedTexts?.contains(columnIndex) ?? false)
+        ? Colors.transparent
+        : getForegroundColor(
+            foreground: state.foreground,
+            defaultColor: textColor,
+          );
     final TextStyle baseStyle = hasMultiColumn
         ? (theme.itemTextStyleWithCols ?? theme.itemTextStyle ?? const TextStyle())
         : theme.itemTextStyle ?? const TextStyle();

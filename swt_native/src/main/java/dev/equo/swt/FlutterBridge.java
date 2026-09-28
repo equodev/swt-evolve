@@ -138,6 +138,13 @@ public abstract class FlutterBridge {
         handleWidgetRefresh(Long.toString(id));
     }
 
+    /** The live widget or resource with this {@link #id}, or null when there is none. */
+    public static Object findById(long id) {
+        java.lang.ref.WeakReference<Object> ref = widgetsById.get(id);
+        Object w = ref != null ? ref.get() : null;
+        return w == null || isDisposed(w) ? null : w;
+    }
+
     static void handleWidgetRefresh(String idText) {
         if (idText == null) return;
         long id;
@@ -936,6 +943,9 @@ public abstract class FlutterBridge {
     public static void send(DartResource resource, String event, Object args) {
         CommService comm = commFor(resource);
         if (resource instanceof DartGC) { DartGC gc = (DartGC) resource;
+            // Flutter never learns a silently disposed GC exists: its drawing would be sent on its
+            // drawable's channel and never committed.
+            if (gc.silentDispose) return;
             bufferOp(comm, gc, event, args);
             return;
         }
@@ -981,7 +991,7 @@ public abstract class FlutterBridge {
         MessageBatch batch = opBatches.computeIfAbsent(gc, g -> borrowBatch());
         String channel = gcChannel(gc);
         // A control's overlay outlives its GCs; an image GC's drawer starts blank, so it has no target.
-        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.drawableOf(gc);
+        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
         int connection = comm == null ? 0 : comm.connectionId();
         boolean[] failed = { false };
         // Per paint cycle: the description is staged at the first op and the send decided at the last.
@@ -1046,7 +1056,7 @@ public abstract class FlutterBridge {
         VResource value = gc.getValue();
         int connection = comm == null ? 0 : comm.connectionId();
         // Id 0 is shared by every GC on a drawable that is neither a control nor an image.
-        Object channel = id(gc) == 0 ? null : gc._drawable();
+        Object channel = id(gc) == 0 ? null : GCHelper.stateKeyOf(gc);
         synchronized (gcStateSeq) {
             Long held = channel == null ? null : gcStateSeq.get(channel);
             long base = value.sentSeq(connection);
@@ -1067,7 +1077,7 @@ public abstract class FlutterBridge {
     private static boolean stageGcState(MessageBatch batch, String channel, Object target, DartGC gc,
             int connection) throws IOException {
         VResource value = gc.getValue();
-        Object drawable = id(gc) == 0 ? null : gc._drawable();
+        Object drawable = id(gc) == 0 ? null : GCHelper.stateKeyOf(gc);
         synchronized (gcStateSeq) {
             Long held = drawable == null ? null : gcStateSeq.get(drawable);
             long base = value.sentSeq(connection);
@@ -1111,7 +1121,7 @@ public abstract class FlutterBridge {
 
     /** Where {@link #addGcStateIfChanged} records what it last staged for a GC. */
     private static Object gcStateKey(DartGC gc) {
-        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.drawableOf(gc);
+        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
         return target == null ? gc : target;
     }
 

@@ -31,6 +31,9 @@ VTableItem _$VTableItemFromJson(Map<String, dynamic> json) => VTableItem()
         (e) => e == null ? null : VImage.fromJson(e as Map<String, dynamic>),
       )
       .toList()
+  ..paintedTexts = (json['paintedTexts'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..texts = (json['texts'] as List<dynamic>?)
       ?.map((e) => e as String?)
       .toList();
@@ -48,5 +51,6 @@ Map<String, dynamic> _$VTableItemToJson(VTableItem instance) =>
       'foreground': ?instance.foreground,
       'grayed': ?instance.grayed,
       'images': ?instance.images,
+      'paintedTexts': ?instance.paintedTexts,
       'texts': ?instance.texts,
     };

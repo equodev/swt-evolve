@@ -3338,6 +3338,13 @@ public class DartTable extends DartComposite implements ITable {
                 TableHelper.loadVirtualWindow(this, e.end);
             });
         });
+        FlutterBridge.on(this, "PaintItem", "PaintItem", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

@@ -93,10 +93,14 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         isSelected,
         enabled,
       );
+      // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
+      // painted twice.
+      final paintedByOverlay =
+          state.paintedTexts?.contains(columnIndex) ?? false;
       final cellTextStyle = getTextStyle(
         context: context,
         font: state.font ?? _context?.tableFont,
-        textColor: cellTextColor,
+        textColor: paintedByOverlay ? Colors.transparent : cellTextColor,
         baseTextStyle: theme.rowTextStyle,
       );
       final columnAlignment = columnIndex < columns.length

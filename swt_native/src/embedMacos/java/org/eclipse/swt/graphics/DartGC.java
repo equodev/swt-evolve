@@ -1890,6 +1890,8 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public int hashCode() {
+        if (ownerDrawItem != null)
+            return ownerDrawItem.hashCode();
         if (gcImageId != 0)
             return gcImageId;
         if (drawable instanceof Control) {
@@ -3310,6 +3312,14 @@ public final class DartGC extends DartResource implements IGC {
     public java.util.function.Consumer<String> textCapture;
 
     public boolean silentDispose;
+
+    org.eclipse.swt.widgets.Widget ownerDrawItem;
+
+    public void paintOwnerDrawnItem(org.eclipse.swt.widgets.Widget item) {
+        ownerDrawItem = item;
+        fullRepaint = true;
+        paintDamage = null;
+    }
 
     public boolean skipRenderOnDispose;
 

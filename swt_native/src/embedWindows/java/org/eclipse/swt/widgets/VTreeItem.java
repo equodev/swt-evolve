@@ -92,6 +92,13 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).items = value;
     }
 
+    public int[] getPaintedTexts() {
+        return ((DartTreeItem) impl).getPaintedTexts();
+    }
+
+    public void setPaintedTexts(int[] value) {
+    }
+
     public String[] getTexts() {
         return ((DartTreeItem) impl).getTexts();
     }
@@ -115,6 +122,8 @@ public class VTreeItem extends VItem {
     public static final String IMAGES = "images";
 
     public static final String ITEMS = "items";
+
+    public static final String PAINTED_TEXTS = "paintedTexts";
 
     public static final String TEXTS = "texts";
 
@@ -144,6 +153,9 @@ public class VTreeItem extends VItem {
                 return;
             case "items":
                 Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "paintedTexts":
+                Serializer.writeKeyValue(writer, "paintedTexts", getPaintedTexts());
                 return;
             case "texts":
                 Serializer.writeKeyValue(writer, "texts", getTexts());

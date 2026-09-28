@@ -78,6 +78,13 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).setImages(value);
     }
 
+    public int[] getPaintedTexts() {
+        return ((DartTableItem) impl).getPaintedTexts();
+    }
+
+    public void setPaintedTexts(int[] value) {
+    }
+
     public String[] getTexts() {
         return ((DartTableItem) impl).getTexts();
     }
@@ -97,6 +104,8 @@ public class VTableItem extends VItem {
     public static final String GRAYED = "grayed";
 
     public static final String IMAGES = "images";
+
+    public static final String PAINTED_TEXTS = "paintedTexts";
 
     public static final String TEXTS = "texts";
 
@@ -120,6 +129,9 @@ public class VTableItem extends VItem {
                 return;
             case "images":
                 Serializer.writeKeyValue(writer, "images", getImages());
+                return;
+            case "paintedTexts":
+                Serializer.writeKeyValue(writer, "paintedTexts", getPaintedTexts());
                 return;
             case "texts":
                 Serializer.writeKeyValue(writer, "texts", getTexts());

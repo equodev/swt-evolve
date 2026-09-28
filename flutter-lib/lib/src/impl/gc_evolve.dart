@@ -8,6 +8,7 @@ import '../theme/theme_extensions/composite_theme_extension.dart';
 import 'canvas_evolve.dart';
 import 'control_evolve.dart';
 import 'gcdrawer_evolve.dart';
+import 'owner_draw_overlay.dart';
 
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
@@ -56,6 +57,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   void _notifyParentGCSubscribed() {
+    final row = _ownerDrawnRow();
+    if (row != null) {
+      row.onGCSubscribed();
+      return;
+    }
     context.visitAncestorElements((element) {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
@@ -118,6 +124,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void _notifyParentGCReady() {
     final bool ready =
         _stateDelivered || _drawer.shapes.isNotEmpty || _snapshot.isNotEmpty;
+    final row = _ownerDrawnRow();
+    if (row != null) {
+      if (ready) row.onGCReady();
+      return;
+    }
     context.visitAncestorElements((element) {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
@@ -129,6 +140,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       }
       return true;
     });
+  }
+
+  /// The owner-drawn Table/Tree row this GC paints, when it is one.
+  OwnerDrawnRowOverlayState? _ownerDrawnRow() {
+    final row = context.findAncestorStateOfType<OwnerDrawnRowOverlayState>();
+    return row != null && row.gcKey == widget.key ? row : null;
   }
 
   CanvasThemeExtension get _canvasTheme =>

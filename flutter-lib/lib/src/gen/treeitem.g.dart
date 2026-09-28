@@ -35,6 +35,9 @@ VTreeItem _$VTreeItemFromJson(Map<String, dynamic> json) => VTreeItem()
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..paintedTexts = (json['paintedTexts'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..texts = (json['texts'] as List<dynamic>?)
       ?.map((e) => e as String?)
       .toList();
@@ -53,5 +56,6 @@ Map<String, dynamic> _$VTreeItemToJson(VTreeItem instance) => <String, dynamic>{
   'grayed': ?instance.grayed,
   'images': ?instance.images,
   'items': ?instance.items,
+  'paintedTexts': ?instance.paintedTexts,
   'texts': ?instance.texts,
 };

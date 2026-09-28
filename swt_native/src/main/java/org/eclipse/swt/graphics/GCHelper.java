@@ -11,6 +11,15 @@ public class GCHelper {
         return gc == null ? null : gc.drawable;
     }
 
+    /**
+     * What a GC's channel belongs to, and so what its described state is recorded against: the
+     * owner-drawn item it paints when it has one, else its drawable.
+     */
+    public static Object stateKeyOf(DartGC gc) {
+        if (gc == null) return null;
+        return gc.ownerDrawItem != null ? gc.ownerDrawItem : gc.drawable;
+    }
+
 
     public static FontMetrics createFontMetrics(Font font) {
         Font resolved = font != null ? font : systemFont();
