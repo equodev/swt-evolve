@@ -41,9 +41,9 @@ class _RecordingCompositeSwt extends CompositeSwt<VComposite> {
   void sendFocusFocusOut(VComposite val, VEvent? payload) => calls.add('focusOut');
 }
 
-VComposite _childlessComposite() => VComposite()
+VComposite _childlessComposite({int style = SWT.NONE}) => VComposite()
   ..id = 1
-  ..style = SWT.NONE
+  ..style = style
   ..enabled = true
   ..visible = true
   ..bounds = (VRectangle()
@@ -52,7 +52,7 @@ VComposite _childlessComposite() => VComposite()
     ..width = 200
     ..height = 60);
 
-Future<List<String>> _pump(WidgetTester tester, List<String> calls) async {
+Future<List<String>> _pump(WidgetTester tester, List<String> calls, {int style = SWT.NONE}) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
@@ -60,7 +60,7 @@ Future<List<String>> _pump(WidgetTester tester, List<String> calls) async {
       child: SizedBox(
         width: 200,
         height: 60,
-        child: _RecordingCompositeSwt(value: _childlessComposite(), calls: calls),
+        child: _RecordingCompositeSwt(value: _childlessComposite(style: style), calls: calls),
       ),
     ),
   ));
@@ -117,6 +117,21 @@ void main() {
 
     expect(calls, equals(['focusIn', 'down']),
         reason: 'SWT focuses the control a press lands on and delivers FocusIn before the press');
+  });
+
+  testWidgets('a press on a NO_FOCUS surface does not take the focus', (tester) async {
+    final calls = await _pump(tester, <String>[], style: SWT.NO_FOCUS);
+    final gesture = await _mouseOutside(tester);
+    await gesture.moveTo(onSurface);
+    await tester.pump();
+    calls.clear();
+
+    await gesture.down(onSurface);
+    await tester.pump();
+
+    expect(calls, equals(['down']),
+        reason: 'a control created with SWT.NO_FOCUS never takes the focus on a click, so the '
+            'control that holds it keeps it');
   });
 
   testWidgets('a second press on the same surface does not re-report FocusIn', (tester) async {

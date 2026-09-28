@@ -244,6 +244,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   @override
   void takeFocusOnPress() {
     if (!_isSurface || _surfaceFocus.hasFocus) return;
+    if ((state.style & SWT.NO_FOCUS) != 0) return;
     _surfaceFocus.requestFocus();
     _reportSurfaceFocusIn();
   }

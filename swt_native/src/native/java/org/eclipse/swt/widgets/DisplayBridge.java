@@ -1025,6 +1025,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
         publishActiveShell();
         requestClientFocus(widget);
+        if (forDisplay != null)
+            forDisplay.checkFocus();
         return true;
     }
 
@@ -1126,6 +1128,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             }
             if (focused == null)
                 publishActiveShell();
+            if (forDisplay != null)
+                forDisplay.checkFocus();
         }
         // The client moved focus off it, so focusing it again later is a real move to send.
         if (focusRequested == widget) {
