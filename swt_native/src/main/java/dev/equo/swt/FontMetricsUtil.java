@@ -382,7 +382,7 @@ public final class FontMetricsUtil {
             totalLines += linesInParagraph;
         }
         if (totalLines == 0) totalLines = 1;
-        return new PointD(maxWidth, lineHeight * totalLines + 2.0);
+        return new PointD(maxWidth, lineHeight * totalLines);
     }
 
     /**
