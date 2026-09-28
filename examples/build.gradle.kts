@@ -51,6 +51,7 @@ val coreCommandsVersion: String by project
 val equinoxCommonVersion: String by project
 val jfaceTextVersion: String by project
 val eclipseTextVersion: String by project
+val uiFormsVersion: String by project
 val nattableVersion: String by project
 
 val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
@@ -63,6 +64,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}")
     // JFace dependencies
     implementation("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
+        exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+    }
+    implementation("org.eclipse.platform:org.eclipse.ui.forms:$uiFormsVersion") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
     implementation("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")

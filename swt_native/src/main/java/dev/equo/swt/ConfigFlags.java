@@ -154,7 +154,9 @@ public class ConfigFlags {
 
     /** Logical pixels per SWT font point on this host, so the render side paints point-sized text
      *  at the size {@link FontMetricsUtil#dpiScale()} measured it at. The client cannot derive it:
-     *  its own platform is the browser's, not the one the application is laid out for. */
+     *  its own platform is the browser's, not the one the application is laid out for. Carries the
+     *  host's DPI only — {@link FontMetricsUtil#rawDpiScale()} — with the zoom left for each side to
+     *  divide by out of its own live copy. */
     public double font_point_scale;
 
     public static ConfigFlags use_swt_fonts(boolean v) {

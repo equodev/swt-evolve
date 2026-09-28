@@ -801,11 +801,93 @@ public class Config {
         configFlags.system_menu_bar = systemMenuBar();
         // Likewise derived: before a Display exists this falls back to the host's own convention,
         // and reads the Display's DPI once there is one.
-        configFlags.font_point_scale = FontMetricsUtil.dpiScale();
+        configFlags.font_point_scale = FontMetricsUtil.rawDpiScale();
         // Also derived, and for the same reason: the client reports the monitor's zoom only once it
         // is up, and swt.autoScale is applied to it after these flags were first read.
         configFlags.ui_zoom = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
         return configFlags;
+    }
+
+    /**
+     * The monitor's own zoom, as the client reported it.
+     *
+     * <p>100 until it does, rather than "unknown": the scale has to be right for the <em>first</em>
+     * measurement, not just eventually. Upstream {@code DPIUtil} makes the same assumption — its
+     * {@code nativeDeviceZoom} starts at 100 and the whole autoscale calculation runs off that — so
+     * this reads the zoom the same way SWT itself does before a display exists, and the client's
+     * report only corrects it on a monitor that is not at 100 %.
+     *
+     * <p>Waiting for the report is not a safe default. A control that measures text while the scale
+     * still reads 1.0 can cache the result for the rest of the run — {@code FormText} does, in
+     * {@code TextSegment.computeTextFragments}, which measures every word once and never again —
+     * and then lays those stale widths out inside a box that has since been divided by the zoom, so
+     * the text wraps at about two thirds of the width it should.
+     */
+    private static volatile int clientDeviceZoom = 100;
+
+    /**
+     * Listeners for {@link #uiScale()} settling on a new value. The client reports the monitor it is
+     * on well after the widget tree is built, so anything that sized itself by the scale has to be
+     * told when the real one arrives rather than reading it once at construction.
+     */
+    private static final java.util.List<Runnable> uiScaleListeners =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static volatile double notifiedUiScale = 1.0;
+
+    public static void addUiScaleListener(Runnable listener) {
+        if (listener != null) uiScaleListeners.add(listener);
+    }
+
+    /** Call once the client's zoom AND the UI zoom derived from it are both in place. */
+    public static void setClientDeviceZoom(int zoom) {
+        if (zoom > 0) clientDeviceZoom = zoom;
+        double scale = uiScale();
+        if (scale == notifiedUiScale) return;
+        notifiedUiScale = scale;
+        for (Runnable listener : uiScaleListeners) {
+            try {
+                listener.run();
+            } catch (Throwable ignored) {
+                // One listener failing must not stop the others from being told.
+            }
+        }
+    }
+
+    /**
+     * The factor the render side draws the tree at: the zoom SWT measures in over the monitor zoom
+     * the client draws at. 1.0 while the two agree or either is still unknown, which is every run
+     * that leaves {@code swt.autoScale} alone.
+     *
+     * <p>Kept in step with the render side's own {@code swtUiScale()} by construction: both are
+     * that same ratio. Read the monitor's zoom from what the client reported rather than from
+     * {@code DPIUtil.getNativeDeviceZoom()}, which the older supported SWT versions do not have.
+     */
+    public static double uiScale() {
+        return uiScaleFor(org.eclipse.swt.internal.DPIUtil.getDeviceZoom(), clientDeviceZoom);
+    }
+
+    static double uiScaleFor(int uiZoom, int monitorZoom) {
+        if (uiZoom <= 0 || monitorZoom <= 0) return 1.0;
+        return uiZoom / (double) monitorZoom;
+    }
+
+    /**
+     * Device pixels per SWT coordinate — how many pixels an off-screen buffer needs per unit the
+     * application draws in.
+     *
+     * <p>Not {@link #uiScale()}: that is only the part of the magnification the render side applies
+     * on top of the monitor. A coordinate travels through both — the tree is scaled by the UI zoom
+     * over the monitor zoom, and the result is then rasterized at the monitor zoom — so the two
+     * cancel down to the UI zoom alone. The distinction is invisible on a monitor at 100 %, where
+     * the two are equal, and is the difference between a crisp and a soft double buffer on any
+     * other one.
+     */
+    public static double rasterScale() {
+        return rasterScaleFor(org.eclipse.swt.internal.DPIUtil.getDeviceZoom());
+    }
+
+    static double rasterScaleFor(int uiZoom) {
+        return uiZoom > 0 ? uiZoom / 100.0 : 1.0;
     }
 
     /**

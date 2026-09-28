@@ -163,6 +163,41 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     protected void registerDisplayClientReady(DartDisplay display) {
         long displayId = display.getApi().hashCode();
+        relayoutWhenUiScaleSettles(display);
+        registerClientReadyHandler(display, displayId);
+    }
+
+    /**
+     * Lays the shells out again once the client has reported its monitor.
+     *
+     * <p>The widget tree is built before that report arrives, so anything that measured text on the
+     * way up did so at a scale that has since changed — and a layout is computed once and kept. Text
+     * is *painted* from the current scale, so type comes out the right size inside line boxes broken
+     * for the old one: a paragraph that wraps early and leaves a gutter. Measured at
+     * `swt.autoScale=150`: the first four extents of a wrapped paragraph came back at dpiScale
+     * 1.3333, the zoom arrived four lines later, and every later extent read 0.8889 — correct, and
+     * too late to affect where the lines had already been broken.
+     */
+    private void relayoutWhenUiScaleSettles(DartDisplay display) {
+        dev.equo.swt.Config.addUiScaleListener(() -> {
+            Display api = display.getApi();
+            if (api == null || api.isDisposed()) return;
+            try {
+                api.asyncExec(() -> {
+                    if (api.isDisposed()) return;
+                    for (Shell shell : api.getShells()) {
+                        if (shell.isDisposed()) continue;
+                        shell.layout(true, true);
+                        shell.redraw();
+                    }
+                });
+            } catch (org.eclipse.swt.SWTException disposed) {
+                // The display went away between the check and asyncExec.
+            }
+        });
+    }
+
+    private void registerClientReadyHandler(DartDisplay display, long displayId) {
         // Completing clientReady + pushing swt.evolve.properties on the first ClientReady is handled
         // by the shared FlutterBridge.onClientReady template; here we only do the Display-specific
         // work: sync Display bounds to the reported viewport and push the (first/next) update.
@@ -181,6 +216,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             Runnable apply = () -> {
                 int uiZoomBefore = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
                 display.applyClientDeviceZoom(p.zoom);
+                // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
+                // this one, and the UI zoom is what that call just derived.
+                dev.equo.swt.Config.setClientDeviceZoom(p.zoom);
                 // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
                 // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
                 // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.

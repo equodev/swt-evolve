@@ -18,12 +18,27 @@ class FontUtils {
   /// measured there and painted here has to use the one factor. This client's own platform is the
   /// browser's, which says nothing about the host, so it only answers until the first config
   /// arrives.
-  static double get pointScale {
+  ///
+  /// Divided by the zoom for the same reason `SwtZoomScale` shrinks every other piece of text:
+  /// `swt.autoScale` grows boxes and leaves glyphs alone, and the transform above this text would
+  /// otherwise grow it too. The factor is read live rather than taken off the flag — the flag is
+  /// pushed before the client has reported its monitor, so it cannot carry the ratio.
+  static double get pointScale => _hostPointScale / uiScale;
+
+  static double get _hostPointScale {
     final fromHost = getConfigFlags().font_point_scale;
     if (fromHost != null && fromHost > 0) return fromHost;
     return defaultTargetPlatform == TargetPlatform.macOS
         ? 1.0
         : _win32GtkDpi / _pointsPerInch;
+  }
+
+  /// The factor the whole tree is magnified by. Painted text divides by it by hand: a scene drawn
+  /// through a TextPainter is out of reach of the `MediaQuery.textScaler` that shrinks every Text
+  /// widget under the same transform.
+  static double get uiScale {
+    final scale = appScaleNotifier.value;
+    return scale > 0 ? scale : 1.0;
   }
 
   /// Convert SWT font style to Flutter FontWeight and FontStyle
@@ -61,7 +76,10 @@ class FontUtils {
       final defaultStyle = context != null
           ? DefaultTextStyle.of(context).style
           : const TextStyle(fontSize: 12);
-      return defaultStyle.copyWith(color: color, fontSize: 12);
+      // Painted text has no font of its own here, but it is still painted: the fallback size is in
+      // logical pixels and has to come down by the zoom like every other glyph.
+      return defaultStyle.copyWith(
+          color: color, fontSize: applyDpiScaling ? 12 / uiScale : 12);
     }
 
     final fontData = vFont.fontData!.first;

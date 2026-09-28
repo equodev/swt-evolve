@@ -39,6 +39,39 @@ class ConfigUiZoomTest {
     }
 
     @Test
+    void the_scale_follows_autoscale_before_the_client_has_reported_anything() {
+        // A control that measures text this early can cache the result for the whole run -- FormText
+        // does -- so the scale has to be right on the first call and not only once the report
+        // arrives. Until then the monitor is taken to be at 100%, the same assumption DPIUtil boots
+        // with, which is what makes `swt.autoScale=150` read as 1.5 from the start.
+        DPIUtil.setDeviceZoom(100);
+        assertThat(Config.uiScale()).isEqualTo(1.0);
+        assertThat(Config.uiScaleFor(150, 100)).isEqualTo(1.5);
+        // A monitor the client has reported pulls the other way: the UI is drawn at 150 on a screen
+        // that already draws at 200, so the tree is shrunk, not grown.
+        assertThat(Config.uiScaleFor(150, 200)).isEqualTo(0.75);
+        assertThat(Config.uiScaleFor(0, 100)).isEqualTo(1.0);
+        assertThat(Config.uiScaleFor(150, 0)).isEqualTo(1.0);
+    }
+
+    @Test
+    void an_off_screen_buffer_is_sized_by_the_zoom_alone_not_by_the_part_left_to_the_render_side() {
+        // A coordinate is magnified by uiScale and then rasterized at the monitor's zoom, so the
+        // pixels an off-screen buffer needs per coordinate are the UI zoom whatever the monitor is.
+        // The two only coincide at 100%, which is why reading uiScale() here looks right until
+        // someone runs the app on a HiDPI screen and every owner-drawn control goes soft.
+        assertThat(Config.rasterScaleFor(150)).isEqualTo(1.5);
+        assertThat(Config.rasterScaleFor(200)).isEqualTo(2.0);
+        assertThat(Config.rasterScaleFor(100)).isEqualTo(1.0);
+        assertThat(Config.rasterScaleFor(0)).isEqualTo(1.0);
+
+        // And it is the zoom SWT ended up with that is read, not the one asked for: setDeviceZoom
+        // runs the value through the autoscale policy, which is free to round it.
+        DPIUtil.setDeviceZoom(150);
+        assertThat(Config.rasterScale()).isEqualTo(DPIUtil.getDeviceZoom() / 100.0);
+    }
+
+    @Test
     void the_zoom_is_read_at_every_call_because_the_client_reports_its_monitor_late() {
         // The flags are computed and cached the first time anything asks for them, which happens
         // before the client has said what monitor it is on -- so a cached zoom would be the boot

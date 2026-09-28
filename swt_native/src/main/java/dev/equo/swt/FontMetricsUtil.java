@@ -137,16 +137,46 @@ public final class FontMetricsUtil {
     /**
      * Logical pixels per SWT font point — {@code dpi / 72} by SWT's own definition.
      * {@link GenFontMetrics} stores point advances while text is painted at the display DPI, so
-     * widths derived from the table must be multiplied by this to land on painted glyphs. The
-     * render side scales by the same factor — it reads it off {@code ConfigFlags.font_point_scale},
-     * which is this value.
+     * widths derived from the table must be multiplied by this to land on painted glyphs. Divided
+     * by the zoom, so text measured here matches text painted there — see
+     * {@link #pointScaleForZoom}.
      */
     public static double dpiScale() {
-        Display display = Display.getCurrent();
-        return (display != null && display.getDPI().x > 0)
-                ? display.getDPI().x / POINTS_PER_INCH
-                : hostScreenDPI().x / POINTS_PER_INCH;
+        return pointScaleForZoom(rawDpiScale(), Config.uiScale());
     }
+
+    /**
+     * The same figure with the zoom left out — what the host's DPI alone says a point is worth.
+     *
+     * <p>This is what travels to the render side in {@code ConfigFlags.font_point_scale}, because
+     * the zoom does not travel with it: the client learns the monitor late, and a flag carrying the
+     * ratio would be read there before that and again after, with no way to tell one from the other.
+     * Each side divides by the zoom it currently holds instead.
+     */
+    public static double rawDpiScale() {
+        Display display = Display.getCurrent();
+        double dpi = (display != null && display.getDPI().x > 0)
+                ? display.getDPI().x
+                : hostScreenDPI().x;
+        return dpi / POINTS_PER_INCH;
+    }
+
+    /**
+     * Text is the one thing {@code swt.autoScale} does not grow. Native SWT builds a font from the
+     * monitor's real DPI — {@code Device#computePixels} reads {@code GetDeviceCaps} and never
+     * consults {@code DPIUtil} — so raising the flag widens every box, row and image while the
+     * glyphs inside them stay the size they were.
+     *
+     * <p>Evolve gets there from the other end: the tree is laid out in a space divided by the zoom
+     * and magnified back, which grows everything including the text. Shrinking a point by the same
+     * factor here lets that magnification cancel, leaving glyphs at their true size in boxes that
+     * grew. The render side divides by the same factor, from its own copy of the zoom:
+     * {@code FontUtils.pointScale} for painted text, {@code SwtZoomScale} for the rest.
+     */
+    static double pointScaleForZoom(double pointScale, double uiScale) {
+        return uiScale > 0 ? pointScale / uiScale : pointScale;
+    }
+
 
     /**
      * Computes scaled font metric values for the given font.
@@ -162,7 +192,7 @@ public final class FontMetricsUtil {
         Display display = Display.getCurrent();
         int h = effectiveHeight(fd, display);
         double scale = (double) h / GenFontMetrics.BASE;
-        double dpiScale = display != null ? display.getDPI().x / POINTS_PER_INCH : 1.0;
+        double dpiScale = dpiScale();
         return new int[]{
             (int) Math.round(m.ascent() * h * dpiScale),
             (int) Math.round(m.descent() * h * dpiScale),

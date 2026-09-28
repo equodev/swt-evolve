@@ -12,6 +12,7 @@ import '../gen/event.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import 'browser_app_base.dart';
+import 'widget_config.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
 import 'key_mapping.dart';
@@ -66,6 +67,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   @override
   void initState() {
     super.initState();
+    appScaleNotifier.addListener(_applyContentZoom);
 
     // On web, stamp the iframe name so a hosting Chromium standalone window can
     // identify this Browser's sub-frame for cancellable LocationListener.changing.
@@ -105,6 +107,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               Future.delayed(const Duration(milliseconds: 150), () {
                 if (mounted) _emitTitle();
               });
+              _applyContentZoom();
               // Re-expose BrowserFunctions in the freshly-loaded document.
               for (final name in _functionNames) {
                 _injectBrowserFunction(name);
@@ -337,6 +340,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   @override
   void dispose() {
+    appScaleNotifier.removeListener(_applyContentZoom);
     _releaseInlineDocument();
     super.dispose();
   }
@@ -641,8 +645,72 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     }
   }
 
+  /// Grows the page with the rest of the tree.
+  ///
+  /// [_unzoomed] hands the webview a viewport `zoom` times wider and takes the magnification back
+  /// out, so on its own the page would keep the size it has unzoomed — which is what native SWT
+  /// does, and which leaves the content looking small inside a UI drawn at 150 %. Zooming the
+  /// document by the same factor spends that wider viewport on larger type instead, at the full
+  /// pixel density the detour bought.
+  ///
+  /// Web has no `runJavaScript` (see the note on [_params]) and does not need this: its iframe is
+  /// magnified by the tree's own transform.
+  void _applyContentZoom() {
+    if (kIsWeb || !_navigationRequested) return;
+    final zoom = appScaleNotifier.value;
+    final factor = zoom > 0 ? zoom : 1.0;
+    try {
+      _controller.runJavaScript(
+          "document.documentElement.style.zoom=${factor.toStringAsFixed(6)};");
+    } catch (_) {
+      // No document to style yet; the next onPageFinished applies it.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return tagSemantics(WebViewWidget(controller: _controller));
+    return tagSemantics(ValueListenableBuilder<double>(
+      valueListenable: appScaleNotifier,
+      builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
+    ));
+  }
+
+  /// Renders the page at the pixel count it is displayed with, instead of stretching it.
+  ///
+  /// A native webview is composed as a texture sized for its own layout, so the tree's
+  /// magnification blows those pixels up rather than re-rendering the page. Laying the webview out
+  /// `zoom` times larger and scaling it back by the same factor leaves it exactly where it was on
+  /// screen while the texture carries `zoom` times the pixels. The page is then zoomed by the same
+  /// factor from the inside (see [_applyContentZoom]), so it ends up the size the rest of the tree
+  /// is drawn at — and sharp, which is the point of the detour.
+  ///
+  /// Web is left alone: there the webview is an `<iframe>`, a live document the browser re-renders
+  /// under the transform rather than a texture.
+  Widget _unzoomed(Widget webview, double zoom) {
+    if (kIsWeb || zoom <= 0 || zoom == 1.0) return webview;
+    return LayoutBuilder(builder: (context, constraints) {
+      if (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight) return webview;
+      // OverflowBox, not a plain SizedBox: a Transform does not change layout, so a child sized
+      // past its parent's constraints would simply be clamped back to them and then scaled down --
+      // leaving the page in 1/zoom of the space it was given.
+      return SizedBox(
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
+        child: ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: constraints.maxWidth * zoom,
+            maxWidth: constraints.maxWidth * zoom,
+            minHeight: constraints.maxHeight * zoom,
+            maxHeight: constraints.maxHeight * zoom,
+            child: Transform.scale(
+              scale: 1 / zoom,
+              alignment: Alignment.topLeft,
+              child: webview,
+            ),
+          ),
+        ),
+      );
+    });
   }
 }

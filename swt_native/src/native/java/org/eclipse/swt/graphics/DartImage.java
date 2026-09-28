@@ -193,9 +193,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, int width, int height, Image api) {
         super(device, api);
-        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        this.imageData = _allocateScratchBuffer(width, height);
         try {
-            init(width, height);
+            init(imageData.width, imageData.height);
             init();
         } finally {
         }
@@ -660,10 +660,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (imageGcDrawer == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageGcDrawer = imageGcDrawer;
-        this.width = width;
-        this.height = height;
-        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
-        init(width, height);
+        this.imageData = _allocateScratchBuffer(width, height);
+        init(imageData.width, imageData.height);
         init();
         GC gc = new GC(getApi());
         boolean drawn = false;
@@ -794,6 +792,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (logicalWidth != -1 && logicalHeight != -1)
+            return new Rectangle(0, 0, logicalWidth, logicalHeight);
         if (width != -1 && height != -1)
             return new Rectangle(0, 0, width, height);
         if (imageData != null)
@@ -1333,6 +1333,25 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (height != -1)
             return height;
         return imageData != null ? imageData.height : 0;
+    }
+
+    private int logicalWidth = -1, logicalHeight = -1;
+
+    private ImageData _allocateScratchBuffer(int width, int height) {
+        logicalWidth = width;
+        logicalHeight = height;
+        double zoom = dev.equo.swt.Config.rasterScale();
+        int bufferWidth = width > 0 ? Math.max(1, (int) Math.round(width * zoom)) : width;
+        int bufferHeight = height > 0 ? Math.max(1, (int) Math.round(height * zoom)) : height;
+        return new ImageData(bufferWidth, bufferHeight, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+    }
+
+    public int _logicalWidth() {
+        return logicalWidth;
+    }
+
+    public int _logicalHeight() {
+        return logicalHeight;
     }
 
     dev.equo.swt.comm.CommService remoteComm;

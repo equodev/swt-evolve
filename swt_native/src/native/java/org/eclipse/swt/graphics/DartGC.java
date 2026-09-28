@@ -524,6 +524,18 @@ public final class DartGC extends DartResource implements IGC {
             imageCapture.accept(image);
             return;
         }
+        // A draw at natural size of a zoom-aware double buffer (see
+        // Image#_allocateScratchBuffer) goes out as a scaled blit instead: the buffer is
+        // the source, the size the application drew at is the destination.
+        if (image.getImpl() instanceof DartImage) {
+            DartImage buffer = (DartImage) image.getImpl();
+            int logicalWidth = buffer._logicalWidth(), logicalHeight = buffer._logicalHeight();
+            int pixelWidth = buffer._wireWidth(), pixelHeight = buffer._wireHeight();
+            if (logicalWidth > 0 && logicalHeight > 0 && (logicalWidth != pixelWidth || logicalHeight != pixelHeight)) {
+                drawImage(image, 0, 0, pixelWidth, pixelHeight, x, y, logicalWidth, logicalHeight);
+                return;
+            }
+        }
         VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
         drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
         drawOp.x = x;
@@ -1939,6 +1951,7 @@ public final class DartGC extends DartResource implements IGC {
         }
         this.drawable = drawable;
         this.data = data;
+        applyImageBufferScale(data.image);
         if (drawable instanceof Control) {
             Control control = (Control) drawable;
             DartWidget widget = (DartWidget) control.getImpl();
@@ -3236,6 +3249,21 @@ public final class DartGC extends DartResource implements IGC {
     boolean fullRepaint;
 
     org.eclipse.swt.graphics.Rectangle paintDamage;
+
+    private void applyImageBufferScale(Image image) {
+        if (image == null || !(image.getImpl() instanceof DartImage))
+            return;
+        DartImage buffer = (DartImage) image.getImpl();
+        int logical = buffer._logicalWidth();
+        int pixels = buffer._wireWidth();
+        if (logical <= 0 || pixels <= logical)
+            return;
+        float scale = (float) pixels / logical;
+        Transform t = new Transform(data.device);
+        t.scale(scale, scale);
+        setTransform(t);
+        t.dispose();
+    }
 
     /**
      * Confines a clipping region to the area the in-flight Paint may touch. The platforms

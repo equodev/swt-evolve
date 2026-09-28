@@ -70,6 +70,33 @@ void main() {
     expect(body.height, closeTo(view.height / 2, 0.01));
   });
 
+  testWidgets('a zoomed app draws text at the size it would have unzoomed',
+      (tester) async {
+    Future<Size> textSizeAt(double scale, double fontSize) async {
+      appScaleNotifier.value = scale;
+      await tester.pumpWidget(MaterialApp(
+        builder: (context, child) => SwtZoomScale(child: child!),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: Text('Ag',
+                key: const Key('t'), style: TextStyle(fontSize: fontSize)),
+          ),
+        ),
+      ));
+      return tester.getSize(find.byKey(const Key('t')));
+    }
+
+    // Against a half-size run rather than a halved measurement: the glyph box rounds, so the two
+    // only agree exactly when both are laid out at the size the text really renders at.
+    final halfUnzoomed = await textSizeAt(1.0, 10);
+    final zoomed = await textSizeAt(2.0, 20);
+
+    // The transform doubles that box back, so the glyphs land on screen at the size the unzoomed
+    // run drew them -- which is what `swt.autoScale` does natively.
+    expect(zoomed, equals(halfUnzoomed));
+  });
+
   testWidgets('applying a zoom keeps every widget State alive', (tester) async {
     final key = GlobalKey<_ProbeState>();
     Widget app() => MaterialApp(

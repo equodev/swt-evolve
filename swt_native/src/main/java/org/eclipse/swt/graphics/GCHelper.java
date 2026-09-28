@@ -20,7 +20,6 @@ public class GCHelper {
         return gc.ownerDrawItem != null ? gc.ownerDrawItem : gc.drawable;
     }
 
-
     public static FontMetrics createFontMetrics(Font font) {
         Font resolved = font != null ? font : systemFont();
         int[] metrics = resolved != null ? FontMetricsUtil.computeFontMetrics(resolved) : null;
@@ -48,15 +47,10 @@ public class GCHelper {
             font = systemFont();
         }
         PointD size = FontMetricsUtil.getFontSize(line, font);
-        Display display = Display.getCurrent();
-        if (display != null) {
-            Point dpi = display.getDPI();
-            if (dpi != null && dpi.x > 0) {
-                double dpiScale = dpi.x / 72.0;
-                return new PointD(size.x() * dpiScale, size.y() * dpiScale);
-            }
-        }
-        return size;
+        // Through FontMetricsUtil rather than dpi/72 here: this extent is what decides where text
+        // wraps, and it has to agree with the size the text is painted at.
+        double dpiScale = FontMetricsUtil.dpiScale();
+        return dpiScale > 0 ? new PointD(size.x() * dpiScale, size.y() * dpiScale) : size;
     }
 
     /**

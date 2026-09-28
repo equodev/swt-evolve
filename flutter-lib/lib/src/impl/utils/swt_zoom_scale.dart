@@ -53,6 +53,16 @@ class SwtZoomScale extends StatelessWidget {
                   data: media.copyWith(
                     size: Size(w.isFinite ? w : media.size.width,
                         h.isFinite ? h : media.size.height),
+                    // Text is the one thing the zoom must not grow: native SWT builds fonts from
+                    // the monitor's own DPI, so `swt.autoScale` widens boxes, rows and images and
+                    // leaves the glyphs inside them alone. Shrinking by the same factor the
+                    // transform above magnifies by lands every Text at its true size. Painted text
+                    // -- the GC and StyledText scenes -- goes through a TextPainter, which no
+                    // MediaQuery reaches; Java divides those by the same factor when it publishes
+                    // `font_point_scale`.
+                    textScaler: scale > 0 && scale != 1.0
+                        ? TextScaler.linear(1 / scale)
+                        : media.textScaler,
                   ),
                   child: child,
                 ),
