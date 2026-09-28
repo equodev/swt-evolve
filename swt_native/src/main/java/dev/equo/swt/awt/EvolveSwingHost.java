@@ -13,6 +13,7 @@ import java.awt.event.ContainerListener;
 import java.awt.event.PaintEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -399,6 +400,56 @@ public final class EvolveSwingHost {
         return snapshot;
     }
 
+    interface HeavyweightVisitor {
+        void visit(Component heavy, int x, int y);
+    }
+
+    /**
+     * Visits every showing heavyweight under {@code root} with its offset from {@code root}'s origin.
+     * A heavyweight nested inside another (a canvas inside an applet) is visited too, right after its
+     * ancestor: the ancestor's own {@code paint} only covers its lightweight children, so the nested
+     * one has to be painted on top of it separately.
+     */
+    static void visitHeavyweights(Container root, int offsetX, int offsetY, HeavyweightVisitor visitor) {
+        for (Component child : root.getComponents()) {
+            if (!child.isShowing()) continue;
+            int cx = offsetX + child.getX();
+            int cy = offsetY + child.getY();
+            if (!child.isLightweight()) visitor.visit(child, cx, cy);
+            if (child instanceof Container) visitHeavyweights((Container) child, cx, cy, visitor);
+        }
+    }
+
+    private static final boolean OFFSCREEN_HEAVYWEIGHTS = Boolean.getBoolean("swt.evolve.heavyweight_offscreen");
+
+    private static final ClassValue<Method[]> OFFSCREEN_TOGGLE = new ClassValue<Method[]>() {
+        @Override
+        protected Method[] computeValue(Class<?> type) {
+            try {
+                return new Method[] {type.getMethod("isOffScreenBuffer"), type.getMethod("setOffScreenBuffer", boolean.class)};
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
+        }
+    };
+
+    /**
+     * Switches a heavyweight that exposes {@code isOffScreenBuffer()}/{@code setOffScreenBuffer(boolean)}
+     * into that mode. An OpenGL canvas normally renders into its own native window, which is never
+     * shown here, and paints nothing into the {@code Graphics} it is handed; in off-screen mode it
+     * renders into memory and draws the result into that {@code Graphics} instead. Checked on every
+     * frame because the hosting application may switch the mode back off at any time.
+     */
+    static void enableOffscreenRendering(Component heavy) {
+        Method[] toggle = OFFSCREEN_TOGGLE.get(heavy.getClass());
+        if (toggle == null) return;
+        try {
+            if (!Boolean.TRUE.equals(toggle[0].invoke(heavy))) toggle[1].invoke(heavy, true);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            // A component that refuses the switch keeps painting the way it did before.
+        }
+    }
+
     private static final class Host {
         private final Canvas canvas;
         // Cached at construction so the EDT never calls canvas.getDisplay() (which throws once the
@@ -691,22 +742,15 @@ public final class EvolveSwingHost {
              */
             private void paintHeavyweightDescendants(Container root, int offsetX, int offsetY,
                     int[] snapshot, int w, int h) {
-                for (Component child : root.getComponents()) {
-                    int cx = offsetX + child.getX();
-                    int cy = offsetY + child.getY();
-                    if (!child.isShowing()) continue;
-                    if (!child.isLightweight()) {
-                        blitHeavyweight(child, cx, cy, snapshot, w, h);
-                    } else if (child instanceof Container) {
-                        paintHeavyweightDescendants((Container) child, cx, cy, snapshot, w, h);
-                    }
-                }
+                visitHeavyweights(root, offsetX, offsetY,
+                        (heavy, x, y) -> blitHeavyweight(heavy, x, y, snapshot, w, h));
             }
 
             /** Paints one heavyweight component off-screen and composites it (premultiplied) into snapshot. */
             private void blitHeavyweight(Component heavy, int destX, int destY, int[] snapshot, int w, int h) {
                 int cw = heavy.getWidth(), ch = heavy.getHeight();
                 if (cw <= 0 || ch <= 0) return;
+                if (OFFSCREEN_HEAVYWEIGHTS) enableOffscreenRendering(heavy);
                 // The component reports its geometry in points while snapshot is the frame's pixel
                 // buffer, so render it at the display scale and place it at the scaled offset —
                 // otherwise a heavyweight child lands undersized in the top-left of where it belongs.

@@ -240,17 +240,19 @@ final class AwtInput {
     }
 
     /**
-     * Finds the heavyweight descendant of {@code root} under (x,y), with its absolute offset from
-     * {@code root}'s origin — or {@code null} if the point resolves to purely lightweight content,
-     * which {@code frame.dispatchEvent()}'s own {@code LightweightDispatcher} already routes
+     * Finds the innermost heavyweight descendant of {@code root} under (x,y), with its absolute
+     * offset from {@code root}'s origin — or {@code null} if the point resolves to purely lightweight
+     * content, which {@code frame.dispatchEvent()}'s own {@code LightweightDispatcher} already routes
      * correctly.
      *
      * <p>AWT's {@code LightweightDispatcher} deliberately stops retargeting a synthetic event at a
      * heavyweight child — normally that child's own native peer receives real input directly there
      * is no such peer here (the same reason {@code EvolveSwingHost.paintHeavyweightDescendants}
-     * exists for output), so input needs the same manual routing the paint side already gets.</p>
+     * exists for output), so input needs the same manual routing the paint side already gets. That
+     * includes a heavyweight nested inside another one (a canvas inside an applet), which the outer
+     * one's dispatcher would not route to either.</p>
      */
-    private static Component findHeavyweightAt(Container root, int x, int y, int[] offsetOut) {
+    static Component findHeavyweightAt(Container root, int x, int y, int[] offsetOut) {
         return findHeavyweightAt(root, x, y, 0, 0, offsetOut);
     }
 
@@ -262,6 +264,10 @@ final class AwtInput {
             if (x < b.x || y < b.y || x >= b.x + b.width || y >= b.y + b.height) continue;
             int cx = baseX + b.x, cy = baseY + b.y;
             if (!c.isLightweight()) {
+                if (c instanceof Container) {
+                    Component nested = findHeavyweightAt((Container) c, x - b.x, y - b.y, cx, cy, offsetOut);
+                    if (nested != null) return nested;
+                }
                 offsetOut[0] = cx;
                 offsetOut[1] = cy;
                 return c;
