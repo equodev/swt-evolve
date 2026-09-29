@@ -149,4 +149,20 @@ void main() {
     final clipTop = tester.getTopLeft(_inPlace(_probe)).dy + clip.clipper!.getClip(Size.zero).top;
     expect(clipTop, closeTo(body.top, 0.01));
   });
+
+  testWidgets('the hovered cell keeps its semantics and the copy adds none', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(_wrap(_table()));
+    await tester.pumpAndSettle();
+
+    await _hover(tester, _inPlace(_probe));
+    expect(find.text(_probe), findsNWidgets(2), reason: 'the copy must be showing');
+
+    // On the web every semantics node is a DOM element: one outside the row, over it, takes its clicks.
+    expect(tester.getSemantics(find.bySemanticsIdentifier('TableItem/103')).label, _probe,
+        reason: 'the transparent in-place cell dropped its label');
+    expect(find.bySemanticsLabel(_probe), findsOneWidget,
+        reason: 'the copy repeats the label outside the table');
+    semantics.dispose();
+  });
 }

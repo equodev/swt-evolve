@@ -593,12 +593,14 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       child: CompositedTransformFollower(
         link: _link,
         showWhenUnlinked: false,
-        // The real cell underneath still owns every gesture; this is paint only.
-        child: IgnorePointer(
-          // The overlay is outside any Material, where the inherited DefaultTextStyle is the
-          // debug one that underlines text in yellow. A transparent Material restores the
-          // theme's own text style without painting anything.
-          child: Material(type: MaterialType.transparency, child: copy),
+        // The real cell underneath still owns every gesture and its semantics; this is paint only.
+        child: ExcludeSemantics(
+          child: IgnorePointer(
+            // The overlay is outside any Material, where the inherited DefaultTextStyle is the
+            // debug one that underlines text in yellow. A transparent Material restores the
+            // theme's own text style without painting anything.
+            child: Material(type: MaterialType.transparency, child: copy),
+          ),
         ),
       ),
     );
@@ -628,7 +630,11 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       child: CompositedTransformTarget(
         link: _link,
         // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
-        child: Opacity(opacity: _showing ? 0.0 : 1.0, child: widget.child),
+        child: Opacity(
+          opacity: _showing ? 0.0 : 1.0,
+          alwaysIncludeSemantics: true,
+          child: widget.child,
+        ),
       ),
     );
   }
