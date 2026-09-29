@@ -14,6 +14,10 @@ class MainComposite extends CompositeSwt<VComposite> {
 }
 
 class MainCompositeImpl extends CompositeImpl<MainComposite, VComposite> {
+  /// A main composite panels its children unless it is itself one of another's panels.
+  @override
+  bool get laysOutChildrenAsPanels => !SashPanelMarker.of(context);
+
   @override
   Widget buildComposite() => buildMainCompositeLayout(this);
 }
@@ -21,7 +25,6 @@ class MainCompositeImpl extends CompositeImpl<MainComposite, VComposite> {
 Widget buildMainCompositeLayout(CompositeImpl impl) {
   final context = impl.context;
   final state = impl.state;
-  final isPanelChild = SashPanelMarker.of(context);
   final widgetTheme = Theme.of(context).extension<CompositeThemeExtension>()!;
   final enabled = state.enabled ?? true;
   final children = state.children;
@@ -46,18 +49,13 @@ Widget buildMainCompositeLayout(CompositeImpl impl) {
     return Visibility(visible: false, child: rawLayout);
   }
 
-  final Widget inner;
-  if (isPanelChild) {
-    inner = ColoredBox(
-      color: backgroundColor,
-      child: SashPanelMarker(active: false, child: rawLayout),
-    );
-  } else {
-    inner = ColoredBox(
-      color: backgroundColor,
-      child: SashPanelMarker(active: true, child: rawLayout),
-    );
-  }
+  final inner = ColoredBox(
+    color: backgroundColor,
+    child: SashPanelMarker(
+      active: impl.laysOutChildrenAsPanels,
+      child: rawLayout,
+    ),
+  );
 
   return wrapCompositeInteractionChrome(impl, impl.wrapWithGCOverlay(inner));
 }

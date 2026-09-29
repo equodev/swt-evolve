@@ -24,7 +24,18 @@ import '../theme/theme_settings/composite_theme_settings.dart';
 /// Returns true if [pos] falls inside the bounds of any child control.
 /// Used to replicate SWT behaviour where mouse events on a child widget do
 /// not propagate to the parent composite.
-bool _hitsAnyChild(VComposite state, Offset pos) {
+///
+/// [childInset] is how far inside its own bounds a child is actually painted. It is zero for an
+/// ordinary composite, but a composite that lays its children out as panels (NoLayout's
+/// `_wrapAsPanel`) leaves a ring of parent background inside every child rectangle. The control
+/// the user sees under a pointer in that ring is the parent, so the ring must not read as child.
+///
+/// Only the press passes it. Forwarding *hover* across the ring as well re-arms the sash cursor
+/// after the MouseExit that should have cleared it: the last hover before the pointer crosses into
+/// the painted child still lands within SashLayout's grab tolerance, and it races that exit through
+/// asyncExec. Leaving hover on the layout rectangle keeps a 5px gap between the last forwarded move
+/// and the exit, which is what makes the reset reliable.
+bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
   final children = state.children;
   if (children == null || children.isEmpty) return false;
   for (final child in children) {
@@ -34,7 +45,7 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
     final rect = Rect.fromLTWH(
       b.x.toDouble(), b.y.toDouble(),
       b.width.toDouble(), b.height.toDouble(),
-    );
+    ).deflate(childInset);
     if (rect.contains(pos)) return true;
   }
   return false;
@@ -43,6 +54,13 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
   final hoverDepth = ControlNestingScope.depthOf(impl.context);
+  // How far inside its own bounds each child is painted, for the press alone (see _hitsAnyChild).
+  // The e4 workbench divider is that ring plus the band between two part stacks, and SashLayout
+  // engages the resize from a MouseDown on the container, so the ring has to reach it.
+  final panelTheme = impl.laysOutChildrenAsPanels
+      ? Theme.of(impl.context).extension<CompositeThemeExtension>()
+      : null;
+  final childInset = panelTheme?.panelChildGap ?? 0.0;
 
   if (state.menu != null && (state.children?.isNotEmpty ?? false)) {
     content = impl.applyMenu(content);
@@ -85,7 +103,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     child: Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
-        if (_hitsAnyChild(state, e.localPosition)) return;
+        if (_hitsAnyChild(state, e.localPosition, childInset)) return;
         if (!impl.forwardsControlMouseDown) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
@@ -210,6 +228,11 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   final FocusNode _surfaceFocus = FocusNode(debugLabel: 'CompositeSurface');
 
   bool get _isSurface => state.children?.isEmpty ?? true;
+
+  /// Whether this composite's children are drawn as inset panels rather than at their own
+  /// bounds -- the [SashPanelMarker] its build path installs, read from somewhere hit-testing
+  /// can also reach it.
+  bool get laysOutChildrenAsPanels => false;
 
   bool _surfaceFocusReported = false;
 
