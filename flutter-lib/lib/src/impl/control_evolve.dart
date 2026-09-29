@@ -622,7 +622,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
     }
-    widget = tagSemantics(widget);
 
     if (state.cursor?.cursorStyle != null) {
       widget = MouseRegion(
@@ -652,7 +651,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       return RegionClip.maybe(
           state.region,
           blockWhenDisabled(
-              Opacity(opacity: AppOpacities.disabled, child: wrapWithGCOverlay(widget))));
+              Opacity(
+                  opacity: AppOpacities.disabled,
+                  child: tagSemantics(wrapWithGCOverlay(widget)))));
     }
 
     if (state.menu != null) {
@@ -661,6 +662,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
+    // Tagged outside the GC overlay: the text the GC draws is the node's name only as a descendant.
+    widget = tagSemantics(widget);
 
     // Skipped when a whole-tree Display forwards keys from a single top-level handler (see
     // [displayLevelKeyForwardingActive]) — otherwise the same key would reach Java twice. Still

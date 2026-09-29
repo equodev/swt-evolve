@@ -193,7 +193,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
           height: widgetTheme.defaultHeight,
         );
       }
-      base = wrap(exposeSemanticsTapAction(_paintBackground(content)));
+      base = wrap(_paintBackground(content));
     }
 
     if (_localVScrollPx != 0.0 || _localHScrollPx != 0.0) {
@@ -293,6 +293,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // reuses this rather than getting its own copy. A click landing here arrives ONLY as a
   // SemanticsAction, not as a PointerDown/Up -- measured: an empty onTap left [wrap]'s Listener
   // untouched and no MouseDown reached Java -- so the action has to forward the click itself.
+  // Not on a plain Canvas: that tap carries no position, and a Canvas acts on where it was clicked.
   Widget exposeSemanticsTapAction(Widget child) {
     return Semantics(
       onTap: () {
@@ -323,9 +324,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Widget buildComposite() {
     final children = state.children;
     if (children == null || children.isEmpty) {
-      final content = wrap(
-        exposeSemanticsTapAction(_paintBackground(const SizedBox.expand())),
-      );
+      final content = wrap(_paintBackground(const SizedBox.expand()));
       return wrapCompositeInteractionChrome(this, content);
     }
     // Re-scopes background inheritance for this Canvas's own children (mirrors
