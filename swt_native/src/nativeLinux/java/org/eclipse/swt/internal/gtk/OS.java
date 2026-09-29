@@ -1179,7 +1179,9 @@ public class OS extends C {
             gnomeDetected = desktopEnvironment.contains("GNOME");
         }
         isGNOME = gnomeDetected;
-        System.setProperty("org.eclipse.swt.internal.gtk.version", (GTK.GTK_VERSION >>> 16) + "." + (GTK.GTK_VERSION >>> 8 & 0xFF) + "." + (GTK.GTK_VERSION & 0xFF));
+        if (System.getProperty("org.eclipse.swt.internal.gtk.version") == null) {
+            System.setProperty("org.eclipse.swt.internal.gtk.version", (GTK.GTK_VERSION >>> 16) + "." + (GTK.GTK_VERSION >>> 8 & 0xFF) + "." + (GTK.GTK_VERSION & 0xFF));
+        }
     }
 
     protected static byte[] ascii(String name) {
