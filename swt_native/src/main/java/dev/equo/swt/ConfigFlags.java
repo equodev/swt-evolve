@@ -159,6 +159,13 @@ public class ConfigFlags {
      *  divide by out of its own live copy. */
     public double font_point_scale;
 
+    /** Transparent margin, in pixels, on each side of a push or toggle button: the preferred width
+     *  reserves it and the render side paints the button inside it. For an application that lays
+     *  its buttons out expecting a native frame wider than what the button draws, and overlaps
+     *  adjacent frames accordingly. 0 (the default) paints the button over its whole bounds.
+     *  Set with {@code -Dswt.evolve.push_button_margin=<px>}. */
+    public int push_button_margin;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -196,6 +203,7 @@ public class ConfigFlags {
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
                 ", font_point_scale=" + font_point_scale +
+                ", push_button_margin=" + push_button_margin +
                 ", system_menu_bar=" + system_menu_bar +
                 '}';
     }

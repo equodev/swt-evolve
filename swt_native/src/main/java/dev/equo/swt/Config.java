@@ -780,6 +780,7 @@ public class Config {
             // OS picks the native control styling; override to test other platforms:
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
+            configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.

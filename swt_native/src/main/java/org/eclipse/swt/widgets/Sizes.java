@@ -77,7 +77,17 @@ public class Sizes {
     }
 
     public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
-        return ButtonSizes.computeSize(c, wHint, hHint, changed);
+        Point size = ButtonSizes.computeSize(c, wHint, hHint, changed);
+        if (wHint == SWT.DEFAULT)
+            size.x += 2 * pushButtonMargin(c.getApi().getStyle());
+        return size;
+    }
+
+    /** The transparent margin on each side of a bezelled button; the render side paints inside it. */
+    private static int pushButtonMargin(int style) {
+        if ((style & (SWT.PUSH | SWT.TOGGLE)) == 0 || (style & (SWT.FLAT | SWT.WRAP)) != 0)
+            return 0;
+        return Config.getConfigFlags().push_button_margin;
     }
 
     public static Point computeSize(DartTableItem widget, int wHint, int hHint, boolean changed) {

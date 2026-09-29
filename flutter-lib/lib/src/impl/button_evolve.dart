@@ -73,19 +73,18 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final enabled = state.enabled ?? false;
     final text = stripAccelerators(state.text);
 
-    final Widget button;
+    // Push and toggle buttons draw their focus ring themselves, around the surface inside the
+    // bezel margin rather than around the whole frame.
     if (hasStyle(state.style, SWT.CHECK)) {
-      button = _buildCheckBox(context, widgetTheme, enabled, text);
+      return _withFocusRing(widgetTheme, _buildCheckBox(context, widgetTheme, enabled, text));
     } else if (hasStyle(state.style, SWT.RADIO)) {
-      button = _buildRadioButton(context, widgetTheme, enabled, text);
+      return _withFocusRing(widgetTheme, _buildRadioButton(context, widgetTheme, enabled, text));
     } else if (hasStyle(state.style, SWT.TOGGLE)) {
-      button = _buildToggleButton(context, widgetTheme, enabled, text);
+      return _buildToggleButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.ARROW)) {
-      button = _buildArrowButton(context, widgetTheme, enabled, text);
-    } else {
-      button = _buildPushButton(context, widgetTheme, enabled, text);
+      return _withFocusRing(widgetTheme, _buildArrowButton(context, widgetTheme, enabled, text));
     }
-    return _withFocusRing(widgetTheme, button);
+    return _buildPushButton(context, widgetTheme, enabled, text);
   }
 
   // Always a DecoratedBox, so gaining focus never remounts the button and drops that focus.
@@ -94,6 +93,34 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         decoration: getButtonFocusRingDecoration(widgetTheme, focused: _hasFocus),
         child: button,
       );
+
+  /// The transparent margin Java reserved on each side of a bezelled button's frame (see
+  /// `push_button_margin`). The surface is painted inside it; the frame itself -- semantics,
+  /// GC overlay -- still spans the bounds.
+  double get _bezelMargin {
+    final bezelled = (hasStyle(state.style, SWT.PUSH) || hasStyle(state.style, SWT.TOGGLE)) &&
+        !hasStyle(state.style, SWT.FLAT) &&
+        !hasStyle(state.style, SWT.WRAP);
+    return bezelled ? (getConfigFlags().push_button_margin ?? 0).toDouble() : 0;
+  }
+
+  BoxConstraints? _surfaceConstraints(double margin) {
+    final constraints = getConstraintsFromBounds(state.bounds);
+    if (constraints == null || margin == 0) return constraints;
+    final width = (constraints.maxWidth - 2 * margin).clamp(0.0, double.infinity);
+    return constraints.copyWith(minWidth: width, maxWidth: width);
+  }
+
+  Widget _insideBezelMargin(
+    ButtonThemeExtension widgetTheme,
+    Widget surface,
+    double margin,
+  ) {
+    final ringed = _withFocusRing(widgetTheme, surface);
+    return margin == 0
+        ? ringed
+        : Padding(padding: EdgeInsets.symmetric(horizontal: margin), child: ringed);
+  }
 
   Widget _buildPushButton(
     BuildContext context,
@@ -104,7 +131,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final isPressed = state.selection ?? false;
     final hasFlat = hasStyle(state.style, SWT.FLAT);
     final isPrimary = state.primary ?? false;
-    final constraints = getConstraintsFromBounds(state.bounds);
+    final margin = _bezelMargin;
+    final constraints = _surfaceConstraints(margin);
     final hasValidBounds = hasBounds(state.bounds);
 
     final baseBackgroundColor = getButtonBackgroundColor(
@@ -146,6 +174,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         widgetTheme.pushButtonPadding,
         horizontalRoom: hasValidBounds
             ? state.bounds!.width.toDouble() -
+                  margin * 2 -
                   widgetTheme.pushButtonBorderWidth * 2 -
                   _pushContentWidth(
                     context,
@@ -171,7 +200,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ),
     );
 
-    return wrap(_wrapWithSwtBackground(context, button));
+    return wrap(_wrapWithSwtBackground(
+        context, _insideBezelMargin(widgetTheme, button, margin)));
   }
 
   /// The width the content row wants: the label in the style it will actually
@@ -243,7 +273,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       enabled: enabled,
     );
 
-    final constraints = getConstraintsFromBounds(state.bounds);
+    final margin = _bezelMargin;
+    final constraints = _surfaceConstraints(margin);
     final hasValidBounds = hasBounds(state.bounds);
 
     Widget button = Material(
@@ -282,7 +313,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ),
     );
 
-    return wrap(_wrapWithSwtBackground(context, button));
+    return wrap(_wrapWithSwtBackground(
+        context, _insideBezelMargin(widgetTheme, button, margin)));
   }
 
   Widget _buildCheckBox(

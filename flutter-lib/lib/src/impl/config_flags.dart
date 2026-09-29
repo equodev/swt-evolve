@@ -55,6 +55,10 @@ class ConfigFlags {
   /// measured its text extents at. Not derivable here: this client's platform is the browser's.
   double? font_point_scale;
 
+  /// Transparent margin on each side of a bezelled push or toggle button, configured on the Java
+  /// side (`swt.evolve.push_button_margin`). 0 paints the button over its whole bounds.
+  int? push_button_margin;
+
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);
   Map<String, dynamic> toJson() => _$ConfigFlagsToJson(this);
