@@ -1102,7 +1102,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /**
      * Whether {@code control} is the control a {@link org.eclipse.swt.custom.TableEditor} or
-     * {@link org.eclipse.swt.custom.TreeEditor} just placed over a cell.
+     * {@link org.eclipse.swt.custom.TreeEditor} just placed over a cell, or a child of an owner-drawn
+     * {@link Canvas} -- the way a custom-drawn grid places its inline editor over a cell it paints. A
+     * shell is a {@code Canvas} too, but its children are ordinary fields.
      *
      * <p>Moving the client's focus is deliberately limited to that case. Pushing it for every control
      * Java focuses is measurably unsafe today: the Eclipse IDE New Project wizard, driven through the
@@ -1116,6 +1118,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     private static boolean isCellEditorControl(Control control) {
         Composite parent = control.getParent();
+        if (parent instanceof Canvas && !(parent instanceof Decorations))
+            return true;
         if (parent instanceof Table && ((Table) parent).getImpl() instanceof DartTable) {
             DartTable dartTable = (DartTable) ((Table) parent).getImpl();
             for (org.eclipse.swt.custom.TableEditor editor : dartTable._editors()) {

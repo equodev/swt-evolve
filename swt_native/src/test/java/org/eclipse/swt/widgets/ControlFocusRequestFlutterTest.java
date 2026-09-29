@@ -50,6 +50,24 @@ class ControlFocusRequestFlutterTest {
     }
 
     @Test
+    void anEditorAnOwnerDrawnCanvasPlacesOverItsContentAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Canvas grid = new Canvas(openShell(), SWT.NONE);
+        grid.setFocus();
+        // The shape of a custom-drawn grid's inline editor: a Text created on the grid itself, placed
+        // over a cell and force-focused in the same mouse-down that selected the cell.
+        Text editor = new Text(grid, SWT.SINGLE);
+        editor.setBounds(40, 20, 100, 19);
+        web.comm.sent.clear();
+
+        assertThat(editor.forceFocus()).as("the editor accepts focus").isTrue();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the grid's editor")
+                .containsExactly(String.valueOf(editor.hashCode()));
+    }
+
+    @Test
     void anOrdinaryFieldIsLeftToTheRenderSide() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell shell = openShell();
