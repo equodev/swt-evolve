@@ -54,8 +54,14 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
     ));
   }
 
+  bool _focusReported = false;
+
+  // hasFocus is true for any focused descendant; SWT gives a Group focus only when it holds it itself.
   void _handleFocusChange() {
-    if (_focusNode!.hasFocus) {
+    final own = _focusNode!.hasPrimaryFocus;
+    if (own == _focusReported) return;
+    _focusReported = own;
+    if (own) {
       widget.sendFocusFocusIn(state, null);
     } else {
       widget.sendFocusFocusOut(state, null);
