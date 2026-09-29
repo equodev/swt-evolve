@@ -28,6 +28,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   Offset? _lastTapGlobalPosition;
   final DoubleTapDetector _rowTap = DoubleTapDetector();
 
+  @override
+  void setValue(V value) {
+    super.setValue(value);
+    // The Tree lays every visible row out from one flattened list, so what is under this item is
+    // the Tree's to redraw.
+    final change = lastChange;
+    if (change == null || change.touches('expanded') || change.touches('items')) {
+      _context?.treeImpl?.itemStructureChanged();
+    }
+  }
+
   Widget _wrapItemForDrag(Widget row) {
     final ctx = _context;
     if (ctx == null) return row;

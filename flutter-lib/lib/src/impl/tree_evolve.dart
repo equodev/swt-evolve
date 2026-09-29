@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 import '../theme/theme_settings/tree_theme_settings.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/styles.dart';
@@ -985,6 +986,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   bool getTreeViewSelectionMode() {
     return StyleBits(state.style).has(SWT.CHECK);
+  }
+
+  /// An item's expansion or children changed on the item's own channel.
+  void itemStructureChanged() {
+    if (!mounted) return;
+    // Can arrive while a row registers inside this Tree's own build; that rebuild waits a frame.
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+    setState(() {});
   }
 
   void setItemExpanded(Object itemId, bool expanded) {
