@@ -30,17 +30,6 @@ class DisplaySwt extends StatefulWidget {
   State<DisplaySwt> createState() => _DisplaySwtState();
 }
 
-/// Last Display state received per Display id. A [DisplaySwt] state can be
-/// recreated mid-session — e.g. when a global config/theme change rebuilds the
-/// subtree the Display sits in — which drops the previous State (and its
-/// `_display`). The `Display/{id}` update that populated the shells may have
-/// already been delivered to that now-discarded State, and Java has no reason to
-/// re-send it, so the fresh State would render empty forever. Seeding new States
-/// from this cache makes a recreated Display immediately reflect the latest known
-/// tree instead of an empty one. (Surfaced on the desktop-native window, where
-/// the post-ClientReady properties update races the first Display update.)
-final Map<int?, VDisplay> _lastDisplayState = <int?, VDisplay>{};
-
 class _DisplaySwtState extends State<DisplaySwt> {
   late VDisplay _display;
 
@@ -50,7 +39,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   @override
   void initState() {
     super.initState();
-    _display = _lastDisplayState[widget.value.id] ?? widget.value;
+    _display = widget.value;
     _publishHoldings();
     applySystemMenu(_heldSystemMenu());
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
@@ -58,7 +47,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
     // how Eclipse command shortcuts dispatch). This replaces the per-control forwarders while a
     // Display is mounted — see [displayLevelKeyForwardingActive].
-    displayLevelKeyForwardingActive = true;
+    startDisplayKeyForwarding();
     _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
     _listenToClipboardRequests();
@@ -93,7 +82,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
     _traverseGate.detach();
-    displayLevelKeyForwardingActive = false;
+    stopDisplayKeyForwarding();
     super.dispose();
   }
 
@@ -122,7 +111,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
     try {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       applyConfigFlags(updated.config);
-      _lastDisplayState[widget.value.id] = updated;
       _display = updated;
       _publishHoldings();
       applySystemMenu(_heldSystemMenu());

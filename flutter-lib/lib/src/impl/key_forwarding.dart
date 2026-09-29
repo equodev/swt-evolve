@@ -9,7 +9,15 @@
 ///
 /// In the embedded backend there is no whole-tree Display surface, so this stays `false` and the
 /// per-control forwarding remains the sole path — unchanged.
-bool displayLevelKeyForwardingActive = false;
+bool get displayLevelKeyForwardingActive => _displayKeyForwarders > 0;
+
+/// Counted, not a flag: a remounted Display's new State starts forwarding before the old one is
+/// disposed, so the old one's stop must not end the new one's.
+int _displayKeyForwarders = 0;
+
+void startDisplayKeyForwarding() => _displayKeyForwarders++;
+
+void stopDisplayKeyForwarding() => _displayKeyForwarders--;
 
 /// The canvas editor (a StyledText) that holds keyboard focus, or `null`.
 Object? _focusedCanvasEditor;

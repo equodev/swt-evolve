@@ -45,16 +45,13 @@ class CsdShell extends StatelessWidget {
     // and does need the handles.
     final nativeFrameOwnsResize = !kIsWeb && os == 'mac';
 
-    Widget content = child;
-
-    if (placement == 'overlay') {
-      content = Column(
-        children: [
-          CsdOverlayStrip(controlsLeading: controlsLeading),
-          Expanded(child: child),
-        ],
-      );
-    }
+    // Always a Column, so the overlay strip arriving above the child leaves the child where it was.
+    final content = Column(
+      children: [
+        if (placement == 'overlay') CsdOverlayStrip(controlsLeading: controlsLeading),
+        Expanded(child: child),
+      ],
+    );
 
     return Stack(
       children: [
