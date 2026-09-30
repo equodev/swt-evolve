@@ -81,6 +81,15 @@ public class VResource {
     }
 
     /**
+     * Records that the state stamped {@code seq} has been sent to {@code connection}, forgetting only the properties {@code written} actually carried. A property can be changed after the walk that wrote this frame and before the frame is credited - a layout that adds a child while its parent is being serialized. Forgetting everything at that point drops a change whose new value nothing has sent, and nothing marks it again: the far side keeps the state from before it, and only an unrelated write to the same widget ever repairs that.
+     */
+    public void sent(int connection, long seq, java.util.Set<String> written) {
+        sentConn_ = connection;
+        sentSeq_ = seq;
+        changed.removeAll(written);
+    }
+
+    /**
      * Writes the changed properties, and only those. Each pair leaves a trailing comma for the caller to overwrite with the closing brace, as the full writer does.
      */
     public void writeDiff(JsonWriter writer) {

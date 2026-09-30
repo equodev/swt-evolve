@@ -91,12 +91,16 @@ Widget wrapDraggable<T extends Object>({
     } else {
       DragStartVeto.reset();
     }
-    onDragStarted?.call();
     dragDetectGate?.reset();
     // DragDetect goes out either way: native SWT raises it for any drag over a control, and an
     // application can listen for it without a DragSource. The Eclipse workbench does exactly that
     // to start moving a view, so withholding it left every view stack immovable.
+    //
+    // Before whatever this control does about the drag, because the far side handles the two in the
+    // order they arrive: a CTabFolder selects the dragged tab, and selecting one a workbench has
+    // not rendered makes it render the view, which takes seconds of a busy UI thread.
     if (dragDetectGate == null) sendDragDetect();
+    onDragStarted?.call();
   }
 
   final feedback = feedbackBuilder != null

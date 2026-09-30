@@ -5,11 +5,16 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.size.CTabFolderSizes;
+import dev.equo.swt.size.TextStyle;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
@@ -29,9 +34,7 @@ public class CTabFolderHelper {
     private static final int BUTTON_SIZE = 16;
     private static final int ITEM_TOP_MARGIN = 2;
     private static final int ITEM_BOTTOM_MARGIN = 2;
-    private static final int INTERNAL_SPACING = 4;
     private static final int FLAGS = SWT.DRAW_TRANSPARENT | SWT.DRAW_MNEMONIC | SWT.DRAW_DELIMITER;
-    private static final String ELLIPSIS = "...";
     private static final String CHEVRON_ELLIPSIS = "99+";
 
     /**
@@ -68,6 +71,70 @@ public class CTabFolderHelper {
         // Composite.setFocus() hands it to a descendant, so the announcement starts deep enough to
         // pass through every control in between — which is where an embedder hangs its listener.
         target.getApi().setFocus();
+    }
+
+    /**
+     * Where the render side draws each folder's tabs: {@code x, width} per tab, in the folder's own
+     * coordinates.
+     *
+     * <p>Not part of the widget's state, and not something this side can work out: it lays the strip
+     * out itself, without a scroll and with whatever does not fit parked off screen.
+     */
+    private static final java.util.Map<DartCTabFolder, int[]> stripLayout =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    public static void handleStripLaidOut(DartCTabFolder obj, Event e) {
+        if (obj.isDisposed()) return;
+        if (e.text == null || e.text.isEmpty()) {
+            stripLayout.remove(obj);
+            return;
+        }
+        String[] parts = e.text.split(",");
+        int[] layout = new int[parts.length];
+        try {
+            for (int i = 0; i < parts.length; i++) layout[i] = Integer.parseInt(parts[i].trim());
+        } catch (NumberFormatException malformed) {
+            return;
+        }
+        stripLayout.put(obj, layout);
+    }
+
+    /**
+     * The tab at a point, resolved against the strip as it is drawn: the tabs laid out in order at
+     * their drawn widths, shifted by however far the strip has been scrolled.
+     *
+     * <p>Not {@code item.getBounds()}, which is this side's own layout - it parks every tab past the
+     * strip's width off screen, because upstream hides them behind the chevron rather than scrolling
+     * them. The workbench asks this which view a drag picked up, so the answer has to be the tab
+     * under the pointer, not the tab that would be there if the strip did not scroll.
+     */
+    public static CTabItem itemAt(DartCTabFolder folder, Point pt) {
+        CTabItem[] items = folder.items;
+        if (items.length == 0) return null;
+        // As upstream's getItem does: a layout still pending would answer from widths that predate
+        // the last change to the strip.
+        folder.runUpdate();
+        Point size = folder.getApi().getSize();
+        if (pt.x < 0 || pt.x >= size.x) return null;
+        int tabHeight = folder.getApi().getTabHeight();
+        int top = folder.onBottom ? size.y - tabHeight : 0;
+        if (pt.y < top || pt.y >= top + tabHeight) return null;
+        int[] drawn = stripLayout.get(folder);
+        if (drawn == null) {
+            // Nothing drawn yet, or nothing that reports where: upstream's own answer, from the
+            // bounds this side laid out, is better than none.
+            for (int element : folder.priority) {
+                CTabItem item = items[element];
+                if (item.getBounds().contains(pt)) return item;
+            }
+            return null;
+        }
+        for (int i = 0; i < items.length && 2 * i + 1 < drawn.length; i++) {
+            if (items[i].isDisposed()) continue;
+            int left = drawn[2 * i], width = drawn[2 * i + 1];
+            if (width > 0 && pt.x >= left && pt.x < left + width) return items[i];
+        }
+        return null;
     }
 
     public static void handleReorderItems(DartCTabFolder obj, Event e) {
@@ -110,7 +177,7 @@ public class CTabFolderHelper {
         event.width = e.width;
         event.height = e.height;
         event.doit = true;
-        for (CTabFolder2Listener listener : obj.folderListeners) {
+        for (CTabFolder2Listener listener : obj.getApi().folderListeners) {
             try {
                 listener.showList(event);
             } catch (Throwable ex) {
@@ -128,10 +195,10 @@ public class CTabFolderHelper {
             CTabFolderEvent closeEvent = folderEvent(obj);
             closeEvent.item = item;
             closeEvent.doit = true;
-            for (CTabFolder2Listener listener : obj.folderListeners) {
+            for (CTabFolder2Listener listener : obj.getApi().folderListeners) {
                 listener.close(closeEvent);
             }
-            for (CTabFolderListener listener : obj.tabListeners) {
+            for (CTabFolderListener listener : obj.getApi().tabListeners) {
                 listener.itemClosed(closeEvent);
             }
             if (closeEvent.doit)
@@ -144,7 +211,7 @@ public class CTabFolderHelper {
     public static void handleMinimize(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         CTabFolderEvent minimizeEvent = folderEvent(obj);
-        for (CTabFolder2Listener listener : obj.folderListeners) {
+        for (CTabFolder2Listener listener : obj.getApi().folderListeners) {
             listener.minimize(minimizeEvent);
         }
     }
@@ -152,7 +219,7 @@ public class CTabFolderHelper {
     public static void handleMaximize(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         CTabFolderEvent maximizeEvent = folderEvent(obj);
-        for (CTabFolder2Listener listener : obj.folderListeners) {
+        for (CTabFolder2Listener listener : obj.getApi().folderListeners) {
             listener.maximize(maximizeEvent);
         }
     }
@@ -160,7 +227,7 @@ public class CTabFolderHelper {
     public static void handleRestore(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         CTabFolderEvent restoreEvent = folderEvent(obj);
-        for (CTabFolder2Listener listener : obj.folderListeners) {
+        for (CTabFolder2Listener listener : obj.getApi().folderListeners) {
             listener.restore(restoreEvent);
         }
     }
@@ -294,17 +361,23 @@ public class CTabFolderHelper {
         return width;
     }
 
-    public static Point computeTextSize(GC gc, CTabItem item, String text, int FLAGS) {
-        final int AVG_CHAR_WIDTH = 8;
-        final int DEFAULT_TEXT_HEIGHT = 16;
-        int textWidth = text.length() * AVG_CHAR_WIDTH;
-        return new Point(textWidth, DEFAULT_TEXT_HEIGHT);
-    }
-
-    private static boolean shouldDrawCloseIcon(CTabItem item, DartCTabFolder parent) {
-        boolean showClose = parent.showClose || ((DartCTabItem) item.getImpl()).showClose;
-        boolean isSelectedOrShowCloseForUnselected = (item.state & SWT.SELECTED) != 0 || parent.showUnselectedClose;
-        return showClose && isSelectedOrShowCloseForUnselected;
+    /**
+     * A tab's label at the size the render side draws it, which is what a tab is sized around.
+     *
+     * <p>The style is {@link CTabFolderSizes#tabLabelStyle()}, measured off a laid-out label rather
+     * than written down here: a font copied from the render side's theme drifts from it silently.
+     */
+    static Point computeTextSize(GC gc, CTabItem item, String text, int FLAGS) {
+        // A resize reaches this from an async runnable, which can run after the item's font was
+        // disposed; a disposed font answers nothing, so measure in the label's own style instead.
+        Font font = item.getFont();
+        if (font != null && font.isDisposed())
+            font = null;
+        if (Config.getConfigFlags().use_swt_fonts)
+            return GCHelper.textExtent(text, FLAGS, font);
+        TextStyle style = CTabFolderSizes.tabLabelStyle().withStyleFrom(font);
+        dev.equo.swt.size.PointD size = FontMetricsUtil.getFontSize(text, style);
+        return new Point((int) Math.ceil(size.x()), (int) Math.ceil(size.y()));
     }
 
     private static int getLargeTextPadding(CTabItem item) {
@@ -317,8 +390,56 @@ public class CTabFolderHelper {
         return 0;
     }
 
+    /**
+     * Whether the render side draws the close button, which is what the tab has to leave room for.
+     * It reads the item's own flag only - a folder-wide SWT.CLOSE does not reach it - so a width
+     * that took the folder's flag into account would reserve room for a button nobody draws.
+     */
+    private static boolean isCloseButtonDrawn(CTabItem item, DartCTabFolder parent, int state) {
+        return ((DartCTabItem) item.getImpl()).showClose
+                && ((state & SWT.SELECTED) != 0 || parent.showUnselectedClose);
+    }
+
     private static boolean shouldApplyLargeTextPadding(DartCTabFolder parent) {
         return !parent.showSelectedImage && !parent.showUnselectedImage;
+    }
+
+    /**
+     * A tab at the size the render side draws it: its label, the icon and close button when they
+     * are drawn, and the padding around them.
+     *
+     * <p>Takes no GC and goes through no renderer. The render side draws the strip from its own
+     * theme, so an application's renderer has no say in a tab's width, and asking it would need a
+     * live GC on a path that answers a hit test.
+     *
+     * <p>{@code MINIMUM_SIZE} is ignored: it asks how narrow a tab could be drawn if the strip ran
+     * short of room, and the render side draws the whole label and hides what no longer fits.
+     */
+    static Point drawnSize(DartCTabFolder parent, int index, int state) {
+        CTabItem item = parent.items[index];
+        if (item.isDisposed()) return new Point(0, 0);
+        int width = 0, height = 0;
+        Image image = item.getImage();
+        if (image != null && !image.isDisposed()) {
+            if (((state & SWT.SELECTED) != 0 && parent.showSelectedImage)
+                    || ((state & SWT.SELECTED) == 0 && parent.showUnselectedImage)) {
+                width += CTabFolderSizes.TAB_IMAGE_EXTRA;
+            }
+            height = CTabFolderSizes.TAB_IMAGE_HEIGHT;
+        }
+        String text = item.getText();
+        if (text != null) {
+            Point size = computeTextSize(null, item, text, FLAGS);
+            width += size.x;
+            height = Math.max(height, size.y);
+        }
+        if (shouldApplyLargeTextPadding(parent)) {
+            width += getLargeTextPadding(item) * 2;
+        } else if (isCloseButtonDrawn(item, parent, state)) {
+            width += CTabFolderSizes.TAB_CLOSE_EXTRA;
+        }
+        return new Point(width + CTabFolderSizes.TAB_LABEL_SURROUND,
+                height + ITEM_TOP_MARGIN + ITEM_BOTTOM_MARGIN);
     }
 
     public static Point computeSize(DartCTabFolderRenderer renderer, DartCTabFolder parent, CTabFolder parentApi, int part, int state, GC gc, int wHint, int hHint) {
@@ -351,51 +472,7 @@ public class CTabFolderHelper {
                 height = BUTTON_SIZE;
                 break;
             default:
-                if (0 <= part && part < parent.getItemCount()) {
-                    CTabItem item = parent.items[part];
-                    if (item.isDisposed()) return new Point(0, 0);
-                    Image image = item.getImage();
-                    if (image != null && !image.isDisposed()) {
-                        Rectangle bounds = image.getBounds();
-                        if (((state & SWT.SELECTED) != 0 && parent.showSelectedImage)
-                                || ((state & SWT.SELECTED) == 0 && parent.showUnselectedImage)) {
-                            width += bounds.width;
-                        }
-                        height = bounds.height;
-                    }
-                    String text = null;
-                    if ((state & MINIMUM_SIZE) != 0) {
-                        int minChars = parent.minChars;
-                        text = minChars == 0 ? null : item.getText();
-                        if (text != null && text.length() > minChars) {
-                            // 3.134 upstream removed CTabFolderRenderer.useEllipses(); it returned
-                            // parent.simple, so inline that (behaviour-preserving across versions).
-                            if (parent.simple) {
-                                int end = minChars < ELLIPSIS.length() + 1 ? minChars : minChars - ELLIPSIS.length();
-                                text = text.substring(0, end);
-                                if (minChars > ELLIPSIS.length() + 1) text += ELLIPSIS;
-                            } else {
-                                int end = minChars;
-                                text = text.substring(0, end);
-                            }
-                        }
-                    } else {
-                        text = item.getText();
-                    }
-                    if (text != null) {
-                        if (width > 0) width += INTERNAL_SPACING;
-                        Point size = computeTextSize(gc, item, text, FLAGS);
-                        width += size.x;
-                        height = Math.max(height, size.y);
-                    }
-
-                    if (shouldApplyLargeTextPadding(parent)) {
-                        width += getLargeTextPadding(item) * 2;
-                    } else if (shouldDrawCloseIcon(item, parent)) {
-                        if (width > 0) width += INTERNAL_SPACING;
-                        width += computeSize(renderer, parent, parentApi, PART_CLOSE_BUTTON, SWT.NONE, gc, SWT.DEFAULT, SWT.DEFAULT).x;
-                    }
-                }
+                if (0 <= part && part < parent.getItemCount()) return drawnSize(parent, part, state);
                 break;
         }
         Rectangle trim = renderer.computeTrim(part, state, 0, 0, width, height);

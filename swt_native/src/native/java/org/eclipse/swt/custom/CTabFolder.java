@@ -116,6 +116,12 @@ public class CTabFolder extends Composite {
     @Deprecated
     public static RGB borderOutsideRGB = new RGB(171, 168, 165);
 
+    /* External Listener management */
+    CTabFolder2Listener[] folderListeners = new CTabFolder2Listener[0];
+
+    // support for deprecated listener mechanism
+    CTabFolderListener[] tabListeners = new CTabFolderListener[0];
+
     // when disposing CTabFolder, don't try to layout the items or
     // keep track of size changes in order to redraw only affected area
     /**

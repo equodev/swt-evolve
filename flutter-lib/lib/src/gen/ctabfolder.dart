@@ -34,6 +34,10 @@ class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
     sendEvent(val, "CTabFolder/reorderItems", payload);
   }
 
+  void sendCTabFolderstripLaidOut(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder/stripLaidOut", payload);
+  }
+
   void sendCTabFolder2close(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/close", payload);
   }

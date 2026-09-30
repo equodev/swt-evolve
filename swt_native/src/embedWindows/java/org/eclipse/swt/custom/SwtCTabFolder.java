@@ -131,12 +131,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     boolean useDefaultRenderer;
 
-    /* External Listener management */
-    CTabFolder2Listener[] folderListeners = new CTabFolder2Listener[0];
-
-    // support for deprecated listener mechanism
-    CTabFolderListener[] tabListeners = new CTabFolderListener[0];
-
     /* Selected item appearance */
     Image selectionBgImage;
 
@@ -469,10 +463,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         // add to array
-        CTabFolder2Listener[] newListeners = new CTabFolder2Listener[folderListeners.length + 1];
-        System.arraycopy(folderListeners, 0, newListeners, 0, folderListeners.length);
-        folderListeners = newListeners;
-        folderListeners[folderListeners.length - 1] = listener;
+        CTabFolder2Listener[] newListeners = new CTabFolder2Listener[getApi().folderListeners.length + 1];
+        System.arraycopy(getApi().folderListeners, 0, newListeners, 0, getApi().folderListeners.length);
+        getApi().folderListeners = newListeners;
+        getApi().folderListeners[getApi().folderListeners.length - 1] = listener;
     }
 
     /**
@@ -500,10 +494,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         // add to array
-        CTabFolderListener[] newTabListeners = new CTabFolderListener[tabListeners.length + 1];
-        System.arraycopy(tabListeners, 0, newTabListeners, 0, tabListeners.length);
-        tabListeners = newTabListeners;
-        tabListeners[tabListeners.length - 1] = listener;
+        CTabFolderListener[] newTabListeners = new CTabFolderListener[getApi().tabListeners.length + 1];
+        System.arraycopy(getApi().tabListeners, 0, newTabListeners, 0, getApi().tabListeners.length);
+        getApi().tabListeners = newTabListeners;
+        getApi().tabListeners[getApi().tabListeners.length - 1] = listener;
         // display close button to be backwards compatible
         if (!showClose) {
             showClose = true;
@@ -775,7 +769,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     private void notifyItemCountChange() {
         CTabFolderEvent e = new CTabFolderEvent(this.getApi());
-        for (CTabFolder2Listener listener : folderListeners) {
+        for (CTabFolder2Listener listener : getApi().folderListeners) {
             listener.itemsCount(e);
         }
     }
@@ -1746,7 +1740,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                             e.width = chevronRect.width;
                             e.height = chevronRect.height;
                             e.doit = true;
-                            for (CTabFolder2Listener folderListener : folderListeners) {
+                            for (CTabFolder2Listener folderListener : getApi().folderListeners) {
                                 folderListener.showList(e);
                             }
                             if (e.doit && !isDisposed()) {
@@ -1819,10 +1813,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         minMaxTb = null;
         chevronItem = null;
         chevronTb = null;
-        if (folderListeners.length != 0)
-            folderListeners = new CTabFolder2Listener[0];
-        if (tabListeners.length != 0)
-            tabListeners = new CTabFolderListener[0];
+        if (getApi().folderListeners.length != 0)
+            getApi().folderListeners = new CTabFolder2Listener[0];
+        if (getApi().tabListeners.length != 0)
+            getApi().tabListeners = new CTabFolderListener[0];
     }
 
     void onDragDetect(Event event) {
@@ -2085,10 +2079,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                             e.time = event.time;
                             e.item = item;
                             e.doit = true;
-                            for (CTabFolder2Listener listener : folderListeners) {
+                            for (CTabFolder2Listener listener : getApi().folderListeners) {
                                 listener.close(e);
                             }
-                            for (CTabFolderListener listener : tabListeners) {
+                            for (CTabFolderListener listener : getApi().tabListeners) {
                                 listener.itemClosed(e);
                             }
                             if (e.doit)
@@ -2154,7 +2148,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                         e.width = chevronRect.width;
                         e.height = chevronRect.height;
                         e.doit = true;
-                        for (CTabFolder2Listener folderListener : folderListeners) {
+                        for (CTabFolder2Listener folderListener : getApi().folderListeners) {
                             folderListener.showList(e);
                         }
                         if (e.doit && !isDisposed()) {
@@ -2278,7 +2272,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (event.widget == maxItem) {
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
-            for (CTabFolder2Listener folderListener : folderListeners) {
+            for (CTabFolder2Listener folderListener : getApi().folderListeners) {
                 if (maximized) {
                     folderListener.restore(e);
                 } else {
@@ -2288,7 +2282,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         } else if (event.widget == minItem) {
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
-            for (CTabFolder2Listener folderListener : folderListeners) {
+            for (CTabFolder2Listener folderListener : getApi().folderListeners) {
                 if (minimized) {
                     folderListener.restore(e);
                 } else {
@@ -2305,7 +2299,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             e.width = chevronRect.width;
             e.height = chevronRect.height;
             e.doit = true;
-            for (CTabFolder2Listener folderListener : folderListeners) {
+            for (CTabFolder2Listener folderListener : getApi().folderListeners) {
                 folderListener.showList(e);
             }
             if (e.doit && !isDisposed()) {
@@ -2389,25 +2383,25 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         checkWidget();
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (folderListeners.length == 0)
+        if (getApi().folderListeners.length == 0)
             return;
         int index = -1;
-        for (int i = 0; i < folderListeners.length; i++) {
-            if (listener == folderListeners[i]) {
+        for (int i = 0; i < getApi().folderListeners.length; i++) {
+            if (listener == getApi().folderListeners[i]) {
                 index = i;
                 break;
             }
         }
         if (index == -1)
             return;
-        if (folderListeners.length == 1) {
-            folderListeners = new CTabFolder2Listener[0];
+        if (getApi().folderListeners.length == 1) {
+            getApi().folderListeners = new CTabFolder2Listener[0];
             return;
         }
-        CTabFolder2Listener[] newTabListeners = new CTabFolder2Listener[folderListeners.length - 1];
-        System.arraycopy(folderListeners, 0, newTabListeners, 0, index);
-        System.arraycopy(folderListeners, index + 1, newTabListeners, index, folderListeners.length - index - 1);
-        folderListeners = newTabListeners;
+        CTabFolder2Listener[] newTabListeners = new CTabFolder2Listener[getApi().folderListeners.length - 1];
+        System.arraycopy(getApi().folderListeners, 0, newTabListeners, 0, index);
+        System.arraycopy(getApi().folderListeners, index + 1, newTabListeners, index, getApi().folderListeners.length - index - 1);
+        getApi().folderListeners = newTabListeners;
     }
 
     /**
@@ -2431,25 +2425,25 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         checkWidget();
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (tabListeners.length == 0)
+        if (getApi().tabListeners.length == 0)
             return;
         int index = -1;
-        for (int i = 0; i < tabListeners.length; i++) {
-            if (listener == tabListeners[i]) {
+        for (int i = 0; i < getApi().tabListeners.length; i++) {
+            if (listener == getApi().tabListeners[i]) {
                 index = i;
                 break;
             }
         }
         if (index == -1)
             return;
-        if (tabListeners.length == 1) {
-            tabListeners = new CTabFolderListener[0];
+        if (getApi().tabListeners.length == 1) {
+            getApi().tabListeners = new CTabFolderListener[0];
             return;
         }
-        CTabFolderListener[] newTabListeners = new CTabFolderListener[tabListeners.length - 1];
-        System.arraycopy(tabListeners, 0, newTabListeners, 0, index);
-        System.arraycopy(tabListeners, index + 1, newTabListeners, index, tabListeners.length - index - 1);
-        tabListeners = newTabListeners;
+        CTabFolderListener[] newTabListeners = new CTabFolderListener[getApi().tabListeners.length - 1];
+        System.arraycopy(getApi().tabListeners, 0, newTabListeners, 0, index);
+        System.arraycopy(getApi().tabListeners, index + 1, newTabListeners, index, getApi().tabListeners.length - index - 1);
+        getApi().tabListeners = newTabListeners;
     }
 
     /**
@@ -4614,14 +4608,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     public boolean _useDefaultRenderer() {
         return useDefaultRenderer;
-    }
-
-    public CTabFolder2Listener[] _folderListeners() {
-        return folderListeners;
-    }
-
-    public CTabFolderListener[] _tabListeners() {
-        return tabListeners;
     }
 
     public Image _selectionBgImage() {

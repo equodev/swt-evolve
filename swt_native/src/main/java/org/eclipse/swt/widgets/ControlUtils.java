@@ -7,6 +7,10 @@ public class ControlUtils {
         removeFromParentChildren(control);
         control.parent = newParent;
         addToParentChildren(control);
+        // Scheduled so the new parent describes the control instead of naming it. A name carries no
+        // write stamp, and the stamp is what tells a move from a disposal - without one, the old
+        // parent's frame, applied first, reads as the control having gone away.
+        control.getBridge().dirty(control);
     }
 
     public static void addToParentChildren(DartControl obj) {

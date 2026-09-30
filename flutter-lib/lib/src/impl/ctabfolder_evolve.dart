@@ -176,6 +176,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDrop: _handleTabDrop,
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
+            onStripLayout: _handleStripLayout,
+            dragPointFor: _dragPointFor,
           ),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
         // shrinks computeSize, it never hides the selected control. A collapsed folder
@@ -215,6 +217,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDrop: _handleTabDrop,
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
+            onStripLayout: _handleStripLayout,
+            dragPointFor: _dragPointFor,
           ),
       ],
     );
@@ -400,12 +404,50 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendCTabFolderitemClosed(state, e);
   }
 
-  /// An application's `dragSetData` identifies the tab being moved through
-  /// `folder.getSelection()` — the same idiom Table/Tree DND uses — so the drag has to select
-  /// it first. Without an application DragSource there is no such listener and the folder's
-  /// own reordering must not steal the selection.
+  /// The point to hand the workbench for a drag on this tab, in the folder's own coordinates - the
+  /// ones it maps the cursor into before asking which tab is there.
+  ///
+  /// The centre of what is DRAWN of the tab, not the centre of the tab: a tab scrolled half out at
+  /// the strip's left edge has its own centre at a negative x, which is outside the folder, and a
+  /// drag whose point finds no tab is read as a drag of the whole stack.
+  Offset? _dragPointFor(Rect tabInGlobal) {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return null;
+    final local = Rect.fromPoints(
+        box.globalToLocal(tabInGlobal.topLeft), box.globalToLocal(tabInGlobal.bottomRight));
+    final drawn = local.intersect(Offset.zero & box.size);
+    if (drawn.isEmpty) return null;
+    return drawn.center;
+  }
+
+  String _reportedStrip = '';
+
+  /// Tells Java where this side draws each tab, as `x,width` pairs in the folder's own coordinates
+  /// - which is what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides
+  /// which view a drag picked up.
+  void _handleStripLayout(List<Rect> tabs) {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final buffer = StringBuffer();
+    for (final tab in tabs) {
+      final left = box.globalToLocal(tab.topLeft).dx;
+      if (buffer.isNotEmpty) buffer.write(',');
+      buffer.write('${left.round()},${tab.width.round()}');
+    }
+    final report = buffer.toString();
+    if (report == _reportedStrip) return;
+    _reportedStrip = report;
+    widget.sendCTabFolderstripLaidOut(state, VEvent()..text = report);
+  }
+
+  /// Selects the tab a drag starts from, which a native CTabFolder does on mouse down
+  /// (`SwtCTabFolder.onMouse`) before any drag can begin.
+  ///
+  /// A workbench renders only the selected part of a stack, so a drag from an unselected tab picks
+  /// up a part that has no widget yet, and the gesture is dropped or fails on it. An application's
+  /// own `dragSetData` needs it too: it identifies the tab being moved through
+  /// `folder.getSelection()`, the same idiom Table and Tree DND use.
   void _handleTabDragStarted(int index) {
-    if (state.dragSource != true) return;
     _handleTabSelection(index);
   }
 
@@ -467,6 +509,13 @@ class _CTabBar extends StatefulWidget {
   final ValueChanged<int>? onTabDragStarted;
   final void Function(BuildContext, CTabFolderThemeExtension widgetTheme)? onChevronShowList;
 
+
+  /// Where each tab is drawn, in global coordinates, for the side that answers hit tests.
+  final void Function(List<Rect> tabs)? onStripLayout;
+
+  /// The point to report for a drag on a tab, given where that tab is drawn.
+  final Offset? Function(Rect tabInGlobal)? dragPointFor;
+
   const _CTabBar({
     required this.state,
     required this.folderWidget,
@@ -484,6 +533,8 @@ class _CTabBar extends StatefulWidget {
     this.onTabDrop,
     this.onTabDragStarted,
     this.onChevronShowList,
+    this.onStripLayout,
+    this.dragPointFor,
   });
 
   @override
@@ -491,6 +542,7 @@ class _CTabBar extends StatefulWidget {
 }
 
 class _CTabBarState extends State<_CTabBar> {
+  final GlobalKey<_TabDragRowState> _rowState = GlobalKey<_TabDragRowState>();
   bool _hoveringTopBar = false;
   bool _scrollbarVisible = false;
   // True when the tab row overflows its width (some tabs scroll off-view). Drives the chevron.
@@ -672,6 +724,9 @@ class _CTabBarState extends State<_CTabBar> {
     }).toList();
 
     final tabRowWithDrag = TabDragRow(
+      key: _rowState,
+      onStripLayout: widget.onStripLayout,
+      dragPointFor: widget.dragPointFor,
       children: tabChildren,
       tabs: displayTabs,
       folderState: widget.state,
@@ -1235,6 +1290,7 @@ class _CTabBarState extends State<_CTabBar> {
     );
   }
 
+
   Widget _buildHorizontalScrollableTabs({
     required CTabFolderThemeExtension widgetTheme,
     required Widget child,
@@ -1254,6 +1310,9 @@ class _CTabBarState extends State<_CTabBar> {
             onNotification: (notification) {
               _showScrollbar();
               _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              // Scrolling moves the tabs without rebuilding the row, so the row is asked to say
+              // where they are once this frame has painted them at the new offset.
+              _rowState.currentState?.scheduleStripReport();
               return false;
             },
             child: MouseRegion(
@@ -1617,6 +1676,12 @@ class TabDragRow extends StatefulWidget {
   final ValueChanged<int>? onTabDragStarted;
   final VoidCallback? onDragStart;
 
+  /// Where each tab is drawn, in global coordinates.
+  final void Function(List<Rect> tabs)? onStripLayout;
+
+  /// The point to report for a drag on a tab, given where that tab is drawn.
+  final Offset? Function(Rect tabInGlobal)? dragPointFor;
+
   const TabDragRow({
     super.key,
     required this.children,
@@ -1629,6 +1694,8 @@ class TabDragRow extends StatefulWidget {
     this.onDrop,
     this.onTabDragStarted,
     this.onDragStart,
+    this.onStripLayout,
+    this.dragPointFor,
   });
 
   @override
@@ -1636,6 +1703,40 @@ class TabDragRow extends StatefulWidget {
 }
 
 class _TabDragRowState extends State<TabDragRow> {
+  /// Where the tabs are drawn, for the side that answers hit tests.
+  ///
+  /// It cannot work that out: it lays the strip out itself, without a scroll and with whatever does
+  /// not fit parked off screen, and it sizes a tab from its own copy of this side's theme. Both
+  /// have been wrong by more than a tab's width, which puts a press on the neighbouring one - and
+  /// that press is how the workbench decides which view a drag picked up.
+  bool _reportPending = false;
+
+  /// Reads the strip once the frame is painted.
+  ///
+  /// A scroll tells its listeners while the frame is still being built, and where a tab is drawn is
+  /// only settled once the viewport has painted at the new offset - so reading on the notification
+  /// itself reports the tabs where they were before the scroll.
+  void scheduleStripReport() {
+    if (_reportPending || widget.onStripLayout == null) return;
+    _reportPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reportPending = false;
+      if (mounted) reportStripLayout();
+    });
+  }
+
+  void reportStripLayout() {
+    final report = widget.onStripLayout;
+    if (report == null) return;
+    final rects = <Rect>[];
+    for (var i = 0; i < widget.children.length; i++) {
+      final box = _itemBox(i);
+      if (box == null || !box.hasSize) return;
+      rects.add(box.localToGlobal(Offset.zero) & box.size);
+    }
+    report(rects);
+  }
+
   final GlobalKey _rowKey = GlobalKey();
   final List<GlobalKey> _itemKeys = [];
   final HoverTracker<int> _insertHover = HoverTracker<int>();
@@ -1718,14 +1819,16 @@ class _TabDragRowState extends State<TabDragRow> {
       state: widget.folderState,
       alwaysDraggable: true,
       // The workbench reads DragDetect's x/y to work out which tab is being dragged, so the event
-      // has to carry the tab's own position rather than an empty one. The tab strip starts at the
-      // folder's own origin, so the row's coordinates are the folder's for this purpose.
+      // has to carry the tab's own position - in the folder's coordinates, which is what it maps
+      // the cursor into before asking. Not the row's: the row is the strip's scrolling content, so
+      // once the strip has been scrolled its coordinates are the tab's unscrolled position, and the
+      // workbench finds no tab there and drags the whole stack instead.
       dragDetectEvent: () {
         final box = _itemBox(index);
-        final row = _row;
-        final centre = (box != null && row != null)
-            ? row.globalToLocal(box.localToGlobal(box.size.center(Offset.zero)))
-            : Offset.zero;
+        final centre = box == null
+            ? Offset.zero
+            : widget.dragPointFor?.call(box.localToGlobal(Offset.zero) & box.size) ??
+                Offset.zero;
         return VEvent()
           ..x = centre.dx.round()
           ..y = centre.dy.round();
@@ -1784,6 +1887,8 @@ class _TabDragRowState extends State<TabDragRow> {
   Widget build(BuildContext context) {
     final count = widget.children.length;
     _ensureItemKeys(count);
+    // The tabs have moved or changed width, and only a painted frame knows where they ended up.
+    scheduleStripReport();
 
     // mainAxisSize.min so the row takes its natural width and the scroll view overflows when
     // tabs don't fit; the default (max) fills and clips instead.

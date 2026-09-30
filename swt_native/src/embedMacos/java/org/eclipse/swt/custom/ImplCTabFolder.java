@@ -38,10 +38,6 @@ public interface ImplCTabFolder extends ImplComposite {
 
     boolean _useDefaultRenderer();
 
-    CTabFolder2Listener[] _folderListeners();
-
-    CTabFolderListener[] _tabListeners();
-
     Image _selectionBgImage();
 
     Color[] _selectionGradientColors();

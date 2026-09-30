@@ -67,6 +67,9 @@ class TrackerSession {
   /// The host whose Tracker is open, so a position is converted by the Shell it belongs to.
   static String? _activeHost;
 
+  /// Converts on the way out, not when a position is recorded: which Shell a gesture belongs to is
+  /// only known once its Tracker opens, and the gesture starts before that. Converting earlier makes
+  /// [_begin]'s replay report window coordinates, off by the Shell's own header.
   static Offset _convert(Offset viewPosition) {
     final convert = _toDisplay[_activeHost];
     return convert == null ? viewPosition : convert(viewPosition);
@@ -127,10 +130,9 @@ class TrackerSession {
     // Bookkeeping first, and whether a Tracker is open or not: the gesture starts well before Java
     // has answered DragDetect, so where the pointer is -- and whether it is still down -- has to be
     // known by the time the Tracker arrives. See _begin.
-    // A pointer position is global to the window, which includes whatever frame the client draws
-    // around the Shell; everything the workbench compares it against is in the Shell's own
-    // coordinates. Converting here keeps that difference out of the rest of the session.
-    final position = _convert(event.position);
+    // Kept as the window position it arrives as, and converted into the Shell's coordinates only on
+    // the way out: see _convert.
+    final position = event.position;
     _lastPosition = position;
     final ended = event is PointerUpEvent || event is PointerCancelEvent;
     if (event is PointerDownEvent) {
@@ -178,12 +180,13 @@ class TrackerSession {
   }
 
   static void _send(int id, String action, Offset position) {
+    final converted = _convert(position);
     _sendEvent(
       id,
       action,
       VEvent()
-        ..x = position.dx.round()
-        ..y = position.dy.round(),
+        ..x = converted.dx.round()
+        ..y = converted.dy.round(),
     );
   }
 

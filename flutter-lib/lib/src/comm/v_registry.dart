@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import 'comm.dart';
+import 'comm_frame.dart';
 import 'delivery_gate.dart';
 
 /// What one delivery did to a value, as much as is knowable from the delivery itself.
@@ -215,6 +216,11 @@ class VRegistry {
         print('[delivery] update does not fit $channel '
             '(held ${node.value.seq}, base ${frame[kBase]}): asking for it again');
         EquoCommService.sendPayload(widgetRefreshChannel, '${node.value.id}');
+        // The frame cannot be applied; what it carries still has to be. A widget described inside
+        // it is the only description that widget will ever get - the sender counts it delivered and
+        // names it from then on - and one dropped here is subscribed to by nobody, so not even the
+        // request above can repair it. Judged on its own stamp, as in the branch below.
+        _adoptSubtreeOf(channel, mapWidgetValue(frame));
       case FrameAction.ignore:
         // Nothing here changes - the frame describes this widget as it used to be. But a whole
         // frame carries every widget beneath it, and one of those can be a widget nothing else has

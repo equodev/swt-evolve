@@ -101,7 +101,10 @@ public class Serializer {
             ThreadLocal.withInitial(java.util.ArrayList::new);
 
     private static void noteWritten(Object impl, VWidget value, long seq, boolean whole) {
-        written.get().add(new Object[]{value, seq, impl, whole});
+        // The names are snapshotted here, not read back when the frame is credited: a property
+        // changed in between belongs to the next frame.
+        written.get().add(
+                new Object[]{value, seq, impl, whole, new java.util.HashSet<>(value.changedKeys())});
     }
 
     /** The value whose partial update is being written, or null while writing whole widgets. */
@@ -183,7 +186,9 @@ public class Serializer {
         writtenResources.get().clear();
         for (Object[] entry : written.get()) {
             VWidget value = (VWidget) entry[0];
-            value.sent(connection, (Long) entry[1]);
+            @SuppressWarnings("unchecked")
+            java.util.Set<String> carried = (java.util.Set<String>) entry[4];
+            value.sent(connection, (Long) entry[1], carried);
             // Described whole: a change back to the last update's value is a real change again.
             if ((Boolean) entry[3]) lastSent.remove(value);
             // A delivered widget can be named instead of described from here on, and a name is only
@@ -785,7 +790,9 @@ public class Serializer {
         // part-stacks is the main workbench area regardless of how deep the perspective nests
         // it -- serialize it as a MainComposite so the parts get the panel treatment
         // (gap/border/shadow). FlutterBridge.widgetName addresses it by the same rule.
-        return Config.presentedName(impl, apiName);
+        String presentedAs = Config.presentedName(impl, apiName);
+        Config.describedAs(impl, presentedAs);
+        return presentedAs;
     }
 
     private static boolean isOwnPackage(Class<? extends Widget> aClass) {

@@ -266,6 +266,21 @@ class _RowGeometry {
   bool get hasExpander => arrowWidth != null;
 }
 
+/// What a tab costs beyond its label, measured rather than copied from the theme it is drawn from.
+class _TabGeometry {
+  final double surround;
+  final double closeExtra;
+  final double imageExtra;
+  final double imageHeight;
+
+  const _TabGeometry({
+    required this.surround,
+    required this.closeExtra,
+    required this.imageExtra,
+    required this.imageHeight,
+  });
+}
+
 // Analysis results for a widget type
 class WidgetAnalysis {
   final String widgetType;
@@ -972,6 +987,21 @@ class WidgetMeasurer {
       if (page != null) discovered['page'] = _probeJson(page);
     }
 
+    // The tabs a CTabFolder draws, which is what Java has to size to answer which one a point is
+    // over. A tab is assembled by the row rather than being a widget of its own, so it is found the
+    // way the row itself holds on to one: the keyed subtree per tab, inside that row and nowhere
+    // else. The item widget's own box is no use here - it is the label, without the padding and the
+    // close button the folder draws around it.
+    final tabRow = expectedComponents['tabsOf'];
+    if (tabRow is String) {
+      final row = _findBoxCreatedBy(root, tabRow);
+      if (row != null) {
+        final tabs = <RenderBoxInfo>[];
+        _collectOutermostCreatedBy(row, 'KeyedSubtree', tabs);
+        if (tabs.isNotEmpty) discovered['tab'] = tabs.map(_probeJson).toList();
+      }
+    }
+
     return discovered;
   }
 
@@ -1119,6 +1149,21 @@ class WidgetMeasurer {
 
   /// The outermost box built by [widget], found from the render tree itself rather than from a
   /// marker the widget has to carry — the same way rows are located.
+  /// Every box created by [widget], outermost only: once one matches, its children are its parts.
+  void _collectOutermostCreatedBy(
+    RenderBoxInfo box,
+    String widget,
+    List<RenderBoxInfo> into,
+  ) {
+    if (box.createdBy(widget)) {
+      into.add(box);
+      return;
+    }
+    for (final child in box.children) {
+      _collectOutermostCreatedBy(child, widget, into);
+    }
+  }
+
   RenderBoxInfo? _findBoxCreatedBy(RenderBoxInfo box, String widget) {
     if (box.createdBy(widget)) return box;
     for (final child in box.children) {
@@ -2489,6 +2534,12 @@ class WidgetMeasurer {
         _agreedMeasurement(frameStyled, widgetType, 'the SWT.BORDER body frame');
     if (stripHeight == null || border == null || borderStyled == null) return;
 
+    final labelStyle = _labelStyle(widgetType, analyses);
+    if (labelStyle == null) return;
+
+    final tab = _tabGeometry(widgetType, analyses);
+    if (tab == null) return;
+
     final buffer = StringBuffer()
       ..writeln('package dev.equo.swt.size;')
       ..writeln()
@@ -2518,8 +2569,134 @@ class WidgetMeasurer {
       ..writeln(
         '    public static final int BODY_BORDER_STYLED = ${borderStyled.round()};',
       )
+      ..writeln()
+      ..writeln(
+        '    /** What a tab draws around its label, both sides together. */',
+      )
+      ..writeln(
+        '    public static final int TAB_LABEL_SURROUND = ${tab.surround.round()};',
+      )
+      ..writeln()
+      ..writeln(
+        '    /** What a close button adds to a tab\'s width, including its gap to the label. */',
+      )
+      ..writeln(
+        '    public static final int TAB_CLOSE_EXTRA = ${tab.closeExtra.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** What an image adds to a tab\'s width, including its gap to the label. */')
+      ..writeln(
+        '    public static final int TAB_IMAGE_EXTRA = ${tab.imageExtra.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** How tall an image on a tab is drawn, which is what sets the tab\'s height. */')
+      ..writeln(
+        '    public static final int TAB_IMAGE_HEIGHT = ${tab.imageHeight.round()};',
+      )
+      ..writeln()
+      ..writeln(
+        '    /** The style a tab\'s label is drawn in, which is the font to measure it in. */',
+      )
+      ..writeln('    public static TextStyle tabLabelStyle() {')
+      ..writeln('        return $labelStyle;')
+      ..writeln('    }')
       ..writeln('}');
     _writeSizesFile(widgetType, buffer);
+  }
+
+  /// What a tab costs beyond its label, as differences between the tab shapes.
+  ///
+  /// Java sizes a tab by measuring its label and adding to it, so these are the numbers it needs -
+  /// not the decomposition the theme is written in, whose several constants only ever reach a tab's
+  /// width as a sum.
+  ///
+  _TabGeometry? _tabGeometry(String widgetType, List<WidgetAnalysis> analyses) {
+    final surround = <String, double>{};
+    final widths = <String, double>{};
+    double? imageHeight;
+    for (final m in analyses.expand((a) => a.measurements)) {
+      final tabs = m.discoveredComponents['tab'];
+      final text = m.discoveredComponents['text'];
+      if (tabs is! List || tabs.isEmpty || text is! Map) continue;
+      final width = ((tabs.first as Map)['width'] as num).toDouble();
+      widths[m.style] = width;
+      if (!m.style.startsWith('tab:')) {
+        surround[m.style] = width - (text['width'] as num).toDouble();
+      }
+      final image = m.discoveredComponents['image'];
+      if (image is Map) imageHeight = (image['height'] as num).toDouble();
+    }
+
+    final agreed =
+        _agreedMeasurement(surround, widgetType, 'what a tab draws around its label');
+    final plain = widths['tab:plain'];
+    final withClose = widths['tab:close'];
+    final withImage = widths['tab:image'];
+    if (agreed == null) return null;
+    if (plain == null || withClose == null || withImage == null || imageHeight == null) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: the tab shapes did not all measure — '
+        'plain=$plain close=$withClose image=$withImage imageHeight=$imageHeight',
+      );
+      return null;
+    }
+
+    // An icon is square, so it has to widen the tab by at least its own height. Anything less means
+    // it was never drawn - the render side builds one from the image's bytes and falls back to
+    // nothing - and the difference would then describe this tool rather than the tab.
+    final imageExtra = withImage - plain;
+    if (imageExtra < imageHeight) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: the tab with an image is only ${imageExtra}px wider than '
+        'the one without, for an icon $imageHeight tall — it was not drawn.',
+      );
+      return null;
+    }
+
+    return _TabGeometry(
+      surround: agreed,
+      closeExtra: withClose - plain,
+      imageExtra: imageExtra,
+      imageHeight: imageHeight,
+    );
+  }
+
+  /// The style the label on this container's own chrome is drawn in, as the `new TextStyle(...)`
+  /// Java measures with. Read off the laid-out text rather than derived from the theme it came from,
+  /// so the side that measures a label and the side that draws it cannot drift apart.
+  String? _labelStyle(String widgetType, List<WidgetAnalysis> analyses) {
+    final byStyle = <String, String>{};
+    for (final m in analyses.expand((a) => a.measurements)) {
+      final text = m.discoveredComponents['text'];
+      if (text is! Map) continue;
+      final style = text['textStyle'];
+      if (style is Map) byStyle[m.style] = _javaTextStyle(style);
+    }
+    final distinct = byStyle.values.toSet();
+    if (distinct.length == 1) return distinct.single;
+    print(
+      distinct.isEmpty
+          ? 'SKIPPED ${widgetType}Sizes.java: no case measured a label.'
+          : 'SKIPPED ${widgetType}Sizes.java: the label is not drawn in one style: $byStyle',
+    );
+    return null;
+  }
+
+  /// A measured text style as the `new TextStyle(...)` Java measures with.
+  String _javaTextStyle(Map style) {
+    final family = ((style['fontFamily'] ?? 'System') as String)
+        .replaceAll('.AppleSystemUIFont', 'System')
+        .replaceAll('Roboto', 'System')
+        .replaceAll('Segoe UI', 'System');
+    final size = (style['fontSize'] as num?)?.toInt() ?? 12;
+    final weight = snapToSupportedWeight(
+      style['fontWeight'] != null
+          ? ((style['fontWeight'] as int).clamp(0, 8) + 1) * 100
+          : 400,
+    );
+    final italic =
+        style['fontStyle'] != null && (style['fontStyle'] as int) == FontStyle.italic.index;
+    return 'new TextStyle("$family", $size, $italic, $weight)';
   }
 
   /// The one value every entry in [edges] agrees on, or null after saying which disagreed. Refusing

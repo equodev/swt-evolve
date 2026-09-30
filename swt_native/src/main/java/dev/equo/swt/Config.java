@@ -552,11 +552,29 @@ public class Config {
      * class name instead reaches nothing.
      */
     public static String presentedName(DartWidget impl, String name) {
-        if ("Composite".equals(name) && impl instanceof DartComposite && !impl.isDisposed()
-                && isMainSashComposite((DartComposite) impl))
-            return "MainComposite";
-        return name;
+        String filed = presented.get(impl);
+        if (filed != null) return filed;
+        return "Composite".equals(name) && impl instanceof DartComposite && !impl.isDisposed()
+                && isMainSashComposite((DartComposite) impl)
+                ? "MainComposite"
+                : name;
     }
+
+    /**
+     * Records the name a widget has been described under, which is the one it is addressed by from
+     * then on.
+     *
+     * <p>{@link #isMainSashComposite} is structural, so it answers differently once the first
+     * part-stack arrives, and a perspective builds its sash containers empty and fills them. The
+     * client subscribes to the name its description carried, so renaming one mid-life leaves it
+     * listening on a channel nothing is addressed to.
+     */
+    static void describedAs(DartWidget impl, String name) {
+        presented.put(impl, name);
+    }
+
+    private static final Map<DartWidget, String> presented =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     private static boolean isSashLayout(Layout layout) {
         return layout != null
