@@ -71,6 +71,27 @@ public class FontListTest {
         assertThat(FontMetricsUtil.getFontList(null, false, SYSTEM_FONT)).isEmpty();
     }
 
+    /**
+     * The desktop surface never registers the web substitution table, so without the host's own
+     * families a desktop session again offers only the system font.
+     */
+    @Test
+    public void desktop_mode_offers_every_family_the_host_table_holds() {
+        String savedMode = ConfigFlags.mode();
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
+        try {
+            String[] hostFamilies = GenDesktopFontMetrics.DATA.keySet().stream()
+                    .map(id -> id.replaceFirst("-[01]-[0-8]$", ""))
+                    .distinct().toArray(String[]::new);
+
+            assertThat(hostFamilies).isNotEmpty();
+            assertThat(namesOf(FontMetricsUtil.getFontList(null, true, SYSTEM_FONT))).contains(hostFamilies);
+        } finally {
+            if (savedMode == null) System.clearProperty(ConfigFlags.MODE_PROPERTY);
+            else ConfigFlags.setMode(savedMode);
+        }
+    }
+
     @Test
     public void survives_a_device_with_no_system_font() {
         FontData[] fonts = FontMetricsUtil.getFontList(null, true, null);

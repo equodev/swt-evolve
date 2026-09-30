@@ -48,7 +48,8 @@ public final class FontMetricsUtil {
      *
      * <p>Reads the substitution table, never populates it: registering is the web runtime's call
      * (see {@code WebFlutterServer}), and forcing it here would make a desktop build substitute
-     * names it can render natively.</p>
+     * names it can render natively. The desktop surface, which leaves that table empty, offers
+     * the families of the host's own metrics table instead: the fonts its font stack paints.</p>
      */
     public static FontData[] getFontList(String faceName, boolean scalable, FontData systemFontData) {
         if (!scalable) return new FontData[0];
@@ -57,6 +58,9 @@ public final class FontMetricsUtil {
             names.add(systemFontData.getName());
         }
         names.addAll(fontSubstitutionKeys());
+        if (ConfigFlags.isDesktopMode()) {
+            names.addAll(desktopFontFamilies());
+        }
         int height = Math.max(1, systemFontData != null ? systemFontData.getHeight() : 11);
         java.util.List<FontData> result = new java.util.ArrayList<>();
         for (String name : names) {
@@ -89,6 +93,21 @@ public final class FontMetricsUtil {
             desktopMetrics = table;
         }
         return table;
+    }
+
+    private static volatile java.util.Set<String> desktopFontFamilies;
+
+    /** The family names in the desktop metrics table; empty where it is absent. */
+    private static java.util.Set<String> desktopFontFamilies() {
+        java.util.Set<String> families = desktopFontFamilies;
+        if (families == null) {
+            families = new java.util.LinkedHashSet<>();
+            for (String id : desktopMetrics().keySet()) {
+                families.add(id.replaceFirst("-[01]-[0-8]$", ""));
+            }
+            desktopFontFamilies = families;
+        }
+        return families;
     }
 
     /**
