@@ -1038,7 +1038,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        if (itemCount == 0 || items == null || items[0] == null) {
+        if (itemCount == 0 || items == null || items[0] == null || items[0].isDisposed()) {
             return TableSizes.getItemHeight(this);
         }
         return Sizes.computeSize((DartTableItem) items[0].getImpl(), SWT.DEFAULT, SWT.DEFAULT, true).y;
