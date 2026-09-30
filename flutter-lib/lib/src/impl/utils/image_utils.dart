@@ -8,6 +8,7 @@ import '../../gen/image.dart';
 import '../assets_manager.dart';
 import '../icons_map.dart';
 import '../widget_config.dart';
+import 'glyph_tone.dart';
 
 class ImageUtils {
   static final Map<String, Widget> _iconCache = {};
@@ -184,8 +185,13 @@ class ImageUtils {
   }) {
     final preserveColors = preserveIconColors;
     final fade = disabledOpacity ?? AppOpacities.disabled;
+    // Only a monochrome glyph takes the tint: color artwork would be flattened into a silhouette.
+    final tinted = renderAsIcon &&
+        !preserveColors &&
+        bytes != null &&
+        GlyphTone.ofEncoded(bytes, GlyphTintLimits.fallback) != null;
     final cacheKey = renderAsIcon
-        ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors-$fade'
+        ? 'icon-${bytes != null ? GlyphTone.contentKey(bytes) : file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$tinted-$fade'
         : (file != null)
         ? 'img-${file}-${width ?? 'default'}-${height ?? 'default'}-$enabled-$fade'
         : 'img-${bytes?.length ?? 'none'}-$enabled-$fade';
@@ -203,7 +209,7 @@ class ImageUtils {
 
         Widget iconContent;
 
-        if (!preserveColors) {
+        if (tinted) {
           final imageColor = color ?? AppColors.getColor(enabled);
           iconContent = SizedBox(
             width: imageSize,

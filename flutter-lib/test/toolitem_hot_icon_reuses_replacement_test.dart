@@ -19,16 +19,14 @@ import 'package:swtflutter/src/impl/utils/image_utils.dart';
 /// feedback is the zoom and the highlight, never a different picture.
 ///
 /// A replaced icon arrives as `svgContent` and renders an [SvgPicture]; one the pack had nothing
-/// for arrives as bytes and renders an [ImageIcon] over a [MemoryImage] of those bytes. That is
-/// what these assert on.
+/// for arrives as bytes and renders a [MemoryImage] of those bytes — through an [ImageIcon] for a
+/// glyph, an [Image] for color artwork. That is what these assert on.
 
 const String _replacementSvg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
     '<rect width="16" height="16" fill="black"/></svg>';
 
-/// Two distinct valid PNGs, standing in for the application's own artwork. Their lengths differ on
-/// purpose: [ImageUtils]'s binary-image cache is keyed by byte length, so same-length bytes would
-/// resolve to each other's widget.
+/// Two distinct valid PNGs, standing in for the application's own artwork.
 const List<int> _normalBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
   0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -109,9 +107,16 @@ Future<void> _hover(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-/// The bytes the drawn [ImageIcon] is painting.
-List<int> _drawnBytes(WidgetTester tester) =>
-    (tester.widget<ImageIcon>(find.byType(ImageIcon)).image as MemoryImage).bytes;
+/// The application bytes being drawn, whether through an [ImageIcon] or an [Image].
+List<List<int>> _drawnAppBytes(WidgetTester tester) => [
+      for (final icon in tester.widgetList<ImageIcon>(find.byType(ImageIcon)))
+        if (icon.image is MemoryImage) (icon.image as MemoryImage).bytes,
+      for (final image in tester.widgetList<Image>(find.byType(Image)))
+        if (image.image is MemoryImage) (image.image as MemoryImage).bytes,
+    ];
+
+/// The bytes the one drawn application image is painting.
+List<int> _drawnBytes(WidgetTester tester) => _drawnAppBytes(tester).single;
 
 void main() {
   // The widget caches are static and keyed by image content, so a scenario would otherwise
@@ -129,7 +134,7 @@ void main() {
     await _hover(tester);
 
     expect(find.byType(SvgPicture), findsOneWidget);
-    expect(find.byType(ImageIcon), findsNothing);
+    expect(_drawnAppBytes(tester), isEmpty);
   });
 
   testWidgets('a hovered item takes its hot icon when that is the replaced one', (tester) async {
@@ -141,7 +146,7 @@ void main() {
     await _hover(tester);
 
     expect(find.byType(SvgPicture), findsOneWidget);
-    expect(find.byType(ImageIcon), findsNothing);
+    expect(_drawnAppBytes(tester), isEmpty);
   });
 
   testWidgets('with nothing replaced the hot icon is still what hovering draws', (tester) async {

@@ -8,6 +8,7 @@ import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/impl/utils/glyph_tone.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 /// `disable_swt_canvas_colors` re-grounds a Canvas in the theme's colors: every stroke, fill and

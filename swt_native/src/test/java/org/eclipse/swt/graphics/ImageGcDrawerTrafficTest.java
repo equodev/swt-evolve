@@ -131,6 +131,41 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     }
 
     @Test
+    void an_image_drawn_by_its_own_gc_is_blitted_as_its_render_not_its_blank_buffer() {
+        // Whatever the client was given while the image was still blank must not be what a later
+        // blit names: the blank buffer paints as an opaque black square.
+        Image avatar = new Image(device(), 16, 16);
+        GC paint = new GC(avatar);
+        paint.fillRectangle(0, 0, 16, 16);
+        paint.dispose();
+        Long ref = ((DartImage) avatar.getImpl()).remoteRef;
+        assertThat(ref).as("the GC's drawing never became a render").isNotNull();
+
+        Image target = new Image(device(), 64, 64);
+        GC firstBlit = new GC(target);
+        firstBlit.drawImage(avatar, 0, 0);
+        firstBlit.dispose();
+        // The next image's GC is what sends the first one's batch, crediting its blank description.
+        Image next = new Image(device(), 16, 16);
+        GC nextPaint = new GC(next);
+        nextPaint.fillRectangle(0, 0, 16, 16);
+        nextPaint.dispose();
+
+        comm.payloads.clear();
+        GC blit = new GC(target);
+        blit.drawImage(avatar, 0, 0);
+        blit.dispose();
+
+        assertThat(String.join("", comm.payloads))
+                .as("the blit named a stale copy of the image instead of its render")
+                .contains("\"remoteRef\":" + ref);
+
+        avatar.dispose();
+        next.dispose();
+        target.dispose();
+    }
+
+    @Test
     void every_gc_on_an_image_describes_itself_however_alike_the_last_one_was() {
         // Each GC is a new, blank drawer on the client, so its state must never be withheld as already sent.
         Image buffer = new Image(device(), 30, 100);

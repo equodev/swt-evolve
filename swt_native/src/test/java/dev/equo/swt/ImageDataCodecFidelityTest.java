@@ -64,6 +64,31 @@ public class ImageDataCodecFidelityTest {
     }
 
     @Test
+    public void a_global_alpha_applies_to_every_pixel() {
+        // An app builds a see-through placeholder by setting alpha = 0 on a blank image's data.
+        ImageData source = new ImageData(4, 4, 32, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
+        source.alpha = 0;
+
+        ImageData out = decoded(source);
+        assertThat(out.alphaData).as("the global alpha was dropped, so the image is opaque black").isNotNull();
+        assertThat(out.getAlpha(0, 0)).isZero();
+        assertThat(out.getAlpha(3, 3)).isZero();
+    }
+
+    @Test
+    public void a_global_alpha_wins_over_per_pixel_alpha() {
+        ImageData source = new ImageData(2, 1, 24, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
+        source.setPixel(0, 0, 0x336699);
+        source.alphaData = new byte[] {(byte) 255, (byte) 255};
+        source.alpha = 128;
+
+        ImageData out = decoded(source);
+        assertThat(out.getAlpha(0, 0)).isEqualTo(128);
+        assertThat(out.getAlpha(1, 0)).isEqualTo(128);
+        assertThat(rgbAt(out, 0, 0)).isEqualTo(new RGB(0x33, 0x66, 0x99));
+    }
+
+    @Test
     public void a_transparent_palette_index_stays_transparent() {
         // A 1-bit stipple: one index drawn, the other see-through.
         ImageData source = new ImageData(4, 4, 1,

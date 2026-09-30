@@ -66,6 +66,21 @@ public final class ImageDataCodec {
         crc.update((value >>> 24) & 0xFF);
     }
 
+    /**
+     * A global {@code alpha} applies to every pixel and overrides {@code alphaData}; the PNG encoder
+     * only writes {@code alphaData}, so the global value is spread into it.
+     */
+    private static ImageData globalAlphaAsAlpha(ImageData img) {
+        if (img.alpha == -1) return img;
+        byte[] alpha = new byte[img.width * img.height];
+        java.util.Arrays.fill(alpha, (byte) img.alpha);
+        ImageData out = (ImageData) img.clone();
+        out.alphaData = alpha;
+        out.alpha = -1;
+        out.maskData = null;
+        return out;
+    }
+
     /** The PNG encoder ignores {@code maskData} but keeps {@code alphaData}, so a mask is converted. */
     private static ImageData maskAsAlpha(ImageData img) {
         if (img.maskData == null || img.alphaData != null || img.alpha != -1) return img;
@@ -145,7 +160,7 @@ public final class ImageDataCodec {
 
         try {
             ImageLoader ldr = new ImageLoader();
-            ldr.data = new ImageData[]{ widenNarrowChannels(maskAsAlpha(img)) };
+            ldr.data = new ImageData[]{ widenNarrowChannels(maskAsAlpha(globalAlphaAsAlpha(img))) };
 
             int fmt;
             switch (img.type) {

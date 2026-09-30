@@ -21,6 +21,7 @@ import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'assets_manager.dart';
 import 'color_utils.dart';
 import 'utils/font_utils.dart';
+import 'utils/glyph_tone.dart';
 import 'utils/image_utils.dart';
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
@@ -2226,43 +2227,6 @@ class FocusRectShape extends Shape {
 
 enum ImageType { raster, svg, picture }
 
-/// What the Canvas theme allows to read as a glyph — an image small enough, and with little enough
-/// color, that it has none of the application's to keep when the Canvas is drawn in theme colors.
-class GlyphTintLimits {
-  final int maxSide;
-  final int channelTolerance;
-
-  const GlyphTintLimits({required this.maxSide, required this.channelTolerance});
-
-  // Used by the standalone image drawer, which renders offscreen and never resolves a theme.
-  static const GlyphTintLimits fallback =
-      GlyphTintLimits(maxSide: 64, channelTolerance: 4);
-}
-
-/// The grey range a monochrome glyph spans, over its visible pixels.
-class GlyphTone {
-  final int darkest;
-  final int lightest;
-
-  const GlyphTone({required this.darkest, required this.lightest});
-
-  // Below this spread the glyph is one tone of ink, and its alpha alone says where the ink is.
-  static const int _minPaperContrast = 64;
-
-  /// Alpha from darkness: [darkest] is full ink, [lightest] is paper. Null for a single-tone glyph.
-  ColorFilter? get inkMask {
-    final range = lightest - darkest;
-    if (range < _minPaperContrast) return null;
-    final k = 255 / range;
-    return ColorFilter.matrix(<double>[
-      0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0,
-      -k, 0, 0, 0, k * lightest,
-    ]);
-  }
-}
-
 class ImageShape extends Shape {
   ImageShape._({
     required this.type,
@@ -2337,11 +2301,7 @@ class ImageShape extends Shape {
     if (remoteRef != null) return 'ref-$remoteRef-$suffix';
     final data = vImage.imageData?.data;
     if (data == null || data.isEmpty) return null;
-    var hash = 0;
-    for (final byte in data) {
-      hash = (hash * 31 + byte) & 0x3FFFFFFF;
-    }
-    return 'bin-${data.length}-$hash-$suffix';
+    return '${GlyphTone.contentKey(ImageUtils.asBytes(data))}-$suffix';
   }
 
   static Future<GlyphTone?> _monochromeGlyphTone(
@@ -2352,29 +2312,11 @@ class ImageShape extends Shape {
     final key = _glyphCacheKey(vImage, limits);
     if (key != null && _monochromeGlyphs.containsKey(key)) return _monochromeGlyphs[key];
 
-    GlyphTone? tone;
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (data != null) {
-      final bytes = data.buffer.asUint8List();
-      var darkest = 255;
-      var lightest = 0;
-      var monochrome = true;
-      for (var i = 0; i + 3 < bytes.length; i += 4) {
-        // Premultiplied alpha scales all three channels alike, so grey stays grey.
-        final a = bytes[i + 3];
-        if (a == 0) continue;
-        final min = math.min(bytes[i], math.min(bytes[i + 1], bytes[i + 2]));
-        final max = math.max(bytes[i], math.max(bytes[i + 1], bytes[i + 2]));
-        if (max - min > limits.channelTolerance) {
-          monochrome = false;
-          break;
-        }
-        final grey = math.min(255, bytes[i] * 255 ~/ a);
-        darkest = math.min(darkest, grey);
-        lightest = math.max(lightest, grey);
-      }
-      if (monochrome) tone = GlyphTone(darkest: darkest, lightest: lightest);
-    }
+    final tone = data == null
+        ? null
+        : GlyphTone.scan(data.buffer.asUint8List(), limits.channelTolerance,
+            premultiplied: true);
     if (key != null) {
       // The key is content-derived, so the map would otherwise grow without bound.
       if (_monochromeGlyphs.length > 512) _monochromeGlyphs.clear();
