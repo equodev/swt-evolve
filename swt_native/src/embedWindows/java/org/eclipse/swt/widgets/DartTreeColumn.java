@@ -579,6 +579,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
 
     void setWidthInPixels(int width) {
         int newValue = width;
+        boolean widthChanged = !java.util.Objects.equals(this.width, newValue);
         if (!java.util.Objects.equals(this.width, newValue)) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
@@ -590,6 +591,8 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         ((DartControl) parent.getImpl()).forceResize();
         this.width = newValue;
         ((DartTree) parent.getImpl()).setScrollWidth();
+        if (widthChanged)
+            sendEvent(SWT.Resize);
     }
 
     void updateToolTip(int index) {
@@ -666,7 +669,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
                 if (isDisposed())
                     return;
                 setWidth(e.width);
-                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

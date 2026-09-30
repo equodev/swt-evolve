@@ -550,6 +550,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         int newValue = width;
+        boolean widthChanged = !java.util.Objects.equals(this.width, newValue);
         if (!java.util.Objects.equals(this.width, newValue)) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
@@ -559,6 +560,8 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         // TODO how to differentiate 0 and 1 cases?
         width = Math.max(0, width - DartTree.CELL_GAP);
         this.width = newValue;
+        if (widthChanged)
+            sendEvent(SWT.Resize);
     }
 
     @Override
@@ -621,7 +624,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
                 if (isDisposed())
                     return;
                 setWidth(e.width);
-                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

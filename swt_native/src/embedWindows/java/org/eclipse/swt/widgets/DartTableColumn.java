@@ -659,6 +659,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     void setWidthInPixels(int width) {
         int newValue = width;
+        boolean widthChanged = !java.util.Objects.equals(this.width, newValue);
         if (!java.util.Objects.equals(this.width, newValue)) {
             getValue().markDirty(VTableColumn.WIDTH);
         }
@@ -668,6 +669,8 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         if (index == -1)
             return;
         this.width = newValue;
+        if (widthChanged)
+            sendEvent(SWT.Resize);
     }
 
     void updateToolTip(int index) {
@@ -739,7 +742,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
                 if (isDisposed())
                     return;
                 setWidth(e.width);
-                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

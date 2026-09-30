@@ -727,7 +727,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
                 if (isDisposed())
                     return;
                 setWidth(e.width);
-                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
