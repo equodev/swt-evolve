@@ -504,12 +504,10 @@ public class TableHelper {
         if (!OwnerDrawOverlay.isListening(item.getApi())) {
             return new int[0];
         }
-        String[] model = item.strings;
         int[] painted = new int[drawn.suppressed.length];
         int count = 0;
         for (int i = 0; i < drawn.suppressed.length; i++) {
-            String own = model != null && i < model.length ? model[i] : null;
-            if (drawn.suppressed[i] || own == null) {
+            if (overlayOwnsText(item, drawn, i)) {
                 painted[count++] = i;
             }
         }
@@ -517,27 +515,39 @@ public class TableHelper {
     }
 
     public static String[] getTexts(DartTableItem item) {
-        String[] model = item.strings;
         OwnerDraw drawn = ownerDraw(item);
         if (drawn == null) {
-            return model;
+            return item.strings;
         }
         String[] result = new String[drawn.suppressed.length];
         for (int i = 0; i < result.length; i++) {
-            String own = model != null && i < model.length ? model[i] : null;
-            // Model wins only when not suppressed AND it has its own text; otherwise use what PaintItem drew.
-            if (!drawn.suppressed[i] && own != null) {
-                result[i] = own;
-                continue;
-            }
-            String captured = drawn.texts[i];
-            if ((captured == null || captured.isEmpty()) && drawn.textDrawn[i] && own != null && !own.isEmpty()) {
-                result[i] = own;
-            } else {
-                result[i] = captured;
-            }
+            result[i] = overlayOwnsText(item, drawn, i) ? drawn.texts[i] : ownText(item, i);
         }
         return result;
+    }
+
+    /**
+     * Whether cell {@code index}'s text belongs to the row's overlay rather than to the model. The
+     * render side reads this to decide which cells not to paint, so it has to agree with what
+     * {@link #getTexts(DartTableItem)} hands it: the model wins when the app did not suppress the
+     * foreground and has its own text, and also when the listener asked to draw text but produced
+     * none — that leaves the overlay with no text op, so a cell marked as the overlay's would be
+     * suppressed on both sides and show nothing.
+     */
+    private static boolean overlayOwnsText(DartTableItem item, OwnerDraw drawn, int index) {
+        String own = ownText(item, index);
+        if (!drawn.suppressed[index] && own != null) {
+            return false;
+        }
+        String captured = drawn.texts[index];
+        boolean drewNoText = captured == null || captured.isEmpty();
+        return !(drewNoText && drawn.textDrawn[index] && own != null && !own.isEmpty());
+    }
+
+    /** Column {@code index}'s model text, or null when the model has none for it. */
+    private static String ownText(DartTableItem item, int index) {
+        String[] model = item.strings;
+        return model != null && index < model.length ? model[index] : null;
     }
 
     private static Image[] ownImages(DartTableItem item, int count) {

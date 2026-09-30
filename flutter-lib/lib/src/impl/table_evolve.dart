@@ -621,8 +621,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
     );
   }
 
-  /// Lays each owner-drawn row's overlay over the row it paints. A Table row has no widget of its
+  /// Lays each owner-drawn row's overlay under the row it paints. A Table row has no widget of its
   /// own to carry one, and every row in the window is [rowHeight] tall.
+  ///
+  /// Under, not over: the overlay replays the row's SWT.EraseItem drawing, which is the cell
+  /// background, and an app that leaves SWT.FOREGROUND set still expects SWT to draw the item's own
+  /// text on top of it. Laid over the row, that background hid every cell whose text the row itself
+  /// paints. The row's cells are transparent unless the item sets a background, so a row laid over
+  /// the overlay hides none of it.
   Widget withOwnerDrawnRows(
     Widget rows,
     List<VTableItem> items,
@@ -642,7 +648,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
           ),
     ];
     // Always a Stack, so the rows are not remounted when the first overlay arrives.
-    return Stack(children: [rows, ...overlays]);
+    return Stack(children: [...overlays, rows]);
   }
 
   /// Rows the table has: for a VIRTUAL table, more than the rows whose data has arrived. Falls back

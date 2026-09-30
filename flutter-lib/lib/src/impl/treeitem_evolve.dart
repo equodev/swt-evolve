@@ -325,17 +325,23 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
-  /// Lays what an owner-drawing Tree paints into this row over the row, not over its children.
+  /// Lays what an owner-drawing Tree paints into this row under the row, and never over its
+  /// children.
+  ///
+  /// Under, not over: the overlay replays the row's SWT.EraseItem drawing, which is the cell
+  /// background, and an app that leaves SWT.FOREGROUND set still expects SWT to draw the item's own
+  /// text on top of it. Laid over the row, that background hid every cell whose text the row itself
+  /// paints.
   Widget _withOwnerDrawOverlay(Widget row) {
     // Always a Stack, so the row is not remounted when the overlay arrives.
     return Stack(
       children: [
-        row,
         if (state.paintedTexts != null)
           Positioned.fill(
             key: ValueKey(state.id),
             child: OwnerDrawnRowOverlay(itemId: state.id),
           ),
+        row,
       ],
     );
   }
