@@ -1309,8 +1309,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.remoteRef = ref;
     }
 
+    boolean renderOwnsPixels;
+
+    public void _renderOwnsPixels() {
+        renderOwnsPixels = true;
+    }
+
     public ImageData _imageDataForWire() {
-        return remoteRef != null ? null : imageData;
+        return (remoteRef != null || renderOwnsPixels) ? null : imageData;
     }
 
     public int _wireWidth() {

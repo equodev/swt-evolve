@@ -111,6 +111,30 @@ class ImageTravelsOnceTest {
     }
 
     @Test
+    void anImageTheRenderSideIsDrawingCarriesNoPixelsBeforeItsRefArrives() {
+        Shell shell = Mocks.shell();
+        Composite parent = new Composite(shell, SWT.NONE);
+        Label label = new Label(parent, SWT.NONE);
+        Image drawn = new Image(shell.getDisplay(), 1, 28);
+        // A GC bound it to the render side. Its ref exists only once that render answers, and until
+        // then this side holds what init() allocated: all zeros, which draws as solid black.
+        ((org.eclipse.swt.graphics.DartImage) drawn.getImpl())._renderOwnsPixels();
+        label.setImage(drawn);
+        settle(shell);
+
+        try (DeliveryAudit audit = DeliveryAudit.install()) {
+            bridge.dirty((DartWidget) label.getImpl());
+            FlutterBridge.update().join();
+
+            assertThat(latestOn(audit, label))
+                    .as("a blank buffer reached the client, which keeps it and draws it black")
+                    .doesNotContain("imageData");
+        }
+
+        drawn.dispose();
+    }
+
+    @Test
     void anImageRedrawnByAGcIsDescribedAgain() {
         Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);

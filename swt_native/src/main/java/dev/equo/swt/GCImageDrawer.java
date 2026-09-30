@@ -184,6 +184,12 @@ public class GCImageDrawer extends EmbeddedBridge {
         // sendGcDispose() reads the same field later, with no window where it could be unset.
         // Resolving is free; start() is what puts anything on the comm.
         resolvedComm = resolveSharedComm(dartImage);
+        // Said here rather than when the render lands: from this point the pixels are the render
+        // side's, and what this side holds is the buffer init() allocated. A client sent that blank
+        // keeps it, because a resource is referenced by name after its first delivery.
+        if (resolvedComm != null && dartImage != null && dartImage.getImpl() instanceof DartImage) {
+            ((DartImage) dartImage.getImpl())._renderOwnsPixels();
+        }
     }
 
     /**
