@@ -251,20 +251,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** The JVM's own clipboard, for a Display with no bridge of its own (a test harness injects one). */
     public static void writeSystemClipboardText(String text) {
         try {
-            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
-                    .setContents(new java.awt.datatransfer.StringSelection(text), null);
-        } catch (java.awt.HeadlessException | IllegalStateException ignored) {
+            SystemClipboard.write(text);
+        } catch (LinkageError noDesktopModule) {
         }
     }
 
     /** Null when there is no text or it cannot be read. */
     public String readClipboardText() {
         try {
-            Object data = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
-                    .getData(java.awt.datatransfer.DataFlavor.stringFlavor);
-            return data instanceof String ? (String) data : null;
-        } catch (java.awt.HeadlessException | IllegalStateException
-                | java.awt.datatransfer.UnsupportedFlavorException | java.io.IOException ignored) {
+            return SystemClipboard.read();
+        } catch (LinkageError noDesktopModule) {
             return null;
         }
     }
