@@ -109,9 +109,12 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         disabledOpacity: widgetTheme.disabledOpacity,
       ),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done &&
-            snapshot.hasData) {
-          final widget = snapshot.data ?? const SizedBox.shrink();
+        if (snapshot.connectionState == ConnectionState.done) {
+          final widget = snapshot.data;
+          if (widget == null) {
+            // Nothing could be drawn for this image; the item still keeps its footprint.
+            return SizedBox(width: iconSize, height: iconSize);
+          }
           _cachedImageWidget = widget;
           return widget;
         }

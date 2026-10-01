@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -80,10 +81,14 @@ class ImageUtils {
   /// change it.
   static bool hasRemoteImage(int ref) => _remoteImageCache.containsKey(ref);
 
+  /// Widgets that were handed [ref] before its render landed here, waiting for it.
+  static final Map<int, List<Completer<void>>> _remoteWaiters = {};
+
   static void registerRemoteImage(int ref, ui.Image image) {
     final previous = _remoteImageCache[ref];
     _remoteImageCache[ref] = RemoteRender.ofImage(image);
     previous?.dispose();
+    _wakeRemoteWaiters(ref);
   }
 
   /// Holds a render as a picture; pixels are made only when something reads them.
@@ -92,6 +97,29 @@ class ImageUtils {
     final previous = _remoteImageCache[ref];
     _remoteImageCache[ref] = RemoteRender(picture, width, height, depth);
     previous?.dispose();
+    _wakeRemoteWaiters(ref);
+  }
+
+  static void _wakeRemoteWaiters(int ref) {
+    for (final waiter in _remoteWaiters.remove(ref) ?? const <Completer<void>>[]) {
+      if (!waiter.isCompleted) waiter.complete();
+    }
+  }
+
+  /// The render behind [ref], waiting for it when a widget got the ref before the render that
+  /// fills it arrived. Null if it never does within [timeout].
+  static Future<RemoteRender?> _awaitRemoteRender(int ref,
+      {Duration timeout = const Duration(seconds: 10)}) async {
+    final ready = _remoteImageCache[ref];
+    if (ready != null) return ready;
+    final waiter = Completer<void>();
+    (_remoteWaiters[ref] ??= []).add(waiter);
+    try {
+      await waiter.future.timeout(timeout);
+    } on TimeoutException {
+      _remoteWaiters[ref]?.remove(waiter);
+    }
+    return _remoteImageCache[ref];
   }
 
   /// The render behind [ref], still as a picture where it never needed to be pixels.
@@ -530,6 +558,12 @@ class ImageUtils {
     );
 
     _futureCache[cacheKey] = future;
+    if (image.remoteRef != null) {
+      // A render that never arrived is retried on the next build instead of staying blank.
+      future.then((widget) {
+        if (widget == null) _futureCache.remove(cacheKey);
+      });
+    }
     return future;
   }
 
@@ -605,6 +639,26 @@ class ImageUtils {
     if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
         bytes: asBytes(image.imageData!.data!),
+        size: size,
+        width: width,
+        height: height,
+        color: color,
+        enabled: enabled,
+        constraints: constraints,
+        renderAsIcon: renderAsIcon,
+        disabledOpacity: disabledOpacity,
+      );
+    }
+
+    // Drawn with a GC: the render stayed here and Java sent only its ref, no pixels.
+    final ref = image.remoteRef;
+    if (ref != null) {
+      final render = await _awaitRemoteRender(ref);
+      if (render == null) return null;
+      // A clone, so the widget keeps a valid handle when the ref's render is released.
+      return _buildReplacementWidget(
+        render.rasteriseSync().clone(),
+        filename: 'remote-$ref',
         size: size,
         width: width,
         height: height,
@@ -725,6 +779,8 @@ class ImageUtils {
       }
       return 'bin-$len-$h';
     }
+    final ref = image.remoteRef;
+    if (ref != null) return 'remote-$ref';
     return 'no-image';
   }
 

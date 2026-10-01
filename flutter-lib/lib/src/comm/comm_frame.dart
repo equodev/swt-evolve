@@ -9,6 +9,7 @@ import '../impl/utils/perf_marks.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import 'comm_api.dart' show CommCallback;
+import 'received_images.dart';
 
 /// Fused JSON→UTF-8 codec: encodes straight to bytes (and decodes from bytes)
 /// in one pass, no intermediate String. Shared by every transport.
@@ -336,6 +337,8 @@ abstract class EquoCommBase {
   /// describe the past, so replaying the run in order costs a little work and settles on the same
   /// state.
   void _hold(String actionId, dynamic payload) {
+    // Its images count as delivered already, and a held frame may never be decoded.
+    keepImagesIn(payload);
     final run = _pending.putIfAbsent(actionId, () => []);
     if (run.length >= maxPendingPerChannel) {
       run.clear();

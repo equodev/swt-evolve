@@ -23,6 +23,7 @@ import '../gen/widgets.dart';
 import 'comm.dart';
 import 'comm_frame.dart';
 import 'delivery_gate.dart';
+import 'received_images.dart';
 
 /// What one delivery did to a value, as much as is knowable from the delivery itself.
 ///
@@ -173,7 +174,10 @@ class VRegistry {
   /// again rather than guessing.
   void apply(String channel, Map<String, dynamic> frame) {
     var node = _nodes[channel];
-    if (node == null) return;
+    if (node == null) {
+      keepImagesIn(frame);
+      return;
+    }
 
     switch (deliveryGate.decide(channel, frame)) {
       case FrameAction.replace:
@@ -233,6 +237,8 @@ class VRegistry {
         // rather than here.
         if (!frame.containsKey(kChangedKeys)) {
           _adoptSubtreeOf(channel, mapWidgetValue(frame));
+        } else {
+          keepImagesIn(frame);
         }
     }
   }
