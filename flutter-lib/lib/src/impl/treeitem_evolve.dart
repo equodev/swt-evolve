@@ -312,10 +312,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               enabled: enabled,
               selected: selected,
               image: image,
-              bgColor: bgColor,
+              bgColor: state.paintedTexts != null ? Colors.transparent : bgColor,
               nextItemSelected: nextItemSelected,
               hasMultiColumn: hasMultiColumn,
               effectiveItemHeight: effectiveItemHeight,
+            ),
+            background: BoxDecoration(
+              color: bgColor,
+              borderRadius: hasMultiColumn
+                  ? null
+                  : BorderRadius.circular(widgetTheme.borderRadius),
             )),
           ),
           if (expanded && hasChildren && (_context?.renderChildItems ?? true))
@@ -331,15 +337,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   /// Under, not over: the overlay replays the row's SWT.EraseItem drawing, which is the cell
   /// background, and an app that leaves SWT.FOREGROUND set still expects SWT to draw the item's own
   /// text on top of it. Laid over the row, that background hid every cell whose text the row itself
-  /// paints.
-  Widget _withOwnerDrawOverlay(Widget row) {
+  /// paints. The row's own [background] (hover, selection) goes under the overlay, not with the row,
+  /// or it covers the overlay's drawing.
+  Widget _withOwnerDrawOverlay(Widget row, {required BoxDecoration background}) {
     // Always a Stack, so the row is not remounted when the overlay arrives.
     return Stack(
       children: [
         if (state.paintedTexts != null)
           Positioned.fill(
             key: ValueKey(state.id),
-            child: OwnerDrawnRowOverlay(itemId: state.id),
+            child: DecoratedBox(
+              decoration: background,
+              child: OwnerDrawnRowOverlay(itemId: state.id),
+            ),
           ),
         row,
       ],

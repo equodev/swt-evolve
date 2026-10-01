@@ -613,6 +613,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
                       items,
                       window,
                       rowHeight,
+                      theme,
                     ),
                   ),
                 );
@@ -628,12 +629,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// background, and an app that leaves SWT.FOREGROUND set still expects SWT to draw the item's own
   /// text on top of it. Laid over the row, that background hid every cell whose text the row itself
   /// paints. The row's cells are transparent unless the item sets a background, so a row laid over
-  /// the overlay hides none of it.
+  /// the overlay hides none of it; the row's own background (selection, alternate row band) is laid
+  /// under the overlay instead, or it would.
   Widget withOwnerDrawnRows(
     Widget rows,
     List<VTableItem> items,
     _RowWindow window,
     double rowHeight,
+    TableThemeExtension theme,
   ) {
     final overlays = <Widget>[
       for (int i = window.start; i < window.end && i < items.length; i++)
@@ -644,7 +647,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
             left: 0,
             right: 0,
             height: rowHeight,
-            child: OwnerDrawnRowOverlay(itemId: items[i].id),
+            child: ColoredBox(
+              color: rowBackgroundColor(i, items[i], theme),
+              child: OwnerDrawnRowOverlay(itemId: items[i].id),
+            ),
           ),
     ];
     // Always a Stack, so the rows are not remounted when the first overlay arrives.
@@ -711,6 +717,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
+  Color rowBackgroundColor(int rowIndex, VTableItem item, TableThemeExtension theme) =>
+      getTableRowBackgroundColor(
+        item,
+        theme,
+        rowIndex == _selectedRowIndex || isItemSelected(item),
+        false,
+        state.enabled ?? false,
+        rowIndex % 2 == 1,
+      );
+
   TableRow buildRow(
     BuildContext context,
     int rowIndex,
@@ -720,14 +736,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
     bool showLines = true,
   }) {
     final isSelected = rowIndex == _selectedRowIndex || isItemSelected(item);
-    final backgroundColor = getTableRowBackgroundColor(
-      item,
-      theme,
-      isSelected,
-      false,
-      state.enabled ?? false,
-      rowIndex % 2 == 1,
-    );
+    // An owner-drawn row's background is laid under its overlay by withOwnerDrawnRows.
+    final backgroundColor = item.paintedTexts != null
+        ? Colors.transparent
+        : rowBackgroundColor(rowIndex, item, theme);
 
     final cells = TableItemSwtWrapper(
       item: item,
