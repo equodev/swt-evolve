@@ -139,6 +139,28 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendMenuDetectMenuDetect(state, e);
   }
 
+  /// A native CTabFolder reports a double-click anywhere on its tab strip. The folder answers it
+  /// with DefaultSelection for the tab under the point, and a workbench maximizes the stack on it.
+  void _handleStripPointerDown(PointerDownEvent e) {
+    if (state.enabled != true) return;
+    if (e.buttons != kPrimaryMouseButton) {
+      dblTap.reset();
+      return;
+    }
+    if (dblTap.registerTap(position: e.position) != 2) return;
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final local = box.globalToLocal(e.position);
+    widget.sendMouseMouseDoubleClick(
+      state,
+      VEvent()
+        ..x = local.dx.round()
+        ..y = local.dy.round()
+        ..button = 1
+        ..count = 2,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabItems = getTabItems();
@@ -177,6 +199,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
             onStripLayout: _handleStripLayout,
+            onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
           ),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
@@ -218,6 +241,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
             onStripLayout: _handleStripLayout,
+            onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
           ),
       ],
@@ -513,6 +537,9 @@ class _CTabBar extends StatefulWidget {
   /// Where each tab is drawn, in global coordinates, for the side that answers hit tests.
   final void Function(List<Rect> tabs)? onStripLayout;
 
+  /// Every press on the tabs or on the empty strip beside them.
+  final ValueChanged<PointerDownEvent>? onStripPointerDown;
+
   /// The point to report for a drag on a tab, given where that tab is drawn.
   final Offset? Function(Rect tabInGlobal)? dragPointFor;
 
@@ -534,6 +561,7 @@ class _CTabBar extends StatefulWidget {
     this.onTabDragStarted,
     this.onChevronShowList,
     this.onStripLayout,
+    this.onStripPointerDown,
     this.dragPointFor,
   });
 
@@ -647,7 +675,7 @@ class _CTabBarState extends State<_CTabBar> {
     Widget tabBarContent = Row(
       children: [
         Expanded(
-          child: _buildHorizontalScrollableTabs(
+          child: _stripPresses(_buildHorizontalScrollableTabs(
             widgetTheme: widgetTheme,
             child: Row(
               children: tabs.asMap().entries.map((entry) {
@@ -674,7 +702,7 @@ class _CTabBarState extends State<_CTabBar> {
                 );
               }).toList(),
             ),
-          ),
+          )),
         ),
       ],
     );
@@ -684,6 +712,18 @@ class _CTabBarState extends State<_CTabBar> {
       height: height,
       child: tabBarContent,
       isTabBottom: isTabBottom,
+    );
+  }
+
+  /// The strip's own area: the tabs and the empty space beside them, not the controls at its end,
+  /// which a native CTabFolder draws as a separate toolbar.
+  Widget _stripPresses(Widget strip) {
+    final onPress = widget.onStripPointerDown;
+    if (onPress == null) return strip;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: onPress,
+      child: strip,
     );
   }
 
@@ -748,7 +788,7 @@ class _CTabBarState extends State<_CTabBar> {
       onDragStart: () => setState(() => _hoveredTabIndex = null),
     );
 
-    final scrollableTabs = Expanded(child: tabRowWithDrag);
+    final scrollableTabs = Expanded(child: _stripPresses(tabRowWithDrag));
 
     final topRightControls = _buildTopRightControls(
       context: context,
