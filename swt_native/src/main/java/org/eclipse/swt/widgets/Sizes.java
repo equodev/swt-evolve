@@ -330,23 +330,20 @@ public class Sizes {
     }
 
     public static Point computeSize(DartCoolBar w, int wHint, int hHint, boolean changed) {
-        return new Point(w.getItemCount() * 20, 28);
+        return CoolBarSizes.computeSize(w.getApi(), wHint, hHint);
     }
 
     public static Point computeSize(DartCoolItem dartCoolItem, int wHint, int hHint) {
-        // Match SWT's CoolItem.computeSize contract: honor the hints and add the item trim
-        // (MINIMUM_WIDTH: gripper + margins) on the layout axis. DEFAULT hint -> 32 like upstream.
+        // Match SWT's CoolItem.computeSize contract: honor the hints and add the item trim on the
+        // layout axis. DEFAULT hint -> 32 like upstream.
         int width = wHint == org.eclipse.swt.SWT.DEFAULT ? 32 : wHint;
         int height = hHint == org.eclipse.swt.SWT.DEFAULT ? 32 : hHint;
         CoolBar parent = dartCoolItem.getApi().getParent();
         boolean isVertical = parent != null && (parent.style & org.eclipse.swt.SWT.VERTICAL) != 0;
-        // CoolItem trim on the layout axis: (2 * MARGIN_WIDTH) + GRABBER_WIDTH = (2*4)+2 = 10.
-        // Hardcoded because DartCoolItem.MINIMUM_WIDTH is not defined on every backend (e.g. Win32).
-        final int MINIMUM_WIDTH = 10;
         if (isVertical) {
-            height += MINIMUM_WIDTH;
+            height += CoolBarSizes.ITEM_TRIM;
         } else {
-            width += MINIMUM_WIDTH;
+            width += CoolBarSizes.ITEM_TRIM;
         }
         return new Point(width, height);
     }
@@ -678,6 +675,8 @@ public class Sizes {
     }
 
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
+        // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
+        if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
         return new Rectangle(x, y, width, height);
     }
 
@@ -861,6 +860,14 @@ public class Sizes {
         return new Rectangle(x, y, size.x, size.y);
     }
 
+    public static Rectangle getClientArea(DartCoolBar widget) {
+        return CoolBarSizes.getClientArea(widget.getBounds());
+    }
+
+    public static Rectangle computeTrim(DartCoolBar widget, int x, int y, int width, int height) {
+        return CoolBarSizes.computeTrim(x, y, width, height);
+    }
+
     public static Rectangle getClientArea(DartCoolItem widget) {
         Rectangle b = widget.getBounds();
         return new Rectangle(0, 28, b.width, b.height-28);
@@ -933,6 +940,9 @@ public class Sizes {
     public static final int SCROLL_BAR_SIZE = 17;
 
     public static Rectangle getClientArea(DartScrollable widget) {
+        // A CoolBar inherits this method rather than declaring its own, so the call that reaches
+        // here was resolved against DartScrollable and has to be handed to the bar's overload.
+        if (widget instanceof DartCoolBar) return getClientArea((DartCoolBar) widget);
         Rectangle b = widget.getBounds();
         int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;

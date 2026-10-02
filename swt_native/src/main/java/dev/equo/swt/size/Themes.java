@@ -6,9 +6,9 @@ public class Themes {
 
     public enum Theme {
 
-        NonDefault(ButtonTheme.getNonDefaultTheme(), LabelTheme.getNonDefaultTheme(), ComboTheme.getNonDefaultTheme(), CComboTheme.getNonDefaultTheme(), TextTheme.getNonDefaultTheme(), ProgressBarTheme.getNonDefaultTheme(), CLabelTheme.getNonDefaultTheme(), LinkTheme.getNonDefaultTheme(), SliderTheme.getNonDefaultTheme(), ScaleTheme.getNonDefaultTheme(), SashTheme.getNonDefaultTheme(), TableItemTheme.getNonDefaultTheme(), TreeItemTheme.getNonDefaultTheme(), TableHeaderTheme.getNonDefaultTheme()), Default(ButtonTheme.getDefaultTheme(), LabelTheme.getDefaultTheme(), ComboTheme.getDefaultTheme(), CComboTheme.getDefaultTheme(), TextTheme.getDefaultTheme(), ProgressBarTheme.getDefaultTheme(), CLabelTheme.getDefaultTheme(), LinkTheme.getDefaultTheme(), SliderTheme.getDefaultTheme(), ScaleTheme.getDefaultTheme(), SashTheme.getDefaultTheme(), TableItemTheme.getDefaultTheme(), TreeItemTheme.getDefaultTheme(), TableHeaderTheme.getDefaultTheme()), Compact(ButtonTheme.getNonDefaultTheme(), LabelTheme.getNonDefaultTheme(), ComboTheme.getNonDefaultTheme(), CComboTheme.getNonDefaultTheme(), TextTheme.getNonDefaultTheme(), ProgressBarTheme.getNonDefaultTheme(), CLabelTheme.getNonDefaultTheme(), LinkTheme.getNonDefaultTheme(), SliderTheme.getNonDefaultTheme(), ScaleTheme.getNonDefaultTheme(), SashTheme.getNonDefaultTheme(), TableItemTheme.getNonDefaultTheme(), TreeItemTheme.getNonDefaultTheme(), TableHeaderTheme.getNonDefaultTheme());
+        NonDefault(ButtonTheme.getNonDefaultTheme(), LabelTheme.getNonDefaultTheme(), ComboTheme.getNonDefaultTheme(), CComboTheme.getNonDefaultTheme(), TextTheme.getNonDefaultTheme(), ProgressBarTheme.getNonDefaultTheme(), CLabelTheme.getNonDefaultTheme(), LinkTheme.getNonDefaultTheme(), SliderTheme.getNonDefaultTheme(), ScaleTheme.getNonDefaultTheme(), SashTheme.getNonDefaultTheme(), TableItemTheme.getNonDefaultTheme(), TreeItemTheme.getNonDefaultTheme(), TableHeaderTheme.getNonDefaultTheme(), CoolBarTheme.getNonDefaultTheme()), Default(ButtonTheme.getDefaultTheme(), LabelTheme.getDefaultTheme(), ComboTheme.getDefaultTheme(), CComboTheme.getDefaultTheme(), TextTheme.getDefaultTheme(), ProgressBarTheme.getDefaultTheme(), CLabelTheme.getDefaultTheme(), LinkTheme.getDefaultTheme(), SliderTheme.getDefaultTheme(), ScaleTheme.getDefaultTheme(), SashTheme.getDefaultTheme(), TableItemTheme.getDefaultTheme(), TreeItemTheme.getDefaultTheme(), TableHeaderTheme.getDefaultTheme(), CoolBarTheme.getDefaultTheme()), Compact(ButtonTheme.getNonDefaultTheme(), LabelTheme.getNonDefaultTheme(), ComboTheme.getNonDefaultTheme(), CComboTheme.getNonDefaultTheme(), TextTheme.getNonDefaultTheme(), ProgressBarTheme.getNonDefaultTheme(), CLabelTheme.getNonDefaultTheme(), LinkTheme.getNonDefaultTheme(), SliderTheme.getNonDefaultTheme(), ScaleTheme.getNonDefaultTheme(), SashTheme.getNonDefaultTheme(), TableItemTheme.getNonDefaultTheme(), TreeItemTheme.getNonDefaultTheme(), TableHeaderTheme.getNonDefaultTheme(), CoolBarTheme.getNonDefaultTheme());
 
-        Theme(ButtonTheme button, LabelTheme label, ComboTheme combo, CComboTheme cCombo, TextTheme text, ProgressBarTheme progressBar, CLabelTheme cLabel, LinkTheme link, SliderTheme slider, ScaleTheme scale, SashTheme sash, TableItemTheme tableItem, TreeItemTheme treeItem, TableHeaderTheme tableHeader) {
+        Theme(ButtonTheme button, LabelTheme label, ComboTheme combo, CComboTheme cCombo, TextTheme text, ProgressBarTheme progressBar, CLabelTheme cLabel, LinkTheme link, SliderTheme slider, ScaleTheme scale, SashTheme sash, TableItemTheme tableItem, TreeItemTheme treeItem, TableHeaderTheme tableHeader, CoolBarTheme coolBar) {
             this.button = button;
             this.label = label;
             this.combo = combo;
@@ -23,6 +23,7 @@ public class Themes {
             this.tableItem = tableItem;
             this.treeItem = treeItem;
             this.tableHeader = tableHeader;
+            this.coolBar = coolBar;
         }
 
         public final ButtonTheme button;
@@ -52,6 +53,8 @@ public class Themes {
         public final TreeItemTheme treeItem;
 
         public final TableHeaderTheme tableHeader;
+
+        public final CoolBarTheme coolBar;
     }
 
     public static Theme getTheme() {

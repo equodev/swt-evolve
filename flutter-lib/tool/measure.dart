@@ -16,8 +16,12 @@ import 'measure_data.dart';
 
 // Configuration
 const bool ENABLE_SCREENSHOTS = true;
-const bool ENABLE_INTERACTIVITY =
-    true; // When true, starts paused with controls
+// When true, starts paused with controls. `--dart-define=MEASURE_INTERACTIVE=false` runs every case
+// unattended and exits when done.
+const bool ENABLE_INTERACTIVITY = bool.fromEnvironment(
+  'MEASURE_INTERACTIVE',
+  defaultValue: true,
+);
 const FromTheme = -1;
 
 /// Supported font weights for theme extraction and font metrics IDs (align with FontList.kt / FontMetricsUtil).
@@ -322,6 +326,8 @@ class WidgetMeasurer {
   int currentThemeIndex = 0;
   // Map: themeName -> widgetType:style -> textStyle
   Map<String, Map<String, Map<String, dynamic>>> extractedThemes = {};
+  // Map: themeName -> widgetType:style -> the frame drawn around the widget's page, per edge
+  Map<String, Map<String, Map<String, double>>> extractedChrome = {};
 
   // Interactive controls state
   bool isPaused = ENABLE_INTERACTIVITY;
@@ -434,7 +440,17 @@ class WidgetMeasurer {
       );
       resultsMap[testCase.name] = result;
     } else {
-      // Phase 2: Extract TextStyle only
+      // Phase 2: a widget measured for its chrome keeps the frame it drew under this theme.
+      final page = discoveredComponents['page'];
+      if (page is Map) {
+        final widgetType = widgetName(testCase.fqn);
+        extractedChrome.putIfAbsent(getCurrentThemeName(), () => {})[
+            '$widgetType:${testCase.style}'] = _frameAround(
+          page,
+          size,
+        );
+      }
+      // Otherwise it keeps its TextStyle only
       if (discoveredComponents.containsKey('text')) {
         final textInfo = discoveredComponents['text'];
         if (textInfo['textStyle'] != null) {
@@ -759,12 +775,22 @@ class WidgetMeasurer {
       _generateJavaWidgetThemeFromExtracted(fqn, widgetType, themesByStyle);
     }
 
+    // A widget measured for its chrome gets a theme of frames rather than of text styles.
+    final chromeWidgetTypes = {
+      for (final byStyle in extractedChrome.values)
+        for (final key in byStyle.keys) key.split(':').first,
+    };
+    for (final widgetType in chromeWidgetTypes) {
+      _generateJavaChromeTheme(widgetType);
+    }
+
     // Generate default theme for widgets without text
     for (var entry in widgetTypesWithThemeCases.entries) {
       final widgetType = entry.key;
       final fqn = entry.value;
 
-      if (!byWidgetType.containsKey(widgetType)) {
+      if (!byWidgetType.containsKey(widgetType) &&
+          !chromeWidgetTypes.contains(widgetType)) {
         print('Generating default theme for $widgetType (no text component)');
         _generateJavaWidgetThemeFromExtracted(fqn, widgetType, null);
       }
@@ -2508,6 +2534,12 @@ class WidgetMeasurer {
         .where((m) => m.discoveredComponents['page'] is Map)
         .toList();
 
+    // No tab strip: a bar whose page is the row its items sit in, framed on all four edges.
+    if (!results.any((m) => m.expectedComponents.containsKey('tabsOf'))) {
+      _generateJavaItemBarSizes(widgetType, results);
+      return;
+    }
+
     final strip = <String, double>{};
     final frame = <String, double>{};
     final frameStyled = <String, double>{};
@@ -2602,6 +2634,211 @@ class WidgetMeasurer {
       ..writeln('    }')
       ..writeln('}');
     _writeSizesFile(widgetType, buffer);
+  }
+
+  /// The frame between a widget's own edges and the page it lays out inside them, per edge.
+  Map<String, double> _frameAround(Map page, Size size) {
+    final left = (page['left'] as num).toDouble();
+    final top = (page['top'] as num).toDouble();
+    return {
+      'left': left,
+      'top': top,
+      'right': size.width - left - (page['width'] as num).toDouble(),
+      'bottom': size.height - top - (page['height'] as num).toDouble(),
+    };
+  }
+
+  /// The one frame every style of [widgetType] draws, or null after saying which edge disagreed.
+  /// Java reserves one frame whatever the style, so a style that moves it is a layout bug to fix
+  /// rather than a number to pick.
+  Map<String, double>? _agreedFrame(
+    String widgetType,
+    Map<String, Map<String, double>> framesByStyle,
+    String where,
+  ) {
+    final agreed = <String, double>{};
+    for (final edge in const ['left', 'top', 'right', 'bottom']) {
+      final value = _agreedMeasurement(
+        {for (final e in framesByStyle.entries) e.key: e.value[edge]!},
+        widgetType,
+        'the $edge edge of the frame $where',
+      );
+      if (value == null) return null;
+      agreed[edge] = value;
+    }
+    return agreed;
+  }
+
+  /// Emits how a bar of items sizes itself: SWT's row layout around the items' preferred sizes,
+  /// inside the frame the render side draws, which [_generateJavaChromeTheme] writes per theme.
+  ///
+  /// The row layout is SWT's own - the item trim and the row spacing are the numbers it places the
+  /// items with - so they are written here as SWT's, not measured. What this run checks is that
+  /// every style draws the same frame, which is the one thing Java cannot tell apart per style.
+  void _generateJavaItemBarSizes(
+    String widgetType,
+    List<MeasurementResult> results,
+  ) {
+    final frame = _agreedFrame(widgetType, {
+      for (final m in results)
+        m.style: _frameAround(m.discoveredComponents['page'] as Map, m.finalSize),
+    }, 'around the item row');
+    if (frame == null) return;
+
+    const javaSource = r'''
+package dev.equo.swt.size;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.CoolBar;
+import org.eclipse.swt.widgets.CoolItem;
+
+/**
+ * How a CoolBar sizes itself: SWT's rows of items, inside the frame the render side draws around
+ * them. The frame is measured, per theme, into {@link CoolBarTheme}; the row layout is SWT's own.
+ *
+ * DO NOT EDIT MANUALLY - regenerate from measure_coolbar.dart
+ */
+public class CoolBarSizes {
+
+    /** What a CoolItem adds to its control on the layout axis: SWT's gripper plus its margins. */
+    public static final int ITEM_TRIM = 10;
+
+    /** The gap SWT's row layout leaves between two rows of a bar that is not SWT.FLAT. */
+    public static final int ROW_SPACING = 2;
+
+    /**
+     * SWT's emulated CoolBar.computeSize: rows break at the explicit wrap indices and wherever the
+     * next item's minimum width would overflow the hint; a row is as long as its items' preferred
+     * widths and as thick as its thickest item. The rows the bar is currently wrapped into for its
+     * present size are deliberately ignored: a bar squeezed onto several rows must still report its
+     * natural size, or its parent keeps it squeezed.
+     */
+    public static Point computeSize(CoolBar bar, int wHint, int hHint) {
+        boolean vertical = (bar.getStyle() & SWT.VERTICAL) != 0;
+        int rowSpacing = (bar.getStyle() & SWT.FLAT) != 0 ? 0 : ROW_SPACING;
+        int maxLength = vertical ? hHint : wHint;
+        int[] order = bar.getItemOrder();
+        java.util.Set<Integer> wraps = new java.util.HashSet<>();
+        for (int index : bar.getWrapIndices()) wraps.add(index);
+
+        int length = 0, thickness = 0, rows = 0;
+        int rowLength = 0, rowMinLength = 0, rowThickness = 0;
+        for (int i = 0; i < order.length; i++) {
+            CoolItem item = bar.getItem(order[i]);
+            Point preferred = item.getPreferredSize();
+            Point minimum = item.getMinimumSize();
+            int itemLength = vertical ? preferred.y : preferred.x;
+            int itemThickness = vertical ? preferred.x : preferred.y;
+            int itemMinLength = (vertical ? minimum.y : minimum.x) + ITEM_TRIM;
+            boolean overflows = maxLength != SWT.DEFAULT && rowMinLength + itemMinLength > maxLength;
+            if (i > 0 && (wraps.contains(i) || overflows)) {
+                length = Math.max(length, rowLength);
+                thickness += rowThickness + (rows > 0 ? rowSpacing : 0);
+                rows++;
+                rowLength = rowMinLength = rowThickness = 0;
+            }
+            rowLength += itemLength;
+            rowMinLength += itemMinLength;
+            rowThickness = Math.max(rowThickness, itemThickness);
+        }
+        if (order.length > 0) {
+            length = Math.max(length, rowLength);
+            thickness += rowThickness + (rows > 0 ? rowSpacing : 0);
+        }
+
+        int width = vertical ? thickness : length;
+        int height = vertical ? length : thickness;
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+        Rectangle trim = computeTrim(0, 0, width, height);
+        return new Point(trim.width, trim.height);
+    }
+
+    /** The bar's bounds around a client area, with the frame the render side draws added back. */
+    public static Rectangle computeTrim(int x, int y, int width, int height) {
+        CoolBarTheme frame = CoolBarTheme.get();
+        return new Rectangle(x - frame.frameLeft(), y - frame.frameTop(),
+                width + frame.frameLeft() + frame.frameRight(),
+                height + frame.frameTop() + frame.frameBottom());
+    }
+
+    /** What the frame the render side draws leaves of the bar's bounds for its items. */
+    public static Rectangle getClientArea(Rectangle bounds) {
+        CoolBarTheme frame = CoolBarTheme.get();
+        return new Rectangle(frame.frameLeft(), frame.frameTop(),
+                Math.max(0, bounds.width - frame.frameLeft() - frame.frameRight()),
+                Math.max(0, bounds.height - frame.frameTop() - frame.frameBottom()));
+    }
+}
+''';
+    _writeSizesFile(widgetType, StringBuffer(javaSource));
+  }
+
+  /// Emits `{Widget}Theme` for a widget measured for its chrome: the frame it draws, per theme.
+  /// Every style has to draw one frame within a theme; themes are free to differ.
+  void _generateJavaChromeTheme(String widgetType) {
+    final byTheme = <String, Map<String, double>>{};
+    for (final themeEntry in extractedChrome.entries) {
+      final framesByStyle = <String, Map<String, double>>{
+        for (final e in themeEntry.value.entries)
+          if (e.key.startsWith('$widgetType:')) e.key.split(':').last: e.value,
+      };
+      final frame = _agreedFrame(
+        widgetType,
+        framesByStyle,
+        'in the ${themeEntry.key} theme',
+      );
+      if (frame == null) {
+        print('SKIPPED ${widgetType}Theme.java: see above.');
+        return;
+      }
+      byTheme[themeEntry.key] = frame;
+    }
+
+    final buffer = StringBuffer()
+      ..writeln('package dev.equo.swt.size;')
+      ..writeln()
+      ..writeln('/**')
+      ..writeln(
+        ' * The frame a $widgetType draws between its bounds and its content, per theme.',
+      )
+      ..writeln(' *')
+      ..writeln(
+        ' * DO NOT EDIT MANUALLY - regenerate from measure_${widgetType.toLowerCase()}.dart',
+      )
+      ..writeln(' */')
+      ..write(
+        javaValueClass('${widgetType}Theme', const [
+          ('int', 'frameLeft'),
+          ('int', 'frameTop'),
+          ('int', 'frameRight'),
+          ('int', 'frameBottom'),
+        ]),
+      )
+      ..writeln('    public static ${widgetType}Theme get() {')
+      ..writeln('        return Themes.getTheme().${widgetField(widgetType)};')
+      ..writeln('    }')
+      ..writeln();
+    for (final entry in byTheme.entries) {
+      final f = entry.value;
+      buffer
+        ..writeln('    public static ${widgetType}Theme get${entry.key}Theme() {')
+        ..writeln(
+          '        return new ${widgetType}Theme(${f['left']!.round()}, ${f['top']!.round()}, '
+          '${f['right']!.round()}, ${f['bottom']!.round()});',
+        )
+        ..writeln('    }')
+        ..writeln();
+    }
+    buffer.writeln('}');
+
+    final themeFile = File(
+      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Theme.java',
+    );
+    themeFile.writeAsStringSync(buffer.toString());
+    print('Generated: ${themeFile.path}');
   }
 
   /// What a tab costs beyond its label, as differences between the tab shapes.
