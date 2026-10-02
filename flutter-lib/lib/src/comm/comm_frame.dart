@@ -268,7 +268,7 @@ abstract class EquoCommBase {
 
     if (jsonOk) {
       final delivered = _deliverDecoded(actionId, payload);
-      if (delivered != null) return delivered;
+      if (!identical(delivered, _noHandler)) return delivered;
     }
 
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
@@ -315,7 +315,7 @@ abstract class EquoCommBase {
       if (name == null) continue;
       names[i] = name;
       final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
-      if (delivered == null) {
+      if (identical(delivered, _noHandler)) {
         _hold(name, entry[1]);
       } else {
         await delivered;
@@ -350,10 +350,14 @@ abstract class EquoCommBase {
   /// Channel a fused run of frames arrives on.
   static const batchEvent = 'swt.evolve.batch';
 
-  /// Runs [actionId]'s handler on an already-decoded payload, or null when none is registered.
+  /// What [_deliverDecoded] returns when no handler is registered. Not null: a synchronous handler
+  /// returns null too, and a frame it already applied must not be held for the next handler.
+  static final Future<void> _noHandler = Future<void>.value();
+
+  /// Runs [actionId]'s handler on an already-decoded payload, or returns [_noHandler].
   FutureOr<void>? _deliverDecoded(String actionId, dynamic payload) {
     final callback = _handlers[actionId];
-    if (callback == null) return null;
+    if (callback == null) return _noHandler;
     if (callback.args?.once ?? false) _handlers.remove(actionId);
     return callback.onSuccess(payload);
   }
