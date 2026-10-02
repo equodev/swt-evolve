@@ -1495,12 +1495,21 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setSelection(int start, int end) {
-        getValue().markDirty(VText.CARET_POSITION);
         checkWidget();
         int length = getCharCount();
         int min = Math.min(Math.max(Math.min(start, end), 0), length);
         int max = Math.min(Math.max(Math.max(start, end), 0), length);
         Point newValue = new Point(min, max);
+        // A partial update carries only the properties it names, so a selection change
+        // that records nothing leaves the client re-applying the range it was last
+        // told - the select-all a dialog opens with, re-asserted over the caret after
+        // every keystroke.
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            getValue().markDirty(VText.SELECTION);
+        }
+        if (this.caretPosition != min) {
+            getValue().markDirty(VText.CARET_POSITION);
+        }
         this.selection = newValue;
         // the caret is in the start of the selection
         this.caretPosition = min;

@@ -76,6 +76,13 @@ class FlagsMatchChangesTest {
                     w -> ((Button) w).setSelection(true)),
             new Case("Text.text", (p, s) -> new Text(p, s), SWT.NONE,
                     w -> ((Text) w).setText("changed")),
+            // A selection the client is not told about is the one it keeps: it re-applies the
+            // range it last heard, so an unflagged change re-asserts a stale select-all.
+            new Case("Text.selection", (p, s) -> {
+                Text text = new Text(p, s);
+                text.setText("Chicken");
+                return text;
+            }, SWT.NONE, w -> ((Text) w).setSelection(0, 7)),
             new Case("Scale.selection", (p, s) -> new Scale(p, s), SWT.NONE,
                     w -> ((Scale) w).setSelection(7)),
             new Case("Spinner.selection", (p, s) -> new Spinner(p, s), SWT.NONE,
