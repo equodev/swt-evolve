@@ -14,6 +14,7 @@ import '../impl/widget_config.dart';
 import '../gen/swt.dart';
 import '../gen/tree.dart';
 import '../gen/treeitem.dart';
+import 'treeitem_evolve.dart' show VTreeItemChildren;
 import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
@@ -1578,8 +1579,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (selectedItems.isEmpty) return;
 
     final selectedItem = selectedItems.last;
-    if (selectedItem.expanded == true &&
-        (selectedItem.items?.isNotEmpty ?? false)) {
+    if (selectedItem.expanded == true && selectedItem.hasChildItems) {
       setState(() {
         selectedItem.expanded = false;
       });
@@ -1597,8 +1597,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (selectedItems.isEmpty) return;
 
     final selectedItem = selectedItems.last;
-    if (selectedItem.expanded != true &&
-        (selectedItem.items?.isNotEmpty ?? false)) {
+    if (selectedItem.expanded != true && selectedItem.hasChildItems) {
       setState(() {
         selectedItem.expanded = true;
       });

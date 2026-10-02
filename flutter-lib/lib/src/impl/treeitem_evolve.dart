@@ -232,7 +232,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final String text = state.text ?? "";
     final List<String?>? texts = state.texts;
     final bool expanded = state.expanded ?? false;
-    final bool hasChildren = state.items != null && state.items!.isNotEmpty;
+    final bool hasChildren = state.hasChildItems;
     final bool isCheckMode = _context?.isCheckMode ?? false;
     final bool checked = state.checked ?? false;
     final bool grayed = state.grayed ?? false;
@@ -365,7 +365,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                   (childItem.text != null && childItem.text!.isNotEmpty) ||
                   (childItem.texts != null &&
                       childItem.texts!.any((text) => text?.isNotEmpty == true)) ||
-                  (childItem.items != null && childItem.items!.isNotEmpty),
+                  childItem.hasChildItems,
             )
             .toList() ??
         [];
@@ -1250,4 +1250,10 @@ class _TreeCheckboxButton extends ButtonSwt<VButton> {
   void sendSelectionSelection(VButton val, VEvent? payload) {
     onChanged();
   }
+}
+
+extension VTreeItemChildren on VTreeItem {
+  /// Whether the item can be expanded. A virtual item knows how many children it has before any
+  /// of them exists, and only creates them once it is open, so the count has to answer too.
+  bool get hasChildItems => (items?.isNotEmpty ?? false) || (itemCount ?? 0) > 0;
 }

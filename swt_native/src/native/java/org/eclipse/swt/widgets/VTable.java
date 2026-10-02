@@ -135,7 +135,7 @@ public class VTable extends VComposite {
     }
 
     public int getItemCount() {
-        return ((DartTable) impl).getItemCount();
+        return ((DartTable) impl)._itemCount();
     }
 
     public void setItemCount(int value) {

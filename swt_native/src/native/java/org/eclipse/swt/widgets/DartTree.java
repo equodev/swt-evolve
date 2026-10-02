@@ -186,6 +186,8 @@ public class DartTree extends DartComposite implements ITree {
             return item;
         item = new TreeItem(this.getApi(), parentItem, SWT.NONE, index, false);
         items[index] = item;
+        if (parentItem != null)
+            ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
         getValue().markDirty(VTree.ITEMS);
         return item;
     }
@@ -555,9 +557,10 @@ public class DartTree extends DartComposite implements ITree {
         if (parentItem != null && ((DartTreeItem) parentItem.getImpl()).itemCount == 1 && ((DartTreeItem) parentItem.getImpl()).expanded) {
         }
         ignoreExpand = false;
-        if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem)
+        if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem) {
             ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
-        else
+            ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEM_COUNT);
+        } else
             getValue().markDirty(VTree.ITEMS);
         if (parentItem == null && this.itemCount == 1) {
             Event event = new Event();
@@ -771,6 +774,7 @@ public class DartTree extends DartComposite implements ITree {
         }
         if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem) {
             ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTree.ITEMS);
+            ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEM_COUNT);
         } else {
             getValue().markDirty(VTree.ITEMS);
         }
@@ -1885,6 +1889,16 @@ public class DartTree extends DartComposite implements ITree {
                     ignoreExpand = true;
                     ignoreExpand = false;
                 }
+            }
+        }
+        {
+            if (parentItem != null) {
+                ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
+                ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEM_COUNT);
+                if (((DartTreeItem) parentItem.getImpl()).expanded)
+                    loadVirtualPage(parentItem);
+            } else {
+                getValue().markDirty(VTree.ITEMS);
             }
         }
     }

@@ -25,6 +25,7 @@ class VTreeItem extends VItem {
     swt = "TreeItem";
   }
 
+  int? itemCount;
   VColor? background;
   bool? checked;
   bool? expanded;
@@ -50,6 +51,7 @@ class VTreeItem extends VItem {
       items = other.items;
       paintedTexts = other.paintedTexts;
       texts = other.texts;
+      itemCount = other.itemCount;
     }
   }
 
@@ -93,6 +95,8 @@ class VTreeItem extends VItem {
         texts = (json['texts'] as List<dynamic>?)
             ?.map((e) => e as String?)
             .toList();
+      case 'itemCount':
+        itemCount = (json['itemCount'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

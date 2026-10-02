@@ -107,6 +107,13 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).strings = value;
     }
 
+    public int getItemCount() {
+        return ((DartTreeItem) impl)._itemCount();
+    }
+
+    public void setItemCount(int value) {
+    }
+
     public static final String BACKGROUND = "background";
 
     public static final String CHECKED = "checked";
@@ -120,6 +127,8 @@ public class VTreeItem extends VItem {
     public static final String GRAYED = "grayed";
 
     public static final String IMAGES = "images";
+
+    public static final String ITEM_COUNT = "itemCount";
 
     public static final String ITEMS = "items";
 
@@ -159,6 +168,9 @@ public class VTreeItem extends VItem {
                 return;
             case "texts":
                 Serializer.writeKeyValue(writer, "texts", getTexts());
+                return;
+            case "itemCount":
+                Serializer.writeKeyValue(writer, "itemCount", getItemCount());
                 return;
         }
         super.writeProperty(writer, key);
