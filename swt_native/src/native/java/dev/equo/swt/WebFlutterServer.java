@@ -727,7 +727,7 @@ public class WebFlutterServer {
                     sendPlain(exchange, 404, "Not Found");
                     return;
                 }
-                serveResolvedFile(exchange, file, method);
+                serveResolvedFile(exchange, file, method, relative);
             } catch (Exception e) {
                 LOG.log(Level.WARNING, "local-file error for " + exchange.getRequestURI(), e);
                 try {
@@ -742,6 +742,13 @@ public class WebFlutterServer {
         /** Streams a file resolved by {@link LocalFileServing#resolve}. Shared by this handler's own
          *  requests and by {@link StaticFileHandler}'s root-path Referer fallback. */
         static void serveResolvedFile(HttpExchange exchange, File file, String method) throws IOException {
+            serveResolvedFile(exchange, file, method, null);
+        }
+
+        /** @param tokenRelativePath the file's path below its {@code /local-file/<token>/}, or
+         *  {@code null} when it is not being served from there */
+        static void serveResolvedFile(HttpExchange exchange, File file, String method,
+                String tokenRelativePath) throws IOException {
             String mimeType = StaticFileHandler.getMimeType(file.getName());
             exchange.getResponseHeaders().set("Content-Type", mimeType);
             exchange.getResponseHeaders().set("Cache-Control", "no-store");
@@ -753,7 +760,8 @@ public class WebFlutterServer {
                 return;
             }
 
-            byte[] rewritten = mimeType.startsWith("text/html") ? rewriteLocalResources(file) : null;
+            byte[] rewritten = mimeType.startsWith("text/html")
+                    ? rewriteLocalResources(file, tokenRelativePath) : null;
             if (rewritten != null) {
                 exchange.sendResponseHeaders(200, rewritten.length);
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -776,17 +784,22 @@ public class WebFlutterServer {
          * icons. Applications built on Eclipse's {@code FileLocator.toFileURL} write exactly that
          * markup, so a served page gets the same rewrite a {@code setText} document does. Returns
          * {@code null} — serve the file as-is — when it references no local file, or is too large
-         * to be the kind of page this is for.
+         * to be the kind of page this is for. A page served under its token also gets its
+         * {@code <base href>} made relative, see {@link LocalFileServing#relativizeBaseHref}.
          * <p>
          * ISO-8859-1 maps bytes to chars one-to-one, so the rewrite (which only ever replaces ASCII
          * URLs) round-trips a document of any real encoding back to its own bytes.
          */
-        private static byte[] rewriteLocalResources(File file) {
+        private static byte[] rewriteLocalResources(File file, String tokenRelativePath) {
             if (file.length() > MAX_REWRITABLE_HTML_BYTES) return null;
             try {
                 String html = new String(Files.readAllBytes(file.toPath()), StandardCharsets.ISO_8859_1);
                 LocalFileServing.ServedHtml served = LocalFileServing.rewriteLocalResources(html);
-                return served == null ? null : served.html.getBytes(StandardCharsets.ISO_8859_1);
+                String out = served == null ? html : served.html;
+                if (tokenRelativePath != null) {
+                    out = LocalFileServing.relativizeBaseHref(out, tokenRelativePath);
+                }
+                return out == html ? null : out.getBytes(StandardCharsets.ISO_8859_1);
             } catch (IOException e) {
                 LOG.log(Level.FINE, "could not rewrite local resources in " + file, e);
                 return null;

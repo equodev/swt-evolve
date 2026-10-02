@@ -183,6 +183,31 @@ class LocalFileServingTest {
     }
 
     @Test
+    void relativizeBaseHref_keepsAFilesystemBaseUnderThePagesToken() throws Exception {
+        File dir = Files.createTempDirectory("equo-base-href").toFile();
+        File target = new File(dir, "welcome.html");
+        Files.write(target.toPath(), "<html></html>".getBytes(StandardCharsets.UTF_8));
+        String html = "<html><base href=\"" + target.getAbsolutePath() + "\" /><head></head></html>";
+
+        assertThat(LocalFileServing.relativizeBaseHref(html, "123.html"))
+                .as("relative to /local-file/<token>/, so resources resolve below the token")
+                .contains("<base href=\"" + target.getAbsolutePath().substring(1) + "\" />");
+        assertThat(LocalFileServing.relativizeBaseHref(html, "sub/123.html"))
+                .as("a page below the token's root climbs back to it first")
+                .contains("<base href=\"../" + target.getAbsolutePath().substring(1) + "\" />");
+    }
+
+    @Test
+    void relativizeBaseHref_leavesOtherBasesAlone() {
+        String remote = "<html><base href=\"https://example.com/docs/\"></html>";
+        assertThat(LocalFileServing.relativizeBaseHref(remote, "p.html")).isSameAs(remote);
+        String missing = "<html><base href=\"/no/such/equo/dir/page.html\"></html>";
+        assertThat(LocalFileServing.relativizeBaseHref(missing, "p.html")).isSameAs(missing);
+        String none = "<html><head></head></html>";
+        assertThat(LocalFileServing.relativizeBaseHref(none, "p.html")).isSameAs(none);
+    }
+
+    @Test
     void tokenFromLocalFileReferer_extractsTokenFromLocalFileUrl() {
         String referer = "http://localhost:56591/local-file/AbCdEf123456/LocalPage.html";
         assertThat(LocalFileServing.tokenFromLocalFileReferer(referer)).isEqualTo("AbCdEf123456");

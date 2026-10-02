@@ -274,6 +274,32 @@ public final class LocalFileServing {
         }
     }
 
+    /**
+     * Rewrites a served page's {@code <base href>} when it is a root-absolute filesystem path
+     * (the scheme-less form {@link #resolveBaseHrefTarget} accepts) into a path relative to the
+     * page's own {@code /local-file/<token>/} URL. Left as written, the browser resolves the
+     * page's relative resources against the server root, outside {@code /local-file/}: that only
+     * works through the Referer fallback, which a stylesheet's own sub-resources never reach, and
+     * not at all when the server sits behind a reverse-proxy prefix. Relative, they stay under
+     * the token, where {@link #resolve} finds them through the {@code <base href>} root.
+     *
+     * @param documentRelativePath the page's path below its token, as requested
+     * @return the rewritten HTML, or {@code html} itself when there is nothing to rewrite
+     */
+    public static String relativizeBaseHref(String html, String documentRelativePath) {
+        Matcher m = BASE_HREF_PATTERN.matcher(html);
+        if (!m.find() || m.start() > BASE_HREF_SCAN_LIMIT) return html;
+        String href = m.group(1);
+        if (!href.startsWith("/") || href.startsWith("//")) return html;
+        if (resolveBaseHrefTarget(href) == null) return html;
+        StringBuilder relative = new StringBuilder();
+        for (int i = documentRelativePath.indexOf('/'); i >= 0; i = documentRelativePath.indexOf('/', i + 1)) {
+            relative.append("../");
+        }
+        relative.append(href, 1, href.length());
+        return html.substring(0, m.start(1)) + relative + html.substring(m.end(1));
+    }
+
     /** Reads up to {@code limit} bytes of {@code file} as UTF-8, for a bounded head-of-file scan. */
     private static String readHead(File file, int limit) throws Exception {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
