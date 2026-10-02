@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.WindowBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -30,6 +32,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -111,6 +114,7 @@ public final class EvolveSwingHost {
         frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
         syncFrameLocation(canvas, frame);
         frame.setVisible(true);
+        host.syncOwner();
         return frame;
     }
 
@@ -125,6 +129,29 @@ public final class EvolveSwingHost {
         if (canvas.isDisposed()) return;
         Point onScreen = canvas.toDisplay(0, 0);
         EventQueue.invokeLater(() -> frame.setLocation(onScreen.x, onScreen.y));
+    }
+
+    /**
+     * Makes the frame stand for the native window its canvas is drawn into, and returns that
+     * window's handle ({@code current} when nothing changed).
+     *
+     * <p>A Swing window opened from the embedded content is owned by this frame, and a lightweight
+     * frame's peer is a hidden window: owned by it, a dialog has no relation to the application
+     * window and falls behind it as soon as that window is activated. Natively the frame is a child
+     * of the shell, which keeps its dialogs above the shell's window; this restores that.
+     */
+    static long syncFrameOwner(Canvas canvas, JLightweightFrame frame, long current) {
+        if (canvas.isDisposed()) return current;
+        long window = nativeWindowOf(canvas.getShell());
+        if (window == 0 || window == current) return current;
+        frame.overrideNativeWindowHandle(window, null);
+        return window;
+    }
+
+    private static long nativeWindowOf(Shell shell) {
+        if (shell == null || !(shell.getImpl() instanceof DartControl)) return 0;
+        FlutterBridge bridge = ((DartControl) shell.getImpl()).getBridge();
+        return bridge instanceof WindowBridge ? ((WindowBridge) bridge).nativeWindowHandle(shell) : 0;
     }
 
     /**
@@ -468,6 +495,8 @@ public final class EvolveSwingHost {
         private int frameHeight;
         // Coalesces repaints: many EDT frames (e.g. a blinking caret) collapse to one SWT redraw.
         private final AtomicBoolean redrawPending = new AtomicBoolean();
+        // The native window the frame stands for, 0 until one is known. SWT thread only.
+        private long ownerWindow;
 
         Host(Canvas canvas) {
             this.canvas = canvas;
@@ -517,13 +546,20 @@ public final class EvolveSwingHost {
                     });
                 });
                 syncFrameLocation(canvas, frame);
+                syncOwner();
                 scheduleStaggeredRepaints(forceRepaint, 200, 600, 1500);
             });
-            canvas.addListener(SWT.Move, e -> syncFrameLocation(canvas, frame));
+            canvas.addListener(SWT.Move, e -> {
+                syncFrameLocation(canvas, frame);
+                syncOwner();
+            });
             // The canvas raises neither Move nor Resize when an ancestor moves, and the window
             // moving changes where it sits on screen just the same.
             Shell shell = canvas.getShell();
-            Listener shellMoved = e -> syncFrameLocation(canvas, frame);
+            Listener shellMoved = e -> {
+                syncFrameLocation(canvas, frame);
+                syncOwner();
+            };
             shell.addListener(SWT.Move, shellMoved);
             canvas.addListener(SWT.Dispose, e -> {
                 if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
@@ -531,6 +567,11 @@ public final class EvolveSwingHost {
                 disposeFrame(frame);
             });
             scheduleStaggeredRepaints(forceRepaint, 300, 900, 2000);
+        }
+
+        /** Needs the frame's peer, so not before the frame has been made visible. */
+        void syncOwner() {
+            ownerWindow = syncFrameOwner(canvas, frame, ownerWindow);
         }
 
         /**

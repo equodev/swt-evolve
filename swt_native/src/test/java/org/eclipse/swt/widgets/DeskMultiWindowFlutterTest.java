@@ -119,6 +119,67 @@ class DeskMultiWindowFlutterTest {
                 .containsKey(detached);
     }
 
+    // ---- which window a shell is drawn into -----------------------------------------------------------
+    //
+    // A window the application opens on its own (a Swing dialog from embedded content) is owned by
+    // the native window it is given; that ownership is what keeps it above the application window.
+
+    private static final long MAIN_WINDOW_VIEW = 0x4708B6L;
+
+    @Test
+    @DisplayName("the main shell is drawn into the Display's window")
+    void mainShellIsInTheDisplayWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+
+        assertThat(desk.nativeWindowHandle(main)).isEqualTo(MAIN_WINDOW_VIEW);
+    }
+
+    @Test
+    @DisplayName("a detached shell is drawn into its own window")
+    void detachedShellIsInItsOwnWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+
+        assertThat(desk.nativeWindowHandle(detached)).isEqualTo(desk.opened.get(0).handle);
+    }
+
+    @Test
+    @DisplayName("a shell drawn inside a detached one is in that one's window")
+    void childOfDetachedShellIsInTheParentWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+        Shell child = new Shell(detached, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        child.setVisible(true);
+
+        assertThat(desk.nativeWindowHandle(child)).isEqualTo(desk.opened.get(0).handle);
+    }
+
+    @Test
+    @DisplayName("a shell drawn inside the Display's window is in that window")
+    void shellInsideTheMainWindowIsInIt() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell dialog = new Shell(main, SWT.DIALOG_TRIM);
+        dialog.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        dialog.setVisible(true);
+
+        assertThat(desk.nativeWindowHandle(dialog)).isEqualTo(MAIN_WINDOW_VIEW);
+    }
+
+    @Test
+    @DisplayName("with no native window there is nothing to own a window by")
+    void noWindowNoHandle() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        desk.disposeNativeWindow();
+
+        assertThat(desk.nativeWindowHandle(main)).isZero();
+    }
+
     // ---- driving them ---------------------------------------------------------------------------------
 
     @Test
@@ -552,6 +613,18 @@ class DeskMultiWindowFlutterTest {
         @Override
         protected void bindShellWindowView(Shell shell, long context) {
             boundViews.put(shell, context);
+        }
+
+        // A window's view stands in as its handle; the Display's own is a fixed one.
+
+        @Override
+        protected long shellWindowView(long context) {
+            return context;
+        }
+
+        @Override
+        protected long mainWindowView() {
+            return MAIN_WINDOW_VIEW;
         }
 
         @Override

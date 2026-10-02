@@ -35,4 +35,14 @@ public interface WindowBridge {
     default boolean rendersAsMainWindow(Object shell) {
         return false;
     }
+
+    /**
+     * The native top-level window this shell is drawn into, or 0 when there is none.
+     *
+     * <p>A window the application opens on its own, such as a Swing dialog from embedded content,
+     * takes it as its owner: that ownership is what keeps it above the application window.
+     */
+    default long nativeWindowHandle(Object shell) {
+        return 0;
+    }
 }

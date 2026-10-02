@@ -164,6 +164,33 @@ public class DeskDisplayBridge extends DisplayBridge {
         DisplayBridgePlatform.bindWindowView(shell, FlutterNative.getView(context));
     }
 
+    /**
+     * The shell's own window when it has one, else the one its nearest windowed ancestor is drawn
+     * into, else the Display's.
+     */
+    @Override
+    public long nativeWindowHandle(Object shell) {
+        Composite current = shell instanceof Shell ? (Shell) shell : null;
+        while (current instanceof Shell && !current.isDisposed()) {
+            if (current.getImpl() instanceof DartShell) {
+                ShellWindow window = shellWindowFor((DartShell) current.getImpl());
+                if (window instanceof NativeShellWindow && window.isAlive()) {
+                    return ((NativeShellWindow) window).view();
+                }
+            }
+            current = current.getParent();
+        }
+        return hasNativeWindow() ? mainWindowView() : 0;
+    }
+
+    protected long shellWindowView(long context) {
+        return FlutterNative.getView(context);
+    }
+
+    protected long mainWindowView() {
+        return FlutterNative.getView(windowContext);
+    }
+
     protected int pumpShellWindow(long context) {
         return FlutterNative.pump(context);
     }
@@ -309,6 +336,10 @@ public class DeskDisplayBridge extends DisplayBridge {
 
         int pump() {
             return pumpShellWindow(context);
+        }
+
+        long view() {
+            return shellWindowView(context);
         }
 
         void markGone() {
