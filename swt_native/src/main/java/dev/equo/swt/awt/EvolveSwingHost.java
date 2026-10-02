@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.event.ContainerEvent;
@@ -37,6 +38,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
+import sun.awt.AWTAccessor;
+import sun.awt.NullComponentPeer;
 import sun.swing.JLightweightFrame;
 import sun.swing.LightweightContent;
 
@@ -201,6 +204,7 @@ public final class EvolveSwingHost {
         // Keep menus/tooltips/popups inside the off-screen frame (lightweight) rather
         // than spawning real OS windows over the Flutter surface.
         javax.swing.JPopupMenu.setDefaultLightWeightPopupEnabled(true);
+        shareFrameBuffer();
         Toolkit.getDefaultToolkit();
         installEvolveDispatcher();
         installHeavyweightRepaintListener();
@@ -398,6 +402,20 @@ public final class EvolveSwingHost {
         }
     }
 
+    /**
+     * Makes {@link JLightweightFrame} hand its content the frame's own pixel buffer instead of a
+     * copy. The copy is only refreshed by Swing's repaint cycle, so anything drawn straight through
+     * {@code Component.getGraphics()} — a rubber-band zoom box drawn in XOR mode, say — reaches the
+     * frame's buffer but never the copy, and a forced push sends the stale copy. Reading the shared
+     * buffer is safe here because every read happens on the EDT, the thread that paints into it.
+     *
+     * <p>{@code JLightweightFrame} reads the property once, when the class initializes, so this has
+     * to run before the first frame is constructed.
+     */
+    static void shareFrameBuffer() {
+        setIfAbsent("swing.jlf.copyBufferEnabled", "false");
+    }
+
     private static void setIfAbsent(String key, String value) {
         if (System.getProperty(key) == null) System.setProperty(key, value);
     }
@@ -477,14 +495,62 @@ public final class EvolveSwingHost {
         }
     }
 
+    /**
+     * The panel the hosted Swing tree is relocated into.
+     *
+     * <p>Whatever reaches it through {@code getGraphics()} is drawing that happens outside the
+     * frame's own paint pass, so the frame never reports it: immediate-mode drawing such as a
+     * rubber-band box, and every repaint inside a hosted applet, which Swing starts from the applet
+     * as its own root rather than from the frame. {@code drawn} schedules the push the frame won't.
+     */
+    static final class ContentRoot extends JPanel {
+        private final Runnable drawn;
+
+        ContentRoot(Runnable drawn) {
+            super(new BorderLayout());
+            this.drawn = drawn;
+        }
+
+        @Override
+        public Graphics getGraphics() {
+            Graphics g = super.getGraphics();
+            if (g != null) drawn.run();
+            return g;
+        }
+    }
+
+    /**
+     * Gives a heavyweight root-pane container — the {@code JApplet} an application wraps its Swing
+     * content in — a lightweight peer, so it becomes part of the frame's own lightweight tree.
+     *
+     * <p>As a heavyweight it has a native surface nobody ever shows, and anything drawn through
+     * {@code getGraphics()} anywhere inside it lands on that surface and is lost: a lightweight
+     * component's {@code getGraphics()} resolves to its nearest heavyweight ancestor's. Lightweight,
+     * the same call resolves to the frame's buffer. Must be called while {@code c} has no peer,
+     * between its removal from one parent and its addition to the next, so that {@code addNotify}
+     * keeps the given peer instead of creating a native one.
+     *
+     * <p>Needs {@code --add-exports java.desktop/sun.awt=ALL-UNNAMED} at runtime; without it the
+     * container stays heavyweight, as it was before.
+     */
+    static void hostAsLightweight(Component c) {
+        if (c.isDisplayable()) return;
+        if (!(c instanceof java.awt.Panel) || !(c instanceof javax.swing.RootPaneContainer)) return;
+        try {
+            AWTAccessor.getComponentAccessor().setPeer(c, new NullComponentPeer());
+        } catch (LinkageError | RuntimeException notAccessible) {
+        }
+    }
+
     private static final class Host {
         private final Canvas canvas;
         // Cached at construction so the EDT never calls canvas.getDisplay() (which throws once the
         // canvas is disposed during shutdown). Display.isDisposed()/asyncExec are thread-safe.
         private final Display display;
-        private final JPanel contentRoot = new JPanel(new BorderLayout());
+        private final JPanel contentRoot = new ContentRoot(this::pushSoon);
         private final EvolveContent content = new EvolveContent();
         private volatile JLightweightFrame frame;
+        private volatile Runnable forceRepaint;
         // Guards the container-listener reentrancy while we relocate app-added children.
         private boolean relocating;
 
@@ -523,6 +589,7 @@ public final class EvolveSwingHost {
             interceptAdds(frame);
             canvas.addPaintListener(this::paint);
             Runnable forceRepaint = () -> content.imageUpdated(0, 0, 0, 0);
+            this.forceRepaint = forceRepaint;
             HEAVYWEIGHT_REPAINT_HOOKS.put(contentRoot, forceRepaint);
             AwtInput.attach(canvas, frame, contentRoot, forceRepaint);
             canvas.addListener(SWT.Resize, e -> {
@@ -593,6 +660,7 @@ public final class EvolveSwingHost {
                         try {
                             frame.remove(child);
                             frame.add(frame.getRootPane(), BorderLayout.CENTER);
+                            hostAsLightweight(child);
                             contentRoot.add(child);
                             contentRoot.revalidate();
                             contentRoot.repaint();
@@ -622,6 +690,11 @@ public final class EvolveSwingHost {
                 frame.setVisible(false);
                 frame.dispose();
             } catch (Throwable ignored) {}
+        }
+
+        private void pushSoon() {
+            Runnable push = forceRepaint;
+            if (push != null && !BLITTING.get()) coalesceRepaint(contentRoot, push);
         }
 
         private void paint(org.eclipse.swt.events.PaintEvent pe) {

@@ -53,6 +53,7 @@ final class AwtInput {
         final Component[] capturedTarget = {null};
         final int[] capturedOffset = {0, 0};
         final javax.swing.Timer[] repaintTimer = {null};
+        final int[] pressedAt = {Integer.MIN_VALUE, Integer.MIN_VALUE};
 
         Listener l = new Listener() {
             @Override
@@ -62,14 +63,14 @@ final class AwtInput {
                         canvas.forceFocus();
                         buttonsDown[0] |= awtButtonDownMask(e.button);
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_PRESSED, e, buttonsDown[0], 1,
-                                capturedTarget, capturedOffset, true, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, true, repaintTimer, forceRepaint);
                         break;
                     }
                     case SWT.MouseUp: {
                         // AWT expects the released button's down-mask still present on
                         // the RELEASED event's modifiers.
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_RELEASED, e, buttonsDown[0], 1,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
                         buttonsDown[0] = 0;
                         break;
                     }
@@ -77,16 +78,16 @@ final class AwtInput {
                         int id = buttonsDown[0] != 0
                                 ? MouseEvent.MOUSE_DRAGGED : MouseEvent.MOUSE_MOVED;
                         postMouse(frame, contentRoot, id, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
                         break;
                     }
                     case SWT.MouseEnter:
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_ENTERED, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
                         break;
                     case SWT.MouseExit:
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_EXITED, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
                         break;
                     case SWT.KeyDown:
                         postKey(frame, KeyEvent.KEY_PRESSED, e);
@@ -132,10 +133,14 @@ final class AwtInput {
      * cover both dispatch paths — a heavyweight only has the drag timer while captured, and a
      * lightweight target has no proactive repaint at all, so a toolbar button's click can reach
      * the view's model with nothing on screen reflecting it.
+     *
+     * <p>The frame's own dispatcher does not synthesize {@code MOUSE_CLICKED} either — the frame's
+     * peer would — so a release that lands where its press did ({@code pressedAt}) is followed by
+     * one, and a release that ends a drag is not, as a native peer decides.
      */
     private static void postMouse(Frame frame, Container contentRoot, int id, Event e, int buttonsDown,
-            int clickCount, Component[] capturedTarget, int[] capturedOffset, boolean isPress,
-            javax.swing.Timer[] repaintTimer, Runnable forceRepaint) {
+            int clickCount, Component[] capturedTarget, int[] capturedOffset, int[] pressedAt,
+            boolean isPress, javax.swing.Timer[] repaintTimer, Runnable forceRepaint) {
         final int x = e.x, y = e.y;
         final int button = awtButton(e.button, id);
         final int modifiers = swtToAwtModifiers(e.stateMask) | buttonsDown;
@@ -187,6 +192,16 @@ final class AwtInput {
             } else {
                 frame.dispatchEvent(new MouseEvent(frame, id, when, modifiers, x, y,
                         clickCount, popup, button));
+                if (isPress) {
+                    pressedAt[0] = x;
+                    pressedAt[1] = y;
+                } else if (id == MouseEvent.MOUSE_RELEASED) {
+                    if (isClick(pressedAt, x, y)) {
+                        frame.dispatchEvent(new MouseEvent(frame, MouseEvent.MOUSE_CLICKED, when,
+                                modifiers, x, y, clickCount, popup, button));
+                    }
+                    pressedAt[0] = Integer.MIN_VALUE;
+                }
             }
             if (id == MouseEvent.MOUSE_RELEASED) {
                 capturedTarget[0] = null;
@@ -223,6 +238,13 @@ final class AwtInput {
                     lx, ly, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, 3, wheelRotation));
             if (hit != null) EvolveSwingHost.scheduleStaggeredRepaints(forceRepaint, 60, 200, 500);
         });
+    }
+
+    /** Whether a release at (x,y) stayed within the drag threshold of the recorded press. */
+    static boolean isClick(int[] pressedAt, int x, int y) {
+        if (pressedAt[0] == Integer.MIN_VALUE) return false;
+        int threshold = java.awt.dnd.DragSource.getDragThreshold();
+        return Math.abs(x - pressedAt[0]) <= threshold && Math.abs(y - pressedAt[1]) <= threshold;
     }
 
     private static void startRepaintTimer(javax.swing.Timer[] repaintTimer, Runnable forceRepaint) {
