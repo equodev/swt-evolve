@@ -85,15 +85,7 @@ public class MacApplicationMenuNativeTest {
             return;
         }
 
-        // The suite runs with the native library switched off, which is exactly what init() skips on.
-        String loadLibrary = System.getProperty(LOAD_LIBRARY);
-        System.clearProperty(LOAD_LIBRARY);
-        try {
-            DisplayBridgePlatform.init();
-        } finally {
-            if (loadLibrary != null)
-                System.setProperty(LOAD_LIBRARY, loadLibrary);
-        }
+        initDesktopSurface();
 
         NSMenu mainMenu = application.mainMenu();
         assertThat(mainMenu).isNotNull();
@@ -127,14 +119,7 @@ public class MacApplicationMenuNativeTest {
             return;
         }
 
-        String loadLibrary = System.getProperty(LOAD_LIBRARY);
-        System.clearProperty(LOAD_LIBRARY);
-        try {
-            DisplayBridgePlatform.init();
-        } finally {
-            if (loadLibrary != null)
-                System.setProperty(LOAD_LIBRARY, loadLibrary);
-        }
+        initDesktopSurface();
 
         NSMenu appMenu = application.mainMenu().itemAtIndex(0).submenu();
         List<String> titles = new ArrayList<>();
@@ -146,5 +131,27 @@ public class MacApplicationMenuNativeTest {
         assertThat(titles).allSatisfy(title -> assertThat(title).doesNotStartWith("SWT_"));
         assertThat(titles).contains("Preferences...", "Services", "Hide Others", "Show All");
         assertThat(titles.get(0)).startsWith("About ");
+    }
+
+    /**
+     * Runs {@code init()} as the desktop surface does. On the web surface it also launches NSApp,
+     * whose {@code -finishLaunching} retitles items of the menu under test.
+     */
+    private static void initDesktopSurface() {
+        // The suite runs with the native library switched off, which is exactly what init() skips on.
+        String loadLibrary = System.getProperty(LOAD_LIBRARY);
+        String mode = ConfigFlags.mode();
+        System.clearProperty(LOAD_LIBRARY);
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
+        try {
+            DisplayBridgePlatform.init();
+        } finally {
+            if (loadLibrary != null)
+                System.setProperty(LOAD_LIBRARY, loadLibrary);
+            if (mode == null)
+                System.clearProperty(ConfigFlags.MODE_PROPERTY);
+            else
+                ConfigFlags.setMode(mode);
+        }
     }
 }
