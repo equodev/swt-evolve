@@ -216,9 +216,7 @@ class VRegistry {
       case FrameAction.recover:
         // An update that does not fit what is held. Asking for the widget again is the safe answer,
         // but never the expected one: it means an update was lost, reordered, or computed from a
-        // state this side never had. Said out loud so that it is noticed rather than absorbed.
-        print('[delivery] update does not fit $channel '
-            '(held ${node.value.seq}, base ${frame[kBase]}): asking for it again');
+        // state this side never had.
         EquoCommService.sendPayload(widgetRefreshChannel, '${node.value.id}');
         // The frame cannot be applied; what it carries still has to be. A widget described inside
         // it is the only description that widget will ever get - the sender counts it delivered and
