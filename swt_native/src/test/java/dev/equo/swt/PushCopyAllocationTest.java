@@ -67,7 +67,7 @@ class PushCopyAllocationTest {
         assertThat(client.connectBlocking(5, TimeUnit.SECONDS)).isTrue();
         // The server registers the session on its own thread; a frame arriving proves it has.
         comm.send("probe");
-        client.awaitBytes(1);
+        client.awaitFrames(1);
         bridge = new RecordingBridge(comm);
         FlutterBridge.set(bridge);
     }
@@ -136,9 +136,9 @@ class PushCopyAllocationTest {
     void loneFrameInABatch_travelsAsItself() {
         MessageBatch batch = new MessageBatch();
         batch.add("Button/7", "{\"text\":\"ok\"}".getBytes(StandardCharsets.UTF_8));
-        long before = client.received.get();
+        long before = client.frames.get();
         comm.send(batch);
-        client.awaitBytes(before + 1);
+        client.awaitFrames(before + 1);
         assertThat(client.lastEvent()).isEqualTo("Button/7");
         assertThat(client.lastPayload()).isEqualTo("{\"text\":\"ok\"}");
     }
@@ -174,37 +174,36 @@ class PushCopyAllocationTest {
 
     private long[] measure(Runnable push) {
         long receivedBefore = client.received.get();
+        long framesBefore = client.frames.get();
         long before = THREADS.getCurrentThreadAllocatedBytes();
         push.run();
         long allocated = THREADS.getCurrentThreadAllocatedBytes() - before;
-        long wire = client.awaitBytes(receivedBefore + 1) - receivedBefore;
+        client.awaitFrames(framesBefore + 1);
+        long wire = client.received.get() - receivedBefore;
         return new long[]{allocated, wire};
     }
 
     private static final class Client extends WebSocketClient {
         final AtomicLong received = new AtomicLong();
+        final AtomicLong frames = new AtomicLong();
         private volatile byte[] last;
 
         Client(URI uri) {
             super(uri);
         }
 
-        /** Waits until at least {@code atLeast} bytes have arrived and nothing more is on its way. */
-        long awaitBytes(long atLeast) {
+        /** Waits until at least {@code atLeast} frames have arrived; every push here is one frame. */
+        synchronized void awaitFrames(long atLeast) {
             long deadline = System.currentTimeMillis() + 5000;
-            long seen = -1;
-            while (System.currentTimeMillis() < deadline) {
-                long now = received.get();
-                if (now >= atLeast && now == seen) return now;
-                seen = now;
+            long left;
+            while (frames.get() < atLeast && (left = deadline - System.currentTimeMillis()) > 0) {
                 try {
-                    Thread.sleep(20);
+                    wait(left);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    break;
+                    return;
                 }
             }
-            return received.get();
         }
 
         String lastEvent() {
@@ -233,6 +232,10 @@ class PushCopyAllocationTest {
             bytes.get(frame);
             last = frame;
             received.addAndGet(frame.length);
+            synchronized (this) {
+                frames.incrementAndGet();
+                notifyAll();
+            }
         }
 
         @Override

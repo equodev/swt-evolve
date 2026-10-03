@@ -135,17 +135,30 @@ final class StyledTextFlutterStage {
 
     void clickAt(Point widgetPoint, int count, int modifiers) {
         double[] at = page(subject, widgetPoint.x, widgetPoint.y);
-        separateFromLastClick();
+        if (lastClickPoint == null || Math.hypot(at[0] - lastClickPoint[0], at[1] - lastClickPoint[1]) <= CLICK_SLOP)
+            separateFromLastClick();
         input().click(at[0], at[1], count, modifiers);
         settle();
         lastClickAt = System.currentTimeMillis();
+        lastClicked = subject;
+        lastClickPoint = at;
     }
 
-    private long lastClickAt;
+    /**
+     * When the client chains two presses into a multi-click: on the same control, within
+     * kDoubleTapSlop of each other and kDoubleTapTimeout apart (control_evolve.dart registerPointerDown).
+     */
+    private static final double CLICK_SLOP = 100;
+    private static final long CLICK_CHAIN_MS = 300;
 
-    /** Waits out the double-click time, so separate clicks are not read as one multi-click. */
+    private long lastClickAt;
+    private StyledText lastClicked;
+    private double[] lastClickPoint;
+
+    /** Waits until a press on the subject can no longer chain with the last one. */
     void separateFromLastClick() {
-        long wait = lastClickAt + display.getDoubleClickTime() + 50 - System.currentTimeMillis();
+        if (lastClicked != subject) return;
+        long wait = lastClickAt + CLICK_CHAIN_MS + 50 - System.currentTimeMillis();
         if (wait <= 0) return;
         try {
             Thread.sleep(wait);

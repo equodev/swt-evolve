@@ -56,6 +56,12 @@ class StyledTextScrollFlutterTest {
         text = stage.subject;
     }
 
+    private static boolean sentIn(List<String> frames, String... parts) {
+        synchronized (frames) {
+            return frames.stream().anyMatch(f -> java.util.Arrays.stream(parts).allMatch(f::contains));
+        }
+    }
+
     @Test
     @DisplayName("the lines at the scrolled-to position are the ones painted")
     void scrolledLinesArePainted() {
@@ -91,7 +97,7 @@ class StyledTextScrollFlutterTest {
 
     @Test
     @DisplayName("what a scroll redraws is sent with the scroll, not after it")
-    void aRulerKeepsUpWithTheText() {
+    void aRulerKeepsUpWithTheText() throws InterruptedException {
         fresh(SWT.MULTI | SWT.V_SCROLL, lines(400));
         Canvas ruler = new Canvas(stage.shell, SWT.NONE);
         ruler.setBounds(StyledTextFlutterStage.WIDTH + 10, 0, 30, StyledTextFlutterStage.HEIGHT);
@@ -116,6 +122,13 @@ class StyledTextScrollFlutterTest {
                 frames.clear();
                 text.setTopPixel(text.getTopPixel() + 97);
                 stage.flutter.flush();
+                // DevTools reports the frames on its own socket, so they can trail the flush's
+                // acknowledgement. Nothing is dispatched while waiting, so no later flush can add to them.
+                long deadline = System.currentTimeMillis() + 2_000;
+                while (System.currentTimeMillis() < deadline && !(sentIn(frames, "\"topPixel\"", String.valueOf(text.hashCode()))
+                        && sentIn(frames, "GC/" + ruler.hashCode()))) {
+                    Thread.sleep(5);
+                }
 
                 List<String> sent = new java.util.ArrayList<>(frames);
                 assertThat(sent).as("frames for tick %d", tick)
@@ -459,7 +472,14 @@ class StyledTextScrollFlutterTest {
     void wrappedDocumentWheelReachesTheEnd() {
         fresh(SWT.MULTI | SWT.V_SCROLL | SWT.WRAP, longWrappedLines(40));
         double[] at = stage.page(text, 100, 100);
-        for (int i = 0; i < 400; i++) stage.input().wheel(at[0], at[1], 0, 400, 0);
+        // Wheels on past the end too, so the clamp at the last row is exercised.
+        boolean reached = false;
+        for (int batch = 0; batch < 20 && !reached; batch++) {
+            for (int i = 0; i < 20; i++) stage.input().wheel(at[0], at[1], 0, 400, 0);
+            stage.settle();
+            reached = lineVisible(text.getCharCount());
+        }
+        for (int i = 0; i < 20; i++) stage.input().wheel(at[0], at[1], 0, 400, 0);
         stage.settle();
 
         assertThat(lineVisible(text.getCharCount())).as("last line visible").isTrue();

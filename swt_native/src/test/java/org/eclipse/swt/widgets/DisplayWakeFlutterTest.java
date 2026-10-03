@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -115,11 +116,20 @@ class DisplayWakeFlutterTest {
     @AfterEach
     void tearDown() throws InterruptedException {
         running = false;
-        Display d = display;
-        if (d != null && !d.isDisposed())
-            d.asyncExec(() -> {}); // unpark from this (non-UI) thread so the loop sees running == false
-        if (uiThread != null)
-            uiThread.join(5000);
+        if (uiThread != null) {
+            // A wake can be consumed by the loop's readAndDispatch before it re-reads running, and
+            // the park after it is uncapped, so keep waking the loop until it has left.
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (uiThread.isAlive() && System.nanoTime() < deadline) {
+                Display d = display;
+                try {
+                    if (d != null && !d.isDisposed()) d.asyncExec(() -> {});
+                } catch (SWTException disposedMeanwhile) {
+                    // the loop has left and disposed it
+                }
+                uiThread.join(10);
+            }
+        }
         setWebParkCap(16);
     }
 

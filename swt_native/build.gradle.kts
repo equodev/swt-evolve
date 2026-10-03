@@ -684,6 +684,11 @@ tasks.test {
     // (or the container's quota) has just adds JVMs that wait for each other.
     maxParallelForks = (System.getProperty("testForks")?.toIntOrNull() ?: 1)
         .coerceIn(1, Runtime.getRuntime().availableProcessors())
+    // Gradle deals every candidate class to the forks in turn, in path order. With helper and nested
+    // classes among the candidates, where a heavy class landed depended on how many of them sorted
+    // before it. @Nested classes still run, through their outer class.
+    include("**/*Test.class", "**/*Tests.class")
+    exclude("**/*$*.class")
     if (chromiumMode)
         classpath = sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["test"].runtimeClasspath
     useJUnitPlatform {

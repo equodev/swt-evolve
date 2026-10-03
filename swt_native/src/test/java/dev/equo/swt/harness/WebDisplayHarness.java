@@ -71,7 +71,8 @@ public final class WebDisplayHarness {
         boolean console = Boolean.getBoolean("harness.web.console");
         try {
             chrome = HeadlessChrome.launch(binary, url, headless, console,
-                    console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, "--remote-debugging-port=0");
+                    console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, "--remote-debugging-port=0",
+                    "--disable-frame-rate-limit", "--disable-gpu-vsync");
         } catch (IOException e) {
             throw new IllegalStateException("could not launch Chrome", e);
         }
