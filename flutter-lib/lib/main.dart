@@ -47,10 +47,6 @@ import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
 
-// Last theme config printed, so the line is emitted on every real change instead of once.
-// The flags arrive over the socket after the first build, so a once-only log always
-// reported them as null -- useless for diagnosing a product's configured theme.
-String? _loggedThemeConfig;
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
 _WindowMetricsReporter? _windowMetricsReporter;
@@ -492,8 +488,8 @@ class EvolveApp extends StatelessWidget {
             'force_theme=${flags.force_theme}, '
             'effective_theme_mode=${effectiveThemeMode.name}, '
             'theme_color=${flags.theme_color}, theme_colors_by_widget=${flags.theme_colors_by_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}';
-        if (themeConfig != _loggedThemeConfig) {
-          _loggedThemeConfig = themeConfig;
+        if (themeConfig != loggedThemeConfig) {
+          loggedThemeConfig = themeConfig;
           print(themeConfig);
         }
         final ThemeData lightTheme;

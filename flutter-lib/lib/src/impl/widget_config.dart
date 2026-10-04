@@ -83,9 +83,18 @@ void applySystemMenu(VMenu? menu) {
 List<VMenuItem> applicationMenuItems() =>
     configFlags.system_menu_bar == true ? const [] : (_systemMenu?.items ?? const []);
 
+/// Last theme config printed, so the line is emitted on every real change instead of once: the
+/// flags arrive after the first build. Lives with the flags so that resetting them logs again.
+String? loggedThemeConfig;
+
+/// Back to the display state a client starts with: no flags, light theme, no color scheme yet.
 @visibleForTesting
 void resetConfigFlags() {
   _systemMenu = null;
+  loggedThemeConfig = null;
+  _useDarkTheme = false;
+  _currentColorSchemeExtension = null;
+  _parentBackgroundColor = null;
   configFlags = ConfigFlags();
   _lastAppliedConfig = null;
   configFlagsVersion.value = 0;

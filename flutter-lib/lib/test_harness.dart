@@ -108,6 +108,7 @@ void registerTestQueryChannel() {
     },
     queryStateJson: queryStateJson,
     queryAllStatesJson: queryAllStatesJson,
+    queryStatesJson: queryStatesJson,
     queryPaintOpsJson: queryPaintOpsJson,
     queryTreeItemsJson: queryTreeItemsJson,
     expandTreeItem: expandTreeItem,
@@ -164,6 +165,38 @@ String? queryStateJson(int targetId) {
   final Map<String, dynamic>? vstate = _findStateById(targetId);
   if (vstate == null) return null;
   return jsonEncode(vstate);
+}
+
+/// The live `V*.toJson()` of the widgets named by [identifiers] (`{swt}/{id}`), keyed the same
+/// way, as a JSON-encoded object; an identifier with no mounted widget is left out. One walk of the
+/// tree, and only the requested states are encoded, so asking for a few widgets does not pay for
+/// serializing all of them the way [queryAllStatesJson] does.
+String queryStatesJson(List<String> identifiers) {
+  final wanted = identifiers.toSet();
+  final Map<String, dynamic> found = {};
+  final root = WidgetsBinding.instance.rootElement;
+  if (root == null || wanted.isEmpty) return jsonEncode(found);
+  void addWithItems(Map<String, dynamic> node) {
+    final key = '${node['swt']}/${node['id']}';
+    if (wanted.contains(key)) found[key] = node;
+    for (final item in _itemsOf(node)) {
+      addWithItems(item);
+    }
+  }
+
+  void visit(Element el) {
+    if (found.length == wanted.length) return;
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate != null) {
+        addWithItems(vstate.toJson() as Map<String, dynamic>);
+      }
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return jsonEncode(found);
 }
 
 /// Every mounted SWT widget's live `V*.toJson()`, keyed by its `{swt}/{id}` semantics
