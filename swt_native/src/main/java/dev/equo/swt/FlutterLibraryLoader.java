@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.ServiceLoader;
@@ -250,9 +251,7 @@ public class FlutterLibraryLoader {
                         ensureDirectoryExists(targetFile);
                     } else {
                         ensureDirectoryExists(targetFile.getParentFile());
-                        try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                            Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        }
+                        extractAtomically(jarFile, entry, targetFile);
                     }
                 }
             }
@@ -334,8 +333,34 @@ public class FlutterLibraryLoader {
         return findFlutterBuildDirectory() != null;
     }
 
+    /**
+     * Writes the entry next to its target and moves it into place, so a process starting at the
+     * same time never loads a half-written file. If the move fails while the target exists (another
+     * process put it there first, and it may already be loaded), that file is used.
+     */
+    private static void extractAtomically(JarFile jarFile, JarEntry entry, File targetFile) throws IOException {
+        Path target = targetFile.toPath();
+        Path temp = Files.createTempFile(target.getParent(), targetFile.getName(), ".part");
+        try {
+            try (InputStream inputStream = jarFile.getInputStream(entry)) {
+                Files.copy(inputStream, temp, StandardCopyOption.REPLACE_EXISTING);
+            }
+            try {
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException moveFailed) {
+                if (!Files.isRegularFile(target)) {
+                    throw moveFailed;
+                }
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+    }
+
     private static void ensureDirectoryExists(File directory) throws IOException {
-        if (!directory.exists() && !directory.mkdirs()) {
+        // mkdirs() is also false when another process created the directory first, e.g. two apps
+        // starting together on a fresh machine; only a directory that still is not there is a failure.
+        if (!directory.mkdirs() && !directory.isDirectory()) {
             throw new IOException("Failed to create directory: " + directory.getAbsolutePath());
         }
     }
