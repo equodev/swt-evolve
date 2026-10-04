@@ -299,6 +299,44 @@ tasks.register("webExampleClasspath") {
 registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
 registerFlutterExample("runDeskExample", "desktop")
 
+// What `runWebExample -PwebOnly=true` would launch, written as JSON so an external driver can fork the
+// example JVM itself instead of paying a nested Gradle build for it. The JVM arguments (system
+// properties included) are read from runWebExample itself, so the two cannot drift; the main class
+// and per-run properties (port, browser, ...) are left to the caller.
+tasks.register("webExampleLaunchSpec") {
+    group = "examples"
+    description = "Writes the java executable, working directory, JVM arguments and browser-only " +
+            "classpath runWebExample -PwebOnly=true would use, as JSON."
+    val jar = project(":swt_native").tasks.named<Jar>("webJar")
+    dependsOn(jar, tasks.named("classes"))
+    val runWebExample = tasks.named<JavaExec>("runWebExample")
+    val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
+        !(dep is ProjectDependency && dep.path == ":swt_native")
+    }
+    val mainOutput = sourceSets["main"].output
+    val outputFile = layout.buildDirectory.file("web-example-launch.json")
+    outputs.file(outputFile)
+    outputs.upToDateWhen { false }
+    doLast {
+        val run = runWebExample.get()
+        val classpath = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
+        // allJvmArgs holds the system properties and Gradle's defaults but, until the task runs, not
+        // the jvmArguments property (where jvmArgs(...) lands), so both are taken.
+        val jvmArgs = run.jvmArguments.get() +
+                run.jvmArgumentProviders.flatMap { it.asArguments() } +
+                run.allJvmArgs
+        val spec = mapOf(
+            "java" to run.javaLauncher.get().executablePath.asFile.absolutePath,
+            "workingDir" to run.workingDir.absolutePath,
+            "jvmArgs" to jvmArgs,
+            "classpath" to classpath.files.map { it.absolutePath },
+        )
+        val file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(spec)))
+    }
+}
+
 // Embedded: the per-widget native-SWT scenario (embed-<os>-<arch>.jar) -- a real native SWT shell
 // that renders Equo-enabled widgets (per Config.equoEnabled) through Flutter and everything else
 // through native SWT, same backend eclipse_run swaps into a real RCP app. Unlike SnippetCapturer
