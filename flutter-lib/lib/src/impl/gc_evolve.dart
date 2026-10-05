@@ -66,6 +66,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
+          _drawer.widgetContext = element;
           if (parentState is ControlImpl) parentState.onGCOverlaySubscribed();
           return false;
         }

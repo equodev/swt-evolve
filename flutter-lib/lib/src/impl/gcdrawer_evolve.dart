@@ -332,7 +332,21 @@ class GCDrawer extends GCDrawerBase {
   Color get fillColor =>
       _themed(state.background, _canvasTheme?.fillColor, _swtBackground);
   Color get textBackgroundColor =>
+      _hostGround ??
       _themed(state.background, _canvasTheme?.textBackgroundColor, _swtBackground);
+
+  Color? get _hostGround {
+    final host = widgetContext;
+    if (_useThemeColors || host is! StatefulElement || !host.mounted) return null;
+    final ground = host.state;
+    if (ground is! GCGround) return null;
+    final GCGround hostGround = ground as GCGround;
+    final rendered = hostGround.renderedGround;
+    final swtGround = hostGround.swtGround;
+    if (rendered == null || swtGround == null || state.background == null) return null;
+    return colorFromVColor(state.background) == colorFromVColor(swtGround) ? rendered : null;
+  }
+
   Color get strokeColor =>
       _themed(state.foreground, _canvasTheme?.strokeColor, _swtForeground);
   Color get lineColor =>
@@ -1821,6 +1835,12 @@ class OvalShape extends Shape {
 
   @override
   String describe() => '${isFilled ? "Fill" : "Draw"}Oval ${_dr(rect)} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+}
+
+abstract interface class GCGround {
+  VColor? get swtGround;
+
+  Color? get renderedGround;
 }
 
 class RectShape extends Shape {

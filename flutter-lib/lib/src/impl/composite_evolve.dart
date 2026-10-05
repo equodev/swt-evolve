@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../nolayout.dart';
+import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/decorations.dart';
 import '../gen/event.dart';
@@ -11,6 +12,7 @@ import '../gen/widget.dart';
 import '../styles.dart';
 import '../impl/control_evolve.dart';
 import '../impl/gc_evolve.dart';
+import '../impl/gcdrawer_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'utils/double_tap_detector.dart';
@@ -220,8 +222,16 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 }
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
-    extends ScrollableImpl<T, V> {
+    extends ScrollableImpl<T, V> implements GCGround {
   final DoubleTapDetector dblTap = DoubleTapDetector();
+
+  Color? _renderedGround;
+
+  @override
+  VColor? get swtGround => state.background;
+
+  @override
+  Color? get renderedGround => _renderedGround;
 
   final FocusNode _surfaceFocus = FocusNode(debugLabel: 'CompositeSurface');
 
@@ -334,14 +344,14 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       parentBackground: ParentBackgroundScope.backgroundOf(context),
     );
     final decorationImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
+    // Inherited backgroundImage is already painted once by the ancestor that owns it
+    // (ShellImpl.buildComposite); stay transparent so it isn't occluded by our own fill.
+    final showsInheritedImage = state.backgroundImage == null &&
+        ParentBackgroundScope.backgroundImageOf(context) != null;
+    _renderedGround = decorationImage == null && !showsInheritedImage ? backgroundColor : null;
 
     Widget paintBackground(Widget child) {
-      // Inherited backgroundImage is already painted once by the ancestor that owns it
-      // (ShellImpl.buildComposite); stay transparent so it isn't occluded by our own fill.
-      if (state.backgroundImage == null &&
-          ParentBackgroundScope.backgroundImageOf(context) != null) {
-        return child;
-      }
+      if (showsInheritedImage) return child;
       if (decorationImage == null) return ColoredBox(color: backgroundColor, child: child);
       return DecoratedBox(
         decoration: BoxDecoration(color: backgroundColor, image: decorationImage),
