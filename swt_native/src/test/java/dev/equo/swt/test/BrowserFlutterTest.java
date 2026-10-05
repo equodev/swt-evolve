@@ -647,6 +647,13 @@ class BrowserFlutterTest {
         }
 
         @Test
+        void getCookie_readsHttpOnlyCookie() {
+            boolean set = kit.setCookie("equoSession=abc; path=/; HttpOnly", base);
+            Assumptions.assumeTrue(set, "static cookie API not functional in this runtime");
+            assertThat(kit.getCookie("equoSession", base)).isEqualTo("abc");
+        }
+
+        @Test
         void clearSessions_doesNotThrow() {
             kit.clearSessions();
         }

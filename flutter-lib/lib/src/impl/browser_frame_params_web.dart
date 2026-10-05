@@ -3,7 +3,7 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 import 'package:webview_all/webview_all.dart'
-    show PlatformWebViewControllerCreationParams;
+    show PlatformWebViewControllerCreationParams, WebViewController;
 import 'package:webview_all_web/webview_all_web.dart';
 
 import 'browser_app_base.dart';
@@ -194,3 +194,13 @@ bool installBrowserFrameKeyHandling(
     return false;
   }
 }
+
+/// The web iframe is released with its element.
+Future<void> browserReleaseWebView(WebViewController controller) async {}
+
+/// Cookies of the iframe's origin are out of this page's reach.
+Future<String?> browserGetCookie(String name, String url) async => null;
+
+Future<bool> browserSetCookie(String name, String value, String domain, String path,
+        {double? expires, bool secure = false, bool httpOnly = false}) async =>
+    false;

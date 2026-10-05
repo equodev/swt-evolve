@@ -1064,6 +1064,8 @@ platforms.forEach { platform ->
             inputs.files(fileTree("../flutter-lib/${info.os}") {
                 exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
             })
+            // A plugin bump changes only the lock, and the plugin's native code is compiled into this build.
+            inputs.file("../flutter-lib/pubspec.lock")
             outputs.dir("../flutter-lib/build/${info.os}")
             // Toggling -PdartDebug must invalidate this task even though its output dir is unchanged
             // (Flutter writes debug/release into sibling subdirs of the same build/<os> tree).

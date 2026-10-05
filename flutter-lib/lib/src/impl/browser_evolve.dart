@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:webview_all/webview_all.dart';
 
@@ -36,6 +37,11 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   String? _loadedUrl;
   String? _loadedText;
   Completer<bool>? _locationChangingCompleter;
+  // The Windows webview answers a navigation request by cancelling the navigation and restarting it
+  // from its URL, which turns a form POST into a GET without its body. There only the loads started
+  // here ask Java (see [_load]).
+  static final bool _asksNavigationRequests =
+      kIsWeb || defaultTargetPlatform != TargetPlatform.windows;
   // Navigation is op-driven once the first "navigate" op arrives. The op carries
   // a monotonic seq so a re-navigation to the *same* URL still loads (the
   // state-driven path dedups same-URL pushes on both sides, which would
@@ -127,30 +133,11 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               if (!_navigationRequested) return;
               widget.sendProgresscompleted(state, null);
             },
-            // Mirror SWT's cancellable LocationListener.changing: ask Java
-            // whether to proceed and honour event.doit. On native SWT this dispatch is
-            // synchronous and in-process, so it never blocks visible navigation; here it is a
-            // round trip over the comm channel, so every navigation -- including one with no
-            // LocationListener registered at all, the common case -- stalls for up to this
-            // timeout before proceeding. Java's asyncExec reply normally lands in single-digit
-            // milliseconds, so 300ms is generous headroom for real UI-thread queueing while
-            // bounding the worst case (previously 2s, and a Browser can issue several
-            // navigations back-to-back for one logical "open", each paying this wait).
-            onNavigationRequest: (request) async {
-              _locationChangingCompleter = Completer<bool>();
-              widget.sendLocationchanging(
-                  state, VEvent()..text = _unproxyUrl(request.url));
-              final doit = await _locationChangingCompleter!.future.timeout(
-                const Duration(milliseconds: 300),
-                onTimeout: () {
-                  _locationChangingCompleter = null;
-                  return true;
-                },
-              );
-              return doit
-                  ? NavigationDecision.navigate
-                  : NavigationDecision.prevent;
-            },
+            onNavigationRequest: _asksNavigationRequests
+                ? (request) async => await _locationChanging(request.url)
+                    ? NavigationDecision.navigate
+                    : NavigationDecision.prevent
+                : null,
           ),
         );
     // }
@@ -205,7 +192,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
             _expectSameOrigin = false;
             // POST bypasses the proxy (which is GET-only); the web backend's
             // own XHR carries the body.
-            _controller.loadRequest(
+            _load(
               uri,
               method: LoadRequestMethod.post,
               headers: _parseHeaders(m["headers"]),
@@ -214,14 +201,14 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
           } else if (kIsWeb && localFilePath != null && localFilePath.isNotEmpty) {
             _loadedLocalFile = true;
             _expectSameOrigin = true;
-            _controller.loadRequest(Uri.parse(localFileRewrite(localFilePath)));
+            _load(Uri.parse(localFileRewrite(localFilePath)));
           } else {
             _loadedLocalFile = false;
             final headers = _parseHeaders(m["headers"]);
             final resolved =
                 _resolveLoadUri(url, uri, headers.isEmpty ? null : headers);
             _expectSameOrigin = resolved.toString() != url;
-            _controller.loadRequest(resolved);
+            _load(resolved);
           }
         }
       } else if (text != null) {
@@ -295,6 +282,34 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       }
     });
 
+    // The static Browser.getCookie/setCookie, routed through whichever Browser Java picked: cookies
+    // belong to the webview profile, not to this Browser.
+    _onOp("getCookie", (args) async {
+      final map = args as Map;
+      final value =
+          await browserGetCookie(map["name"] as String, map["url"] as String);
+      EquoCommService.sendPayload(
+        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
+        VEvent()..text = value,
+      );
+    });
+    _onOp("setCookie", (args) async {
+      final map = args as Map;
+      final set = await browserSetCookie(
+        map["name"] as String,
+        map["value"] as String,
+        map["domain"] as String,
+        map["path"] as String,
+        expires: (map["expires"] as num?)?.toDouble(),
+        secure: map["secure"] as bool? ?? false,
+        httpOnly: map["httpOnly"] as bool? ?? false,
+      );
+      EquoCommService.sendPayload(
+        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
+        VEvent()..text = '$set',
+      );
+    });
+
     _applyContent();
     // Same reasoning as _applyContent above: extraSetState never runs for the very
     // first snapshot, so a BrowserFunction already registered by the time this
@@ -315,6 +330,36 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
   }
 
+  /// Mirrors SWT's cancellable LocationListener.changing: asks Java whether the navigation to [url]
+  /// may proceed and honours event.doit. On native SWT this dispatch is synchronous and in-process,
+  /// so it never blocks visible navigation; here it is a round trip over the comm channel, so every
+  /// navigation -- including one with no LocationListener registered at all, the common case --
+  /// stalls for up to this timeout before proceeding. Java's asyncExec reply normally lands in
+  /// single-digit milliseconds, so 300ms is generous headroom for real UI-thread queueing while
+  /// bounding the worst case: a Browser can issue several navigations back-to-back for one logical
+  /// "open", each paying this wait.
+  Future<bool> _locationChanging(String url) {
+    _locationChangingCompleter = Completer<bool>();
+    widget.sendLocationchanging(state, VEvent()..text = _unproxyUrl(url));
+    return _locationChangingCompleter!.future.timeout(
+      const Duration(milliseconds: 300),
+      onTimeout: () {
+        _locationChangingCompleter = null;
+        return true;
+      },
+    );
+  }
+
+  /// Loads [uri] for a navigation Java asked for. Where the webview is not asked about its own
+  /// navigations, LocationListener.changing is asked here first.
+  Future<void> _load(Uri uri,
+      {LoadRequestMethod method = LoadRequestMethod.get,
+      Map<String, String> headers = const <String, String>{},
+      Uint8List? body}) async {
+    if (!_asksNavigationRequests && !await _locationChanging(uri.toString())) return;
+    await _controller.loadRequest(uri, method: method, headers: headers, body: body);
+  }
+
   /// Loads a `setText` document. On web it is served from a same-origin `blob:` URL so the page
   /// is scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
   /// webviews render the string directly.
@@ -328,7 +373,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     _releaseInlineDocument();
     _inlineDocumentUrl = url;
     _expectSameOrigin = true;
-    _controller.loadRequest(Uri.parse(url));
+    _load(Uri.parse(url));
   }
 
   void _releaseInlineDocument() {
@@ -342,6 +387,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   void dispose() {
     appScaleNotifier.removeListener(_applyContentZoom);
     _releaseInlineDocument();
+    browserReleaseWebView(_controller);
     super.dispose();
   }
 
@@ -589,7 +635,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       _loadedText = null;
       final resolved = _resolveLoadUri(url!, uri);
       _expectSameOrigin = resolved.toString() != url;
-      _controller.loadRequest(resolved);
+      _load(resolved);
     } else if (state.text != null && state.text != _loadedText) {
       // Like the file: url above: a document embedding file: sub-resources is only loadable in
       // the rewritten form the navigate op carries, so leave it to the op rather than rendering
