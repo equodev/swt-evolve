@@ -377,10 +377,22 @@ public final class DartCursor extends DartResource implements ICursor {
 
     int cursorStyle = -1;
 
+    int hotspotX;
+
+    int hotspotY;
+
     Image image;
 
     public int _cursorStyle() {
         return cursorStyle;
+    }
+
+    public int _hotspotX() {
+        return hotspotX;
+    }
+
+    public int _hotspotY() {
+        return hotspotY;
     }
 
     public Image _image() {

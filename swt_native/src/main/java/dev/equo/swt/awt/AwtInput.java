@@ -54,6 +54,7 @@ final class AwtInput {
         final int[] capturedOffset = {0, 0};
         final javax.swing.Timer[] repaintTimer = {null};
         final int[] pressedAt = {Integer.MIN_VALUE, Integer.MIN_VALUE};
+        final Component[] heavyweightUnder = {null};
 
         Listener l = new Listener() {
             @Override
@@ -63,14 +64,16 @@ final class AwtInput {
                         canvas.forceFocus();
                         buttonsDown[0] |= awtButtonDownMask(e.button);
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_PRESSED, e, buttonsDown[0], 1,
-                                capturedTarget, capturedOffset, pressedAt, true, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, true,
+                                repaintTimer, forceRepaint);
                         break;
                     }
                     case SWT.MouseUp: {
                         // AWT expects the released button's down-mask still present on
                         // the RELEASED event's modifiers.
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_RELEASED, e, buttonsDown[0], 1,
-                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         buttonsDown[0] = 0;
                         break;
                     }
@@ -78,16 +81,19 @@ final class AwtInput {
                         int id = buttonsDown[0] != 0
                                 ? MouseEvent.MOUSE_DRAGGED : MouseEvent.MOUSE_MOVED;
                         postMouse(frame, contentRoot, id, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         break;
                     }
                     case SWT.MouseEnter:
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_ENTERED, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         break;
                     case SWT.MouseExit:
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_EXITED, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, pressedAt, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         break;
                     case SWT.KeyDown:
                         postKey(frame, KeyEvent.KEY_PRESSED, e);
@@ -140,7 +146,8 @@ final class AwtInput {
      */
     private static void postMouse(Frame frame, Container contentRoot, int id, Event e, int buttonsDown,
             int clickCount, Component[] capturedTarget, int[] capturedOffset, int[] pressedAt,
-            boolean isPress, javax.swing.Timer[] repaintTimer, Runnable forceRepaint) {
+            Component[] heavyweightUnder, boolean isPress, javax.swing.Timer[] repaintTimer,
+            Runnable forceRepaint) {
         final int x = e.x, y = e.y;
         final int button = awtButton(e.button, id);
         final int modifiers = swtToAwtModifiers(e.stateMask) | buttonsDown;
@@ -158,6 +165,13 @@ final class AwtInput {
             } else {
                 int[] offset = new int[2];
                 Component hit = findHeavyweightAt(contentRoot, x, y, offset);
+                if (id == MouseEvent.MOUSE_MOVED || id == MouseEvent.MOUSE_ENTERED
+                        || id == MouseEvent.MOUSE_EXITED) {
+                    crossHeavyweights(contentRoot, heavyweightUnder,
+                            id == MouseEvent.MOUSE_EXITED ? null : hit, x, y, when, modifiers);
+                    // Over a heavyweight, the crossing is the canvas's enter or exit.
+                    if (id != MouseEvent.MOUSE_MOVED && hit != null) return;
+                }
                 if (hit != null) {
                     target = hit;
                     lx = x - offset[0];
@@ -238,6 +252,31 @@ final class AwtInput {
                     lx, ly, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, 3, wheelRotation));
             if (hit != null) EvolveSwingHost.scheduleStaggeredRepaints(forceRepaint, 60, 200, 500);
         });
+    }
+
+    /**
+     * Raises {@code MOUSE_EXITED} on the heavyweight the pointer left and {@code MOUSE_ENTERED} on
+     * the one it is now over, as their native peers would. The frame's dispatcher only tracks
+     * lightweights, and applications rely on these: a 3D view sets its tool's cursor on enter.
+     */
+    static void crossHeavyweights(Container contentRoot, Component[] under, Component now,
+            int x, int y, long when, int modifiers) {
+        Component was = under[0];
+        if (now == was) return;
+        under[0] = now;
+        if (was != null && was.getParent() != null) {
+            dispatchCrossing(contentRoot, was, MouseEvent.MOUSE_EXITED, x, y, when, modifiers);
+        }
+        if (now != null) {
+            dispatchCrossing(contentRoot, now, MouseEvent.MOUSE_ENTERED, x, y, when, modifiers);
+        }
+    }
+
+    private static void dispatchCrossing(Container contentRoot, Component c, int id, int x, int y,
+            long when, int modifiers) {
+        java.awt.Point p = SwingUtilities.convertPoint(contentRoot, x, y, c);
+        c.dispatchEvent(new MouseEvent(c, id, when, modifiers, p.x, p.y, 0, false,
+                MouseEvent.NOBUTTON));
     }
 
     /** Whether a release at (x,y) stayed within the drag threshold of the recorded press. */

@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../comm/v_registry.dart';
 import '../gen/control.dart';
+import '../gen/cursor.dart';
 import '../gen/rectangle.dart';
 import '../gen/droptarget.dart';
 import '../gen/event.dart';
@@ -17,6 +18,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../impl/focus_requests.dart';
+import '../impl/image_mouse_cursor.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
@@ -537,6 +539,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
+  /// The cursor [cursor] shows, or null when it leaves it to the controls around this one.
+  MouseCursor? mouseCursorOf(VCursor? cursor) {
+    if (cursor == null) return null;
+    final style = cursor.cursorStyle;
+    if (style != null && style >= 0) return swtCursorToFlutter(style);
+    if (cursor.image != null) return imageMouseCursorOf(cursor) ?? SystemMouseCursors.basic;
+    return null;
+  }
+
   /// Whether this control forwards MouseDown from the interaction chrome
   /// (the Listener added in wrap() and wrapCompositeInteractionChrome).
   /// TableImpl overrides this to false because each cell has its own
@@ -623,11 +634,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       widget = wrapDnd(widget);
     }
 
-    if (state.cursor?.cursorStyle != null) {
-      widget = MouseRegion(
-        cursor: swtCursorToFlutter(state.cursor!.cursorStyle!),
-        child: widget,
-      );
+    final mouseCursor = mouseCursorOf(state.cursor);
+    if (mouseCursor != null) {
+      widget = MouseRegion(cursor: mouseCursor, child: widget);
     }
 
     if (state.style.has(SWT.BORDER)) {

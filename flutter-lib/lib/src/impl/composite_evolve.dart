@@ -70,9 +70,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   // outer wrapper. Adding/removing a wrapper widget on cursor-change would
   // change the root widget type returned by build(), deactivating all child
   // elements (CTabFolder, Canvas, Tree, …) and destroying their state.
-  final cursor = state.cursor?.cursorStyle != null
-      ? impl.swtCursorToFlutter(state.cursor!.cursorStyle!)
-      : MouseCursor.defer;
+  final cursor = impl.mouseCursorOf(state.cursor) ?? MouseCursor.defer;
 
   final forwardsPointer = state.children?.isNotEmpty ?? false;
 

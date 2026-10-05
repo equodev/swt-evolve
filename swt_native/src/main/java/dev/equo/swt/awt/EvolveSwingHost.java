@@ -551,6 +551,7 @@ public final class EvolveSwingHost {
         private final EvolveContent content = new EvolveContent();
         private volatile JLightweightFrame frame;
         private volatile Runnable forceRepaint;
+        private volatile EmbedCursor cursor;
         // Guards the container-listener reentrancy while we relocate app-added children.
         private boolean relocating;
 
@@ -592,6 +593,9 @@ public final class EvolveSwingHost {
             this.forceRepaint = forceRepaint;
             HEAVYWEIGHT_REPAINT_HOOKS.put(contentRoot, forceRepaint);
             AwtInput.attach(canvas, frame, contentRoot, forceRepaint);
+            EmbedCursor embedCursor = new EmbedCursor(canvas, display, frame);
+            embedCursor.attach();
+            cursor = embedCursor;
             canvas.addListener(SWT.Resize, e -> {
                 Rectangle a = canvas.getClientArea();
                 final int w = Math.max(1, a.width), h = Math.max(1, a.height);
@@ -900,6 +904,13 @@ public final class EvolveSwingHost {
                         snapshot[destRowBase + px] = (a << 24) | (r << 16) | (g << 8) | b;
                     }
                 }
+            }
+
+            /** Ignores the frame's pick, which it makes from the OS pointer; see {@link EmbedCursor}. */
+            @Override
+            public void setCursor(java.awt.Cursor ignored) {
+                EmbedCursor c = cursor;
+                if (c != null) c.refresh();
             }
 
             @Override public void focusGrabbed() {}
