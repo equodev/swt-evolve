@@ -15,10 +15,6 @@
 // Without `--include-tests` a property read only by a test still counts as unused, which is the
 // question the generator wants answered; the summary reports those separately either way.
 
-// The Element2 API (`analyzer`'s in-progress replacement for the old `Element` model) is what this
-// script is built on; there is no non-experimental way to resolve a written vs. read identifier yet.
-// ignore_for_file: experimental_member_use
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -26,7 +22,7 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 
 Future<void> main(List<String> args) async {
   final outPath = _option(args, '--out');
@@ -145,9 +141,9 @@ class _DeclarationCollector extends RecursiveAstVisitor<void> {
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
-    final owner = node.name.lexeme;
+    final owner = node.namePart.typeName.lexeme;
     if (owner.startsWith('V')) {
-      for (final member in node.members.whereType<FieldDeclaration>()) {
+      for (final member in node.body.members.whereType<FieldDeclaration>()) {
         if (member.isStatic) continue;
         for (final variable in member.fields.variables) {
           into.putIfAbsent(owner, () => <String>{}).add(variable.name.lexeme);
@@ -166,15 +162,15 @@ class _UsageCollector extends RecursiveAstVisitor<void> {
 
   final Map<String, Set<String>> into;
 
-  void _record(Element2? element) {
+  void _record(Element? element) {
     if (element == null) return;
-    if (element is! PropertyAccessorElement2 && element is! FieldElement2) return;
+    if (element is! PropertyAccessorElement && element is! FieldElement) return;
 
-    var name = element.name3;
+    var name = element.name;
     if (name == null) return;
     if (name.endsWith('=')) name = name.substring(0, name.length - 1);
 
-    final owner = element.enclosingElement2?.name3;
+    final owner = element.enclosingElement?.name;
     if (owner == null || !owner.startsWith('V')) return;
     into.putIfAbsent(owner, () => <String>{}).add(name);
   }
@@ -190,22 +186,22 @@ class _UsageCollector extends RecursiveAstVisitor<void> {
   // only ever written as unread, which is most of what an event value is for.
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
-    _record(node.writeElement2);
-    _record(node.readElement2);
+    _record(node.writeElement);
+    _record(node.readElement);
     super.visitAssignmentExpression(node);
   }
 
   @override
   void visitPostfixExpression(PostfixExpression node) {
-    _record(node.writeElement2);
-    _record(node.readElement2);
+    _record(node.writeElement);
+    _record(node.readElement);
     super.visitPostfixExpression(node);
   }
 
   @override
   void visitPrefixExpression(PrefixExpression node) {
-    _record(node.writeElement2);
-    _record(node.readElement2);
+    _record(node.writeElement);
+    _record(node.readElement);
     super.visitPrefixExpression(node);
   }
 }

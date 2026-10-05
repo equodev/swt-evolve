@@ -20,7 +20,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.9.0
-  flutter: "^3.44.4"
+  flutter: "^3.47.5"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -44,10 +44,10 @@ dependencies:
   webview_all_windows: ^1.4.4
   pointer_interceptor: ^0.10.1
   flutter_svg: ^2.1.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   image: ^4.0.17
   font_awesome_flutter: ^11.0.0
-  theme_tailor_annotation: ^3.1.1
+  theme_tailor_annotation: ^4.0.0
   web: ^1.1.1
 
 dev_dependencies:
@@ -68,10 +68,10 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   # Resolved-AST scanning for tool/unused_value_properties.dart, which reports the generated
   # value-class properties nothing on this side reads.
-  analyzer: ^7.7.1
-  build_runner: ^2.3.3
-  json_serializable: ^6.8.0
-  theme_tailor: ^3.1.1
+  analyzer: ^13.3.0
+  build_runner: ^2.16.1
+  json_serializable: ^6.14.1
+  theme_tailor: ^4.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

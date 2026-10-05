@@ -41,6 +41,12 @@ analyzer:
     invalid_null_aware_operator: ignore
     unnecessary_non_null_assertion: ignore
     body_might_complete_normally_nullable: ignore
+  exclude:
+    - build/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the
