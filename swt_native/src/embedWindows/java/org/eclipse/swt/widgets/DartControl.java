@@ -3513,6 +3513,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 return;
         }
         if (!visible) {
+            if (fixFocus) {
+                fixFocus(control);
+                if (isDisposed())
+                    return;
+                fixFocus = false;
+            }
             sendEvent(SWT.Hide);
             if (isDisposed())
                 return;

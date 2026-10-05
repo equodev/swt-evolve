@@ -1612,8 +1612,32 @@ public abstract class FlutterBridge {
         return null;
     }
 
+    /**
+     * Whether the window hosting {@code shell} currently has the keyboard focus the OS grants.
+     *
+     * <p>True by default: a surface with no window of its own -- a page in a browser tab, an
+     * embedded view inside a native parent -- has no separate notion of being the active window, and
+     * the shell's own visibility is the best answer available. A surface that owns a top-level window
+     * overrides this, because there "visible" and "active" are different facts and a Display that
+     * conflates them reports an active shell while the user is in another application.
+     */
+    public boolean hostsActiveWindow(Object shell) {
+        return true;
+    }
+
+    /** Screen position of the window content that hosts {@code control}: what a point at (0, 0) of its
+     *  top-level shell maps to in display coordinates. */
     public Point getWindowOrigin(DartControl control) {
         return new Point(0, 0);
+    }
+
+    /**
+     * Whether {@code shell} is the top-level shell this bridge shows as its host window, drawn without
+     * a Flutter title bar; {@code null} when the bridge does not host shells and the caller must decide
+     * from the shell alone.
+     */
+    public Boolean hostsAsMainShell(Shell shell) {
+        return null;
     }
 
     public void setCursor(DartControl control, long cursor) {

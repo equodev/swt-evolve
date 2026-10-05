@@ -1,6 +1,8 @@
 package dev.equo.swt.awt;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -34,6 +36,10 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * <p>Needs a real lightweight frame, so it is skipped where AWT runs headless.
  */
 @SuppressWarnings("removal")
+@DisabledOnOs(value = OS.MAC, disabledReason = "this suite runs with -XstartOnFirstThread on macOS,"
+        + " which hands the main thread to Cocoa; AWT never gets to run its event queue there, so"
+        + " invokeAndWait below blocks forever instead of failing. Headless runs skip it anyway, so"
+        + " a Linux desktop is the only place it executes")
 class ImmediateModeDrawingTest {
 
     private static final int W = 200;

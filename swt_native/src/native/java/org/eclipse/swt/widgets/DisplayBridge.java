@@ -494,6 +494,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return shell != null && !shell.isDisposed() && shell == mainShell(display);
     }
 
+    @Override
+    public Boolean hostsAsMainShell(Shell shell) {
+        return forDisplay != null && isMainShell(forDisplay, shell);
+    }
+
     /** {@link #mainShell} as the client sees it: its id, or 0 when it is not among the shells
      *  {@link VDisplay#of} sends (only visible shells are serialized, so an invisible one would
      *  name a shell the client does not have). */

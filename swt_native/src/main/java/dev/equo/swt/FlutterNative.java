@@ -62,7 +62,9 @@ public final class FlutterNative {
     /**
      * Sets a surface's bounds. For an <b>embedded</b> surface {@code (x,y,w,h)} is the container and
      * {@code (vx,vy,vw,vh)} the hosted view (they differ only for CTabFolder). For a <b>window</b>
-     * surface {@code (x,y,w,h)} is the window geometry and the view rect is ignored.
+     * surface {@code (x,y,w,h)} is the window's <em>content</em> rect in screen points, top-left
+     * origin on the primary screen, decorations excluded, on every platform; the view rect is
+     * ignored. That is the origin {@code DeskDisplayBridge} reports for {@code toDisplay}.
      */
     public static void setBounds(long context, int x, int y, int w, int h,
                                  int vx, int vy, int vw, int vh) {
@@ -125,6 +127,18 @@ public final class FlutterNative {
     }
 
     /** No window, or one whose position cannot be told. */
+    /**
+     * Whether this surface's window currently has keyboard focus from the OS, i.e. is the key or
+     * foreground window. False for a surface with no window of its own.
+     *
+     * <p>A Display cannot answer {@code getActiveShell()} from its own state: a shell being visible
+     * says nothing about whether the OS considers its window active, and treating the two as the
+     * same makes {@code setFocus()} succeed on a window the user is not looking at.
+     */
+    public static boolean isActive(long context) {
+        return IsActive(context);
+    }
+
     public static final long ORIGIN_UNKNOWN = Long.MIN_VALUE;
 
     /**
@@ -161,6 +175,8 @@ public final class FlutterNative {
     private static native void SetVisible(long context, boolean visible);
 
     private static native long GetOrigin(long context);
+
+    private static native boolean IsActive(long context);
 
 
     private static native void SetBundleDir(String bundleDir);

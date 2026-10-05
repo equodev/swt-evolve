@@ -280,7 +280,6 @@ public class DartText extends DartScrollable implements IText {
         insertEditText(string);
         if (string.length() != 0) {
             getValue().markDirty(VText.TEXT);
-            sendEvent(SWT.Modify);
         }
     }
 
@@ -325,7 +324,7 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         Point selection = getSelection();
         if (selection != null) {
-            setSelection(selection.x);
+            setSelection(selection.y);
         }
     }
 
@@ -996,13 +995,11 @@ public class DartText extends DartScrollable implements IText {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
             Point selection = getSelection();
-            string = verifyText(string, selection.x, selection.x);
+            string = verifyText(string, selection.x, selection.y);
             if (string == null)
                 return;
         }
         insertEditText(string);
-        if (string.length() != 0)
-            sendEvent(SWT.Modify);
     }
 
     void insertEditText(String string) {
@@ -1027,6 +1024,12 @@ public class DartText extends DartScrollable implements IText {
         clearSegments(false);
         setEditText(newText);
         setSelection(selection.x + string.length());
+        // Modify belongs with the write and before Segments: writing the text is what makes a
+        // toolkit raise its own change notification, and it does so before applySegments is
+        // reached. On an actual change rather than on a non-empty argument, so replacing a
+        // selection with nothing still reports one -- and so the callers do not have to.
+        if (!newText.equals(oldText))
+            sendEvent(SWT.Modify);
         applySegments();
     }
 
@@ -1901,7 +1904,9 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
+                if (isDisposed())
+                    return;
+                if (!isDisposed() && !TextHelper.proposesNoChange(e)) {
                     int textLen = getCharCount();
                     e.start = Math.min(e.start, textLen);
                     e.end = Math.min(e.end, textLen);

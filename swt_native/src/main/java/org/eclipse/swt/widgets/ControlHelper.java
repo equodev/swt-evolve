@@ -278,12 +278,27 @@ public class ControlHelper {
             Rectangle bounds = current.getBounds();
             offset[0] += bounds.x;
             offset[1] += bounds.y;
+            // Plain cast, not a pattern: this source set is also compiled at -source 8 and -source 11
+            // for the older SWT versions, where a binding instanceof is a compile error.
             if (current instanceof Shell) {
+                Shell shell = (Shell) current;
+                DartControl impl = (DartControl) current.getImpl();
+                FlutterBridge bridge = impl.getBridge();
+                // The bridge knows which shell it shows as its window (no Flutter title bar) and where
+                // that window's content sits on screen; the geometry guess is only for a bridge that
+                // does not host shells.
+                Boolean hosted = bridge == null ? null : bridge.hostsAsMainShell(shell);
+                boolean main = hosted != null ? hosted : isMainShell(shell);
                 int st = current.getStyle();
                 boolean showsTitleBar = (st & SWT.NO_TRIM) == 0
                     && ((st & SWT.TITLE) != 0 || (st & SWT.CLOSE) != 0);
-                if (showsTitleBar && !isMainShell((Shell) current)) {
+                if (showsTitleBar && !main) {
                     offset[1] += (st & SWT.TOOL) != 0 ? 22 : 30;
+                }
+                if (bridge != null) {
+                    Point origin = bridge.getWindowOrigin(impl);
+                    offset[0] += origin.x;
+                    offset[1] += origin.y;
                 }
                 return null;
             }
@@ -325,9 +340,30 @@ public class ControlHelper {
             return false;
         if (b.width == 1024 && b.height == 768)
             return true;
-        Rectangle view = shell.getMonitor().getClientArea();
+        Rectangle view = screenToMeasureAgainst(shell);
+        if (view == null)
+            return false;
         return b.width >= Math.round(view.width * 0.8f)
             && b.height >= Math.round(view.height * 0.8f);
+    }
+
+    /**
+     * The screen area a shell's size is compared against, or null when there is none to compare with.
+     * <p>
+     * Shell.getMonitor() is the right question but not always an answered one: a shell that has not
+     * been placed on a monitor yet has none to name, while the Display already knows of one. Reading
+     * it unguarded made toDisplay throw from inside the walk, which surfaced as a
+     * NullPointerException on an unrelated caller rather than as a missing monitor.
+     */
+    private static Rectangle screenToMeasureAgainst(Shell shell) {
+        Monitor monitor = shell.getMonitor();
+        if (monitor == null) {
+            Display display = shell.getDisplay();
+            Monitor[] monitors = display == null ? null : display.getMonitors();
+            if (monitors != null && monitors.length > 0)
+                monitor = monitors[0];
+        }
+        return monitor == null ? null : monitor.getClientArea();
     }
 
     static Point toDisplay(DartControl dartControl, int x, int y) {
@@ -618,9 +654,29 @@ public class ControlHelper {
     public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
             return;
-        deactivatePreviouslyActive(control, detail);
-        for (Widget widget = control.getApi(); widget != null; ) {
+        Control now = control.getApi();
+        Shell shell = now.getShell();
+        if (shell == null || shell.isDisposed())
+            return;
+        Control previous = lastActivated.put(shell, now);
+        // An open shell is the active control of itself until something inside it takes over -- what
+        // Shell.setActiveControl(this) establishes natively when the shell activates. Treating an
+        // untracked shell as inactive instead makes the first focus inside it announce the shell too.
+        if (previous == null || previous.isDisposed())
+            previous = shell;
+        // Activation is a change, not a restatement: re-focusing the control that already holds focus
+        // announces nothing, which is also what keeps two focus callbacks for one focus change from
+        // announcing it twice.
+        if (previous == now)
+            return;
+        sendDeactivateToFormerChain(previous, now, detail);
+        for (Widget widget = now; widget != null; ) {
             if (widget.isDisposed())
+                return;
+            // Stop at the first ancestor the two chains share: an ancestor that was already active is
+            // not activated again. Walking to the Shell regardless announces it on every focus change
+            // inside it, which the native never does.
+            if (isAncestorOfOrSame(widget, previous))
                 return;
             // A Dart control can sit inside a natively-backed ancestor; that one already gets its
             // activation from the OS, so walk past it rather than assuming the whole chain is ours.
@@ -643,18 +699,11 @@ public class ControlHelper {
      * marked active. A CTabFolder is where that shows: it keeps painting itself as the focused
      * stack, so with several stacks open none of them is distinguishable from the active one.
      *
-     * The previous control is tracked here rather than read from Shell.lastActive because the
-     * Shell may be a native one (the embedded backend has no Dart Shell at all), and because the
+     * The previous control is tracked by the caller rather than read from Shell.lastActive because
+     * the Shell may be a native one (the embedded backend has no Dart Shell at all), and because the
      * walk above, not setActiveControl, owns the Activate half.
      */
-    private static void deactivatePreviouslyActive(DartControl control, int detail) {
-        Control now = control.getApi();
-        Shell shell = now.getShell();
-        if (shell == null || shell.isDisposed())
-            return;
-        Control previous = lastActivated.put(shell, now);
-        if (previous == null || previous.isDisposed() || previous == now)
-            return;
+    private static void sendDeactivateToFormerChain(Control previous, Control now, int detail) {
         for (Widget widget = previous; widget != null; ) {
             if (widget.isDisposed() || isAncestorOfOrSame(widget, now))
                 return;

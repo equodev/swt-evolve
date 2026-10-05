@@ -5,6 +5,7 @@ import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -39,12 +40,28 @@ public class DeskDisplayBridge extends DisplayBridge {
     private boolean windowClosed;
 
     /**
+     * Height of the chrome the render side draws inside the window's own content area -- the CSD
+     * title strip. The window's content is not the shell's client area when one is drawn, so the
+     * shell starts this far below the window origin. Measured from the handshake (content height
+     * minus the viewport the client reports for SWT) rather than assumed, so it follows whatever the
+     * render side actually draws instead of a constant Java would have to keep in step with Dart.
+     */
+    private int clientTopInset;
+
+    /**
      * True only while the shell close that {@link #onWindowCloseRequested} asked for is running.
      * The window follows an <em>accepted close gesture</em>, never the mere absence of shells: an
      * application that disposes a splash before opening its real shell leaves no top-level shell for
      * an instant, and tearing the window down there strands the app with no window at all.
      */
     private boolean closingOnRequest;
+
+    /**
+     * Screen origin of the window's content, as last pushed by {@link #forwardWindowBounds}. The main
+     * shell is slaved to (0, 0, viewport) once the client reports in, so this is the only place Java
+     * keeps where that shell really is on screen. (0, 0) until the app positions the window itself.
+     */
+    private Point windowOrigin = new Point(0, 0);
 
     DeskDisplayBridge(DartDisplay display) {
         super(display);
@@ -228,12 +245,18 @@ public class DeskDisplayBridge extends DisplayBridge {
         return hasNativeWindow() ? shellWindowOrigin(windowContext) : null;
     }
 
-    /** Test seam: where a detached window's content sits on screen, or null when it cannot be told. */
+    /**
+     * Where a window's SHELL sits on screen, or null when it cannot be told: the window's content
+     * origin moved down past the chrome the render side draws above the shell. Callers turn this into
+     * shell bounds, and a shell whose origin ignored the strip put every screen coordinate derived
+     * from it a strip-height too high -- far enough that a click aimed at a control by its own
+     * toDisplay landed outside it.
+     */
     protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
         long packed = FlutterNative.getOrigin(context);
         if (packed == FlutterNative.ORIGIN_UNKNOWN) return null;
         return new org.eclipse.swt.graphics.Point(
-                FlutterNative.originX(packed), FlutterNative.originY(packed));
+                FlutterNative.originX(packed), FlutterNative.originY(packed) + clientTopInset);
     }
 
 
@@ -336,6 +359,10 @@ public class DeskDisplayBridge extends DisplayBridge {
 
         int pump() {
             return pumpShellWindow(context);
+        }
+
+        boolean isActive() {
+            return !gone && context != 0 && windowActive(context);
         }
 
         long view() {
@@ -558,6 +585,12 @@ public class DeskDisplayBridge extends DisplayBridge {
                 }
                 return changed;
             }
+            // The shell still carries the window's content height here, and the client has just
+            // reported the part of it SWT actually gets; the difference is the chrome drawn above.
+            // Width has to match, so a genuine resize is never mistaken for chrome.
+            if (current != null && current.width == viewport.width && current.height > viewport.height) {
+                clientTopInset = current.height - viewport.height;
+            }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
             boolean shellMatches = current != null
@@ -602,8 +635,54 @@ public class DeskDisplayBridge extends DisplayBridge {
         // A shell not laid out yet carries a placeholder size. A window collapsed to a pixel reports
         // no viewport, so the handshake that would correct it never runs: keep the size it has.
         if (bounds.width <= 1 || bounds.height <= 1) return;
+        windowOrigin = new Point(bounds.x, bounds.y);
         FlutterNative.setBounds(windowContext, bounds.x, bounds.y, bounds.width, bounds.height,
                 bounds.x, bounds.y, bounds.width, bounds.height);
+    }
+
+    @Override
+    public boolean hostsActiveWindow(Object shell) {
+        if (!(shell instanceof Shell) || ((Shell) shell).isDisposed()) return false;
+        // A detached shell has a window of its own and answers for that one; every other shell is
+        // drawn inside the Display's window and answers for it.
+        for (NativeShellWindow w : shellWindowsToPump) {
+            if (w.shell == shell) return w.isActive();
+        }
+        return hasNativeWindow() && windowActive(windowContext);
+    }
+
+    /**
+     * Whether a bridge library old enough to predate {@link FlutterNative#isActive} is in use. Asked
+     * once: the symbol does not appear while the process runs.
+     */
+    private static boolean canAskWhetherActive = true;
+
+    /** Test seam: whether the OS gives this native window the keyboard focus. */
+    protected boolean windowActive(long context) {
+        if (!canAskWhetherActive)
+            return true;
+        try {
+            return FlutterNative.isActive(context);
+        } catch (UnsatisfiedLinkError builtBeforeThisQuestionExisted) {
+            // Fail open, which is what the Display answered before it asked at all. Answering "not
+            // active" instead would leave getActiveShell() permanently null against such a library,
+            // and every caller that reads it -- dialog parenting, focus restoration -- would see no
+            // active shell at all rather than an occasionally optimistic one.
+            canAskWhetherActive = false;
+            return true;
+        }
+    }
+
+    @Override
+    public Point getWindowOrigin(DartControl control) {
+        // Nothing to add: a desk shell's bounds are already where it is on screen, because
+        // applyWindowOrigin keeps them in step with the window the OS actually placed. The caller
+        // sums the shell's bounds and this origin, so answering with the window position counts it
+        // twice -- a control 20 px inside a shell at (100, 100) maps to 220 instead of 120, and every
+        // screen coordinate derived from it (a popup's location, a drag's target, a hit test) is off
+        // by a whole shell origin. The base class answers (0, 0) for a bridge whose shells are
+        // positioned inside a viewport instead; this override exists only to say that desk is not one.
+        return keepsMainShellOrigin() ? new Point(0, 0) : new Point(windowOrigin.x, windowOrigin.y);
     }
 
     /**

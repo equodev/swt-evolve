@@ -56,6 +56,7 @@ class FlutterSurface: NSObject {
     func setState(_ state: Int32) {}
     func setVisible(_ visible: Bool) {}
     func origin() -> (Int32, Int32)? { return nil }
+    func isActive() -> Bool { return false }
     func dispose() {}
 }
 
@@ -324,26 +325,38 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
 
     override func setBounds(x: Int32, y: Int32, w: Int32, h: Int32, vx: Int32, vy: Int32, vw: Int32, vh: Int32) {
         guard let win = window else { return }
-        if let screen = win.screen ?? NSScreen.main {
-            // SWT uses a top-left screen origin; Cocoa uses bottom-left. Flip the y of the frame.
-            let origin = NSPoint(x: CGFloat(x), y: screen.frame.height - CGFloat(y) - CGFloat(h))
-            win.setFrameOrigin(origin)
-        }
-        // A caller with no size yet passes 0: move the window, leave its size alone. Resizing to a
-        // pixel here is what left the application with an invisible window it could never grow out
-        // of, because a window that small reports no viewport for the handshake to correct.
+        // Size first: the origin below assumes the final content height, and AppKit clamps a frame
+        // that would overflow the screen, so placing the still-large initial window first leaves it
+        // pinned under the menu bar instead of at (x, y). A caller with no size yet passes 0: move
+        // the window, leave its size alone. Resizing to a pixel here is what left the application
+        // with an invisible window it could never grow out of, because a window that small reports
+        // no viewport for the handshake to correct.
         if w > 0 && h > 0 {
             win.setContentSize(NSSize(width: CGFloat(w), height: CGFloat(h)))
+        }
+        // SWT uses a top-left origin on the primary screen; Cocoa a bottom-left one on that same
+        // screen, whatever screen the window ends up on. Flipping against any other screen (the
+        // window's, or the key window's) lands the frame off-screen and AppKit clamps it under the
+        // menu bar.
+        if let primary = NSScreen.screens.first {
+            let origin = NSPoint(x: CGFloat(x), y: primary.frame.height - CGFloat(y) - CGFloat(h))
+            win.setFrameOrigin(origin)
         }
     }
 
 
+    /// Whether this window is key, i.e. the one AppKit sends keyboard input to. The same fact the
+    /// traffic lights mirror through `windowDidBecomeKey`, asked for directly.
+    override func isActive() -> Bool {
+        return window?.isKeyWindow ?? false
+    }
+
     /// Where the window's CONTENT starts on screen, in the same top-left space setBounds takes.
     /// Content rather than frame, so the title bar is already accounted for and a caller converting
-    /// a window-local point needs no further correction. Uses the same screen as setBounds so the
-    /// two round-trip; both share that call's multi-monitor caveat.
+    /// a window-local point needs no further correction. Flips against the primary screen, the one
+    /// setBounds places against, so the two round-trip; both share that call's multi-monitor caveat.
     override func origin() -> (Int32, Int32)? {
-        guard let win = window, let screen = win.screen ?? NSScreen.main else { return nil }
+        guard let win = window, let screen = NSScreen.screens.first else { return nil }
         let content = win.contentRect(forFrameRect: win.frame)
         let top = screen.frame.height - (content.origin.y + content.height)
         return (Int32(content.origin.x.rounded()), Int32(top.rounded()))
@@ -610,6 +623,11 @@ public func FlutterNative_setState(env: UnsafeMutablePointer<JNIEnv?>, cls: jcla
 public func FlutterNative_getOrigin(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jlong {
     guard let o = surfaceFrom(context)?.origin() else { return jlong(Int64.min) }
     return (jlong(o.0) << 32) | jlong(UInt32(bitPattern: o.1))
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_IsActive")
+public func FlutterNative_isActive(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jboolean {
+    return (surfaceFrom(context)?.isActive() ?? false) ? jboolean(1) : jboolean(0)
 }
 
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetVisible")

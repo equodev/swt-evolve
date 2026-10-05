@@ -84,16 +84,22 @@ class ToolItemClickActivationFlutterTest {
     }
 
     @Test
-    @DisplayName("the activation reaches every ancestor up to the shell")
+    @DisplayName("the activation climbs past the clicked control and stops at the active shell")
     void activationTravelsUpTheChain() {
+        int[] barActivations = {0};
+        bar.addListener(SWT.Activate, e -> barActivations[0]++);
         int[] shellActivations = {0};
         shell.addListener(SWT.Activate, e -> shellActivations[0]++);
 
         clickItem();
 
-        assertThat(shellActivations[0])
-                .as("SWT.Activate walks the whole parent chain, as Shell.setActiveControl does")
+        assertThat(barActivations[0])
+                .as("the walk starts at the control the click was reported on")
                 .isPositive();
+        assertThat(shellActivations[0])
+                .as("an already-active shell is not activated again: Shell.setActiveControl stops at "
+                        + "the first ancestor the old and new chains share, and the shell is always one")
+                .isZero();
     }
 
     /** Fire the tool item's own Dart→Java Selection handler and drain the asyncExec it hops through. */

@@ -3345,6 +3345,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (isDisposed())
             return;
         invalidateVisibleRegion();
+        if (fixFocus) {
+            fixFocus(control);
+            if (isDisposed())
+                return;
+            fixFocus = false;
+        }
         if (!visible) {
             /*
 		* It is possible (but unlikely), that application

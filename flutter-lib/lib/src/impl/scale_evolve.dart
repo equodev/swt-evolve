@@ -11,6 +11,20 @@ import 'utils/widget_utils.dart';
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
+  /// A Scale takes keyboard focus like any other control: clicking it focuses it, and the arrow,
+  /// page, home and end keys then move the value. Java routes a keystroke to whatever
+  /// getFocusControl() returns, so a Scale that never reports focus never receives one.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'Scale');
+
+  @override
+  FocusNode? get swtFocusNode => _focusNode;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ScaleThemeExtension>()!;
@@ -44,17 +58,16 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
           );
         },
         onChangeEnd: (value) {
+          // No event of its own: a Scale sends Selection and nothing else, and the change that
+          // ends the gesture has already sent one through onChanged.
           state.selection = value.round();
-          widget.sendSelectionDefaultSelection(
-            state,
-            VEvent()..index = state.selection,
-          );
         },
-        onHover: (isHovering) {
-          if (isHovering) {
-            widget.sendMouseTrackMouseEnter(state, null);
+        focusNode: _focusNode,
+        onFocusChanged: (hasFocus) {
+          if (hasFocus) {
+            widget.sendFocusFocusIn(state, null);
           } else {
-            widget.sendMouseTrackMouseExit(state, null);
+            widget.sendFocusFocusOut(state, null);
           }
         },
       ),
@@ -77,7 +90,8 @@ class _ThemedScale extends StatefulWidget {
   final ScaleThemeExtension widgetTheme;
   final ValueChanged<double> onChanged;
   final ValueChanged<double> onChangeEnd;
-  final ValueChanged<bool> onHover;
+  final FocusNode focusNode;
+  final ValueChanged<bool> onFocusChanged;
 
   const _ThemedScale({
     this.background,
@@ -92,7 +106,8 @@ class _ThemedScale extends StatefulWidget {
     required this.widgetTheme,
     required this.onChanged,
     required this.onChangeEnd,
-    required this.onHover,
+    required this.focusNode,
+    required this.onFocusChanged,
   });
 
   @override
@@ -102,6 +117,20 @@ class _ThemedScale extends StatefulWidget {
 class _ThemedScaleState extends State<_ThemedScale> {
   double? _localValue;
   bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_reportFocus);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_reportFocus);
+    super.dispose();
+  }
+
+  void _reportFocus() => widget.onFocusChanged(widget.focusNode.hasFocus);
 
   @override
   Widget build(BuildContext context) {
@@ -118,14 +147,11 @@ class _ThemedScaleState extends State<_ThemedScale> {
     );
 
     final scale = MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        widget.onHover(true);
-      },
-      onExit: (_) {
-        setState(() => _isHovered = false);
-        widget.onHover(false);
-      },
+      // Hover here only drives the thumb's own appearance. MouseEnter and MouseExit belong to
+      // ControlImpl.wrap(), which reports them for every control; sending them here as well is
+      // what made a Scale report entering twice.
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
       child: Stack(
         children: [
           Positioned.fill(
@@ -187,6 +213,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
         value: displayValue.clamp(widget.min, widget.max),
         min: widget.min,
         max: widget.max,
+        focusNode: widget.focusNode,
         onChanged: widget.enabled ? _handleChanged : null,
         onChangeEnd: widget.enabled ? _handleChangeEnd : null,
       ),
@@ -228,6 +255,8 @@ class _ThemedScaleState extends State<_ThemedScale> {
   }
 
   void _handleChanged(double value) {
+    // Touching a Scale focuses it, as it does natively; Flutter's Slider does not do this itself.
+    if (!widget.focusNode.hasFocus) widget.focusNode.requestFocus();
     setState(() => _localValue = value);
     widget.onChanged(value);
   }

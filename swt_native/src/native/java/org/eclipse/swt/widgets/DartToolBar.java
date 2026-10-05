@@ -580,6 +580,16 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return lastFocus;
     }
 
+    @Override
+    public boolean forceFocus() {
+        checkWidget();
+        for (ToolItem item : items) {
+            if (item != null && !item.isDisposed() && (item.getStyle() & SWT.SEPARATOR) == 0 && item.getEnabled())
+                return super.forceFocus();
+        }
+        return false;
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

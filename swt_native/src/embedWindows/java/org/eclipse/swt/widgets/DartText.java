@@ -292,7 +292,6 @@ public class DartText extends DartScrollable implements IText {
         applySegments();
         if (string.length() != 0) {
             getValue().markDirty(VText.TEXT);
-            sendEvent(SWT.Modify);
         }
     }
 
@@ -344,7 +343,7 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         Point sel = getSelection();
         if (sel != null && sel.x != sel.y) {
-            setSelection(sel.x);
+            setSelection(sel.y);
         }
     }
 
@@ -997,8 +996,6 @@ public class DartText extends DartScrollable implements IText {
             super.updateTextDirection(AUTO_TEXT_DIRECTION);
         }
         applySegments();
-        if (string.length() != 0)
-            sendEvent(SWT.Modify);
     }
 
     @Override
@@ -1979,7 +1976,9 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
+                if (isDisposed())
+                    return;
+                if (!isDisposed() && !TextHelper.proposesNoChange(e)) {
                     sendEvent(SWT.Verify, e);
                 }
             });

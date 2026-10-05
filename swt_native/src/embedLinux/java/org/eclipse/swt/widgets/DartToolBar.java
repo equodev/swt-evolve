@@ -572,6 +572,16 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return items;
     }
 
+    @Override
+    public boolean forceFocus() {
+        checkWidget();
+        for (ToolItem item : items) {
+            if (item != null && !item.isDisposed() && (item.getStyle() & SWT.SEPARATOR) == 0 && item.getEnabled())
+                return super.forceFocus();
+        }
+        return false;
+    }
+
     void addItem(ToolItem item) {
         int length = items.length;
         ToolItem[] newItems = new ToolItem[length + 1];

@@ -597,6 +597,10 @@ Java_dev_equo_swt_FlutterNative_SetBounds(JNIEnv *env, jclass cls, jlong context
   FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
   if (!w) return;
   if (w->top_window && GTK_IS_WINDOW(w->top_window)) {
+    // (x, y) is the content's top-left, like on every other platform. GTK's default gravity
+    // would place the decorated frame there instead, one title bar off. Wayland ignores window
+    // positioning altogether; the size still applies.
+    gtk_window_set_gravity(GTK_WINDOW(w->top_window), GDK_GRAVITY_STATIC);
     gtk_window_move(GTK_WINDOW(w->top_window), x, y);
     gtk_window_resize(GTK_WINDOW(w->top_window), width, height);
   } else if (w->view) {
@@ -686,6 +690,15 @@ Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv *env, jclass cls, jlong context
   gdk_window_get_origin(gdk, &x, &y);
   return (static_cast<jlong>(x) << 32)
          | (static_cast<jlong>(static_cast<guint32>(y)));
+}
+
+// Whether the window holds the keyboard focus the OS grants. GTK tracks this per toplevel, so it
+// answers for a window that is merely visible as well as one the user is working in.
+JNIEXPORT jboolean JNICALL
+Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv *env, jclass cls, jlong context) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  if (!w || !w->top_window || !GTK_IS_WINDOW(w->top_window)) return JNI_FALSE;
+  return gtk_window_is_active(GTK_WINDOW(w->top_window)) ? JNI_TRUE : JNI_FALSE;
 }
 
 // Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding the

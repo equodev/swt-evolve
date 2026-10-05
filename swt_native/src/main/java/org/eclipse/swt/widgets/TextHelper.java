@@ -318,6 +318,20 @@ public class TextHelper {
         }
     }
 
+    /**
+     * Whether a Verify coming from the render side proposes no edit at all: nothing to replace, and
+     * nothing to replace it with.
+     * <p>
+     * A programmatic write is pushed down to the client, whose field reports the resulting caret and
+     * content back as a pending edit of its own. That echo reaches Java as a Verify with an empty
+     * range and empty text -- twice for one setText, as the caret lands at the end and returns. No
+     * native raises a Verify for it, because nothing is being edited and a listener has nothing to
+     * veto. A real keystroke carries text; a real deletion carries a range.
+     */
+    public static boolean proposesNoChange(Event e) {
+        return e.text != null && e.text.isEmpty() && e.start == e.end;
+    }
+
     public static void setText(DartText text, String string) {
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             int length = text.getCharCount();
@@ -337,8 +351,13 @@ public class TextHelper {
         text.selection = null;
 
         text.updateAutoTextDirectionIfNeeded();
-        text.applySegments();
+        // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,
+        // but for a single-line Text the Modify it reports is not that one: writing the text is what
+        // makes the OS raise its own change notification (EN_CHANGE on Win32), synchronously, before
+        // applySegments is reached. setEditText above is where that write happens here, so this is
+        // where the notification belongs -- Win32 and GTK both record Verify, Modify, Segments.
         text.sendEvent(SWT.Modify);
+        text.applySegments();
     }
 
     public static void setEditText(DartText text, char[] chars) {

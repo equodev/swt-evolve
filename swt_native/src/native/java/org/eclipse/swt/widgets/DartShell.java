@@ -915,8 +915,9 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void makeKeyAndOrderFront() {
+        boolean wasActive = display.getActiveShell() == this.getApi();
         _takeFocusHolder(true);
-        if (!isDisposed()) {
+        if (!isDisposed() && !wasActive) {
             sendEvent(SWT.Activate);
         }
     }

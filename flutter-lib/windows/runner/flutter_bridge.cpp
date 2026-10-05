@@ -354,6 +354,18 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, j
             | (static_cast<jlong>(static_cast<uint32_t>(origin.y)));
 }
 
+// Whether this window is the one the OS gives keyboard input to. The foreground window is the
+// right test rather than GetActiveWindow, which is per-thread and answers for a thread whose
+// windows are all in the background.
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv* env, jclass cls, jlong context) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return JNI_FALSE;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return JNI_FALSE;
+    HWND fg = ::GetForegroundWindow();
+    return (fg == hwnd || ::IsChild(hwnd, fg)) ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return;

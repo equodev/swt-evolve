@@ -344,7 +344,6 @@ public class DartText extends DartScrollable implements IText {
         insertEditText(string);
         if (string.length() != 0) {
             getValue().markDirty(VText.TEXT);
-            sendEvent(SWT.Modify);
         }
     }
 
@@ -2065,7 +2064,9 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
+                if (isDisposed())
+                    return;
+                if (!isDisposed() && !TextHelper.proposesNoChange(e)) {
                     sendEvent(SWT.Verify, e);
                 }
             });

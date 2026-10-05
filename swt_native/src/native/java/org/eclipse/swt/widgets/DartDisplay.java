@@ -4032,7 +4032,13 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     boolean canBeActiveShell(Shell shell) {
-        return shell != null && !shell.isDisposed() && shell.getVisible() && (shell.getStyle() & SWT.NO_FOCUS) == 0;
+        if (shell == null || shell.isDisposed() || !shell.getVisible())
+            return false;
+        if ((shell.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        DartControl impl = (DartControl) shell.getImpl();
+        FlutterBridge bridge = impl.getBridge();
+        return bridge == null || bridge.hostsActiveWindow(shell);
     }
 
     void bootFailureCleanup() {
