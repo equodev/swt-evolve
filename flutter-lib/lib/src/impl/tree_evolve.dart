@@ -42,8 +42,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
   List<VTreeItem>? _pendingSelection;
-  int checkboxUpdateCounter = 0;
-  final Map<Object, Map<String, bool>> _pendingCheckboxStates = {};
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
@@ -229,26 +227,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       }
     }
     super.setValue(value);
-
-    if (_pendingCheckboxStates.isNotEmpty && value.items != null) {
-      _preserveCheckboxStates(value.items!);
-    }
-  }
-
-  void _preserveCheckboxStates(List<VWidget> items) {
-    for (final item in items) {
-      if (item is VTreeItem) {
-        final pendingState = _pendingCheckboxStates[item.id];
-        if (pendingState != null) {
-          item.checked = pendingState['checked'];
-          item.grayed = pendingState['grayed'];
-        }
-
-        if (item.items != null) {
-          _preserveCheckboxStates(item.items!);
-        }
-      }
-    }
   }
 
   Widget createTreeView() {
@@ -970,9 +948,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final treeWidth = _hScrollContentWidth ?? state.bounds?.width?.toDouble();
 
     return TreeItemSwtWrapper(
-      key: ValueKey(
-        'tree_item_${flatItem.item.id}_${flatItem.item.checked}_${flatItem.item.grayed}',
-      ),
+      key: ValueKey('tree_item_${flatItem.item.id}'),
       treeItem: flatItem.item,
       level: flatItem.level,
       isCheckMode: getTreeViewSelectionMode(),
@@ -1728,89 +1704,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return null;
   }
 
-  List<VTreeItem> _getAllDescendants(VTreeItem item) {
-    final List<VTreeItem> descendants = [];
-    if (item.items != null) {
-      for (final child in item.items!) {
-        descendants.add(child);
-        descendants.addAll(_getAllDescendants(child));
-      }
-    }
-    return descendants;
-  }
-
-  void _addParentChain(VTreeItem item, List<VTreeItem> selection) {
-    var currentParentId = _findParentItemId(item.id);
-    while (currentParentId != null) {
-      final parent = _findTreeItemById(currentParentId);
-      if (parent != null &&
-          !selection.any((selected) => selected.id == parent.id)) {
-        selection.insert(0, parent);
-        currentParentId = _findParentItemId(parent.id);
-      } else {
-        break;
-      }
-    }
-  }
-
-  void handleCheckboxCascade(Object itemId, bool newCheckedState) {
-    if (state.enabled != true) return;
-    final item = _findTreeItemById(itemId);
-    if (item == null) return;
-
-    setState(() {
-      checkboxUpdateCounter++;
-
-      item.checked = newCheckedState;
-      item.grayed = false;
-      _pendingCheckboxStates[itemId] = {
-        'checked': newCheckedState,
-        'grayed': false,
-      };
-
-      if (item.items != null && item.items!.isNotEmpty) {
-        final allDescendants = _getAllDescendants(item);
-        for (final descendant in allDescendants) {
-          descendant.checked = newCheckedState;
-          descendant.grayed = false;
-          _pendingCheckboxStates[descendant.id] = {
-            'checked': newCheckedState,
-            'grayed': false,
-          };
-        }
-      }
-
-      final parentId = _findParentItemId(itemId);
-      if (parentId != null) {
-        _updateParentCheckboxState(parentId);
-      }
-    });
-  }
-
-  void _updateParentCheckboxState(Object parentId) {
-    final parent = _findTreeItemById(parentId);
-    if (parent == null || parent.items == null) return;
-
-    final children = parent.items!.whereType<VTreeItem>().toList();
-    if (children.isEmpty) return;
-
-    final checkedCount = children
-        .where((child) => child.checked == true)
-        .length;
-
-    parent.checked = checkedCount > 0;
-    parent.grayed = false;
-    _pendingCheckboxStates[parentId] = {
-      'checked': checkedCount > 0,
-      'grayed': false,
-    };
-
-    final grandParentId = _findParentItemId(parentId);
-    if (grandParentId != null) {
-      _updateParentCheckboxState(grandParentId);
-    }
-  }
-
   int _getItemLevel(Object itemId) {
     return _getItemLevelRecursive(state.items ?? [], itemId, 0);
   }
@@ -1993,7 +1886,6 @@ class TreeItemContext {
   final TreeImpl? treeImpl;
   final VFont? treeFont;
   final List<VTreeItem>? selection;
-  final int checkboxUpdateCounter;
   final double? treeWidth;
   final bool renderChildItems;
   final bool treeFocused;
@@ -2006,7 +1898,6 @@ class TreeItemContext {
     this.treeImpl,
     this.treeFont,
     this.selection,
-    this.checkboxUpdateCounter = 0,
     this.treeWidth,
     this.renderChildItems = true,
     this.treeFocused = false,
@@ -2041,7 +1932,6 @@ class TreeItemContextProvider extends InheritedWidget {
          treeImpl: treeImpl,
          treeFont: treeFont,
          selection: treeImpl?.state.selection,
-         checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
          treeWidth: treeWidth,
          renderChildItems: renderChildItems,
          treeFocused: treeImpl?.hasFocus ?? false,
@@ -2061,14 +1951,9 @@ class TreeItemContextProvider extends InheritedWidget {
           (item) => !oldSelection.any((oldItem) => oldItem.id == item.id),
         );
 
-    final checkboxChanged =
-        oldWidget.context.checkboxUpdateCounter !=
-        context.checkboxUpdateCounter;
-
     return context.level != oldWidget.context.level ||
         context.isCheckMode != oldWidget.context.isCheckMode ||
         selectionChanged ||
-        checkboxChanged ||
         context.treeFocused != oldWidget.context.treeFocused;
   }
 }

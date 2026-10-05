@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/impl/tree_evolve.dart';
+import '../comm/v_registry.dart';
 import '../gen/treeitem.dart';
 import '../gen/treecolumn.dart';
 import '../gen/image.dart';
@@ -381,9 +382,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         treeWidth: _context?.treeWidth,
         child: TreeItemSwt(
           value: childItem,
-          key: ValueKey(
-            'tree_child_item_${childItem.id}_${childItem.checked}_${childItem.grayed}',
-          ),
+          key: ValueKey('tree_child_item_${childItem.id}'),
         ),
       );
     }).toList();
@@ -569,28 +568,28 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
 
     final Color iconColor = _getItemIconColor(widgetTheme!, enabled, selected);
-    final futureKey =
-        '${ImageUtils.stableImageKey(image)}_${iconColor.value}_$enabled';
-
-    return FutureBuilder<Widget?>(
-      key: ValueKey(futureKey),
-      future: ImageUtils.buildVImageAsync(
-        image,
-        size: widgetTheme.itemIconSize,
-        color: iconColor,
-        enabled: enabled,
-        constraints: BoxConstraints(
-          minWidth: widgetTheme.itemIconSize,
-          minHeight: widgetTheme.itemIconSize,
-          maxWidth: widgetTheme.itemIconSize,
-          maxHeight: widgetTheme.itemIconSize,
-        ),
-        useBinaryImage: true,
-        renderAsIcon: true,
+    final render = ImageUtils.buildVImageAsync(
+      image,
+      size: widgetTheme.itemIconSize,
+      color: iconColor,
+      enabled: enabled,
+      constraints: BoxConstraints(
+        minWidth: widgetTheme.itemIconSize,
+        minHeight: widgetTheme.itemIconSize,
+        maxWidth: widgetTheme.itemIconSize,
+        maxHeight: widgetTheme.itemIconSize,
       ),
+      useBinaryImage: true,
+      renderAsIcon: true,
+    );
+
+    // No key: a new colour or image swaps the future in place, and the icon already shown stays
+    // until the new one is ready instead of the row blinking empty for a frame.
+    return FutureBuilder<Widget?>(
+      future: render,
+      initialData: ImageUtils.resolvedRender(render),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done &&
-            snapshot.data != null) {
+        if (snapshot.data != null) {
           return snapshot.data!;
         }
         // Return null if image fails to load
@@ -788,23 +787,15 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       child: Container(
         margin: EdgeInsets.only(right: theme.checkboxSpacing),
         child: _CheckboxButtonWrapper(
-          key: ValueKey('checkbox_${state.id}_$checked'),
+          key: ValueKey('checkbox_${state.id}'),
           ownerId: state.id,
           checked: checked,
           grayed: grayed,
           enabled: enabled,
           onChanged: () {
             if (!enabled) return;
-            final bool newCheckedState = grayed
-                ? false
-                : (checked ? false : true);
-            _context?.treeImpl?.handleCheckboxCascade(
-              state.id,
-              newCheckedState,
-            );
             _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
             final e = _createEvent(detail: SWT.CHECK);
-            e.doit = newCheckedState;
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
               e,
@@ -1213,31 +1204,39 @@ class _CheckboxButtonWrapperState extends State<_CheckboxButtonWrapper> {
   @override
   void initState() {
     super.initState();
-    buttonValue = VButton.empty()
-      ..id = widget.ownerId
-      ..style = SWT.CHECK
-      ..enabled = widget.enabled
+    // The box draws the value held for its channel, not one built here, so that is the one kept.
+    buttonValue =
+        VRegistry.instance.register(
+              VButton.empty()
+                ..id = widget.ownerId
+                ..style = SWT.CHECK,
+            )
+            as VButton;
+    _followItem();
+  }
+
+  void _followItem() {
+    buttonValue
       ..selection = widget.checked
-      ..grayed = widget.grayed;
+      ..grayed = widget.grayed
+      ..enabled = widget.enabled;
   }
 
   @override
   void didUpdateWidget(_CheckboxButtonWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.checked != widget.checked ||
-        oldWidget.grayed != widget.grayed ||
-        oldWidget.enabled != widget.enabled) {
-      setState(() {
-        buttonValue.selection = widget.checked;
-        buttonValue.grayed = widget.grayed;
-        buttonValue.enabled = widget.enabled;
-      });
-    }
+    _followItem();
+  }
+
+  // The button flips itself on a click; the item's check state is Java's, so the box goes back.
+  void _onClicked() {
+    widget.onChanged();
+    if (mounted) setState(_followItem);
   }
 
   @override
   Widget build(BuildContext context) {
-    return _TreeCheckboxButton(value: buttonValue, onChanged: widget.onChanged);
+    return _TreeCheckboxButton(value: buttonValue, onChanged: _onClicked);
   }
 }
 

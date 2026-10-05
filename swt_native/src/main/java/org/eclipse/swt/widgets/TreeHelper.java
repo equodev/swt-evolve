@@ -57,7 +57,7 @@ public class TreeHelper {
 
         event.item = item;
         if (event.detail == SWT.CHECK) {
-            item.setChecked(event.doit);
+            item.setChecked(!item.getChecked());
         }
         tree.setSelection(item);
         tree.sendSelectionEvent(selectionType, event, true);

@@ -16,6 +16,12 @@ class ImageUtils {
   static final Map<String, Widget> _imageCache = {};
   // Cache for async image loading Futures to prevent recreation on every rebuild
   static final Map<String, Future<Widget?>> _futureCache = {};
+
+  /// What each cached render resolved to, readable synchronously by a widget mounted after it did.
+  static final Expando<Widget> _resolvedRenders = Expando('resolved render');
+
+  /// The widget [render] resolved to, or null while it is still pending.
+  static Widget? resolvedRender(Future<Widget?> render) => _resolvedRenders[render];
   static final Map<String, DecorationImage> _backgroundImageCache = {};
   static final Map<String, bool> _replacedByName = {};
   static final Map<String, Future<bool>> _replacedByNamePending = {};
@@ -558,6 +564,9 @@ class ImageUtils {
     );
 
     _futureCache[cacheKey] = future;
+    future.then((widget) {
+      if (widget != null) _resolvedRenders[future] = widget;
+    });
     if (image.remoteRef != null) {
       // A render that never arrived is retried on the next build instead of staying blank.
       future.then((widget) {
