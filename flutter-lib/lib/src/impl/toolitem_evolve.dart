@@ -11,6 +11,7 @@ import '../gen/widgets.dart';
 import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
+import './utils/tab_only_focus_node.dart';
 import './utils/widget_utils.dart';
 import '../custom/main_toolbar_scope.dart';
 import '../custom/rich_tooltip.dart';
@@ -24,11 +25,20 @@ import 'dart:ui';
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     extends ItemImpl<T, V> {
   bool _isHovered = false;
+  final _buttonFocus = TabOnlyFocusNode(debugLabel: 'ToolItem');
+  final _arrowFocus = TabOnlyFocusNode(debugLabel: 'ToolItem arrow');
   Widget? _cachedImageWidget;
   VImage? _cachedImage;
   double? _cachedIconSize;
   Color? _cachedIconColor;
   bool? _cachedEnabled;
+
+  @override
+  void dispose() {
+    _buttonFocus.dispose();
+    _arrowFocus.dispose();
+    super.dispose();
+  }
 
   double _calculateIconSize(BoxConstraints? constraints, double defaultSize) {
     if (constraints == null) return defaultSize;
@@ -238,6 +248,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     Widget button = Material(
       color: Colors.transparent,
       child: InkWell(
+        focusNode: _buttonFocus,
         onTap: enabled ? onTap : null,
         splashColor: widgetTheme.hoverColor.withOpacity(
           widgetTheme.splashOpacity,
@@ -356,6 +367,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       Widget mainContentButton = Material(
         color: Colors.transparent,
         child: InkWell(
+          focusNode: _buttonFocus,
           onTap: enabled
               ? () {
                   setState(() => _isHovered = false);
@@ -380,6 +392,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       Widget dropdownArrow = Material(
         color: Colors.transparent,
         child: InkWell(
+          focusNode: _arrowFocus,
           onTap: enabled
               ? () {
                   setState(() => _isHovered = false);

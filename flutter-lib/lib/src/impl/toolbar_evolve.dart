@@ -14,6 +14,7 @@ import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
 import 'utils/widget_utils.dart';
+import 'utils/tab_only_focus_node.dart';
 
 VEvent? toolItemGeometryEvent(BuildContext context) {
   final itemBox = context.findRenderObject();
@@ -65,7 +66,10 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final hasShadowOut = style.has(SWT.SHADOW_OUT);
     final isRightToLeft = style.has(SWT.RIGHT_TO_LEFT);
     final textOnRight = style.has(SWT.RIGHT);
-    final toolItems = getToolItems(context);
+    final entries = _toolItemEntries(context);
+    final toolItems = entries.map((e) => e.widget).nonNulls.toList();
+    final wrappedRows =
+        shouldWrap && !isVertical ? _wrappedRows(entries) : null;
 
     final isInToolbarArea = ToolbarAreaMarker.of(context);
     // A nested bar (e.g. the CTabFolder topRight slot) sits inside a composite that already
@@ -120,6 +124,36 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
               },
             );
           }
+        } else if (wrappedRows != null && wrappedRows.length > 1) {
+          // Each row fills its own share of the bar, so items sit where Java's toDisplay puts them.
+          final rowCount = wrappedRows.length;
+          final rowHeight = (state.bounds!.height - 2 * (rowCount - 1)) / rowCount;
+          bar = Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 2,
+            children: [
+              for (final row in wrappedRows)
+                SizedBox(
+                  width: state.bounds!.width.toDouble(),
+                  height: rowHeight > 0 ? rowHeight : 0,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: isRightToLeft
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      textDirection: isRightToLeft
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: row,
+                    ),
+                  ),
+                ),
+            ],
+          );
         } else {
           final itemRow = isVertical
               ? Column(
@@ -223,7 +257,11 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     );
   }
 
-  List<Widget> getToolItems(BuildContext context) {
+  List<Widget> getToolItems(BuildContext context) =>
+      _toolItemEntries(context).map((e) => e.widget).nonNulls.toList();
+
+  /// Every item with its widget, null for one that draws nothing but still takes room in Java's layout.
+  List<({VToolItem item, Widget? widget})> _toolItemEntries(BuildContext context) {
     if (state.items == null) {
       return [];
     }
@@ -256,25 +294,50 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     );
 
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
-    final result = <Widget>[];
+    final result = <({VToolItem item, Widget? widget})>[];
     var contentIndex = 0;
     for (final item in allItems) {
+      Widget? widget;
       if ((item.style & SWT.SEPARATOR) != 0) {
         // A SEPARATOR ToolItem carrying setControl() hosts a real control — combos,
         // text fields, nested toolbars. Collapsing it to a divider drops that whole
         // subtree, so let the item build itself instead.
         if (item.control != null) {
-          result.add(ToolItemSwt(value: item));
+          widget = ToolItemSwt(value: item);
         } else {
-          result.add(_buildToolBarSeparator(isVertical, toolbarTheme));
+          widget = _buildToolBarSeparator(isVertical, toolbarTheme);
         }
       } else if (item.image != null || item.text != null) {
         if (contentIndex < contentWidgets.length) {
-          result.add(contentWidgets[contentIndex++]);
+          widget = contentWidgets[contentIndex++];
         }
       }
+      result.add((item: item, widget: widget));
     }
     return result;
+  }
+
+  /// The rows Java's layout wraps a horizontal SWT.WRAP bar into, by each item's serialized width.
+  List<List<Widget>>? _wrappedRows(
+      List<({VToolItem item, Widget? widget})> entries) {
+    final bounds = state.bounds;
+    if (!hasBounds(bounds)) return null;
+    final rows = <List<Widget>>[[]];
+    var x = 0;
+    for (var i = 0; i < entries.length; i++) {
+      final item = entries[i].item;
+      var width = item.width ?? 0;
+      // Java's thickness for a separator the application gave no width.
+      if ((item.style & SWT.SEPARATOR) != 0 && width <= 0) width = 8;
+      if (i != 0 && x + width > bounds!.width) {
+        rows.add([]);
+        x = 0;
+      }
+      x += width;
+      final widget = entries[i].widget;
+      if (widget != null) rows.last.add(widget);
+    }
+    return rows;
   }
 
   Widget _buildToolBarSeparator(bool isVertical, ToolBarThemeExtension theme) {
@@ -609,6 +672,16 @@ class _SpecialDropdownWidget extends StatefulWidget {
 }
 
 class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
+  final _buttonFocus = TabOnlyFocusNode(debugLabel: 'ToolItem');
+  final _arrowFocus = TabOnlyFocusNode(debugLabel: 'ToolItem arrow');
+
+  @override
+  void dispose() {
+    _buttonFocus.dispose();
+    _arrowFocus.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
@@ -625,6 +698,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     Widget mainContentButton = Material(
       color: Colors.transparent,
       child: InkWell(
+        focusNode: _buttonFocus,
         onTap: enabled
             ? () {
                 final itemWidget = ToolItemSwt(value: widget.toolItem);
@@ -668,6 +742,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     Widget dropdownArrow = Material(
       color: Colors.transparent,
       child: InkWell(
+        focusNode: _arrowFocus,
         onTap: enabled
             ? () {
                 final itemWidget = ToolItemSwt(value: widget.toolItem);

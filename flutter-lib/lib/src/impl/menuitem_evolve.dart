@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import 'package:flutter/services.dart';
@@ -67,6 +69,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         leading: _buildMenuIcon(widgetTheme, isEnabled),
         trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
         subMenu: state.menu!,
+        onArm: _sendArm,
       ));
     }
 
@@ -108,6 +111,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       isEnabled: isEnabled,
       autofocus: isAutofocusTarget,
       focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
+      onArm: _sendArm,
       onTap: isEnabled ? _onCheckPressed : null,
       leading: _buildToggleLeading(
         indicator: _MenuCheckbox(
@@ -153,6 +157,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       isEnabled: isEnabled,
       autofocus: isAutofocusTarget,
       focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
+      onArm: _sendArm,
       onTap: isEnabled ? _onRadioPressed : null,
       leading: _buildToggleLeading(
         indicator: _MenuRadioButton(
@@ -187,11 +192,15 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       isEnabled: isEnabled,
       autofocus: isAutofocusTarget,
       focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
+      onArm: _sendArm,
       onTap: isEnabled ? () {
-        capturedWidget.sendSelectionSelection(capturedState, null);
-        if (notifier != null) {
-          notifier.closeMenu();
+        if (notifier == null) {
+          capturedWidget.sendSelectionSelection(capturedState, null);
+          return;
         }
+        notifier.registerPendingChange(
+            () => capturedWidget.sendSelectionSelection(capturedState, null));
+        notifier.closeMenu();
       } : null,
       leading: _buildMenuIcon(widgetTheme, isEnabled),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
@@ -257,6 +266,8 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     notifier?.closeMenu();
   }
 
+  void _sendArm() => widget.sendArmArm(state, null);
+
   void _sendSelectionEvent() {
     final notifier = MenuChangeNotifier.of(context);
     if (notifier != null) {
@@ -281,10 +292,12 @@ class _MenuItemRow extends StatefulWidget {
   // a frame after the menu opens (see MenuImpl._focusFirstItemNextFrame) instead of relying
   // solely on Focus(autofocus:)'s own timing. Null means "use an internal, unmanaged FocusNode".
   final FocusNode? focusNode;
+  final VoidCallback? onArm;
 
   const _MenuItemRow({
     required this.widgetTheme,
     required this.isEnabled,
+    this.onArm,
     this.onTap,
     this.leading,
     required this.child,
@@ -298,8 +311,29 @@ class _MenuItemRow extends StatefulWidget {
 }
 
 class _MenuItemRowState extends State<_MenuItemRow> {
-  bool _isHovered = false;
+  FocusNode? _ownFocusNode;
   bool _isFocused = false;
+
+  FocusNode get _focusNode =>
+      widget.focusNode ?? (_ownFocusNode ??= FocusNode(debugLabel: 'MenuItem'));
+
+  @override
+  void dispose() {
+    _ownFocusNode?.dispose();
+    super.dispose();
+  }
+
+  // Focus is the menu's single current item, so hover moves it here and the arrow keys continue from it.
+  void _handleHover(PointerHoverEvent event) {
+    if (!widget.isEnabled || _focusNode.hasFocus) return;
+    _focusNode.requestFocus();
+    FocusTraversalGroup.of(context).invalidateScopeData(FocusScope.of(context));
+  }
+
+  void _handleFocusChange(bool focused) {
+    setState(() => _isFocused = focused);
+    if (focused) widget.onArm?.call();
+  }
 
   // Without this, _MenuItemRow is mouse-only: it has no FocusNode at all, so a freshly-opened
   // menu has nothing for arrow-key navigation to move between and nothing for Enter/Space to
@@ -324,14 +358,13 @@ class _MenuItemRowState extends State<_MenuItemRow> {
     return Opacity(
       opacity: widget.isEnabled ? 1.0 : widget.widgetTheme.disabledOpacity,
       child: Focus(
-        focusNode: widget.focusNode,
+        focusNode: _focusNode,
         autofocus: widget.isEnabled && widget.autofocus,
         canRequestFocus: widget.isEnabled,
         onKeyEvent: _handleKeyEvent,
-        onFocusChange: (focused) => setState(() => _isFocused = focused),
+        onFocusChange: _handleFocusChange,
         child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
+          onHover: _handleHover,
           child: Listener(
             onPointerUp: (e) {
               if (e.buttons == 0 && widget.onTap != null) {
@@ -346,7 +379,7 @@ class _MenuItemRowState extends State<_MenuItemRow> {
               ),
               padding: widget.widgetTheme.itemPadding,
               decoration: BoxDecoration(
-                color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isHovered || _isFocused),
+                color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isFocused),
                 borderRadius: BorderRadius.circular(
                   widget.widgetTheme.borderRadius,
                 ),
@@ -373,6 +406,27 @@ class _MenuItemRowState extends State<_MenuItemRow> {
   }
 }
 
+final _cascadeOpenKeys = {
+  LogicalKeyboardKey.arrowRight,
+  LogicalKeyboardKey.arrowLeft,
+  LogicalKeyboardKey.enter,
+  LogicalKeyboardKey.numpadEnter,
+  LogicalKeyboardKey.space,
+};
+
+/// Natively a cascade opens on hover, a click, Right, Enter or Space, never because Up or Down made it
+/// the current item; Flutter opens one whenever it gets the focus.
+class _CascadeMenuController extends MenuController {
+  _CascadeMenuController(this._mayOpen);
+
+  final bool Function() _mayOpen;
+
+  @override
+  void open({Offset? position}) {
+    if (_mayOpen()) super.open(position: position);
+  }
+}
+
 class _CascadeMenuItemRow extends StatefulWidget {
   final MenuItemThemeExtension widgetTheme;
   final MenuThemeExtension menuTheme;
@@ -381,6 +435,7 @@ class _CascadeMenuItemRow extends StatefulWidget {
   final Widget? leading;
   final Widget? trailing;
   final VMenu subMenu;
+  final VoidCallback onArm;
 
   const _CascadeMenuItemRow({
     required this.widgetTheme,
@@ -390,6 +445,7 @@ class _CascadeMenuItemRow extends StatefulWidget {
     this.leading,
     this.trailing,
     required this.subMenu,
+    required this.onArm,
   });
 
   @override
@@ -397,10 +453,19 @@ class _CascadeMenuItemRow extends StatefulWidget {
 }
 
 class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
-  final MenuController _menuController = MenuController();
+  late final MenuController _menuController = _CascadeMenuController(() =>
+      _isHovered ||
+      _isPressed ||
+      HardwareKeyboard.instance.logicalKeysPressed.any(_cascadeOpenKeys.contains));
+  late final FocusNode _buttonFocusNode =
+      FocusNode(debugLabel: 'Cascade', onKeyEvent: _enterOpenSubmenu);
+  final FocusNode _submenuFocusNode = FocusNode(debugLabel: 'Cascade.menu');
   // SizedBox.shrink() placeholder ensures SubmenuButton is always interactive
   List<Widget> _menuChildren = const [SizedBox.shrink()];
   bool _isHovered = false;
+  // A touch has no hover, so the press itself has to let the tap open the submenu.
+  bool _isPressed = false;
+  bool _shown = false;
 
   @override
   void initState() {
@@ -453,15 +518,60 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
   @override
   void dispose() {
     EquoCommService.remove("Menu/${widget.subMenu.id}");
+    _buttonFocusNode.dispose();
+    _submenuFocusNode.dispose();
     super.dispose();
   }
 
-  void _onHover(bool hovering) {
-    final wasHovered = _isHovered;
-    _isHovered = hovering;
-    if (hovering && !wasHovered && widget.isEnabled) {
-      _requestItems();
+  // Another item of this menu became current, from hover or the keyboard: the submenu goes, as natively.
+  void _handleFocusChange(bool focused) {
+    if (focused) widget.onArm();
+    _closeSubmenuIfFocusLeft();
+  }
+
+  void _closeSubmenuIfFocusLeft() {
+    if (_menuController.isOpen && !_buttonFocusNode.hasFocus && !_submenuFocusNode.hasFocus) {
+      _menuController.close();
     }
+  }
+
+  // Natively a hover-opened submenu takes Up/Down; one the keyboard opened already holds the focus.
+  KeyEventResult _enterOpenSubmenu(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent || !_menuController.isOpen || !_isHovered) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowDown && key != LogicalKeyboardKey.arrowUp) {
+      return KeyEventResult.ignored;
+    }
+    final items = _submenuFocusNode.traversalDescendants.toList();
+    if (items.isEmpty) return KeyEventResult.ignored;
+    (key == LogicalKeyboardKey.arrowDown ? items.first : items.last).requestFocus();
+    return KeyEventResult.handled;
+  }
+
+  void _onHover(bool hovering) {
+    _isHovered = hovering;
+  }
+
+  // Deferred past the focus change that opened the submenu, so Java hears the item's Arm first.
+  void _onSubmenuOpen() {
+    _shown = true;
+    scheduleMicrotask(() {
+      if (mounted && _shown) _requestItems();
+    });
+  }
+
+  // Hide goes out when the submenu starts closing: onClose waits for the closing animation, by
+  // which time the next cascade has already sent its Show.
+  void _onSubmenuAnimation(AnimationStatus status) {
+    if (status == AnimationStatus.reverse || status.isDismissed) _sendHide();
+  }
+
+  void _sendHide() {
+    if (!_shown) return;
+    _shown = false;
+    MenuSwt<VMenu>(value: widget.subMenu).sendMenuHide(widget.subMenu, null);
   }
 
   void _requestItems() {
@@ -476,14 +586,6 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
       setState(() {
         _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
       });
-      // Open the submenu with the now-populated items if still hovered
-      if (_isHovered) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _isHovered && !_menuController.isOpen) {
-            _menuController.open();
-          }
-        });
-      }
     });
     MenuSwt<VMenu>(value: widget.subMenu).sendMenuShow(widget.subMenu, null);
   }
@@ -498,13 +600,23 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
           minWidth: double.infinity,
           minHeight: widget.widgetTheme.itemHeight,
         ),
-        child: SubmenuButton(
+        child: Listener(
+          onPointerDown: (_) => _isPressed = true,
+          onPointerUp: (_) => scheduleMicrotask(() => _isPressed = false),
+          onPointerCancel: (_) => _isPressed = false,
+          child: SubmenuButton(
           controller: _menuController,
+          focusNode: _buttonFocusNode,
           onHover: _onHover,
+          onOpen: _onSubmenuOpen,
+          onClose: _sendHide,
+          onAnimationStatusChanged: _onSubmenuAnimation,
+          onFocusChange: _handleFocusChange,
           style: ButtonStyle(
             backgroundColor: WidgetStateProperty.resolveWith((states) {
               if (!widget.isEnabled) return widget.widgetTheme.backgroundColor;
-              if (states.contains(WidgetState.hovered)) {
+              // SubmenuButton focuses itself on hover, so focus is the single current-item signal.
+              if (states.contains(WidgetState.focused) || _menuController.isOpen) {
                 return widget.widgetTheme.hoverBackgroundColor;
               }
               return widget.widgetTheme.backgroundColor;
@@ -535,7 +647,12 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
           ),
           menuChildren: [
             pointerInterceptor(
-              Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
+              Focus(
+                focusNode: _submenuFocusNode,
+                canRequestFocus: false,
+                onFocusChange: (_) => _closeSubmenuIfFocusLeft(),
+                child: Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
+              ),
             ),
           ],
           child: Row(
@@ -553,6 +670,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
               ],
             ],
           ),
+        ),
         ),
       ),
     );

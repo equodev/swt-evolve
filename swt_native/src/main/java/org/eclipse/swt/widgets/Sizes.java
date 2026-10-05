@@ -509,7 +509,32 @@ public class Sizes {
             return new Point(DartToolItem.DEFAULT_WIDTH, DartToolItem.DEFAULT_HEIGHT);
         }
 
+        // A wrapping bar is measured in the runs its items wrap into at the hinted extent, as native does.
         boolean isVertical = (c.getApi().style & SWT.VERTICAL) != 0;
+        int wrapAt = isVertical ? hHint : wHint;
+        if ((c.getApi().style & SWT.WRAP) != 0 && wrapAt != SWT.DEFAULT) {
+            Point[] sizes = new Point[itemCount];
+            int across = 0;
+            for (int i = 0; i < itemCount; i++) {
+                sizes[i] = computeSize((DartToolItem) items[i].getImpl());
+                across = Math.max(across, isVertical ? sizes[i].x : sizes[i].y);
+            }
+            // As the layout wraps: any item but the first that would pass the limit starts a run 2px on.
+            int runs = 1, along = 0, maxAlong = 0;
+            for (int i = 0; i < itemCount; i++) {
+                int extent = isVertical ? sizes[i].y : sizes[i].x;
+                if (i != 0 && along + extent > wrapAt) {
+                    runs++;
+                    along = 0;
+                }
+                along += extent;
+                maxAlong = Math.max(maxAlong, along);
+            }
+            int acrossTotal = runs * across + (runs - 1) * 2;
+            int width = isVertical ? acrossTotal : maxAlong;
+            int height = isVertical ? maxAlong : acrossTotal;
+            return new Point(wHint != SWT.DEFAULT ? wHint : width, hHint != SWT.DEFAULT ? hHint : height);
+        }
 
         int totalWidth = 0;
         int totalHeight = 0;
@@ -855,6 +880,12 @@ public class Sizes {
                 } else {
                     x += siblingSize.x;
                 }
+            }
+            // The client centres a single run of items across a bar taller than they are.
+            if (!isVertical) {
+                int barHeight = toolbar.getBounds().height;
+                if (barHeight > size.y)
+                    y = (barHeight - size.y) / 2;
             }
         }
         return new Rectangle(x, y, size.x, size.y);

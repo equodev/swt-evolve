@@ -14,6 +14,7 @@ import 'utils/window_origin.dart';
 import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'key_forwarding.dart';
+import 'menu_evolve.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
 import 'utils/traversal_veto_scope.dart';
@@ -92,7 +93,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
   bool _forwardKeyToSwt(KeyEvent event) {
     // A focused widget with its own keyboard pipeline (a Swing island) forwards its own keys.
     if (keyboardClaimed) return false;
+    // An open menu owns the keyboard, as the platform's menu loop does: the focused control gets nothing.
+    if (OpenMenus.any) return false;
     final int id = widget.value.id ?? 0;
+    if (openListClaimsKey(event)) return false;
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
       if (compositionOwnsKey(event.character ?? '')) return false;

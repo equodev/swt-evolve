@@ -719,13 +719,14 @@ ThemeData _hbLightWidgets(ThemeData t) {
       hoverBackgroundColor: const Color(0xFFEFECF3),
       textColor: const Color(0xFF3A343E),
     ),
+    // A drop-down list's hovered and selected items share the menu's hover colour.
     t.extension<ComboThemeExtension>()?.copyWith(
       hoverBackgroundColor: const Color(0xFFEFECF3),
-      selectedItemBackgroundColor: const Color(0xFFE5E0EB),
+      selectedItemBackgroundColor: const Color(0xFFEFECF3),
     ),
     t.extension<CComboThemeExtension>()?.copyWith(
       itemHoverBackgroundColor: const Color(0xFFEFECF3),
-      selectedItemBackgroundColor: const Color(0xFFE5E0EB),
+      selectedItemBackgroundColor: const Color(0xFFEFECF3),
     ),
     t.extension<ButtonThemeExtension>()?.copyWith(
       checkboxBorderColor: const Color(0xFF8B8293),

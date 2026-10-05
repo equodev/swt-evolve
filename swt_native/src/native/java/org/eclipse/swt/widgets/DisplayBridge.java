@@ -1009,6 +1009,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void clientFocused(DartControl widget) {
+        // A disabled control never holds the focus in SWT, whichever node of it the client focused.
+        Control api = widget == null ? null : widget.getApi();
+        if (api != null && !api.isDisposed() && !api.isEnabled())
+            return;
         focusRequested = widget;
         setFocus(widget);
     }
@@ -1034,6 +1038,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return null;
     }
 
+    /** The CCombo the control is, or is a part of (its field, arrow or list). */
+    private static org.eclipse.swt.custom.CCombo cComboOf(DartControl control) {
+        Control c = control == null ? null : control.getApi();
+        while (c != null && !c.isDisposed()) {
+            if (c instanceof org.eclipse.swt.custom.CCombo && c.getImpl() instanceof org.eclipse.swt.custom.DartCCombo)
+                return (org.eclipse.swt.custom.CCombo) c;
+            c = c.getParent();
+        }
+        return null;
+    }
+
     private static Shell shellOf(DartControl control) {
         Control api = control == null ? null : control.getApi();
         return api == null || api.isDisposed() ? null : api.getShell();
@@ -1046,6 +1061,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             activatedFrom.put(to, from);
         if (to != null)
             lastFocusShell = new java.lang.ref.WeakReference<>(to);
+        org.eclipse.swt.custom.CCombo leftCombo = cComboOf(focused);
+        boolean leavesCCombo = leftCombo != null && leftCombo != cComboOf(widget);
+        if (leavesCCombo)
+            org.eclipse.swt.custom.CComboHelper.focusLeft((org.eclipse.swt.custom.DartCCombo) leftCombo.getImpl());
         focused = widget;
         Control api = widget == null ? null : widget.getApi();
         boolean live = api != null && !api.isDisposed();
@@ -1063,7 +1082,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     live && api.isListening(org.eclipse.swt.SWT.Traverse));
         }
         publishActiveShell();
-        requestClientFocus(widget);
+        // Flutter's focus would otherwise stay on the CCombo, whose field reopens its list on an arrow key.
+        requestClientFocus(widget, leavesCCombo);
         if (forDisplay != null)
             forDisplay.checkFocus();
         return true;
@@ -1082,11 +1102,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <p>A focus that started on the client comes back through here too (the FocusIn handler tracks
      * it the same way); the cell-editor guard below is what keeps that from re-pushing anything.
      */
-    private void requestClientFocus(DartControl widget) {
+    private void requestClientFocus(DartControl widget, boolean always) {
         Control api = widget == null ? null : widget.getApi();
         if (api == null || api.isDisposed())
             return;
-        if (!isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText))
+        if (!always && !isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText))
             return;
         if (widget == focusRequested)
             return;
@@ -1158,7 +1178,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
     public void clearFocus(DartControl widget) {
-        if (focused == widget) {
+        // A shown popup menu takes the keyboard without moving the focus control, as natively.
+        if (focused == widget && !popupMenuShown()) {
             focused = null;
             // The client reports a control losing the focus without reporting who took it, so the
             // clear can land after the activation that would have named the new holder. Leaving
@@ -1178,6 +1199,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (focusRequested == widget) {
             focusRequested = null;
         }
+    }
+
+    private boolean popupMenuShown() {
+        if (forDisplay == null)
+            return false;
+        for (Menu menu : forDisplay.shownPopups) {
+            if (menu != null && !menu.isDisposed())
+                return true;
+        }
+        return false;
     }
 
     @Override

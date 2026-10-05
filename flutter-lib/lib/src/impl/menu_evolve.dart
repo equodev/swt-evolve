@@ -53,6 +53,13 @@ class OpenPopupMenuTracker {
   }
 }
 
+/// Every mounted menu anchor's controller, so the Display can tell when a menu holds the keyboard.
+class OpenMenus {
+  static final Set<MenuController> _controllers = {};
+
+  static bool get any => _controllers.any((controller) => controller.isOpen);
+}
+
 class MenuChangeNotifier extends InheritedWidget {
   final void Function(void Function()) registerPendingChange;
   final MenuState menuState;
@@ -101,6 +108,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   final FocusNode _popupAnchorFocusNode = FocusNode(debugLabel: 'MenuAnchor.popup');
   // The actual keyboard-entry point into the menu: see MenuChangeNotifier.autofocusItemFocusNode.
   final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'MenuItem.autofocus');
+  // Holds the open menu's items, so a menu made only of cascades can focus its first one.
+  final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'Menu.items');
   // True only while the open menu was opened by Java (the `visible && !isOpen` branch below). A
   // context menu opened imperatively from Dart (openContextMenuAt, on right-click) keeps
   // state.visible == false the whole time, so the symmetric close must NOT read that steady false
@@ -129,6 +138,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   @override
   void initState() {
     super.initState();
+    OpenMenus._controllers.add(_menuController);
     _subscribeRawChannels();
   }
 
@@ -175,9 +185,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     if (identical(OpenPopupMenuTracker._current, this)) {
       OpenPopupMenuTracker._current = null;
     }
+    OpenMenus._controllers.remove(_menuController);
     _unsubscribeRawChannels();
     _popupAnchorFocusNode.dispose();
     _firstItemFocusNode.dispose();
+    _itemsFocusNode.dispose();
     super.dispose();
   }
 
@@ -212,6 +224,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       if (!mounted || !_menuController.isOpen) return;
       if (_firstItemFocusNode.context != null) {
         _firstItemFocusNode.requestFocus();
+        return;
+      }
+      final items = _itemsFocusNode.traversalDescendants;
+      if (items.isNotEmpty) {
+        items.first.requestFocus();
       } else {
         _popupAnchorFocusNode.requestFocus();
       }
@@ -390,7 +407,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         if (identical(OpenPopupMenuTracker._current, this)) {
           OpenPopupMenuTracker._current = null;
         }
-        _sendPendingChanges();
         _openedFromVisibleFlag = false;
         _pendingContextMenuPosition = null;
         _pendingOpenFromVisibleFlag = false;
@@ -408,6 +424,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         // on it left Java believing the popup was still up — and the Display skips re-showing a
         // popup it still counts as shown, which killed every later opening of that menu.
         widget.sendMenuHide(state, null);
+        // A chosen item is selected after its menus are hidden, as natively.
+        _sendPendingChanges();
       },
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
@@ -419,11 +437,15 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           // No extra Semantics wrapper: with the anchor untagged, each item's own tagSemantics
           // materializes on its own (a tagged anchor merges them away; an added wrapper here
           // duplicates every item node instead).
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: menuItems
-                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                .toList(),
+          child: Focus(
+            focusNode: _itemsFocusNode,
+            canRequestFocus: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: menuItems
+                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                  .toList(),
+            ),
           ),
         )),
       ],
@@ -536,6 +558,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   @override
   void initState() {
     super.initState();
+    OpenMenus._controllers.add(_subMenuController);
     final preItems = widget.item.menu?.items;
     if (preItems != null && preItems.isNotEmpty) {
       _itemsLoaded = true;
@@ -547,6 +570,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
 
   @override
   void dispose() {
+    OpenMenus._controllers.remove(_subMenuController);
     if (widget.item.menu != null) {
       EquoCommService.remove("Menu/${widget.item.menu!.id}");
     }

@@ -114,29 +114,22 @@ Color getCComboItemBackgroundColor(CComboThemeExtension widgetTheme, bool isSele
   return isSelected ? widgetTheme.selectedItemBackgroundColor : Colors.transparent;
 }
 
-/// A list entry's style: a theme with a solid item hover paints it as the row's fill instead of a tint.
+/// A list entry's style. The open list has a single highlighted item, which hover moves, so hover and
+/// focus paint nothing of their own.
 ButtonStyle getCComboEntryStyle(
   CComboThemeExtension widgetTheme,
   TextStyle textStyle,
   double width,
-  bool isSelected,
+  bool Function() isHighlighted,
 ) {
-  final resting = getCComboItemBackgroundColor(widgetTheme, isSelected);
-  final style = MenuItemButton.styleFrom(
+  return MenuItemButton.styleFrom(
     foregroundColor: textStyle.color,
     minimumSize: Size(width, widgetTheme.itemHeight),
     padding: widgetTheme.textFieldPadding,
-    overlayColor: widgetTheme.hoverBackgroundColor,
-    backgroundColor: resting,
-  );
-  final hover = widgetTheme.itemHoverBackgroundColor;
-  if (hover.a == 0) return style;
-  return style.copyWith(
-    overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+    overlayColor: Colors.transparent,
+  ).copyWith(
     backgroundColor: WidgetStateProperty.resolveWith(
-      (states) => states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)
-          ? hover
-          : resting,
+      (_) => getCComboItemBackgroundColor(widgetTheme, isHighlighted()),
     ),
   );
 }

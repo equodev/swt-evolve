@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 /// Whether a whole-tree [DisplaySwt] is mounted and forwarding keystrokes from a single
 /// top-level handler (see `display_evolve.dart`).
 ///
@@ -54,3 +56,14 @@ void claimKeyboard(Object owner, bool owns) {
     _keyboardOwner = null;
   }
 }
+
+/// Open drop-down lists, each deciding which keys it takes. Like the popup of a native one, an open
+/// list keeps its navigation keys from SWT: no KeyDown, and no Traverse that would close a dialog or
+/// press its default button.
+final Set<bool Function(KeyEvent)> _openListKeyClaims = {};
+
+void addOpenListKeyClaim(bool Function(KeyEvent) claims) => _openListKeyClaims.add(claims);
+
+void removeOpenListKeyClaim(bool Function(KeyEvent) claims) => _openListKeyClaims.remove(claims);
+
+bool openListClaimsKey(KeyEvent event) => _openListKeyClaims.any((claims) => claims(event));

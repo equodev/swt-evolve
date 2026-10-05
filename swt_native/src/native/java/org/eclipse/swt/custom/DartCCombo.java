@@ -1660,6 +1660,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             //$NON-NLS-1$
             text.setText("");
             _text = "";
+            getValue().markDirty(VCCombo.TEXT);
             getValue().markDirty(VCCombo.SELECTION);
             return;
         }
@@ -1674,6 +1675,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 list.showSelection();
             }
         }
+        // The field shows _text, which is not the property the rewritten dirty() marks.
+        getValue().markDirty(VCCombo.TEXT);
         getValue().markDirty(VCCombo.SELECTION);
     }
 
@@ -2038,6 +2041,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     void textEvent(Event event) {
+        if (CComboHelper.routeToOpenList(this, event))
+            return;
         switch(event.type) {
             case SWT.FocusIn:
                 {
@@ -2403,6 +2408,13 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "List", "Visible", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                CComboHelper.listShownByFlutter(this, e.detail != 0);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

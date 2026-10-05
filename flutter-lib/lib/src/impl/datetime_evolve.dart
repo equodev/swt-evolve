@@ -23,6 +23,13 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
 
   int _maxDigits(_FieldDef f) => f.max >= 1000 ? 4 : 2;
 
+  // The calendar popup is an OverlayEntry outside this subtree, so it is rebuilt with the control.
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _calendarOverlay?.markNeedsBuild();
+  }
+
   @override
   void dispose() {
     _closeCalendarOverlay();
@@ -60,13 +67,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     );
   }
 
-  void _openCalendarOverlay({
-    required int year,
-    required int month,
-    required int day,
-    required bool enabled,
-    required ColorScheme colorScheme,
-  }) {
+  void _openCalendarOverlay({required ColorScheme colorScheme}) {
     _closeCalendarOverlay();
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
@@ -97,11 +98,11 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
               elevation: 4,
               borderRadius: BorderRadius.circular(4),
               child: _CalendarWidget(
-                year: year,
-                month: month,
-                selectedDay: day,
+                year: _year,
+                month: _month,
+                selectedDay: _day,
                 showWeekNumbers: false,
-                enabled: enabled,
+                enabled: state.enabled ?? true,
                 colorScheme: colorScheme,
                 onDaySelected: (y, m, d) {
                   setState(() {
@@ -238,10 +239,9 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     final isShort = hasStyle(style, SWT.SHORT);
     final hasDropDown = hasStyle(style, SWT.DROP_DOWN);
 
-    final now = DateTime.now();
-    final year = state.year ?? now.year;
-    final month = state.month ?? now.month - 1;
-    final day = state.day ?? now.day;
+    final year = _year;
+    final month = _month;
+    final day = _day;
 
     final fields = <_FieldDef>[
       _FieldDef(
@@ -297,13 +297,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                   _closeCalendarOverlay();
                 } else {
                   setState(() => _calendarDropped = true);
-                  _openCalendarOverlay(
-                    year: year,
-                    month: month,
-                    day: day,
-                    enabled: enabled,
-                    colorScheme: colorScheme,
-                  );
+                  _openCalendarOverlay(colorScheme: colorScheme);
                 }
               },
             )
@@ -401,6 +395,10 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
 
     return Focus(
       focusNode: _focusNode,
+      // Java routes the keys it is forwarded to its focus control, so it must know this one has it.
+      onFocusChange: (focused) => focused
+          ? widget.sendFocusFocusIn(state, null)
+          : widget.sendFocusFocusOut(state, null),
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
         final idx = _selectedField.clamp(0, fields.length - 1);
@@ -486,6 +484,10 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     if (next < f.min) next = f.max;
     f.onChanged(next);
   }
+
+  int get _year => state.year ?? DateTime.now().year;
+  int get _month => state.month ?? DateTime.now().month - 1;
+  int get _day => state.day ?? DateTime.now().day;
 
   int _daysInMonth(int year, int month) => DateTime(year, month + 2, 0).day;
 
@@ -691,7 +693,9 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
   @override
   void didUpdateWidget(_CalendarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.year != widget.year || oldWidget.month != widget.month) {
+    if (oldWidget.year != widget.year ||
+        oldWidget.month != widget.month ||
+        oldWidget.selectedDay != widget.selectedDay) {
       _displayYear = widget.year;
       _displayMonth = widget.month;
     }

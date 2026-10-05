@@ -1511,6 +1511,17 @@ class _CTabBarState extends State<_CTabBar> {
     return null;
   }
 
+  /// The width Java leaves between the topRight control and the folder's right edge, or 0 when it
+  /// does not place the control from that edge.
+  double _javaTrailingWidth(VComposite? topRightComposite, int alignment) {
+    final folder = widget.state.bounds;
+    final control = topRightComposite?.bounds;
+    if (folder == null || control == null) return 0;
+    if ((alignment & SWT.FILL) != 0 || alignment == SWT.CENTER) return 0;
+    final trailing = folder.width - (control.x + control.width);
+    return trailing > 0 ? trailing.toDouble() : 0;
+  }
+
   Widget _buildTopRightControls({
     required BuildContext context,
     required CTabFolderThemeExtension widgetTheme,
@@ -1542,44 +1553,57 @@ class _CTabBarState extends State<_CTabBar> {
             topRightComposite,
             backgroundColor: widgetTheme.tabBarBackgroundColor,
           ),
-        if (showMinimizeButton)
-          Builder(
-            builder: (context) {
-              final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
-              return _buildControlButton(
-                context: context,
-                widgetTheme: widgetTheme,
-                icon: isMinimized ? Icons.maximize : Icons.minimize,
-                onTap: isVisible ? widget.onMinimize : () {},
-                isHovered: _isMinimizeHovered,
-                onHoverChanged: (hovered) {
-                  setState(() {
-                    _isMinimizeHovered = hovered;
-                  });
+        // Java packs the folder's own buttons to the right of the topRight control and places the
+        // control from that edge; the buttons take the same room here, so the control is drawn where
+        // toDisplay() says it is.
+        ConstrainedBox(
+          constraints: BoxConstraints(minWidth: _javaTrailingWidth(topRightComposite, alignment)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+            if (showMinimizeButton)
+              Builder(
+                builder: (context) {
+                  final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
+                  return _buildControlButton(
+                    context: context,
+                    widgetTheme: widgetTheme,
+                    icon: isMinimized ? Icons.maximize : Icons.minimize,
+                    onTap: isVisible ? widget.onMinimize : () {},
+                    isHovered: _isMinimizeHovered,
+                    onHoverChanged: (hovered) {
+                      setState(() {
+                        _isMinimizeHovered = hovered;
+                      });
+                    },
+                    enabled: true,
+                  );
                 },
-                enabled: true,
-              );
-            },
-          ),
-        if (showMaximizeButton)
-          Builder(
-            builder: (context) {
-              final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
-              return _buildControlButton(
-                context: context,
-                widgetTheme: widgetTheme,
-                icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-                onTap: isVisible ? widget.onMaximize : () {},
-                isHovered: _isMaximizeHovered,
-                onHoverChanged: (hovered) {
-                  setState(() {
-                    _isMaximizeHovered = hovered;
-                  });
+              ),
+            if (showMaximizeButton)
+              Builder(
+                builder: (context) {
+                  final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
+                  return _buildControlButton(
+                    context: context,
+                    widgetTheme: widgetTheme,
+                    icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
+                    onTap: isVisible ? widget.onMaximize : () {},
+                    isHovered: _isMaximizeHovered,
+                    onHoverChanged: (hovered) {
+                      setState(() {
+                        _isMaximizeHovered = hovered;
+                      });
+                    },
+                    enabled: true,
+                  );
                 },
-                enabled: true,
-              );
-            },
+              ),
+            ],
           ),
+        ),
       ],
     );
 

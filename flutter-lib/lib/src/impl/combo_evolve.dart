@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons, Icon, Divider, Theme;
 
@@ -12,6 +13,7 @@ import '../theme/theme_settings/combo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
+import 'key_forwarding.dart';
 import 'utils/pointer.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
@@ -25,12 +27,17 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   /// The last `listVisible` Java sent. The dropdown is otherwise local UI state Java only drives
   /// through `Combo.setListVisible`, so only a change between two pushes is a command.
   bool? _lastJavaListVisible;
+  /// The item the keyboard points at while the list is open; Enter commits it.
+  int _highlighted = -1;
+  final GlobalKey _highlightedKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
     _focusNode.addListener(_handleFocusChange);
+    _focusNode.onKeyEvent = _handleKey;
+    addOpenListKeyClaim(_listClaimsKey);
     _lastJavaListVisible = state.listVisible;
   }
 
@@ -132,8 +139,71 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     final bool? newVisible = state.listVisible;
     if (newVisible != _lastJavaListVisible) {
       _lastJavaListVisible = newVisible;
-      newVisible == true ? _overlayController.show() : _overlayController.hide();
+      _showList(newVisible == true);
     }
+  }
+
+  void _showList(bool show) {
+    if (show) {
+      _highlighted = (state.items ?? const <String>[]).indexOf(state.text ?? "");
+      _overlayController.show();
+    } else {
+      _overlayController.hide();
+    }
+  }
+
+  bool _listClaimsKey(KeyEvent event) =>
+      mounted && _overlayController.isShowing && _listKeys.contains(event.logicalKey);
+
+  static final Set<LogicalKeyboardKey> _listKeys = {
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.numpadEnter,
+    LogicalKeyboardKey.escape,
+    LogicalKeyboardKey.f4,
+  };
+
+  /// Native SWT hands the open list the Combo's keys; without this the arrows and Enter only move
+  /// the caret, or reach whatever control Java still thinks is focused.
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (StyleBits(state.style).has(SWT.SIMPLE)) return KeyEventResult.ignored;
+    final LogicalKeyboardKey key = event.logicalKey;
+    final bool alt = HardwareKeyboard.instance.isAltPressed;
+    final bool down = key == LogicalKeyboardKey.arrowDown;
+    final bool up = key == LogicalKeyboardKey.arrowUp;
+    if (!_overlayController.isShowing) {
+      if (key == LogicalKeyboardKey.f4 || (alt && down)) {
+        _toggleOverlay();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+    final List<String> items = state.items ?? const <String>[];
+    if ((up || down) && !alt) {
+      if (items.isNotEmpty) {
+        setState(() => _highlighted = (_highlighted + (down ? 1 : -1)).clamp(0, items.length - 1));
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final BuildContext? item = _highlightedKey.currentContext;
+          if (item != null) Scrollable.ensureVisible(item);
+        });
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      if (_highlighted >= 0 && _highlighted < items.length) {
+        _onItemSelected(items[_highlighted]);
+      } else {
+        _toggleOverlay();
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.f4 || (alt && (up || down))) {
+      _toggleOverlay();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   void _handleFocusChange() {
@@ -258,6 +328,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             onSelected: _onItemSelected,
             onTextChanged: _handleTextChanged,
             onToggleOverlay: _toggleOverlay,
+            highlighted: _highlighted,
+            highlightedKey: _highlightedKey,
+            onHighlight: (i) => setState(() => _highlighted = i),
             width: width,
             textPadding: textPadding,
             arrowSpacing: arrowSpacing,
@@ -284,12 +357,15 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
   /// Toggles the dropdown keeping [VCombo.listVisible] truthful, so a value push that reuses the
   /// state object cannot resurrect a stale flag.
+  ///
+  /// Opening it focuses the Combo, as a click on a native one does: its keys belong to the list.
   void _toggleOverlay() {
     final bool showing = !_overlayController.isShowing;
+    if (showing) _focusNode.requestFocus();
     setState(() {
       state.listVisible = showing;
+      _showList(showing);
     });
-    showing ? _overlayController.show() : _overlayController.hide();
   }
 
   void _onItemSelected(String? value) {
@@ -304,6 +380,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
   @override
   void dispose() {
+    removeOpenListKeyClaim(_listClaimsKey);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -323,6 +400,9 @@ class _DropdownComboLayout extends StatelessWidget {
   final ValueChanged<String?> onSelected;
   final ValueChanged<String> onTextChanged;
   final VoidCallback onToggleOverlay;
+  final int highlighted;
+  final GlobalKey highlightedKey;
+  final ValueChanged<int> onHighlight;
   final double width;
   final EdgeInsets textPadding;
   final double arrowSpacing;
@@ -343,6 +423,9 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.onSelected,
     required this.onTextChanged,
     required this.onToggleOverlay,
+    required this.highlighted,
+    required this.highlightedKey,
+    required this.onHighlight,
     required this.width,
     required this.textPadding,
     required this.arrowSpacing,
@@ -458,17 +541,18 @@ class _DropdownComboLayout extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: (state.items ?? [])
-                        .map(
-                          (item) => _ComboItem(
-                            text: item,
-                            isSelected: item == state.text,
-                            theme: theme,
-                            textStyle: textStyle,
-                            onTap: () => onSelected(item),
-                          ),
-                        )
-                        .toList(),
+                    children: [
+                      for (final (i, item) in (state.items ?? const <String>[]).indexed)
+                        _ComboItem(
+                          key: i == highlighted ? highlightedKey : null,
+                          text: item,
+                          isSelected: i == highlighted,
+                          theme: theme,
+                          textStyle: textStyle,
+                          onHover: () => onHighlight(i),
+                          onTap: () => onSelected(item),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -574,13 +658,17 @@ class _ComboItem extends StatefulWidget {
   final ComboThemeExtension theme;
   final TextStyle textStyle;
   final VoidCallback onTap;
+  // The drop-down list has one highlighted item: hover moves it, instead of painting a second one.
+  final VoidCallback? onHover;
 
   const _ComboItem({
+    super.key,
     required this.text,
     required this.isSelected,
     required this.theme,
     required this.textStyle,
     required this.onTap,
+    this.onHover,
   });
 
   @override
@@ -592,11 +680,13 @@ class _ComboItemState extends State<_ComboItem> {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = getComboItemBackgroundColor(widget.theme, widget.isSelected, _itemHovered);
+    final Color bgColor = getComboItemBackgroundColor(
+        widget.theme, widget.isSelected, widget.onHover == null && _itemHovered);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _itemHovered = true),
       onExit: (_) => setState(() => _itemHovered = false),
+      onHover: widget.onHover == null || widget.isSelected ? null : (_) => widget.onHover!(),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,

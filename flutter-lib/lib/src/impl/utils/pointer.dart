@@ -17,9 +17,19 @@ class PointerInterceptorScope extends StatelessWidget {
 
   final Widget child;
 
+  // The interceptor is a platform view, a focus stop the arrow keys would otherwise land on.
   @override
-  Widget build(BuildContext context) =>
-      kIsWeb ? PointerInterceptor(child: child, debug: false) : child;
+  Widget build(BuildContext context) => kIsWeb
+      ? Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+              child: ExcludeFocus(child: PointerInterceptor(child: const SizedBox.expand())),
+            ),
+            child,
+          ],
+        )
+      : child;
 }
 
 /// Wraps [child] in a [PointerInterceptorScope]. Safe to apply unconditionally: off web it adds no

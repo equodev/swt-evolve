@@ -377,6 +377,15 @@ public class GallerySnippet {
             moreItem.setText(entry);
             moreItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
         }
+        MenuItem moreCascade = new MenuItem(toolDropDownMenu, SWT.CASCADE);
+        moreCascade.setText("More C");
+        Menu moreSubMenu = new Menu(shell, SWT.DROP_DOWN);
+        moreCascade.setMenu(moreSubMenu);
+        for (String entry : new String[] { "Deep 1", "Deep 2" }) {
+            MenuItem deepItem = new MenuItem(moreSubMenu, SWT.PUSH);
+            deepItem.setText(entry);
+            deepItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
+        }
         toolDropDown.addSelectionListener(widgetSelectedAdapter(e -> {
             if (e.detail == SWT.ARROW) {
                 // A DROP_DOWN ToolItem only reports the arrow click; placing and showing the menu
