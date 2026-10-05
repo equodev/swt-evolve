@@ -273,28 +273,32 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
     }
 
 // The screenshot capture forks one JVM per snippet. Resolving the classpath once and reusing it for
-// all of them saves a whole nested Gradle build each time, which dominated that job's runtime.
-tasks.register("webExampleClasspath") {
-    group = "examples"
-    description = "Writes runWebExample's browser-only runtime classpath to a file, one entry per line."
-    val jar = project(":swt_native").tasks.named<Jar>("webJar")
-    dependsOn(jar)
-    // The snippet classes are read out of sourceSets in doLast, which carries no task dependency of
-    // its own, so without this the file names a classes directory nothing ever compiled.
-    dependsOn(tasks.named("classes"))
-    val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
-        !(dep is ProjectDependency && dep.path == ":swt_native")
+// all of them saves a whole nested Gradle build each time, which dominated that job's runtime. The
+// desktop twin serves a host that launches snippets with JVM flags of its own.
+fun registerExampleClasspath(name: String, jarTaskName: String, fileName: String, renderMode: String) =
+    tasks.register(name) {
+        group = "examples"
+        description = "Writes the $renderMode example runtime classpath to a file, one entry per line."
+        val jar = project(":swt_native").tasks.named<Jar>(jarTaskName)
+        dependsOn(jar)
+        // The snippet classes are read out of sourceSets in doLast, which carries no task dependency of
+        // its own, so without this the file names a classes directory nothing ever compiled.
+        dependsOn(tasks.named("classes"))
+        val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
+            !(dep is ProjectDependency && dep.path == ":swt_native")
+        }
+        val mainOutput = sourceSets["main"].output
+        val outputFile = layout.buildDirectory.file(fileName)
+        outputs.file(outputFile)
+        doLast {
+            val entries = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
+            val file = outputFile.get().asFile
+            file.parentFile.mkdirs()
+            file.writeText(entries.files.joinToString("\n") { it.absolutePath })
+        }
     }
-    val mainOutput = sourceSets["main"].output
-    val outputFile = layout.buildDirectory.file("web-example-classpath.txt")
-    outputs.file(outputFile)
-    doLast {
-        val entries = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
-        val file = outputFile.get().asFile
-        file.parentFile.mkdirs()
-        file.writeText(entries.files.joinToString("\n") { it.absolutePath })
-    }
-}
+registerExampleClasspath("webExampleClasspath", "webJar", "web-example-classpath.txt", "browser-only")
+registerExampleClasspath("deskExampleClasspath", "${currentPlatform}Jar", "desk-example-classpath.txt", "desktop")
 
 registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
 registerFlutterExample("runDeskExample", "desktop")

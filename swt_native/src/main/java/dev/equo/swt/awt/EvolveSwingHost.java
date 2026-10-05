@@ -38,6 +38,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
+import dev.equo.swt.Config;
 import sun.awt.AWTAccessor;
 import sun.awt.NullComponentPeer;
 import sun.swing.JLightweightFrame;
@@ -90,6 +91,9 @@ public final class EvolveSwingHost {
      */
     public static Frame newFrame(final Composite parent) {
         if (parent == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        // Under swing-evolve's engine there is no LightweightFrame peer to blit from: the island
+        // path replaces this one, toolkit set-up included.
+        if (Config.hasSwingEngine()) return SwingIslandHost.newFrame(parent);
         startToolkit();
         installOutsideClickRepaintFilter(parent.getDisplay());
 

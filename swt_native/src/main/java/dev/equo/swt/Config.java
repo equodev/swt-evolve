@@ -618,6 +618,8 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
+        IWidget island = swingIslandFor(parent, style, composite);
+        if (island != null) return island;
         // Route by the public class's simple name so Evolve stays EWT-agnostic:
         // an EWT-provided `EwtWidget` (split package) renders as an "EwtWidget" node.
         if ("EwtWidget".equals(composite.getClass().getSimpleName()))
@@ -633,6 +635,33 @@ public class Config {
             return new DartMainComposite(parent, style, composite);
         }
         return new DartComposite(parent, style, composite);
+    }
+
+    /** The island {@code SWT_AWT.new_Frame} mounts a Swing mirror in, routed by its type; null otherwise. */
+    static IWidget swingIslandFor(Composite parent, int style, Composite composite) {
+        return composite instanceof SwingIsland ? new DartSwingIsland(parent, style, composite) : null;
+    }
+
+    /**
+     * Whether swing-evolve's engine owns this JVM's AWT, detected by its classes being loadable:
+     * {@code swt_native} compiles against nothing of it.
+     */
+    public static boolean hasSwingEngine() {
+        return SwingEngine.PRESENT;
+    }
+
+    /** A class of swing-evolve's engine, or null when it is not loadable. */
+    public static Class<?> swingEngineClass(String name) {
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException | LinkageError e) {
+            return null;
+        }
+    }
+
+    private static final class SwingEngine {
+        static final boolean PRESENT = swingEngineClass("dev.equo.swing.engine.Engine") != null
+                && swingEngineClass("dev.equo.swing.bridge.comm.CommService") != null;
     }
 
     private static final String EDITOR_CLASS = "org.eclipse.ui.texteditor.AbstractTextEditor";

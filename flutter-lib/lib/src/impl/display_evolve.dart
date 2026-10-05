@@ -90,6 +90,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
   /// Returns false so the keystroke still reaches Flutter's own widgets (text editing, tree
   /// navigation, etc.) — this only mirrors the key to SWT, it never consumes it.
   bool _forwardKeyToSwt(KeyEvent event) {
+    // A focused widget with its own keyboard pipeline (a Swing island) forwards its own keys.
+    if (keyboardClaimed) return false;
     final int id = widget.value.id ?? 0;
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.

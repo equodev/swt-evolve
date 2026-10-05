@@ -35,3 +35,22 @@ void setCanvasEditorFocus(Object editor, bool focused) {
     _focusedCanvasEditor = null;
   }
 }
+
+/// The widget that runs its own keyboard pipeline and holds focus, or `null`. Today: a Swing island,
+/// whose mirror hands every key to the AWT engine itself.
+Object? _keyboardOwner;
+
+/// True while a widget with its own keyboard pipeline holds focus; the Display-level forwarder
+/// then stays out, so a key is dispatched to exactly one engine.
+bool get keyboardClaimed => _keyboardOwner != null;
+
+/// Claims (or releases) the keyboard for [owner]. A release only counts for the current owner, so
+/// a blur cannot clear the claim a newly focused widget just made — the two arrive in no
+/// guaranteed order.
+void claimKeyboard(Object owner, bool owns) {
+  if (owns) {
+    _keyboardOwner = owner;
+  } else if (identical(_keyboardOwner, owner)) {
+    _keyboardOwner = null;
+  }
+}
