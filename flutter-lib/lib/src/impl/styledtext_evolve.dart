@@ -90,14 +90,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         defaultColor: _styledTextTheme.foregroundColor,
       );
 
+  /// The editor fill marks a place to type. A read-only StyledText is text to read, so it sits on the
+  /// surface like a Label or a read-only Text does.
   @override
   Color get bg =>
       ParentBackgroundScope.backgroundOf(context) ??
-      getBackgroundColor(
-        background: state.background,
-        defaultColor: _styledTextTheme.backgroundColor,
-      ) ??
-      _styledTextTheme.backgroundColor;
+      getBackgroundColor(background: state.background, defaultColor: null) ??
+      ((state.editable ?? false)
+          ? _styledTextTheme.backgroundColor
+          : Theme.of(context).colorScheme.surface);
 
   @override
   Widget wrapWithGCOverlay(Widget child) {
