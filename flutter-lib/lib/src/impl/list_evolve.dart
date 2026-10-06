@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/event.dart';
@@ -29,7 +32,7 @@ class ListImpl<T extends ListSwt, V extends VList>
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;
     final height = hasConstraints ? state.bounds!.height.toDouble() : null;
 
-    return SwtControlScope(swt: state.swt, child: tagSemantics(_StyledList(
+    return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(_StyledList(
       widgetTheme: widgetTheme,
       state: state,
       items: state.items!,
@@ -49,15 +52,9 @@ class ListImpl<T extends ListSwt, V extends VList>
         var e = VEvent()..segments = state.selection;
         widget.sendSelectionDefaultSelection(state, e);
       },
-      onItemMouseDown: () =>
-          widget.sendMouseMouseDown(state, VEvent()..button = 1..count = 1),
-      onItemMouseUp: () =>
-          widget.sendMouseMouseUp(state, VEvent()..button = 1..count = 1),
-      onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
-      onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
       onFocusOut: () => widget.sendFocusFocusOut(state, null),
-    )));
+    ))));
   }
 
   List<String> _convertIndicesToItems(List<String> items, List<int> indices) {
@@ -87,10 +84,6 @@ class _StyledList extends StatefulWidget {
   final bool isMultiSelect;
   final Function(List<String>) onSelectionChanged;
   final Function(String) onItemDoubleClick;
-  final VoidCallback onItemMouseDown;
-  final VoidCallback onItemMouseUp;
-  final VoidCallback onMouseEnter;
-  final VoidCallback onMouseExit;
   final VoidCallback onFocusIn;
   final VoidCallback onFocusOut;
   final double? width;
@@ -105,10 +98,6 @@ class _StyledList extends StatefulWidget {
     required this.isMultiSelect,
     required this.onSelectionChanged,
     required this.onItemDoubleClick,
-    required this.onItemMouseDown,
-    required this.onItemMouseUp,
-    required this.onMouseEnter,
-    required this.onMouseExit,
     required this.onFocusIn,
     required this.onFocusOut,
     this.width,
@@ -142,47 +131,43 @@ class _StyledListState extends State<_StyledList> {
         ? theme.focusedBorderColor
         : theme.borderColor;
 
-    return MouseRegion(
-      onEnter: (_) => widget.onMouseEnter(),
-      onExit: (_) => widget.onMouseExit(),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          setState(() => _isFocused = hasFocus);
-          if (hasFocus) {
-            widget.onFocusIn();
-          } else {
-            widget.onFocusOut();
-          }
-        },
-        child: SizedBox(
-          width: widget.width,
-          height: widget.height,
-          child: Container(
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              border: Border.all(color: borderColor, width: theme.borderWidth),
-              borderRadius: BorderRadius.circular(theme.borderRadius),
-            ),
-            child: widget.items.isEmpty
-                ? const SizedBox.shrink()
-                : ListView.builder(
-                    itemCount: widget.items.length,
-                    itemExtent: theme.itemHeight,
-                    itemBuilder: (context, index) {
-                      final item = widget.items[index];
-                      final isSelected = widget.selection.contains(item);
-                      return _ListItem(
-                        widgetTheme: theme,
-                        state: widget.state,
-                        item: item,
-                        isSelected: isSelected,
-                        enabled: widget.enabled,
-                        onTap: () => _handleItemTap(item),
-                        onDoubleTap: () => widget.onItemDoubleClick(item),
-                      );
-                    },
-                  ),
+    return Focus(
+      onFocusChange: (hasFocus) {
+        setState(() => _isFocused = hasFocus);
+        if (hasFocus) {
+          widget.onFocusIn();
+        } else {
+          widget.onFocusOut();
+        }
+      },
+      child: SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: Container(
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: Border.all(color: borderColor, width: theme.borderWidth),
+            borderRadius: BorderRadius.circular(theme.borderRadius),
           ),
+          child: widget.items.isEmpty
+              ? const SizedBox.shrink()
+              : ListView.builder(
+                  itemCount: widget.items.length,
+                  itemExtent: theme.itemHeight,
+                  itemBuilder: (context, index) {
+                    final item = widget.items[index];
+                    final isSelected = widget.selection.contains(item);
+                    return _ListItem(
+                      widgetTheme: theme,
+                      state: widget.state,
+                      item: item,
+                      isSelected: isSelected,
+                      enabled: widget.enabled,
+                      onTap: () => _handleItemTap(item),
+                      onDoubleTap: () => widget.onItemDoubleClick(item),
+                    );
+                  },
+                ),
         ),
       ),
     );
@@ -223,9 +208,7 @@ class _StyledListState extends State<_StyledList> {
     }
 
     final newSelection = newIndices.map((i) => items[i]).toList();
-    widget.onItemMouseDown();
     widget.onSelectionChanged(newSelection);
-    widget.onItemMouseUp();
   }
 }
 
@@ -285,44 +268,51 @@ class _ListItemState extends State<_ListItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: InstantDoubleTapDetector(
-        onTap: widget.onTap,
-        onDoubleTap: widget.onDoubleTap,
-        identity: widget.item,
-        child: Stack(
-          children: [
-            Container(
-              height: theme.itemHeight,
-              color: baseBackgroundColor,
-              padding: theme.itemPadding,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                widget.item,
-                style: textStyle,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (widget.isSelected && widget.enabled)
-              AnimatedOpacity(
-                duration: theme.animationDuration,
-                curve: Curves.easeInOut,
-                opacity: 0.3,
-                child: Container(
-                  height: theme.itemHeight,
-                  color: selectedOverlayColor,
+      // Selects on the press, as a native list does, so the Selection lands between MouseDown and
+      // MouseUp: a tap is only recognised once the release has been reported. On a microtask, as
+      // the press reaches the control's own MouseDown listener after this one.
+      child: Listener(
+        onPointerDown: (e) {
+          if (e.buttons == kPrimaryButton) scheduleMicrotask(widget.onTap);
+        },
+        child: InstantDoubleTapDetector(
+          onDoubleTap: widget.onDoubleTap,
+          identity: widget.item,
+          child: Stack(
+            children: [
+              Container(
+                height: theme.itemHeight,
+                color: baseBackgroundColor,
+                padding: theme.itemPadding,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  widget.item,
+                  style: textStyle,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            if (!widget.isSelected && widget.enabled)
-              AnimatedOpacity(
-                duration: theme.animationDuration,
-                curve: Curves.easeInOut,
-                opacity: _isHovered ? 0.1 : 0.0,
-                child: Container(
-                  height: theme.itemHeight,
-                  color: hoverOverlayColor,
+              if (widget.isSelected && widget.enabled)
+                AnimatedOpacity(
+                  duration: theme.animationDuration,
+                  curve: Curves.easeInOut,
+                  opacity: 0.3,
+                  child: Container(
+                    height: theme.itemHeight,
+                    color: selectedOverlayColor,
+                  ),
                 ),
-              ),
-          ],
+              if (!widget.isSelected && widget.enabled)
+                AnimatedOpacity(
+                  duration: theme.animationDuration,
+                  curve: Curves.easeInOut,
+                  opacity: _isHovered ? 0.1 : 0.0,
+                  child: Container(
+                    height: theme.itemHeight,
+                    color: hoverOverlayColor,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

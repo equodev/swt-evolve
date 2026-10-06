@@ -19,4 +19,6 @@ public class ClientReadyPayload {
     public int displayHeight;
     /** Device zoom in percent (100 = no scaling). 0 when the client can't report it yet. */
     public int zoom;
+    /** Height of the chrome the client draws inside the window above the app content -- the CSD title strip. */
+    public int insetTop;
 }

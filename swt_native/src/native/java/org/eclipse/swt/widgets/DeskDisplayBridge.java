@@ -43,9 +43,8 @@ public class DeskDisplayBridge extends DisplayBridge {
     /**
      * Height of the chrome the render side draws inside the window's own content area -- the CSD
      * title strip. The window's content is not the shell's client area when one is drawn, so the
-     * shell starts this far below the window origin. Measured from the handshake (content height
-     * minus the viewport the client reports for SWT) rather than assumed, so it follows whatever the
-     * render side actually draws instead of a constant Java would have to keep in step with Dart.
+     * shell starts this far below the window origin. The client reports it with every viewport it
+     * sends, so it follows whatever the render side actually draws.
      */
     private int clientTopInset;
 
@@ -580,6 +579,11 @@ public class DeskDisplayBridge extends DisplayBridge {
      * echoed back to the OS window. Returns whether anything changed (a no-op repeat must not re-push).
      */
     @Override
+    protected void applyClientInsetTop(int insetTop) {
+        clientTopInset = insetTop;
+    }
+
+    @Override
     protected boolean applyClientViewport(DartDisplay display, Rectangle viewport, Rectangle monitor, boolean isFirst) {
         boolean changed = false;
 
@@ -600,12 +604,6 @@ public class DeskDisplayBridge extends DisplayBridge {
                     changed = true;
                 }
                 return changed;
-            }
-            // The shell still carries the window's content height here, and the client has just
-            // reported the part of it SWT actually gets; the difference is the chrome drawn above.
-            // Width has to match, so a genuine resize is never mistaken for chrome.
-            if (current != null && current.width == viewport.width && current.height > viewport.height) {
-                clientTopInset = current.height - viewport.height;
             }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".

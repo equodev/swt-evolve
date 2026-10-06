@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Offset;
 
 import 'dnd_session.dart' show ActiveDragTracker;
 
@@ -14,6 +15,12 @@ typedef HoverChanged = void Function(bool hovering);
 class HoverExclusivityArbiter {
   HoverExclusivityArbiter._();
   static final HoverExclusivityArbiter instance = HoverExclusivityArbiter._();
+
+  /// Where the pointer was, in global coordinates, on the latest crossing reported here. A
+  /// control that loses the hover to a descendant has not been crossed itself, so its own last
+  /// crossing is stale: its MouseExit is placed from this instead, as natively it is placed at the
+  /// pointer's current position.
+  Offset? pointerPosition;
 
   final Map<Object, int> _activeDepths = {};
   final Map<Object, HoverChanged> _callbacks = {};

@@ -378,6 +378,7 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
     'displayWidth': mw,
     'displayHeight': mh,
     'zoom': zoom,
+    'insetTop': csdContentInsetTop().round(),
   });
 }
 

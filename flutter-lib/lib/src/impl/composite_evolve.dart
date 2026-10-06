@@ -82,10 +82,12 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
     onEnter: (e) {
       impl.notePointerCrossing(e.localPosition);
+      HoverExclusivityArbiter.instance.pointerPosition = e.position;
       HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true);
     },
     onExit: (e) {
       impl.notePointerCrossing(e.localPosition);
+      HoverExclusivityArbiter.instance.pointerPosition = e.position;
       HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false);
     },
     onHover: (e) {

@@ -60,12 +60,17 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
-    if (tabItems.isEmpty) {
-      return Container();
-    }
-
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
+
+    // A folder with no tabs is still a control in its bounds: the pointer still enters it.
+    if (tabItems.isEmpty) {
+      return SwtControlScope(
+          swt: state.swt,
+          child: tagSemantics(trackPointer(blockWhenDisabled(hasValidBounds
+              ? ConstrainedBox(constraints: constraints!, child: const SizedBox.expand())
+              : const SizedBox.shrink()))));
+    }
 
     final tabContent = _buildTabContent(tabBodies);
 
@@ -83,21 +88,21 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     if (hasValidBounds) {
       return SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+          child: tagSemantics(trackPointer(blockWhenDisabled(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             child: ConstrainedBox(constraints: constraints!, child: content),
-          ))));
+          )))));
     }
 
     // The tabs letter and colour in the folder's own font/foreground: VTabItem has neither.
     return SwtControlScope(
         swt: state.swt,
-        child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+        child: tagSemantics(trackPointer(blockWhenDisabled(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           child: content,
-        ))));
+        )))));
   }
 
   Widget _buildTabContent(List<Widget> tabBodies) {

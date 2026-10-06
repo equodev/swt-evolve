@@ -15,26 +15,22 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
     final isVertical = hasStyle(style, SWT.VERTICAL);
     final hasValidBounds = hasBounds(state.bounds);
 
-    return MouseRegion(
-      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-      child: Focus(
-        onFocusChange: _onFocusChange,
-        child: Builder(
-          builder: (context) {
-            return super.wrap(
-              _CoolBarContainer(
-                theme: theme,
-                isVertical: isVertical,
-                hasValidBounds: hasValidBounds,
-                crossAxisSize: _getCrossAxisSize(theme, isVertical),
-                backgroundColor: _getBackgroundColor(context, theme),
-                borderColor: _getBorderColor(theme),
-                child: _buildContent(theme, isVertical, hasValidBounds),
-              ),
-            );
-          },
-        ),
+    return Focus(
+      onFocusChange: _onFocusChange,
+      child: Builder(
+        builder: (context) {
+          return super.wrap(
+            _CoolBarContainer(
+              theme: theme,
+              isVertical: isVertical,
+              hasValidBounds: hasValidBounds,
+              crossAxisSize: _getCrossAxisSize(theme, isVertical),
+              backgroundColor: _getBackgroundColor(context, theme),
+              borderColor: _getBorderColor(theme),
+              child: _buildContent(theme, isVertical, hasValidBounds),
+            ),
+          );
+        },
       ),
     );
   }

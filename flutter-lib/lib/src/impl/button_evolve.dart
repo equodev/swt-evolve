@@ -186,7 +186,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ),
       widgetTheme: widgetTheme,
       onPressed: enabled ? _onPressed : null,
-      onHover: _onHover,
       onFocusChange: _onFocusChange,
       isPrimary: isPrimary,
       child: _buildButtonContent(
@@ -282,7 +281,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
         onTap: enabled ? _onPressed : null,
-        onHover: _onHover,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         splashColor: widgetTheme.splashColor,
@@ -382,7 +380,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       grayedBorderRadius: widgetTheme.checkboxGrayedBorderRadius,
       duration: widgetTheme.buttonPressDelay,
       onTap: enabled ? _onPressed : null,
-      onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
 
@@ -474,7 +471,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           : widgetTheme.disabledForegroundColor,
       duration: widgetTheme.buttonPressDelay,
       onTap: enabled ? _onPressed : null,
-      onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
 
@@ -520,7 +516,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
         onTap: enabled ? _onPressed : null,
-        onHover: _onHover,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         child: AnimatedContainer(
@@ -721,14 +716,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
-  void _onHover(bool isHovering) {
-    if (isHovering) {
-      widget.sendMouseTrackMouseEnter(state, null);
-    } else {
-      widget.sendMouseTrackMouseExit(state, null);
-    }
-  }
-
   void _onFocusChange(bool hasFocus) {
     if (mounted && _hasFocus != hasFocus) setState(() => _hasFocus = hasFocus);
     if (hasFocus) {
@@ -751,7 +738,6 @@ class _HoverableButton extends StatefulWidget {
   final EdgeInsets padding;
   final ButtonThemeExtension widgetTheme;
   final VoidCallback? onPressed;
-  final ValueChanged<bool> onHover;
   final ValueChanged<bool> onFocusChange;
   final bool isPrimary;
   final Widget child;
@@ -768,7 +754,6 @@ class _HoverableButton extends StatefulWidget {
     required this.padding,
     required this.widgetTheme,
     this.onPressed,
-    required this.onHover,
     required this.onFocusChange,
     required this.isPrimary,
     required this.child,
@@ -794,11 +779,9 @@ class _HoverableButtonState extends State<_HoverableButton> {
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovering = true);
-        widget.onHover(true);
       },
       onExit: (_) {
         setState(() => _isHovering = false);
-        widget.onHover(false);
       },
       child: Material(
         color: backgroundColor,
@@ -854,7 +837,6 @@ class _HoverableCheckboxRadio extends StatefulWidget {
   final Color? innerColor;
   final Duration duration;
   final VoidCallback? onTap;
-  final ValueChanged<bool> onHover;
   final ValueChanged<bool> onFocusChange;
 
   const _HoverableCheckboxRadio({
@@ -877,7 +859,6 @@ class _HoverableCheckboxRadio extends StatefulWidget {
     this.innerColor,
     required this.duration,
     this.onTap,
-    required this.onHover,
     required this.onFocusChange,
   });
 
@@ -972,11 +953,9 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovering = true);
-        widget.onHover(true);
       },
       onExit: (_) {
         setState(() => _isHovering = false);
-        widget.onHover(false);
       },
       child: GestureDetector(
         onTap: widget.onTap,

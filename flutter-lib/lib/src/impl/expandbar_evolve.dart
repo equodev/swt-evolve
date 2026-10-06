@@ -15,6 +15,10 @@ import 'utils/image_utils.dart';
 
 class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     extends CompositeImpl<T, V> {
+  /// A click never focuses an ExpandBar natively, empty or not.
+  @override
+  void takeFocusOnPress() {}
+
   @override
   Widget buildComposite() {
     final children = state.children;
@@ -100,7 +104,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       result = IntrinsicHeight(child: result);
     }
 
-    return SwtControlScope(swt: state.swt, child: tagSemantics(result));
+    return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result)));
   }
 
   List<Widget> getExpandItems(

@@ -14,7 +14,6 @@ import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
-import 'utils/hover_arbiter.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
@@ -161,21 +160,14 @@ class TextImpl<T extends TextSwt, V extends VText>
       isMultiLine,
       hasValidBounds,
     );
-    final hoverDepth = ControlNestingScope.depthOf(context);
     return tagSemantics(
       wrapDnd(
         // When a whole-tree Display forwards keys from its single top-level handler, that handler
         // already delivers shortcuts to Java while a Text has focus, so skip the per-field wrapper
         // to avoid double-dispatch. In the embedded backend (no whole-tree Display) it is the only
         // path — Text builds its own field via [wrapDnd] and never routes through [ControlImpl.wrap].
-        // MouseRegion here mirrors ControlImpl.wrap(), which Text also never routes through --
-        // otherwise MouseEnter/MouseExit (e.g. a hover highlighter) never fire on a Text.
-        MouseRegion(
-          onEnter: (_) => HoverExclusivityArbiter.instance
-              .setActive(this, hoverDepth, true),
-          onExit: (_) => HoverExclusivityArbiter.instance
-              .setActive(this, hoverDepth, false),
-          child: Listener(
+        trackPointer(
+          Listener(
             onPointerDown: _reportFocusOnPress,
             child: displayLevelKeyForwardingActive
                 ? fieldWrapper

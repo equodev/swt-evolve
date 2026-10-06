@@ -54,26 +54,22 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       separator = Divider(color: separatorColor, indent: 0, endIndent: 0);
     }
 
-    return MouseRegion(
-      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.sendFocusFocusIn(state, null);
-          } else {
-            widget.sendFocusFocusOut(state, null);
-          }
-        },
-        child: wrap(
-          constraints != null
-              ? SizedBox(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  child: separator,
-                )
-              : separator,
-        ),
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          widget.sendFocusFocusIn(state, null);
+        } else {
+          widget.sendFocusFocusOut(state, null);
+        }
+      },
+      child: wrap(
+        constraints != null
+            ? SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: separator,
+              )
+            : separator,
       ),
     );
   }

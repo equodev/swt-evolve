@@ -120,13 +120,6 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
             widget.sendFocusFocusOut(state, null);
           }
         },
-        onHover: (isHovering) {
-          if (isHovering) {
-            widget.sendMouseTrackMouseEnter(state, null);
-          } else {
-            widget.sendMouseTrackMouseExit(state, null);
-          }
-        },
       ),
     );
   }
@@ -154,7 +147,6 @@ class _ThemedSpinner extends StatefulWidget {
   final ValueChanged<int> onChanged;
   final ValueChanged<int> onSubmitted;
   final ValueChanged<bool> onFocusChanged;
-  final ValueChanged<bool> onHover;
 
   const _ThemedSpinner({
     required this.value,
@@ -177,7 +169,6 @@ class _ThemedSpinner extends StatefulWidget {
     required this.onChanged,
     required this.onSubmitted,
     required this.onFocusChanged,
-    required this.onHover,
   });
 
   @override
@@ -232,39 +223,31 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   Widget build(BuildContext context) {
     final isInteractive = widget.enabled && !widget.readOnly;
 
-    return MouseRegion(
-      onEnter: (_) {
-        widget.onHover(true);
-      },
-      onExit: (_) {
-        widget.onHover(false);
-      },
-      child: AnimatedContainer(
-        duration: widget.widgetTheme.animationDuration,
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: widget.backgroundColor,
-          border: Border.all(
-            color: widget.borderColor,
-            width: widget.widgetTheme.borderWidth,
-          ),
-          borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+    return AnimatedContainer(
+      duration: widget.widgetTheme.animationDuration,
+      width: widget.width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: widget.backgroundColor,
+        border: Border.all(
+          color: widget.borderColor,
+          width: widget.widgetTheme.borderWidth,
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: DoubleClickWordSelector(
-                controller: _controller,
-                focusNode: _focusNode,
-                text: _controller.text,
-                onWordSelected: (_, __) {},
-                child: _buildTextField(isInteractive),
-              ),
+        borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: DoubleClickWordSelector(
+              controller: _controller,
+              focusNode: _focusNode,
+              text: _controller.text,
+              onWordSelected: (_, __) {},
+              child: _buildTextField(isInteractive),
             ),
-            _buildButtonColumn(isInteractive),
-          ],
-        ),
+          ),
+          _buildButtonColumn(isInteractive),
+        ],
       ),
     );
   }

@@ -112,8 +112,6 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     final height = boundsHeight > 0 ? boundsHeight : widgetTheme.defaultSize;
 
     Widget sashContent = MouseRegion(
-      onEnter: (_) => handleMouseEnter(),
-      onExit: (_) => handleMouseExit(),
       cursor: isHorizontal
           ? SystemMouseCursors.resizeRow
           : SystemMouseCursors.resizeColumn,
@@ -160,7 +158,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       lastAppliedY = _localY;
     }
 
-    return tagSemantics(sashContent);
+    return tagSemantics(trackPointer(sashContent));
   }
 
   void _enterLocalEditMode() {
@@ -285,14 +283,6 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
       _exitLocalEditMode();
     }
-  }
-
-  void handleMouseEnter() {
-    widget.sendMouseTrackMouseEnter(state, null);
-  }
-
-  void handleMouseExit() {
-    widget.sendMouseTrackMouseExit(state, null);
   }
 
   void handleFocusIn() {

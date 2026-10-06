@@ -239,6 +239,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
                     broadcastSwtEvolveProperties();
                 }
+                applyClientInsetTop(p.insetTop);
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
                 // Only for a client that holds nothing (first ClientReady, or a page refresh): a
@@ -353,6 +354,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * re-push, or it would feed the resize loop. The desktop surface overrides this (there the Display
      * is the {@code monitor}, governed independently of the window — see {@code DeskDisplayBridge}).
      */
+    /** The chrome the client draws above the app content, as it reports it. Only a surface whose
+     *  window has its own screen position needs it. */
+    protected void applyClientInsetTop(int insetTop) {
+    }
+
     protected boolean applyClientViewport(DartDisplay display, Rectangle viewport, Rectangle monitor, boolean isFirst) {
         if (!isFirst && display.bounds.equals(viewport)) {
             return false; // idempotent: same viewport as before — no churn, no echo

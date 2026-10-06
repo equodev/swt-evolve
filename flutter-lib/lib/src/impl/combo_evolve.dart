@@ -351,7 +351,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
         );
         _focusNode.requestFocus();
       },
-      child: SizedBox(width: width, height: height, child: content),
+      child: trackPointer(SizedBox(width: width, height: height, child: content)),
     ));
   }
 

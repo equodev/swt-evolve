@@ -95,7 +95,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     super.initState();
     _resolveSentinelBounds(state);
     HoverExclusivityArbiter.instance.register(this, (hovering) {
-      final at = _lastPointerCrossing;
+      final global = HoverExclusivityArbiter.instance.pointerPosition;
+      final box = context.findRenderObject();
+      final at = global != null && box is RenderBox && box.attached
+          ? box.globalToLocal(global)
+          : _lastPointerCrossing;
       final event = at == null
           ? null
           : (VEvent()
@@ -103,7 +107,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ..y = at.dy.round());
       if (hovering) {
         widget.sendMouseTrackMouseEnter(state, event);
+        // A pointer that enters and comes to rest sends no hover event after the one that brought
+        // it in, so the stillness that makes a MouseHover due has to start counting here.
+        if (event != null) _resetHoverTimer(state, event);
       } else {
+        _hoverTimer?.cancel();
         widget.sendMouseTrackMouseExit(state, event);
       }
     });
@@ -692,7 +700,31 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       );
     }
 
-    widget = Listener(
+    widget = _pointerListener(_pointerRegion(hoverDepth, widget));
+
+    return SwtControlScope(
+      swt: state.swt,
+      child: ControlNestingScope(
+        depth: hoverDepth + 1,
+        child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
+      ),
+    );
+  }
+
+  /// The pointer events a native control reports on its own: MouseDown and MouseUp, MouseEnter and
+  /// MouseExit settled by [HoverExclusivityArbiter], MouseMove while the pointer is over it,
+  /// MouseHover once it rests. [wrap] applies it; a control that builds its own tree instead has to
+  /// call this, or it reports none of them.
+  Widget trackPointer(Widget child) {
+    final hoverDepth = ControlNestingScope.depthOf(context);
+    return ControlNestingScope(
+      depth: hoverDepth + 1,
+      child: _pointerListener(_pointerRegion(hoverDepth, child)),
+    );
+  }
+
+  Widget _pointerListener(Widget child) {
+    return Listener(
       onPointerDown: (e) {
         if (scrollBarPointers.contains(e.pointer)) return;
         takeFocusOnPress();
@@ -704,7 +736,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ..y = e.localPosition.dy.round()
             ..count = swtClickCount
             ..stateMask = swtStateMask(released: false, flutterButtons: e.buttons);
-          this.widget.sendMouseMouseDown(state, event);
+          widget.sendMouseMouseDown(state, event);
         }
         // After MouseDown, never before: a tool that tracks the secondary press picks the
         // item under the cursor there, and a menu built ahead of it describes the previous
@@ -722,7 +754,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..y = e.localPosition.dy.round()
           ..count = swtClickCount
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
-        this.widget.sendMouseMouseUp(state, event);
+        widget.sendMouseMouseUp(state, event);
       },
       onPointerCancel: (e) {
         forgetDragDetect(e.pointer);
@@ -736,36 +768,35 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..y = e.localPosition.dy.round();
         sendThrottledDragMove(state, event, e.buttons);
       },
-      child: MouseRegion(
-        onEnter: (e) {
-          _lastPointerCrossing = e.localPosition;
-          HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
-        },
-        onExit: (e) {
-          _lastPointerCrossing = e.localPosition;
-          _hoverTimer?.cancel();
-          _removeTooltip();
-          HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
-        },
-        onHover: (e) {
-          final event = VEvent()
-            ..x = e.localPosition.dx.round()
-            ..y = e.localPosition.dy.round();
-          _lastHoverPosition = e.position;
-          _removeTooltip();
-          sendThrottledMouseMove(state, event, e.buttons);
-          _resetHoverTimer(state, event);
-        },
-        child: widget,
-      ),
+      child: child,
     );
+  }
 
-    return SwtControlScope(
-      swt: state.swt,
-      child: ControlNestingScope(
-        depth: hoverDepth + 1,
-        child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
-      ),
+  Widget _pointerRegion(int hoverDepth, Widget child) {
+    return MouseRegion(
+      onEnter: (e) {
+        _lastPointerCrossing = e.localPosition;
+        _lastHoverPosition = e.position;
+        HoverExclusivityArbiter.instance.pointerPosition = e.position;
+        HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
+      },
+      onExit: (e) {
+        _lastPointerCrossing = e.localPosition;
+        HoverExclusivityArbiter.instance.pointerPosition = e.position;
+        _hoverTimer?.cancel();
+        _removeTooltip();
+        HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
+      },
+      onHover: (e) {
+        final event = VEvent()
+          ..x = e.localPosition.dx.round()
+          ..y = e.localPosition.dy.round();
+        _lastHoverPosition = e.position;
+        _removeTooltip();
+        sendThrottledMouseMove(state, event, e.buttons);
+        _resetHoverTimer(state, event);
+      },
+      child: child,
     );
   }
 
