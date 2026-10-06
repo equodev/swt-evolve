@@ -17,18 +17,33 @@ class ConfigUiZoomTest {
 
     private ConfigFlags savedFlags;
     private int savedZoom;
+    private String savedMode;
+    private String savedAutoScale;
 
     @BeforeEach
     void captureState() {
         savedFlags = Config.getConfigFlags();
         savedZoom = DPIUtil.getDeviceZoom();
+        savedMode = System.getProperty(ConfigFlags.MODE_PROPERTY);
+        savedAutoScale = System.getProperty("swt.autoScale");
+        // The autoscale policy below is what the desktop window follows; the browser tab is covered
+        // separately at the end.
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
         Config.setConfigFlags(null);
     }
 
     @AfterEach
     void restoreState() {
         DPIUtil.setDeviceZoom(savedZoom);
+        Config.setClientDeviceZoom(100);
+        restoreProperty(ConfigFlags.MODE_PROPERTY, savedMode);
+        restoreProperty("swt.autoScale", savedAutoScale);
         Config.setConfigFlags(savedFlags);
+    }
+
+    private static void restoreProperty(String key, String value) {
+        if (value == null) System.clearProperty(key);
+        else System.setProperty(key, value);
     }
 
     @Test
@@ -82,5 +97,56 @@ class ConfigUiZoomTest {
         DPIUtil.setDeviceZoom(150);
 
         assertThat(Config.getConfigFlags().ui_zoom).isEqualTo(DPIUtil.getDeviceZoom());
+    }
+
+    // ---- browser tab ------------------------------------------------------------------------------
+
+    @Test
+    void in_a_browser_tab_the_ui_is_drawn_at_the_reported_zoom_when_the_app_sets_no_autoScale() {
+        // A browser reports its page zoom as part of the device pixel ratio. The integer policy (the
+        // default of the older SWT releases) rounds 125 down to 100, and drawing at that would shrink
+        // a zoomed page back to its old size.
+        browserTab();
+        AutoScalePolicy.runWith("integer", () -> {
+            DPIUtil.setDeviceZoom(125);
+            assertThat(DPIUtil.getDeviceZoom()).isEqualTo(100);
+
+            Config.setClientDeviceZoom(125);
+
+            assertThat(Config.uiZoom()).isEqualTo(125);
+            assertThat(Config.getConfigFlags().ui_zoom).isEqualTo(125);
+            assertThat(Config.uiScale()).isEqualTo(1.0);
+            assertThat(Config.rasterScale()).isEqualTo(1.25);
+        });
+    }
+
+    @Test
+    void in_a_browser_tab_an_explicit_autoScale_is_still_honoured() {
+        browserTab();
+        System.setProperty("swt.autoScale", "integer");
+        AutoScalePolicy.runWith("integer", () -> {
+            DPIUtil.setDeviceZoom(125);
+
+            Config.setClientDeviceZoom(125);
+
+            assertThat(Config.uiZoom()).isEqualTo(100);
+            assertThat(Config.uiScale()).isEqualTo(0.8);
+        });
+    }
+
+    @Test
+    void the_desktop_window_keeps_following_the_autoscale_policy() {
+        AutoScalePolicy.runWith("integer", () -> {
+            DPIUtil.setDeviceZoom(125);
+
+            Config.setClientDeviceZoom(125);
+
+            assertThat(Config.uiZoom()).isEqualTo(100);
+        });
+    }
+
+    private static void browserTab() {
+        System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        System.clearProperty("swt.autoScale");
     }
 }

@@ -300,6 +300,110 @@ class DisplayResizeFlutterTest {
                 .isEqualTo(new Rectangle(50, 50, 1600, 1000));
     }
 
+    // ---- main-shell election with a top-level shell that is never shown ---------------------------
+
+    @Test
+    void web_neverShownFirstShell_theShownShellFillsTheViewportAndIsNamedMain() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell neverShown = newMainShell();
+        Shell workbench = newMainShell();
+        workbench.setBounds(0, 0, 1920, 1080);
+        workbench.open();
+
+        clientReady(web.comm, 2560, 1271, true);
+
+        assertThat(workbench.getBounds())
+                .as("the shown shell is the one slaved to the viewport")
+                .isEqualTo(new Rectangle(0, 0, 2560, 1271));
+        assertThat(neverShown.getBounds())
+                .as("a shell that is never shown does not take the viewport")
+                .isNotEqualTo(new Rectangle(0, 0, 2560, 1271));
+        assertThat(lastDisplayFrame(web.comm))
+                .as("the client is told which shell is main, so it does not float it")
+                .contains("\"mainShellId\":" + workbench.hashCode());
+    }
+
+    @Test
+    void web_neverShownFirstShell_theShownShellFollowsAResize() {
+        TestWebBridge web = install(TestWebBridge::new);
+        newMainShell();
+        Shell workbench = newMainShell();
+        workbench.open();
+
+        clientReady(web.comm, 1150, 978, true);
+        clientReady(web.comm, 900, 620, false);
+
+        assertThat(workbench.getBounds())
+                .as("the shown shell follows the viewport across a resize")
+                .isEqualTo(new Rectangle(0, 0, 900, 620));
+    }
+
+    @Test
+    void desk_neverShownFirstShell_theShownShellFollowsAResize() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        newMainShell();
+        Shell workbench = newMainShell();
+        workbench.open();
+
+        clientReady(desk.comm, 1280, 800, true);
+        clientReady(desk.comm, 900, 620, false);
+
+        assertThat(workbench.getBounds())
+                .as("the shown shell follows the native window across a resize")
+                .isEqualTo(new Rectangle(0, 0, 900, 620));
+    }
+
+    @Test
+    void desk_hiddenE4WorkbenchShell_outranksAShownSplash() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell splash = new Shell(display, org.eclipse.swt.SWT.NO_TRIM | org.eclipse.swt.SWT.ON_TOP);
+        splash.setBounds(400, 300, 450, 300);
+        Shell workbench = newMainShell();
+        workbench.setLayout(new org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout());
+        splash.open();
+
+        clientReady(desk.comm, 1728, 1001, true);
+
+        assertThat(splash.getBounds())
+                .as("the splash keeps its own size while the e4 workbench shell is still hidden")
+                .isEqualTo(new Rectangle(400, 300, 450, 300));
+        assertThat(desk.isMainShell(dartDisplay(), workbench)).isTrue();
+    }
+
+    // ---- browser zoom -----------------------------------------------------------------------------
+
+    @Test
+    void web_browserZoom_isHandedBackToTheRenderSideSoTheTabReflows() {
+        System.clearProperty("dev.equo.swt.mode");
+        int zoomBefore = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+        try {
+            // The integer policy, the default of the older SWT releases, rounds a 125% zoom to 100.
+            dev.equo.swt.AutoScalePolicy.runWith("integer", () -> {
+                TestWebBridge web = install(TestWebBridge::new);
+                Shell shell = newMainShell();
+                shell.open();
+                clientReady(web.comm, 1384, 855, 100, true);
+                web.comm.sent.clear();
+
+                // Ctrl+ to 125%: the client's first report still divides by the zoom it was last told.
+                clientReady(web.comm, 1384, 855, 125, false);
+
+                assertThat(lastPropertiesFrame(web.comm))
+                        .as("the render side learns it now draws at 125, so it stops shrinking the page")
+                        .contains("\"ui_zoom\":125");
+
+                clientReady(web.comm, 1107, 684, 125, false);
+
+                assertThat(shell.getBounds())
+                        .as("the shell lays out in the zoomed tab, like any web page")
+                        .isEqualTo(new Rectangle(0, 0, 1107, 684));
+            });
+        } finally {
+            org.eclipse.swt.internal.DPIUtil.setDeviceZoom(zoomBefore);
+            dev.equo.swt.Config.setClientDeviceZoom(100);
+        }
+    }
+
     @Test
     void web_winClose_closesMainShell() {
         TestWebBridge web = install(TestWebBridge::new);
@@ -356,6 +460,31 @@ class DisplayResizeFlutterTest {
         dd.setBridge(bridge);
         bridge.start(dd);
         return bridge;
+    }
+
+    private static String lastDisplayFrame(RecordingComm comm) {
+        String last = null;
+        for (RecordingComm.Frame frame : comm.sent) {
+            if (frame.json != null && frame.json.contains("\"mainShellId\"")) last = frame.json;
+        }
+        return last;
+    }
+
+    private static String lastPropertiesFrame(RecordingComm comm) {
+        String last = null;
+        for (RecordingComm.Frame frame : comm.sent) {
+            if ("swt.evolve.properties".equals(frame.event)) last = frame.json;
+        }
+        return last;
+    }
+
+    private static void clientReady(RecordingComm comm, int width, int height, int zoom, boolean isFirst) {
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.width = width;
+        p.height = height;
+        p.isFirst = isFirst;
+        p.zoom = zoom;
+        comm.fireContaining("ClientReady", p);
     }
 
     private Shell newMainShell() {

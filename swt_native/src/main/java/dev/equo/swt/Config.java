@@ -855,7 +855,7 @@ public class Config {
         configFlags.font_point_scale = FontMetricsUtil.rawDpiScale();
         // Also derived, and for the same reason: the client reports the monitor's zoom only once it
         // is up, and swt.autoScale is applied to it after these flags were first read.
-        configFlags.ui_zoom = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+        configFlags.ui_zoom = uiZoom();
         return configFlags;
     }
 
@@ -905,16 +905,29 @@ public class Config {
     }
 
     /**
-     * The factor the render side draws the tree at: the zoom SWT measures in over the monitor zoom
-     * the client draws at. 1.0 while the two agree or either is still unknown, which is every run
-     * that leaves {@code swt.autoScale} alone.
+     * The factor the render side draws the tree at: the {@linkplain #uiZoom() UI zoom} over the
+     * monitor zoom the client draws at. 1.0 while the two agree or either is still unknown.
      *
      * <p>Kept in step with the render side's own {@code swtUiScale()} by construction: both are
      * that same ratio. Read the monitor's zoom from what the client reported rather than from
      * {@code DPIUtil.getNativeDeviceZoom()}, which the older supported SWT versions do not have.
      */
     public static double uiScale() {
-        return uiScaleFor(org.eclipse.swt.internal.DPIUtil.getDeviceZoom(), clientDeviceZoom);
+        return uiScaleFor(uiZoom(), clientDeviceZoom);
+    }
+
+    /**
+     * The zoom the UI is drawn at, in percent: the one {@code swt.autoScale} derived from the
+     * client's zoom.
+     *
+     * <p>Except in a browser tab whose application sets no {@code swt.autoScale}, where it is the
+     * client's zoom itself. A browser's device pixel ratio includes the user's page zoom, and SWT's
+     * default policy rounds it to a multiple of 100, which would undo any zoom between 75 % and 150 %.
+     */
+    public static int uiZoom() {
+        boolean browserTab = !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode();
+        if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom;
+        return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
     }
 
     static double uiScaleFor(int uiZoom, int monitorZoom) {
@@ -934,7 +947,7 @@ public class Config {
      * other one.
      */
     public static double rasterScale() {
-        return rasterScaleFor(org.eclipse.swt.internal.DPIUtil.getDeviceZoom());
+        return rasterScaleFor(uiZoom());
     }
 
     static double rasterScaleFor(int uiZoom) {

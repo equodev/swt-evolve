@@ -214,7 +214,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
             Display api = display.getApi();
             Runnable apply = () -> {
-                int uiZoomBefore = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+                int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
                 // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
                 // this one, and the UI zoom is what that call just derived.
@@ -222,7 +222,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
                 // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
                 // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.
-                if (org.eclipse.swt.internal.DPIUtil.getDeviceZoom() != uiZoomBefore) {
+                if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
                     broadcastSwtEvolveProperties();
                 }
                 boolean changed = applyClientViewport(display,
@@ -464,9 +464,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
 
     /** The top-level, display-tracking shell that drives (and is slaved to) the viewport, or null.
-     *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT} over construction order; falls
-     *  back to the first trackable shell when no such shell exists yet. */
+     *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT}, then the first visible trackable
+     *  shell, then the first trackable one. Visibility outranks construction order because a pre-e4
+     *  workbench creates a top-level shell it never shows ahead of its window. */
     protected Shell mainShell(DartDisplay display) {
+        Shell firstVisible = null;
         Shell firstTrackable = null;
         for (Shell shell : display._shells()) {
             if (shell == null || shell.isDisposed() || !shouldTrackDisplayBounds(shell)) {
@@ -481,11 +483,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (layout != null && E4_MAIN_SHELL_LAYOUT.equals(layout.getClass().getName())) {
                 return shell;
             }
+            if (firstVisible == null && shell.getVisible()) {
+                firstVisible = shell;
+            }
             if (firstTrackable == null) {
                 firstTrackable = shell;
             }
         }
-        return firstTrackable;
+        return firstVisible != null ? firstVisible : firstTrackable;
     }
 
     /** Whether {@code shell} is the one {@link #mainShell} returns — the single shell that drives
