@@ -125,6 +125,17 @@ public class WebDisplayBridge extends DisplayBridge {
         return bridge.webServer.getApplicationUrl();
     }
 
+    /** The cookie jar of the Display's web server, or null off the web or before it started. */
+    static dev.equo.swt.ProxyCookieJar lookupProxyCookies(Object displayObj) {
+        if (!(displayObj instanceof Display)) return null;
+        Display display = (Display) displayObj;
+        if (!(display.getImpl() instanceof DartDisplay)) return null;
+        DartDisplay dartDisplay = (DartDisplay) display.getImpl();
+        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge)) return null;
+        WebDisplayBridge bridge = (WebDisplayBridge) dartDisplay.displayBridge;
+        return bridge.webServer != null ? bridge.webServer.getProxyCookies() : null;
+    }
+
     /**
      * SPI implementation backing {@link FlutterBridgeSpi#getCommPort(Object)}.
      * Resolves the Display's own per-session comm port so an embedding host's WS proxy dials the
@@ -205,6 +216,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
         FlutterBridgeSpi.registerWebServerUrlLookup(WebDisplayBridge::lookupWebServerUrl);
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
+        dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
     }
 

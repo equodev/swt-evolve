@@ -104,6 +104,8 @@ public class WebFlutterServer {
 
     private HttpServer httpServer;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    /** One per server, so per Display: two sessions never share a proxied site's cookies. */
+    private final ProxyCookieJar proxyCookies = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
     /** The headless Chrome we launched (see {@link #launchHeadless}); reaped in {@link #stop}. */
     private HeadlessChrome headlessChrome;
 
@@ -141,7 +143,7 @@ public class WebFlutterServer {
 
         httpServer = HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
         httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics));
-        httpServer.createContext("/proxy", new ProxyHandler());
+        httpServer.createContext("/proxy", new ProxyHandler(proxyCookies));
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
         // ProxyHandler's sibling-wait (see TARGET_AUTH_CACHE) can block a worker thread for up to a
@@ -203,6 +205,11 @@ public class WebFlutterServer {
     public String getApplicationUrl() {
         int port = httpServer != null ? httpServer.getAddress().getPort() : httpPort;
         return "http://localhost:" + port;
+    }
+
+    /** The cookies of the sites this server's {@code /proxy} serves. */
+    public ProxyCookieJar getProxyCookies() {
+        return proxyCookies;
     }
 
     /**

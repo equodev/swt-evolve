@@ -44,6 +44,13 @@ class ProxyHandler implements HttpHandler {
 
     private static final int MAX_REDIRECTS = 5;
 
+    /** The proxied sites' cookies: they reach no browser, since every page is served from here. */
+    private final ProxyCookieJar cookies;
+
+    ProxyHandler(ProxyCookieJar cookies) {
+        this.cookies = cookies;
+    }
+
     // Headers last seen for a given target url, keyed by the exact decoded target. A served
     // page has no idea it is being proxied (the injected <base href> hides that), so when its
     // own client-side script re-navigates or "canonicalizes" the address -- a bare reload of
@@ -116,7 +123,7 @@ class ProxyHandler implements HttpHandler {
             // change than this proxy needs to make to support writes.
             String requestContentType = exchange.getRequestHeaders().getFirst("Content-Type");
 
-            Fetched resp = fetch(target, method, requestBody, requestContentType, headerLines);
+            Fetched resp = fetch(target, method, requestBody, requestContentType, headerLines, cookies);
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
             String lowerContentType = contentType.toLowerCase();
@@ -134,6 +141,7 @@ class ProxyHandler implements HttpHandler {
                 // href=, so a <base> already in place would itself be rewritten to a /proxy?url=
                 // wrapper -- and the page's real address is read back from document.baseURI.
                 html = rewriteResourceUrls(html, finalUri, headerLines, selfOrigin);
+                html = rewriteFormActions(html, finalUri, headerLines, selfOrigin);
                 html = injectBaseHref(html, resp.finalUrl);
                 if (!headerLines.isEmpty()) {
                     html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
@@ -166,7 +174,7 @@ class ProxyHandler implements HttpHandler {
     }
 
     /** What the proxied request came back with, plus the URL and method it ended on. */
-    private static final class Fetched {
+    static final class Fetched {
         final String finalUrl;
         final int statusCode;
         final byte[] body;
@@ -184,9 +192,12 @@ class ProxyHandler implements HttpHandler {
      * Follows redirects itself: {@link HttpURLConnection} will not follow one that changes
      * protocol (the http -> https hop most sites open with), and the URL the response ended on —
      * which the injected base href has to name — is not something it reports either.
+     *
+     * <p>Cookies go both ways on every hop, redirects included: an OAuth2 login sets its session on
+     * the hop that redirects to the identity provider and checks it on the one coming back.
      */
-    private static Fetched fetch(String target, String method, byte[] requestBody,
-            String requestContentType, List<String> headerLines) throws IOException {
+    static Fetched fetch(String target, String method, byte[] requestBody,
+            String requestContentType, List<String> headerLines, ProxyCookieJar cookies) throws IOException {
         String url = target;
         for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
@@ -203,6 +214,12 @@ class ProxyHandler implements HttpHandler {
                 if (name.isEmpty()) continue;
                 try { conn.setRequestProperty(name, value); } catch (Exception ignored) { }
             }
+            URI hopUri = toUri(url);
+            String jarCookies = hopUri != null ? cookies.header(hopUri) : null;
+            if (jarCookies != null) {
+                String own = conn.getRequestProperty("Cookie");
+                conn.setRequestProperty("Cookie", own == null ? jarCookies : own + "; " + jarCookies);
+            }
             if (requestBody.length > 0) {
                 conn.setDoOutput(true);
                 conn.setFixedLengthStreamingMode(requestBody.length);
@@ -211,6 +228,7 @@ class ProxyHandler implements HttpHandler {
                 }
             }
             int code = conn.getResponseCode();
+            if (hopUri != null) cookies.store(hopUri, setCookieHeaders(conn));
             if (code >= 300 && code < 400) {
                 String location = conn.getHeaderField("Location");
                 conn.disconnect();
@@ -237,6 +255,22 @@ class ProxyHandler implements HttpHandler {
             }
         }
         throw new IOException("too many redirects for " + target);
+    }
+
+    private static List<String> setCookieHeaders(HttpURLConnection conn) {
+        List<String> values = new ArrayList<>();
+        for (Map.Entry<String, List<String>> e : conn.getHeaderFields().entrySet()) {
+            if (e.getKey() != null && e.getKey().equalsIgnoreCase("Set-Cookie")) values.addAll(e.getValue());
+        }
+        return values;
+    }
+
+    private static URI toUri(String url) {
+        try {
+            return new URL(url).toURI();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** Extracts a single URL-decoded query parameter from a raw query string. */
@@ -296,6 +330,13 @@ class ProxyHandler implements HttpHandler {
             "\\b(src|href)\\s*=\\s*([\"'])(?!(?:data:|mailto:|javascript:|#))([^\"']*)\\2",
             Pattern.CASE_INSENSITIVE);
 
+    private static final Pattern FORM_TAG = Pattern.compile("<form\\b[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern POST_METHOD = Pattern.compile("\\smethod\\s*=\\s*([\"']?)post\\1[\\s>/]", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ACTION_ATTR = Pattern.compile(
+            "(\\saction\\s*=\\s*)([\"'])(?!(?:javascript:|#))([^\"']*)\\2", Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern CHAR_REF = Pattern.compile("&(#[0-9]+|#[xX][0-9a-fA-F]+|amp|quot|apos|lt|gt);");
+
     /**
      * Rewrites {@code src=}/{@code href=} references that resolve to a proxyable http(s) URL so
      * they route through this same {@code /proxy} endpoint too, carrying the same auth headers as
@@ -310,27 +351,93 @@ class ProxyHandler implements HttpHandler {
      * and needs the target's own cooperation (exempt those paths from the auth gate, or send CORS
      * headers) to fully work through a cross-origin proxy.
      */
-    private static String rewriteResourceUrls(String html, URI baseUri, List<String> headerLines, String selfOrigin) {
+    static String rewriteResourceUrls(String html, URI baseUri, List<String> headerLines, String selfOrigin) {
         Matcher m = RESOURCE_ATTR.matcher(html);
         // Matcher.appendReplacement/appendTail only gained a StringBuilder overload in Java 9;
         // this class is compiled down to Java 8 for older SWT releases, so StringBuffer it is.
         StringBuffer out = new StringBuffer();
         while (m.find()) {
             String replacement = m.group(0);
-            try {
-                URI resolved = baseUri.resolve(m.group(3));
-                String scheme = resolved.getScheme();
-                if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
-                        && WebFlutterServer.proxyAllowed(resolved.toString())) {
-                    StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
-                            .append(Java8.urlEncode(resolved.toString(), StandardCharsets.UTF_8));
-                    for (String header : headerLines) {
-                        proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
-                    }
-                    replacement = m.group(1) + "=" + m.group(2) + proxied + m.group(2);
-                }
-            } catch (Exception ignored) { }
+            String proxied = proxiedUrl(m.group(3), baseUri, headerLines, selfOrigin);
+            if (proxied != null) replacement = m.group(1) + "=" + m.group(2) + proxied + m.group(2);
             m.appendReplacement(out, Matcher.quoteReplacement(replacement));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    /**
+     * Routes a POST form's {@code action} through this endpoint too. Submitted as written, a login
+     * form posts the whole iframe to the target's own origin, which a site that forbids framing
+     * refuses. A GET form is left alone: the browser replaces its action's query with the form's
+     * fields, which would drop the {@code url=} this endpoint needs.
+     */
+    static String rewriteFormActions(String html, URI baseUri, List<String> headerLines, String selfOrigin) {
+        Matcher form = FORM_TAG.matcher(html);
+        StringBuffer out = new StringBuffer();
+        while (form.find()) {
+            String tag = form.group();
+            if (POST_METHOD.matcher(tag).find()) {
+                Matcher action = ACTION_ATTR.matcher(tag);
+                if (action.find()) {
+                    String proxied = proxiedUrl(action.group(3), baseUri, headerLines, selfOrigin);
+                    if (proxied != null) {
+                        tag = tag.substring(0, action.start()) + action.group(1) + action.group(2) + proxied
+                                + action.group(2) + tag.substring(action.end());
+                    }
+                }
+            }
+            form.appendReplacement(out, Matcher.quoteReplacement(tag));
+        }
+        form.appendTail(out);
+        return out.toString();
+    }
+
+    /** The {@code /proxy} URL serving {@code rawValue}, or null when it is not proxied. */
+    private static String proxiedUrl(String rawValue, URI baseUri, List<String> headerLines, String selfOrigin) {
+        try {
+            // The value as the browser reads it: a literal &amp; in a query is a different URL.
+            URI resolved = baseUri.resolve(decodeCharRefs(rawValue));
+            String scheme = resolved.getScheme();
+            if (scheme == null || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
+                    || !WebFlutterServer.proxyAllowed(resolved.toString())) {
+                return null;
+            }
+            StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
+                    .append(Java8.urlEncode(resolved.toString(), StandardCharsets.UTF_8));
+            for (String header : headerLines) {
+                proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
+            }
+            return proxied.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Decodes the character references a URL in an attribute value can carry. */
+    private static String decodeCharRefs(String value) {
+        if (value.indexOf('&') < 0) return value;
+        Matcher m = CHAR_REF.matcher(value);
+        StringBuffer out = new StringBuffer();
+        while (m.find()) {
+            String ref = m.group(1);
+            String decoded;
+            if (ref.startsWith("#x") || ref.startsWith("#X")) {
+                decoded = new String(Character.toChars(Integer.parseInt(ref.substring(2), 16)));
+            } else if (ref.startsWith("#")) {
+                decoded = new String(Character.toChars(Integer.parseInt(ref.substring(1))));
+            } else if (ref.equals("amp")) {
+                decoded = "&";
+            } else if (ref.equals("quot")) {
+                decoded = "\"";
+            } else if (ref.equals("apos")) {
+                decoded = "'";
+            } else if (ref.equals("lt")) {
+                decoded = "<";
+            } else {
+                decoded = ">";
+            }
+            m.appendReplacement(out, Matcher.quoteReplacement(decoded));
         }
         m.appendTail(out);
         return out.toString();

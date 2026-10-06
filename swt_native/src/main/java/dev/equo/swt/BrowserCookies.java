@@ -21,8 +21,14 @@ public final class BrowserCookies {
     private BrowserCookies() {
     }
 
-    /** The value of cookie {@code name} for {@code url}, or null when there is none. */
+    /**
+     * The value of cookie {@code name} for {@code url}, or null when there is none. On the web the
+     * page cannot read the iframe's cookies at all; the ones it can have are the proxied sites',
+     * kept server-side by the Display's web server.
+     */
     public static String get(DartWidget browser, Display display, String name, String url) {
+        ProxyCookieJar web = ProxyCookieJar.forDisplay(display);
+        if (web != null) return web.get(name, url);
         return request(browser, display, "getCookie", Java8.map("name", name, "url", url));
     }
 
@@ -31,6 +37,8 @@ public final class BrowserCookies {
      * domain or path takes the URL's, as the native SWT browsers do. Returns whether it was set.
      */
     public static boolean set(DartWidget browser, Display display, String value, String url) {
+        ProxyCookieJar web = ProxyCookieJar.forDisplay(display);
+        if (web != null) return web.set(value, url);
         HttpCookie cookie;
         URI origin;
         try {
