@@ -237,6 +237,9 @@ class _ListItem extends StatefulWidget {
 
 class _ListItemState extends State<_ListItem> {
   bool _isHovered = false;
+  // Set when a pointer press has already selected the item, so the tap the same click completes
+  // does not select it a second time.
+  bool _selectedByPress = false;
 
   @override
   Widget build(BuildContext context) {
@@ -273,10 +276,24 @@ class _ListItemState extends State<_ListItem> {
       // the press reaches the control's own MouseDown listener after this one.
       child: Listener(
         onPointerDown: (e) {
-          if (e.buttons == kPrimaryButton) scheduleMicrotask(widget.onTap);
+          if (e.buttons != kPrimaryButton) return;
+          _selectedByPress = true;
+          scheduleMicrotask(widget.onTap);
         },
+        // A tap with no press before it -- an accessibility or test tap through the semantics
+        // tree -- still selects.
         child: InstantDoubleTapDetector(
-          onDoubleTap: widget.onDoubleTap,
+          onTap: () {
+            if (_selectedByPress) {
+              _selectedByPress = false;
+            } else {
+              widget.onTap();
+            }
+          },
+          onDoubleTap: () {
+            _selectedByPress = false;
+            widget.onDoubleTap();
+          },
           identity: widget.item,
           child: Stack(
             children: [
