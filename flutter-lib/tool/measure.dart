@@ -8,6 +8,8 @@ import 'package:swtflutter/src/theme/theme.dart';
 import 'dart:ui' as ui;
 
 import 'package:swtflutter/screenshot.dart';
+import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
+import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 
 import 'java_value_class.dart';
@@ -56,6 +58,22 @@ class ThemeConfig {
 }
 
 String widgetName(String fqn) => fqn.split('.').last;
+
+/// Where the emitters write the Java they generate. Overridable so a check can re-emit into a
+/// temp directory and compare, instead of overwriting the source tree it is checking.
+const String defaultSizeOutputDir =
+    '../swt_native/src/main/java/dev/equo/swt/size';
+
+/// The analysis a measurement run derived, committed so the emitters can re-run without a screen.
+///
+/// The Java under `dev/equo/swt/size` is a function of two things: these numbers and the emitters
+/// below. Only the numbers need a real window, real fonts and a GPU — so committing them is what
+/// lets a machine without one re-emit the Java and check it (`tool/emit_sizes.dart`).
+const String sizesModelPath = 'tool/sizes-model.json';
+
+/// Bumped when the shape below changes, so a stale model fails loudly instead of emitting
+/// half-populated Java.
+const int sizesModelVersion = 2;
 
 // Measurement test case - generic for any widget
 class MeasurementCase {
@@ -235,6 +253,14 @@ const Map<String, (int, int)> rowWidgetFallbackWidth = {
   'Table': (70, 70),
 };
 
+/// Width of the frame a row widget draws inside its own bounds for `SWT.BORDER`, read from the
+/// theme that draws it. A widget absent here draws no frame — Tree's only border is the line
+/// between columns, which is not an inset — and gets no `getFrameBorder` at all.
+double? declaredFrameBorder(String widgetType, ThemeData theme) =>
+    widgetType == 'Table'
+    ? theme.extension<TableThemeExtension>()?.borderWidth
+    : null;
+
 /// What the native `Scrollable.computeTrim` reserves on each axis for the scroll bars and the
 /// frame, whether or not they end up showing (on macOS, `NSScrollView.frameSizeForContentSize`
 /// with legacy scrollers). Like the fallback widths above these are not measurements and cannot
@@ -333,16 +359,50 @@ class WidgetMeasurer {
   bool isPaused = ENABLE_INTERACTIVITY;
   bool isFinished = false;
 
+  /// Where the generated Java goes.
+  String outputDir = defaultSizeOutputDir;
+
+  /// False for a re-emit from the committed model: it has no raw render boxes to dump under
+  /// `build/`, and must not write the model it was just handed back over itself.
+  bool isMeasuring = true;
+
+  /// `widget.<expr>` that a widget's `computeSize` walks for its widest item, by fqn. Declared on
+  /// the measurement cases, so it has to be carried for a re-emit that has none.
+  final Map<String, String> itemsAccessorByFqn = {};
+
+  /// Fqn of every widget that has a theme-sampling case, by simple name. A widget whose cases draw
+  /// no text still gets a theme file, derived from this.
+  final Map<String, String> themeCaseFqnByWidget = {};
+
   WidgetMeasurer();
 
   List<MeasurementResult> get results => resultsMap.values.toList();
 
+  /// Themes in the order `getThemes()` declares them, which is the order the generated
+  /// `get<Theme>Theme()` methods come out in. Map iteration order would instead make the emitted
+  /// Java depend on the order the themes happened to reach the measurer, which a re-emit from the
+  /// committed model cannot reproduce.
+  Iterable<String> get themeOrder {
+    final declared = themesToMeasure.map((t) => t.name).toList();
+    return [
+      ...declared,
+      ...{
+        ...extractedThemes.keys,
+        ...extractedChrome.keys,
+      }.where((n) => !declared.contains(n)),
+    ];
+  }
+
   void addTestCase(MeasurementCase testCase) {
     testCases.add(testCase);
+    if (testCase.itemsAccessor != null) {
+      itemsAccessorByFqn[testCase.fqn] = testCase.itemsAccessor!;
+    }
   }
 
   void addThemeCase(MeasurementCase testCase) {
     themeSamplingCases.add(testCase);
+    themeCaseFqnByWidget[widgetName(testCase.fqn)] = testCase.fqn;
   }
 
   Widget buildCurrentCase(GlobalKey key) {
@@ -363,6 +423,15 @@ class WidgetMeasurer {
       return tCase.buildWidget(key);
     }
   }
+
+  /// The theme the sizing phase renders under, which is the one the emitted constants describe.
+  ///
+  /// Some of what the Java needs is *declared* on the render side rather than measurable: the gap
+  /// beside a tree item's icon, the width of its checkbox, the frame a bordered Table draws. Those
+  /// are read off this theme and compiled into the Java, the same way measure_canvas.dart reads the
+  /// ColorScheme — one declaration, so the side that measures and the side that draws cannot drift.
+  ThemeData get sizingTheme =>
+      themesToMeasure.isEmpty ? ThemeData() : themesToMeasure.first.themeFactory();
 
   ThemeData getCurrentTheme() {
     if (themesToMeasure.isEmpty ||
@@ -664,6 +733,7 @@ class WidgetMeasurer {
     } else {
       // No theme sampling needed, finish immediately
       print('No theme sampling configured, measurements complete.');
+      saveSizesModel();
       isFinished = true;
       if (!ENABLE_INTERACTIVITY) exit(0);
     }
@@ -693,9 +763,197 @@ class WidgetMeasurer {
 
     // Now generate theme files from extractedThemes
     _exportThemeResults();
+    saveSizesModel();
 
     isFinished = true;
     if (!ENABLE_INTERACTIVITY) exit(0);
+  }
+
+  /// What this run measured, in the shape [sizesModelPath] carries.
+  ///
+  /// The per-case sizes and the components discovered in them — not the constants derived from
+  /// them. Deriving is pure arithmetic over exactly this, so it re-runs on the way back out and
+  /// stays under the check: a fix to the analysis has to show up in the Java or the check fails.
+  ///
+  /// `renderBoxHierarchy` is the one thing left out. Only discovery reads it, discovery is what
+  /// produced `discoveredComponents` here, and it is the bulk of a run's output.
+  Map<String, dynamic> toSizesModel() {
+    Object? jsonSafe(Object? v) {
+      if (v == null || v is num || v is bool || v is String) return v;
+      // An image probe is declared as a record of its nominal size.
+      if (v is (int, int)) return [v.$1, v.$2];
+      if (v is List) return v.map(jsonSafe).toList();
+      if (v is Map) {
+        return {for (final e in v.entries) '${e.key}': jsonSafe(e.value)};
+      }
+      return '$v';
+    }
+
+    final widgets = <String, dynamic>{};
+    for (final m in results) {
+      final entry =
+          widgets.putIfAbsent(m.fqn, () {
+                return <String, dynamic>{
+                  if (itemsAccessorByFqn.containsKey(m.fqn))
+                    'itemsAccessor': itemsAccessorByFqn[m.fqn],
+                  'cases': <dynamic>[],
+                };
+              })
+              as Map<String, dynamic>;
+      (entry['cases'] as List).add({
+        'name': m.name,
+        'style': m.style,
+        'width': m.finalSize.width,
+        'height': m.finalSize.height,
+        'useFontTheme': m.useFontTheme,
+        'expectedComponents': jsonSafe(m.expectedComponents),
+        'discoveredComponents': jsonSafe(m.discoveredComponents),
+      });
+    }
+    return {
+      'version': sizesModelVersion,
+      'widgets': widgets,
+      'themeCaseFqnByWidget': themeCaseFqnByWidget,
+      'themes': extractedThemes,
+      'chrome': extractedChrome,
+    };
+  }
+
+  /// Load [model] into this measurer so the emitters can run against it.
+  void applySizesModel(Map<String, dynamic> model) {
+    final version = model['version'];
+    if (version != sizesModelVersion) {
+      throw StateError(
+        '$sizesModelPath is version $version, this tool writes '
+        '$sizesModelVersion — re-run the measurement to rewrite it.',
+      );
+    }
+    for (final widget in (model['widgets'] as Map).entries) {
+      final fqn = widget.key as String;
+      final entry = widget.value as Map;
+      final itemsAccessor = entry['itemsAccessor'];
+      if (itemsAccessor is String) itemsAccessorByFqn[fqn] = itemsAccessor;
+      for (final c in (entry['cases'] as List).cast<Map>()) {
+        final name = c['name'] as String;
+        resultsMap[name] = MeasurementResult(
+          fqn,
+          name,
+          c['style'] as String,
+          Size(
+            (c['width'] as num).toDouble(),
+            (c['height'] as num).toDouble(),
+          ),
+          Map<String, dynamic>.from(c['expectedComponents'] as Map),
+          Map<String, dynamic>.from(c['discoveredComponents'] as Map),
+          const {},
+          c['useFontTheme'] as bool,
+        );
+      }
+    }
+    themeCaseFqnByWidget.addAll(
+      Map<String, String>.from(model['themeCaseFqnByWidget'] as Map),
+    );
+    for (final theme in (model['themes'] as Map).entries) {
+      extractedThemes[theme.key as String] = {
+        for (final e in (theme.value as Map).entries)
+          e.key as String: Map<String, dynamic>.from(e.value as Map),
+      };
+    }
+    for (final theme in (model['chrome'] as Map).entries) {
+      extractedChrome[theme.key as String] = {
+        for (final e in (theme.value as Map).entries)
+          e.key as String: {
+            for (final f in (e.value as Map).entries)
+              f.key as String: (f.value as num).toDouble(),
+          },
+      };
+    }
+  }
+
+  /// Re-run the emitters alone, against a model a measurement run derived earlier.
+  void emitFromSizesModel(Map<String, dynamic> model) {
+    isMeasuring = false;
+    applySizesModel(model);
+    _exportSizingResults(_analyzeResultsByStyle());
+    _exportThemeResults();
+  }
+
+  /// Merge what this run measured into the committed model.
+  ///
+  /// A per-widget run (`measure_button.dart`) measures a few widgets, so it replaces their entries
+  /// and leaves every other widget's alone — overwriting would reduce the model to one widget and
+  /// take the rest of the Java out of the check with it.
+  void saveSizesModel({String path = sizesModelPath}) {
+    if (!isMeasuring) return;
+    final file = File(path);
+    final fresh = toSizesModel();
+    final merged = file.existsSync()
+        ? mergeSizesModel(
+            jsonDecode(file.readAsStringSync()) as Map<String, dynamic>,
+            fresh,
+          )
+        : fresh;
+    file.writeAsStringSync(_encodeSizesModel(merged));
+    print('Updated: ${file.path}');
+  }
+
+  /// [fresh] on top of [committed]: the widgets this run measured replace their entries, every
+  /// other widget's is kept.
+  Map<String, dynamic> mergeSizesModel(
+    Map<String, dynamic> committed,
+    Map<String, dynamic> fresh,
+  ) {
+    if (committed['version'] != sizesModelVersion) return fresh;
+    final widgets = Map<String, dynamic>.from(committed['widgets'] as Map)
+      ..addAll(fresh['widgets'] as Map<String, dynamic>);
+    final themeCases = Map<String, dynamic>.from(
+      committed['themeCaseFqnByWidget'] as Map,
+    )..addAll((fresh['themeCaseFqnByWidget'] as Map).cast<String, dynamic>());
+
+    // A theme's entries are keyed `Widget:STYLE`. Every key of a re-measured widget is dropped
+    // before the fresh ones go in, so each theme ends up holding exactly the styles this run found.
+    final measuredWidgets = {
+      for (final fqn in (fresh['widgets'] as Map).keys) widgetName(fqn as String),
+      ...(fresh['themeCaseFqnByWidget'] as Map).keys.cast<String>(),
+    };
+    Map<String, dynamic> mergeByStyle(String section) {
+      final out = <String, dynamic>{};
+      for (final theme in (committed[section] as Map).entries) {
+        out[theme.key as String] = {
+          for (final e in (theme.value as Map).entries)
+            if (!measuredWidgets.contains((e.key as String).split(':').first))
+              e.key as String: e.value,
+        };
+      }
+      for (final theme in (fresh[section] as Map).entries) {
+        (out.putIfAbsent(theme.key as String, () => <String, dynamic>{})
+                as Map<String, dynamic>)
+            .addAll(Map<String, dynamic>.from(theme.value as Map));
+      }
+      return out;
+    }
+
+    return {
+      'version': sizesModelVersion,
+      'widgets': widgets,
+      'themeCaseFqnByWidget': themeCases,
+      'themes': mergeByStyle('themes'),
+      'chrome': mergeByStyle('chrome'),
+    };
+  }
+
+  /// Keys sorted at every level, so two runs that measured the same thing produce the same file
+  /// and a merge shows only what actually moved.
+  String _encodeSizesModel(Map<String, dynamic> model) {
+    Object? sorted(Object? v) => v is Map
+        ? {
+            for (final k in v.keys.map((k) => k as String).toList()..sort())
+              k: sorted(v[k]),
+          }
+        : v is List
+        ? v.map(sorted).toList()
+        : v;
+    return '${JsonEncoder.withIndent('  ').convert(sorted(model))}\n';
   }
 
   void _exportSizingResults(List<WidgetAnalysis> analyses) {
@@ -713,13 +971,15 @@ class WidgetMeasurer {
       final widgetType = widgetName(fqn).toLowerCase();
 
       // Write per-widget JSON file
-      final widgetJson = {
-        'analyses': widgetAnalyses.map((a) => a.toJson()).toList(),
-      };
-      final json = JsonEncoder.withIndent('  ').convert(widgetJson);
-      final file = File('./build/measurements_$widgetType.json');
-      file.writeAsStringSync(json);
-      print('Exported: ${file.path}');
+      if (isMeasuring) {
+        final widgetJson = {
+          'analyses': widgetAnalyses.map((a) => a.toJson()).toList(),
+        };
+        final json = JsonEncoder.withIndent('  ').convert(widgetJson);
+        final file = File('./build/measurements_$widgetType.json');
+        file.writeAsStringSync(json);
+        print('Exported: ${file.path}');
+      }
 
       // Generate Java sizing file
       _generateJavaWidgetSizes(fqn, widgetAnalyses);
@@ -738,9 +998,9 @@ class WidgetMeasurer {
     // Group by widget type
     final byWidgetType = <String, Map<String, Map<String, dynamic>>>{};
 
-    for (var themeEntry in extractedThemes.entries) {
-      final themeName = themeEntry.key;
-      final stylesMap = themeEntry.value;
+    for (var themeName in themeOrder) {
+      final stylesMap = extractedThemes[themeName];
+      if (stylesMap == null) continue;
 
       for (var styleEntry in stylesMap.entries) {
         final key = styleEntry.key; // e.g., "label:HORIZONTAL"
@@ -756,13 +1016,9 @@ class WidgetMeasurer {
       }
     }
 
-    // Find widget types that have theme sampling cases but no extracted text
-    // These need a default theme with TextStyle.def()
-    final widgetTypesWithThemeCases = <String, String>{};
-    for (var testCase in themeSamplingCases) {
-      final widgetType = widgetName(testCase.fqn);
-      widgetTypesWithThemeCases[widgetType] = testCase.fqn;
-    }
+    // Widget types that have theme sampling cases but no extracted text need a default theme with
+    // TextStyle.def().
+    final widgetTypesWithThemeCases = themeCaseFqnByWidget;
 
     // Generate theme file per widget type
     for (var entry in byWidgetType.entries) {
@@ -1286,9 +1542,61 @@ class WidgetMeasurer {
   ) {
     final constants = <String, dynamic>{};
 
+    // How much of the size it was given does the image actually take? Answered by how the widget's
+    // width responds to a larger image: cases that differ only in the image share a text width, so
+    // the slope across two image sizes says it. 1 means the image is laid out at the size it was
+    // given; 0 means it was not laid out at all, and the extra width is only the gap beside it.
+    //
+    // This has to be measured rather than assumed, because `_discoverComponents` reports the size
+    // the case *asked* for when it finds no image box. Subtracting that nominal width from a width
+    // that never contained it is what used to derive a negative image spacing.
+    final slopes = <double>[];
+    final byTextWidth = <double, List<MeasurementResult>>{};
+    for (final r in styleResults) {
+      final text = r.discoveredComponents['text'];
+      final image = r.discoveredComponents['image'];
+      if (text is! Map || image is! Map) continue;
+      byTextWidth
+          .putIfAbsent((text['width'] as num).toDouble(), () => [])
+          .add(r);
+    }
+    for (final group in byTextWidth.values) {
+      for (final a in group) {
+        for (final b in group) {
+          final aw = ((a.discoveredComponents['image'] as Map)['width'] as num)
+              .toDouble();
+          final bw = ((b.discoveredComponents['image'] as Map)['width'] as num)
+              .toDouble();
+          if (bw - aw < 1) continue;
+          slopes.add((b.finalSize.width - a.finalSize.width) / (bw - aw));
+        }
+      }
+    }
+    // Every pair, not the first one: a case whose image had not resolved by the time it was
+    // measured reads as its own slope, and one of those must not decide the answer.
+    final imageWidthSlope = _median(slopes);
+    // Only the two ends are conclusive; a slope in between is left to the arithmetic below rather
+    // than guessed at.
+    final imageRendersNothing =
+        imageWidthSlope != null && imageWidthSlope.abs() < 0.1;
+
     double? minWidth;
     double? minHeight;
+    // The smallest case of all, including ones that drew nothing. Only the image heuristics below
+    // read it; it is kept separate from the floor emitted into the Java so that excluding a
+    // drew-nothing case from one does not silently move the other.
+    double? smallestHeight;
     for (var result in styleResults) {
+      if (smallestHeight == null || result.finalSize.height < smallestHeight) {
+        smallestHeight = result.finalSize.height;
+      }
+      // A case given an image the widget never laid out, with no text to lay out either, measured
+      // the widget's padding and nothing else. That is not a floor for one that shows content.
+      if (imageRendersNothing &&
+          !result.discoveredComponents.containsKey('text') &&
+          result.discoveredComponents.containsKey('image')) {
+        continue;
+      }
       if (minWidth == null || result.finalSize.width < minWidth) {
         minWidth = result.finalSize.width;
       }
@@ -1464,12 +1772,14 @@ class WidgetMeasurer {
       final imageAffectsWidth =
           (maxWidthWithImage - minWidth!) > avgImageWidth * 0.5;
       final imageAffectsHeight =
-          (maxHeightWithImage - minHeight!) > avgImageHeight * 0.5;
+          (maxHeightWithImage - smallestHeight!) > avgImageHeight * 0.5;
 
       // Analyze layout orientation for cases with both text and image
       String? imageLayout; // 'horizontal', 'vertical', or null
       double? imageSpacing;
       bool? imageUsesMax; // true if height uses MAX, false if uses SUM
+      final horizontalSpacings = <double>[];
+      final verticalSpacings = <double>[];
 
       for (var result in styleResults) {
         if (result.discoveredComponents.containsKey('text') &&
@@ -1497,7 +1807,10 @@ class WidgetMeasurer {
 
           // Analyze width: finalWidth = textWidth + imageWidth + spacing + hPad
           final widthForComponents = finalWidth - hPad;
-          final widthSpacing = widthForComponents - textWidth - imageWidth;
+          final widthSpacing =
+              widthForComponents -
+              textWidth -
+              (imageRendersNothing ? 0 : imageWidth);
 
           // Analyze height: could be MAX(text, image) + vPad OR textHeight + imageHeight + spacing + vPad
           final heightForComponents = finalHeight - vPad;
@@ -1508,26 +1821,28 @@ class WidgetMeasurer {
           final diffFromSum = (heightForComponents - sumHeight).abs();
 
           if (diffFromMax < 5) {
-            // Height uses MAX (horizontal layout)
-            imageLayout = 'horizontal';
-            imageSpacing = widthSpacing;
-            imageUsesMax = true;
+            horizontalSpacings.add(widthSpacing);
           } else if (diffFromSum < 5) {
-            // Height uses SUM (vertical layout)
-            imageLayout = 'vertical';
-            imageSpacing = heightForComponents - sumHeight;
-            imageUsesMax = false;
+            verticalSpacings.add(heightForComponents - sumHeight);
           }
-
-          print(
-            '  Layout analysis: width=$finalWidth (text=$textWidth + image=$imageWidth + spacing=$widthSpacing + pad=$hPad)',
-          );
-          print(
-            '               height=$finalHeight (MAX($textHeight, $imageHeight)=$maxHeight vs SUM=${sumHeight}, diffMax=$diffFromMax, diffSum=$diffFromSum)',
-          );
-          break; // Only need to analyze one case
         }
       }
+      // The layout the cases mostly agree on, and the median of what they measured for it — for
+      // the same reason the slope above takes every pair: one unresolved image must not set it.
+      if (horizontalSpacings.length >= verticalSpacings.length &&
+          horizontalSpacings.isNotEmpty) {
+        imageLayout = 'horizontal';
+        imageSpacing = _median(horizontalSpacings);
+        imageUsesMax = true;
+      } else if (verticalSpacings.isNotEmpty) {
+        imageLayout = 'vertical';
+        imageSpacing = _median(verticalSpacings);
+        imageUsesMax = false;
+      }
+      print(
+        '  Layout analysis: $imageLayout, spacing=$imageSpacing '
+        '(${horizontalSpacings.length} horizontal / ${verticalSpacings.length} vertical cases)',
+      );
 
       constants['imageAffectsWidth'] = imageAffectsWidth;
       constants['imageAffectsHeight'] = imageAffectsHeight;
@@ -1963,11 +2278,13 @@ class WidgetMeasurer {
         final textX = isVertical ? 'm.text.y()' : 'm.text.x()';
         final textY = isVertical ? 'm.text.x()' : 'm.text.y()';
 
-        // Include image spacing whenever the image exists — it's the icon's own margin, not conditioned on sibling text.
+        // The gap sits between the image and the text, so it only exists when both do — which is
+        // how the render side lays it out (`clabel_evolve.dart`, `label_evolve.dart`: the
+        // SizedBox(iconTextSpacing) is inside an `if (text.isNotEmpty)`).
         String textWidthExpr;
         if (imageAffectsWidth && hasImageSpacing) {
           textWidthExpr =
-              '($textX + m.image.x() + (m.image.x() > 0 ? $styleName.IMAGE_SPACING : 0))';
+              '($textX + m.image.x() + (m.image.x() > 0 && $textX > 0 ? $styleName.IMAGE_SPACING : 0))';
         } else if (imageAffectsWidth) {
           textWidthExpr = '($textX + m.image.x())';
         } else {
@@ -1981,9 +2298,9 @@ class WidgetMeasurer {
             // Horizontal layout - no spacing needed in height
             textHeightExpr = 'Math.max($textY, m.image.y())';
           } else if (hasImageSpacing) {
-            // Same reasoning as the width case above.
+            // Same reasoning as the width case above, on the stacking axis.
             textHeightExpr =
-                '($textY + m.image.y() + (m.image.y() > 0 ? $styleName.IMAGE_SPACING : 0))';
+                '($textY + m.image.y() + (m.image.y() > 0 && $textY > 0 ? $styleName.IMAGE_SPACING : 0))';
           } else {
             // Vertical layout without spacing
             textHeightExpr = '($textY + m.image.y())';
@@ -2386,13 +2703,7 @@ class WidgetMeasurer {
         '                m.textStyle = TextStyle.from(widget.getFont());',
       );
       buffer.writeln('            }');
-      String? itemsExpr;
-      for (final c in testCases) {
-        if (c.fqn == fqn && c.itemsAccessor != null) {
-          itemsExpr = c.itemsAccessor;
-          break;
-        }
-      }
+      final itemsExpr = itemsAccessorByFqn[fqn];
       if (itemsExpr == null) {
         buffer.writeln(
           '            return FontMetricsUtil.getFontSize(text, m.textStyle);',
@@ -2422,11 +2733,21 @@ class WidgetMeasurer {
 
     buffer.writeln('}');
 
-    final javaFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Sizes.java',
-    );
+    final javaFile = File('$outputDir/${widgetType}Sizes.java');
     javaFile.writeAsStringSync(buffer.toString());
     print('Generated: ${javaFile.path}');
+  }
+
+  /// Middle value of [values], or null when there are none. Used wherever several cases measured
+  /// the same thing: the median ignores a case the render side had not finished laying out, which
+  /// a mean or a first-match would carry straight into the generated constant.
+  double? _median(List<double> values) {
+    if (values.isEmpty) return null;
+    final sorted = [...values]..sort();
+    final mid = sorted.length ~/ 2;
+    return sorted.length.isOdd
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
   }
 
   /// Number formatted as a Java `double` literal, with float noise from the layout rounded off.
@@ -2780,21 +3101,23 @@ public class CoolBarSizes {
   /// Every style has to draw one frame within a theme; themes are free to differ.
   void _generateJavaChromeTheme(String widgetType) {
     final byTheme = <String, Map<String, double>>{};
-    for (final themeEntry in extractedChrome.entries) {
+    for (final themeName in themeOrder) {
+      final byStyle = extractedChrome[themeName];
+      if (byStyle == null) continue;
       final framesByStyle = <String, Map<String, double>>{
-        for (final e in themeEntry.value.entries)
+        for (final e in byStyle.entries)
           if (e.key.startsWith('$widgetType:')) e.key.split(':').last: e.value,
       };
       final frame = _agreedFrame(
         widgetType,
         framesByStyle,
-        'in the ${themeEntry.key} theme',
+        'in the $themeName theme',
       );
       if (frame == null) {
         print('SKIPPED ${widgetType}Theme.java: see above.');
         return;
       }
-      byTheme[themeEntry.key] = frame;
+      byTheme[themeName] = frame;
     }
 
     final buffer = StringBuffer()
@@ -2834,9 +3157,7 @@ public class CoolBarSizes {
     }
     buffer.writeln('}');
 
-    final themeFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Theme.java',
-    );
+    final themeFile = File('$outputDir/${widgetType}Theme.java');
     themeFile.writeAsStringSync(buffer.toString());
     print('Generated: ${themeFile.path}');
   }
@@ -3058,29 +3379,9 @@ public class CoolBarSizes {
         '        for ($itemType item : $param.getItems()) {',
       );
       buffer.writeln('            if (item == null) continue;');
-      buffer.writeln('            TextStyle ts;');
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+        '            widest = Math.max(widest, getCellContentWidth(item));',
       );
-      buffer.writeln(
-        '                ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
-      );
-      buffer.writeln('            } else {');
-      buffer.writeln('                ts = TextStyle.from(item.getFont());');
-      buffer.writeln('            }');
-      buffer.writeln('            int cellWidth = 0;');
-      buffer.writeln('            String text = item.getText();');
-      buffer.writeln('            if (text != null && !text.isEmpty()) {');
-      buffer.writeln(
-        '                cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
-      buffer.writeln('            }');
-      buffer.writeln('            if (item.getImage() != null) {');
-      buffer.writeln(
-        '                cellWidth += ts.size() + CELL_PADDING_LEFT;',
-      );
-      buffer.writeln('            }');
-      buffer.writeln('            widest = Math.max(widest, cellWidth);');
       buffer.writeln('        }');
       buffer.writeln('        if (widest == 0) return 0;');
       buffer.writeln(
@@ -3089,6 +3390,50 @@ public class CoolBarSizes {
       buffer.writeln(
         '        return widest + CELL_PADDING_HORIZONTAL + CELL_MARGIN;',
       );
+      buffer.writeln('    }');
+      buffer.writeln();
+      // One cell's content, and where it starts. computeSize needs the first for the widest item;
+      // {Widget}Item.getBounds() needs both, so they are public rather than inlined above.
+      buffer.writeln(
+        '    /** The width the first cell\'s image and text take, without the cell\'s padding. */',
+      );
+      buffer.writeln(
+        '    public static int getCellContentWidth($itemType item) {',
+      );
+      buffer.writeln('        TextStyle ts;');
+      buffer.writeln(
+        '        if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+      );
+      buffer.writeln(
+        '            ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
+      );
+      buffer.writeln('        } else {');
+      buffer.writeln('            ts = TextStyle.from(item.getFont());');
+      buffer.writeln('        }');
+      buffer.writeln('        int cellWidth = 0;');
+      buffer.writeln('        String text = item.getText();');
+      buffer.writeln('        if (text != null && !text.isEmpty()) {');
+      buffer.writeln(
+        '            cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
+      );
+      buffer.writeln('        }');
+      buffer.writeln('        if (item.getImage() != null) {');
+      buffer.writeln('            cellWidth += ts.size() + CELL_PADDING_LEFT;');
+      buffer.writeln('        }');
+      buffer.writeln('        return cellWidth;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where the first cell\'s content starts: after the checkbox, if any, and the cell\'s padding. */',
+      );
+      buffer.writeln(
+        '    public static int getLeadingInset(Dart$widgetType $param) {',
+      );
+      buffer.writeln('        int inset = CELL_PADDING_LEFT;');
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.CHECK) != 0) inset += CHECKBOX_WIDTH + CELL_PADDING_LEFT;',
+      );
+      buffer.writeln('        return inset;');
       buffer.writeln('    }');
       buffer.writeln();
     }
@@ -3245,6 +3590,9 @@ public class CoolBarSizes {
     final needsFontMetrics = rowFontSensitive || headerFontSensitive;
 
     final fallbackWidth = rowWidgetFallbackWidth[widgetType];
+    // A measured border wins; the declaration covers a widget whose cases never set SWT.BORDER.
+    final frameBorder =
+        plain.borderWidth ?? declaredFrameBorder(widgetType, sizingTheme);
     final nested = plain.hasExpander;
     // A flat widget with no columns paints its items in an implicit column 0, so its preferred
     // width has to follow the widest item instead of the fallback constant. A nested one is left
@@ -3309,9 +3657,9 @@ public class CoolBarSizes {
         '    private static final double HEADER_PADDING_VERTICAL = ${_d(headerPaddingVertical)};',
       );
     }
-    if (plain.borderWidth != null) {
+    if (frameBorder != null) {
       buffer.writeln(
-        '    private static final double BORDER_WIDTH = ${_d(plain.borderWidth!)};',
+        '    private static final double BORDER_WIDTH = ${_d(frameBorder)};',
       );
     }
     if (fallbackWidth != null) {
@@ -3360,6 +3708,27 @@ public class CoolBarSizes {
       buffer.writeln(
         '    private static final double EXPAND_ICON_SIZE = ${_d(plain.arrowWidth!)};',
       );
+      // What the row reserves beside each part it draws. These are declared on the render side
+      // rather than recoverable from a row's overall size, so they are read off the theme the
+      // rows were measured under (see [sizingTheme]).
+      final row = sizingTheme.extension<TreeThemeExtension>();
+      if (row != null) {
+        buffer.writeln(
+          '    private static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
+        );
+        buffer.writeln(
+          '    private static final double CHECKBOX_SPACE = ${_d(row.checkboxSize)} + ${_d(row.checkboxSpacing)};',
+        );
+        buffer.writeln(
+          '    private static final int ICON_SIZE = ${row.itemIconSize.round()};',
+        );
+        buffer.writeln(
+          '    private static final int ICON_SPACE = ICON_SIZE + ${row.itemIconSpacing.round()};',
+        );
+        buffer.writeln(
+          '    private static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
+        );
+      }
     }
     buffer.writeln();
     if (fallbackWidth != null) {
@@ -3369,7 +3738,7 @@ public class CoolBarSizes {
         nested: nested,
         measuresContent: measuresContent,
         themeClass: '${widgetType}ItemTheme',
-        hasBorder: plain.borderWidth != null,
+        hasBorder: frameBorder != null,
       );
       buffer.writeln();
     }
@@ -3425,6 +3794,65 @@ public class CoolBarSizes {
       '        return widgetWidth * gapFraction + paddingLeft + indent * level;',
     );
     buffer.writeln('    }');
+    // Where an item's own content begins, and what its parts are reported to take. These answer
+    // {Widget}Item.getBounds()/getTextBounds() rather than computeSize, so they live beside the
+    // geometry they are derived from instead of being hand-written into the file afterwards.
+    final row = sizingTheme.extension<TreeThemeExtension>();
+    if (row != null) {
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where an item\'s first cell content starts: after its indent, the expander and any checkbox. */',
+      );
+      buffer.writeln(
+        '    public static int getContentLeft(Dart$widgetType $param, $itemType item) {',
+      );
+      buffer.writeln(
+        '        double left = getExpanderLeft($param, levelOf(item)) + EXPAND_ICON_SIZE + EXPAND_ICON_SPACING;',
+      );
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.CHECK) != 0) left += CHECKBOX_SPACE;',
+      );
+      buffer.writeln('        return (int) Math.ceil(left);');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The size an item\'s image is drawn at. */');
+      buffer.writeln('    public static int getIconSize() {');
+      buffer.writeln('        return ICON_SIZE;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width an image takes before the text, its spacing included. */',
+      );
+      buffer.writeln('    public static int getIconSpace() {');
+      buffer.writeln('        return ICON_SPACE;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width a cell\'s text is shown in: the text and its padding. */',
+      );
+      buffer.writeln(
+        '    public static int getTextWidth($itemType item, int index) {',
+      );
+      buffer.writeln('        String text = item.getText(index);');
+      buffer.writeln(
+        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(item.getFont(index));',
+      );
+      buffer.writeln(
+        '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
+      );
+      buffer.writeln('        return width + TEXT_PADDING;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    static int levelOf($itemType item) {');
+      buffer.writeln('        int level = 0;');
+      buffer.writeln(
+        '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
+      );
+      buffer.writeln('            level++;');
+      buffer.writeln('        }');
+      buffer.writeln('        return level;');
+      buffer.writeln('    }');
+    }
     buffer.writeln();
     buffer.writeln('    public static double getExpanderWidth() {');
     buffer.writeln('        return EXPAND_ICON_SIZE;');
@@ -3441,13 +3869,19 @@ public class CoolBarSizes {
     buffer.writeln(
       '        if (item == null || item.getItemCount() == 0) return false;',
     );
-    buffer.writeln('        int level = 0;');
-    buffer.writeln(
-      '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
-    );
-    buffer.writeln('            level++;');
-    buffer.writeln('        }');
-    buffer.writeln('        double left = getExpanderLeft($param, level);');
+    if (row == null) {
+      buffer.writeln('        int level = 0;');
+      buffer.writeln(
+        '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
+      );
+      buffer.writeln('            level++;');
+      buffer.writeln('        }');
+      buffer.writeln('        double left = getExpanderLeft($param, level);');
+    } else {
+      buffer.writeln(
+        '        double left = getExpanderLeft($param, levelOf(item));',
+      );
+    }
     buffer.writeln('        return x >= left && x < left + EXPAND_ICON_SIZE;');
     buffer.writeln('    }');
     buffer.writeln('}');
@@ -3455,9 +3889,7 @@ public class CoolBarSizes {
   }
 
   void _writeSizesFile(String widgetType, StringBuffer buffer) {
-    final javaFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Sizes.java',
-    );
+    final javaFile = File('$outputDir/${widgetType}Sizes.java');
     javaFile.writeAsStringSync(buffer.toString());
     print('Generated: ${javaFile.path}');
   }
@@ -3633,9 +4065,7 @@ public class CoolBarSizes {
       buffer.writeln('}');
     }
 
-    final themeFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetClass}Theme.java',
-    );
+    final themeFile = File('$outputDir/${widgetClass}Theme.java');
     themeFile.writeAsStringSync(buffer.toString());
     print('Generated: ${themeFile.path}');
   }

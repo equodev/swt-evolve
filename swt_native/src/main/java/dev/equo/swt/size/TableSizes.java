@@ -20,7 +20,7 @@ public class TableSizes {
 
     private static final double ROW_PADDING_VERTICAL = 8.0;
     private static final double HEADER_PADDING_VERTICAL = 8.0;
-    private static final double BORDER_WIDTH = 2.5;
+    private static final double BORDER_WIDTH = 2.0;
     private static final int WIDTH_NO_COLUMNS = 70;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
     private static final int CELL_PADDING_LEFT = 8;

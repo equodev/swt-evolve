@@ -35,4 +35,8 @@ public final class ButtonTheme {
         return new ButtonTheme(new TextStyle("Inter", 14, false, 500));
     }
 
+    public static ButtonTheme getCompactTheme() {
+        return new ButtonTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
+    }
+
 }

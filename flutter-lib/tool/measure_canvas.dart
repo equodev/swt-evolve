@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/theme/theme.dart';
 import './java_value_class.dart';
+import './measure.dart' show defaultSizeOutputDir;
 
 /// Generates dev/equo/swt/size/CanvasTheme.java from the app's own default dark ColorScheme —
 /// surface, the color CanvasThemeExtension.backgroundColor resolves to for a genuinely
@@ -19,7 +20,7 @@ void main() {
 
 int _toByte(double component) => (component * 255.0).round().clamp(0, 255);
 
-void writeCanvasThemeFile() {
+void writeCanvasThemeFile({String outputDir = defaultSizeOutputDir}) {
   final scheme = createDarkColorScheme();
   final surface = scheme.surface;
   final red = _toByte(surface.r);
@@ -97,7 +98,7 @@ void writeCanvasThemeFile() {
   buffer.writeln('}');
 
   final file = File(
-    '../swt_native/src/main/java/dev/equo/swt/size/CanvasTheme.java',
+    '$outputDir/CanvasTheme.java',
   );
   file.writeAsStringSync(buffer.toString());
   print('Generated: ${file.path}');

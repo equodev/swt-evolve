@@ -35,4 +35,8 @@ public final class TreeItemTheme {
         return new TreeItemTheme(new TextStyle("Inter", 14, false, 500));
     }
 
+    public static TreeItemTheme getCompactTheme() {
+        return new TreeItemTheme(new TextStyle("Inter", 10, false, 500, 1.4285714285714286));
+    }
+
 }

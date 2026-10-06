@@ -21,7 +21,7 @@ public class CComboSizes {
         static final double MIN_WIDTH = 66.0;
         static final double MIN_HEIGHT = 26.0;
         static final double HORIZONTAL_PADDING = 42.0;
-        static final double VERTICAL_PADDING = 9.5;
+        static final double VERTICAL_PADDING = 10.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 
@@ -29,7 +29,7 @@ public class CComboSizes {
         static final double MIN_WIDTH = 62.0;
         static final double MIN_HEIGHT = 22.0;
         static final double HORIZONTAL_PADDING = 38.0;
-        static final double VERTICAL_PADDING = 5.5;
+        static final double VERTICAL_PADDING = 6.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 

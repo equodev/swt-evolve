@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/theme/named_themes.dart';
+import './measure.dart' show defaultSizeOutputDir;
 
 /// Generates dev/equo/swt/size/ThemeScales.java, the theme-name -> type-scale lookup the Java size
 /// model needs.
@@ -21,7 +22,7 @@ void main() {
 
 const String _defaultScaleName = 'NonDefault';
 
-void writeThemeScalesFile() {
+void writeThemeScalesFile({String outputDir = defaultSizeOutputDir}) {
   final buffer = StringBuffer();
   buffer.writeln('package dev.equo.swt.size;');
   buffer.writeln();
@@ -64,7 +65,7 @@ void writeThemeScalesFile() {
   buffer.writeln('}');
 
   final file = File(
-    '../swt_native/src/main/java/dev/equo/swt/size/ThemeScales.java',
+    '$outputDir/ThemeScales.java',
   );
   file.writeAsStringSync(buffer.toString());
   print('Generated: ${file.path}');

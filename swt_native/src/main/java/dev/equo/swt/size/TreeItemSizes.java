@@ -40,7 +40,7 @@ public class TreeItemSizes {
 
         m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
         m.image = computeImage(widget);
-        width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 ? NONE.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH);
+        width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? NONE.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH);
         if (hHint != SWT.DEFAULT) {
             height = hHint;
         } else if (wHint != SWT.DEFAULT && m.textStyle != null) {
