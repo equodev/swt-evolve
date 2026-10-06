@@ -71,7 +71,7 @@ abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, List<dynamic>> _pending = {};
   final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
-  final Map<String, Uint8List> _rawPending = {};
+  final Map<String, List<Uint8List>> _rawPending = {};
   final Map<String, bool Function(Uint8List)> _arrivalHandlers = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
@@ -275,8 +275,20 @@ abstract class EquoCommBase {
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
     if (jsonOk) _hold(actionId, payload);
-    _rawPending[actionId] = body ?? Uint8List(0);
+    _holdRaw(actionId, body ?? Uint8List(0));
     return null;
+  }
+
+  /// [_hold] for a raw-bytes channel: a run in arrival order, capped the same way. A protocol's
+  /// opening message is routinely followed by another before its listener is up, and a slot would
+  /// keep only the later one.
+  void _holdRaw(String actionId, Uint8List body) {
+    final run = _rawPending.putIfAbsent(actionId, () => []);
+    if (run.length >= maxPendingPerChannel) {
+      run.clear();
+      return;
+    }
+    run.add(body);
   }
 
   /// GC descriptions by name: the sender defines one under `_gd` and refers to it by `_gr` after.
@@ -446,6 +458,8 @@ abstract class EquoCommBase {
     // the delivery gate refuses one that describes the widget as it used to be. Asking Java to
     // re-serialize instead, which this did while that could not be told apart, was a round trip for
     // every widget described before it was mounted.
+    // The same frames were held as raw bytes too, for an onBytes that will not come now.
+    _rawPending.remove(actionId);
     for (final pending in _pending.remove(actionId) ?? const []) {
       _deliver(actionId, onSuccess, pending);
     }
@@ -478,10 +492,13 @@ abstract class EquoCommBase {
   /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).
   void onBytes(String actionId, FutureOr<void> Function(Uint8List) callback) {
     _rawHandlers[actionId] = callback;
-    final pending = _rawPending.remove(actionId);
-    // A frame that arrived before anyone was listening replays through the queue, so it still
-    // lands ahead of whatever has arrived since.
-    if (pending != null) _enqueueApply(actionId, () => callback(pending));
+    // A body that happened to decode as JSON was held for on() too; this channel is raw now.
+    _pending.remove(actionId);
+    // Frames that arrived before anyone was listening replay through the queue, in arrival order,
+    // so they still land ahead of whatever has arrived since.
+    for (final pending in _rawPending.remove(actionId) ?? const <Uint8List>[]) {
+      _enqueueApply(actionId, () => callback(pending));
+    }
   }
 
   void remove(String actionId, [Object? token]) {
