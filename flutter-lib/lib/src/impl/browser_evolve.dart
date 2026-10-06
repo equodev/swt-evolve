@@ -415,8 +415,11 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   bool _documentIsLive() {
     if (!_expectSameOrigin || _params == null) return true;
     try {
-      browserEvalInFrame(_params, '1');
-      return true;
+      final href = browserEvalInFrame(_params, 'location.href');
+      // The placeholder about:blank shares our origin, so being readable does
+      // not make it the setText document.
+      final inline = _loadedText != null ? _inlineDocumentUrl : null;
+      return inline == null || href == inline;
     } catch (_) {
       return false;
     }
@@ -425,10 +428,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   bool _isPlaceholderLoad(String? reportedUrl) {
     if (!_navigationRequested) return true;
     // A late placeholder load can still land just after a real navigation
-    // started. The native webviews report a setText document under about:blank
-    // too, so only URLs are checked.
+    // started. The native webviews report a setText document under
+    // about:blank too; on web it has its own blob: URL instead.
     return reportedUrl == 'about:blank' &&
-        _loadedText == null &&
+        (_loadedText == null || _inlineDocumentUrl != null) &&
         _loadedUrl != 'about:blank';
   }
 
