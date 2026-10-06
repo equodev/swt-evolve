@@ -31,6 +31,18 @@ public class Serializer {
      */
     private static final ThreadLocal<int[]> depth = ThreadLocal.withInitial(() -> new int[1]);
 
+    /** How many widget payloads this thread is writing; above zero, getters are being read for the client. */
+    private static final ThreadLocal<int[]> writing = ThreadLocal.withInitial(() -> new int[1]);
+
+    /**
+     * Whether a widget is being described for the client right now. A getter that has side effects
+     * on the application (a virtual item's SetData) checks this to tell a read for the wire apart
+     * from one the application made.
+     */
+    public static boolean isWriting() {
+        return writing.get()[0] > 0;
+    }
+
     /**
      * Values that must be described in full on this pass, whatever their own state says.
      *
@@ -262,10 +274,12 @@ public class Serializer {
         try {
             java.util.Map<Object, Object> outerScope = payloadScope.get();
             payloadScope.set(EMPTY_SCOPE);
+            writing.get()[0]++;
             try {
                 writePrefix(writer, prefix);
                 dsl.serialize(writer, p);
             } finally {
+                writing.get()[0]--;
                 if (outerScope == null) {
                     payloadScope.remove();
                 } else {
@@ -574,6 +588,7 @@ public class Serializer {
         depth.get()[0] = 0;
         Object outerUpdating = updating.get()[0];
         JsonWriter writer = borrowWriter();
+        writing.get()[0]++;
         try {
             writePrefix(writer, prefix);
             VWidget value = impl.getValue();
@@ -624,6 +639,7 @@ public class Serializer {
             noteWritten(impl, value, seq, false);
             sink.accept(writer.getByteBuffer(), writer.size());
         } finally {
+            writing.get()[0]--;
             updating.get()[0] = outerUpdating;
             writerPool.get().addFirst(writer);
         }

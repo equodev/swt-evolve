@@ -39,6 +39,10 @@ class TreeSwt<V extends VTree> extends CompositeSwt<V> {
     sendEvent(val, "Selection/Selection", payload);
   }
 
+  void sendSetDataSetData(V val, VEvent? payload) {
+    sendEvent(val, "SetData/SetData", payload);
+  }
+
   void sendTreeCollapse(V val, VEvent? payload) {
     sendEvent(val, "Tree/Collapse", payload);
   }

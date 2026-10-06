@@ -268,6 +268,8 @@ public class DartTree extends DartComposite implements ITree {
     boolean checkData(TreeItem item) {
         if (((DartTreeItem) item.getImpl()).cached)
             return true;
+        if (TreeHelper.isHiddenWhileSerializing(item))
+            return true;
         if ((getApi().style & SWT.VIRTUAL) != 0) {
             ((DartTreeItem) item.getImpl()).cached = true;
             Event event = new Event();
@@ -2422,6 +2424,38 @@ public class DartTree extends DartComposite implements ITree {
         }
     }
 
+    void loadVirtualChildren(int parentId, int end) {
+        if ((getApi().style & SWT.VIRTUAL) == 0)
+            return;
+        TreeItem parentItem = findOpenItem(items, parentId);
+        if (parentItem == null)
+            return;
+        int limit = Math.min(end, getItemCount(parentItem));
+        for (int i = 0; i < limit; i++) {
+            TreeItem it = _getItem(parentItem, i, true);
+            if (it != null)
+                checkData(it);
+        }
+    }
+
+    TreeItem findOpenItem(TreeItem[] level, int id) {
+        if (level == null)
+            return null;
+        for (TreeItem it : level) {
+            if (it == null || it.isDisposed())
+                continue;
+            DartTreeItem impl = (DartTreeItem) it.getImpl();
+            if (!impl.expanded)
+                continue;
+            if (FlutterBridge.id(it) == id)
+                return it;
+            TreeItem found = findOpenItem(impl.items, id);
+            if (found != null)
+                return found;
+        }
+        return null;
+    }
+
     void onItemExpanded(TreeItem item, boolean expanded) {
         getValue().markDirty(VTree.ITEMS);
         if (expanded)
@@ -2489,6 +2523,13 @@ public class DartTree extends DartComposite implements ITree {
                 if (isDisposed())
                     return;
                 TreeHelper.sendSelection(this, e, SWT.Selection);
+            });
+        });
+        FlutterBridge.on(this, "SetData", "SetData", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                loadVirtualChildren(e.index, e.end);
             });
         });
         FlutterBridge.on(this, "Tree", "Collapse", e -> {

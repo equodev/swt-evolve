@@ -29,6 +29,14 @@ class _FlatTreeItem {
   const _FlatTreeItem(this.item, this.level);
 }
 
+/// An open item with more children than have been loaded, and the row its loaded ones end on.
+class _MoreRows {
+  final int lastRow;
+  final VTreeItem parent;
+  final int loaded;
+  const _MoreRows(this.lastRow, this.parent, this.loaded);
+}
+
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final Map<dynamic, String> treeItemExpanders = {};
   final List<String> eventNames = [];
@@ -56,6 +64,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _horizontalController = ScrollController();
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
+    _verticalController!.addListener(_requestVisibleChildren);
     // E2E test hooks. Rows DO carry a per-row Semantics node: each is a TreeItemSwt whose build()
     // ends in tagSemantics. But the node only exists while the row is built — the list virtualises,
     // and a row can lose its node while the widget is live — so these expose what the DOM cannot:
@@ -240,6 +249,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         final columns = getTreeColumns();
         final flatItems = _flattenVisibleItems(state.items, 0);
+        _moreRows = isVirtual() ? _rowsWithMoreAfter(flatItems) : const [];
+        if (_moreRows.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _requestVisibleChildren();
+          });
+        }
         final allItems = _collectAllTreeItems(state.items);
         final hasMultiColumn = columns.length > 1;
         _cachedHeaderHeight = hasMultiColumn
@@ -414,6 +429,52 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       }
     }
     return result;
+  }
+
+  List<_MoreRows> _rowsWithMoreAfter(List<_FlatTreeItem> flat) {
+    final result = <_MoreRows>[];
+    for (var i = 0; i < flat.length; i++) {
+      final item = flat[i].item;
+      final loaded = item.items?.length ?? 0;
+      // Fewer children than last time: the item was repopulated, so its rows are asked for afresh.
+      if ((_loadedChildren[item.id] ?? 0) > loaded) _requestedChildren.remove(item.id);
+      _loadedChildren[item.id] = loaded;
+      if (item.expanded != true || (item.itemCount ?? 0) <= loaded) continue;
+      var end = i + 1;
+      while (end < flat.length && flat[end].level > flat[i].level) {
+        end++;
+      }
+      result.add(_MoreRows(end - 1, item, loaded));
+    }
+    return result;
+  }
+
+  List<_MoreRows> _moreRows = const [];
+  final Map<int, int> _requestedChildren = {};
+  final Map<int, int> _loadedChildren = {};
+
+  /// Asks Java for the children of an open item that the viewport, plus half a screenful, reaches
+  /// past the ones loaded. The same window Table asks for, which keeps SetData within SWT's budget
+  /// of three times the visible rows.
+  void _requestVisibleChildren() {
+    final controller = _verticalController;
+    final rowHeight = _cachedItemHeight;
+    if (_moreRows.isEmpty || controller == null || !controller.hasClients) return;
+    if (rowHeight == null || rowHeight <= 0) return;
+    final position = controller.position;
+    final visibleRows = (position.viewportDimension / rowHeight).ceil() + 1;
+    final windowEnd =
+        ((position.pixels + position.viewportDimension) / rowHeight).ceil() + visibleRows ~/ 2;
+    for (final more in _moreRows) {
+      if (more.lastRow >= windowEnd) continue;
+      final needed = more.loaded + (windowEnd - more.lastRow);
+      final id = more.parent.id;
+      if ((_requestedChildren[id] ?? 0) >= needed) continue;
+      _requestedChildren[id] = needed;
+      widget.sendSetDataSetData(state, VEvent()
+        ..index = id
+        ..end = needed);
+    }
   }
 
   List<_FlatTreeItem> _flattenVisibleItems(List<VWidget>? items, int level) {

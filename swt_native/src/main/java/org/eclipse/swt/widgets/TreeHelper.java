@@ -74,15 +74,25 @@ public class TreeHelper {
             return;
         }
         event.item = item;
-        
-        // Store the previous state for comparison
-        boolean wasExpanded = item.getExpanded();
 
-        if (wasExpanded != expand) {
-            item.setExpanded(expand);
+        if (item.getExpanded() != expand) {
+            // Like a native tree, notify before the item opens: opening fills a virtual item's
+            // first children through SetData, and a lazy viewer (JFace TreeViewer) only treats its
+            // placeholder child as one, and asks for the real child count, while it has no data.
             dartTree.sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
+            if (item.isDisposed()) return;
+            item.setExpanded(expand);
             dartTree.getBridge().dirty(dartTree);
         }
+    }
+
+    /** Whether {@code item} is being described for the client while one of its ancestors is collapsed. */
+    public static boolean isHiddenWhileSerializing(TreeItem item) {
+        if (!Serializer.isWriting()) return false;
+        for (TreeItem parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {
+            if (!parent.getExpanded()) return true;
+        }
+        return false;
     }
 
     public static void createItem(TreeItem item, long hParent, long hInsertAfter, long hItem) {

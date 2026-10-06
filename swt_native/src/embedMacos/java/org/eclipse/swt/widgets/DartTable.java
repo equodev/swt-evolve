@@ -2568,13 +2568,6 @@ public class DartTable extends DartComposite implements ITable {
     protected void _hookEvents() {
         super._hookEvents();
         getApi().addListener(SWT.MouseDown, event -> TableHelper.handleMouseDownSelection(this, event));
-        FlutterBridge.on(this, "SetData", "SetData", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                TableHelper.loadVirtualWindow(this, e.end);
-            });
-        });
         FlutterBridge.on(this, "PaintItem", "PaintItem", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
@@ -2603,6 +2596,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 TableHelper.sendSelection(this, e, SWT.Selection);
+            });
+        });
+        FlutterBridge.on(this, "SetData", "SetData", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.loadVirtualWindow(this, e.end);
             });
         });
     }

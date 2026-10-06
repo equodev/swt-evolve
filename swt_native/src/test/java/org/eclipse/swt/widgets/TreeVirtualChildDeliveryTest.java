@@ -99,15 +99,35 @@ class TreeVirtualChildDeliveryTest {
     }
 
     @Test
+    @DisplayName("the children of an open item that the client scrolls to are filled and delivered")
+    void childrenTheClientAsksForAreDelivered() {
+        TreeItem group = virtualTreeWithOneRow();
+        group.setItemCount(1);
+        group.setExpanded(true);
+        // The real count arriving after the item was opened, as a lazy viewer's does: only the
+        // first page is loaded, as SWT's budget of SetData for the rows on screen allows.
+        group.setItemCount(40);
+        FlutterBridge.update();
+
+        try (DeliveryAudit audit = DeliveryAudit.install()) {
+            ((DartTree) group.getParent().getImpl()).loadVirtualChildren((int) FlutterBridge.id(group), 30);
+            FlutterBridge.update();
+
+            assertThat(childTextsSentFor(audit, group))
+                    .hasSize(30)
+                    .endsWith("row0/28", "row0/29");
+        }
+    }
+
+    @Test
     @DisplayName("a child the viewer creates by index reaches the client")
     void childCreatedByIndexIsDelivered() {
         TreeItem launch = virtualTreeWithOneRow();
         launch.setItemCount(20);
-        launch.setExpanded(true);
         FlutterBridge.update();
 
         try (DeliveryAudit audit = DeliveryAudit.install()) {
-            // Past the page an expand fills, the way a viewer's replace() reaches a row.
+            // Under a closed item nothing is loaded, so this is the viewer's replace() creating it.
             launch.getItem(18).setText("replaced");
             FlutterBridge.update();
 
@@ -115,6 +135,79 @@ class TreeVirtualChildDeliveryTest {
                     .as("the parent's item list gained a row")
                     .contains("replaced");
         }
+    }
+
+    @Test
+    @DisplayName("a user expand reaches the viewer while the placeholder child is still empty")
+    void userExpandLetsALazyViewerReplaceItsPlaceholder() {
+        TreeItem group = virtualTreeWithOneRow();
+        // A lazy viewer that does not know the child count yet gives the row one empty child, so
+        // it has an expander, and asks for the real count when it is opened - TreeViewer's
+        // handleTreeExpand, which only treats the child as a placeholder while it has no data.
+        group.setItemCount(1);
+        group.getParent().addListener(SWT.Expand, e -> {
+            TreeItem expanded = (TreeItem) e.item;
+            TreeItem[] children = expanded.getItems();
+            if (children.length == 1 && children[0].getData() == null) expanded.setItemCount(18);
+        });
+        group.getParent().addListener(SWT.SetData, e -> e.item.setData(((TreeItem) e.item).getText()));
+        FlutterBridge.update();
+
+        try (DeliveryAudit audit = DeliveryAudit.install()) {
+            Event click = new Event();
+            click.index = 0;
+            TreeHelper.sendExpand((DartTree) group.getParent().getImpl(), click, true);
+            FlutterBridge.update();
+
+            assertThat(group.getItemCount())
+                    .as("filling the placeholder before the Expand makes it look like a real "
+                            + "child, so the viewer never asks for the count")
+                    .isEqualTo(18);
+            assertThat(childTextsSentFor(audit, group)).startsWith("row0/0", "row0/1", "row0/2");
+        }
+    }
+
+    @Test
+    @DisplayName("describing a collapsed item's children to the client does not fill them")
+    void sendingAHiddenChildDoesNotFillIt() {
+        TreeItem group = virtualTreeWithOneRow();
+        group.setItemCount(1);
+        group.getParent().addListener(SWT.Expand, e -> {
+            TreeItem expanded = (TreeItem) e.item;
+            TreeItem[] children = expanded.getItems();
+            if (children.length == 1 && children[0].getData() == null) expanded.setItemCount(18);
+        });
+        group.getParent().addListener(SWT.SetData, e -> e.item.setData(((TreeItem) e.item).getText()));
+        // The viewer reaches the placeholder while the item is still closed, so it travels to the
+        // client before anyone opens the item.
+        TreeItem placeholder = group.getItems()[0];
+        FlutterBridge.update();
+
+        assertThat(placeholder.getData())
+                .as("a native tree never asks for the data of a row it does not paint")
+                .isNull();
+
+        Event click = new Event();
+        click.index = 0;
+        TreeHelper.sendExpand((DartTree) group.getParent().getImpl(), click, true);
+        FlutterBridge.update();
+
+        assertThat(group.getItemCount()).isEqualTo(18);
+    }
+
+    @Test
+    @DisplayName("the children of an open item are filled when they are sent")
+    void sendingAVisibleChildStillFillsIt() {
+        TreeItem group = virtualTreeWithOneRow();
+        group.setItemCount(40);
+        group.setExpanded(true);
+        // Past the page an expand fills: realized, never filled, and on screen.
+        TreeItem row = group.getItems()[30];
+        FlutterBridge.update();
+
+        assertThat(((DartTreeItem) row.getImpl()).text)
+                .as("with no paint loop, sending the row is what asks for its data")
+                .isEqualTo("row0/30");
     }
 
     // ---- harness ----

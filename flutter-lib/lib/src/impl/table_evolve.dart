@@ -713,7 +713,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     _requestedRowEnd = end;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      widget.sendEvent(state, "SetData/SetData", VEvent()..end = end);
+      widget.sendSetDataSetData(state, VEvent()..end = end);
     });
   }
 

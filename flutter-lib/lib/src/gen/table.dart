@@ -38,6 +38,10 @@ class TableSwt<V extends VTable> extends CompositeSwt<V> {
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
+
+  void sendSetDataSetData(V val, VEvent? payload) {
+    sendEvent(val, "SetData/SetData", payload);
+  }
 }
 
 @JsonSerializable()

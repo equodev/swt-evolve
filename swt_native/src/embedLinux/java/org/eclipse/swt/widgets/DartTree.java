@@ -351,6 +351,8 @@ public class DartTree extends DartComposite implements ITree {
     boolean checkData(TreeItem item) {
         if (((DartTreeItem) item.getImpl()).cached)
             return true;
+        if (TreeHelper.isHiddenWhileSerializing(item))
+            return true;
         if ((getApi().style & SWT.VIRTUAL) != 0) {
             ((DartTreeItem) item.getImpl()).cached = true;
             TreeItem parentItem = item.getParentItem();
@@ -2641,6 +2643,10 @@ public class DartTree extends DartComposite implements ITree {
                 if (isDisposed())
                     return;
                 TreeHelper.sendSelection(this, e, SWT.Selection);
+            });
+        });
+        FlutterBridge.on(this, "SetData", "SetData", e -> {
+            getDisplay().asyncExec(() -> {
             });
         });
         FlutterBridge.on(this, "Tree", "Collapse", e -> {
