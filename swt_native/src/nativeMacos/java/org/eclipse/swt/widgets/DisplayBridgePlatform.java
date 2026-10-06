@@ -27,7 +27,7 @@ final class DisplayBridgePlatform {
             return;
         MacApplicationMenu.install();
         // The desktop window and a Chromium window bring their own native application loop.
-        if (!ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode())
+        if (appleEventPumpRequested() && !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode())
             launch();
     }
 
@@ -71,6 +71,18 @@ final class DisplayBridgePlatform {
         if (view == 0 || control == null || control.isDisposed())
             return;
         control.view = new org.eclipse.swt.internal.cocoa.NSView(view);
+    }
+
+    /**
+     * Whether this run asks for the NSApp launch and the Cocoa pump that goes with it
+     * ({@code -Ddev.equo.swt.mac.appleEventPump=true}). Off by default: only an application that
+     * blocks its startup on the open-application Apple Event needs them, and the pump costs every
+     * other one its Display thread — {@link #pumpEvents()} blocks indefinitely on an NSApp that was
+     * finish-launched but never run, which is every browser-surface run, so the thread never returns
+     * from its first {@code readAndDispatch} and nothing posted to it with {@code asyncExec} runs.
+     */
+    private static boolean appleEventPumpRequested() {
+        return Boolean.getBoolean("dev.equo.swt.mac.appleEventPump");
     }
 
     /**

@@ -38,10 +38,12 @@ public class WebDisplayBridge extends DisplayBridge {
      * {@code beforeunload} time, so instead of closing immediately we wait this long: if the page was
      * merely refreshing, the reloaded client reconnects and re-sends {@code ClientReady} within the
      * window (see {@link #onDisplayClientReady}) and the close is cancelled; a genuine close lets the
-     * timer elapse and tears the shells down. Tuned to comfortably cover a Flutter-web reboot; override
-     * with {@code -Ddev.equo.swt.web.refreshGraceMs} (0 disables deferral — close immediately again).
+     * timer elapse and tears the shells down. It has to cover a cold Flutter-web boot of the whole
+     * tree, not of a snippet: an IDE-sized client takes 10-14 s to paint and reconnect, and a grace
+     * that expires first turns every refresh into a shutdown. Override with
+     * {@code -Ddev.equo.swt.web.refreshGraceMs} (0 disables deferral — close immediately again).
      */
-    private static final long REFRESH_GRACE_MS = Long.getLong("dev.equo.swt.web.refreshGraceMs", 3000);
+    private static final long REFRESH_GRACE_MS = Long.getLong("dev.equo.swt.web.refreshGraceMs", 20000);
 
     /** Single daemon thread that fires deferred tab-closes; created lazily, shut down with the Display. */
     private ScheduledExecutorService closeScheduler;
