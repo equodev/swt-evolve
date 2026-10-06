@@ -251,21 +251,25 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
     // through `wrap()`, so it owes them that answer itself.
     if (constraints != null) {
-      return tagSemantics(blockWhenDisabled(ParentForegroundScope(
-        foreground: state.foreground,
-        font: state.font,
-        selectionForeground: state.selectionForeground,
-        child: ConstrainedBox(constraints: constraints, child: column),
-      )));
+      return SwtControlScope(
+          swt: state.swt,
+          child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+            foreground: state.foreground,
+            font: state.font,
+            selectionForeground: state.selectionForeground,
+            child: ConstrainedBox(constraints: constraints, child: column),
+          ))));
     }
 
     // The tabs letter and colour in the folder's own font/foreground when they carry none.
-    return tagSemantics(blockWhenDisabled(ParentForegroundScope(
-      foreground: state.foreground,
-      font: state.font,
-      selectionForeground: state.selectionForeground,
-      child: column,
-    )));
+    return SwtControlScope(
+        swt: state.swt,
+        child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+          foreground: state.foreground,
+          font: state.font,
+          selectionForeground: state.selectionForeground,
+          child: column,
+        ))));
   }
 
   void _handleTabSelection(int index) {
@@ -844,6 +848,7 @@ class _CTabBarState extends State<_CTabBar> {
     final enabled = widget.state.enabled ?? false;
 
     final resolvedSelectionForeground = getForegroundColor(
+      context: context,
       foreground: widget.state.selectionForeground,
       defaultColor: widgetTheme.tabSelectedTextColor,
     );
@@ -1017,6 +1022,7 @@ class _CTabBarState extends State<_CTabBar> {
     final active = showHighlight && (widget.state.highlight ?? false);
 
     final resolvedSelectionForeground = getForegroundColor(
+      context: context,
       foreground: widget.state.selectionForeground,
       defaultColor: widgetTheme.tabSelectedTextColor,
     );

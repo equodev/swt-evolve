@@ -985,6 +985,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             return;
         this.background = newValue;
         cached = true;
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
     }
 
     /**
@@ -1036,6 +1037,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
                 }
             }
         }
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        getValue().markDirty(VTreeItem.BACKGROUND);
     }
 
     /**
@@ -1112,6 +1115,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldFont != null && oldFont.equals(font))
             return;
         cached = true;
+        getValue().markDirty(VTreeItem.FONTS);
     }
 
     /**
@@ -1151,6 +1155,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldFont == font)
             return;
         cellFont[index] = font;
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
         if (oldFont != null && oldFont.equals(font))
             return;
         cached = true;
@@ -1206,6 +1212,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             return;
         this.foreground = newValue;
         cached = true;
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
     }
 
     /**
@@ -1257,6 +1264,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
                 }
             }
         }
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        getValue().markDirty(VTreeItem.FOREGROUND);
     }
 
     /**
@@ -1507,9 +1516,13 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     Color background;
 
+    Color[] backgrounds;
+
     boolean checked;
 
     Color foreground;
+
+    Color[] foregrounds;
 
     Image[] images = new Image[0];
 
@@ -1555,12 +1568,20 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return background;
     }
 
+    public Color[] _backgrounds() {
+        return backgrounds;
+    }
+
     public boolean _checked() {
         return checked;
     }
 
     public Color _foreground() {
         return foreground;
+    }
+
+    public Color[] _foregrounds() {
+        return foregrounds;
     }
 
     public Image[] _images() {

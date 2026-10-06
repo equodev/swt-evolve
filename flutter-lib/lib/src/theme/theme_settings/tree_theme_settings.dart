@@ -200,6 +200,7 @@ Color getTreeBackgroundColor(
 }
 
 Color getTreeItemTextColor(
+  BuildContext context,
   VTreeItem state,
   TreeThemeExtension widgetTheme,
   bool selected,
@@ -213,6 +214,7 @@ Color getTreeItemTextColor(
       : widgetTheme.itemDisabledTextColor;
   
   return getForegroundColor(
+    context: context,
     // The item's own colour, else the Tree's: an item with no colour of its own takes the
     // control's, the way SWT resolves it.
     foreground: state.foreground ?? parentForeground,

@@ -20,6 +20,13 @@ class ConfigFlags {
   /// for itself shows. Controls whose GC content is the control (Canvas, StyledText) ignore it.
   bool? disable_control_gc_overlay;
   bool? use_swt_fonts;
+
+  /// Text in the foreground the application set rather than the theme's. Null follows
+  /// [use_swt_fonts]; see `useSwtFontColors`.
+  bool? use_swt_font_colors;
+
+  /// [use_swt_font_colors] per lower-case widget name, over the global value.
+  Map<String, bool>? use_swt_font_colors_by_widget;
   String? theme_name;
   String? force_theme;
   String? theme_color;

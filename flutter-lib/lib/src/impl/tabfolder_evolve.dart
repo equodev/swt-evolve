@@ -81,19 +81,23 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
     // through `wrap()`, so it owes them that answer itself.
     if (hasValidBounds) {
-      return tagSemantics(blockWhenDisabled(ParentForegroundScope(
-        foreground: state.foreground,
-        font: state.font,
-        child: ConstrainedBox(constraints: constraints!, child: content),
-      )));
+      return SwtControlScope(
+          swt: state.swt,
+          child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+            foreground: state.foreground,
+            font: state.font,
+            child: ConstrainedBox(constraints: constraints!, child: content),
+          ))));
     }
 
     // The tabs letter and colour in the folder's own font/foreground: VTabItem has neither.
-    return tagSemantics(blockWhenDisabled(ParentForegroundScope(
-      foreground: state.foreground,
-      font: state.font,
-      child: content,
-    )));
+    return SwtControlScope(
+        swt: state.swt,
+        child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+          foreground: state.foreground,
+          font: state.font,
+          child: content,
+        ))));
   }
 
   Widget _buildTabContent(List<Widget> tabBodies) {

@@ -256,7 +256,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final headerTextStyle = getTextStyle(
         context: context,
         font: state.font,
-        textColor: getTableHeaderTextColor(state, widgetTheme),
+        textColor: getTableHeaderTextColor(context, state,widgetTheme),
         baseTextStyle: widgetTheme.headerTextStyle,
       );
       headerOff += calculateHeaderHeight(headerTextStyle, widgetTheme) + widgetTheme.headerBorderWidth;
@@ -324,7 +324,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     Map<int, TableColumnWidth>? columnWidths,
   ) {
     final backgroundColor = getTableHeaderBackgroundColor(state, theme);
-    final textColor = getTableHeaderTextColor(state, theme);
+    final textColor = getTableHeaderTextColor(context, state,theme);
     final textStyle = getTextStyle(
       context: context,
       font: state.font,
@@ -928,7 +928,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final headerTextStyle = getTextStyle(
         context: context,
         font: state.font,
-        textColor: getTableHeaderTextColor(state, theme),
+        textColor: getTableHeaderTextColor(context, state,theme),
         baseTextStyle: theme.headerTextStyle,
       );
       headerOffset += calculateHeaderHeight(headerTextStyle, theme) +
@@ -1143,7 +1143,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: getTableHeaderTextColor(state, theme),
+      textColor: getTableHeaderTextColor(context, state,theme),
       baseTextStyle: theme.headerTextStyle,
     );
 
@@ -1208,7 +1208,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: getTableHeaderTextColor(state, theme),
+      textColor: getTableHeaderTextColor(context, state,theme),
       baseTextStyle: theme.headerTextStyle,
     );
     final rowTextStyle = getTextStyle(
@@ -1247,7 +1247,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: getTableHeaderTextColor(state, theme),
+      textColor: getTableHeaderTextColor(context, state,theme),
       baseTextStyle: theme.headerTextStyle,
     );
     final rowTextStyle = getTextStyle(
@@ -1328,7 +1328,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final cellTextStyle = getTextStyle(
       context: context,
       font: cellFont,
-      textColor: getTableRowTextColor(item, theme, false, true,
+      textColor: getTableRowTextColor(context, item, theme, false, true,
           parentForeground: state.foreground),
       baseTextStyle: rowTextStyle,
     );

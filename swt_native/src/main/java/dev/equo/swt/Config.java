@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 
@@ -783,6 +784,8 @@ public class Config {
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
+            configFlags.use_swt_font_colors = optionalBoolean(System.getProperty(USE_SWT_FONT_COLORS));
+            configFlags.use_swt_font_colors_by_widget = fontColorsByWidgetFromProperties();
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));
             // Toolbar icons and table cells grow under the pointer by default; opt out to render
             // like native SWT:  -Dswt.evolve.disable_hover_zoom=true
@@ -979,6 +982,29 @@ public class Config {
             flags.force_theme = "dark";
         }
         flags.decorations_align = DecorationsAlign.VLEFT;
+    }
+
+    static final String USE_SWT_FONT_COLORS = "swt.use_swt_font_colors";
+    static final String USE_SWT_FONT_COLORS_BY_WIDGET = "swt.evolve.use_swt_font_colors_";
+
+    /** Null when unset or blank, so the flag can tell "not configured" from "false". */
+    static Boolean optionalBoolean(String value) {
+        return value == null || value.trim().isEmpty() ? null : Boolean.parseBoolean(value.trim());
+    }
+
+    /**
+     * {@code -Dswt.evolve.use_swt_font_colors_<widget>=true|false}, keyed by the lower-case widget
+     * name, like {@code swt.evolve.theme_color_<widget>}.
+     */
+    static Map<String, Boolean> fontColorsByWidgetFromProperties() {
+        TreeMap<String, Boolean> byWidget = new TreeMap<>();
+        for (String key : System.getProperties().stringPropertyNames()) {
+            if (!key.startsWith(USE_SWT_FONT_COLORS_BY_WIDGET)) continue;
+            String widget = key.substring(USE_SWT_FONT_COLORS_BY_WIDGET.length()).trim().toLowerCase();
+            Boolean value = optionalBoolean(System.getProperty(key));
+            if (!widget.isEmpty() && value != null) byWidget.put(widget, value);
+        }
+        return byWidget.isEmpty() ? null : byWidget;
     }
 
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {

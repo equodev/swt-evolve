@@ -86,6 +86,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   /// The text colour: the application's own when it set one, else the theme's.
   Color get _textColor => getForegroundColor(
+        context: context,
         foreground: state.foreground,
         defaultColor: _styledTextTheme.foregroundColor,
       );

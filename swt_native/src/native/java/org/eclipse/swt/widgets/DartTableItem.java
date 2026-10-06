@@ -656,6 +656,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             return;
         cached = true;
         redraw(-1);
+        getValue().markDirty(VTableItem.BACKGROUNDS);
     }
 
     /**
@@ -693,6 +694,8 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (oldColor == color)
             return;
         cellBackground[index] = color;
+        getValue().markDirty(VTableItem.BACKGROUND);
+        getValue().markDirty(VTableItem.BACKGROUNDS);
         if (oldColor != null && oldColor.equals(color))
             return;
         cached = true;
@@ -759,6 +762,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         width = -1;
         cached = true;
         redraw(-1);
+        getValue().markDirty(VTableItem.FONTS);
     }
 
     /**
@@ -798,6 +802,8 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (oldFont == font)
             return;
         cellFont[index] = font;
+        getValue().markDirty(VTableItem.FONT);
+        getValue().markDirty(VTableItem.FONTS);
         if (oldFont != null && oldFont.equals(font))
             return;
         width = -1;
@@ -839,6 +845,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             return;
         cached = true;
         redraw(-1);
+        getValue().markDirty(VTableItem.FOREGROUNDS);
     }
 
     /**
@@ -876,6 +883,8 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (oldColor == color)
             return;
         cellForeground[index] = color;
+        getValue().markDirty(VTableItem.FOREGROUND);
+        getValue().markDirty(VTableItem.FOREGROUNDS);
         if (oldColor != null && oldColor.equals(color))
             return;
         cached = true;

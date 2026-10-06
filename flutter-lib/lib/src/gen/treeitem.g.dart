@@ -19,14 +19,27 @@ VTreeItem _$VTreeItemFromJson(Map<String, dynamic> json) => VTreeItem()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
+  ..backgrounds = (json['backgrounds'] as List<dynamic>?)
+      ?.map(
+        (e) => e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
+      )
+      .toList()
   ..checked = json['checked'] as bool?
   ..expanded = json['expanded'] as bool?
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
+  ..fonts = (json['fonts'] as List<dynamic>?)
+      ?.map((e) => e == null ? null : VFont.fromJson(e as Map<String, dynamic>))
+      .toList()
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
+  ..foregrounds = (json['foregrounds'] as List<dynamic>?)
+      ?.map(
+        (e) => e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
+      )
+      .toList()
   ..grayed = json['grayed'] as bool?
   ..images = (json['images'] as List<dynamic>?)
       ?.map(
@@ -51,10 +64,13 @@ Map<String, dynamic> _$VTreeItemToJson(VTreeItem instance) => <String, dynamic>{
   'text': ?instance.text,
   'itemCount': ?instance.itemCount,
   'background': ?instance.background,
+  'backgrounds': ?instance.backgrounds,
   'checked': ?instance.checked,
   'expanded': ?instance.expanded,
   'font': ?instance.font,
+  'fonts': ?instance.fonts,
   'foreground': ?instance.foreground,
+  'foregrounds': ?instance.foregrounds,
   'grayed': ?instance.grayed,
   'images': ?instance.images,
   'items': ?instance.items,

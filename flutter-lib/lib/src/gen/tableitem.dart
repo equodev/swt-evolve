@@ -25,9 +25,12 @@ class VTableItem extends VItem {
   }
 
   VColor? background;
+  List<VColor?>? backgrounds;
   bool? checked;
   VFont? font;
+  List<VFont?>? fonts;
   VColor? foreground;
+  List<VColor?>? foregrounds;
   bool? grayed;
   List<VImage?>? images;
   List<int>? paintedTexts;
@@ -38,9 +41,12 @@ class VTableItem extends VItem {
     super.copyFrom(other);
     if (other is VTableItem) {
       background = other.background;
+      backgrounds = other.backgrounds;
       checked = other.checked;
       font = other.font;
+      fonts = other.fonts;
       foreground = other.foreground;
+      foregrounds = other.foregrounds;
       grayed = other.grayed;
       images = other.images;
       paintedTexts = other.paintedTexts;
@@ -55,16 +61,37 @@ class VTableItem extends VItem {
         background = json['background'] == null
             ? null
             : VColor.fromJson(json['background'] as Map<String, dynamic>);
+      case 'backgrounds':
+        backgrounds = (json['backgrounds'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'checked':
         checked = json['checked'] as bool?;
       case 'font':
         font = json['font'] == null
             ? null
             : VFont.fromJson(json['font'] as Map<String, dynamic>);
+      case 'fonts':
+        fonts = (json['fonts'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VFont.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'foreground':
         foreground = json['foreground'] == null
             ? null
             : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+      case 'foregrounds':
+        foregrounds = (json['foregrounds'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'grayed':
         grayed = json['grayed'] as bool?;
       case 'images':

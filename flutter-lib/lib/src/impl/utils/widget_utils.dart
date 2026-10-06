@@ -4,6 +4,8 @@ import '../../gen/swt.dart';
 import '../../gen/color.dart';
 import '../../gen/font.dart';
 import '../../gen/image.dart';
+import '../../gen/item.dart';
+import '../../gen/widget.dart';
 import '../../impl/color_utils.dart';
 import '../../impl/widget_config.dart';
 import 'font_utils.dart';
@@ -75,14 +77,20 @@ Color? getBackgroundColor({
   return defaultColor;
 }
 
-/// Gets foreground/text color with SWT font support
+/// What an item set for one column (`TreeItem.setForeground(int, Color)` and the like), or null
+/// when it set nothing there and the item's own value applies.
+T? cellValue<T>(List<T?>? cells, int column) =>
+    cells != null && column >= 0 && column < cells.length ? cells[column] : null;
+
+/// The text colour: [foreground] when the control [context] builds for honours the application's
+/// (see `useSwtFontColors`), else [defaultColor].
 Color getForegroundColor({
+  required BuildContext context,
   required VColor? foreground,
   required Color defaultColor,
-  BuildContext? context,
 }) {
-  final useSwtForeground = (getConfigFlags().use_swt_fonts ?? false) ||
-      (context != null && SwtColorScope.isActive(context));
+  final useSwtForeground = useSwtFontColors(SwtControlScope.nameOf(context)) ||
+      SwtColorScope.isActive(context);
 
   if (useSwtForeground && foreground != null) {
     return colorFromVColor(foreground, defaultColor: defaultColor);
@@ -213,6 +221,27 @@ class SwtColorScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(SwtColorScope oldWidget) => false;
+}
+
+/// The SWT control a subtree is built for, published by `ControlImpl.wrap`. An item drawn inside a
+/// control, or a builder below its build, answers to that control.
+class SwtControlScope extends InheritedWidget {
+  final String? swt;
+
+  const SwtControlScope({super.key, required this.swt, required super.child});
+
+  /// The control's own name when [context] is that control's, since its build runs above the scope
+  /// it publishes; otherwise the enclosing control's.
+  static String? nameOf(BuildContext context) {
+    if (context is StatefulElement) {
+      final owner = context.state;
+      if (owner is WidgetSwtState && owner.state is! VItem) return owner.state.swt;
+    }
+    return context.dependOnInheritedWidgetOfExactType<SwtControlScope>()?.swt;
+  }
+
+  @override
+  bool updateShouldNotify(SwtControlScope oldWidget) => swt != oldWidget.swt;
 }
 
 /// Carries a container's own foreground down to the items it draws inline. An item with no

@@ -657,12 +657,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // widget's GC channels whatever its enablement, so the GC has to be mounted and subscribed on
       // this branch too. Without it, everything a Canvas draws for itself is dropped -- a ui.forms
       // Hyperlink, which applications create disabled, renders as an empty row.
-      return RegionClip.maybe(
-          state.region,
-          blockWhenDisabled(
-              Opacity(
-                  opacity: AppOpacities.disabled,
-                  child: tagSemantics(wrapWithGCOverlay(widget)))));
+      return SwtControlScope(
+          swt: state.swt,
+          child: RegionClip.maybe(
+              state.region,
+              blockWhenDisabled(
+                  Opacity(
+                      opacity: AppOpacities.disabled,
+                      child: tagSemantics(wrapWithGCOverlay(widget))))));
     }
 
     if (state.menu != null) {
@@ -760,9 +762,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ),
     );
 
-    return ControlNestingScope(
-      depth: hoverDepth + 1,
-      child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
+    return SwtControlScope(
+      swt: state.swt,
+      child: ControlNestingScope(
+        depth: hoverDepth + 1,
+        child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
+      ),
     );
   }
 

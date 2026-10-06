@@ -139,6 +139,7 @@ class _StyledLinkState extends State<StyledLink> {
   Widget _buildRichText() {
     final textColor = widget.enabled
         ? getForegroundColor(
+            context: context,
             foreground: widget.foreground,
             defaultColor: widget.widgetTheme.textColor,
           )
@@ -173,6 +174,7 @@ class _StyledLinkState extends State<StyledLink> {
 
     final linkColor = widget.enabled
         ? getForegroundColor(
+            context: context,
             foreground: widget.linkForeground,
             defaultColor: (_isHovered || _isFocused)
                 ? widget.widgetTheme.linkHoverTextColor

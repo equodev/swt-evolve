@@ -496,8 +496,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           final String cellText = col == 0
               ? firstText
               : (col < texts.length ? texts[col] ?? '' : '');
+          final cellFont = cellValue(item.fonts, col);
           final painter = TextPainter(
-            text: TextSpan(text: cellText, style: textStyle),
+            text: TextSpan(
+              text: cellText,
+              style: cellFont == null
+                  ? textStyle
+                  : getTextStyle(
+                      context: context,
+                      font: cellFont,
+                      textColor: theme.itemTextColor,
+                      baseTextStyle: theme.itemTextStyle,
+                    ),
+            ),
             textDirection: TextDirection.ltr,
             maxLines: 1,
           );
@@ -566,7 +577,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           text: text,
           style: getTextStyle(
             context: context,
-            font: item.font ?? state.font,
+            font: cellValue(item.fonts, 0) ?? item.font ?? state.font,
             // The item's own colour, else the Tree's -- the same cascade the font above uses.
           textColor: getForegroundColor(
             foreground: item.foreground ?? state.foreground,

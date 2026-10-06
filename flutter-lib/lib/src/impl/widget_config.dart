@@ -129,6 +129,17 @@ bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
 /// ToolItemThemeExtension.hoverZoom* and TableThemeExtension.cellHoverZoom*.
 bool get hoverZoom => !(getConfigFlags().disable_hover_zoom ?? false);
 
+/// Whether [widget] (an SWT class name) draws text in the foreground the application set rather
+/// than the theme's: `-Dswt.evolve.use_swt_font_colors_<widget>`, else `-Dswt.use_swt_font_colors`, else
+/// `use_swt_fonts`.
+bool useSwtFontColors([String? widget]) {
+  final flags = getConfigFlags();
+  final own = widget == null
+      ? null
+      : flags.use_swt_font_colors_by_widget?[widget.toLowerCase()];
+  return own ?? flags.use_swt_font_colors ?? flags.use_swt_fonts ?? false;
+}
+
 /// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the named theme's default.
 bool get focusIndicators {
   final flags = getConfigFlags();

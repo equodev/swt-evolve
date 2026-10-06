@@ -29,7 +29,7 @@ class ListImpl<T extends ListSwt, V extends VList>
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;
     final height = hasConstraints ? state.bounds!.height.toDouble() : null;
 
-    return tagSemantics(_StyledList(
+    return SwtControlScope(swt: state.swt, child: tagSemantics(_StyledList(
       widgetTheme: widgetTheme,
       state: state,
       items: state.items!,
@@ -57,7 +57,7 @@ class ListImpl<T extends ListSwt, V extends VList>
       onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
       onFocusOut: () => widget.sendFocusFocusOut(state, null),
-    ));
+    )));
   }
 
   List<String> _convertIndicesToItems(List<String> items, List<int> indices) {
@@ -272,7 +272,7 @@ class _ListItemState extends State<_ListItem> {
     final selectedOverlayColor = theme.selectedItemBackgroundColor;
     final hoverOverlayColor = theme.hoverItemBackgroundColor;
 
-    final textColor = getListItemTextColor(theme, widget.isSelected, widget.enabled,
+    final textColor = getListItemTextColor(context, theme, widget.isSelected, widget.enabled,
         foreground: widget.state.foreground);
 
     final textStyle = getTextStyle(

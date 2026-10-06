@@ -185,7 +185,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     if (_context == null) {
       // Standalone mode used by the measure tool — render as a single row without tree context.
-      final textColor = getTreeItemTextColor(state, widgetTheme, false, true,
+      final textColor = getTreeItemTextColor(context, state, widgetTheme, false, true,
           parentForeground: ParentForegroundScope.of(context));
       final image = _treeColumnImage();
       return Container(
@@ -251,6 +251,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
     final textColor = getTreeItemTextColor(
+      context,
       state,
       widgetTheme,
       selected,
@@ -1139,7 +1140,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final cellTextColor = (state.paintedTexts?.contains(columnIndex) ?? false)
         ? Colors.transparent
         : getForegroundColor(
-            foreground: state.foreground,
+            context: context,
+            foreground: cellValue(state.foregrounds, columnIndex) ?? state.foreground,
             defaultColor: textColor,
           );
     final TextStyle baseStyle = hasMultiColumn
@@ -1147,7 +1149,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         : theme.itemTextStyle ?? const TextStyle();
     final cellTextStyle = getTextStyle(
       context: context,
-      font: state.font ?? _context?.treeFont,
+      font: cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.treeFont,
       textColor: cellTextColor,
       baseTextStyle: baseStyle,
     );
@@ -1172,7 +1174,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       );
     }
 
-    return Container(padding: adjustedPadding, child: textWidget);
+    return Container(
+      padding: adjustedPadding,
+      color: getBackgroundColor(
+        background: cellValue(state.backgrounds, columnIndex),
+        defaultColor: null,
+      ),
+      child: textWidget,
+    );
   }
 }
 

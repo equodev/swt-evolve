@@ -81,6 +81,19 @@ public class ConfigFlags {
 
     public boolean use_swt_fonts;
 
+    /**
+     * Draws text in the foreground the application set rather than the theme's
+     * ({@code -Dswt.use_swt_font_colors}). Null follows {@link #use_swt_fonts}.
+     */
+    public Boolean use_swt_font_colors;
+
+    /**
+     * {@link #use_swt_font_colors} for one widget class, keyed by its lower-case SWT name
+     * ({@code -Dswt.evolve.use_swt_font_colors_tree=true}); it wins over the global value. An item follows
+     * the control that draws it: a TreeItem answers to {@code tree}.
+     */
+    public Map<String, Boolean> use_swt_font_colors_by_widget;
+
     public boolean use_special_dropdown_button;
 
     public boolean preserve_icon_colors;
@@ -185,6 +198,8 @@ public class ConfigFlags {
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
                 ", disable_control_gc_overlay=" + disable_control_gc_overlay +
                 ", use_swt_fonts=" + use_swt_fonts +
+                ", use_swt_font_colors=" + use_swt_font_colors +
+                ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +

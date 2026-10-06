@@ -968,6 +968,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             return;
         cached = true;
         redraw(-1);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
     }
 
     /**
@@ -1005,6 +1006,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldColor == color)
             return;
         cellBackground[index] = color;
+        getValue().markDirty(VTreeItem.BACKGROUND);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
         if (oldColor != null && oldColor.equals(color))
             return;
         cached = true;
@@ -1102,6 +1105,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         width = -1;
         cached = true;
         redraw(-1);
+        getValue().markDirty(VTreeItem.FONTS);
     }
 
     /**
@@ -1141,6 +1145,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldFont == font)
             return;
         cellFont[index] = font;
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
         if (oldFont != null && oldFont.equals(font))
             return;
         width = -1;
@@ -1182,6 +1188,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             return;
         cached = true;
         redraw(-1);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
     }
 
     /**
@@ -1219,6 +1226,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldColor == color)
             return;
         cellForeground[index] = color;
+        getValue().markDirty(VTreeItem.FOREGROUND);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
         if (oldColor != null && oldColor.equals(color))
             return;
         cached = true;

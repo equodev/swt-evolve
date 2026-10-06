@@ -180,6 +180,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
 
   Widget _buildSlider(double displayValue) {
     final activeTrackColor = getScaleActiveTrackColor(
+      context,
       widget.widgetTheme,
       isEnabled: widget.enabled,
       foreground: widget.foreground,
@@ -189,6 +190,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
       isEnabled: widget.enabled,
     );
     final thumbColor = getScaleThumbColor(
+      context,
       widget.widgetTheme,
       isEnabled: widget.enabled,
       isHovered: _isHovered,

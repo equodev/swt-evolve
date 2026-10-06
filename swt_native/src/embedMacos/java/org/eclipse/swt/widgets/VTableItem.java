@@ -24,6 +24,24 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).background = value;
     }
 
+    public Color[] getBackgrounds() {
+        Color[] values = ((DartTableItem) impl).cellBackground;
+        if (values == null)
+            return null;
+        Color[] result = new Color[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Color v = values[i];
+            if (v != null && !(v.getImpl() instanceof DartColor))
+                v = null;
+            result[i] = v;
+        }
+        return result;
+    }
+
+    public void setBackgrounds(Color[] value) {
+        ((DartTableItem) impl).cellBackground = value;
+    }
+
     public boolean getChecked() {
         return ((DartTableItem) impl).getChecked();
     }
@@ -45,12 +63,50 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).font = value;
     }
 
+    public Font[] getFonts() {
+        Font[] values = ((DartTableItem) impl).cellFont;
+        if (values == null)
+            return null;
+        Font[] result = new Font[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Font v = values[i];
+            if (v != null && v.getImpl() instanceof SwtFont)
+                v = GraphicsUtils.copyFont(v);
+            if (v != null && !(v.getImpl() instanceof DartFont))
+                v = null;
+            result[i] = v;
+        }
+        return result;
+    }
+
+    public void setFonts(Font[] value) {
+        ((DartTableItem) impl).cellFont = value;
+    }
+
     public Color getForeground() {
         return ((DartTableItem) impl).foreground;
     }
 
     public void setForeground(Color value) {
         ((DartTableItem) impl).foreground = value;
+    }
+
+    public Color[] getForegrounds() {
+        Color[] values = ((DartTableItem) impl).cellForeground;
+        if (values == null)
+            return null;
+        Color[] result = new Color[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Color v = values[i];
+            if (v != null && !(v.getImpl() instanceof DartColor))
+                v = null;
+            result[i] = v;
+        }
+        return result;
+    }
+
+    public void setForegrounds(Color[] value) {
+        ((DartTableItem) impl).cellForeground = value;
     }
 
     public boolean getGrayed() {
@@ -95,11 +151,17 @@ public class VTableItem extends VItem {
 
     public static final String BACKGROUND = "background";
 
+    public static final String BACKGROUNDS = "backgrounds";
+
     public static final String CHECKED = "checked";
 
     public static final String FONT = "font";
 
+    public static final String FONTS = "fonts";
+
     public static final String FOREGROUND = "foreground";
+
+    public static final String FOREGROUNDS = "foregrounds";
 
     public static final String GRAYED = "grayed";
 
@@ -115,14 +177,23 @@ public class VTableItem extends VItem {
             case "background":
                 Serializer.writeKeyValue(writer, "background", getBackground());
                 return;
+            case "backgrounds":
+                Serializer.writeKeyValue(writer, "backgrounds", getBackgrounds());
+                return;
             case "checked":
                 Serializer.writeKeyValue(writer, "checked", getChecked());
                 return;
             case "font":
                 Serializer.writeKeyValue(writer, "font", getFont());
                 return;
+            case "fonts":
+                Serializer.writeKeyValue(writer, "fonts", getFonts());
+                return;
             case "foreground":
                 Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "foregrounds":
+                Serializer.writeKeyValue(writer, "foregrounds", getForegrounds());
                 return;
             case "grayed":
                 Serializer.writeKeyValue(writer, "grayed", getGrayed());

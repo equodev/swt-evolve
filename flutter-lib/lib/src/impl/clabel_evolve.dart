@@ -53,6 +53,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     final itemTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
 
     final textColor = getForegroundColor(
+      context: context,
       foreground: state.foreground,
       defaultColor: clabelTheme.primaryTextColor,
     );
@@ -181,6 +182,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
   ) {
     final textColor = enabled
         ? getForegroundColor(
+            context: context,
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
           )

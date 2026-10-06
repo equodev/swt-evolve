@@ -19,6 +19,11 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..disable_swt_canvas_colors = json['disable_swt_canvas_colors'] as bool?
   ..disable_control_gc_overlay = json['disable_control_gc_overlay'] as bool?
   ..use_swt_fonts = json['use_swt_fonts'] as bool?
+  ..use_swt_font_colors = json['use_swt_font_colors'] as bool?
+  ..use_swt_font_colors_by_widget =
+      (json['use_swt_font_colors_by_widget'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as bool),
+      )
   ..theme_name = json['theme_name'] as String?
   ..force_theme = json['force_theme'] as String?
   ..theme_color = json['theme_color'] as String?
@@ -61,6 +66,8 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'disable_swt_canvas_colors': ?instance.disable_swt_canvas_colors,
   'disable_control_gc_overlay': ?instance.disable_control_gc_overlay,
   'use_swt_fonts': ?instance.use_swt_fonts,
+  'use_swt_font_colors': ?instance.use_swt_font_colors,
+  'use_swt_font_colors_by_widget': ?instance.use_swt_font_colors_by_widget,
   'theme_name': ?instance.theme_name,
   'force_theme': ?instance.force_theme,
   'theme_color': ?instance.theme_color,

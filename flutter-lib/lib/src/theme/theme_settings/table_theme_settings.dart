@@ -161,6 +161,7 @@ Color getTableCellDefaultTextColor(
 }
 
 Color getTableRowTextColor(
+  BuildContext context,
   VTableItem state,
   TableThemeExtension widgetTheme,
   bool selected,
@@ -168,6 +169,7 @@ Color getTableRowTextColor(
   VColor? parentForeground,
 }) {
   return getForegroundColor(
+    context: context,
     // The row's own colour, else the Table's: an item with no colour of its own takes the
     // control's, the way SWT resolves it.
     foreground: state.foreground ?? parentForeground,
@@ -200,12 +202,14 @@ Color getTableRowBackgroundColor(
 }
 
 Color getTableHeaderTextColor(
+  BuildContext context,
   VTable state,
   TableThemeExtension widgetTheme,
 ) {
   final defaultColor = widgetTheme.headerTextColor;
   
   return getForegroundColor(
+    context: context,
     foreground: state.headerForeground,
     defaultColor: defaultColor,
   );

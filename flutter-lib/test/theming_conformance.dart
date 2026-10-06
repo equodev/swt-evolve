@@ -673,4 +673,57 @@ void defineThemingConformance({int shard = 0, int shards = 1}) {
       });
     }
   });
+
+  // use_swt_font_colors_<widget> is resolved from where the text is built, not named by the
+  // caller, so every widget is checked against its own name: it turns the application foreground
+  // on, and another widget's name leaves the theme in place. An item answers to its control.
+  group('with only use_swt_font_colors_<widget> on', () {
+    for (final entry in _widgets.entries) {
+      final name = entry.key;
+      if (!mine()) continue;
+      if (_optOut.containsKey(name) || _foregroundOptOut.containsKey(name)) continue;
+      final own = (_itemOwner[name] ?? name).toLowerCase();
+      final other = own == 'label' ? 'button' : 'label';
+
+      for (final (key, honoured) in [(own, true), (other, false)]) {
+        testWidgets('$name ${honoured ? 'answers to' : 'ignores'} use_swt_font_colors_$key',
+            (tester) async {
+          resetConfigFlags();
+          setConfigFlags(ConfigFlags()
+            ..use_swt_colors = false
+            ..use_swt_fonts = false
+            ..theme_name = 'equo'
+            ..use_swt_font_colors_by_widget = {key: true});
+          final colors = await _paintedColors(tester, entry.value());
+          if (_foregroundAsPaint.contains(name)) {
+            expect(colors.containsKey(_fgArgb), honoured,
+                reason: honoured
+                    ? '$name ignored use_swt_font_colors_$key, its own name'
+                    : '$name took the application foreground from another widget\'s name');
+            return;
+          }
+          final styles = _textStyles(tester).toList();
+          if (styles.isEmpty) {
+            markTestSkipped('$name draws no inspectable text - not measurable this way');
+            return;
+          }
+          expect(styles.any((s) => s.color?.value == _fgArgb), honoured,
+              reason: honoured
+                  ? '$name ignored use_swt_font_colors_$key, its own name'
+                  : '$name took the application foreground from another widget\'s name');
+        });
+      }
+    }
+  });
 }
+
+/// Widgets that paint the foreground as a shape (a track, a thumb) rather than as text.
+const Set<String> _foregroundAsPaint = {'Scale', 'Slider'};
+
+/// The control an item answers to for `use_swt_font_colors_<widget>`: the one that draws it.
+const Map<String, String> _itemOwner = {
+  'TableItem': 'Table',
+  'TreeItem': 'Tree',
+  'ToolItem': 'ToolBar',
+  'CTabItem': 'CTabFolder',
+};

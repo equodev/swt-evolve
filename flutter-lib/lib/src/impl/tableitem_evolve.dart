@@ -88,6 +88,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           ? (cellTexts[columnIndex] ?? "")
           : "";
       final cellTextColor = getCellTextColor(
+        context,
         columnIndex,
         theme,
         isSelected,
@@ -99,7 +100,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           state.paintedTexts?.contains(columnIndex) ?? false;
       final cellTextStyle = getTextStyle(
         context: context,
-        font: state.font ?? _context?.tableFont,
+        font: cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.tableFont,
         textColor: paintedByOverlay ? Colors.transparent : cellTextColor,
         baseTextStyle: theme.rowTextStyle,
       );
@@ -391,6 +392,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   }
 
   Color getCellTextColor(
+    BuildContext context,
     int columnIndex,
     TableThemeExtension theme,
     bool isSelected,
@@ -400,6 +402,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     final cellForeground = getCellForeground(columnIndex);
     return getForegroundColor(
+      context: context,
       // Cell, else row, else the Table's own -- the cascade SWT resolves.
       foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
       defaultColor: defaultColor,
@@ -425,13 +428,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     return textPainter.height + theme.cellPadding.vertical;
   }
 
-  VColor? getCellForeground(int columnIndex) {
-    return null;
-  }
+  VColor? getCellForeground(int columnIndex) =>
+      cellValue(state.foregrounds, columnIndex);
 
-  VColor? getCellBackground(int columnIndex) {
-    return null;
-  }
+  VColor? getCellBackground(int columnIndex) =>
+      cellValue(state.backgrounds, columnIndex);
 }
 
 class _TableCheckboxButtonWrapper extends StatefulWidget {

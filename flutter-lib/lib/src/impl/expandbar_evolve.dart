@@ -100,7 +100,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       result = IntrinsicHeight(child: result);
     }
 
-    return tagSemantics(result);
+    return SwtControlScope(swt: state.swt, child: tagSemantics(result));
   }
 
   List<Widget> getExpandItems(
@@ -255,6 +255,7 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
 
     // Both states take the application's colour when it set one; only the theme default differs.
     final textColor = getForegroundColor(
+      context: context,
       foreground: widget.parentForeground,
       defaultColor: _isExpanded
           ? itemTheme.foregroundExpandedColor

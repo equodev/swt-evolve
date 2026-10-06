@@ -35,23 +35,26 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
     final children = state.children;
     final text = stripAccelerators(state.text);
 
-    return tagSemantics(MouseRegion(
-      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-      child: Focus(
-        focusNode: _focusNode,
-        child: _StyledGroup(
-          widgetTheme: widgetTheme,
-          text: text,
-          composite: state,
-          children: children,
-          vFont: state.font,
-          textColor: state.foreground,
-          hasBounds: hasBounds(state.bounds),
-          style: state.style,
+    return SwtControlScope(
+      swt: state.swt,
+      child: tagSemantics(MouseRegion(
+        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
+        child: Focus(
+          focusNode: _focusNode,
+          child: _StyledGroup(
+            widgetTheme: widgetTheme,
+            text: text,
+            composite: state,
+            children: children,
+            vFont: state.font,
+            textColor: state.foreground,
+            hasBounds: hasBounds(state.bounds),
+            style: state.style,
+          ),
         ),
-      ),
-    ));
+      )),
+    );
   }
 
   bool _focusReported = false;
@@ -149,6 +152,7 @@ class _StyledGroup extends StatelessWidget {
         : backgroundColor;
 
     final foregroundColor = getForegroundColor(
+      context: context,
       foreground: textColor,
       defaultColor: widgetTheme.foregroundColor,
     );

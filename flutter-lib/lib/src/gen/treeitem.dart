@@ -27,10 +27,13 @@ class VTreeItem extends VItem {
 
   int? itemCount;
   VColor? background;
+  List<VColor?>? backgrounds;
   bool? checked;
   bool? expanded;
   VFont? font;
+  List<VFont?>? fonts;
   VColor? foreground;
+  List<VColor?>? foregrounds;
   bool? grayed;
   List<VImage?>? images;
   List<VTreeItem>? items;
@@ -42,10 +45,13 @@ class VTreeItem extends VItem {
     super.copyFrom(other);
     if (other is VTreeItem) {
       background = other.background;
+      backgrounds = other.backgrounds;
       checked = other.checked;
       expanded = other.expanded;
       font = other.font;
+      fonts = other.fonts;
       foreground = other.foreground;
+      foregrounds = other.foregrounds;
       grayed = other.grayed;
       images = other.images;
       items = other.items;
@@ -62,6 +68,13 @@ class VTreeItem extends VItem {
         background = json['background'] == null
             ? null
             : VColor.fromJson(json['background'] as Map<String, dynamic>);
+      case 'backgrounds':
+        backgrounds = (json['backgrounds'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'checked':
         checked = json['checked'] as bool?;
       case 'expanded':
@@ -70,10 +83,24 @@ class VTreeItem extends VItem {
         font = json['font'] == null
             ? null
             : VFont.fromJson(json['font'] as Map<String, dynamic>);
+      case 'fonts':
+        fonts = (json['fonts'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VFont.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'foreground':
         foreground = json['foreground'] == null
             ? null
             : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+      case 'foregrounds':
+        foregrounds = (json['foregrounds'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'grayed':
         grayed = json['grayed'] as bool?;
       case 'images':

@@ -91,6 +91,7 @@ ScaleThemeExtension _getScaleTheme({
 
 // Helper to get track colors based on state
 Color getScaleActiveTrackColor(
+  BuildContext context,
   ScaleThemeExtension widgetTheme, {
   required bool isEnabled,
   VColor? foreground,
@@ -101,6 +102,7 @@ Color getScaleActiveTrackColor(
   // Follows the application's foreground the way Slider's thumb already does: the two are
   // sibling widgets and looked like they belonged to different themes.
   return getForegroundColor(
+    context: context,
     foreground: foreground,
     defaultColor: widgetTheme.activeTrackColor,
   );
@@ -118,6 +120,7 @@ Color getScaleInactiveTrackColor(
 
 // Helper to get thumb color based on state
 Color getScaleThumbColor(
+  BuildContext context,
   ScaleThemeExtension widgetTheme, {
   required bool isEnabled,
   required bool isHovered,
@@ -127,6 +130,7 @@ Color getScaleThumbColor(
     return widgetTheme.disabledThumbColor;
   }
   return getForegroundColor(
+    context: context,
     foreground: foreground,
     defaultColor: isHovered ? widgetTheme.thumbHoverColor : widgetTheme.thumbColor,
   );

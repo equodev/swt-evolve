@@ -46,6 +46,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
     }
 
     final activeTrackColor = getSliderActiveTrackColor(
+      context,
       state,
       widgetTheme,
       enabled: enabled,
@@ -56,6 +57,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
       enabled: enabled,
     );
     final thumbColor = getSliderThumbColor(
+      context,
       state,
       widgetTheme,
       enabled: enabled,
@@ -94,6 +96,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
 }
 
 Color getSliderActiveTrackColor(
+  BuildContext context,
   VSlider state,
   SliderThemeExtension widgetTheme, {
   required bool enabled,
@@ -102,6 +105,7 @@ Color getSliderActiveTrackColor(
     return widgetTheme.disabledActiveTrackColor;
   }
   return getForegroundColor(
+    context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.activeTrackColor,
   );
@@ -123,6 +127,7 @@ Color getSliderInactiveTrackColor(
 }
 
 Color getSliderThumbColor(
+  BuildContext context,
   VSlider state,
   SliderThemeExtension widgetTheme, {
   required bool enabled,
@@ -131,6 +136,7 @@ Color getSliderThumbColor(
     return widgetTheme.disabledThumbColor;
   }
   return getForegroundColor(
+    context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.thumbColor,
   );

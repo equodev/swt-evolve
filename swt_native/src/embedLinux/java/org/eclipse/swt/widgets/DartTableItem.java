@@ -730,6 +730,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             return;
         this.background = newValue;
         cached = true;
+        getValue().markDirty(VTableItem.BACKGROUNDS);
     }
 
     /**
@@ -780,6 +781,8 @@ public class DartTableItem extends DartItem implements ITableItem {
                 }
             }
         }
+        getValue().markDirty(VTableItem.BACKGROUNDS);
+        getValue().markDirty(VTableItem.BACKGROUND);
     }
 
     /**
@@ -840,6 +843,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (oldFont != null && oldFont.equals(font))
             return;
         cached = true;
+        getValue().markDirty(VTableItem.FONTS);
     }
 
     /**
@@ -879,6 +883,8 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (oldFont == font)
             return;
         cellFont[index] = font;
+        getValue().markDirty(VTableItem.FONT);
+        getValue().markDirty(VTableItem.FONTS);
         if (oldFont != null && oldFont.equals(font))
             return;
         cached = true;
@@ -934,6 +940,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             return;
         this.foreground = newValue;
         cached = true;
+        getValue().markDirty(VTableItem.FOREGROUNDS);
     }
 
     /**
@@ -984,6 +991,8 @@ public class DartTableItem extends DartItem implements ITableItem {
                 }
             }
         }
+        getValue().markDirty(VTableItem.FOREGROUNDS);
+        getValue().markDirty(VTableItem.FOREGROUND);
     }
 
     /**
@@ -1218,9 +1227,13 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     Color background;
 
+    Color[] backgrounds;
+
     boolean checked;
 
     Color foreground;
+
+    Color[] foregrounds;
 
     int imageIndent;
 
@@ -1258,12 +1271,20 @@ public class DartTableItem extends DartItem implements ITableItem {
         return background;
     }
 
+    public Color[] _backgrounds() {
+        return backgrounds;
+    }
+
     public boolean _checked() {
         return checked;
     }
 
     public Color _foreground() {
         return foreground;
+    }
+
+    public Color[] _foregrounds() {
+        return foregrounds;
     }
 
     public int _imageIndent() {
