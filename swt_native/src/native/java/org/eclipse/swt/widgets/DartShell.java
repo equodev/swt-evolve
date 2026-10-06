@@ -1036,6 +1036,8 @@ public class DartShell extends DartDecorations implements IShell {
         updateParent(false);
         ((DartDisplay) display.getImpl()).updateQuitMenu();
         lastActive = null;
+        if (savedDisplay != null && ((DartDisplay) savedDisplay.getImpl()).disposing)
+            return;
         // The active shell going away hands activation back to the one it took over from, at
         // once, as a window manager does when the active window is destroyed.
         if (returnTo != null && !returnTo.isDisposed() && returnTo.isVisible()) {

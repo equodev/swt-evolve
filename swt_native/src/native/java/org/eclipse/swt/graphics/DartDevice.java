@@ -228,25 +228,25 @@ public abstract class DartDevice implements Drawable, IDevice {
      * @see #checkDevice
      */
     public void dispose() {
-        synchronized (DartDevice.class) {
-            try (ExceptionStash exceptions = new ExceptionStash()) {
-                if (isDisposed())
-                    return;
-                checkDevice();
-                try {
-                    release();
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-                destroy();
-                disposed = true;
-                if (tracking) {
-                    synchronized (trackingLock) {
-                        printErrors();
-                        objects = null;
-                        errors = null;
-                        trackingLock = null;
-                    }
+        if (isDisposed())
+            return;
+        checkDevice();
+        if (!disposeStarted.compareAndSet(false, true))
+            return;
+        try (ExceptionStash exceptions = new ExceptionStash()) {
+            try {
+                release();
+            } catch (Error | RuntimeException ex) {
+                exceptions.stash(ex);
+            }
+            destroy();
+            disposed = true;
+            if (tracking) {
+                synchronized (trackingLock) {
+                    printErrors();
+                    objects = null;
+                    errors = null;
+                    trackingLock = null;
                 }
             }
         }
@@ -859,6 +859,8 @@ public abstract class DartDevice implements Drawable, IDevice {
 
     void bootFailureCleanup() {
     }
+
+    final java.util.concurrent.atomic.AtomicBoolean disposeStarted = new java.util.concurrent.atomic.AtomicBoolean();
 
     public Device getApi() {
         return (Device) api;
