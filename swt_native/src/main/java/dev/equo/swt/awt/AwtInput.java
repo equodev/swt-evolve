@@ -69,8 +69,6 @@ final class AwtInput {
                         break;
                     }
                     case SWT.MouseUp: {
-                        // AWT expects the released button's down-mask still present on
-                        // the RELEASED event's modifiers.
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_RELEASED, e, buttonsDown[0], 1,
                                 capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
                                 repaintTimer, forceRepaint);
@@ -150,7 +148,9 @@ final class AwtInput {
             Runnable forceRepaint) {
         final int x = e.x, y = e.y;
         final int button = awtButton(e.button, id);
-        final int modifiers = swtToAwtModifiers(e.stateMask) | buttonsDown;
+        final int modifiers = id == MouseEvent.MOUSE_RELEASED
+                ? releaseModifiers(e.stateMask, buttonsDown, e.button)
+                : swtToAwtModifiers(e.stateMask) | buttonsDown;
         final long when = System.currentTimeMillis();
         final boolean popup = e.button == 3;
         if (id == MouseEvent.MOUSE_PRESSED || id == MouseEvent.MOUSE_RELEASED) {
@@ -402,6 +402,20 @@ final class AwtInput {
             case 3: return InputEvent.BUTTON3_DOWN_MASK | InputEvent.BUTTON3_MASK;
             default: return 0;
         }
+    }
+
+    /**
+     * The modifiers of a release, built the way a native peer builds them: extended masks only,
+     * without the released button's, so {@code MouseEvent} derives the legacy masks — the released
+     * button's included — itself. AWT's lightweight dispatcher reads a release that still carries
+     * its button's down mask as one made with no button held, and hands it to whatever is under the
+     * pointer instead of the component the drag started on.
+     */
+    @SuppressWarnings("deprecation")
+    private static int releaseModifiers(int stateMask, int buttonsDown, int swtButton) {
+        int legacy = InputEvent.SHIFT_MASK | InputEvent.CTRL_MASK | InputEvent.META_MASK
+                | InputEvent.ALT_MASK | InputEvent.BUTTON1_MASK | InputEvent.ALT_GRAPH_MASK;
+        return (swtToAwtModifiers(stateMask) | buttonsDown) & ~legacy & ~awtButtonDownMask(swtButton);
     }
 
     @SuppressWarnings("deprecation")
