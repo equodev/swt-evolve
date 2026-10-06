@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
 import '../gen/menu.dart';
@@ -195,6 +196,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKeyWhileFocusParked);
     if (identical(OpenPopupMenuTracker._current, this)) {
       OpenPopupMenuTracker._current = null;
     }
@@ -414,11 +416,13 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       consumeOutsideTap: true,
       onOpen: () {
         OpenPopupMenuTracker._current = this;
+        HardwareKeyboard.instance.addHandler(_handleKeyWhileFocusParked);
         if (_showSent) return;
         _showSent = true;
         widget.sendMenuShow(state, null);
       },
       onClose: () {
+        HardwareKeyboard.instance.removeHandler(_handleKeyWhileFocusParked);
         if (identical(OpenPopupMenuTracker._current, this)) {
           OpenPopupMenuTracker._current = null;
         }
@@ -470,6 +474,28 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       builder: (context, controller, child) =>
           Focus(focusNode: _popupAnchorFocusNode, child: const SizedBox.shrink()),
     );
+  }
+
+  // The web engine parks the focus at the root scope when it moves the semantics DOM holding the
+  // focused item, as another overlay appearing over the menu does. The menu is still open, and like
+  // the platform's menu loop it keeps answering Escape and the arrow keys.
+  bool _handleKeyWhileFocusParked(KeyEvent event) {
+    if (event is! KeyDownEvent || !_menuController.isOpen) return false;
+    if (!identical(OpenPopupMenuTracker._current, this)) return false;
+    final focusManager = FocusManager.instance;
+    if (focusManager.primaryFocus != focusManager.rootScope) return false;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) {
+      _menuController.close();
+      return true;
+    }
+    if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.arrowUp) {
+      final items = _itemsFocusNode.traversalDescendants.toList();
+      if (items.isEmpty) return false;
+      (key == LogicalKeyboardKey.arrowDown ? items.first : items.last).requestFocus();
+      return true;
+    }
+    return false;
   }
 
   void _registerPendingChange(void Function() callback) {
