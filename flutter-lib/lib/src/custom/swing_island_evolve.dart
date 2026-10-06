@@ -1,6 +1,7 @@
 /// An SWT_AWT island under swing-evolve's engine. Java describes the composite `SWT_AWT.new_Frame`
 /// creates as a "SwingIsland" and, asked, answers with the AWT frame's windowId and the engine's
-/// port; the mirror of that window comes from [swingMirrorBuilder].
+/// port, or a negative one when the engine's traffic rides Evolve's own connection; the mirror of
+/// that window comes from [swingMirrorBuilder].
 ///
 /// Evolve does not depend on swing-evolve. A host whose Flutter bundle includes swing-evolve's
 /// package sets [swingMirrorBuilder] at startup; while it is null the island renders empty, which
@@ -34,8 +35,12 @@ class SwingIslandWindow {
   /// The engine's id of the frame `SWT_AWT.new_Frame` returned.
   final int windowId;
 
-  /// The engine's loopback comm port.
+  /// The engine's loopback comm port, or negative when the engine has no socket of its own and its
+  /// traffic rides Evolve's connection instead ([overEvolveConnection]).
   final int port;
+
+  /// Whether the engine's traffic rides Evolve's own connection rather than a socket of its own.
+  bool get overEvolveConnection => port < 0;
 
   /// True while the island holds focus: the mirror claims keys and Java's window gains focus.
   final ValueListenable<bool> focused;

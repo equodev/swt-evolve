@@ -5,6 +5,7 @@ import java.awt.Window;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -15,6 +16,7 @@ import org.eclipse.swt.widgets.DartSwingIsland;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.SwingIsland;
+import dev.equo.swt.comm.CommService;
 
 /**
  * {@code SWT_AWT.new_Frame} while swing-evolve's engine owns the JVM's AWT
@@ -23,7 +25,9 @@ import dev.equo.swt.SwingIsland;
  * <p>The engine gives every AWT window a fake peer and a {@code windowId}, and mirrors its content
  * as Flutter widgets to whoever mounts a {@code SwingMirror} for that id. So the frame is a plain
  * undecorated {@link Frame}, and a {@link SwingIsland} filling the EMBEDDED composite is told the id
- * and the engine's comm port so its Flutter region can mount the mirror. Nothing is blitted, and
+ * and the engine's comm port so its Flutter region can mount the mirror. A negative port means the
+ * engine has no socket of its own and its traffic rides this Display's connection, through a
+ * {@link SwingIslandTransport}. Nothing is blitted, and
  * none of {@link EvolveSwingHost}'s toolkit set-up applies: with fake peers AWT makes no AppKit
  * call.
  *
@@ -61,7 +65,7 @@ public final class SwingIslandHost {
         frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
         frame.setVisible(true);
 
-        Map<String, Object> info = describe(frame);
+        Map<String, Object> info = describe(frame, FlutterBridge.commFor(island));
         // The region asks when it mounts (it may not exist yet, and a push nobody listens to is
         // dropped) and is answered on its own channel; the push covers a region already there.
         FlutterBridge.onPayload(island, ISLAND_EVENT, p -> FlutterBridge.send(island, ISLAND_EVENT, info));
@@ -74,7 +78,7 @@ public final class SwingIslandHost {
     }
 
     /** The frame's {@code windowId} and the engine's comm port, which is all the region needs. */
-    private static Map<String, Object> describe(Frame frame) {
+    private static Map<String, Object> describe(Frame frame, CommService displayComm) {
         EngineCalls calls = EngineCalls.INSTANCE;
         if (calls.unavailable != null) throw new IllegalStateException(calls.unavailable, calls.cause);
         try {
@@ -82,6 +86,11 @@ public final class SwingIslandHost {
             Object engine = calls.start.invoke(null);
             Object comm = calls.comm.invoke(engine);
             int port = (Integer) calls.getPort.invoke(comm);
+            if (port < 0 && !carriedBy(ServiceLoader.load(SwingIslandTransport.class,
+                    SwingIslandHost.class.getClassLoader()), displayComm)) {
+                throw new IllegalStateException("swing-evolve's engine has no socket of its own and no "
+                        + SwingIslandTransport.class.getName() + " carries its traffic over this Display's connection");
+            }
             Map<String, Object> info = new LinkedHashMap<>();
             info.put("windowId", windowId);
             info.put("port", port);
@@ -89,6 +98,14 @@ public final class SwingIslandHost {
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(NOT_CALLABLE, e);
         }
+    }
+
+    /** Whether one of {@code transports} takes {@code displayComm} for the engine's traffic. */
+    static boolean carriedBy(Iterable<SwingIslandTransport> transports, CommService displayComm) {
+        for (SwingIslandTransport transport : transports) {
+            if (transport.attach(displayComm)) return true;
+        }
+        return false;
     }
 
     private static final String NOT_CALLABLE = "swing-evolve's engine is present but not callable";

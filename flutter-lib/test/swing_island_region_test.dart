@@ -49,10 +49,10 @@ VComposite _island() => VComposite()
     ..height = 300);
 
 /// What Java sends on the island's channel once the frame exists.
-void _answerIsland() {
+void _answerIsland({int port = enginePort}) {
   const channel = 'SwingIsland/$islandId/swingIsland';
   final actionBytes = utf8.encode(channel);
-  final bodyBytes = utf8.encode(json.encode({'windowId': windowId, 'port': enginePort}));
+  final bodyBytes = utf8.encode(json.encode({'windowId': windowId, 'port': port}));
   final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;
@@ -119,6 +119,20 @@ void main() {
     final mirror = tester.widget<_Mirror>(find.byType(_Mirror));
     expect(mirror.window.windowId, windowId);
     expect(mirror.window.port, enginePort);
+    expect(mirror.window.overEvolveConnection, isFalse);
+  });
+
+  testWidgets('an engine with no port of its own is reached over Evolve\'s connection', (
+    tester,
+  ) async {
+    await _pumpIsland(tester, <String>[]);
+
+    _answerIsland(port: -1);
+    await tester.pumpAndSettle();
+
+    final mirror = tester.widget<_Mirror>(find.byType(_Mirror));
+    expect(mirror.window.windowId, windowId);
+    expect(mirror.window.overEvolveConnection, isTrue);
   });
 
   testWidgets('without a mirror builder the island is empty and takes no focus', (tester) async {

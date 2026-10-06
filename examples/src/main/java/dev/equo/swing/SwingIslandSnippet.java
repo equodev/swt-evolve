@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Text;
  *
  * <p>An SWT {@link Text} above the island and one below it let keyboard focus move into the island
  * and out of it in both directions, and the {@code JTextField} inside shows where a key landed.
+ * {@code -Dislands=N} stacks N islands, one AWT frame each.
  *
  * <p>{@code runDeskExample}/{@code runWebExample} with {@code -PmainClass=dev.equo.swing.SwingIslandSnippet}
  * run the blit path. The island path needs swing-evolve's engine on the JVM (its host launch line)
@@ -46,25 +47,8 @@ public class SwingIslandSnippet {
         above.setMessage("SWT Text above the island");
         above.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        final Composite composite = new Composite(shell, SWT.EMBEDDED);
-        composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-        final Frame frame = SWT_AWT.new_Frame(composite);
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
-        JLabel label = new JLabel("Swing island: click OK");
-        JTextField field = new JTextField("type here");
-        JButton button = new JButton("OK");
-        final int[] clicks = {0};
-        button.addActionListener(e -> {
-            clicks[0]++;
-            label.setText("OK clicked " + clicks[0] + " time(s)");
-            System.out.println("[snippet] ActionListener fired: " + clicks[0]);
-        });
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(field, BorderLayout.CENTER);
-        panel.add(button, BorderLayout.SOUTH);
-        frame.add(panel);
-        frame.validate();
+        int islands = Math.max(1, Integer.getInteger("islands", 1));
+        for (int i = 1; i <= islands; i++) addIsland(shell, islands == 1 ? "" : " " + i);
 
         Text below = new Text(shell, SWT.BORDER | SWT.SINGLE);
         below.setMessage("SWT Text below the island");
@@ -76,5 +60,28 @@ public class SwingIslandSnippet {
             if (!display.readAndDispatch()) display.sleep();
         }
         display.dispose();
+    }
+
+    private static void addIsland(Shell shell, String suffix) {
+        final Composite composite = new Composite(shell, SWT.EMBEDDED);
+        composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        final Frame frame = SWT_AWT.new_Frame(composite);
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JLabel label = new JLabel("Swing island" + suffix + ": click OK");
+        JTextField field = new JTextField("type here");
+        JButton button = new JButton("OK");
+        final int[] clicks = {0};
+        button.addActionListener(e -> {
+            clicks[0]++;
+            label.setText("OK clicked " + clicks[0] + " time(s)");
+            System.out.println("[snippet] ActionListener fired: " + clicks[0]
+                    + (suffix.isEmpty() ? "" : " (island" + suffix + ")"));
+        });
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(field, BorderLayout.CENTER);
+        panel.add(button, BorderLayout.SOUTH);
+        frame.add(panel);
+        frame.validate();
     }
 }
