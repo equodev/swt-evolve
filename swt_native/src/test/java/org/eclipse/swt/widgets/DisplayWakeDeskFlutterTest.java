@@ -70,6 +70,46 @@ class DisplayWakeDeskFlutterTest {
     }
 
     @Test
+    void stateDirtiedOnTheUiThread_postsNothing() {
+        TestDeskBridge desk = install();
+        Shell shell = new Shell(display);
+        while (display.readAndDispatch()) {
+            /* settle the shell's own delivery */
+        }
+        desk.nativeWakes.set(0);
+
+        desk.dirty((DartWidget) shell.getImpl());
+
+        assertThat(desk.nativeWakes.get())
+                .as("the UI thread is not waiting while it dirties state; its next readAndDispatch flushes it")
+                .isZero();
+    }
+
+    @Test
+    void wakesWhileOneIsQueued_postOnlyOnceUntilThePumpDrainsIt() throws Exception {
+        TestDeskBridge desk = install();
+
+        runOffUiThread(() -> {
+            for (int i = 0; i < 100; i++) display.asyncExec(() -> {
+            });
+        });
+
+        assertThat(desk.nativeWakes.get())
+                .as("one queued wake already ends the wait; every extra one is an OS event to dispatch")
+                .isEqualTo(1);
+
+        while (display.readAndDispatch()) {
+            /* the pump drains the queued wake */
+        }
+        runOffUiThread(() -> display.asyncExec(() -> {
+        }));
+
+        assertThat(desk.nativeWakes.get())
+                .as("once the pump has drained it, the next wake is posted again")
+                .isEqualTo(2);
+    }
+
+    @Test
     void wakeFromTheUiThreadItself_postsNothing() {
         TestDeskBridge desk = install();
 

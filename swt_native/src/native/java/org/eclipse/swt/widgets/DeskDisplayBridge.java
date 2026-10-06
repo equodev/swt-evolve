@@ -63,6 +63,13 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private Point windowOrigin = new Point(0, 0);
 
+    /**
+     * Set while a posted wake is still in the OS event queue. One queued wake is enough to end the
+     * idle wait, and every extra one is an OS event the next pump dispatches, each closing an AppKit
+     * transaction the window server has to process.
+     */
+    private final java.util.concurrent.atomic.AtomicBoolean wakeQueued = new java.util.concurrent.atomic.AtomicBoolean();
+
     DeskDisplayBridge(DartDisplay display) {
         super(display);
         // The native window is the client; never fall back to a browser/chromium launch.
@@ -125,6 +132,8 @@ public class DeskDisplayBridge extends DisplayBridge {
             bindWindowView();
         applyWindowOrigin(mainShell(forDisplay), mainWindowOrigin());
 
+        // The pump drains the queued wake, so a wake after this point has to be posted again.
+        wakeQueued.set(false);
         int status = pumpWindow();
         if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
             onWindowCloseRequested();
@@ -445,7 +454,7 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public void wake() {
-        if (hasNativeWindow()) {
+        if (hasNativeWindow() && wakeQueued.compareAndSet(false, true)) {
             wakeNativeWindow();
         }
     }
@@ -455,9 +464,15 @@ public class DeskDisplayBridge extends DisplayBridge {
         FlutterNative.wake(windowContext);
     }
 
-    /** State dirtied off the UI thread has to interrupt the wait too, or the flush waits for it. */
+    /**
+     * State dirtied off the UI thread has to interrupt the wait too, or the flush waits for it. The UI
+     * thread itself is not waiting while it dirties state, and its next readAndDispatch flushes it.
+     */
     @Override
     protected void wakeForDirty() {
+        DartDisplay display = forDisplay;
+        if (display != null && display.thread == Thread.currentThread())
+            return;
         wake();
     }
 
