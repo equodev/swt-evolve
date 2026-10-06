@@ -670,7 +670,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return new Rectangle(0, 0, 0, 0);
+        if (!((DartTree) parent.getImpl()).checkData(this.getApi(), true))
+            error(SWT.ERROR_WIDGET_DISPOSED);
+        return Sizes.getImageBounds(this, index);
     }
 
     Rectangle getImageBoundsInPixels(int index) {

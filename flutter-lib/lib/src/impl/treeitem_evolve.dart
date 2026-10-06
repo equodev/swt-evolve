@@ -187,7 +187,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       // Standalone mode used by the measure tool — render as a single row without tree context.
       final textColor = getTreeItemTextColor(state, widgetTheme, false, true,
           parentForeground: ParentForegroundScope.of(context));
-      final image = _treeColumnImage() ?? state.image;
+      final image = _treeColumnImage();
       return Container(
         padding: widgetTheme.itemPadding,
         child: Row(
@@ -218,9 +218,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }
 
   /// The icon for the tree column, which is the only column a tree row draws one in.
+  ///
+  /// A null entry in [VTreeItem.images] is an answer, not a gap: it is how Java says the row's
+  /// owner-draw overlay paints that icon, so falling back to [VTreeItem.image] would draw it twice.
   VImage? _treeColumnImage() {
     final images = state.images;
-    if (images == null || images.isEmpty) return null;
+    if (images == null || images.isEmpty) return state.image;
     return images[0];
   }
 
@@ -240,7 +243,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final int level = _context?.level ?? 0;
     // An owner-drawn cell's icon only ever exists as what the SWT.PaintItem listener drew, which
     // Java reports in images[0]; a cell that set one the ordinary way reports it in both.
-    final VImage? image = _treeColumnImage() ?? state.image;
+    final VImage? image = _treeColumnImage();
 
     final bool selected = _context?.treeImpl?.isItemSelected(state.id) ?? false;
     final bool enabled = _context?.parentTreeValue.enabled ?? true;
