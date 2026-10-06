@@ -809,7 +809,7 @@ tasks.jar {
     }
 
     // Add all dependencies to the JAR
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    from(configurations.runtimeClasspath.map { cp -> cp.map { if (it.isDirectory) it else zipTree(it) } })
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
 
     manifest {
@@ -1132,7 +1132,7 @@ platforms.forEach { platform ->
         }
 
         // Add all dependencies to the JAR
-        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+        from(configurations.runtimeClasspath.map { cp -> cp.map { if (it.isDirectory) it else zipTree(it) } })
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
         // Must drop the classes as well as the export (see excludeFxCanvas): leaving them in a
         // bundle that no longer exports the package would let nothing load them anyway, and
