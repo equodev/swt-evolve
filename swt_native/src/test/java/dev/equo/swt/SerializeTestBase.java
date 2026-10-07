@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.function.Consumer;
@@ -264,7 +265,6 @@ public class SerializeTestBase {
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
                 .ignore(Select.field(Widget.class, "style"))
-                .ignore(Select.setter(CCombo.class, "setAlignment"))
                 .ignore(Select.setter(Control.class, "setBounds"))
                 .ignore(Select.setter(Control.class, "setLayoutData"))
                 .ignore(Select.setter(Control.class, "setBackgroundImage"))
@@ -272,6 +272,7 @@ public class SerializeTestBase {
                 .ignore(Select.setter(Control.class, "setEnabled"))
                 .ignore(Select.setter(Composite.class, "setLayout"))
                 .ignore(Select.setter(Control.class, "setTouchEnabled"));
+        inst = ignoreSetterIfDeclared(inst, CCombo.class, "setAlignment");
         try {
             inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
         } catch (ClassNotFoundException e) {}
@@ -284,6 +285,21 @@ public class SerializeTestBase {
                 .generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
         inst.fill();
+    }
+
+    /**
+     * Ignores {@code owner}'s setter only when the SWT being compiled against declares it.
+     * {@link Select#setter(Class, String)} resolves the method eagerly and fails the whole fill
+     * with a usage error when the name matches nothing.
+     */
+    private static <T> InstancioObjectApi<T> ignoreSetterIfDeclared(
+            InstancioObjectApi<T> inst, Class<?> owner, String setter) {
+        for (Method m : owner.getDeclaredMethods()) {
+            if (m.getName().equals(setter)) {
+                return inst.ignore(Select.setter(owner, setter));
+            }
+        }
+        return inst;
     }
 
     private Image createTestImage() {
