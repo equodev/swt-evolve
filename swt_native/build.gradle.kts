@@ -133,19 +133,18 @@ val swtVersionFull = (project.parent?.parent?.findProperty("swtVersionFull")
 
 val swtVersion = swtVersionFull.substringBefore(".v")
 
-val swtVersionConfig by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
+// An including build with an :eclipse_run project records there (build/swtVersion) the SWT version of
+// the app it swaps these jars into; the jars take that version while it is there, swtVersionFull
+// otherwise. Read as a file: resolving it as a dependency on that build while these tasks run waits
+// for the build to configure, which it never does again once it is running tasks.
+val parentSwtVersionFile: File? = gradle.parent?.rootProject?.findProject(":eclipse_run")
+    ?.let { File(it.projectDir, "build/swtVersion") }
 
 val swtVersionProvider = provider {
-    val versionFiles = swtVersionConfig.files
-    if (versionFiles.isNotEmpty() && versionFiles.first().exists()) versionFiles.first().readText().trim() else swtVersionFull
+    parentSwtVersionFile?.takeIf { it.exists() }?.readText()?.trim() ?: swtVersionFull
 }
 
 dependencies {
-    if (gradle.parent != null)
-        swtVersionConfig("dev.equo:eclipse_run")
     implementation(libs.java.websocket)
     // Alternative WS impl, selectable at runtime via -Dcomm.impl=jetty (Jetty 12 core, no servlets).
     // compileOnly so Jetty's transitive jars never ship in the platform JARs; it's a bench-only
