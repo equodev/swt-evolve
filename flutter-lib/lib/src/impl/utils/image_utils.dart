@@ -16,6 +16,7 @@ class ImageUtils {
   static final Map<String, Widget> _imageCache = {};
   // Cache for async image loading Futures to prevent recreation on every rebuild
   static final Map<String, Future<Widget?>> _futureCache = {};
+  static final Expando<String> _contentKeys = Expando();
 
   /// What each cached render resolved to, readable synchronously by a widget mounted after it did.
   static final Expando<Widget> _resolvedRenders = Expando('resolved render');
@@ -807,14 +808,7 @@ class ImageUtils {
     }
     final data = image.imageData?.data;
     if (data != null && data.isNotEmpty) {
-      final len = data.length;
-      // Use length + first 32 bytes folded into a hash for content identity
-      final limit = len < 32 ? len : 32;
-      var h = 0;
-      for (var i = 0; i < limit; i++) {
-        h = h * 31 + data[i];
-      }
-      return 'bin-$len-$h';
+      return _contentKeys[data] ??= GlyphTone.contentKey(asBytes(data));
     }
     final ref = image.remoteRef;
     if (ref != null) return 'remote-$ref';

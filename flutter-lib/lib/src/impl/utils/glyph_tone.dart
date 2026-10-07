@@ -109,8 +109,20 @@ class GlyphTone {
   /// A key that tells two encoded images apart by their whole content, not only their length.
   static String contentKey(Uint8List bytes) {
     var hash = 0;
-    for (final byte in bytes) {
-      hash = (hash * 31 + byte) & 0x3FFFFFFF;
+    final wordCount = bytes.length ~/ 4;
+    // A Uint32List view needs a 4-byte-aligned offset; ByteData reads the same words from any other.
+    if (bytes.offsetInBytes % 4 == 0) {
+      for (final word in bytes.buffer.asUint32List(bytes.offsetInBytes, wordCount)) {
+        hash = (hash * 31 + word) & 0x3FFFFFFF;
+      }
+    } else {
+      final view = ByteData.sublistView(bytes);
+      for (var w = 0; w < wordCount; w++) {
+        hash = (hash * 31 + view.getUint32(w * 4, Endian.host)) & 0x3FFFFFFF;
+      }
+    }
+    for (var i = wordCount * 4; i < bytes.length; i++) {
+      hash = (hash * 31 + bytes[i]) & 0x3FFFFFFF;
     }
     return 'bin-${bytes.length}-$hash';
   }

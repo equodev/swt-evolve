@@ -548,18 +548,21 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           final image = _getImageForState(enabled);
           final isChecked = state.selection ?? false;
 
-          Widget iconOrImage;
+          final Widget child;
           if (image != null) {
-            iconOrImage = _buildImageWidget(
-              image,
-              enabled,
-              constraints,
-              effectiveDefaultIconSize,
-              textColor,
-              widgetTheme,
+            child = _buildChildContent(
+              image: image,
+              enabled: enabled,
+              constraints: constraints,
+              defaultIconSize: effectiveDefaultIconSize,
+              iconColor: textColor,
+              widgetTheme: widgetTheme,
+              text: text,
+              textStyle: textStyle,
+              textOnRight: textOnRight,
             );
           } else {
-            iconOrImage = _applyHoverZoom(
+            final glyph = _applyHoverZoom(
               Icon(
                 isChecked ? Icons.check_box : Icons.check_box_outline_blank,
                 size: widgetTheme.iconSize,
@@ -567,21 +570,17 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               ),
               enabled,
             );
-          }
-
-          final Widget child;
-          if (text != null && text.isNotEmpty) {
-            child = Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconOrImage,
-                const SizedBox(width: 4),
-                Text(text, textAlign: TextAlign.center, style: textStyle),
-              ],
-            );
-          } else {
-            child = iconOrImage;
+            child = (text != null && text.isNotEmpty)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      glyph,
+                      const SizedBox(width: 4),
+                      Text(text, textAlign: TextAlign.center, style: textStyle),
+                    ],
+                  )
+                : glyph;
           }
 
           final toolbarTheme = Theme.of(
@@ -617,18 +616,21 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           final image = _getImageForState(enabled);
           final isSelected = state.selection ?? false;
 
-          Widget iconOrImage;
+          final Widget child;
           if (image != null) {
-            iconOrImage = _buildImageWidget(
-              image,
-              enabled,
-              constraints,
-              effectiveDefaultIconSize,
-              textColor,
-              widgetTheme,
+            child = _buildChildContent(
+              image: image,
+              enabled: enabled,
+              constraints: constraints,
+              defaultIconSize: effectiveDefaultIconSize,
+              iconColor: textColor,
+              widgetTheme: widgetTheme,
+              text: text,
+              textStyle: textStyle,
+              textOnRight: textOnRight,
             );
           } else {
-            iconOrImage = _applyHoverZoom(
+            final glyph = _applyHoverZoom(
               Icon(
                 isSelected
                     ? Icons.radio_button_checked
@@ -638,21 +640,17 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               ),
               enabled,
             );
-          }
-
-          final Widget child;
-          if (text != null && text.isNotEmpty) {
-            child = Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconOrImage,
-                const SizedBox(width: 4),
-                Text(text, textAlign: TextAlign.center, style: textStyle),
-              ],
-            );
-          } else {
-            child = iconOrImage;
+            child = (text != null && text.isNotEmpty)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      glyph,
+                      const SizedBox(width: 4),
+                      Text(text, textAlign: TextAlign.center, style: textStyle),
+                    ],
+                  )
+                : glyph;
           }
 
           return _buildToolbarButton(
