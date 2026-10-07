@@ -185,5 +185,43 @@ void main() {
 
       expect(sent, contains('Control/Move 105,100'));
     });
+
+    // The workbench enters a drop target on one move and only accepts the drop -- feedback, cursor,
+    // and the drop itself -- on a move after that, inside the same target. Native input always
+    // delivers several moves inside a tab strip before the button comes up; a sampled one may not.
+    testWidgets('a drop is confirmed where it lands, not only entered', (tester) async {
+      TrackerSession.attachHost('Shell', 8009);
+      final gesture = await tester.startGesture(const Offset(100, 100));
+      _open('Shell', 8009, 4250);
+      await tester.pump();
+
+      await gesture.moveTo(const Offset(400, 100));
+      await gesture.moveTo(const Offset(420, 100));
+      sent.clear();
+      await gesture.up();
+      await tester.pump();
+
+      expect(sent.where((s) => s == 'Control/Move 420,100'), hasLength(2),
+          reason: 'one move to enter the target under the release, one to accept the drop there');
+      expect(sent.last, startsWith('Tracker/close'));
+    });
+
+    testWidgets('a pointer that comes to rest is reported where it rests', (tester) async {
+      TrackerSession.attachHost('Shell', 8010);
+      final gesture = await tester.startGesture(const Offset(100, 100));
+      _open('Shell', 8010, 4251);
+      await tester.pump();
+
+      await gesture.moveTo(const Offset(400, 100));
+      await gesture.moveTo(const Offset(420, 100));
+      sent.clear();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(sent, ['Control/Move 420,100', 'Control/Move 420,100'],
+          reason: 'holding still over a tab strip has to show the drop there before the release');
+
+      await gesture.up();
+      await tester.pump();
+    });
   });
 }

@@ -122,6 +122,22 @@ void main() {
         pointer);
   });
 
+  testWidgets('a Tracker hosted by a titled secondary window reports the same position',
+      (tester) async {
+    // A view torn off into a window of its own: the drag back starts on that window's tabs, so the
+    // Tracker opens on it. Its bounds include the title bar this side draws, exactly as Java's
+    // toDisplay counts it, so the title bar must not come off the position a second time.
+    const pointer = Offset(420, 310);
+    final torn = VShell()
+      ..id = 3
+      ..style = SWT.SHELL_TRIM
+      ..text = 'torn off'
+      ..bounds = _rect(300, 200, 400, 300)
+      ..children = [];
+
+    expect(await reportedFor(tester, [_mainShell(), torn], 'Shell/3', pointer), pointer);
+  });
+
   testWidgets('a shell renders where its bounds say, which is what makes the trip cancel',
       (tester) async {
     await _pump(tester, [_mainShell(), _feedback(200, 150)..id = 2]);

@@ -867,6 +867,10 @@ public class DartTracker extends DartWidget implements ITracker {
         if ((eventType == SWT.Move || eventType == SWT.Resize) && event != null && getDisplay() != null) {
             ((DartDisplay) getDisplay().getImpl()).cursorLocation = new Point(event.x, event.y);
         }
+        // Before the workbench resolves the drop for this position, so it asks the window the
+        // pointer is over first.
+        if (eventType == SWT.Move && event != null && getBridge() instanceof DisplayBridge)
+            ((DisplayBridge) getBridge()).activateInlineWindowAt(new Point(event.x, event.y));
         // Every client event reaches the loop through here, so this is where it becomes
         // worth waking: the loop has nothing to do until the pointer has moved again.
         clientInput.release();

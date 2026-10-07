@@ -6,6 +6,8 @@ import dev.equo.swt.comm.CommService;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowBridge;
 import dev.equo.swt.WindowPolicy;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -505,6 +507,40 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     public Boolean hostsAsMainShell(Shell shell) {
         return forDisplay != null && isMainShell(forDisplay, shell);
+    }
+
+    private static final int MODAL_MASK = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
+
+    /**
+     * Activates the window under a dragging pointer when it is one drawn inside this one.
+     *
+     * <p>The workbench resolves a drop by asking its windows in the order they were last activated,
+     * which on a desktop is the order they are stacked in. A window drawn inside this one stays in
+     * front of the main shell whatever was activated last, so a drag that started in the main shell
+     * was resolved against it even over a window drawn on top, and nothing could be dropped there.
+     * Activating the window the pointer is over keeps that order the order the user sees.
+     */
+    public void activateInlineWindowAt(Point point) {
+        DartDisplay display = forDisplay;
+        if (display == null || point == null)
+            return;
+        Shell[] shells = display.getShells();
+        // Drawn in this order, so the last one containing the point is the one in front.
+        for (int i = shells.length - 1; i >= 0; i--) {
+            Shell shell = shells[i];
+            if (shell.isDisposed() || !shell.isVisible() || isMainShell(display, shell)
+                    || shellWindows.containsKey(shell))
+                continue;
+            int style = shell.getStyle();
+            boolean titled = (style & SWT.NO_TRIM) == 0 && (style & (SWT.TITLE | SWT.CLOSE)) != 0;
+            if (!titled || (style & SWT.ON_TOP) != 0 || (style & MODAL_MASK) != 0)
+                continue;
+            if (!shell.getBounds().contains(point))
+                continue;
+            if (display.getActiveShell() != shell)
+                shell.setActive();
+            return;
+        }
     }
 
     /** {@link #mainShell} as the client sees it: its id, or 0 when it is not among the shells

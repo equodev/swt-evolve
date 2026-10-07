@@ -56,11 +56,6 @@ class FloatingShellChromeScope extends InheritedWidget {
 
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
   Offset? _offset;
-
-  /// How much frame this Shell draws above its content, which a pointer position has to be
-  /// measured past: it arrives global to the window, and the bounds Java sends start at the
-  /// content. Kept from the last build, which is where the layout decides it.
-  double _headerH = 0;
   Size? _size;
   bool _maximized = false;
   bool _interacting = false;
@@ -116,17 +111,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   }
 
   /// Where a window-global pointer position falls in the coordinate space Java works in: measured
-  /// from the content's own origin, then shifted by where this Shell sits. Read from the render
-  /// tree rather than derived from the frame's parts, so border, title bar and maximized state are
-  /// all already accounted for.
+  /// from this Shell's own top-left, then shifted by where this Shell sits. Read from the render
+  /// tree rather than derived from the frame's parts, so maximized state is already accounted for.
+  ///
+  /// The top-left is the frame's, title bar included: Java's bounds for a shell start there too, and
+  /// its toDisplay adds the title bar to reach the client area.
   Offset _toDisplay(Offset windowPosition) {
     if (!mounted) return windowPosition;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return windowPosition;
-    // The Shell's own top-left, plus whatever frame it draws above its content: what is left is
-    // measured from the same origin the bounds Java sends are measured from.
-    final content = box.localToGlobal(Offset.zero) + Offset(0, _headerH);
-    final local = windowPosition - content;
+    final local = windowPosition - box.localToGlobal(Offset.zero);
     final b = state.bounds;
     if (b == null) return local;
     return Offset(local.dx + b.x.toDouble(), local.dy + b.y.toDouble());
@@ -345,7 +339,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
     final headerH = _showTitleBar ? titleBarH : 0.0;
-    _headerH = headerH;
 
     final w = (isFullScreen || _maximized) ? viewport.maxWidth : bodyW;
     final h = (isFullScreen || _maximized) ? viewport.maxHeight : bodyH;
