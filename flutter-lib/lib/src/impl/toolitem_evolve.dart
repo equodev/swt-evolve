@@ -12,6 +12,7 @@ import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
 import './utils/tab_only_focus_node.dart';
+import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import '../custom/main_toolbar_scope.dart';
 import '../custom/rich_tooltip.dart';
@@ -295,7 +296,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         child: child,
       ) ??
       Tooltip(
-        message: message,
+        message: stripAccelerators(message),
         preferBelow: widgetTheme.tooltipPreferBelow,
         verticalOffset: widgetTheme.tooltipVerticalOffset,
         margin: widgetTheme.tooltipMargin,

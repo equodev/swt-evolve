@@ -24,6 +24,7 @@ import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import 'utils/perf_marks.dart';
 import 'utils/round_trip_timing.dart';
+import 'utils/text_utils.dart';
 import 'utils/hosted_context_menu.dart';
 import '../custom/rich_tooltip.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
@@ -820,7 +821,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             child: DefaultTextStyle(
               style: (tooltipTheme?.messageTextStyle ?? const TextStyle())
                   .copyWith(decoration: TextDecoration.none),
-              child: Text(message, maxLines: tooltipTheme?.messageMaxLines),
+              child: Text(stripAccelerators(message), maxLines: tooltipTheme?.messageMaxLines),
             ),
               ),
         ),

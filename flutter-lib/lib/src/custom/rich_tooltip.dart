@@ -78,7 +78,7 @@ class RichToolTipData {
   /// Splits an item's label and tooltip into the card's parts, or null when there is nothing at all
   /// to show. An item with only a label gets [_sampleBody] rather than one word in a box.
   static RichToolTipData? of({String? text, String? toolTipText}) {
-    var body = toolTipText?.trim() ?? '';
+    var body = _stripMnemonics(toolTipText);
     String? shortcut;
     final match = _trailingShortcut.firstMatch(body);
     if (match != null) {
