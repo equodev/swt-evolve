@@ -230,6 +230,11 @@ class _ThemedScaleState extends State<_ThemedScale> {
               : widget.widgetTheme.thumbRadius,
         ),
         tickMarkShape: SliderTickMarkShape.noTickMark,
+        // The track is inset by the overlay radius; tying it to the tick marks' padding keeps the
+        // value under the pointer where the ticks say it is.
+        overlayShape: RoundSliderOverlayShape(
+          overlayRadius: widget.widgetTheme.horizontalPadding,
+        ),
       ),
       child: Slider(
         value: displayValue.clamp(widget.min, widget.max),

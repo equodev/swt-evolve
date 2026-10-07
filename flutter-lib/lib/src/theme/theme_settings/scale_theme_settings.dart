@@ -77,8 +77,8 @@ ScaleThemeExtension _getScaleTheme({
     minVerticalWidth: 40.0,
     minVerticalHeight: 120.0,
 
-    // Padding
-    horizontalPadding: 24.0,
+    // Track inset from each end, as GTK and Cocoa place it: a click maps to the same value.
+    horizontalPadding: 12.0,
 
     // Default scale values
     defaultMinimum: 0,
