@@ -122,8 +122,10 @@ class ProxyHandler implements HttpHandler {
             // postData body at all, and blindly relaying those upstream is a wider behavior
             // change than this proxy needs to make to support writes.
             String requestContentType = exchange.getRequestHeaders().getFirst("Content-Type");
+            // The page should come back in the viewer's language, as it would loaded directly.
+            String acceptLanguage = exchange.getRequestHeaders().getFirst("Accept-Language");
 
-            Fetched resp = fetch(target, method, requestBody, requestContentType, headerLines, cookies);
+            Fetched resp = fetch(target, method, requestBody, requestContentType, acceptLanguage, headerLines, cookies);
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
             String lowerContentType = contentType.toLowerCase();
@@ -143,6 +145,7 @@ class ProxyHandler implements HttpHandler {
                 html = rewriteResourceUrls(html, finalUri, headerLines, selfOrigin);
                 html = rewriteFormActions(html, finalUri, headerLines, selfOrigin);
                 html = injectBaseHref(html, resp.finalUrl);
+                html = injectNavigationShim(html, originOf(finalUri), headerLines, selfOrigin);
                 if (!headerLines.isEmpty()) {
                     html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
                 }
@@ -196,8 +199,8 @@ class ProxyHandler implements HttpHandler {
      * <p>Cookies go both ways on every hop, redirects included: an OAuth2 login sets its session on
      * the hop that redirects to the identity provider and checks it on the one coming back.
      */
-    static Fetched fetch(String target, String method, byte[] requestBody,
-            String requestContentType, List<String> headerLines, ProxyCookieJar cookies) throws IOException {
+    static Fetched fetch(String target, String method, byte[] requestBody, String requestContentType,
+            String acceptLanguage, List<String> headerLines, ProxyCookieJar cookies) throws IOException {
         String url = target;
         for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
@@ -213,6 +216,9 @@ class ProxyHandler implements HttpHandler {
                 String value = header.substring(colon + 1).trim();
                 if (name.isEmpty()) continue;
                 try { conn.setRequestProperty(name, value); } catch (Exception ignored) { }
+            }
+            if (acceptLanguage != null && conn.getRequestProperty("Accept-Language") == null) {
+                conn.setRequestProperty("Accept-Language", acceptLanguage);
             }
             URI hopUri = toUri(url);
             String jarCookies = hopUri != null ? cookies.header(hopUri) : null;
@@ -476,6 +482,37 @@ class ProxyHandler implements HttpHandler {
 
     private static String originOf(URI uri) {
         return uri.getScheme() + "://" + uri.getAuthority();
+    }
+
+    /**
+     * Routes the page's own script-driven navigations back through this endpoint. Markup rewriting
+     * only sees URLs written in an attribute; a {@code location.href = url} built in script (a
+     * language picker's {@code onchange}, say) takes the iframe straight to the target, which a site
+     * that forbids framing refuses. Uses the Navigation API: where a browser lacks it, those
+     * navigations behave as before. Only navigations to the proxied page's own origin are rerouted,
+     * and POST submissions are left to {@link #rewriteFormActions}.
+     */
+    static String injectNavigationShim(String html, String targetOrigin, List<String> headerLines, String selfOrigin) {
+        StringBuilder headersJs = new StringBuilder("[");
+        for (int i = 0; i < headerLines.size(); i++) {
+            if (i > 0) headersJs.append(",");
+            headersJs.append(jsStringLiteral(headerLines.get(i)));
+        }
+        headersJs.append("]");
+        String script = "<script>(function(){"
+                + "var nav=window.navigation;if(!nav)return;"
+                + "var TARGET_ORIGIN;try{TARGET_ORIGIN=new URL(" + jsStringLiteral(targetOrigin) + ").origin;}catch(e){return;}"
+                + "var SELF_ORIGIN=" + jsStringLiteral(selfOrigin) + ";"
+                + "var HEADERS=" + headersJs + ";"
+                + "nav.addEventListener('navigate',function(e){"
+                + "try{if(!e.cancelable||e.hashChange||e.downloadRequest||e.formData)return;"
+                + "var dest=new URL(e.destination.url);if(dest.origin!==TARGET_ORIGIN)return;"
+                + "var u=SELF_ORIGIN+'/proxy?url='+encodeURIComponent(dest.href);"
+                + "for(var i=0;i<HEADERS.length;i++){u+='&header='+encodeURIComponent(HEADERS[i]);}"
+                + "e.preventDefault();location.href=u;}catch(err){}"
+                + "});})();</script>";
+        Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
+        return m.find() ? html.substring(0, m.end()) + script + html.substring(m.end()) : script + html;
     }
 
     /**

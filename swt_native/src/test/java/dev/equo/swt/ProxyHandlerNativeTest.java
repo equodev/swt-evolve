@@ -109,16 +109,43 @@ public class ProxyHandlerNativeTest {
         base = "http://127.0.0.1:" + server.getAddress().getPort();
         ProxyCookieJar jar = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
 
-        ProxyHandler.Fetched form = ProxyHandler.fetch(base + "/start", "GET", new byte[0], null,
+        ProxyHandler.Fetched form = ProxyHandler.fetch(base + "/start", "GET", new byte[0], null, null,
                 Collections.<String>emptyList(), jar);
         assertThat(new String(form.body, StandardCharsets.UTF_8)).isEqualTo("form");
 
         ProxyHandler.Fetched done = ProxyHandler.fetch(base + "/idp/authenticate", "POST",
-                "user=u".getBytes(StandardCharsets.UTF_8), "application/x-www-form-urlencoded",
+                "user=u".getBytes(StandardCharsets.UTF_8), "application/x-www-form-urlencoded", null,
                 Collections.<String>emptyList(), jar);
         assertThat(done.finalUrl).isEqualTo(base + "/done");
         assertThat(new String(done.body, StandardCharsets.UTF_8)).isEqualTo("SESSION=s2");
         assertThat(jar.get("SESSION", base + "/")).isEqualTo("s2");
+    }
+
+    @Test
+    public void the_viewer_language_reaches_every_hop() throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/start", ex -> redirect(ex, "/page", null));
+        server.createContext("/page", ex -> respond(ex, 200, String.valueOf(ex.getRequestHeaders().getFirst("Accept-Language"))));
+        server.start();
+        base = "http://127.0.0.1:" + server.getAddress().getPort();
+
+        ProxyHandler.Fetched page = ProxyHandler.fetch(base + "/start", "GET", new byte[0], null, "es-AR,es;q=0.9",
+                Collections.<String>emptyList(), new ProxyCookieJar(WebFlutterServer::proxyAllowed));
+
+        assertThat(new String(page.body, StandardCharsets.UTF_8)).isEqualTo("es-AR,es;q=0.9");
+    }
+
+    @Test
+    public void the_navigation_shim_runs_first_and_reroutes_only_the_target_origin() {
+        String html = ProxyHandler.injectNavigationShim("<html><head><script src=\"app.js\"></script></head></html>",
+                "https://id.example.test", Collections.singletonList("Authorization: Bearer t"), SELF);
+
+        assertThat(html).startsWith("<html><head><script>(function(){var nav=window.navigation;");
+        assertThat(html.indexOf("navigation")).isLessThan(html.indexOf("app.js"));
+        assertThat(html).contains("new URL(\"https://id.example.test\").origin")
+                .contains("SELF_ORIGIN=\"" + SELF + "\"")
+                .contains("\"Authorization: Bearer t\"")
+                .contains("e.formData");
     }
 
     private static String cookie(HttpExchange ex) {
