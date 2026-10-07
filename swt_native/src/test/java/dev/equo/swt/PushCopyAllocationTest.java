@@ -41,7 +41,7 @@ class PushCopyAllocationTest {
 
     private static final int TEXT_CHARS = 64 * 1024;
     private static final int WARMUP = 30;
-    private static final int RUNS = 30;
+    private static final int RUNS = 200;
 
     private static final com.sun.management.ThreadMXBean THREADS =
             (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
@@ -152,8 +152,8 @@ class PushCopyAllocationTest {
 
     /** Extra bytes allocated per extra byte on the wire, between a push and the same push twice as large. */
     private double copiesPerWireByte(IntFunction<Runnable> pushOfSize) {
-        long[] small = fewestAllocated(pushOfSize.apply(TEXT_CHARS));
-        long[] large = fewestAllocated(pushOfSize.apply(2 * TEXT_CHARS));
+        long[] small = meanAllocated(pushOfSize.apply(TEXT_CHARS));
+        long[] large = meanAllocated(pushOfSize.apply(2 * TEXT_CHARS));
         assertThat(large[1] - small[1]).as("the larger push put more on the wire").isGreaterThan(TEXT_CHARS / 2);
         double copies = (large[0] - small[0]) / (double) (large[1] - small[1]);
         System.out.printf("[push-copies] allocated=%d/%d wire=%d/%d copies=%.2f%n",
@@ -161,15 +161,22 @@ class PushCopyAllocationTest {
         return copies;
     }
 
-    /** The fewest bytes one run allocated on this thread, and the bytes that run put on the wire. */
-    private long[] fewestAllocated(Runnable push) {
+    /**
+     * The bytes one run allocated on this thread on average, and the bytes a run put on the wire.
+     * An average and not the fewest of the runs: OpenJ9 advances the thread's allocated-bytes count
+     * only when the thread takes a new allocation cache, so a single run reads 0 or a whole cache's
+     * worth, and only the sum over many runs is the bytes they allocated.
+     */
+    private long[] meanAllocated(Runnable push) {
         for (int i = 0; i < WARMUP; i++) measure(push);
-        long[] best = {Long.MAX_VALUE, 0};
+        long allocated = 0;
+        long wire = 0;
         for (int i = 0; i < RUNS; i++) {
             long[] m = measure(push);
-            if (m[0] < best[0]) best = m;
+            allocated += m[0];
+            wire = m[1];
         }
-        return best;
+        return new long[]{allocated / RUNS, wire};
     }
 
     private long[] measure(Runnable push) {

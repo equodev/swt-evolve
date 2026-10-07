@@ -179,10 +179,12 @@ void main(List<String> args) async {
 // gcDispose handler removes it.
 final Map<int, GCDrawer> _activeGcDrawers = {};
 
-// ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web; read the hi/lo
-// uint32 halves instead (see bench.dart's _setInt64BE for the matching write-side rationale).
+// ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web, so the value is read
+// as its two 32-bit halves and combined arithmetically: on web, bit operators work on 32 bits and
+// `hi << 32` is 0. The high half is signed because the value can be negative: a GC id is a Java
+// identity hash, which some JVMs give the full 32-bit range, sent sign-extended to 64 bits.
 int _readInt64BE(ByteData v, int offset) =>
-    (v.getUint32(offset, Endian.big) << 32) | v.getUint32(offset + 4, Endian.big);
+    v.getInt32(offset, Endian.big) * 0x100000000 + v.getUint32(offset + 4, Endian.big);
 
 void _registerGcCreateListener() {
   // Raw-bytes path: Java sends the gcId as 8 big-endian bytes, no JSON round-trip.

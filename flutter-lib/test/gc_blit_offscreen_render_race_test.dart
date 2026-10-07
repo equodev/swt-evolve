@@ -42,7 +42,7 @@ List<int> _refBody(int ref) =>
     (ByteData(8)..setInt64(0, ref, Endian.big)).buffer.asUint8List();
 
 int _readInt64BE(ByteData v, int offset) =>
-    (v.getUint32(offset, Endian.big) << 32) | v.getUint32(offset + 4, Endian.big);
+    v.getInt32(offset, Endian.big) * 0x100000000 + v.getUint32(offset + 4, Endian.big);
 
 Future<void> _settle() async {
   for (var i = 0; i < 60; i++) {

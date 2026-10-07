@@ -1160,11 +1160,6 @@ class GCDrawer extends GCDrawerBase {
     return bytes;
   }
 
-  // ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web; read the hi/lo
-  // uint32 halves instead (same rationale as main.dart's copy).
-  static int _readInt64BE(ByteData v, int offset) =>
-      (v.getUint32(offset, Endian.big) << 32) | v.getUint32(offset + 4, Endian.big);
-
   /// Renders the drawn state and keeps it here, registered under the ref Java minted. Nothing
   /// crosses back unless [wantPixels] — the pixels are fetched later, and only if some Java caller
   /// actually reads them (see `Image/requestPixels` in main.dart).
