@@ -404,6 +404,22 @@ static void on_display_window_active(GObject *object, GParamSpec * /*pspec*/, gp
   fl_method_channel_invoke_method(ctx->window_channel, "active", args, nullptr, nullptr, nullptr);
 }
 
+// A crossing that is not the pointer moving through the view. A window manager restacking or
+// focusing the window on a click reports the pointer leaving and re-entering it while the button is
+// still down, and the view would hand both on as a MouseExit and MouseEnter on every click. Dropped
+// by the rule native SWT applies (Control.gtk_enter_notify_event / gtk_leave_notify_event): a
+// crossing counts only when no button is held -- a held button is SWT's implicit capture -- and only
+// when it is a normal one or the end of a grab.
+static void DropCapturedCrossings(GdkEvent *event, gpointer) {
+  if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_LEAVE_NOTIFY) {
+    const GdkEventCrossing *crossing = &event->crossing;
+    const guint buttons = GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK;
+    if (crossing->mode != GDK_CROSSING_NORMAL && crossing->mode != GDK_CROSSING_UNGRAB) return;
+    if ((crossing->state & buttons) != 0) return;
+  }
+  gtk_main_do_event(event);
+}
+
 // Creates a visible top-level GtkWindow hosting one FlView for the whole Display.
 FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widget_name,
                                    const char *theme, int backgroundColor, int width, int height,
@@ -441,6 +457,8 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
     return nullptr;
   }
   InstallXErrorHandler();
+  // This process's GTK serves no one else here: the whole SWT tree is this one view.
+  gdk_event_handler_set(DropCapturedCrossings, nullptr, nullptr);
 
   FlutterWindow *ctx = new FlutterWindow;
   ctx->headless_window = nullptr;
