@@ -131,9 +131,19 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   bool _shownOnce = false;
   Offset? _pendingContextMenuPosition;
 
+  // Every mounted popup per menu: a control's own copy and the one its window renders once shown.
+  static final Map<String, Set<MenuImpl>> _mounted = {};
+
+  /// The other mounted copy of this menu that is already open, or about to be.
+  MenuImpl? get _presentingPeer {
+    for (final peer in _mounted[_rawChannel] ?? const <MenuImpl>{}) {
+      if (identical(peer, this) || !peer.mounted) continue;
+      if (peer._menuController.isOpen || peer._pendingContextMenuPosition != null) return peer;
+    }
+    return null;
+  }
+
   String? _rawChannel;
-  Object? _closeMenuToken;
-  Object? _shownToken;
 
   @override
   void initState() {
@@ -156,28 +166,31 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void _subscribeRawChannels() {
     final channel = "${state.swt}/${state.id}";
     _rawChannel = channel;
-    _closeMenuToken = EquoCommService.onRaw(
-      "$channel/closeMenu",
-          (_) {
-        if (_menuController.isOpen) {
-          _menuController.close();
-        }
-      },
-    );
-    _shownToken = EquoCommService.onRaw(
-      "$channel/shown",
-          (_) => _onMenuShown(),
-    );
+    final copies = _mounted.putIfAbsent(channel, () => {});
+    copies.add(this);
+    if (copies.length > 1) return;
+    // A channel holds one handler, so the copies share it: a second subscription would silence the first.
+    EquoCommService.onRaw("$channel/closeMenu", (_) {
+      for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
+        if (copy._menuController.isOpen) copy._menuController.close();
+      }
+    });
+    EquoCommService.onRaw("$channel/shown", (_) {
+      for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
+        copy._onMenuShown();
+      }
+    });
   }
 
   void _unsubscribeRawChannels() {
     final channel = _rawChannel;
     if (channel == null) return;
-    EquoCommService.remove("$channel/closeMenu", _closeMenuToken);
-    EquoCommService.remove("$channel/shown", _shownToken);
     _rawChannel = null;
-    _closeMenuToken = null;
-    _shownToken = null;
+    final copies = _mounted[channel];
+    if (copies == null || !copies.remove(this) || copies.isNotEmpty) return;
+    _mounted.remove(channel);
+    EquoCommService.remove("$channel/closeMenu");
+    EquoCommService.remove("$channel/shown");
   }
 
   @override
@@ -195,6 +208,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
   void openContextMenuAt(BuildContext context, Offset position) {
     if (_menuController.isOpen || _pendingContextMenuPosition != null) return;
+    if (_presentingPeer != null) return;
     _pendingContextMenuPosition = position;
     _showSent = true;
     widget.sendMenuShow(state, null);
@@ -346,8 +360,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _shownOnce = false;
     }
 
+    // A right-click already put this menu up through the control's own copy: one menu, one panel.
     if (visible && !_menuController.isOpen && !_shownOnce &&
-        !HostedContextMenu.wraps(context)) {
+        !HostedContextMenu.wraps(context) && _presentingPeer == null) {
       _shownOnce = true;
       // Ask Java to fill the menu before opening it. SWT.Show is what a MenuManager with
       // setRemoveAllWhenShown empties and refills the menu on, and only the client fires it --
@@ -412,7 +427,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         _pendingOpenFromVisibleFlag = false;
         _shownOnce = false;
         _showSent = false;
-        if (visible) {
+        if (state.visible ?? false) {
           // Sync the SERIALIZED state too: build() reads state.visible, and with it stuck true
           // the open guard re-opens the menu on every rebuild (Java can't help — its own field
           // already went false on the Hide event, so a later setVisible(false) is a no-op that
