@@ -26,11 +26,13 @@ class GCSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("style", w.getStyle());
         assertJ.satisfies(node("XORMode").equalsTo(w.getXORMode(), orAbsentIfFalse));
         assertJ.satisfies(node("alpha").equalsTo(w.getAlpha(), 255));
+        assertJ.satisfies(node("antialias").equalsTo(w.getAntialias(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("clipping").equalsTo(value(w).getClipping(), orAbsentIfNull));
         assertJ.satisfies(node("fillRule").equalsTo(w.getFillRule(), 1));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("interpolation").equalsTo(w.getInterpolation(), orAbsentIf0));
         assertJ.satisfies(node("lineCap").equalsTo(w.getLineCap(), 1));
         assertJ.satisfies(node("lineDash").equalsTo(w.getLineDash(), orAbsentIfNull));
         assertJ.satisfies(node("lineJoin").equalsTo(w.getLineJoin(), 1));

@@ -27,9 +27,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
+import 'native_platform.dart' if (dart.library.js_interop) 'web_platform.dart';
 import 'src/impl/window_commands_native.dart'
-    if (dart.library.html) 'src/impl/window_commands_web.dart';
+    if (dart.library.js_interop) 'src/impl/window_commands_web.dart';
 
 import 'src/comm/comm.dart';
 import 'src/gen/display.dart';

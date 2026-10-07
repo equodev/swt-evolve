@@ -986,7 +986,10 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     inputs.dir("../flutter-lib/web")
     inputs.dir("../flutter-lib/assets")
     outputs.dir("../flutter-lib/build/web")
-    commandLine = flutterCmd() + listOf("build", "web")
+    // Both builds in one bundle: the loader runs the wasm one (Skwasm, which rasterises off the
+    // main thread when the page is cross-origin isolated) where the browser supports WasmGC, and
+    // the JavaScript one (CanvasKit) everywhere else.
+    commandLine = flutterCmd() + listOf("build", "web", "--wasm")
 }
 
 val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {

@@ -31,9 +31,17 @@ public final class HeadlessChrome implements AutoCloseable {
     private Process process;
     private Path profileDir;
 
+    /**
+     * Closes the browser when the JVM exits without anyone calling {@link #close}: an application
+     * ending in {@code System.exit}, a test JVM that never stops its server. Chrome does not die with
+     * its parent, so without this every such exit leaves a browser running.
+     */
+    private final Thread reaper = new Thread(this::close, "equo-chrome-reaper");
+
     private HeadlessChrome(Process process, Path profileDir) {
         this.process = process;
         this.profileDir = profileDir;
+        Runtime.getRuntime().addShutdownHook(reaper);
     }
 
     /** The launched process, so a caller can observe it (e.g. relaunch on a wedged boot). */
@@ -172,7 +180,14 @@ public final class HeadlessChrome implements AutoCloseable {
      * Idempotent.
      */
     @Override
-    public void close() {
+    public synchronized void close() {
+        if (Thread.currentThread() != reaper) {
+            try {
+                Runtime.getRuntime().removeShutdownHook(reaper);
+            } catch (IllegalStateException shuttingDown) {
+                // The JVM is already exiting; the hook runs this same close, which finds nothing left.
+            }
+        }
         if (process != null) {
             destroyDescendants(process);
             process.destroyForcibly();

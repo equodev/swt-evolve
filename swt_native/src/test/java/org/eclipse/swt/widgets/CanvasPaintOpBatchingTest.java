@@ -125,9 +125,9 @@ class CanvasPaintOpBatchingTest {
         assertThat(gcFrames())
                 .as("frames for a single %d-op paint", OPS_PER_PAINT)
                 .hasSize(1);
-        // Counted by payload, as a repeated channel is named once (MessageBatch); y2 because a
-        // zero-valued field is omitted and the first line has x1 = 0.
-        assertThat(countOccurrences(wire, "\"y2\":10"))
+        // Counted by payload, as a repeated channel is named once (MessageBatch). An op is its
+        // arguments in order: drawLine(i, 0, i, 10) travels as [i,0,i,10].
+        assertThat(java.util.regex.Pattern.compile("\\[(\\d+),0,\\1,10]").matcher(wire).results().count())
                 .as("draw ops that reached the wire")
                 .isEqualTo(OPS_PER_PAINT);
         assertThat(countOccurrences(wire, "drawLineintintintint"))
@@ -143,8 +143,9 @@ class CanvasPaintOpBatchingTest {
 
         assertThat(wire).as("each op keeps its own channel inside the batch")
                 .contains("[\"GC/");
-        assertThat(wire.indexOf("\"x1\":0")).as("first op precedes the last")
-                .isLessThan(wire.indexOf("\"x1\":" + (OPS_PER_PAINT - 1)));
+        assertThat(wire.indexOf("[0,0,0,10]")).as("first op precedes the last")
+                .isNotNegative()
+                .isLessThan(wire.indexOf("[" + (OPS_PER_PAINT - 1) + ",0," + (OPS_PER_PAINT - 1) + ",10]"));
     }
 
     @Test

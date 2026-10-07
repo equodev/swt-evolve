@@ -285,9 +285,10 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // Under Flutter 3.35's merged platform/UI thread the engine's UI work (frame scheduling,
         // post-frame callbacks — including the one that sends ClientReady) runs on this main run
         // loop. The non-blocking nextEvent drain above doesn't give it time, so a busy SWT
-        // readAndDispatch loop would never let a frame render. Spin the run loop ~2ms so it does —
-        // the same fix applied to PumpMessages for the size-test harness.
-        RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
+        // readAndDispatch loop would never let a frame render. One pass over the run loop runs
+        // whatever the engine has ready; waiting in it would hold every paint that follows the pump,
+        // and an idle SWT loop already waits inside the OS loop (waitForEvent).
+        CFRunLoopRunInMode(CFRunLoopMode.defaultMode, 0, false)
         // The engine is up by now if it is going to be, so anything held back for it can go.
         hasPumped = true
         flushPendingActive()

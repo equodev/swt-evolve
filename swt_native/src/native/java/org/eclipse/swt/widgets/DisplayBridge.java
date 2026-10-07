@@ -164,6 +164,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     protected void registerDisplayClientReady(DartDisplay display) {
         long displayId = display.getApi().hashCode();
         relayoutWhenUiScaleSettles(display);
+        // Queued ahead of everything else the client is sent: what it draws before its ClientReady,
+        // a GC's paint included, is measured with these flags on this side.
+        broadcastSwtEvolveProperties();
         registerClientReadyHandler(display, displayId);
     }
 

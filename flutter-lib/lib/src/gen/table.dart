@@ -89,13 +89,9 @@ class VTable extends VComposite {
             ?.map((e) => VTableEditor.fromJson(e as Map<String, dynamic>))
             .toList();
       case 'headerBackground':
-        headerBackground = json['headerBackground'] == null
-            ? null
-            : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>);
+        headerBackground = VColor.read(json['headerBackground']);
       case 'headerForeground':
-        headerForeground = json['headerForeground'] == null
-            ? null
-            : VColor.fromJson(json['headerForeground'] as Map<String, dynamic>);
+        headerForeground = VColor.read(json['headerForeground']);
       case 'headerVisible':
         headerVisible = json['headerVisible'] as bool?;
       case 'items':

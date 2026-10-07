@@ -70,10 +70,23 @@ void main() {
     return committed(drawer, id);
   }
 
-  /// How much of the stroke is actually drawn, along the whole shape.
-  double inkedLength(PathShape shape) => shape.path
-      .computeMetrics()
-      .fold(0.0, (total, metric) => total + metric.length);
+  /// How much of the stroke is actually drawn, along the whole shape: a straight line's dashes are
+  /// separate segments, any other outline's are a path.
+  double inkedLength(Shape shape) {
+    if (shape is SegmentsShape) {
+      var total = 0.0;
+      for (var i = 0; i + 3 < shape.points.length; i += 4) {
+        total += (Offset(shape.points[i + 2], shape.points[i + 3]) -
+                Offset(shape.points[i], shape.points[i + 1]))
+            .distance;
+      }
+      return total;
+    }
+    return (shape as PathShape)
+        .path
+        .computeMetrics()
+        .fold(0.0, (total, metric) => total + metric.length);
+  }
 
   group('line style', () {
     test('a solid line is one unbroken stroke', () async {
@@ -91,9 +104,10 @@ void main() {
     test('LINE_DASH leaves gaps along the line it spans', () async {
       final shapes = await horizontalRule(lineStyle: SWT.LINE_DASH, lineWidth: 4);
 
-      final dashed = shapes.single as PathShape;
-      expect(dashed.path.getBounds().left, 0);
-      expect(dashed.path.getBounds().right, 100);
+      // A straight line's dashes are its segments, first to last along the run.
+      final dashed = shapes.single as SegmentsShape;
+      expect(dashed.points.first, 0);
+      expect(dashed.points[dashed.points.length - 2], 100);
       // 12 on, 4 off in line-width units: three quarters of the run is ink.
       expect(inkedLength(dashed), closeTo(75, 12));
     });
@@ -101,9 +115,9 @@ void main() {
     test('LINE_DOT lays down less ink than LINE_DASH over the same run',
         () async {
       final dash = (await horizontalRule(lineStyle: SWT.LINE_DASH, lineWidth: 4))
-          .single as PathShape;
+          .single;
       final dot = (await horizontalRule(lineStyle: SWT.LINE_DOT, lineWidth: 4))
-          .single as PathShape;
+          .single;
 
       expect(inkedLength(dot), lessThan(inkedLength(dash)));
     });
@@ -117,7 +131,7 @@ void main() {
         SWT.LINE_DASHDOTDOT,
       ]) {
         final shapes = await horizontalRule(lineStyle: style, lineWidth: 4);
-        inked[style] = inkedLength(shapes.single as PathShape);
+        inked[style] = inkedLength(shapes.single);
       }
 
       expect(inked.values.toSet(), hasLength(inked.length));
@@ -130,7 +144,7 @@ void main() {
           await horizontalRule(lineStyle: SWT.LINE_DASH, lineWidth: 0);
 
       // 18 on, 6 off: a quarter of the run is gap.
-      expect(inkedLength(shapes.single as PathShape), closeTo(75, 12));
+      expect(inkedLength(shapes.single), closeTo(75, 12));
     });
 
     test('LINE_CUSTOM follows the dash lengths the application set', () async {
@@ -138,7 +152,7 @@ void main() {
           lineStyle: SWT.LINE_CUSTOM, lineWidth: 1, lineDash: [20, 20]);
 
       // Taken as given rather than scaled by the width: 20 on, 20 off, three times over the run.
-      expect(inkedLength(shapes.single as PathShape), closeTo(60, 1));
+      expect(inkedLength(shapes.single), closeTo(60, 1));
     });
 
     test('LINE_CUSTOM with no dashes falls back to solid, as SWT does',

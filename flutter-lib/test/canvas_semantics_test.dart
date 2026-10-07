@@ -55,10 +55,14 @@ void _deliver(String actionId, Map<String, dynamic> json) {
 }
 
 /// `Hyperlink.paintText` ends in `GC.drawText(text, x, y, true)` -- transparent, so the GC itself
-/// never fills a background.
+/// never fills a background. That overload reaches the client as the flags form SWT defines it by.
 void _paintLinkLabel() {
-  _deliver('GC/$_canvasId/drawTextStringintintboolean',
-      {'string': 'Forgot My Password', 'x': 0, 'y': 0, 'isTransparent': true});
+  _deliver('GC/$_canvasId/drawTextStringintintint', {
+    'string': 'Forgot My Password',
+    'x': 0,
+    'y': 0,
+    'flags': SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT
+  });
   _deliver('GC/$_canvasId/gcDispose', {'fullRepaint': true});
 }
 

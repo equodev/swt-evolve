@@ -117,7 +117,9 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        appendPathData(((DartPath) path.getImpl()).getPathData());
+        PathData source = ((DartPath) path.getImpl()).getPathData();
+        appendPathData(flatness > 0 ? PathGeometry.flatten(source, flatness) : source);
+        appendTexts((DartPath) path.getImpl());
         closed = ((DartPath) path.getImpl()).closed;
         init();
     }
@@ -222,6 +224,7 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         DartPath source = (DartPath) path.getImpl();
         appendPathData(source.getPathData());
+        appendTexts(source);
         closed = source.closed;
     }
 
@@ -267,14 +270,12 @@ public class DartPath extends DartResource implements IPath {
     public void addString(String string, float x, float y, Font font) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (font == null)
+        if (string == null || font == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            closed = true;
-        } finally {
-        }
+        appendText(string, x, y, font);
+        closed = true;
     }
 
     /**
@@ -325,33 +326,9 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (gc == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        try {
-            //TODO - see windows
-            if (outline) {
-                int[] buffer = new int[] { 0xFFFFFFFF };
-                GCData data = ((DartGC) gc.getImpl()).data;
-                switch(data.lineCap) {
-                    case SWT.CAP_ROUND:
-                        break;
-                    case SWT.CAP_FLAT:
-                        break;
-                    case SWT.CAP_SQUARE:
-                        break;
-                }
-                switch(data.lineJoin) {
-                    case SWT.JOIN_MITER:
-                        break;
-                    case SWT.JOIN_ROUND:
-                        break;
-                    case SWT.JOIN_BEVEL:
-                        break;
-                }
-                return buffer[0] != 0xFFFFFFFF;
-            } else {
-            }
-        } finally {
-        }
-        return false;
+        if (gc.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        return PathGeometry.contains(pathData, textBoxes(), x, y, gc.getFillRule(), outline, gc.getLineWidth());
     }
 
     /**
@@ -404,9 +381,7 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (bounds.length < 4)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        PathGeometry.bounds(pathData, textBounds(), bounds);
     }
 
     /**
@@ -592,6 +567,56 @@ public class DartPath extends DartResource implements IPath {
 
     boolean hasCurrentPoint;
 
+    final java.util.List<String> textStrings = new java.util.ArrayList<>();
+
+    final java.util.List<Font> textFonts = new java.util.ArrayList<>();
+
+    float[] textOrigins = new float[0];
+
+    void appendText(String string, float x, float y, Font font) {
+        textStrings.add(string);
+        textFonts.add(new Font(font.getDevice(), font.getFontData()));
+        float[] origins = java.util.Arrays.copyOf(textOrigins, textOrigins.length + 2);
+        origins[origins.length - 2] = x;
+        origins[origins.length - 1] = y;
+        textOrigins = origins;
+    }
+
+    void appendTexts(DartPath source) {
+        for (int i = 0; i < source.textStrings.size(); i++) appendText(source.textStrings.get(i), source.textOrigins[2 * i], source.textOrigins[2 * i + 1], source.textFonts.get(i));
+    }
+
+    boolean hasText() {
+        return !textStrings.isEmpty();
+    }
+
+    String[] wireTextStrings() {
+        return textStrings.isEmpty() ? null : textStrings.toArray(new String[0]);
+    }
+
+    float[] wireTextOrigins() {
+        return textStrings.isEmpty() ? null : textOrigins;
+    }
+
+    Font[] wireTextFonts() {
+        return textFonts.isEmpty() ? null : textFonts.toArray(new Font[0]);
+    }
+
+    java.util.List<Rectangle> textBoxes() {
+        java.util.List<Rectangle> boxes = new java.util.ArrayList<>();
+        for (int i = 0; i < textStrings.size(); i++) {
+            Point extent = GCHelper.textExtent(textStrings.get(i), 0, textFonts.get(i));
+            boxes.add(new Rectangle((int) Math.floor(textOrigins[2 * i]), (int) Math.floor(textOrigins[2 * i + 1]), extent.x + 1, extent.y + 1));
+        }
+        return boxes;
+    }
+
+    Rectangle textBounds() {
+        Rectangle bounds = null;
+        for (Rectangle box : textBoxes()) bounds = bounds == null ? box : bounds.union(box);
+        return bounds;
+    }
+
     void appendElement(byte type, float... coords) {
         if (pathData == null) {
             pathData = new PathData();
@@ -647,10 +672,7 @@ public class DartPath extends DartResource implements IPath {
         for (int i = 0, j = 0; i < data.types.length; i++) {
             switch(data.types[i]) {
                 case SWT.PATH_MOVE_TO:
-                    if (closed)
-                        moveTo(data.points[j++], data.points[j++]);
-                    else
-                        lineTo(data.points[j++], data.points[j++]);
+                    moveTo(data.points[j++], data.points[j++]);
                     break;
                 case SWT.PATH_LINE_TO:
                     lineTo(data.points[j++], data.points[j++]);

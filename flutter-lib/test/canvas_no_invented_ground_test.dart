@@ -68,8 +68,8 @@ void _deliver(String actionId, Map<String, dynamic> json) {
 /// `Hyperlink.paintText` ends in `GC.drawText(text, x, y, true)` -- transparent, so the GC itself
 /// never fills a background.
 void _paintLinkLabel() {
-  _deliver('GC/$_canvasId/drawTextStringintintboolean',
-      {'string': 'Forgot My Password', 'x': 0, 'y': 0, 'isTransparent': true});
+  _deliver('GC/$_canvasId/drawTextStringintintint',
+      {'string': 'Forgot My Password', 'x': 0, 'y': 0, 'flags': 7}); // DRAW_DELIMITER | DRAW_TAB | DRAW_TRANSPARENT
   _deliver('GC/$_canvasId/gcDispose', {'fullRepaint': true});
 }
 

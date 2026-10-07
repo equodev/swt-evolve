@@ -59,11 +59,9 @@ Future<void> _paint(Color gcBackground, {bool transparent = false}) async {
     'background': _rgba(gcBackground),
     'foreground': _rgba(const Color(0xFFFFFFFF)),
   });
-  await deliverFrame(
-      transparent
-          ? 'GC/$_panelId/drawStringStringintintboolean'
-          : 'GC/$_panelId/drawStringStringintint',
-      {'string': ' Header ', 'x': 0, 'y': 6, if (transparent) 'isTransparent': true});
+  // drawString reaches the client as drawText with flags: none, or DRAW_TRANSPARENT.
+  await deliverFrame('GC/$_panelId/drawTextStringintintint',
+      {'string': ' Header ', 'x': 0, 'y': 6, 'flags': transparent ? SWT.DRAW_TRANSPARENT : 0});
   await deliverFrame('GC/$_panelId/gcDispose', {'fullRepaint': true});
 }
 

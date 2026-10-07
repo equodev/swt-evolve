@@ -11,6 +11,13 @@ import org.eclipse.swt.widgets.Display;
  */
 public class GraphicsUtils {
 
+    /** The pixels of a new {@code Image(device, width, height)}: SWT specifies it starts white. */
+    public static ImageData blankImageData(int width, int height) {
+        ImageData data = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        java.util.Arrays.fill(data.data, (byte) 0xFF);
+        return data;
+    }
+
     /**
      * Creates a copy of an ImageData.
      * This is used internally by DartImage constructors to make defensive copies

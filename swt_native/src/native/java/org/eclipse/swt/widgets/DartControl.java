@@ -4142,6 +4142,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return _background != null;
     }
 
+    public Color getOwnForeground() {
+        return _foreground;
+    }
+
     public boolean getInheritsBackground() {
         return (getApi().state & PARENT_BACKGROUND) != 0;
     }

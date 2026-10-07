@@ -185,7 +185,10 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         // (`pkill -f runWebExample`) reaps all of them.
         sessionId()?.let { systemProperty("dev.equo.session", it) }
         systemProperty("dev.equo.swt.crashReport.disabled", "true")
-        systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
+        // Off unless asked for (-Ddev.equo.swt.web.crossOriginIsolated=true): isolation is what gives
+        // the wasm renderer its threads, and what makes a Browser's iframe refuse external pages.
+        systemProperty("dev.equo.swt.web.crossOriginIsolated",
+            System.getProperty("dev.equo.swt.web.crossOriginIsolated") ?: "false")
         systemProperty("dev.equo.swt.mode", mode)
         // -Pdebug turns on the Java-side DebugLog (Config.isDebug): prints every `send:` of a widget's
         // V* payload to Flutter. That's the Java side of the Phase 3 Flutter-vs-V* cross-check. It can

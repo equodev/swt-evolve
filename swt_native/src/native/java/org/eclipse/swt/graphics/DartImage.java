@@ -239,14 +239,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, Image srcImage, int flag, Image api) {
         super(device, api);
-        DartImage srcImg = (DartImage) srcImage.getImpl();
-        if (srcImg.filename != null) {
-            this.filename = srcImg.filename;
-        }
         if (srcImage == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (srcImage.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        DartImage srcImg = (DartImage) srcImage.getImpl();
+        if (srcImg.filename != null) {
+            this.filename = srcImg.filename;
+        }
         switch(flag) {
             case SWT.IMAGE_COPY:
             case SWT.IMAGE_DISABLE:
@@ -483,6 +483,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, InputStream stream, Image api) {
         super(device, api);
+        if (stream == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         ImageData data = new ImageData(stream);
         this.imageData = data;
         init(data, 100);
@@ -950,12 +953,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         _ensureRemotePixels();
         // Return a defensive copy: getImageData() must not hand out the backing store, so a
         // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
-        if (zoom == 100)
+        // A buffer allocated at the raster scale (see _allocateScratchBuffer) is stored at that
+        // zoom; every other image at 100%.
+        int storedZoom = logicalWidth > 0 && this.imageData.width != logicalWidth ? Math.round(100f * this.imageData.width / logicalWidth) : 100;
+        if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
-        // The image is stored at 100%; scale to the requested zoom (matches upstream, which
-        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already
-        // returns a fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
-        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
+        // Scale to the requested zoom (matches upstream, which falls back to
+        // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
+        // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
+        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, storedZoom);
     }
 
     /**
@@ -1044,6 +1050,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public long internal_new_GC(GCData data) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().type != SWT.BITMAP || memGC != null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -1349,7 +1357,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         double zoom = dev.equo.swt.Config.rasterScale();
         int bufferWidth = width > 0 ? Math.max(1, (int) Math.round(width * zoom)) : width;
         int bufferHeight = height > 0 ? Math.max(1, (int) Math.round(height * zoom)) : height;
-        return new ImageData(bufferWidth, bufferHeight, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        return GraphicsUtils.blankImageData(bufferWidth, bufferHeight);
     }
 
     public int _logicalWidth() {

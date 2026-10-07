@@ -162,8 +162,12 @@ public class DartPattern extends DartResource implements IPattern {
      */
     public DartPattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2, Pattern api) {
         super(device, api);
+        if (color1 == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color1.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (color2 == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color2.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         this.color1 = new Color(new RGB(color1.getRed(), color1.getGreen(), color1.getBlue()), alpha1);

@@ -79,7 +79,9 @@ class TextLayoutDrawNativeTest {
         GC gc = freshGc();
         TextLayout layout = new TextLayout(gc.getDevice());
         layout.setText("refactor gc");
-        layout.setStyle(new TextStyle(null, gc.getDevice().getSystemColor(SWT.COLOR_RED), null), 0, 7);
+        // Not a system colour: the mocked display answers every one with the same Color, which is
+        // also the canvas's foreground the GC starts from.
+        layout.setStyle(new TextStyle(null, new Color(gc.getDevice(), 255, 0, 0), null), 0, 7);
         layout.draw(gc, 0, 0);
         layout.dispose();
         gc.dispose();

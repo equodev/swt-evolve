@@ -54,9 +54,7 @@ class VLink extends VControl {
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
       case 'linkForeground':
-        linkForeground = json['linkForeground'] == null
-            ? null
-            : VColor.fromJson(json['linkForeground'] as Map<String, dynamic>);
+        linkForeground = VColor.read(json['linkForeground']);
       case 'text':
         text = json['text'] as String?;
       default:

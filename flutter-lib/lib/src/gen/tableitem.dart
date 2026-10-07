@@ -58,15 +58,10 @@ class VTableItem extends VItem {
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
       case 'background':
-        background = json['background'] == null
-            ? null
-            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+        background = VColor.read(json['background']);
       case 'backgrounds':
         backgrounds = (json['backgrounds'] as List<dynamic>?)
-            ?.map(
-              (e) =>
-                  e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
-            )
+            ?.map((e) => VColor.read(e))
             .toList();
       case 'checked':
         checked = json['checked'] as bool?;
@@ -82,15 +77,10 @@ class VTableItem extends VItem {
             )
             .toList();
       case 'foreground':
-        foreground = json['foreground'] == null
-            ? null
-            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+        foreground = VColor.read(json['foreground']);
       case 'foregrounds':
         foregrounds = (json['foregrounds'] as List<dynamic>?)
-            ?.map(
-              (e) =>
-                  e == null ? null : VColor.fromJson(e as Map<String, dynamic>),
-            )
+            ?.map((e) => VColor.read(e))
             .toList();
       case 'grayed':
         grayed = json['grayed'] as bool?;

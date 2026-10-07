@@ -10,8 +10,10 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
+import 'src/comm/comm_frame.dart' show EquoCommBase;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
 import 'src/gen/widget.dart';
+import 'src/testing/frame_stats.dart';
 import 'src/testing/render_facts.dart';
 import 'src/testing/tree_test_registry.dart';
 import 'test_harness_iframe_stub.dart'
@@ -80,10 +82,47 @@ void registerTestQueryChannel() {
   EquoCommService.onRaw("evolve.test.frameSync", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int syncId = (map['syncId'] as num).toInt();
+    // Where the wait went, on one clock: queued behind the frames that came before this request,
+    // then until the frame began, then building and painting it.
+    final clock = EquoCommBase.clock;
+    final received = EquoCommBase.lastReceivedMicros;
+    final arrived = clock.elapsedMicroseconds;
+    var began = arrived;
+    SchedulerBinding.instance.scheduleFrameCallback((_) => began = clock.elapsedMicroseconds);
     scheduleFrameSync(() {
+      final painted = clock.elapsedMicroseconds;
       EquoCommService.sendPayload("evolve.test.frameSynced", {
         'syncId': syncId,
+        'queuedMicros': arrived - received,
+        'toVsyncMicros': began - arrived,
+        'vsyncToPaintedMicros': painted - began,
       });
+    });
+  });
+
+  // Frame statistics from the engine's own pipeline, the only rendering measurement comparable to a
+  // native toolkit's: a Java-side timer sees serialization, not the frame reaching the screen.
+  EquoCommService.onRaw("evolve.test.frameStats", (dynamic req) {
+    final map = (req as Map).cast<String, dynamic>();
+    final int statsId = (map['statsId'] as num).toInt();
+    final String action = (map['action'] as String?) ?? 'snapshot';
+    Map<String, dynamic> stats;
+    try {
+      if (action == 'start') {
+        FrameStats.start();
+      } else if (action == 'stop') {
+        FrameStats.stop();
+      }
+      // A ping times the transport: answering it must not cost anything of its own.
+      stats = action == 'ping' ? const <String, dynamic>{} : FrameStats.snapshot();
+    } catch (e) {
+      // Always answer: the comm layer isolates handler errors, so throwing here would leave the
+      // caller waiting on a timeout with nothing to diagnose.
+      stats = <String, dynamic>{'error': '$e'};
+    }
+    EquoCommService.sendPayload("evolve.test.frameStatsResponse", {
+      'statsId': statsId,
+      'stats': stats,
     });
   });
 

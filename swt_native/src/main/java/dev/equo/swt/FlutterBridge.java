@@ -546,6 +546,7 @@ public abstract class FlutterBridge {
             dirtySnapshot = new HashSet<>(dirty);
             dirty.clear();
         }
+        org.eclipse.swt.widgets.PaintPacing.flushing(dirtySnapshot);
         Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
         Set<Object> carryingDescendants = ancestorsCarryingOthers(dirtySnapshot, filteredDirty);
         // Only widgets without a frame of their own need the path down to them described.
@@ -1033,6 +1034,7 @@ public abstract class FlutterBridge {
             opResources.remove(gc);
             MessageBatch dropped = opBatches.remove(gc);
             if (dropped != null) releaseBatch(dropped);
+            org.eclipse.swt.widgets.PaintPacing.unchanged(target);
             return;
         }
         if (target != null) cycleSent.put(target, new long[] { connection, drawn });
@@ -1062,6 +1064,7 @@ public abstract class FlutterBridge {
             long base = value.sentSeq(connection);
             boolean diff = Serializer.mayDiffResources() && base != 0 && held != null && held == base
                     && value.anyDirty();
+            if (!diff) Serializer.forgetSentProperties(value);
             long seq = diff ? serializer.toDiff(prefix, gc, base, sink) : serializer.toStamped(prefix, gc, sink);
             value.sent(connection, seq);
             if (channel != null) gcStateSeq.put(channel, seq);
@@ -1091,8 +1094,9 @@ public abstract class FlutterBridge {
                 gcStateSeq.put(drawable, seq);
                 // The channel holds a state no whole description was hashed from.
                 gcStateSent.remove(gcStateKey(gc));
-                return true;
+                return seq != base;
             }
+            Serializer.forgetSentProperties(value);
             long stamp = addGcStateIfChanged(batch, channel, target, gc, connection);
             // A reference, or nothing at all, still leaves the channel holding this GC's state.
             long seq = stamp > 0 ? stamp : Serializer.nextWriteStamp();

@@ -50,10 +50,11 @@ void main() {
     final drawer = GCDrawer.embedded(state, onShapesUpdated: (_) {});
     addTearDown(drawer.dispose);
 
-    drawer.onDrawTextStringintint(VGCDrawTextStringintint()
+    drawer.onDrawTextStringintintint(VGCDrawTextStringintintint()
       ..string = 'Constant'
       ..x = 10
-      ..y = 10);
+      ..y = 10
+      ..flags = 6); // drawText(String, int, int): DRAW_DELIMITER | DRAW_TAB
 
     final action = utf8.encode('GC/$id/gcDispose');
     final body = utf8.encode(jsonEncode({'fullRepaint': true}));

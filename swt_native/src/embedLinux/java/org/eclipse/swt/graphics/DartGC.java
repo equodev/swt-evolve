@@ -374,6 +374,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.type != SWT.BITMAP || image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (hashCode() == 0)
             return;
         VGCCopyAreaImageintint drawOp = new VGCCopyAreaImageintint();
@@ -399,14 +405,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
-        VGCCopyAreaintintintintintint drawOp = new VGCCopyAreaintintintintintint();
-        drawOp.srcX = srcX;
-        drawOp.srcY = srcY;
-        drawOp.width = width;
-        drawOp.height = height;
-        drawOp.destX = destX;
-        drawOp.destY = destY;
-        FlutterBridge.send(this, "copyAreaintintintintintint", drawOp);
+        copyArea(srcX, srcY, width, height, destX, destY, true);
     }
 
     /**
@@ -428,6 +427,10 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (width <= 0 || height <= 0)
+            return;
         VGCCopyAreaintintintintintintboolean drawOp = new VGCCopyAreaintintintintintintboolean();
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
@@ -542,6 +545,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawArcintintintintintint drawOp = new VGCDrawArcintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -570,6 +575,8 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawFocusintintintint drawOp = new VGCDrawFocusintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -598,8 +605,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (imageCapture != null) {
             imageCapture.accept(image);
             return;
@@ -644,11 +655,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        if (imageCapture != null && image != null) {
-            imageCapture.accept(image);
-            return;
-        }
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
             return;
@@ -659,6 +666,12 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (imageCapture != null && image != null) {
+            imageCapture.accept(image);
+            return;
+        }
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, false);
     }
 
@@ -696,6 +709,21 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.132
      */
     public void drawImage(Image image, int destX, int destY, int destWidth, int destHeight) {
+        if (isDisposed()) {
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        }
+        if (destWidth == 0 || destHeight == 0) {
+            return;
+        }
+        if (destWidth < 0 || destHeight < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (image == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        if (image.isDisposed()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         if (imageCapture != null) {
             imageCapture.accept(image);
             return;
@@ -710,6 +738,11 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (!simple) {
+            Rectangle imageBounds = srcImage.getBounds();
+            if (srcX + srcWidth > imageBounds.width || srcY + srcHeight > imageBounds.height)
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
         drawOp.image = GraphicsUtils.copyImageForDraw(display, srcImage);
         drawOp.srcX = srcX;
@@ -737,6 +770,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawLineintintintint drawOp = new VGCDrawLineintintintint();
         drawOp.x1 = x1;
         drawOp.y1 = y1;
@@ -767,6 +802,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawOvalintintintint drawOp = new VGCDrawOvalintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -799,10 +836,14 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (path.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path.handle == 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         checkGC(DRAW);
@@ -826,6 +867,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawPointintint drawOp = new VGCDrawPointintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -850,6 +893,10 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (pointArray == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         VGCDrawPolygonint drawOp = new VGCDrawPolygonint();
         drawOp.pointArray = pointArray;
         FlutterBridge.send(this, "drawPolygonint", drawOp);
@@ -873,6 +920,10 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (pointArray == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         VGCDrawPolylineint drawOp = new VGCDrawPolylineint();
         drawOp.pointArray = pointArray;
         FlutterBridge.send(this, "drawPolylineint", drawOp);
@@ -894,6 +945,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawRectangleintintintint drawOp = new VGCDrawRectangleintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -919,9 +972,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        VGCDrawRectangleRectangle drawOp = new VGCDrawRectangleRectangle();
-        drawOp.rect = rect;
-        FlutterBridge.send(this, "drawRectangleRectangle", drawOp);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        drawRectangle(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -946,6 +999,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCDrawRoundRectangleintintintintintint drawOp = new VGCDrawRoundRectangleintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -979,18 +1034,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        if (textCapture != null) {
-            textCapture.accept(string);
-            return;
-        }
-        if (imageCapture != null) {
-            return;
-        }
-        VGCDrawStringStringintint drawOp = new VGCDrawStringStringintint();
-        drawOp.string = string;
-        drawOp.x = x;
-        drawOp.y = y;
-        FlutterBridge.send(this, "drawStringStringintint", drawOp);
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        drawString(string, x, y, false);
     }
 
     /**
@@ -1021,19 +1071,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        if (textCapture != null) {
-            textCapture.accept(string);
-            return;
-        }
-        if (imageCapture != null) {
-            return;
-        }
-        VGCDrawStringStringintintboolean drawOp = new VGCDrawStringStringintintboolean();
-        drawOp.string = string;
-        drawOp.x = x;
-        drawOp.y = y;
-        drawOp.isTransparent = isTransparent;
-        FlutterBridge.send(this, "drawStringStringintintboolean", drawOp);
+        drawText(string, x, y, isTransparent ? SWT.DRAW_TRANSPARENT : 0);
     }
 
     /**
@@ -1059,18 +1097,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        if (textCapture != null) {
-            textCapture.accept(string);
-            return;
-        }
-        if (imageCapture != null) {
-            return;
-        }
-        VGCDrawTextStringintint drawOp = new VGCDrawTextStringintint();
-        drawOp.string = string;
-        drawOp.x = x;
-        drawOp.y = y;
-        FlutterBridge.send(this, "drawTextStringintint", drawOp);
+        drawText(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -1098,19 +1125,10 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        if (textCapture != null) {
-            textCapture.accept(string);
-            return;
-        }
-        if (imageCapture != null) {
-            return;
-        }
-        VGCDrawTextStringintintboolean drawOp = new VGCDrawTextStringintintboolean();
-        drawOp.string = string;
-        drawOp.x = x;
-        drawOp.y = y;
-        drawOp.isTransparent = isTransparent;
-        FlutterBridge.send(this, "drawTextStringintintboolean", drawOp);
+        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
+        if (isTransparent)
+            flags |= SWT.DRAW_TRANSPARENT;
+        drawText(string, x, y, flags);
     }
 
     /**
@@ -1153,6 +1171,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string.length() == 0)
+            return;
         if (textCapture != null) {
             textCapture.accept(string);
             return;
@@ -1218,6 +1242,8 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCFillArcintintintintintint drawOp = new VGCFillArcintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -1249,6 +1275,10 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if ((width == 0) || (height == 0))
+            return;
         VGCFillGradientRectangleintintintintboolean drawOp = new VGCFillGradientRectangleintintintintboolean();
         drawOp.x = x;
         drawOp.y = y;
@@ -1275,6 +1305,8 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCFillOvalintintintint drawOp = new VGCFillOvalintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -1307,10 +1339,14 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (path.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path.handle == 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         checkGC(FILL);
@@ -1336,6 +1372,10 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (pointArray == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         VGCFillPolygonint drawOp = new VGCFillPolygonint();
         drawOp.pointArray = pointArray;
         FlutterBridge.send(this, "fillPolygonint", drawOp);
@@ -1357,6 +1397,8 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCFillRectangleintintintint drawOp = new VGCFillRectangleintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -1381,9 +1423,9 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        VGCFillRectangleRectangle drawOp = new VGCFillRectangleRectangle();
-        drawOp.rect = rect;
-        FlutterBridge.send(this, "fillRectangleRectangle", drawOp);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        fillRectangle(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -1404,6 +1446,8 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         VGCFillRoundRectangleintintintintintint drawOp = new VGCFillRoundRectangleintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
@@ -1451,6 +1495,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getAdvanceWidth(char ch) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         //BOGUS
@@ -1483,6 +1529,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public boolean getAdvanced() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.cairo != 0;
@@ -1501,6 +1549,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getAlpha() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.alpha;
@@ -1523,11 +1573,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getAntialias() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0)
             return SWT.DEFAULT;
-        return SWT.DEFAULT;
+        return this.antialias;
     }
 
     /**
@@ -1540,6 +1592,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Color getBackground() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return this.background;
@@ -1560,6 +1614,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public Pattern getBackgroundPattern() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.backgroundPattern;
@@ -1582,6 +1638,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getCharWidth(char ch) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         //BOGUS
@@ -1601,15 +1659,22 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Rectangle getClipping() {
-        if (this.clipping == null) {
-            if (drawable instanceof Control) {
-                Rectangle b = ((Control) drawable).getBounds();
-                if (b != null)
-                    return new Rectangle(0, 0, b.width, b.height);
-            }
-            return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        Rectangle bounds = null;
+        if (drawable instanceof Control) {
+            Rectangle b = ((Control) drawable).getBounds();
+            if (b != null)
+                bounds = new Rectangle(0, 0, b.width, b.height);
+        } else if (drawable instanceof Image) {
+            bounds = ((Image) drawable).getBounds();
         }
-        return this.clipping;
+        Rectangle clip = this.clipping == null ? bounds : new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        if (clip == null)
+            return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        if (bounds != null && this.clipping != null)
+            clip = clip.intersection(bounds);
+        return GCHelper.isTransforming(transform) ? GCHelper.transformBounds(transform, clip, true) : clip;
     }
 
     /**
@@ -1627,6 +1692,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void getClipping(Region region) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (region == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
@@ -1654,6 +1721,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getFillRule() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         long cairo = data.cairo;
@@ -1673,6 +1742,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Font getFont() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.font;
@@ -1690,6 +1761,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return GCHelper.createFontMetrics(data.font);
     }
 
@@ -1703,6 +1776,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Color getForeground() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_WIDGET_DISPOSED);
         return this.foreground;
@@ -1723,6 +1798,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.foregroundPattern;
@@ -1751,6 +1828,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.2
      */
     public GCData getGCData() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data;
@@ -1770,6 +1849,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getInterpolation() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.interpolation;
@@ -1787,6 +1868,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.3
      */
     public LineAttributes getLineAttributes() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         float[] dashes = null;
@@ -1811,6 +1894,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineCap() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.lineCap;
     }
 
@@ -1827,6 +1912,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int[] getLineDash() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.lineDashes == null)
@@ -1852,6 +1939,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineJoin() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.lineJoin;
     }
 
@@ -1868,6 +1957,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getLineStyle() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.lineStyle;
@@ -1886,6 +1977,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getLineWidth() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return (int) data.lineWidth;
@@ -1910,6 +2003,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 2.1.2
      */
     public int getStyle() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.style;
@@ -1943,13 +2038,15 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getTextAntialias() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0)
             return SWT.DEFAULT;
         if (data.context != 0) {
         }
-        return SWT.DEFAULT;
+        return this.textAntialias;
     }
 
     /**
@@ -2001,6 +2098,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean getXORMode() {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.xorMode;
@@ -2049,8 +2148,10 @@ public final class DartGC extends DartResource implements IGC {
             Color inheritedBg = drawable instanceof Control ? ((Control) drawable).getBackground() : null;
             this.background = inheritedBg != null ? inheritedBg : new Color(255, 255, 255);
         }
-        if (this.foreground == null)
-            this.foreground = new Color(0, 0, 0);
+        if (this.foreground == null) {
+            Color inheritedFg = GCHelper.ownForeground(drawable);
+            this.foreground = inheritedFg != null ? inheritedFg : new Color(0, 0, 0);
+        }
         if (data.font != null)
             data.state &= ~FONT;
         if (data.font == null) {
@@ -2130,7 +2231,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean isClipped() {
-        return clipping != null && (clipping.width > 0 || clipping.height > 0);
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return clipping != null && (paintDamage == null || !clipping.equals(paintDamage));
     }
 
     /**
@@ -2197,6 +2300,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAdvanced(boolean advanced) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         boolean newValue = advanced;
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -2234,6 +2339,9 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAlpha(int alpha) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        alpha &= 0xFF;
         int newValue = alpha;
         if (!java.util.Objects.equals(this.alpha, newValue)) {
             getValue().markDirty(VGC.ALPHA);
@@ -2276,7 +2384,12 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAntialias(int antialias) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = antialias;
+        if (!java.util.Objects.equals(this.antialias, newValue)) {
+            getValue().markDirty(VGC.ANTIALIAS);
+        }
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0 && antialias == SWT.DEFAULT)
@@ -2310,6 +2423,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setBackground(Color color) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (color == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.background, newValue)) {
@@ -2318,11 +2437,8 @@ public final class DartGC extends DartResource implements IGC {
         this.background = newValue;
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (color == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (color.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         data.backgroundPattern = null;
+        this.backgroundPattern = data.backgroundPattern;
         data.state &= ~(BACKGROUND | BACKGROUND_BG);
     }
 
@@ -2351,11 +2467,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        Pattern newValue = pattern;
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        Pattern newValue = pattern;
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0 && pattern == null)
             return;
         if (data.backgroundPattern == pattern)
@@ -2477,6 +2595,23 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (GCHelper.isTransforming(transform)) {
+            Rectangle device = GCHelper.transformBounds(transform, new Rectangle(x, y, width, height), false);
+            x = device.x;
+            y = device.y;
+            width = device.width;
+            height = device.height;
+        }
         clearClipShape();
         getValue().markDirty(VGC.CLIPPING);
         if (getApi().handle == 0)
@@ -2518,10 +2653,12 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        getValue().markDirty(VGC.CLIPPING);
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path != null && path.isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        getValue().markDirty(VGC.CLIPPING);
+        if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         Transform t = null;
         if (currentTransform != null) {
@@ -2552,6 +2689,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         clearClipShape();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -2589,10 +2728,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Region region) {
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (region != null && region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (region != null) {
             setClipping(region.handle);
         } else {
@@ -2616,6 +2757,10 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setFont(Font font) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (font != null && font.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         font = GraphicsUtils.copyFont(font);
         Font newValue = font;
         if (!java.util.Objects.equals(this.font, newValue)) {
@@ -2623,8 +2768,6 @@ public final class DartGC extends DartResource implements IGC {
         }
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (font != null && font.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         data.font = font != null ? font : ((SwtDevice) data.device.getImpl()).systemFont;
         data.state &= ~FONT;
         this.font = newValue;
@@ -2648,6 +2791,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setFillRule(int rule) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = rule;
         if (!java.util.Objects.equals(this.fillRule, newValue)) {
             getValue().markDirty(VGC.FILL_RULE);
@@ -2680,6 +2825,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setForeground(Color color) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (color == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.foreground, newValue)) {
@@ -2688,11 +2839,8 @@ public final class DartGC extends DartResource implements IGC {
         this.foreground = newValue;
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (color == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (color.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         data.foregroundPattern = null;
+        this.foregroundPattern = data.foregroundPattern;
         data.state &= ~FOREGROUND;
     }
 
@@ -2720,11 +2868,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        Pattern newValue = pattern;
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        Pattern newValue = pattern;
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0 && pattern == null)
             return;
         if (data.foregroundPattern == pattern)
@@ -2761,7 +2911,12 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setInterpolation(int interpolation) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = interpolation;
+        if (!java.util.Objects.equals(this.interpolation, newValue)) {
+            getValue().markDirty(VGC.INTERPOLATION);
+        }
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0 && interpolation == SWT.DEFAULT)
@@ -2804,11 +2959,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        LineAttributes newValue = attributes;
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        LineAttributes newValue = attributes;
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int mask = 0;
         float lineWidth = attributes.width;
         if (lineWidth != data.lineWidth) {
@@ -2894,14 +3051,25 @@ public final class DartGC extends DartResource implements IGC {
             return;
         data.lineWidth = lineWidth;
         getValue().markDirty(VGC.LINE_WIDTH);
+        this.lineWidth = (int) data.lineWidth;
+        getValue().markDirty(VGC.LINE_WIDTH);
         data.lineStyle = lineStyle;
+        getValue().markDirty(VGC.LINE_STYLE);
+        this.lineStyle = data.lineStyle;
         getValue().markDirty(VGC.LINE_STYLE);
         data.lineCap = cap;
         getValue().markDirty(VGC.LINE_CAP);
+        this.lineCap = data.lineCap;
+        getValue().markDirty(VGC.LINE_CAP);
         data.lineJoin = join;
         getValue().markDirty(VGC.LINE_JOIN);
+        this.lineJoin = data.lineJoin;
+        getValue().markDirty(VGC.LINE_JOIN);
         data.lineDashes = dashes;
+        this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+        getValue().markDirty(VGC.LINE_DASH);
         data.lineDashesOffset = dashOffset;
+        getValue().markDirty(VGC.LINE_DASH_OFFSET);
         data.lineMiterLimit = miterLimit;
         this.lineAttributes = newValue;
         data.state &= ~mask;
@@ -2924,6 +3092,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setLineCap(int cap) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = cap;
         if (!java.util.Objects.equals(this.lineCap, newValue)) {
             getValue().markDirty(VGC.LINE_CAP);
@@ -2941,6 +3111,7 @@ public final class DartGC extends DartResource implements IGC {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         data.lineCap = cap;
+        getValue().markDirty(VGC.LINE_CAP);
         this.lineCap = newValue;
         data.state &= ~LINE_CAP;
     }
@@ -2963,6 +3134,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setLineDash(int[] dashes) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int[] newValue = dashes;
         if (!java.util.Objects.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
@@ -2982,16 +3155,24 @@ public final class DartGC extends DartResource implements IGC {
             if (!changed)
                 return;
             data.lineDashes = new float[dashes.length];
+            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+            getValue().markDirty(VGC.LINE_DASH);
             for (int i = 0; i < dashes.length; i++) {
                 data.lineDashes[i] = dashes[i];
             }
             data.lineStyle = SWT.LINE_CUSTOM;
             getValue().markDirty(VGC.LINE_STYLE);
+            this.lineStyle = data.lineStyle;
+            getValue().markDirty(VGC.LINE_STYLE);
         } else {
             if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
                 return;
             data.lineDashes = null;
+            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+            getValue().markDirty(VGC.LINE_DASH);
             data.lineStyle = SWT.LINE_SOLID;
+            getValue().markDirty(VGC.LINE_STYLE);
+            this.lineStyle = data.lineStyle;
             getValue().markDirty(VGC.LINE_STYLE);
         }
         this.lineDash = newValue;
@@ -3016,6 +3197,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setLineJoin(int join) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = join;
         if (!java.util.Objects.equals(this.lineJoin, newValue)) {
             getValue().markDirty(VGC.LINE_JOIN);
@@ -3033,6 +3216,7 @@ public final class DartGC extends DartResource implements IGC {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         data.lineJoin = join;
+        getValue().markDirty(VGC.LINE_JOIN);
         this.lineJoin = newValue;
         data.state &= ~LINE_JOIN;
     }
@@ -3053,6 +3237,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setLineStyle(int lineStyle) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineStyle;
         if (!java.util.Objects.equals(this.lineStyle, newValue)) {
             getValue().markDirty(VGC.LINE_STYLE);
@@ -3076,6 +3262,7 @@ public final class DartGC extends DartResource implements IGC {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         data.lineStyle = lineStyle;
+        getValue().markDirty(VGC.LINE_STYLE);
         this.lineStyle = newValue;
         data.state &= ~LINE_STYLE;
     }
@@ -3101,6 +3288,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineWidth;
         if (!java.util.Objects.equals(this.lineWidth, newValue)) {
             getValue().markDirty(VGC.LINE_WIDTH);
@@ -3110,6 +3299,7 @@ public final class DartGC extends DartResource implements IGC {
         if (data.lineWidth == lineWidth)
             return;
         data.lineWidth = lineWidth;
+        getValue().markDirty(VGC.LINE_WIDTH);
         this.lineWidth = newValue;
         data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
     }
@@ -3165,6 +3355,8 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setTextAntialias(int antialias) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = antialias;
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -3212,11 +3404,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        Transform newValue = transform;
-        if (getApi().handle == 0)
+        if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (transform != null && transform.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        Transform newValue = transform;
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.cairo == 0 && transform == null)
             return;
         long cairo = data.cairo;
@@ -3247,6 +3441,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setXORMode(boolean xor) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         boolean newValue = xor;
         if (!java.util.Objects.equals(this.XORMode, newValue)) {
             getValue().markDirty(VGC.XORMODE);
@@ -3277,6 +3473,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point stringExtent(String string) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return textExtent(string, 0);
     }
 
@@ -3300,6 +3498,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return textExtent(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
@@ -3335,6 +3535,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         return GCHelper.textExtent(string, flags, data.font);
@@ -3368,7 +3570,7 @@ public final class DartGC extends DartResource implements IGC {
 
     int alpha = 255;
 
-    int antialias;
+    int antialias = SWT.DEFAULT;
 
     Color background;
 
@@ -3386,7 +3588,7 @@ public final class DartGC extends DartResource implements IGC {
 
     Pattern foregroundPattern;
 
-    int interpolation;
+    int interpolation = SWT.DEFAULT;
 
     LineAttributes lineAttributes;
 
@@ -3402,7 +3604,7 @@ public final class DartGC extends DartResource implements IGC {
 
     int style;
 
-    int textAntialias;
+    int textAntialias = SWT.DEFAULT;
 
     Transform transform;
 
@@ -3506,6 +3708,12 @@ public final class DartGC extends DartResource implements IGC {
 
     org.eclipse.swt.graphics.Rectangle paintDamage;
 
+    private float bufferScale = 1f;
+
+    float wireBufferScale() {
+        return bufferScale;
+    }
+
     /**
      * Confines a clipping region to the area the in-flight Paint may touch. The platforms
      * enforce this below SWT — a paint context carries the damaged region as its system
@@ -3549,8 +3757,23 @@ public final class DartGC extends DartResource implements IGC {
             getValue().markDirty(VGC.CLIPPING_PATH);
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
+        if (clippingText != null) {
+            getValue().markDirty("clippingText");
+            clippingText.dispose();
+        }
         clippingPath = null;
         clippingRects = null;
+        clippingText = null;
+    }
+
+    Path clippingText;
+
+    Path wireClippingText() {
+        return clippingText;
+    }
+
+    float wireLineDashOffset() {
+        return data == null ? 0 : data.lineDashesOffset;
     }
 
     private Display display;

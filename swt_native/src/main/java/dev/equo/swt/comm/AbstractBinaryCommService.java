@@ -38,6 +38,23 @@ public abstract class AbstractBinaryCommService implements CommService {
     private final java.util.concurrent.atomic.AtomicInteger connection =
             new java.util.concurrent.atomic.AtomicInteger(1);
 
+    /** Wire bytes each way, for measuring what a paint or an event costs in traffic. */
+    private final java.util.concurrent.atomic.LongAdder bytesSent = new java.util.concurrent.atomic.LongAdder();
+    private final java.util.concurrent.atomic.LongAdder bytesReceived = new java.util.concurrent.atomic.LongAdder();
+
+    public long bytesSent() {
+        return bytesSent.sum();
+    }
+
+    public long bytesReceived() {
+        return bytesReceived.sum();
+    }
+
+    /** Whether a client has connected; until one does, every frame sent is buffered for it. */
+    public boolean hasClient() {
+        return firstClientConnected;
+    }
+
     @Override
     public int connectionId() {
         return connection.get();
@@ -51,12 +68,14 @@ public abstract class AbstractBinaryCommService implements CommService {
     @Override
     public void send(String eventName, byte[] payload) {
         byte[] frame = encodeFrame(eventName, payload);
+        bytesSent.add(frame.length);
         if (heldForFirstClient(frame, 0, frame.length, false)) return;
         broadcast(frame, 0, frame.length);
     }
 
     @Override
     public void sendFrame(byte[] frame, int offset, int length) {
+        bytesSent.add(length);
         if (heldForFirstClient(frame, offset, length, true)) return;
         broadcast(frame, offset, length);
     }
@@ -117,6 +136,7 @@ public abstract class AbstractBinaryCommService implements CommService {
      * handed over: decoding may overwrite it, so it must not be read again or shared.
      */
     protected void onBinaryMessage(byte[] data, int offset, int length) {
+        bytesReceived.add(length);
         if (length < NAME_LENGTH_BYTES) return;
         int nameLen = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
         if (length < NAME_LENGTH_BYTES + nameLen) return;

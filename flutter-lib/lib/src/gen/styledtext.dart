@@ -188,9 +188,7 @@ class VStyledText extends VCanvas {
       case 'lineSpacing':
         lineSpacing = (json['lineSpacing'] as num?)?.toInt();
       case 'marginColor':
-        marginColor = json['marginColor'] == null
-            ? null
-            : VColor.fromJson(json['marginColor'] as Map<String, dynamic>);
+        marginColor = VColor.read(json['marginColor']);
       case 'rightMargin':
         rightMargin = (json['rightMargin'] as num?)?.toInt();
       case 'selection':
@@ -198,17 +196,9 @@ class VStyledText extends VCanvas {
             ? null
             : VPoint.fromJson(json['selection'] as Map<String, dynamic>);
       case 'selectionBackground':
-        selectionBackground = json['selectionBackground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionBackground'] as Map<String, dynamic>,
-              );
+        selectionBackground = VColor.read(json['selectionBackground']);
       case 'selectionForeground':
-        selectionForeground = json['selectionForeground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionForeground'] as Map<String, dynamic>,
-              );
+        selectionForeground = VColor.read(json['selectionForeground']);
       case 'selectionRanges':
         selectionRanges = (json['selectionRanges'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())

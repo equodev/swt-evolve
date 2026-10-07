@@ -100,4 +100,42 @@ void main() {
     expect(received, isEmpty);
     expect(comm.sent, isEmpty);
   });
+
+  test('changes held past an overflow are not replayed; the widget is asked for once, whole',
+      () async {
+    final comm = _TestComm();
+    comm.receiveJson('GC/42', {'id': 42, '_s': 1});
+    for (var seq = 2; seq <= EquoCommBase.maxPendingPerChannel + 40; seq++) {
+      comm.receiveJson('GC/42', {'id': 42, '_s': seq, '_b': seq - 1});
+    }
+    await _drainMicrotasks();
+
+    final received = <dynamic>[];
+    comm.on('GC/42', received.add);
+    await _drainMicrotasks();
+
+    expect(received, isEmpty,
+        reason: 'changes to a state that was dropped with the overflowing run cannot be applied');
+    expect(comm.sent, [('swt.evolve.widget.refresh', '"42"')]);
+  });
+
+  test('a whole frame after an overflow starts the held run again', () async {
+    final comm = _TestComm();
+    for (var seq = 1; seq <= EquoCommBase.maxPendingPerChannel + 5; seq++) {
+      comm.receiveJson('GC/43', {'id': 43, '_s': seq, '_b': seq - 1});
+    }
+    comm.receiveJson('GC/43', {'id': 43, '_s': 100});
+    comm.receiveJson('GC/43', {'id': 43, '_s': 101, '_b': 100});
+    await _drainMicrotasks();
+
+    final received = <dynamic>[];
+    comm.on('GC/43', received.add);
+    await _drainMicrotasks();
+
+    expect(received, [
+      {'id': 43, '_s': 100},
+      {'id': 43, '_s': 101, '_b': 100},
+    ]);
+    expect(comm.sent, isEmpty);
+  });
 }

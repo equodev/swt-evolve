@@ -83,8 +83,8 @@ class GCFreshStateNativeTest {
 
         String state = stateBeforeFirstOp();
         assertThat(state).as("the fill must not be drawn with the previous paint's state").isNotNull();
-        // The canvas's own background: a control GC starts from the control it was opened
-        // on, so the literal that used to stand here only matched while the GC ignored it.
+        // A control GC starts from the control's background, and from the foreground the
+        // application set on it -- none here, so black, whatever the colour scheme's text is.
         Color canvasBg = canvas.getBackground();
         assertThat(state).contains(String.format("\"background\":{\"a\":255,\"b\":%d,\"g\":%d,\"r\":%d}",
                 canvasBg.getBlue(), canvasBg.getGreen(), canvasBg.getRed()));
@@ -92,6 +92,15 @@ class GCFreshStateNativeTest {
         // A whole description replaces what the client holds, so an alpha left out is the default.
         assertThat(state).doesNotContain("\"alpha\":40");
         assertThat(state).doesNotContain("\"clipping\":").doesNotContain("\"transform\"");
+    }
+
+    @Test
+    @DisplayName("a GC starts from the foreground the application set on its control")
+    void gcStartsFromTheControlsOwnForeground() {
+        canvas.setForeground(canvas.getDisplay().getSystemColor(SWT.COLOR_RED));
+        GC gc = new GC(canvas);
+        assertThat(gc.getForeground().getRGB()).isEqualTo(canvas.getForeground().getRGB());
+        gc.dispose();
     }
 
     @Test

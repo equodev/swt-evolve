@@ -35,6 +35,7 @@ class VGC extends VWidget {
 
   bool? XORMode;
   int? alpha;
+  int? antialias;
   VColor? background;
   VPattern? backgroundPattern;
   VRectangle? clipping;
@@ -43,6 +44,8 @@ class VGC extends VWidget {
   int? fillRule;
   VFont? font;
   VColor? foreground;
+  VPattern? foregroundPattern;
+  int? interpolation;
   int? lineCap;
   List<int>? lineDash;
   int? lineJoin;
@@ -50,12 +53,17 @@ class VGC extends VWidget {
   int? lineWidth;
   VTransform? transform;
 
+  VPath? clippingText;
+  double? lineDashOffset;
+  double? bufferScale;
+
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VGC) {
       XORMode = other.XORMode;
       alpha = other.alpha;
+      antialias = other.antialias;
       background = other.background;
       backgroundPattern = other.backgroundPattern;
       clipping = other.clipping;
@@ -64,12 +72,17 @@ class VGC extends VWidget {
       fillRule = other.fillRule;
       font = other.font;
       foreground = other.foreground;
+      foregroundPattern = other.foregroundPattern;
+      interpolation = other.interpolation;
       lineCap = other.lineCap;
       lineDash = other.lineDash;
       lineJoin = other.lineJoin;
       lineStyle = other.lineStyle;
       lineWidth = other.lineWidth;
       transform = other.transform;
+      clippingText = other.clippingText;
+      lineDashOffset = other.lineDashOffset;
+      bufferScale = other.bufferScale;
     }
   }
 
@@ -80,10 +93,10 @@ class VGC extends VWidget {
         XORMode = json['XORMode'] as bool?;
       case 'alpha':
         alpha = (json['alpha'] as num?)?.toInt();
+      case 'antialias':
+        antialias = (json['antialias'] as num?)?.toInt();
       case 'background':
-        background = json['background'] == null
-            ? null
-            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+        background = VColor.read(json['background']);
       case 'backgroundPattern':
         backgroundPattern = json['backgroundPattern'] == null
             ? null
@@ -109,9 +122,15 @@ class VGC extends VWidget {
             ? null
             : VFont.fromJson(json['font'] as Map<String, dynamic>);
       case 'foreground':
-        foreground = json['foreground'] == null
+        foreground = VColor.read(json['foreground']);
+      case 'foregroundPattern':
+        foregroundPattern = json['foregroundPattern'] == null
             ? null
-            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+            : VPattern.fromJson(
+                json['foregroundPattern'] as Map<String, dynamic>,
+              );
+      case 'interpolation':
+        interpolation = (json['interpolation'] as num?)?.toInt();
       case 'lineCap':
         lineCap = (json['lineCap'] as num?)?.toInt();
       case 'lineDash':
@@ -128,6 +147,14 @@ class VGC extends VWidget {
         transform = json['transform'] == null
             ? null
             : VTransform.fromJson(json['transform'] as Map<String, dynamic>);
+      case 'clippingText':
+        clippingText = json['clippingText'] == null
+            ? null
+            : VPath.fromJson(json['clippingText'] as Map<String, dynamic>);
+      case 'lineDashOffset':
+        lineDashOffset = (json['lineDashOffset'] as num?)?.toDouble();
+      case 'bufferScale':
+        bufferScale = (json['bufferScale'] as num?)?.toDouble();
       default:
         super.readProperty(key, json);
     }
@@ -149,29 +176,19 @@ class VGCCopyAreaImageintint {
   factory VGCCopyAreaImageintint.fromJson(Map<String, dynamic> json) =>
       _$VGCCopyAreaImageintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCCopyAreaImageintintToJson(this);
-}
 
-@JsonSerializable()
-class VGCCopyAreaintintintintintint {
-  int srcX;
-  int srcY;
-  int width;
-  int height;
-  int destX;
-  int destY;
-
-  VGCCopyAreaintintintintintint({
-    this.srcX = 0,
-    this.srcY = 0,
-    this.width = 0,
-    this.height = 0,
-    this.destX = 0,
-    this.destY = 0,
-  });
-
-  factory VGCCopyAreaintintintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCCopyAreaintintintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCCopyAreaintintintintintintToJson(this);
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCCopyAreaImageintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCCopyAreaImageintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCCopyAreaImageintint()
+      ..image = json[0] == null
+          ? null
+          : VImage.fromJson(json[0] as Map<String, dynamic>)
+      ..x = (json[1] as num).toInt()
+      ..y = (json[2] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -199,6 +216,23 @@ class VGCCopyAreaintintintintintintboolean {
   ) => _$VGCCopyAreaintintintintintintbooleanFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCCopyAreaintintintintintintbooleanToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCCopyAreaintintintintintintboolean.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCCopyAreaintintintintintintboolean.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCCopyAreaintintintintintintboolean()
+      ..srcX = (json[0] as num).toInt()
+      ..srcY = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt()
+      ..destX = (json[4] as num).toInt()
+      ..destY = (json[5] as num).toInt()
+      ..paint = json[6] as bool;
+  }
 }
 
 @JsonSerializable()
@@ -222,6 +256,22 @@ class VGCDrawArcintintintintintint {
   factory VGCDrawArcintintintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawArcintintintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawArcintintintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawArcintintintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawArcintintintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCDrawArcintintintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt()
+      ..startAngle = (json[4] as num).toInt()
+      ..arcAngle = (json[5] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -241,6 +291,18 @@ class VGCDrawFocusintintintint {
   factory VGCDrawFocusintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawFocusintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawFocusintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawFocusintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawFocusintintintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawFocusintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -254,6 +316,19 @@ class VGCDrawImageImageintint {
   factory VGCDrawImageImageintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawImageImageintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawImageImageintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawImageImageintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawImageImageintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawImageImageintint()
+      ..image = json[0] == null
+          ? null
+          : VImage.fromJson(json[0] as Map<String, dynamic>)
+      ..x = (json[1] as num).toInt()
+      ..y = (json[2] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -274,6 +349,23 @@ class VGCDrawImageImageintintintint {
   factory VGCDrawImageImageintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawImageImageintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawImageImageintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawImageImageintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawImageImageintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCDrawImageImageintintintint()
+      ..image = json[0] == null
+          ? null
+          : VImage.fromJson(json[0] as Map<String, dynamic>)
+      ..destX = (json[1] as num).toInt()
+      ..destY = (json[2] as num).toInt()
+      ..destWidth = (json[3] as num).toInt()
+      ..destHeight = (json[4] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -304,6 +396,27 @@ class VGCDrawImageImageintintintintintintintint {
   ) => _$VGCDrawImageImageintintintintintintintintFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCDrawImageImageintintintintintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawImageImageintintintintintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawImageImageintintintintintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCDrawImageImageintintintintintintintint()
+      ..image = json[0] == null
+          ? null
+          : VImage.fromJson(json[0] as Map<String, dynamic>)
+      ..srcX = (json[1] as num).toInt()
+      ..srcY = (json[2] as num).toInt()
+      ..srcWidth = (json[3] as num).toInt()
+      ..srcHeight = (json[4] as num).toInt()
+      ..destX = (json[5] as num).toInt()
+      ..destY = (json[6] as num).toInt()
+      ..destWidth = (json[7] as num).toInt()
+      ..destHeight = (json[8] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -318,6 +431,18 @@ class VGCDrawLineintintintint {
   factory VGCDrawLineintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawLineintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawLineintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawLineintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawLineintintintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawLineintintintint()
+      ..x1 = (json[0] as num).toInt()
+      ..y1 = (json[1] as num).toInt()
+      ..x2 = (json[2] as num).toInt()
+      ..y2 = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -337,6 +462,18 @@ class VGCDrawOvalintintintint {
   factory VGCDrawOvalintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawOvalintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawOvalintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawOvalintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawOvalintintintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawOvalintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -348,6 +485,17 @@ class VGCDrawPathPath {
   factory VGCDrawPathPath.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawPathPathFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawPathPathToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawPathPath.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawPathPath.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawPathPath()
+      ..path = json[0] == null
+          ? null
+          : VPath.fromJson(json[0] as Map<String, dynamic>);
+  }
 }
 
 @JsonSerializable()
@@ -360,6 +508,16 @@ class VGCDrawPointintint {
   factory VGCDrawPointintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawPointintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawPointintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawPointintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawPointintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawPointintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -371,6 +529,17 @@ class VGCDrawPolygonint {
   factory VGCDrawPolygonint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawPolygonintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawPolygonintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawPolygonint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawPolygonint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawPolygonint()
+      ..pointArray = (json[0] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
+  }
 }
 
 @JsonSerializable()
@@ -382,17 +551,17 @@ class VGCDrawPolylineint {
   factory VGCDrawPolylineint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawPolylineintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawPolylineintToJson(this);
-}
 
-@JsonSerializable()
-class VGCDrawRectangleRectangle {
-  VRectangle? rect;
-
-  VGCDrawRectangleRectangle();
-
-  factory VGCDrawRectangleRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawRectangleRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawRectangleRectangleToJson(this);
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawPolylineint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawPolylineint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawPolylineint()
+      ..pointArray = (json[0] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
+  }
 }
 
 @JsonSerializable()
@@ -412,6 +581,20 @@ class VGCDrawRectangleintintintint {
   factory VGCDrawRectangleintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawRectangleintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawRectangleintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawRectangleintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawRectangleintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCDrawRectangleintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -437,72 +620,22 @@ class VGCDrawRoundRectangleintintintintintint {
   ) => _$VGCDrawRoundRectangleintintintintintintFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCDrawRoundRectangleintintintintintintToJson(this);
-}
 
-@JsonSerializable()
-class VGCDrawStringStringintint {
-  String string;
-  int x;
-  int y;
-
-  VGCDrawStringStringintint({this.string = '', this.x = 0, this.y = 0});
-
-  factory VGCDrawStringStringintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawStringStringintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawStringStringintintToJson(this);
-}
-
-@JsonSerializable()
-class VGCDrawStringStringintintboolean {
-  String string;
-  int x;
-  int y;
-  bool isTransparent;
-
-  VGCDrawStringStringintintboolean({
-    this.string = '',
-    this.x = 0,
-    this.y = 0,
-    this.isTransparent = false,
-  });
-
-  factory VGCDrawStringStringintintboolean.fromJson(
-    Map<String, dynamic> json,
-  ) => _$VGCDrawStringStringintintbooleanFromJson(json);
-  Map<String, dynamic> toJson() =>
-      _$VGCDrawStringStringintintbooleanToJson(this);
-}
-
-@JsonSerializable()
-class VGCDrawTextStringintint {
-  String string;
-  int x;
-  int y;
-
-  VGCDrawTextStringintint({this.string = '', this.x = 0, this.y = 0});
-
-  factory VGCDrawTextStringintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawTextStringintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawTextStringintintToJson(this);
-}
-
-@JsonSerializable()
-class VGCDrawTextStringintintboolean {
-  String string;
-  int x;
-  int y;
-  bool isTransparent;
-
-  VGCDrawTextStringintintboolean({
-    this.string = '',
-    this.x = 0,
-    this.y = 0,
-    this.isTransparent = false,
-  });
-
-  factory VGCDrawTextStringintintboolean.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawTextStringintintbooleanFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawTextStringintintbooleanToJson(this);
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawRoundRectangleintintintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawRoundRectangleintintintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCDrawRoundRectangleintintintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt()
+      ..arcWidth = (json[4] as num).toInt()
+      ..arcHeight = (json[5] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -522,6 +655,18 @@ class VGCDrawTextStringintintint {
   factory VGCDrawTextStringintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawTextStringintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawTextStringintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCDrawTextStringintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCDrawTextStringintintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCDrawTextStringintintint()
+      ..string = json[0] as String
+      ..x = (json[1] as num).toInt()
+      ..y = (json[2] as num).toInt()
+      ..flags = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -545,6 +690,22 @@ class VGCFillArcintintintintintint {
   factory VGCFillArcintintintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillArcintintintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCFillArcintintintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillArcintintintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillArcintintintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCFillArcintintintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt()
+      ..startAngle = (json[4] as num).toInt()
+      ..arcAngle = (json[5] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -568,6 +729,21 @@ class VGCFillGradientRectangleintintintintboolean {
   ) => _$VGCFillGradientRectangleintintintintbooleanFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCFillGradientRectangleintintintintbooleanToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillGradientRectangleintintintintboolean.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillGradientRectangleintintintintboolean.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCFillGradientRectangleintintintintboolean()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt()
+      ..vertical = json[4] as bool;
+  }
 }
 
 @JsonSerializable()
@@ -587,6 +763,18 @@ class VGCFillOvalintintintint {
   factory VGCFillOvalintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillOvalintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCFillOvalintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillOvalintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillOvalintintintint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCFillOvalintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -598,6 +786,17 @@ class VGCFillPathPath {
   factory VGCFillPathPath.fromJson(Map<String, dynamic> json) =>
       _$VGCFillPathPathFromJson(json);
   Map<String, dynamic> toJson() => _$VGCFillPathPathToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillPathPath.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillPathPath.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCFillPathPath()
+      ..path = json[0] == null
+          ? null
+          : VPath.fromJson(json[0] as Map<String, dynamic>);
+  }
 }
 
 @JsonSerializable()
@@ -609,17 +808,17 @@ class VGCFillPolygonint {
   factory VGCFillPolygonint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillPolygonintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCFillPolygonintToJson(this);
-}
 
-@JsonSerializable()
-class VGCFillRectangleRectangle {
-  VRectangle? rect;
-
-  VGCFillRectangleRectangle();
-
-  factory VGCFillRectangleRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillRectangleRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillRectangleRectangleToJson(this);
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillPolygonint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillPolygonint.fromJson(json as Map<String, dynamic>);
+    }
+    return VGCFillPolygonint()
+      ..pointArray = (json[0] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
+  }
 }
 
 @JsonSerializable()
@@ -639,6 +838,20 @@ class VGCFillRectangleintintintint {
   factory VGCFillRectangleintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillRectangleintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCFillRectangleintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillRectangleintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillRectangleintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCFillRectangleintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt();
+  }
 }
 
 @JsonSerializable()
@@ -664,4 +877,20 @@ class VGCFillRoundRectangleintintintintintint {
   ) => _$VGCFillRoundRectangleintintintintintintFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCFillRoundRectangleintintintintintintToJson(this);
+
+  /// The op as Java sends it, its arguments in order, or spelled out by name.
+  factory VGCFillRoundRectangleintintintintintint.fromWire(Object? json) {
+    if (json is! List) {
+      return VGCFillRoundRectangleintintintintintint.fromJson(
+        json as Map<String, dynamic>,
+      );
+    }
+    return VGCFillRoundRectangleintintintintintint()
+      ..x = (json[0] as num).toInt()
+      ..y = (json[1] as num).toInt()
+      ..width = (json[2] as num).toInt()
+      ..height = (json[3] as num).toInt()
+      ..arcWidth = (json[4] as num).toInt()
+      ..arcHeight = (json[5] as num).toInt();
+  }
 }

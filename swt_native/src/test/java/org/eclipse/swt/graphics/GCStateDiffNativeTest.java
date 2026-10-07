@@ -73,8 +73,27 @@ class GCStateDiffNativeTest {
         List<String> frames = stateFrames();
         assertThat(frames).hasSize(2);
         assertThat(frames.get(0)).doesNotContain("\"_d\"").contains("\"_s\"").contains("\"background\"");
-        assertThat(frames.get(1)).contains("\"_d\":[").contains("\"clipping\":{").contains("\"_b\"")
+        // A change names neither the GC, its properties nor the state it follows: the channel says
+        // which GC and delivers in order, and the drawer merges whatever keys arrive.
+        assertThat(frames.get(1)).contains("\"_d\":0").contains("\"clipping\":{")
+                .doesNotContain("\"_b\"").doesNotContain("\"_s\"")
+                .doesNotContain("\"swt\"").doesNotContain("\"id\"")
                 .doesNotContain("\"background\"").doesNotContain("\"foreground\"");
+    }
+
+    @Test
+    @DisplayName("a colour changed inside a paint travels as one ARGB number")
+    void changedColourIsPacked() {
+        GC gc = new GC(canvas);
+        gc.fillRectangle(0, 0, 10, 10);
+        gc.setForeground(new Color(canvas.getDisplay(), 0x12, 0x34, 0x56));
+        gc.drawLine(0, 0, 10, 10);
+        gc.dispose();
+
+        List<String> frames = stateFrames();
+        assertThat(frames).hasSize(2);
+        assertThat(frames.get(0)).contains("\"foreground\":{");
+        assertThat(frames.get(1)).contains("\"foreground\":" + 0xFF123456L);
     }
 
     @Test
@@ -85,9 +104,10 @@ class GCStateDiffNativeTest {
         first.dispose();
         bridge.comm.sent.clear();
 
-        // A description the client already holds is not sent again, so this one has to differ.
+        // A description the client already holds is not sent again, so this one has to differ. Not a
+        // system colour: the mocked display answers every one with the canvas's own foreground.
         GC second = new GC(canvas);
-        second.setForeground(canvas.getDisplay().getSystemColor(SWT.COLOR_RED));
+        second.setForeground(new Color(canvas.getDisplay(), 255, 0, 0));
         second.fillRectangle(0, 0, 10, 10);
         second.dispose();
 

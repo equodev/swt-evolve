@@ -573,6 +573,35 @@ public class Serializer {
         return keys;
     }
 
+    /** {@link #lastSent} for resources, whose state a client may also be given whole or by name. */
+    private static final java.util.Map<VResource, java.util.Map<String, long[]>> lastSentResource =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** {@link #worthSending(VWidget, JsonWriter)} for a resource's changed properties. */
+    private static java.util.List<String> worthSending(VResource value, JsonWriter scratch) {
+        java.util.List<String> keys = new java.util.ArrayList<>(value.changedKeys().size());
+        int connection = target.get();
+        java.util.Map<String, long[]> seen = lastSentResource.computeIfAbsent(value, v -> new java.util.HashMap<>());
+        for (String key : value.changedKeys()) {
+            scratch.reset();
+            value.writeDiff(scratch, java.util.Collections.singletonList(key));
+            long hash = hashOf(scratch.getByteBuffer(), scratch.size());
+            long[] previous = seen.get(key);
+            if (previous != null && previous[0] == connection && previous[1] == hash) continue;
+            seen.put(key, new long[] { connection, hash });
+            keys.add(key);
+        }
+        return keys;
+    }
+
+    /**
+     * The client was given [value] whole (or by a name for its whole state): what it holds per
+     * property is no longer what the changes before recorded.
+     */
+    public static void forgetSentProperties(VResource value) {
+        lastSentResource.remove(value);
+    }
+
     private static long hashOf(byte[] bytes, int length) {
         long hash = 0xcbf29ce484222325L;
         for (int i = 0; i < length; i++) {
@@ -677,8 +706,10 @@ public class Serializer {
 
     /**
      * Writes {@code impl} behind {@code prefix} as the properties that changed since {@code base},
-     * the stamp of the state the far side holds, and returns the new stamp. The frame has the shape
-     * {@link #toDiff(DartWidget)} gives a widget, so the far side merges it the same way.
+     * the stamp of the state the far side holds, and returns the new stamp. Leaner than a widget's
+     * change: a resource's channel already names it and delivers in order, and its drawer merges
+     * whatever keys arrive, so the frame carries no id, stamps or changed names ({@code _d} only
+     * marks it a change) and its colours are packed.
      */
     public long toDiff(byte[] prefix, DartResource impl, long base, Lent sink) {
         written.get().clear();
@@ -689,24 +720,25 @@ public class Serializer {
             VResource value = impl.getValue();
             long seq = writeSeq.incrementAndGet();
             writer.writeByte((byte) '{');
-            writeKeyValue(writer, "id", FlutterBridge.id(impl));
-            writeKeyValue(writer, "swt", FlutterBridge.widgetName(impl));
-            writeKeyValue(writer, "_s", seq);
-            writeKeyValue(writer, "_b", base);
-            writeKey(writer, "_d");
-            writer.writeByte((byte) '[');
-            boolean first = true;
-            for (String key : value.changedKeys()) {
-                if (!first) writer.writeByte((byte) ',');
-                first = false;
-                StringConverter.serialize(key, writer);
-            }
-            writer.writeByte((byte) ']');
-            writer.writeByte((byte) ',');
             // The resource being described is this one; everything its properties name is nested.
             depth.get()[0]++;
+            java.util.List<String> keys;
             try {
-                value.writeDiff(writer);
+                JsonWriter scratch = borrowWriter();
+                try {
+                    keys = worthSending(value, scratch);
+                } finally {
+                    writerPool.get().addFirst(scratch);
+                }
+                // Nothing the client does not already hold: no frame, and the state it holds stays current.
+                if (keys.isEmpty()) return base;
+                writeKeyValue(writer, "_d", 0);
+                packColors.get()[0] = true;
+                try {
+                    value.writeDiff(writer, keys);
+                } finally {
+                    packColors.get()[0] = false;
+                }
             } finally {
                 depth.get()[0]--;
             }
@@ -782,8 +814,20 @@ public class Serializer {
     public static void writeKeyValue(JsonWriter writer, String key, Object value) {
         writeKey(writer, key);
         if (value == null) writer.writeNull();
+        else if (value instanceof Color && packColors.get()[0]) writeArgb(writer, (Color) value);
         else writer.serializeObject(value);
         writer.writeByte((byte) ',');
+    }
+
+    /**
+     * Set while a resource's change is written: a colour it names directly goes as one ARGB number
+     * rather than an object, a GC changing colour on nearly every draw.
+     */
+    private static final ThreadLocal<boolean[]> packColors = ThreadLocal.withInitial(() -> new boolean[1]);
+
+    private static void writeArgb(JsonWriter writer, Color color) {
+        long argb = ((long) color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+        NumberConverter.serialize(argb, writer);
     }
 
     private static void writeKey(JsonWriter writer, String key) {

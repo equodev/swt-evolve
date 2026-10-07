@@ -62,8 +62,8 @@ void _deliver(String actionId, Map<String, dynamic> json) {
 
 /// One drawn op, so the overlay has shapes and therefore paints a backdrop at all.
 void _paintReadout() {
-  _deliver('GC/$_canvasId/drawTextStringintintboolean',
-      {'string': 'Detect installed JVMs: (0%)', 'x': 0, 'y': 4, 'isTransparent': true});
+  _deliver('GC/$_canvasId/drawTextStringintintint',
+      {'string': 'Detect installed JVMs: (0%)', 'x': 0, 'y': 4, 'flags': 7}); // DRAW_DELIMITER | DRAW_TAB | DRAW_TRANSPARENT
   _deliver('GC/$_canvasId/gcDispose', {'fullRepaint': true});
 }
 

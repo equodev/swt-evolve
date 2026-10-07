@@ -41,14 +41,11 @@ abstract class GCDrawerBase {
 
   void onStateChanged(VGC newState) {}
 
-  void _op(String name, void Function(Map<String, dynamic>) fn) {
+  void _op(String name, void Function(Object?) fn) {
     final channel = "${state.swt}/${state.id}/$name";
     _handlerTokens[channel] = EquoCommService.onRaw(channel, (raw) {
       try {
-        final map = raw is String
-            ? jsonDecode(raw) as Map<String, dynamic>
-            : raw as Map<String, dynamic>;
-        fn(map);
+        fn(raw is String ? jsonDecode(raw) : raw);
       } catch (e) {
         print('[GC DrawerBase] Error in $name: $e');
       }
@@ -58,138 +55,104 @@ abstract class GCDrawerBase {
   void _registerOps() {
     _op(
       "copyAreaImageintint",
-      (p) => onCopyAreaImageintint(VGCCopyAreaImageintint.fromJson(p)),
-    );
-    _op(
-      "copyAreaintintintintintint",
-      (p) => onCopyAreaintintintintintint(
-        VGCCopyAreaintintintintintint.fromJson(p),
-      ),
+      (p) => onCopyAreaImageintint(VGCCopyAreaImageintint.fromWire(p)),
     );
     _op(
       "copyAreaintintintintintintboolean",
       (p) => onCopyAreaintintintintintintboolean(
-        VGCCopyAreaintintintintintintboolean.fromJson(p),
+        VGCCopyAreaintintintintintintboolean.fromWire(p),
       ),
     );
     _op(
       "drawArcintintintintintint",
       (p) =>
-          onDrawArcintintintintintint(VGCDrawArcintintintintintint.fromJson(p)),
+          onDrawArcintintintintintint(VGCDrawArcintintintintintint.fromWire(p)),
     );
     _op(
       "drawFocusintintintint",
-      (p) => onDrawFocusintintintint(VGCDrawFocusintintintint.fromJson(p)),
+      (p) => onDrawFocusintintintint(VGCDrawFocusintintintint.fromWire(p)),
     );
     _op(
       "drawImageImageintint",
-      (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromJson(p)),
+      (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromWire(p)),
     );
     _op(
       "drawImageImageintintintint",
       (p) => onDrawImageImageintintintint(
-        VGCDrawImageImageintintintint.fromJson(p),
+        VGCDrawImageImageintintintint.fromWire(p),
       ),
     );
     _op(
       "drawImageImageintintintintintintintint",
       (p) => onDrawImageImageintintintintintintintint(
-        VGCDrawImageImageintintintintintintintint.fromJson(p),
+        VGCDrawImageImageintintintintintintintint.fromWire(p),
       ),
     );
     _op(
       "drawLineintintintint",
-      (p) => onDrawLineintintintint(VGCDrawLineintintintint.fromJson(p)),
+      (p) => onDrawLineintintintint(VGCDrawLineintintintint.fromWire(p)),
     );
     _op(
       "drawOvalintintintint",
-      (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromJson(p)),
+      (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromWire(p)),
     );
-    _op("drawPathPath", (p) => onDrawPathPath(VGCDrawPathPath.fromJson(p)));
+    _op("drawPathPath", (p) => onDrawPathPath(VGCDrawPathPath.fromWire(p)));
     _op(
       "drawPointintint",
-      (p) => onDrawPointintint(VGCDrawPointintint.fromJson(p)),
+      (p) => onDrawPointintint(VGCDrawPointintint.fromWire(p)),
     );
     _op(
       "drawPolygonint",
-      (p) => onDrawPolygonint(VGCDrawPolygonint.fromJson(p)),
+      (p) => onDrawPolygonint(VGCDrawPolygonint.fromWire(p)),
     );
     _op(
       "drawPolylineint",
-      (p) => onDrawPolylineint(VGCDrawPolylineint.fromJson(p)),
-    );
-    _op(
-      "drawRectangleRectangle",
-      (p) => onDrawRectangleRectangle(VGCDrawRectangleRectangle.fromJson(p)),
+      (p) => onDrawPolylineint(VGCDrawPolylineint.fromWire(p)),
     );
     _op(
       "drawRectangleintintintint",
       (p) =>
-          onDrawRectangleintintintint(VGCDrawRectangleintintintint.fromJson(p)),
+          onDrawRectangleintintintint(VGCDrawRectangleintintintint.fromWire(p)),
     );
     _op(
       "drawRoundRectangleintintintintintint",
       (p) => onDrawRoundRectangleintintintintintint(
-        VGCDrawRoundRectangleintintintintintint.fromJson(p),
-      ),
-    );
-    _op(
-      "drawStringStringintint",
-      (p) => onDrawStringStringintint(VGCDrawStringStringintint.fromJson(p)),
-    );
-    _op(
-      "drawStringStringintintboolean",
-      (p) => onDrawStringStringintintboolean(
-        VGCDrawStringStringintintboolean.fromJson(p),
-      ),
-    );
-    _op(
-      "drawTextStringintint",
-      (p) => onDrawTextStringintint(VGCDrawTextStringintint.fromJson(p)),
-    );
-    _op(
-      "drawTextStringintintboolean",
-      (p) => onDrawTextStringintintboolean(
-        VGCDrawTextStringintintboolean.fromJson(p),
+        VGCDrawRoundRectangleintintintintintint.fromWire(p),
       ),
     );
     _op(
       "drawTextStringintintint",
-      (p) => onDrawTextStringintintint(VGCDrawTextStringintintint.fromJson(p)),
+      (p) => onDrawTextStringintintint(VGCDrawTextStringintintint.fromWire(p)),
     );
     _op(
       "fillArcintintintintintint",
       (p) =>
-          onFillArcintintintintintint(VGCFillArcintintintintintint.fromJson(p)),
+          onFillArcintintintintintint(VGCFillArcintintintintintint.fromWire(p)),
     );
     _op(
       "fillGradientRectangleintintintintboolean",
       (p) => onFillGradientRectangleintintintintboolean(
-        VGCFillGradientRectangleintintintintboolean.fromJson(p),
+        VGCFillGradientRectangleintintintintboolean.fromWire(p),
       ),
     );
     _op(
       "fillOvalintintintint",
-      (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromJson(p)),
+      (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromWire(p)),
     );
-    _op("fillPathPath", (p) => onFillPathPath(VGCFillPathPath.fromJson(p)));
+    _op("fillPathPath", (p) => onFillPathPath(VGCFillPathPath.fromWire(p)));
     _op(
       "fillPolygonint",
-      (p) => onFillPolygonint(VGCFillPolygonint.fromJson(p)),
-    );
-    _op(
-      "fillRectangleRectangle",
-      (p) => onFillRectangleRectangle(VGCFillRectangleRectangle.fromJson(p)),
+      (p) => onFillPolygonint(VGCFillPolygonint.fromWire(p)),
     );
     _op(
       "fillRectangleintintintint",
       (p) =>
-          onFillRectangleintintintint(VGCFillRectangleintintintint.fromJson(p)),
+          onFillRectangleintintintint(VGCFillRectangleintintintint.fromWire(p)),
     );
     _op(
       "fillRoundRectangleintintintintintint",
       (p) => onFillRoundRectangleintintintintintint(
-        VGCFillRoundRectangleintintintintintint.fromJson(p),
+        VGCFillRoundRectangleintintintintintint.fromWire(p),
       ),
     );
   }
@@ -202,7 +165,6 @@ abstract class GCDrawerBase {
   }
 
   void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs);
-  void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint opArgs);
   void onCopyAreaintintintintintintboolean(
     VGCCopyAreaintintintintintintboolean opArgs,
   );
@@ -219,15 +181,10 @@ abstract class GCDrawerBase {
   void onDrawPointintint(VGCDrawPointintint opArgs);
   void onDrawPolygonint(VGCDrawPolygonint opArgs);
   void onDrawPolylineint(VGCDrawPolylineint opArgs);
-  void onDrawRectangleRectangle(VGCDrawRectangleRectangle opArgs);
   void onDrawRectangleintintintint(VGCDrawRectangleintintintint opArgs);
   void onDrawRoundRectangleintintintintintint(
     VGCDrawRoundRectangleintintintintintint opArgs,
   );
-  void onDrawStringStringintint(VGCDrawStringStringintint opArgs);
-  void onDrawStringStringintintboolean(VGCDrawStringStringintintboolean opArgs);
-  void onDrawTextStringintint(VGCDrawTextStringintint opArgs);
-  void onDrawTextStringintintboolean(VGCDrawTextStringintintboolean opArgs);
   void onDrawTextStringintintint(VGCDrawTextStringintintint opArgs);
   void onFillArcintintintintintint(VGCFillArcintintintintintint opArgs);
   void onFillGradientRectangleintintintintboolean(
@@ -236,7 +193,6 @@ abstract class GCDrawerBase {
   void onFillOvalintintintint(VGCFillOvalintintintint opArgs);
   void onFillPathPath(VGCFillPathPath opArgs);
   void onFillPolygonint(VGCFillPolygonint opArgs);
-  void onFillRectangleRectangle(VGCFillRectangleRectangle opArgs);
   void onFillRectangleintintintint(VGCFillRectangleintintintint opArgs);
   void onFillRoundRectangleintintintintintint(
     VGCFillRoundRectangleintintintintintint opArgs,

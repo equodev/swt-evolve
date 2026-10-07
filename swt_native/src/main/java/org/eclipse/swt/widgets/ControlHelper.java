@@ -506,6 +506,18 @@ public class ControlHelper {
     private static void schedulePaint(DartControl c) {
         if (c.drawCount > 0 || !paintQueued.add(c))
             return;
+        if (PaintPacing.holds(c))
+            return;
+        dispatchPaint(c);
+    }
+
+    /** A Paint held until the client showed the previous one: sends it, if one is still wanted. */
+    static void dispatchHeldPaint(DartControl c) {
+        if (paintQueued.contains(c))
+            dispatchPaint(c);
+    }
+
+    private static void dispatchPaint(DartControl c) {
         c.getDisplay().asyncExec(() -> {
             paintQueued.remove(c);
             // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
@@ -558,6 +570,7 @@ public class ControlHelper {
         } finally {
             inPaintDepth--;
         }
+        PaintPacing.painted(c);
     }
 
     private static void sendPaint(DartControl c, Rectangle damage, boolean scoped) {

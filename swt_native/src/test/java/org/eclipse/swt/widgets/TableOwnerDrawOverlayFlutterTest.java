@@ -103,7 +103,8 @@ class TableOwnerDrawOverlayFlutterTest {
         assertThat(texts).as("the drawn name is still the row's text").containsExactly("check_0710");
         assertThat(rowChannels)
                 .as("the icon is drawn on the row's own channel, and the paint is committed")
-                .contains(row + "/fillRoundRectangleintintintintintint", row + "/drawStringStringintintboolean",
+                // drawString(String, int, int, true) reaches the client as the flags form SWT defines it by.
+                .contains(row + "/fillRoundRectangleintintintintintint", row + "/drawTextStringintintint",
                         row + "/gcDispose");
         assertThat(body(entries, row + "/gcDispose"))
                 .as("each paint of the row replaces the last")

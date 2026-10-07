@@ -4352,6 +4352,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return null;
     }
 
+    public Color getOwnForeground() {
+        return getForeground();
+    }
+
     public Font getExplicitFont() {
         return font;
     }

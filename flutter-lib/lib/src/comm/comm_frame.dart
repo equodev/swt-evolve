@@ -9,6 +9,7 @@ import '../impl/utils/perf_marks.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import 'comm_api.dart' show CommCallback;
+import 'delivery_gate.dart' show kBase, kChangedKeys;
 import 'received_images.dart';
 
 /// Fused JSON→UTF-8 codec: encodes straight to bytes (and decodes from bytes)
@@ -70,6 +71,10 @@ class UserEventCallback {
 abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, List<dynamic>> _pending = {};
+
+  /// Channels whose held run overflowed and has had no whole frame since: the changes arriving
+  /// after it describe a state this side no longer has, so they are not kept.
+  final Set<String> _overflowed = {};
   final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
   final Map<String, List<Uint8List>> _rawPending = {};
   final Map<String, bool Function(Uint8List)> _arrivalHandlers = {};
@@ -222,7 +227,12 @@ abstract class EquoCommBase {
   }
 
   /// Subclasses call this with the raw bytes of each received binary frame.
+  /// Microseconds on [clock] at which the socket last handed a frame over, before it was queued.
+  static int lastReceivedMicros = 0;
+  static final Stopwatch clock = Stopwatch()..start();
+
   void receiveBinary(Uint8List data) {
+    lastReceivedMicros = clock.elapsedMicroseconds;
     if (data.length < 2) return;
     final nameLen = (data[0] << 8) | data[1];
     if (data.length < 2 + nameLen) return;
@@ -329,7 +339,7 @@ abstract class EquoCommBase {
       final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
       if (identical(delivered, _noHandler)) {
         _hold(name, entry[1]);
-      } else {
+      } else if (delivered is Future) {
         await delivered;
       }
     }
@@ -351,9 +361,19 @@ abstract class EquoCommBase {
   void _hold(String actionId, dynamic payload) {
     // Its images count as delivered already, and a held frame may never be decoded.
     keepImagesIn(payload);
+    // A resource's change names no base, only that it is one.
+    final whole = payload is Map && !payload.containsKey(kBase) && !payload.containsKey(kChangedKeys);
+    if (_overflowed.contains(actionId)) {
+      // Past an overflow only a whole frame means anything; it starts the run over.
+      if (!whole) return;
+      _overflowed.remove(actionId);
+      _pending[actionId] = [payload];
+      return;
+    }
     final run = _pending.putIfAbsent(actionId, () => []);
     if (run.length >= maxPendingPerChannel) {
       run.clear();
+      _overflowed.add(actionId);
       return;
     }
     run.add(payload);
@@ -463,6 +483,12 @@ abstract class EquoCommBase {
     for (final pending in _pending.remove(actionId) ?? const []) {
       _deliver(actionId, onSuccess, pending);
     }
+    // What was held overflowed and nothing whole came after it: asked for once, whole, instead of
+    // replaying changes to a state that never arrived.
+    if (_overflowed.remove(actionId)) {
+      final slash = actionId.lastIndexOf('/');
+      if (slash >= 0) send(widgetRefreshChannel, actionId.substring(slash + 1));
+    }
     return token;
   }
 
@@ -505,6 +531,7 @@ abstract class EquoCommBase {
     if (token != null && _handlers[actionId]?.token != token) return;
     _handlers.remove(actionId);
     _pending.remove(actionId);
+    _overflowed.remove(actionId);
     _rawHandlers.remove(actionId);
     _rawPending.remove(actionId);
   }

@@ -175,7 +175,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         Point size = new Point(width, height);
         init(size.x, size.y);
         init();
-        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        this.imageData = GraphicsUtils.blankImageData(width, height);
     }
 
     /**
@@ -474,6 +474,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, InputStream stream, Image api) {
         super(device, api);
+        if (stream == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         ImageData data = new ImageData(stream);
         this.imageData = data;
         getApi().surface = 1;
@@ -622,6 +625,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
+        if (imageGcDrawer == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         if (imageGcDrawer == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init();
@@ -1059,12 +1065,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         _ensureRemotePixels();
         // Return a defensive copy: getImageData() must not hand out the backing store, so a
         // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
-        if (zoom == 100)
+        // A buffer allocated at the raster scale (see _allocateScratchBuffer) is stored at that
+        // zoom; every other image at 100%.
+        int storedZoom = 100;
+        if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
-        // The image is stored at 100%; scale to the requested zoom (matches upstream, which
-        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already
-        // returns a fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
-        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
+        // Scale to the requested zoom (matches upstream, which falls back to
+        // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
+        // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
+        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, storedZoom);
     }
 
     private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {

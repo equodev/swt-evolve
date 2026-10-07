@@ -139,8 +139,36 @@ class ImageUtils {
       print('[Image] no render registered for remoteRef $ref');
       return null;
     }
-    final data = (await render.rasterise()).toByteData(format: ui.ImageByteFormat.png);
-    return (await data)?.buffer.asUint8List();
+    return toBytes(render.rasteriseSync(), ui.ImageByteFormat.png);
+  }
+
+  /// [image]'s pixels in [format]; null if the engine cannot produce them.
+  ///
+  /// On Skwasm a read-back sizes the surface frames are drawn on to the image, then rasterises
+  /// into it; a frame that resizes it in between gets the read-back done at the view's size.
+  /// Read-backs therefore run one at a time, and one whose dimensions are not the image's is
+  /// done again: matching dimensions mean the surface was the image's own when it rasterised.
+  static Future<Uint8List?> toBytes(ui.Image image, ui.ImageByteFormat format) {
+    final next = _readBack.then((_) async {
+      for (var attempt = 0; ; attempt++) {
+        final bytes = (await image.toByteData(format: format))?.buffer.asUint8List();
+        if (bytes == null || attempt == 4 || _hasSize(bytes, format, image.width, image.height)) {
+          return bytes;
+        }
+      }
+    });
+    _readBack = next.then((_) {}, onError: (_) {});
+    return next;
+  }
+
+  static Future<void> _readBack = Future.value();
+
+  static bool _hasSize(Uint8List bytes, ui.ImageByteFormat format, int width, int height) {
+    if (format != ui.ImageByteFormat.png) return bytes.length == width * height * 4;
+    // IHDR is always the first chunk; its width and height are at bytes 16 and 20.
+    if (bytes.length < 24) return false;
+    final header = ByteData.sublistView(bytes);
+    return header.getUint32(16) == width && header.getUint32(20) == height;
   }
 
   static void releaseRemoteImage(int ref) {
@@ -849,12 +877,20 @@ class ImageUtils {
       return null;
     }
 
-    try {
-      final data = image!.imageData!.data!;
-      final bytes = data is String
-          ? base64Decode(data as String)
-          : asBytes(data);
+    final Object data = image!.imageData!.data!;
+    if (data is String) return _decode(data);
+    // A clone: callers dispose what they are given, and the decoded original serves the next draw.
+    final decoded = await (_decodedFrom[data] ??= _decode(data));
+    return decoded?.clone();
+  }
 
+  /// Decoded images by the bytes they were decoded from, so an image drawn again is not decoded
+  /// again. Held for as long as those bytes are, which is as long as the image is.
+  static final Expando<Future<ui.Image?>> _decodedFrom = Expando();
+
+  static Future<ui.Image?> _decode(Object data) async {
+    try {
+      final bytes = data is String ? base64Decode(data) : asBytes(data as List<int>);
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
       return frame.image;
@@ -895,8 +931,11 @@ class RemoteRender {
   }
 
   void dispose() {
-    _raster?.dispose();
+    final raster = _raster;
     _raster = null;
+    // After the frame, not now: on the web renderers, disposing an image made by toImageSync while
+    // another is being rasterised in the same frame corrupts that one.
+    if (raster != null) WidgetsBinding.instance.endOfFrame.then((_) => raster.dispose());
     // The picture is not disposed: committed display lists may still draw it, and it cannot be
     // cloned. The engine reclaims it once unreferenced.
   }

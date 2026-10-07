@@ -160,11 +160,7 @@ class VCTabFolder extends VComposite {
       case 'selection':
         selection = (json['selection'] as num?)?.toInt();
       case 'selectionBackground':
-        selectionBackground = json['selectionBackground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionBackground'] as Map<String, dynamic>,
-              );
+        selectionBackground = VColor.read(json['selectionBackground']);
       case 'selectionBarThickness':
         selectionBarThickness = (json['selectionBarThickness'] as num?)
             ?.toInt();
@@ -173,11 +169,7 @@ class VCTabFolder extends VComposite {
             ? null
             : VImage.fromJson(json['selectionBgImage'] as Map<String, dynamic>);
       case 'selectionForeground':
-        selectionForeground = json['selectionForeground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionForeground'] as Map<String, dynamic>,
-              );
+        selectionForeground = VColor.read(json['selectionForeground']);
       case 'showChevron':
         showChevron = json['showChevron'] as bool?;
       case 'showListPopupSeq':

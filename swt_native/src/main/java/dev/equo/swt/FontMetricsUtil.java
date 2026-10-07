@@ -206,18 +206,22 @@ public final class FontMetricsUtil {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
         Metrics m = metrics(getId(fd));
+        // The same fallback text is measured with (lineHeight, measureLine), so a line's extent and
+        // the font's height agree for a family without metrics of its own.
+        if (m == null) m = metrics("System-0-3");
         if (m == null) m = metrics("Verdana-0-3");
         if (m == null) return null;
         Display display = Display.getCurrent();
         int h = effectiveHeight(fd, display);
         double scale = (double) h / GenFontMetrics.BASE;
         double dpiScale = dpiScale();
-        return new int[]{
-            (int) Math.round(m.ascent() * h * dpiScale),
-            (int) Math.round(m.descent() * h * dpiScale),
-            (int) Math.round(m.height() * h * dpiScale),
-            (int) Math.round(m.avgCharWidth() * scale * dpiScale)
-        };
+        int ascent = (int) Math.round(m.ascent() * h * dpiScale);
+        int height = (int) Math.round(m.height() * h * dpiScale);
+        // Height is ascent + descent + leading, and leading is never negative. Rounding the three
+        // separately can leave the other two a pixel over; the height stays, since it is also the
+        // line height text extents are measured with.
+        int descent = Math.min((int) Math.round(m.descent() * h * dpiScale), height - ascent);
+        return new int[]{ascent, descent, height, (int) Math.round(m.avgCharWidth() * scale * dpiScale)};
     }
 
     /**

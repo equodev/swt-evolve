@@ -41,6 +41,27 @@ void main() {
     expect(seen, ['line:7', 'line:8', 'dispose']);
   });
 
+  test('a batched entry a synchronous handler took is not kept for the next one', () async {
+    final first = <int>[];
+    EquoCommService.onRaw('GC/901/drawLine', (p) {
+      first.add((p as Map)['x1'] as int);
+    });
+    _receive(batchEvent, [
+      ['GC/901/drawLine', {'x1': 1}],
+    ]);
+    await Future.delayed(Duration.zero);
+
+    // A new drawer on the same id registers the channel again.
+    final second = <int>[];
+    EquoCommService.onRaw('GC/901/drawLine', (p) {
+      second.add((p as Map)['x1'] as int);
+    });
+    await Future.delayed(Duration.zero);
+
+    expect(first, [1]);
+    expect(second, isEmpty, reason: 'a frame already applied must not be replayed');
+  });
+
   test('a batched entry whose handler is not up yet is not dropped', () async {
     _receive(batchEvent, [
       ['GC/2/drawLine', {'x1': 3}],

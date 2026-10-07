@@ -93,9 +93,7 @@ class VTree extends VComposite {
             ?.map((e) => VTreeEditor.fromJson(e as Map<String, dynamic>))
             .toList();
       case 'headerBackground':
-        headerBackground = json['headerBackground'] == null
-            ? null
-            : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>);
+        headerBackground = VColor.read(json['headerBackground']);
       case 'headerVisible':
         headerVisible = json['headerVisible'] as bool?;
       case 'items':

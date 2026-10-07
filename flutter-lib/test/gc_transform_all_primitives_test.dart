@@ -89,11 +89,11 @@ void main() {
     drawer.onDrawPointintint(VGCDrawPointintint()
       ..x = 5
       ..y = 5);
-    drawer.onDrawTextStringintintboolean(VGCDrawTextStringintintboolean()
+    drawer.onDrawTextStringintintint(VGCDrawTextStringintintint()
       ..string = 'label'
       ..x = 25
       ..y = 25
-      ..isTransparent = true);
+      ..flags = 7); // drawText(String, int, int, true): DRAW_DELIMITER | DRAW_TAB | DRAW_TRANSPARENT
 
     final shapes = await committed(drawer, id);
 

@@ -33,8 +33,8 @@ VCanvas _canvas() => VCanvas()
     ..height = 22);
 
 Future<void> _drawString(String text) => deliverFrame(
-      'GC/$_canvasId/drawStringStringintintboolean',
-      {'string': text, 'x': 2, 'y': 2, 'isTransparent': true},
+      'GC/$_canvasId/drawTextStringintintint',
+      {'string': text, 'x': 2, 'y': 2, 'flags': 1}, // drawString(text, 2, 2, true): DRAW_TRANSPARENT
     );
 
 Future<void> _endPaint() =>

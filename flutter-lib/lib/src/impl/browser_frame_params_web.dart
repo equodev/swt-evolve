@@ -150,7 +150,21 @@ Object? browserEvalInFrame(
   final win = params.iFrame.contentWindow;
   if (win == null) throw StateError('iframe has no content window');
   final result = (win as JSObject).callMethod<JSAny?>('eval'.toJS, script.toJS);
-  return result.dartify();
+  return _dartifyFromFrame(result);
+}
+
+/// [JSAnyUtilityExtension.dartify] for a value made in another realm: an array from the iframe is
+/// not an instance of this page's Array, which the wasm build's dartify requires to see a list.
+/// Array.isArray is realm-independent, so arrays are walked here and everything else passed on.
+Object? _dartifyFromFrame(JSAny? value) {
+  if (value == null) return null;
+  final isArray = (globalContext['Array'] as JSObject)
+      .callMethod<JSBoolean>('isArray'.toJS, value)
+      .toDart;
+  if (!isArray) return value.dartify();
+  final array = value as JSObject;
+  final length = (array['length'] as JSNumber).toDartInt;
+  return [for (var i = 0; i < length; i++) _dartifyFromFrame(array[i.toString()])];
 }
 
 /// Reports keys typed inside the iframe to [onKey] and suppresses the same reserved shortcuts the

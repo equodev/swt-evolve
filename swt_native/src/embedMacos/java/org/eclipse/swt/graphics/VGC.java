@@ -43,7 +43,6 @@ public class VGC extends VResource {
         ((DartGC) impl).alpha = value == null ? 255 : value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getAntialias() {
         return ((DartGC) impl).getAntialias();
     }
@@ -132,7 +131,6 @@ public class VGC extends VResource {
         ((DartGC) impl).foregroundPattern = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getInterpolation() {
         return ((DartGC) impl).getInterpolation();
     }
@@ -220,345 +218,388 @@ public class VGC extends VResource {
         ((DartGC) impl).transform = value;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCCopyAreaImageintint {
 
+        @JsonAttribute(index = 0)
         public Image image;
 
+        @JsonAttribute(index = 1)
         public int x;
 
+        @JsonAttribute(index = 2)
         public int y;
     }
 
-    @CompiledJson()
-    public static class VGCCopyAreaintintintintintint {
-
-        public int srcX;
-
-        public int srcY;
-
-        public int width;
-
-        public int height;
-
-        public int destX;
-
-        public int destY;
-    }
-
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCCopyAreaintintintintintintboolean {
 
+        @JsonAttribute(index = 0)
         public int srcX;
 
+        @JsonAttribute(index = 1)
         public int srcY;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
 
+        @JsonAttribute(index = 4)
         public int destX;
 
+        @JsonAttribute(index = 5)
         public int destY;
 
+        @JsonAttribute(index = 6)
         public boolean paint;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawArcintintintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
 
+        @JsonAttribute(index = 4)
         public int startAngle;
 
+        @JsonAttribute(index = 5)
         public int arcAngle;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawFocusintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawImageImageintint {
 
+        @JsonAttribute(index = 0)
         public Image image;
 
+        @JsonAttribute(index = 1)
         public int x;
 
+        @JsonAttribute(index = 2)
         public int y;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawImageImageintintintint {
 
+        @JsonAttribute(index = 0)
         public Image image;
 
+        @JsonAttribute(index = 1)
         public int destX;
 
+        @JsonAttribute(index = 2)
         public int destY;
 
+        @JsonAttribute(index = 3)
         public int destWidth;
 
+        @JsonAttribute(index = 4)
         public int destHeight;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawImageImageintintintintintintintint {
 
+        @JsonAttribute(index = 0)
         public Image image;
 
+        @JsonAttribute(index = 1)
         public int srcX;
 
+        @JsonAttribute(index = 2)
         public int srcY;
 
+        @JsonAttribute(index = 3)
         public int srcWidth;
 
+        @JsonAttribute(index = 4)
         public int srcHeight;
 
+        @JsonAttribute(index = 5)
         public int destX;
 
+        @JsonAttribute(index = 6)
         public int destY;
 
+        @JsonAttribute(index = 7)
         public int destWidth;
 
+        @JsonAttribute(index = 8)
         public int destHeight;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawLineintintintint {
 
+        @JsonAttribute(index = 0)
         public int x1;
 
+        @JsonAttribute(index = 1)
         public int y1;
 
+        @JsonAttribute(index = 2)
         public int x2;
 
+        @JsonAttribute(index = 3)
         public int y2;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawOvalintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawPointintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawPolygonint {
 
+        @JsonAttribute(index = 0)
         public int[] pointArray;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawPolylineint {
 
+        @JsonAttribute(index = 0)
         public int[] pointArray;
     }
 
-    @CompiledJson()
-    public static class VGCDrawRectangleRectangle {
-
-        public Rectangle rect;
-    }
-
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawRectangleintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawRoundRectangleintintintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
 
+        @JsonAttribute(index = 4)
         public int arcWidth;
 
+        @JsonAttribute(index = 5)
         public int arcHeight;
     }
 
-    @CompiledJson()
-    public static class VGCDrawStringStringintint {
-
-        public String string;
-
-        public int x;
-
-        public int y;
-    }
-
-    @CompiledJson()
-    public static class VGCDrawStringStringintintboolean {
-
-        public String string;
-
-        public int x;
-
-        public int y;
-
-        public boolean isTransparent;
-    }
-
-    @CompiledJson()
-    public static class VGCDrawTextStringintint {
-
-        public String string;
-
-        public int x;
-
-        public int y;
-    }
-
-    @CompiledJson()
-    public static class VGCDrawTextStringintintboolean {
-
-        public String string;
-
-        public int x;
-
-        public int y;
-
-        public boolean isTransparent;
-    }
-
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCDrawTextStringintintint {
 
+        @JsonAttribute(index = 0)
         public String string;
 
+        @JsonAttribute(index = 1)
         public int x;
 
+        @JsonAttribute(index = 2)
         public int y;
 
+        @JsonAttribute(index = 3)
         public int flags;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCFillArcintintintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
 
+        @JsonAttribute(index = 4)
         public int startAngle;
 
+        @JsonAttribute(index = 5)
         public int arcAngle;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCFillGradientRectangleintintintintboolean {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
 
+        @JsonAttribute(index = 4)
         public boolean vertical;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCFillOvalintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCFillPolygonint {
 
+        @JsonAttribute(index = 0)
         public int[] pointArray;
     }
 
-    @CompiledJson()
-    public static class VGCFillRectangleRectangle {
-
-        public Rectangle rect;
-    }
-
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCFillRectangleintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
     }
 
-    @CompiledJson()
+    @CompiledJson(formats = CompiledJson.Format.ARRAY)
     public static class VGCFillRoundRectangleintintintintintint {
 
+        @JsonAttribute(index = 0)
         public int x;
 
+        @JsonAttribute(index = 1)
         public int y;
 
+        @JsonAttribute(index = 2)
         public int width;
 
+        @JsonAttribute(index = 3)
         public int height;
 
+        @JsonAttribute(index = 4)
         public int arcWidth;
 
+        @JsonAttribute(index = 5)
         public int arcHeight;
+    }
+
+    @JsonAttribute(ignore = true)
+    public Path getClippingText() {
+        return ((DartGC) impl).wireClippingText();
+    }
+
+    public void setClippingText(Path value) {
+    }
+
+    public float getLineDashOffset() {
+        return ((DartGC) impl).wireLineDashOffset();
+    }
+
+    public void setLineDashOffset(float value) {
+    }
+
+    public float getBufferScale() {
+        return ((DartGC) impl).wireBufferScale();
+    }
+
+    public void setBufferScale(float value) {
     }
 
     public static final String XORMODE = "XORMode";
 
     public static final String ALPHA = "alpha";
 
+    public static final String ANTIALIAS = "antialias";
+
     public static final String BACKGROUND = "background";
+
+    public static final String BUFFER_SCALE = "bufferScale";
 
     public static final String CLIPPING = "clipping";
 
@@ -572,9 +613,13 @@ public class VGC extends VResource {
 
     public static final String FOREGROUND = "foreground";
 
+    public static final String INTERPOLATION = "interpolation";
+
     public static final String LINE_CAP = "lineCap";
 
     public static final String LINE_DASH = "lineDash";
+
+    public static final String LINE_DASH_OFFSET = "lineDashOffset";
 
     public static final String LINE_JOIN = "lineJoin";
 
@@ -592,6 +637,9 @@ public class VGC extends VResource {
                 return;
             case "alpha":
                 Serializer.writeKeyValue(writer, "alpha", getAlpha());
+                return;
+            case "antialias":
+                Serializer.writeKeyValue(writer, "antialias", getAntialias());
                 return;
             case "background":
                 Serializer.writeKeyValue(writer, "background", getBackground());
@@ -614,6 +662,9 @@ public class VGC extends VResource {
             case "foreground":
                 Serializer.writeKeyValue(writer, "foreground", getForeground());
                 return;
+            case "interpolation":
+                Serializer.writeKeyValue(writer, "interpolation", getInterpolation());
+                return;
             case "lineCap":
                 Serializer.writeKeyValue(writer, "lineCap", getLineCap());
                 return;
@@ -631,6 +682,12 @@ public class VGC extends VResource {
                 return;
             case "style":
                 Serializer.writeKeyValue(writer, "style", getStyle());
+                return;
+            case "lineDashOffset":
+                Serializer.writeKeyValue(writer, "lineDashOffset", getLineDashOffset());
+                return;
+            case "bufferScale":
+                Serializer.writeKeyValue(writer, "bufferScale", getBufferScale());
                 return;
         }
         super.writeProperty(writer, key);

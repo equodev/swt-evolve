@@ -99,9 +99,9 @@ void main() {
 
     // Cycle 1: one scroll step. The first GC copies rows [18, 120) up to y=0.
     _openGc(comm, 6002, 6100, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6002/copyAreaintintintintintint', _json({
+    comm.receiveBinary(_frame('GC/6002/copyAreaintintintintintintboolean', _json({
       'srcX': 0, 'srcY': _step, 'width': _w, 'height': _h - _step,
-      'destX': 0, 'destY': 0,
+      'destX': 0, 'destY': 0, 'paint': true,
     })));
     _closeGc(comm, 6002, 6101);
     await _settle();
@@ -147,9 +147,9 @@ void main() {
     await _settle();
 
     _openGc(comm, 6202, 6300, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6202/copyAreaintintintintintint', _json({
+    comm.receiveBinary(_frame('GC/6202/copyAreaintintintintintintboolean', _json({
       'srcX': 0, 'srcY': _step, 'width': _w, 'height': _h - _step,
-      'destX': 0, 'destY': 0,
+      'destX': 0, 'destY': 0, 'paint': true,
     })));
     _closeGc(comm, 6202, 6301);
     await _settle();

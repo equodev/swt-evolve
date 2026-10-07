@@ -101,6 +101,23 @@ void main() {
     expect(d.state.fillRule, 1);
   });
 
+  test('a change in the lean form Java sends merges too: no stamps, colours packed', () async {
+    final d = drawer();
+    deliver('GC/$id', whole());
+    await settle();
+
+    deliver('GC/$id', {'_d': 0, 'foreground': 0xFF123456, 'lineWidth': 2});
+    await settle();
+
+    expect(d.state.foreground?.alpha, 0xFF);
+    expect(d.state.foreground?.red, 0x12);
+    expect(d.state.foreground?.green, 0x34);
+    expect(d.state.foreground?.blue, 0x56);
+    expect(d.state.lineWidth, 2);
+    expect(d.state.background?.blue, 192);
+    expect(d.state.clipping?.width, 96);
+  });
+
   test('successive changes accumulate, the way a paint applies them one op at a time', () async {
     final d = drawer();
     deliver('GC/$id', whole());
