@@ -166,10 +166,33 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   List<int>? _lastSentWeights;
   static const int _liveSyncMinDelta = 5;
 
+  final FocusNode _focusNode = FocusNode(debugLabel: 'SashForm');
+  bool _focusReported = false;
+
   @override
   void initState() {
     super.initState();
     _initializePanelSizes();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  // hasFocus is true for any focused descendant; SWT gives a SashForm focus only when it holds it itself.
+  void _handleFocusChange() {
+    final own = _focusNode.hasPrimaryFocus;
+    if (own == _focusReported) return;
+    _focusReported = own;
+    if (own) {
+      widget.onFocusIn();
+    } else {
+      widget.onFocusOut();
+    }
   }
 
   @override
@@ -225,13 +248,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
         }
       },
       child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.onFocusIn();
-          } else {
-            widget.onFocusOut();
-          }
-        },
+        focusNode: _focusNode,
         child: LayoutBuilder(
           builder: (context, constraints) {
             return widget.isVertical

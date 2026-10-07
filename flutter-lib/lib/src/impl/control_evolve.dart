@@ -123,15 +123,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     final node = swtFocusNode;
     if (node == null) return;
     if (!FocusRequests.instance.claim(state.id)) return;
-    if (node.context != null) {
-      node.requestFocus();
-      return;
-    }
-    // Java can focus a control in the same pass that creates it, so the request routinely arrives
-    // before this one's first build -- the node has no context yet and requestFocus() is dropped.
+    // After the next frame: Java often creates or moves the control in the same pass that focuses it,
+    // and focusing a text field opens the platform input connection at its current layout position.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) swtFocusNode?.requestFocus();
     });
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   @override

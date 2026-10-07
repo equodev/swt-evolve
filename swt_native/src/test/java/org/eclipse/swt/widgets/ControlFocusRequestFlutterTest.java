@@ -68,6 +68,26 @@ class ControlFocusRequestFlutterTest {
     }
 
     @Test
+    void anEditorWrappedInACompositeOnAnOwnerDrawnCanvasAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Canvas grid = new Canvas(openShell(), SWT.NONE);
+        grid.setFocus();
+        // A grid's cell editor that frames its field: the Text sits in a Composite the editor placed
+        // over the cell, sometimes two deep, rather than on the grid itself.
+        Composite frame = new Composite(grid, SWT.NONE);
+        frame.setBounds(40, 20, 100, 25);
+        Composite inner = new Composite(frame, SWT.NONE);
+        Text editor = new Text(inner, SWT.SINGLE | SWT.BORDER);
+        web.comm.sent.clear();
+
+        assertThat(editor.forceFocus()).as("the editor accepts focus").isTrue();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the framed editor")
+                .containsExactly(String.valueOf(editor.hashCode()));
+    }
+
+    @Test
     void anOrdinaryFieldIsLeftToTheRenderSide() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell shell = openShell();

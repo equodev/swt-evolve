@@ -120,8 +120,16 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // getFocusControl() by sending Focus/FocusIn (DartControl wires it to bridge.setFocus). Without
   // this the Canvas held Flutter focus but never told Java, so web-mode keys reached nothing -- a
   // fully dead terminal pane. Mirror every other keyboard control (Text, List, ...).
+  //
+  // The node stays mounted while the Canvas hosts children, so hasFocus is also true for a focused
+  // child; only the Canvas holding the focus itself is reported, as SWT would.
+  bool _keyboardFocusReported = false;
+
   void _handleKeyboardFocusChange() {
-    if (_keyboardFocus.hasFocus) {
+    final own = _keyboardFocus.hasPrimaryFocus;
+    if (own == _keyboardFocusReported) return;
+    _keyboardFocusReported = own;
+    if (own) {
       widget.sendFocusFocusIn(state, null);
     } else {
       widget.sendFocusFocusOut(state, null);
@@ -238,13 +246,16 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       child: wrapWithScrollbars(base),
     );
 
-    if (hasActiveChildren) return content;
-
-    // Forward keystrokes to SWT (Key/KeyDown|KeyUp); DartControl already turns those
-    // into SWT.KeyDown/KeyUp events for the application's listeners.
+    // Always mounted: unmounting it when a child appears would drop a held focus to the previous holder.
+    // Forwards only the Canvas's own keys to SWT; a child's key is left to the child. Checked per event,
+    // since an external node keeps the callback from its first build.
     return Focus(
       focusNode: _keyboardFocus,
       onKeyEvent: (node, event) {
+        final kids = state.children;
+        if (!node.hasPrimaryFocus || (kids != null && kids.isNotEmpty)) {
+          return KeyEventResult.ignored;
+        }
         final vEvent = mapNewKeyEventToSwt(event);
         if (vEvent.keyCode != 0 || vEvent.character != 0) {
           // When a whole-tree Display forwards keys from its single top-level handler, that handler

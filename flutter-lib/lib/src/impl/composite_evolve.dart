@@ -237,6 +237,11 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
   bool get _isSurface => state.children?.isEmpty ?? true;
 
+  /// Only a childless Composite mounts this node. One focused while it still has children takes the
+  /// focus once they are gone: an unmounted node keeps the request until it is mounted.
+  @override
+  FocusNode? get swtFocusNode => _surfaceFocus;
+
   /// Whether this composite's children are drawn as inset panels rather than at their own
   /// bounds -- the [SashPanelMarker] its build path installs, read from somewhere hit-testing
   /// can also reach it.
