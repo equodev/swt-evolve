@@ -35,7 +35,8 @@ public final class WebDisplayHarness {
     private static final String STYLEDTEXT_PERF_RESPONSE = "evolve.test.styledTextPerfResponse";
     private static final String FRAME_COST_RESPONSE = "evolve.test.frameCostResponse";
     private static final long TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 10_000);
-    private static final long READY_TIMEOUT_MS = Long.getLong("harness.readyTimeoutMs", 30_000);
+    private static final int BOOT_ATTEMPTS = Integer.getInteger("harness.bootAttempts", 3);
+    private static final long BOOT_ATTEMPT_MS = Long.getLong("harness.bootAttemptMs", 12_000);
 
     private final Gson gson = new Gson();
     private final AtomicInteger ids = new AtomicInteger();
@@ -47,6 +48,12 @@ public final class WebDisplayHarness {
     private DevTools devTools;
     private UserInput input;
     private final Map<String, String> overridden = new HashMap<>();
+    /** Upcoming browser launches that load a page which never connects, to exercise the relaunch. */
+    private int bootFailuresToInject = Integer.getInteger("harness.web.failBoots", 0);
+
+    void injectBootFailures(int count) {
+        bootFailuresToInject = count;
+    }
 
     public Display boot() {
         File webDir = WidgetFlutterHarness.resolveWebDir();
@@ -69,21 +76,41 @@ public final class WebDisplayHarness {
         if (binary == null) throw new IllegalStateException("Chrome/Chromium not found; set -Dequo.swt.browser=<path>");
         boolean headless = Boolean.parseBoolean(System.getProperty("harness.web.headless", "true"));
         boolean console = Boolean.getBoolean("harness.web.console");
+        // Headless Chrome intermittently wedges during startup in the CI container and never loads
+        // the app; a fresh browser clears it, so each attempt is short and a wedged one is replaced.
+        for (int attempt = 1; !awaitClient(binary, url, headless, console); attempt++) {
+            if (attempt == BOOT_ATTEMPTS)
+                throw new IllegalStateException("the web client did not connect after " + BOOT_ATTEMPTS
+                        + " browser launches of " + BOOT_ATTEMPT_MS + "ms each");
+        }
+        devTools = DevTools.connect(chrome.profileDir(), url);
+        input = new UserInput(devTools);
+        return display;
+    }
+
+    /** Launches a browser on {@code url}; true once its client paints, false after it was closed for not doing so. */
+    private boolean awaitClient(String binary, String url, boolean headless, boolean console) {
+        String openUrl = url;
+        if (bootFailuresToInject > 0) {
+            bootFailuresToInject--;
+            openUrl = "data:text/html,harness-forced-boot-failure";
+        }
         try {
-            chrome = HeadlessChrome.launch(binary, url, headless, console,
+            chrome = HeadlessChrome.launch(binary, openUrl, headless, console,
                     console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, "--remote-debugging-port=0",
                     "--disable-frame-rate-limit", "--disable-gpu-vsync");
         } catch (IOException e) {
             throw new IllegalStateException("could not launch Chrome", e);
         }
-        long deadline = System.currentTimeMillis() + READY_TIMEOUT_MS;
+        long deadline = System.currentTimeMillis() + BOOT_ATTEMPT_MS;
         while (!syncFrame(1_000)) {
-            if (System.currentTimeMillis() > deadline)
-                throw new IllegalStateException("the web client did not connect within " + READY_TIMEOUT_MS + "ms");
+            if (System.currentTimeMillis() > deadline) {
+                chrome.close();
+                chrome = null;
+                return false;
+            }
         }
-        devTools = DevTools.connect(chrome.profileDir(), url);
-        input = new UserInput(devTools);
-        return display;
+        return true;
     }
 
     public void teardown() {
@@ -115,8 +142,8 @@ public final class WebDisplayHarness {
     public void flush() {
         FlutterBridge.update();
         if (!syncFrame(TIMEOUT_MS))
-            throw new IllegalStateException("the client painted no frame within " + TIMEOUT_MS + "ms ("
-                    + input.pageState() + ")");
+            throw new IllegalStateException("the client painted no frame within " + TIMEOUT_MS + "ms" + lastStall
+                    + " (" + input.pageState() + ")");
     }
 
     /** Runs the Display's pending work; true when there was any. */
@@ -152,7 +179,7 @@ public final class WebDisplayHarness {
         comm.send(Q_REQUEST, ("{\"queryId\":" + id + ",\"targetId\":" + w.hashCode() + "}")
                 .getBytes(StandardCharsets.UTF_8));
         Map<String, Object> response = await(f, TIMEOUT_MS);
-        if (response == null) throw new IllegalStateException("no answer to the state query for " + w);
+        if (response == null) throw new IllegalStateException("no answer to the state query for " + w + lastStall);
         return response;
     }
 
@@ -200,12 +227,16 @@ public final class WebDisplayHarness {
     }
 
     private Map<String, Object> await(CompletableFuture<Map<String, Object>> f, long timeoutMs) {
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (!f.isDone() && System.currentTimeMillis() < deadline) {
+        StallTolerantDeadline deadline = new StallTolerantDeadline(timeoutMs);
+        while (!f.isDone() && deadline.hasTimeLeft()) {
             if (!drain()) sleep();
         }
+        lastStall = deadline.stallSuffix();
         return f.getNow(null);
     }
+
+    /** {@link StallTolerantDeadline#stallSuffix()} of the last wait, for its failure message. */
+    private String lastStall = "";
 
     private void complete(byte[] bytes, String idKey) {
         if (bytes == null) return;

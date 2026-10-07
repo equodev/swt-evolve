@@ -142,6 +142,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     var e = VEvent();
     if (_context?.treeImpl != null && widgetTheme != null) {
       e.index = _context!.treeImpl!.findItemIndex(state.id);
+      e.itemId = state.id;
       e.detail = detail ?? widgetTheme.eventDefaultDetail;
       e.x = widgetTheme.eventDefaultX;
       e.y = widgetTheme.eventDefaultY;

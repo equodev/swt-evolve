@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.DartImage;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 
+import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 
 public class TreeHelper {
@@ -50,7 +51,7 @@ public class TreeHelper {
      * @param selectionType the type of selection event
      */
     public static void sendSelection(DartTree tree, Event event, int selectionType) {
-        TreeItem item = getVisibleItemAtIndex(tree, event.index);
+        TreeItem item = itemOf(tree, event);
         if (item == null) {
             return;
         }
@@ -64,7 +65,7 @@ public class TreeHelper {
     }
 
     public static void sendExpand(DartTree dartTree, Event event, boolean expand) {
-        TreeItem item = getVisibleItemAtIndex(dartTree, event.index);
+        TreeItem item = itemOf(dartTree, event);
         if (item == null) {
             return;
         }
@@ -271,6 +272,19 @@ public class TreeHelper {
     }
 
     /**
+     * The row a client event is about. The client names it by id: its row index counts the rows it
+     * shows, and the tree may have been rebuilt since (a filter refresh), putting another item at
+     * that index. An id that no longer resolves is a row that is gone, not a reason to pick another.
+     */
+    private static TreeItem itemOf(DartTree tree, Event event) {
+        if (event.itemId == 0) return getVisibleItemAtIndex(tree, event.index);
+        for (TreeItem item : visibleItems(tree)) {
+            if (FlutterBridge.id(item) == event.itemId) return item;
+        }
+        return null;
+    }
+
+    /**
      * Gets the visible TreeItem at the specified index from the tree.
      *
      * @param tree the DartTree instance
@@ -282,14 +296,7 @@ public class TreeHelper {
             return null;
         }
 
-        // Collect visible items in visual order
-        java.util.List<TreeItem> visibleItems = new java.util.ArrayList<>();
-        TreeItem[] rootItems = tree.getApi().getItems();
-        for (TreeItem rootItem : rootItems) {
-            if (rootItem != null) {
-                collectVisibleItemsRecursive(rootItem, visibleItems);
-            }
-        }
+        java.util.List<TreeItem> visibleItems = visibleItems(tree);
 
         // Check if index is valid
         if (index >= visibleItems.size()) {
@@ -297,6 +304,17 @@ public class TreeHelper {
         }
 
         return visibleItems.get(index);
+    }
+
+    /** The items the tree shows, in visual order. */
+    private static java.util.List<TreeItem> visibleItems(DartTree tree) {
+        java.util.List<TreeItem> visibleItems = new java.util.ArrayList<>();
+        for (TreeItem rootItem : tree.getApi().getItems()) {
+            if (rootItem != null) {
+                collectVisibleItemsRecursive(rootItem, visibleItems);
+            }
+        }
+        return visibleItems;
     }
 
     /**

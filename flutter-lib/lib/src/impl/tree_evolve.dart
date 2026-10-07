@@ -1660,6 +1660,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   VEvent _createDefaultEvent(Object itemId) {
     var e = VEvent();
     e.index = findItemIndex(itemId);
+    if (itemId is int) e.itemId = itemId;
     e.detail = _cachedWidgetTheme!.eventDefaultDetail;
     e.x = _cachedWidgetTheme!.eventDefaultX;
     e.y = _cachedWidgetTheme!.eventDefaultY;
