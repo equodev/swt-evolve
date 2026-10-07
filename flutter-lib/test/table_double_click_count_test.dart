@@ -7,6 +7,7 @@
 // editor twice, which opens two dialogs for one double-click.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -107,5 +108,28 @@ void main() {
     expect(calls.where((c) => c.startsWith('Selection/DefaultSelection:')),
         hasLength(1),
         reason: 'a double-click sends exactly one DefaultSelection');
+  });
+
+  testWidgets('a tap through the semantics tree sends one MouseDown', (tester) async {
+    final handle = tester.ensureSemantics();
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 800,
+        height: 400,
+        child: _RecordingTableSwt(value: _table(), calls: calls),
+      ),
+    ));
+    await tester.pump();
+
+    final node = tester.getSemantics(find.text('Row 1'));
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+    await tester.pump(Duration.zero);
+
+    expect(_countsOf(calls, 'Mouse/MouseDown'), equals([1]),
+        reason: 'accessibility and test drivers tap through the semantics tree, with no pointer '
+            'press before the tap; the row still has to be pressed, once');
+    handle.dispose();
   });
 }

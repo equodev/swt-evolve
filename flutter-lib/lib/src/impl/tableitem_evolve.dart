@@ -19,6 +19,10 @@ import 'utils/image_utils.dart';
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
+  // Set when a pointer press has already sent this row's MouseDown, so the tap the same click
+  // completes does not send it again.
+  bool _pressSent = false;
+
   TableItemContext? _context;
 
   void setContext(TableItemContext context) {
@@ -230,6 +234,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // the event SWT numbers -- onTap only decides what the completed gesture was.
       onPointerDown: (e) {
         if (e.buttons != kPrimaryButton) return;
+        _pressSent = true;
         sendMouseDown(
             1,
             enabled && _context?.tableImpl != null
@@ -238,6 +243,20 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
             e.position);
       },
       child: GestureDetector(
+      // A tap through the semantics tree arrives here with no press before it; one that follows a
+      // pointer press was already sent above.
+      onTapDown: (_) {
+        if (_pressSent) {
+          _pressSent = false;
+          return;
+        }
+        sendMouseDown(
+            1,
+            enabled && _context?.tableImpl != null
+                ? _context!.tableImpl!.registerRowTap(rowIndex)
+                : 1);
+      },
+      onTapCancel: () => _pressSent = false,
       onSecondaryTapDown: (details) {
         sendMouseDown(3, 1);
         if (_context?.tableImpl != null) {
