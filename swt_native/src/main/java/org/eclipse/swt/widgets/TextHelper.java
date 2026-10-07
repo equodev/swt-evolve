@@ -320,16 +320,22 @@ public class TextHelper {
 
     /**
      * Whether a Verify coming from the render side proposes no edit at all: nothing to replace, and
-     * nothing to replace it with.
-     * <p>
-     * A programmatic write is pushed down to the client, whose field reports the resulting caret and
-     * content back as a pending edit of its own. That echo reaches Java as a Verify with an empty
-     * range and empty text -- twice for one setText, as the caret lands at the end and returns. No
-     * native raises a Verify for it, because nothing is being edited and a listener has nothing to
-     * veto. A real keystroke carries text; a real deletion carries a range.
+     * nothing to replace it with. The client sends one when the user moves the caret -- a click, an
+     * arrow key -- and no native raises a Verify for that, because nothing is being edited and a
+     * listener has nothing to veto. A real keystroke carries text; a real deletion carries a range.
      */
     public static boolean proposesNoChange(Event e) {
         return e.text != null && e.text.isEmpty() && e.start == e.end;
+    }
+
+    /**
+     * The user moved the caret in the client's field without editing. getCaretPosition() and
+     * getSelection() answer from Java's copy, so it follows; nothing is pushed back.
+     */
+    public static void clientCaretMoved(DartText text, int offset) {
+        int caret = Math.max(0, Math.min(offset, text.getCharCount()));
+        text.caretPosition = caret;
+        text.selection = new Point(caret, caret);
     }
 
     public static void setText(DartText text, String string) {

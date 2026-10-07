@@ -55,6 +55,10 @@ class ToolBarConfig extends InheritedWidget {
 
 class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     extends CompositeImpl<T, V> {
+  /// A click never focuses a ToolBar natively, empty or not.
+  @override
+  void takeFocusOnPress() {}
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;

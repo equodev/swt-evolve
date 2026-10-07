@@ -230,6 +230,11 @@ public class DartSash extends DartControl implements ISash {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if ((e.stateMask & SWT.BUTTON_MASK) != 0) {
+                    ControlHelper.sendActivateToAncestors(this, SWT.MouseDown);
+                    if (isDisposed())
+                        return;
+                }
                 sendEvent(SWT.Selection, e);
                 if (!isDisposed() && e.doit) {
                     setBounds(e.x, e.y, bounds.width, bounds.height);

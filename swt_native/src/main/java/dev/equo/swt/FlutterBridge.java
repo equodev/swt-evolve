@@ -1636,6 +1636,19 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /**
+     * Makes {@code control} its shell's active control, announcing SWT.Activate/Deactivate with
+     * {@code detail}, when the shell tracks that itself. False when it does not -- a native shell --
+     * and the caller has to announce the change on its own.
+     */
+    public boolean setActiveControl(Control control, int detail) {
+        return false;
+    }
+
+    /** Moves the client's keyboard focus onto {@code control}, which Java has just focused itself. */
+    public void focusClient(DartControl control) {
+    }
+
     /** The client moved its focus to {@code control}: tracked like {@link #setFocus}, without echoing it back. */
     public void clientFocused(DartControl control) {
         setFocus(control);

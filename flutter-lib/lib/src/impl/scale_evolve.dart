@@ -11,6 +11,9 @@ import 'utils/widget_utils.dart';
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
+  bool _changedDuringPress = false;
+  bool _pressed = false;
+
   /// A Scale takes keyboard focus like any other control: clicking it focuses it, and the arrow,
   /// page, home and end keys then move the value. Java routes a keystroke to whatever
   /// getFocusControl() returns, so a Scale that never reports focus never receives one.
@@ -38,8 +41,22 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final size = getScaleSize(state, widgetTheme, isVertical: isVertical);
 
-    return wrap(
-      _ThemedScale(
+    return wrap(Listener(
+      onPointerDown: (_) {
+        _changedDuringPress = false;
+        _pressed = true;
+      },
+      // A press that moves nothing still reports a Selection, ahead of its MouseUp, as a native
+      // Scale does for a click on its knob; this Listener is reached before the control's own.
+      onPointerUp: (_) {
+        _pressed = false;
+        if (_changedDuringPress || !enabled) return;
+        widget.sendSelectionSelection(state, VEvent()
+          ..index = state.selection
+          ..stateMask = SWT.BUTTON1);
+      },
+      onPointerCancel: (_) => _pressed = false,
+      child: _ThemedScale(
         background: state.background,
         foreground: state.foreground,
         value: currentValue,
@@ -51,10 +68,13 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         isVertical: isVertical,
         widgetTheme: widgetTheme,
         onChanged: (value) {
+          _changedDuringPress = true;
           state.selection = value.round();
           widget.sendSelectionSelection(
             state,
-            VEvent()..index = state.selection,
+            VEvent()
+              ..index = state.selection
+              ..stateMask = _pressed ? SWT.BUTTON1 : 0,
           );
         },
         onChangeEnd: (value) {
@@ -71,7 +91,7 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
           }
         },
       ),
-    );
+    ));
   }
 }
 

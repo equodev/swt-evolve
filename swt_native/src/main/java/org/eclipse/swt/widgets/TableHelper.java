@@ -92,14 +92,12 @@ public class TableHelper {
             // Event it is handed and EventTable's send loop re-reads that type on every step, so
             // passing the in-flight MouseDown event would leave it typed SWT.Selection and drop
             // every MouseDown listener still behind this one.
+            // A native Table's click Selection names the item and nothing about the click itself, but
+            // for the button still held: its stateMask carries it, as the event fires before release.
             Event selection = new Event();
             selection.segments = event.segments;
             selection.detail = event.detail;
-            selection.stateMask = event.stateMask;
-            selection.button = event.button;
-            selection.count = event.count;
-            selection.x = event.x;
-            selection.y = event.y;
+            selection.stateMask = event.stateMask | (event.button == 3 ? SWT.BUTTON3 : SWT.BUTTON1);
             selection.time = event.time;
             sendSelection(table, selection, SWT.Selection);
         }
@@ -124,7 +122,10 @@ public class TableHelper {
                 int index = event.segments[0];
                 if (table.items != null && index >= 0 && index < table.items.length) {
                     event.item = table.items[index];
-                    event.index = index;
+                    // A native Table's Selection names the row by its item alone; the index is only
+                    // the cell edit's own (read below), which arrives carrying text.
+                    if (event.text != null)
+                        event.index = index;
                 }
             }
         }

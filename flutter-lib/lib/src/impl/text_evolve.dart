@@ -40,7 +40,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _modifyGate.attach(state.swt, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateCaretPosition());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fromJava(_updateCaretPosition));
   }
 
   /// Holds an edit while the field is vetoable: the proposal goes to Java as the Modify, the
@@ -80,16 +80,18 @@ class TextImpl<T extends TextSwt, V extends VText>
     if (!mounted) return;
     final authoritative = state.text ?? '';
     if (_controller.text != authoritative) {
-      _controller.value = _controller.value.copyWith(
-        text: authoritative,
-        selection: TextSelection.collapsed(offset: authoritative.length),
-        composing: TextRange.empty,
-      );
+      _fromJava(() => _controller.value = _controller.value.copyWith(
+            text: authoritative,
+            selection: TextSelection.collapsed(offset: authoritative.length),
+            composing: TextRange.empty,
+          ));
     }
   }
 
   @override
-  void extraSetState() {
+  void extraSetState() => _fromJava(_applyJavaState);
+
+  void _applyJavaState() {
     String newText = state.text ?? "";
     // A Java value push may be the echo of a Modify this field sent moments ago. If the user
     // has typed further in the meantime, resetting the controller to the echoed (older) text
@@ -391,6 +393,19 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
   }
 
+  /// True while the controller is being set from a value Java pushed: the caret it lands on is
+  /// Java's own, so it is not reported back as a move.
+  bool _applyingJavaValue = false;
+
+  void _fromJava(void Function() apply) {
+    _applyingJavaValue = true;
+    try {
+      apply();
+    } finally {
+      _applyingJavaValue = false;
+    }
+  }
+
   void _updateCaretPosition() {
     if (!mounted) return;
 
@@ -401,6 +416,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     // Only update if position actually changed
     if (state.caretPosition == null || state.caretPosition != cursorOffset) {
       state.caretPosition = cursorOffset;
+      if (_applyingJavaValue) return;
 
       // Send the caret position to Java via Verify event
       var e = VEvent()

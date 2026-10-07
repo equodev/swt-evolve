@@ -1237,7 +1237,6 @@ public class DartShell extends DartDecorations implements IShell {
         {
             super.setBounds(x, y, width, height, move, resize);
             resized = true;
-            sendEvent(SWT.Resize);
             if (isDisposed())
                 return;
             if (layout != null) {

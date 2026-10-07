@@ -1933,12 +1933,14 @@ public class DartText extends DartScrollable implements IText {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (!isDisposed() && !TextHelper.proposesNoChange(e)) {
-                    int textLen = getCharCount();
-                    e.start = Math.min(e.start, textLen);
-                    e.end = Math.min(e.end, textLen);
-                    sendEvent(SWT.Verify, e);
+                if (TextHelper.proposesNoChange(e)) {
+                    TextHelper.clientCaretMoved(this, e.start);
+                    return;
                 }
+                int textLen = getCharCount();
+                e.start = Math.min(e.start, textLen);
+                e.end = Math.min(e.end, textLen);
+                sendEvent(SWT.Verify, e);
             });
         });
     }

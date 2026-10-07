@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
 import '../gen/sash.dart';
@@ -123,7 +124,17 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
             handleFocusOut();
           }
         },
-        child: GestureDetector(
+        // A press and a release each report the sash's position, ahead of their MouseDown and
+        // MouseUp, as a native Sash does; this Listener sits inside the control's own, so it is
+        // reached first. The drag in between reports its moves from the pan below.
+        child: Listener(
+          onPointerDown: enabled
+              ? (e) {
+                  if (e.buttons == kPrimaryButton) _sendPositionSelection(pressed: true);
+                }
+              : null,
+          onPointerUp: enabled ? (_) => _sendPositionSelection(pressed: false) : null,
+          child: GestureDetector(
           onPanStart: enabled
               ? (details) {
                   _isDragging = true;
@@ -150,6 +161,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
             color: sashColor,
           ),
         ),
+        ),
       ),
     );
 
@@ -171,27 +183,33 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
   }
 
   void _exitLocalEditMode() {
-    if (_isInLocalEditMode && _localX != null && _localY != null) {
-      final bounds = state.bounds;
-      if (bounds != null) {
-        final event = VEvent()
-          ..x = _localX
-          ..y = _localY
-          ..width = bounds.width
-          ..height = bounds.height
-          ..detail = 0
-          ..stateMask = 0;
-
-        widget.sendSelectionSelection(state, event);
-
-        _isInLocalEditMode = false;
-        return;
-      }
+    // The release already reported where the drag ended (_sendPositionSelection); the local
+    // position stays until Java's bounds catch up.
+    if (_isInLocalEditMode && _localX != null && _localY != null && state.bounds != null) {
+      _isInLocalEditMode = false;
+      return;
     }
 
     _isInLocalEditMode = false;
     _localX = null;
     _localY = null;
+  }
+
+  /// The Selection a press or a release reports: where the sash is now, with the button still
+  /// held on the press.
+  void _sendPositionSelection({required bool pressed}) {
+    final bounds = state.bounds;
+    if (bounds == null) return;
+    widget.sendSelectionSelection(
+      state,
+      VEvent()
+        ..x = _localX ?? bounds.x
+        ..y = _localY ?? bounds.y
+        ..width = bounds.width
+        ..height = bounds.height
+        ..detail = 0
+        ..stateMask = pressed ? SWT.BUTTON1 : 0,
+    );
   }
 
   void handleSelectionStart(DragStartDetails details) {

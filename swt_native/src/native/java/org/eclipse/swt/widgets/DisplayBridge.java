@@ -1074,8 +1074,38 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         if (reportPrecedesPendingRequest(widget))
             return;
+        if (api != null && !api.isDisposed() && declinesClientFocus(api))
+            return;
         focusRequested = widget;
         setFocus(widget);
+    }
+
+    @Override
+    public boolean setActiveControl(Control control, int detail) {
+        Shell shell = control.getShell();
+        if (!(shell.getImpl() instanceof DartShell))
+            return false;
+        ((DartShell) shell.getImpl()).setActiveControl(control, detail);
+        return true;
+    }
+
+    @Override
+    public void focusClient(DartControl widget) {
+        requestClientFocus(widget, true);
+    }
+
+    /**
+     * Whether a bare Canvas turns down the focus the client gave it. The client focuses any empty
+     * surface it is pressed or tabbed onto; natively a Canvas takes the focus only while it hooks key
+     * events (Composite's button-press and traversal both check hooksKeys), so one with no key
+     * listener leaves it where it was. A shell is a Canvas too, and keeps its own.
+     */
+    private static boolean declinesClientFocus(Control api) {
+        if (!(api instanceof Canvas) || api instanceof Decorations)
+            return false;
+        if (((Canvas) api).getChildren().length > 0 || (api.getStyle() & org.eclipse.swt.SWT.EMBEDDED) != 0)
+            return false;
+        return !api.isListening(org.eclipse.swt.SWT.KeyDown) && !api.isListening(org.eclipse.swt.SWT.KeyUp);
     }
 
     /** For each shell, the shell that was active when it became active. */

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
@@ -176,14 +177,23 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final cellPadding = _fitCellPadding(
         columnIndex, cellText, textStyle, theme, showCheckbox, cellImage);
 
-    void sendMouseDown(int button, int count) {
+    void sendMouseDown(int button, int count, [Offset? globalPosition]) {
       if (enabled && _context != null) {
         if ((button == 1 || button == 3) && _context!.tableImpl != null) {
           _context!.tableImpl!.selectRowLocally(rowIndex);
         }
         final e = VEvent();
-        e.x = _computeCellCenterX(columnIndex, theme);
-        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in
+        // only for a press that carries no position.
+        final tableBox = _context!.tableImpl?.context.findRenderObject();
+        if (globalPosition != null && tableBox is RenderBox && tableBox.attached) {
+          final local = tableBox.globalToLocal(globalPosition);
+          e.x = local.dx.round();
+          e.y = local.dy.round();
+        } else {
+          e.x = _computeCellCenterX(columnIndex, theme);
+          e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        }
         e.button = button;
         e.count = count;
         e.segments = [rowIndex];
@@ -213,14 +223,21 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     // Tag only the first cell as the row's anchor for E2E tooling (Playwright etc.) —
     // tagging every cell would give the row's id to several DOM nodes at once.
-    final cell = GestureDetector(
-      // The click count is registered here, on the down, because that is the
-      // event SWT numbers -- onTap only decides what the completed gesture was.
-      onTapDown: (_) => sendMouseDown(
-          1,
-          enabled && _context?.tableImpl != null
-              ? _context!.tableImpl!.registerRowTap(rowIndex)
-              : 1),
+    final cell = Listener(
+      // The primary press is sent from the raw down, not from a tap gesture: the gesture is only
+      // recognised once the arena settles, after the Table has already reported its focus, and
+      // SWT delivers the press first. The click count is registered here too, because that is
+      // the event SWT numbers -- onTap only decides what the completed gesture was.
+      onPointerDown: (e) {
+        if (e.buttons != kPrimaryButton) return;
+        sendMouseDown(
+            1,
+            enabled && _context?.tableImpl != null
+                ? _context!.tableImpl!.registerRowTap(rowIndex)
+                : 1,
+            e.position);
+      },
+      child: GestureDetector(
       onSecondaryTapDown: (details) {
         sendMouseDown(3, 1);
         if (_context?.tableImpl != null) {
@@ -283,6 +300,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
                     ),
           ),
         ),
+      ),
       ),
     );
 

@@ -626,6 +626,38 @@ public class ControlHelper {
     }
 
     /**
+     * What a native press does before SWT.MouseDown reaches listeners: Shell.setActiveControl(control,
+     * SWT.MouseDown) announces the activation, and a control that takes the focus on a click takes it
+     * -- Shell.FocusOut and FocusIn -- so a MouseDown listener already finds the control focused.
+     * Win32 and GTK agree on that order for every control; Flutter would otherwise report the focus
+     * a microtask after the press, behind the MouseDown it caused.
+     */
+    public static void pressed(DartControl control, Event event) {
+        sendActivateToAncestors(control, SWT.MouseDown);
+        if (control.isDisposed() || event == null || event.button != 1)
+            return;
+        if (!takesFocusOnClick(control) || control.isFocusControl())
+            return;
+        if (control.forceFocus() && !control.isDisposed())
+            control.getBridge().focusClient(control);
+    }
+
+    /**
+     * The controls a button-1 press focuses natively. Win32 and GTK agree on every one of them; a
+     * Canvas is left to its own press handling, since natively it takes the focus only while it
+     * hooks key events.
+     */
+    static boolean takesFocusOnClick(DartControl control) {
+        Control api = control.getApi();
+        if ((api.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        return api instanceof Button || api instanceof Combo || api instanceof DateTime
+                || api instanceof List || api instanceof Scale || api instanceof Spinner
+                || api instanceof TabFolder || api instanceof Table || api instanceof Tree
+                || api instanceof Text;
+    }
+
+    /**
      * Takes the focus and announces the activation that goes with it, so a control that focuses
      * itself programmatically still reaches an embedding workbench's active-part tracking — there is
      * no OS focus here to generate it. Deliberately does NOT send SWT.FocusIn: a control that
@@ -670,6 +702,10 @@ public class ControlHelper {
         Control now = control.getApi();
         Shell shell = now.getShell();
         if (shell == null || shell.isDisposed())
+            return;
+        // A Dart Shell already tracks its active control: Shell.setActiveControl, which focus changes
+        // drive too. A second tracker here announced every focus change twice, once from each.
+        if (control.getBridge().setActiveControl(now, detail))
             return;
         Control previous = lastActivated.put(shell, now);
         // An open shell is the active control of itself until something inside it takes over -- what

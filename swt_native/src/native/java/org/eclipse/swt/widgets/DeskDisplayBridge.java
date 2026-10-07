@@ -580,7 +580,24 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     protected void applyClientInsetTop(int insetTop) {
+        if (insetTop == clientTopInset)
+            return;
         clientTopInset = insetTop;
+        // A shell placed before the strip's height was known has a window that much too short.
+        Shell main = forDisplay == null ? null : mainShell(forDisplay);
+        if (main != null && !main.getMaximized() && !main.getFullScreen())
+            forwardWindowBounds(windowBoundsFor(main.getBounds()));
+    }
+
+    /**
+     * The window a main shell's bounds call for: the shell is the area below the CSD strip (see
+     * {@link #shellWindowOrigin}), so its window is that much taller and starts that much higher.
+     * Sized to the shell alone, the window left the shell a strip-height short, and the next viewport
+     * report shrank it -- whenever that report happened to arrive.
+     */
+    private Rectangle windowBoundsFor(Rectangle shell) {
+        if (shell == null || clientTopInset == 0) return shell;
+        return new Rectangle(shell.x, shell.y - clientTopInset, shell.width, shell.height + clientTopInset);
     }
 
     @Override
@@ -600,7 +617,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             // real viewport the shell is the source of truth, so push its geometry out.
             if (viewport.width <= 1 || viewport.height <= 1) {
                 if (current != null && current.width > 1 && current.height > 1) {
-                    forwardWindowBounds(current);
+                    forwardWindowBounds(windowBoundsFor(current));
                     changed = true;
                 }
                 return changed;
@@ -755,7 +772,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (shell.getMaximized() || shell.getFullScreen()) {
             return;
         }
-        forwardWindowBounds(bounds);
+        forwardWindowBounds(windowBoundsFor(bounds));
     }
 
     @Override
