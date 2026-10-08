@@ -429,11 +429,14 @@ public class Config {
      * is side-aware and corrects its own sizing at layout time.
      */
     static int classifyTrimSide(Composite parent) {
-        if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
+        // Every Composite in the application is classified here, so the cheap discriminator runs
+        // first -- an instanceof, a layout read and a class-name compare -- and the stack walk only
+        // for what survives it.
         Object layout = trimLayout(parent);
         if (layout == null) return -1;
         java.lang.reflect.Field[] f = trimFields(layout);
         if (f == null) return -1;
+        if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
         try {
             int fromModel = modelTrimSide(parent);
             // A side whose field is already assigned cannot be the one under construction.
@@ -468,24 +471,91 @@ public class Config {
     private static int modelTrimSide(Composite parent) {
         Object window = parent.getData(E4_MODEL_ELEMENT_KEY);
         if (window == null) return -1;
+        Accessors windowGetters = windowAccessors(window);
+        if (windowGetters == null) return -1;
         try {
-            Object bars = window.getClass().getMethod("getTrimBars").invoke(window);
+            Object bars = windowGetters.get(WINDOW_TRIM_BARS, window);
             if (!(bars instanceof java.util.List)) return -1;
-            java.util.List<?> list = (java.util.List<?>) bars;
             Object building = null;
-            for (Object bar : list) {
-                Class<?> barClass = bar.getClass();
-                if (barClass.getMethod("getRenderer").invoke(bar) == null) continue;
-                if (barClass.getMethod("getWidget").invoke(bar) != null) continue;
+            Accessors buildingGetters = null;
+            for (Object bar : (java.util.List<?>) bars) {
+                Accessors barGetters = barAccessors(bar);
+                if (barGetters == null) return -1;
+                if (barGetters.get(BAR_RENDERER, bar) == null) continue;
+                if (barGetters.get(BAR_WIDGET, bar) != null) continue;
                 if (building != null) return -1;
                 building = bar;
+                buildingGetters = barGetters;
             }
             if (building == null) return -1;
-            Object side = building.getClass().getMethod("getSide").invoke(building);
+            Object side = buildingGetters.get(BAR_SIDE, building);
             return side instanceof Enum ? trimSideNamed(((Enum<?>) side).name()) : -1;
         } catch (ReflectiveOperationException | RuntimeException ignored) {
         }
         return -1;
+    }
+
+    /**
+     * The no-arg e4 model getters {@link #modelTrimSide} reads, resolved once per owning class.
+     *
+     * <p>{@code getMethod} scans a class's public methods and hands back a fresh copy on every call,
+     * which is the part of the reflection worth keeping out of the per-bar loop; the {@code invoke}
+     * folds into roughly a virtual call once JIT'd. Resolved lazily instead of at class-init like
+     * {@link Jdk9}'s lookups, because these classes are not on this fragment's classpath and the
+     * only handle on them is an instance handed over at runtime.
+     *
+     * <p>{@link #owner} is what makes a cached holder safe to reuse: a host whose model is
+     * implemented by another class re-resolves, instead of invoking a foreign {@code Method} and
+     * losing the model read to the failure that follows.
+     */
+    private static final class Accessors {
+
+        final Class<?> owner;
+        private final java.lang.reflect.Method[] getters;
+
+        private Accessors(Class<?> owner, java.lang.reflect.Method[] getters) {
+            this.owner = owner;
+            this.getters = getters;
+        }
+
+        static Accessors of(Class<?> owner, String[] names) {
+            java.lang.reflect.Method[] getters = new java.lang.reflect.Method[names.length];
+            try {
+                for (int i = 0; i < names.length; i++) getters[i] = owner.getMethod(names[i]);
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                return null;
+            }
+            return new Accessors(owner, getters);
+        }
+
+        Object get(int getter, Object target) throws ReflectiveOperationException {
+            return getters[getter].invoke(target);
+        }
+    }
+
+    private static final String[] WINDOW_GETTERS = {"getTrimBars"};
+    private static final int WINDOW_TRIM_BARS = 0;
+
+    private static final String[] BAR_GETTERS = {"getRenderer", "getWidget", "getSide"};
+    private static final int BAR_RENDERER = 0, BAR_WIDGET = 1, BAR_SIDE = 2;
+
+    private static volatile Accessors WINDOW_ACCESSORS;
+    private static volatile Accessors BAR_ACCESSORS;
+
+    private static Accessors windowAccessors(Object window) {
+        Accessors cached = WINDOW_ACCESSORS;
+        if (cached != null && cached.owner == window.getClass()) return cached;
+        Accessors resolved = Accessors.of(window.getClass(), WINDOW_GETTERS);
+        if (resolved != null) WINDOW_ACCESSORS = resolved;
+        return resolved;
+    }
+
+    private static Accessors barAccessors(Object bar) {
+        Accessors cached = BAR_ACCESSORS;
+        if (cached != null && cached.owner == bar.getClass()) return cached;
+        Accessors resolved = Accessors.of(bar.getClass(), BAR_GETTERS);
+        if (resolved != null) BAR_ACCESSORS = resolved;
+        return resolved;
     }
 
     private static int trimSideNamed(String name) {

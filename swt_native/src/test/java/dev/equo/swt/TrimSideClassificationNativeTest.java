@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -115,6 +117,38 @@ class TrimSideClassificationNativeTest {
         assertSidesBuiltAsTheirOwnImplementations();
     }
 
+    /**
+     * The Shell-and-layout test is the cheap discriminator, so it runs first: the StackWalker walk
+     * behind it would otherwise run for every Composite the application constructs.
+     */
+    @Test
+    void the_layout_is_consulted_before_the_stack_is_walked() {
+        // Not reached through TrimmedPartLayout.getTrimComposite, so the classification declines.
+        assertThat(Config.classifyTrimSide(shell)).isEqualTo(-1);
+
+        verify(shell, atLeastOnce()).getLayout();
+    }
+
+    /**
+     * The model getters are resolved once and cached, so a host whose model is implemented by other
+     * classes has to re-resolve them: the first host's Method invoked on a foreign instance throws,
+     * and the bottom rail would fall back to elimination and be built as the toolbar.
+     */
+    @Test
+    void a_model_implemented_by_other_classes_is_read_with_its_own_getters() {
+        render(boundWindow(bar(SideValue.BOTTOM)));
+        assertThat(trim.bottom.getImpl()).isInstanceOf(DartStatusBar.class);
+
+        trim = new TrimmedPartLayout();
+        when(shell.getLayout()).thenReturn(trim);
+        OtherTrimBar bottom = new OtherTrimBar(SideValue.BOTTOM);
+        when(shell.getData("modelElement")).thenReturn(new OtherTrimmedWindow(bottom));
+        bottom.renderer = new Object();
+        bottom.widget = trim.getTrimComposite(shell, SWT.BOTTOM);
+
+        assertThat(trim.bottom.getImpl()).isInstanceOf(DartStatusBar.class);
+    }
+
     private void assertSidesBuiltAsTheirOwnImplementations() {
         assertThat(trim.top.getImpl()).isInstanceOf(DartMainToolbar.class);
         assertThat(trim.bottom.getImpl()).isInstanceOf(DartStatusBar.class);
@@ -189,6 +223,44 @@ class TrimSideClassificationNativeTest {
 
         public boolean isToBeRendered() {
             return toBeRendered;
+        }
+
+        public Object getRenderer() {
+            return renderer;
+        }
+
+        public Object getWidget() {
+            return widget;
+        }
+    }
+
+    /** A second host's {@code MTrimmedWindow}: the same duck type, an unrelated class. */
+    public static class OtherTrimmedWindow {
+
+        private final List<OtherTrimBar> bars;
+
+        OtherTrimmedWindow(OtherTrimBar... bars) {
+            this.bars = List.of(bars);
+        }
+
+        public List<OtherTrimBar> getTrimBars() {
+            return bars;
+        }
+    }
+
+    /** A second host's {@code MTrimBar}: the same duck type, an unrelated class. */
+    public static class OtherTrimBar {
+
+        private final SideValue side;
+        Object renderer;
+        Object widget;
+
+        OtherTrimBar(SideValue side) {
+            this.side = side;
+        }
+
+        public SideValue getSide() {
+            return side;
         }
 
         public Object getRenderer() {
