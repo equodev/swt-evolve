@@ -13,6 +13,8 @@ public final class MenuItemHelper {
      * listener applying the item it hears must hear the picked one last.
      */
     static void pick(DartMenuItem item, Event e) {
+        // The menus a click closed hide first, as natively.
+        dev.equo.swt.FlutterBridge.runHeld(item);
         MenuItem api = item.getApi();
         if ((api.getStyle() & SWT.CHECK) != 0) {
             item.setSelection(!item.getSelection());

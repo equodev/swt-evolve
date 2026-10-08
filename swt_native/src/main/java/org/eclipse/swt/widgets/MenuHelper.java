@@ -5,6 +5,12 @@ import dev.equo.swt.FlutterBridge;
 
 public class MenuHelper {
 
+    /** The {@code detail} of a client Hide sent because one of the menu's items was picked. */
+    static final int HIDDEN_BY_PICK = 1;
+
+    /** How long a pick's Hides wait for its Selection. */
+    private static final int PICK_TIMEOUT_MS = 500;
+
     /** Display data set while the last KeyDown was Alt and no other key has been pressed since. */
     private static final String ALT_ALONE = "org.eclipse.swt.internal.menuBarAltAlone";
 
@@ -16,8 +22,20 @@ public class MenuHelper {
                 menu.sendEvent(SWT.Help, e);
             });
         });
+        // A pick hides every open menu and then selects the item, as separate client messages, and
+        // other events can arrive between them. The picked item runs the held Hides just before its
+        // Selection, so whatever a Hide listener defers runs after it: JFace disposes a pull-down's
+        // proxy submenu, the picked item included, in an asyncExec from its Hide listener.
         FlutterBridge.on(menu, dev.equo.swt.WireTable.CHANNEL_MENU_HIDE, e -> {
-            menu.getDisplay().asyncExec(() -> onClientHid(menu, e));
+            if (e.detail != HIDDEN_BY_PICK) {
+                menu.getDisplay().asyncExec(() -> onClientHid(menu, e));
+                return;
+            }
+            e.detail = 0;
+            FlutterBridge.hold(menu, () -> onClientHid(menu, e));
+            // A pick whose Selection never arrives must not leave its menus shown.
+            Display display = menu.getDisplay();
+            display.asyncExec(() -> display.timerExec(PICK_TIMEOUT_MS, () -> FlutterBridge.runHeld(menu)));
         });
         FlutterBridge.on(menu, dev.equo.swt.WireTable.CHANNEL_MENU_SHOW, e -> {
             menu.getDisplay().asyncExec(() -> {

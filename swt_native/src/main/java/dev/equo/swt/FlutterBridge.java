@@ -1199,6 +1199,28 @@ public abstract class FlutterBridge {
         if (clock != null) clock.stamp(getDisplay(widget));
     }
 
+    /**
+     * Work held for a later step of the same client gesture, which runs it inline: a gesture the
+     * client reports as several messages natively happens in one turn of the event loop, but each
+     * message is queued on its own, and other events can be queued between them.
+     */
+    private final java.util.Queue<Runnable> held = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+    /** Holds {@code work} on {@code widget}'s bridge until {@link #runHeld} is called there; without a bridge, posts it. */
+    public static void hold(DartWidget widget, Runnable work) {
+        FlutterBridge bridge = widget.getBridge();
+        if (bridge == null) widget.getDisplay().asyncExec(work);
+        else bridge.held.add(work);
+    }
+
+    /** Runs, on the calling thread and in the order they were held, the work held on {@code widget}'s bridge. */
+    public static void runHeld(DartWidget widget) {
+        FlutterBridge bridge = widget.getBridge();
+        if (bridge == null) return;
+        Runnable work;
+        while ((work = bridge.held.poll()) != null) work.run();
+    }
+
     /** Registers {@code cb} for the events {@code widget}'s channel numbered {@code channel} carries. */
     public static void on(DartWidget widget, int channel, Consumer<Event> cb) {
         String name = ChannelHeader.name(channel);

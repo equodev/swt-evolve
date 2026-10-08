@@ -7,6 +7,7 @@ import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
 import '../comm/channel_header.dart';
 import '../comm/v_registry.dart';
+import '../gen/event.dart';
 import '../gen/menu.dart';
 import '../gen/widgets.dart' show WireChannel, WireType;
 import 'utils/window_origin.dart';
@@ -159,8 +160,15 @@ class OpenMenus {
   }
 }
 
+/// The Hide a menu sends as it closes. When an item pick closed it, the item's Selection follows,
+/// and the flag tells Java to run that Selection before whatever the Hide's listeners defer —
+/// natively both are dispatched in one turn of the event loop. Matches `MenuHelper.HIDDEN_BY_PICK`.
+VEvent? menuHideEvent({required bool picked}) => picked ? (VEvent()..detail = 1) : null;
+
 class MenuChangeNotifier extends InheritedWidget {
   final void Function(void Function()) registerPendingChange;
+  /// Whether an item pick is waiting to be sent once the menu has closed.
+  final bool Function()? hasPendingChange;
   final MenuState menuState;
   final VoidCallback closeMenu;
   // The item MenuItemImpl should build with this FocusNode (and autofocus: true) -- the menu's
@@ -177,6 +185,7 @@ class MenuChangeNotifier extends InheritedWidget {
   const MenuChangeNotifier({
     Key? key,
     required this.registerPendingChange,
+    this.hasPendingChange,
     required this.menuState,
     required this.closeMenu,
     this.autofocusItem,
@@ -486,6 +495,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
                 onClosed: (byKeyboard) => _onTitleClosed(index, byKeyboard),
                 onMoveTitle: (step) => _moveFromOpenTitle(index, step),
                 registerPendingChange: _registerPendingChange,
+                hasPendingChange: _hasPendingChange,
                 menuState: _menuState,
               ),
           ],
@@ -711,13 +721,14 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         // Sent whichever path opened it. A right-click leaves state.visible false, so gating this
         // on it left Java believing the popup was still up — and the Display skips re-showing a
         // popup it still counts as shown, which killed every later opening of that menu.
-        widget.sendMenuHide(state, null);
+        widget.sendMenuHide(state, menuHideEvent(picked: _pendingChanges.isNotEmpty));
         // A chosen item is selected after its menus are hidden, as natively.
         _sendPendingChanges();
       },
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
           registerPendingChange: _registerPendingChange,
+          hasPendingChange: _hasPendingChange,
           menuState: _menuState,
           closeMenu: _menuController.close,
           autofocusItem: _firstFocusableMenuItem(menuItems),
@@ -748,6 +759,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void _registerPendingChange(void Function() callback) {
     _pendingChanges.add(callback);
   }
+
+  bool _hasPendingChange() => _pendingChanges.isNotEmpty;
 
   /// The item MenuChangeNotifier.autofocusItem should point at: the first enabled, non-separator,
   /// non-cascade item, so a freshly-opened menu always has something keyboard-focused to
@@ -827,6 +840,7 @@ class _MenuBarItem extends StatefulWidget {
   /// Left (-1) or Right (1) in the open drop-down: the neighbouring title's drop-down takes its place.
   final void Function(int step) onMoveTitle;
   final void Function(void Function()) registerPendingChange;
+  final bool Function() hasPendingChange;
   final MenuState menuState;
 
   const _MenuBarItem({
@@ -842,6 +856,7 @@ class _MenuBarItem extends StatefulWidget {
     required this.onClosed,
     required this.onMoveTitle,
     required this.registerPendingChange,
+    required this.hasPendingChange,
     required this.menuState,
   });
 
@@ -953,7 +968,9 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     _closingFromKeyboard = false;
     _closingForNextTitle = false;
     final menu = widget.item.menu;
-    if (_shown && menu != null) MenuSwt<VMenu>(value: menu).sendMenuHide(menu, null);
+    if (_shown && menu != null) {
+      MenuSwt<VMenu>(value: menu).sendMenuHide(menu, menuHideEvent(picked: widget.hasPendingChange()));
+    }
     _shown = false;
     if (!forNextTitle) widget.onClosed(byKeyboard);
   }
@@ -1038,6 +1055,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
         menuChildren: [
           pointerInterceptor(MenuChangeNotifier(
             registerPendingChange: widget.registerPendingChange,
+            hasPendingChange: widget.hasPendingChange,
             menuState: widget.menuState,
             closeMenu: _subMenuController.close,
             child: Focus(

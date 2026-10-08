@@ -665,7 +665,9 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
     _focusFirstItemWhenFilled = false;
     if (!_shown) return;
     _shown = false;
-    MenuSwt<VMenu>(value: widget.subMenu).sendMenuHide(widget.subMenu, null);
+    final picked = mounted &&
+        (context.getInheritedWidgetOfExactType<MenuChangeNotifier>()?.hasPendingChange?.call() ?? false);
+    MenuSwt<VMenu>(value: widget.subMenu).sendMenuHide(widget.subMenu, menuHideEvent(picked: picked));
   }
 
   void _requestItems() {
