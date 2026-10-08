@@ -366,7 +366,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   void _handleChevronShowList(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
     final RenderBox? box = buttonContext.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize) {
-      final Offset origin = box.localToGlobal(Offset.zero);
+      // Measured against the overlay showMenu places the list in, not the view: the app's zoom
+      // Transform sits above that overlay, so the two spaces differ once SWT asks for a zoom.
+      final overlayBox = Navigator.of(buttonContext).overlay?.context.findRenderObject();
+      final Offset origin = box.localToGlobal(Offset.zero,
+          ancestor: overlayBox is RenderBox ? overlayBox : null);
       _chevronButtonRect = origin & box.size;
     } else {
       _chevronButtonRect = null;
