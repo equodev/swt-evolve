@@ -17,7 +17,7 @@ import java.util.Arrays;
  * for each Modify while the selection is changed from the keyboard and while text is typed. Every
  * event is printed with a [repro] prefix. Run with {@code --drive} to send the keys with
  * java.awt.Robot. For the native baseline, call
- * Config.forceEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
  */
 public class CComboModifySnippet {
     static final String[] ITEMS = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};

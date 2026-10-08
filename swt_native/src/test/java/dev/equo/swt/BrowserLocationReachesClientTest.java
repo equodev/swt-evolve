@@ -28,9 +28,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * it has to reach the client as well. A report the client sends for the page before a {@code setUrl}
  * can land after it, and the url sent then is that older page's; the client keeps it until the next
  * change is sent, which has to be the report of the page that did load.
- *
- * <p>Lives in {@code dev.equo.swt} for {@link Config#resetForceEclipse()}, as
- * {@link BrowserNavigateReplayTest} does.
  */
 @ExtendWith(Mocks.class)
 class BrowserLocationReachesClientTest {
@@ -44,7 +41,6 @@ class BrowserLocationReachesClientTest {
 
     @BeforeEach
     void setUp() {
-        Config.resetForceEclipse();
         Config.forceEquo();
         Config.useEquo(Browser.class);
         bridge = new RecordingBridge();

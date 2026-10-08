@@ -3,7 +3,6 @@ package dev.equo.jface;
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.equo.swt.Config;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -25,7 +24,6 @@ import org.eclipse.swt.widgets.Table;
 public class Snippet034CellEditorPerRow {
 
     public static void main(String[] args) {
-//        Config.forceEclipse();
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setLayout(new FillLayout());

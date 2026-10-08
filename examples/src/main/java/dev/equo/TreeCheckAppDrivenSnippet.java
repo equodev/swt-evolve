@@ -33,7 +33,7 @@ import java.util.List;
  * <p>The pane on the right prints the state the Java side holds for every item.
  *
  * <p>Run: {@code ./gradlew :examples:runDeskExample -PmainClass=dev.equo.TreeCheckAppDrivenSnippet}
- * <br>Swap Config.forceEquo() for Config.forceEclipse() (runEmbedExample) for the native baseline.
+ * <br>Swap Config.forceEquo() for Config.defaultToEclipse() (runEmbedExample) for the native baseline.
  */
 public class TreeCheckAppDrivenSnippet {
 

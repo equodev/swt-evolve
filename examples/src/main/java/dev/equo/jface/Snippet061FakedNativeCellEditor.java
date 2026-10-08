@@ -3,7 +3,6 @@ package dev.equo.jface;
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.equo.swt.Config;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.Util;
 import org.eclipse.jface.viewers.CellEditor;
@@ -44,7 +43,6 @@ public class Snippet061FakedNativeCellEditor {
 
     public static void main(String[] args) {
         try {
-//            Config.forceEclipse();
             Display display = new Display();
 
             Shell shell = new Shell(display);

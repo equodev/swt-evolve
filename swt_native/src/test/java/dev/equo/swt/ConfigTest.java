@@ -1,6 +1,8 @@
 package dev.equo.swt;
 
+import com.equo.chromium.swt.Browser;
 import org.eclipse.swt.custom.*;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -21,7 +23,6 @@ import static org.mockito.Mockito.*;
 public class ConfigTest {
 
     private static Config.Impl initialDefault;
-    private static boolean initialForceEclipse;
     /** The dev.equo.swt.* properties as this class found them: the test task sets some for every test. */
     private static Map<String, String> initialProperties;
 
@@ -30,7 +31,6 @@ public class ConfigTest {
         // Config's state is process-wide, and the per-test hooks below pin it. Restoring it after the
         // class keeps later test classes on the state they were written for.
         initialDefault = Config.defaultImpl;
-        initialForceEclipse = Config.forceEclipse;
         initialProperties = new HashMap<>();
         System.getProperties().forEach((k, v) -> {
             if (k.toString().startsWith(Config.PROPERTY_PREFIX)) initialProperties.put(k.toString(), v.toString());
@@ -55,7 +55,6 @@ public class ConfigTest {
     private static void restoreConfig() {
         // `equo` is Config's default; a class that ran earlier in this fork may have left `eclipse`.
         Config.defaultToEquo();
-        Config.forceEclipse = initialForceEclipse;
         // Config.reset() clears every dev.equo.swt.* property, the test task's included: put those back.
         Config.reset();
         initialProperties.forEach(System::setProperty);
@@ -117,12 +116,38 @@ public class ConfigTest {
     }
 
     @Test
-    void force_eclipse_beats_every_other_choice() {
+    void the_eclipse_default_hands_the_browser_to_chromium() {
+        Config.defaultToEclipse();
+        assertThat(Config.isEquo(Browser.class, null)).isFalse();
+    }
+
+    @Test
+    void the_eclipse_default_keeps_a_gc_without_a_dart_parent_native() {
+        Config.defaultToEclipse();
+        assertThat(Config.isEquoGC(GC.class, null)).isFalse();
+    }
+
+    @Test
+    void run_with_eclipse_default_restores_the_previous_default() {
         Config.forceEquo();
-        Config.useEquo(Button.class);
-        Config.forceEclipse();
-        assertThat(Config.isEquo(Button.class)).isFalse();
-        assertThat(Config.isEquo(Button.class, Mocks.shell())).isFalse();
+        boolean[] inside = new boolean[1];
+
+        Config.runWithEclipseDefault(() -> inside[0] = Config.isEquo(Button.class));
+
+        assertThat(inside[0]).isFalse();
+        assertThat(Config.defaultImpl).isEqualTo(Config.Impl.force_equo);
+    }
+
+    @Test
+    void run_with_eclipse_default_restores_the_previous_default_when_the_action_throws() {
+        try {
+            Config.runWithEclipseDefault(() -> {
+                throw new IllegalStateException();
+            });
+        } catch (IllegalStateException expected) {
+        }
+
+        assertThat(Config.defaultImpl).isEqualTo(Config.Impl.equo);
     }
 
     @Nested

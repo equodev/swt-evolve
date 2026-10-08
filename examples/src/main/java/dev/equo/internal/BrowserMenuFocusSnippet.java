@@ -52,7 +52,7 @@ public class BrowserMenuFocusSnippet {
 
     public static void main(String[] args) {
         if (Boolean.parseBoolean(System.getProperty("equo", "true"))) Config.forceEquo();
-        else Config.forceEclipse();
+        else Config.defaultToEclipse();
 
         Display display = new Display();
         Shell shell = new Shell(display);

@@ -16,7 +16,7 @@ import java.util.Arrays;
  * moves focus to the next control in the tab order (the Button). The same is repeated after clicking
  * the Text. The focus control is printed after each step with a [repro] prefix. Run with
  * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.forceEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
  */
 public class TabTraversalAfterSetFocusSnippet {
     public static void main(String[] args) throws Exception {

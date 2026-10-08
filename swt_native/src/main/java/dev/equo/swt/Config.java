@@ -34,7 +34,6 @@ public class Config {
 
     private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
     static final Map<Class<?>, Impl> equoEnabled;
-    static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
     static final boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
@@ -158,16 +157,19 @@ public class Config {
         defaultImpl = Impl.force_equo;
     }
 
-    public static void forceEclipse() {
-        forceEclipse = true;
-    }
-
-    static void resetForceEclipse() {
-        forceEclipse = false;
-    }
-
     public static void defaultToEclipse() {
         defaultImpl = Impl.eclipse;
+    }
+
+    /** Runs {@code action} with the eclipse default, then restores the previous default. */
+    static void runWithEclipseDefault(Runnable action) {
+        Impl previous = defaultImpl;
+        defaultImpl = Impl.eclipse;
+        try {
+            action.run();
+        } finally {
+            defaultImpl = previous;
+        }
     }
 
     public static void useEquo(Class<?> clazz) {
@@ -190,7 +192,6 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
-        if (forceEclipse) return false;
         // Per-widget override
         Impl forced = isForced(clazz);
         if (forced != null)
@@ -233,7 +234,6 @@ public class Config {
     }
 
     public static boolean isEquoGC(Class<?> clazz, Drawable parent) {
-        if (forceEclipse) return false;
         // Per-widget override
         Impl forced = isForced(clazz);
         if (forced != null)
@@ -290,8 +290,6 @@ public class Config {
             widgetTracker = new IdWidgetTracker();
             widgetTracker.startTracking();
         }
-
-        if (forceEclipse) return false;
 
         // Per-id override
         if (parent instanceof Composite) { Composite c = (Composite) parent;
@@ -1287,7 +1285,6 @@ public class Config {
         buffer.append("sideBarImpl=").append(sideBarImpl).append("\n");
         buffer.append("statusBarImpl=").append(statusBarImpl).append("\n");
         buffer.append("mainCompositeImpl=").append(mainCompositeImpl).append("\n");
-        buffer.append("forceEclipse=").append(forceEclipse).append("\n");
         System.getProperties().forEach((k, v) -> {
             if (k.toString().startsWith(PROPERTY_PREFIX))
                 buffer.append(k).append("=").append(v).append("\n");

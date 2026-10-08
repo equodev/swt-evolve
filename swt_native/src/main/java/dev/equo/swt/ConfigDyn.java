@@ -29,7 +29,7 @@ public class ConfigDyn {
         // Config.isEquo(Class, Widget) (ancestor and caller heuristics) would otherwise pull them
         // into Dart inside an otherwise native tree. An explicit per-widget override still wins,
         // as it does for every other widget.
-        if (forceEclipse || (defaultImpl == Impl.eclipse && isForced(Composite.class) != Impl.equo))
+        if (defaultImpl == Impl.eclipse && isForced(Composite.class) != Impl.equo)
             return new SwtComposite(parent, style, composite);
         if (Config.isEquo(composite.getClass(), parent)) {
             IWidget island = swingIslandFor(parent, style, composite);

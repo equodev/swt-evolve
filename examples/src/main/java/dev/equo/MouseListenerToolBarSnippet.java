@@ -26,14 +26,14 @@ import org.eclipse.swt.widgets.Shell;
  * holding a child Label, and a childless Canvas that paints its own caption. Each keeps an
  * activation counter — the counter, not the drawing, is what the two shapes disagree about. The
  * log on the right shows the payload every listener actually received; run with
- * {@code -Ddev.equo.swt.forceEclipse=true} to read the same log off native SWT.
+ * {@code -Ddev.equo.swt.default=eclipse} to read the same log off native SWT.
  */
 public class MouseListenerToolBarSnippet {
 
     private static List log;
 
     public static void main(String[] args) {
-        if (!Boolean.getBoolean("dev.equo.swt.forceEclipse")) Config.forceEquo();
+        if (!"eclipse".equals(System.getProperty("dev.equo.swt.default"))) Config.forceEquo();
 
         Display display = new Display();
         Shell shell = new Shell(display, SWT.SHELL_TRIM);

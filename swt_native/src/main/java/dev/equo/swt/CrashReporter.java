@@ -117,8 +117,6 @@ public class CrashReporter {
             File crashLog = writeCrashLog(throwable);
             File eclipseLog = findEclipseLog();
 
-            Config.forceEclipse();
-
             Display display = Display.getCurrent();
             if (display == null) display = Display.getDefault();
 
@@ -151,7 +149,7 @@ public class CrashReporter {
 
     private static void showDialog(Display display, File crashLog, File eclipseLog) {
         try {
-            new CrashDialog(display, crashLog, eclipseLog).open();
+            Config.runWithEclipseDefault(() -> new CrashDialog(display, crashLog, eclipseLog).open());
         } catch (Throwable t) {
             printFallback(null, crashLog);
         }
@@ -465,13 +463,12 @@ public class CrashReporter {
         File mostRecent = crashFiles.get(0);
 
         try {
-            Config.forceEclipse();
             File eclipseLog = findEclipseLog();
-            new CrashDialog(display, mostRecent, eclipseLog, CrashDialog.CrashType.NATIVE).open();
+            Config.runWithEclipseDefault(() ->
+                    new CrashDialog(display, mostRecent, eclipseLog, CrashDialog.CrashType.NATIVE).open());
         } catch (Throwable t) {
             System.err.println("[CrashReporter] Failed to show native crash dialog: " + t);
         } finally {
-            Config.resetForceEclipse();
             // Move all found crash files to ~/.equo/
             for (File file : crashFiles) {
                 moveToEquoDir(file);
@@ -481,12 +478,10 @@ public class CrashReporter {
 
     private static void showAbnormalExitDialog(Display display, File eclipseLog) {
         try {
-            Config.forceEclipse();
-            new CrashDialog(display, null, eclipseLog, CrashDialog.CrashType.ABNORMAL_EXIT).open();
+            Config.runWithEclipseDefault(() ->
+                    new CrashDialog(display, null, eclipseLog, CrashDialog.CrashType.ABNORMAL_EXIT).open());
         } catch (Throwable t) {
             System.err.println("[CrashReporter] Failed to show abnormal exit dialog: " + t);
-        } finally {
-            Config.resetForceEclipse();
         }
     }
 

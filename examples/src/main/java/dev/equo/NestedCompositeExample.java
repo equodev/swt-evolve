@@ -13,7 +13,6 @@ public class NestedCompositeExample {
 
     public static void main(String[] args) {
         Config.forceEquo();
-//        Config.forceEclipse();
         System.setProperty("dev.equo.swt.Composite", "equo");
         Display display = new Display();
         Shell shell = new Shell(display);

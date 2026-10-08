@@ -17,7 +17,7 @@ import java.util.Arrays;
  * Alt+Down and F4 open the list, and Enter fires DefaultSelection. After every step the Combo's
  * selection index, text and list visibility are printed. Every event is printed with a [repro] prefix.
  * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.forceEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
  */
 public class ComboKeyboardSnippet {
     static final String[] ITEMS = {"Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"};

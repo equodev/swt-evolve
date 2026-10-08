@@ -16,7 +16,7 @@ import java.util.Arrays;
  * MOD1+Shift+C for Copy; MOD1 is Command on Cocoa, Ctrl elsewhere) fires Selection on that item.
  * Every event is printed with a [repro] prefix.
  * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.forceEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
  */
 public class MenuAcceleratorSnippet {
     /** The key SWT.MOD1 stands for: Command on Cocoa, Ctrl elsewhere. */

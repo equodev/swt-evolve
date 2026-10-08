@@ -33,11 +33,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * the op has seen no seq at all and so accepts it, while one that did drops it as stale — which is
  * what keeps the replay from reloading a page that is already there, throwing away everything it did
  * after {@code completed}. These tests drive that request directly through the recording comm.
- *
- * <p>Lives in {@code dev.equo.swt} for {@link Config#resetForceEclipse()}: that flag short-circuits
- * every impl decision, is package-private to reset, and is left set by anything exercising
- * {@code CrashReporter} — which, given the test-class order varies, otherwise makes this class
- * observe a non-Dart Browser at random.
  */
 @ExtendWith(Mocks.class)
 class BrowserNavigateReplayTest {
@@ -50,7 +45,6 @@ class BrowserNavigateReplayTest {
     // "eclipse" instead would silently change what classes running afterwards resolve to.
     @BeforeEach
     void setUp() {
-        Config.resetForceEclipse();
         Config.forceEquo();
         Config.useEquo(Browser.class);
         bridge = new RecordingBridge();

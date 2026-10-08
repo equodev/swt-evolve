@@ -41,7 +41,7 @@ import org.eclipse.swt.widgets.TreeItem;
 public class SwingDropFromTreeSnippet {
 
     public static void main(String[] args) {
-        if (args.length > 0 && args[0].equals("eclipse")) Config.forceEclipse();
+        if (args.length > 0 && args[0].equals("eclipse")) Config.defaultToEclipse();
         else Config.forceEquo();
 
         Display display = new Display();

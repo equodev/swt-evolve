@@ -11,7 +11,6 @@ public class CanvasExample {
     static int y = 50;
 
     public static void main(String[] args) {
-//        Config.forceEclipse();
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("Canvas GC Example");

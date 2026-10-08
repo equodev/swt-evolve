@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.Shell;
  *
  * <p>Run: {@code ./gradlew :examples:runDeskExample -PmainClass=dev.equo.ImageProcessingSnippet}
  * <br>Web: {@code ./gradlew :examples:runWebExample -PmainClass=dev.equo.ImageProcessingSnippet}
- * <br>Native oracle: swap {@link Config#forceEquo()} for {@link Config#forceEclipse()}.
+ * <br>Native oracle: swap {@link Config#forceEquo()} for {@link Config#defaultToEclipse()}.
  */
 public class ImageProcessingSnippet {
 

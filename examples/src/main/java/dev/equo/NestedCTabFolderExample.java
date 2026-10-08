@@ -1,6 +1,5 @@
 package dev.equo;
 
-import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
@@ -14,7 +13,6 @@ import org.eclipse.swt.widgets.Shell;
 public class NestedCTabFolderExample {
 
     public static void main(String[] args) {
-//        Config.forceEclipse();
         System.setProperty("dev.equo.swt.debug", "true");
         Display display = new Display();
         Shell shell = new Shell(display);

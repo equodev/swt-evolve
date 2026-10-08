@@ -47,7 +47,6 @@ public class CustomSashLayoutExample {
 
     public static void main(String[] args) {
         System.setProperty("dev.equo.swt.debug", "true");
-//        Config.forceEclipse();
         Config.forceEquo();
         Display display = new Display();
         Shell shell = new Shell(display);

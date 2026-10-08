@@ -22,7 +22,7 @@ import org.eclipse.swt.widgets.Shell;
  * on the image with nothing else visible -- a solid slab where the Canvas sits means the GC erase
  * resolved to a color instead of staying transparent for the image painted underneath.
  *
- * Swap Config.forceEquo() for Config.forceEclipse() (runEmbedExample) for the native baseline.
+ * Swap Config.forceEquo() for Config.defaultToEclipse() (runEmbedExample) for the native baseline.
  */
 public class CanvasPaintListenerInheritedImageSnippet {
 

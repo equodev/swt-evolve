@@ -25,7 +25,7 @@ import java.util.List;
  * checkbox whose appearance lags behind its state is readable without a reference screenshot.
  *
  * <p>Run: {@code ./gradlew :examples:runDeskExample -PmainClass=dev.equo.jface.ContainerCheckedTreeSnippet}
- * <br>Swap Config.forceEquo() for Config.forceEclipse() (runEmbedExample) for the native baseline.
+ * <br>Swap Config.forceEquo() for Config.defaultToEclipse() (runEmbedExample) for the native baseline.
  */
 public class ContainerCheckedTreeSnippet {
 

@@ -16,7 +16,7 @@ import java.util.Arrays;
  * (Apps) key fires MenuDetect with detail MENU_KEYBOARD and shows the menu; arrows then arm items,
  * Enter selects one and a mnemonic letter selects its item. Every event is printed with a [repro] prefix.
  * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.forceEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
  */
 public class ContextMenuKeyboardSnippet {
     public static void main(String[] args) throws Exception {

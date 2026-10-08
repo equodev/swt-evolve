@@ -28,7 +28,7 @@ public class JFaceTableWithCellEditorsSnippet {
     static final String[] ROLES = {"Developer", "Designer", "Manager", "QA"};
 
     public static void main(String[] args) {
-        Config.forceEclipse();
+        Config.defaultToEclipse();
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("JFace Table - Cell Editors");

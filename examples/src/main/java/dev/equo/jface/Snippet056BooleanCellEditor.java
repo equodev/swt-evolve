@@ -140,7 +140,7 @@ public class Snippet056BooleanCellEditor {
     }
 
     public static void main(String[] args) {
-        Config.forceEclipse();
+        Config.defaultToEclipse();
         Display display = new Display();
 
         Shell shell = new Shell(display);

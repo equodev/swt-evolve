@@ -13,7 +13,6 @@ import org.eclipse.swt.widgets.*;
 public class CursorHoverExample {
 
     public static void main(String[] args) {
-        Config.forceEclipse();
         Config.defaultToEclipse();
         Display display = new Display();
         Shell shell = new Shell(display);
