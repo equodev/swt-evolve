@@ -915,6 +915,7 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void makeKeyAndOrderFront() {
+        ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         boolean wasActive = display.getActiveShell() == this.getApi();
         _takeFocusHolder(true);
         if (!isDisposed() && !wasActive) {
@@ -954,6 +955,7 @@ public class DartShell extends DartDecorations implements IShell {
             updateModal();
         }
         bringToTop(false);
+        ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         Shell prevActiveShell = display.getActiveShell();
         setWindowVisible(true, true);
         if (isDisposed())

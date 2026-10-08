@@ -1038,7 +1038,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return shell;
             }
         }
-        Shell[] currentShells = getShells();
+        Shell[] currentShells = shellsInDrawOrder();
         for (int i = currentShells.length - 1; i >= 0; i--) {
             if (canBeActiveShell(currentShells[i])) {
                 return currentShells[i];
@@ -4094,6 +4094,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         System.arraycopy(shells, 0, newShells, 0, shells.length);
         newShells[shells.length] = shell;
         shells = newShells;
+        Shell[] newDrawOrder = new Shell[drawOrder.length + 1];
+        System.arraycopy(drawOrder, 0, newDrawOrder, 0, drawOrder.length);
+        newDrawOrder[drawOrder.length] = shell;
+        drawOrder = newDrawOrder;
     }
 
     void removeShell(Shell shell) {
@@ -4105,6 +4109,39 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         for (Shell s : shells) if (s != shell)
             newShells[i++] = s;
         shells = newShells;
+        Shell[] newDrawOrder = new Shell[count];
+        i = 0;
+        for (Shell s : drawOrder) if (s != shell)
+            newDrawOrder[i++] = s;
+        drawOrder = newDrawOrder;
+    }
+
+    Shell[] drawOrder = new Shell[0];
+
+    public Shell[] shellsInDrawOrder() {
+        return drawOrder.clone();
+    }
+
+    void raiseShell(Shell shell) {
+        Shell[] newDrawOrder = new Shell[drawOrder.length];
+        int i = 0;
+        for (Shell s : drawOrder) if (!ownedBy(s, shell))
+            newDrawOrder[i++] = s;
+        for (Shell s : drawOrder) if (ownedBy(s, shell))
+            newDrawOrder[i++] = s;
+        if (java.util.Arrays.equals(newDrawOrder, drawOrder))
+            return;
+        drawOrder = newDrawOrder;
+        if (displayBridge != null)
+            displayBridge.sendDisplayUpdate(this);
+    }
+
+    private static boolean ownedBy(Shell s, Shell owner) {
+        for (Control c = s; c != null; c = ((DartControl) c.getImpl()).parent) {
+            if (c == owner)
+                return true;
+        }
+        return false;
     }
 
     Map<Runnable, TimerTask> _timerExecTasks = new HashMap<>();

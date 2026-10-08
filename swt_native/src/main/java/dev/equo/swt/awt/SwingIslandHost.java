@@ -39,9 +39,10 @@ import dev.equo.swt.comm.CommService;
  * <p>Every other window the engine shows is a request to the mirror bundle on the client, which
  * may route it to a Shell of its own ({@link #SURFACE_EVENT}): Java builds that Shell, holding a
  * {@link SwingIsland} bound to the engine's existing window, and leaves its close and its teardown
- * to that bundle. Such a Shell stays in the Display's window whatever {@link WindowPolicy} says:
- * a Shell in a window of its own is drawn by another Flutter client, which has no mirror of the
- * engine's window to show. An application {@link WindowPolicy.Resolver} still outranks that.
+ * to that bundle. A modal window's Shell is {@code APPLICATION_MODAL}, and stays on top of any modal
+ * Shell opened after it (see {@link #listen}). Such a Shell stays in the Display's window whatever
+ * {@link WindowPolicy} says: a Shell in a window of its own is drawn by another Flutter client,
+ * which has no mirror of the engine's window to show. An application {@link WindowPolicy.Resolver} still outranks that.
  *
  * <p>Reaches the engine by reflection only. {@code swt_native} compiles against nothing of
  * swing-evolve, which a host puts on its classpath (and its {@code -javaagent}) at runtime.
@@ -58,8 +59,8 @@ public final class SwingIslandHost {
 
     /**
      * The mirror bundle asks for a Shell for one of the engine's windows: its windowId, the engine's
-     * port, its kind ({@code frame}, {@code dialog} or {@code window}), title, resizability, the
-     * nearest island or Shell'd window in its owner chain ({@code hostOwnerId}, 0 for none), Java's
+     * port, its kind ({@code frame}, {@code dialog} or {@code window}), title, resizability,
+     * modality, the nearest island or Shell'd window in its owner chain ({@code hostOwnerId}, 0 for none), Java's
      * x/y, its size, and its offset from that owner ({@code dx}/{@code dy}) when known.
      */
     static final String SURFACE_EVENT = "swingIsland.surface";
@@ -69,6 +70,9 @@ public final class SwingIslandHost {
 
     /** Java resized the window, and its Shell follows: {@code {windowId, w, h}}. */
     static final String RESIZE_EVENT = "swingIsland.resize";
+
+    /** Java retitled the window, and its Shell follows: {@code {windowId, title}}. */
+    static final String TITLE_EVENT = "swingIsland.title";
 
     /** The Shell built for a window is open: {@code {windowId}}, to the bundle. */
     static final String OPENED_EVENT = "swingIsland.opened";
@@ -137,10 +141,23 @@ public final class SwingIslandHost {
         child.addListener(SWT.Dispose, e -> islands.remove(windowId, child));
     }
 
-    /** Answers the mirror bundle's Shell requests on {@code comm}, once per Display. */
+    /**
+     * Answers the mirror bundle's Shell requests on {@code comm}, once per Display.
+     *
+     * <p>Also raises a modal window's Shell back over a modal Shell opened after it: the newest modal
+     * Shell is drawn on top with the client's modal scrim under it, and would cover a window that
+     * AWT, not SWT, blocks.
+     */
     static void listen(Display display, CommService comm) {
         if (display.getData(LISTENING_KEY) != null) return;
         display.setData(LISTENING_KEY, Boolean.TRUE);
+        display.addFilter(SWT.Show, e -> {
+            if (e.widget instanceof Shell && isModal((Shell) e.widget)) {
+                Shell shown = (Shell) e.widget;
+                // Deferred until open() has activated and focused it.
+                onDisplay(display, () -> raiseModalSurfaceOver(display, shown));
+            }
+        });
         comm.on(SURFACE_EVENT, Object.class, p -> {
             if (p instanceof Map) onDisplay(display, () -> openSurface(display, comm, (Map<?, ?>) p));
         });
@@ -157,6 +174,39 @@ public final class SwingIslandHost {
                 if (shell != null) setClientSize(shell, intOf(resize, "w"), intOf(resize, "h"));
             });
         });
+        comm.on(TITLE_EVENT, Object.class, p -> {
+            if (p instanceof Map) onDisplay(display, () -> {
+                Map<?, ?> title = (Map<?, ?>) p;
+                Shell shell = surfaceShell(display, intOf(title, "windowId"));
+                if (shell != null) shell.setText(textOf(title, "title"));
+            });
+        });
+    }
+
+    private static boolean isModal(Shell shell) {
+        return (shell.getStyle() & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL | SWT.PRIMARY_MODAL)) != 0;
+    }
+
+    /** Raises the newest open modal Shell built for a window, which {@code shown}, just opened, covers. */
+    private static void raiseModalSurfaceOver(Display display, Shell shown) {
+        if (shown.isDisposed() || !shown.isVisible()) return;
+        Map<Integer, Shell> surfaces = registry(display, SURFACES_KEY);
+        if (surfaces.containsValue(shown)) return;
+        Shell covered = null;
+        for (Shell shell : display.getShells()) {
+            if (surfaces.containsValue(shell) && !shell.isDisposed() && shell.isVisible() && isModal(shell)
+                    && !isDescendant(shown, shell)) {
+                covered = shell;
+            }
+        }
+        if (covered != null) covered.setActive();
+    }
+
+    private static boolean isDescendant(Shell shell, Shell ancestor) {
+        for (Composite c = shell.getParent(); c != null; c = c.getParent()) {
+            if (c == ancestor) return true;
+        }
+        return false;
     }
 
     private static void setClientSize(Shell shell, int width, int height) {
@@ -194,12 +244,15 @@ public final class SwingIslandHost {
         if ("frame".equals(kind)) {
             shell = new Shell(display, resizable ? SWT.SHELL_TRIM : SWT.SHELL_TRIM & ~(SWT.RESIZE | SWT.MAX));
         } else {
-            int style = "dialog".equals(kind) ? SWT.DIALOG_TRIM | (resizable ? SWT.RESIZE : 0) : SWT.NO_TRIM;
+            // Swing's document and toolkit modality collapse to APPLICATION_MODAL.
+            int style = "dialog".equals(kind)
+                    ? SWT.DIALOG_TRIM | (resizable ? SWT.RESIZE : 0)
+                            | (Boolean.TRUE.equals(request.get("modal")) ? SWT.APPLICATION_MODAL : 0)
+                    : SWT.NO_TRIM;
             shell = parent != null ? new Shell(parent, style) : new Shell(display, style);
         }
         shell.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
-        Object title = request.get("title");
-        shell.setText(title == null ? "" : title.toString());
+        shell.setText(textOf(request, "title"));
         shell.setLayout(new FillLayout());
         SwingIsland island = new SwingIsland(shell, SWT.NONE);
 
@@ -235,6 +288,11 @@ public final class SwingIslandHost {
         if (parent == null) return new Point(intOf(request, "x"), intOf(request, "y"));
         Rectangle bounds = parent.getBounds();
         return new Point(bounds.x + (bounds.width - size.x) / 2, bounds.y + (bounds.height - size.y) / 2);
+    }
+
+    private static String textOf(Map<?, ?> request, String key) {
+        Object value = request.get(key);
+        return value == null ? "" : value.toString();
     }
 
     private static int intOf(Map<?, ?> request, String key) {

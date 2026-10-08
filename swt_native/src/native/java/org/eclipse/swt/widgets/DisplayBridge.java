@@ -524,7 +524,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         DartDisplay display = forDisplay;
         if (display == null || point == null)
             return;
-        Shell[] shells = display.getShells();
+        Shell[] shells = display.shellsInDrawOrder();
         // Drawn in this order, so the last one containing the point is the one in front.
         for (int i = shells.length - 1; i >= 0; i--) {
             Shell shell = shells[i];

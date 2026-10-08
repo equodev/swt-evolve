@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.eclipse.swt.SWT;
@@ -13,7 +15,9 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DartDisplay;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +31,7 @@ import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * A secondary Swing window the client's mirror bundle routes to a Shell of its own: Java builds
@@ -256,6 +261,88 @@ class SwingIslandSurfaceTest {
         Rectangle bounds = dialog.getBounds();
         assertThat(new Point(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2))
                 .isEqualTo(new Point(500, 400));
+    }
+
+    @Test
+    @DisplayName("a modal dialog's Shell blocks the rest of the application")
+    void modalDialog() {
+        Shell main = new Shell(display);
+        main.open();
+        Map<String, Object> request = request(5, "dialog", 0);
+        request.put("modal", true);
+
+        Shell dialog = open(request);
+
+        assertThat(dialog.getStyle() & SWT.APPLICATION_MODAL).isNotZero();
+    }
+
+    @Test
+    @DisplayName("a modeless dialog's Shell blocks nothing")
+    void modelessDialog() {
+        Shell dialog = open(request(5, "dialog", 0));
+
+        assertThat(dialog.getStyle() & (SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL | SWT.SYSTEM_MODAL)).isZero();
+    }
+
+    @Test
+    @DisplayName("a Shell takes the title Java gives its window afterwards")
+    void titleFollowsJava() {
+        Shell shell = open(request(9, "frame", 0));
+
+        bridge.comm.fireContaining(SwingIslandHost.TITLE_EVENT, Map.of("windowId", 9, "title", "Properties (edited)"));
+        drain();
+
+        assertThat(shell.getText()).isEqualTo("Properties (edited)");
+    }
+
+    /**
+     * An application may block SWT itself while a modal AWT dialog is up: once the dialog shows, it
+     * opens an invisible modal Shell and swallows the activation of every Shell already visible,
+     * raising the dialog instead.
+     *
+     * <p>The dialog's input goes to the engine through its mirror, past SWT's own modality checks;
+     * what stops it is the client's modal scrim, drawn under the last modal Shell in the Display's
+     * order. So "takes input" is: drawn last of the modal Shells, and active.
+     */
+    @Test
+    @DisplayName("a modal dialog's Shell stays on top of, and takes input over, an application's own SWT blocker")
+    void modalDialogOverApplicationBlocker() {
+        Shell main = new Shell(display);
+        main.open();
+        Map<String, Object> request = request(5, "dialog", 0);
+        request.put("modal", true);
+        Shell dialog = open(request);
+
+        Set<Shell> visibleAtStart = Arrays.stream(display.getShells()).filter(Shell::isVisible)
+                .collect(Collectors.toSet());
+        AtomicInteger depth = new AtomicInteger();
+        AtomicInteger raises = new AtomicInteger();
+        Listener blockActivation = e -> {
+            if (!visibleAtStart.contains(e.widget)) return;
+            e.type = SWT.None;
+            if (depth.incrementAndGet() > 1) fail("raising the dialog activated a Shell again");
+            if (raises.incrementAndGet() > 10) fail("the dialog is raised over and over");
+            dialog.forceActive();
+            depth.decrementAndGet();
+        };
+        display.addFilter(SWT.Activate, blockActivation);
+        Shell limbo = new Shell(display);
+        limbo.setBounds(0, 10000, 0, 0);
+        Shell blocker = new Shell(limbo, SWT.APPLICATION_MODAL);
+        blocker.setBounds(0, 0, 2, 2);
+        blocker.setAlpha(0);
+        blocker.open();
+        drain();
+
+        Shell[] drawOrder = ((DartDisplay) display.getImpl()).shellsInDrawOrder();
+        Shell topModal = Arrays.stream(drawOrder)
+                .filter(s -> s.isVisible() && (s.getStyle() & SWT.APPLICATION_MODAL) != 0)
+                .reduce((first, second) -> second).orElseThrow();
+        assertThat(topModal).as("drawn last of the modal Shells, so the client's modal scrim is under it")
+                .isSameAs(dialog);
+        assertThat(display.getActiveShell()).isSameAs(dialog);
+        assertThat(raises.get()).isLessThanOrEqualTo(1);
+        display.removeFilter(SWT.Activate, blockActivation);
     }
 
     @Test

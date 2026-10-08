@@ -61,8 +61,8 @@ public class VDisplay {
         // delivered, and from then on named rather than described. A hidden shell is most of the
         // trim during startup, which is why the client was being handed names for toolbars and menu
         // items it had never been given. Whether a shell is drawn is decided from its own visible
-        // flag, on the side that draws.
-        Shell[] all = display._shells();
+        // flag, on the side that draws. In the order the client draws them, bottom first.
+        Shell[] all = display.shellsInDrawOrder();
         ArrayList<Shell> live = new ArrayList<>();
         for (Shell s : all) {
             if (s != null && !s.isDisposed()) {

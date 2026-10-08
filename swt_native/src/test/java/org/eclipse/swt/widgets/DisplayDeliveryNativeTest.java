@@ -10,6 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,6 +87,49 @@ class DisplayDeliveryNativeTest {
         assertThat(latestDisplayState(web))
                 .as("keyboard focus follows the active shell, so the client has to know which it is")
                 .contains("\"activeShellId\":" + second.hashCode());
+    }
+
+    @Test
+    @DisplayName("a shell made active is drawn above the shells opened after it")
+    void activatedShellIsRaised() {
+        TestWebBridge web = install();
+        Shell first = new Shell(display);
+        first.open();
+        Shell second = new Shell(display);
+        second.open();
+
+        first.setActive();
+
+        assertThat(shellOrder(web)).containsExactly(second.hashCode(), first.hashCode());
+    }
+
+    @Test
+    @DisplayName("a raised shell keeps its own shells above it")
+    void raisedShellKeepsItsChildrenAbove() {
+        TestWebBridge web = install();
+        Shell first = new Shell(display);
+        first.open();
+        Shell child = new Shell(first);
+        child.open();
+        Shell second = new Shell(display);
+        second.open();
+
+        first.forceActive();
+
+        assertThat(shellOrder(web)).containsExactly(second.hashCode(), first.hashCode(), child.hashCode());
+    }
+
+    @Test
+    @DisplayName("a shell opened after a later one is drawn above it")
+    void openedShellIsRaised() {
+        TestWebBridge web = install();
+        Shell first = new Shell(display);
+        Shell second = new Shell(display);
+        second.open();
+
+        first.open();
+
+        assertThat(shellOrder(web)).containsExactly(second.hashCode(), first.hashCode());
     }
 
     @Test
@@ -184,6 +229,15 @@ class DisplayDeliveryNativeTest {
         List<RecordingComm.Frame> frames = displayFrames(web);
         assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
         return frames.get(frames.size() - 1).json;
+    }
+
+    /** The ids of the Display's shells in the order the client draws them, bottom first. */
+    private List<Integer> shellOrder(TestWebBridge web) {
+        String state = latestDisplayState(web);
+        return Arrays.stream(display.getShells())
+                .map(Shell::hashCode)
+                .sorted(Comparator.comparingInt(id -> state.indexOf("\"id\":" + id)))
+                .toList();
     }
 
     @Test
