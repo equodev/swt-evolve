@@ -1,7 +1,8 @@
 /// An SWT_AWT island under swing-evolve's engine. Java describes the composite `SWT_AWT.new_Frame`
 /// creates as a "SwingIsland" and, asked, answers with the AWT frame's windowId and the engine's
 /// port, or a negative one when the engine's traffic rides Evolve's own connection; the mirror of
-/// that window comes from [swingMirrorBuilder].
+/// that window comes from [swingMirrorBuilder]. The same region fills a Shell Java built for one of
+/// the engine's secondary windows, which Java's answer marks as a surface.
 ///
 /// Evolve does not depend on swing-evolve. A host whose Flutter bundle includes swing-evolve's
 /// package sets [swingMirrorBuilder] at startup; while it is null the island renders empty, which
@@ -30,7 +31,8 @@ import '../impl/key_forwarding.dart';
 /// The AWT window an island mirrors, as Java described it.
 @immutable
 class SwingIslandWindow {
-  const SwingIslandWindow({required this.windowId, required this.port, required this.focused});
+  const SwingIslandWindow(
+      {required this.windowId, required this.port, required this.focused, this.surface = false});
 
   /// The engine's id of the frame `SWT_AWT.new_Frame` returned.
   final int windowId;
@@ -44,6 +46,9 @@ class SwingIslandWindow {
 
   /// True while the island holds focus: the mirror claims keys and Java's window gains focus.
   final ValueListenable<bool> focused;
+
+  /// Whether the window is a secondary one with a Shell of its own, rather than an island's frame.
+  final bool surface;
 }
 
 /// Builds the mirror of [window] inside an island.
@@ -97,6 +102,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
   final ValueNotifier<bool> _focused = ValueNotifier(false);
   int? _windowId;
   int? _port;
+  bool _surface = false;
   Object? _token;
 
   String get _askChannel => '${widget.channel}/${SwingIslandRegion.ask}';
@@ -121,6 +127,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     setState(() {
       _windowId = windowId;
       _port = port;
+      _surface = decoded['surface'] == true;
     });
   }
 
@@ -168,7 +175,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
         onPointerDown: (_) => _node.requestFocus(),
         child: builder(
           context,
-          SwingIslandWindow(windowId: windowId, port: port, focused: _focused),
+          SwingIslandWindow(windowId: windowId, port: port, focused: _focused, surface: _surface),
         ),
       ),
     );

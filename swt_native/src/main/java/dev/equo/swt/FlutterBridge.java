@@ -1394,6 +1394,15 @@ public abstract class FlutterBridge {
         }
     }
 
+    /** Sends {@code args} on {@code comm} under {@code eventName}, a channel no widget owns. */
+    public static void send(CommService comm, String eventName, Object args) {
+        try {
+            serializeAndSend(comm, eventName, args);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void send(DartWidget resource, String event, Object args) {
         CommService comm = commFor(resource);
         if (dirty.contains(resource)) {

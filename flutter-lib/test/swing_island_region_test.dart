@@ -49,10 +49,12 @@ VComposite _island() => VComposite()
     ..height = 300);
 
 /// What Java sends on the island's channel once the frame exists.
-void _answerIsland({int port = enginePort}) {
+void _answerIsland({int port = enginePort, bool surface = false}) {
   const channel = 'SwingIsland/$islandId/swingIsland';
   final actionBytes = utf8.encode(channel);
-  final bodyBytes = utf8.encode(json.encode({'windowId': windowId, 'port': port}));
+  final bodyBytes = utf8.encode(
+    json.encode({'windowId': windowId, 'port': port, if (surface) 'surface': true}),
+  );
   final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;
@@ -120,6 +122,20 @@ void main() {
     expect(mirror.window.windowId, windowId);
     expect(mirror.window.port, enginePort);
     expect(mirror.window.overEvolveConnection, isFalse);
+  });
+
+  testWidgets('a window with a Shell of its own is told apart from an island\'s frame', (
+    tester,
+  ) async {
+    await _pumpIsland(tester, <String>[]);
+    _answerIsland();
+    await tester.pumpAndSettle();
+    expect(tester.widget<_Mirror>(find.byType(_Mirror)).window.surface, isFalse);
+
+    _answerIsland(surface: true);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<_Mirror>(find.byType(_Mirror)).window.surface, isTrue);
   });
 
   testWidgets('an engine with no port of its own is reached over Evolve\'s connection', (

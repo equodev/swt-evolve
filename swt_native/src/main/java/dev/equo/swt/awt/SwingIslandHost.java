@@ -3,19 +3,24 @@ package dev.equo.swt.awt;
 import java.awt.Frame;
 import java.awt.Window;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartSwingIsland;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.SwingIsland;
+import dev.equo.swt.WindowPolicy;
 import dev.equo.swt.comm.CommService;
 
 /**
@@ -31,6 +36,13 @@ import dev.equo.swt.comm.CommService;
  * none of {@link EvolveSwingHost}'s toolkit set-up applies: with fake peers AWT makes no AppKit
  * call.
  *
+ * <p>Every other window the engine shows is a request to the mirror bundle on the client, which
+ * may route it to a Shell of its own ({@link #SURFACE_EVENT}): Java builds that Shell, holding a
+ * {@link SwingIsland} bound to the engine's existing window, and leaves its close and its teardown
+ * to that bundle. Such a Shell stays in the Display's window whatever {@link WindowPolicy} says:
+ * a Shell in a window of its own is drawn by another Flutter client, which has no mirror of the
+ * engine's window to show. An application {@link WindowPolicy.Resolver} still outranks that.
+ *
  * <p>Reaches the engine by reflection only. {@code swt_native} compiles against nothing of
  * swing-evolve, which a host puts on its classpath (and its {@code -javaagent}) at runtime.
  */
@@ -44,6 +56,35 @@ public final class SwingIslandHost {
     /** The event the region asks on and is answered on: {@code SwingIsland/<id>/swingIsland}. */
     static final String ISLAND_EVENT = "swingIsland";
 
+    /**
+     * The mirror bundle asks for a Shell for one of the engine's windows: its windowId, the engine's
+     * port, its kind ({@code frame}, {@code dialog} or {@code window}), title, resizability, the
+     * nearest island or Shell'd window in its owner chain ({@code hostOwnerId}, 0 for none), Java's
+     * x/y, its size, and its offset from that owner ({@code dx}/{@code dy}) when known.
+     */
+    static final String SURFACE_EVENT = "swingIsland.surface";
+
+    /** The mirror bundle tears a Shell down: {@code {windowId}}. */
+    static final String DISPOSE_EVENT = "swingIsland.dispose";
+
+    /** Java resized the window, and its Shell follows: {@code {windowId, w, h}}. */
+    static final String RESIZE_EVENT = "swingIsland.resize";
+
+    /** The Shell built for a window is open: {@code {windowId}}, to the bundle. */
+    static final String OPENED_EVENT = "swingIsland.opened";
+
+    /** The person closed a Shell, which Java's window decides: {@code {windowId}}, to the bundle. */
+    static final String CLOSE_EVENT = "swingIsland.close";
+
+    /** The Display's islands and Shell'd windows, by windowId. */
+    private static final String ISLANDS_KEY = SwingIslandHost.class.getName() + ".islands";
+
+    /** The Display's Shells built for the mirror bundle, by windowId. */
+    private static final String SURFACES_KEY = SwingIslandHost.class.getName() + ".surfaces";
+
+    /** Set on a Display whose comm answers the bundle's Shell requests. */
+    private static final String LISTENING_KEY = SwingIslandHost.class.getName() + ".listening";
+
     public static Frame newFrame(Composite parent) {
         if (parent == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
         parent.setLayout(new FillLayout());
@@ -53,7 +94,6 @@ public final class SwingIslandHost {
             throw new IllegalStateException("swing-evolve's engine owns AWT but " + parent
                     + " is not a Dart widget, so it cannot host a Swing island");
         }
-        DartSwingIsland island = (DartSwingIsland) child.getImpl();
         parent.layout(true);
 
         // Shown on the calling (SWT) thread, where the blit path built its frame too. It opens at
@@ -65,11 +105,10 @@ public final class SwingIslandHost {
         frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
         frame.setVisible(true);
 
-        Map<String, Object> info = describe(frame, FlutterBridge.commFor(island));
-        // The region asks when it mounts (it may not exist yet, and a push nobody listens to is
-        // dropped) and is answered on its own channel; the push covers a region already there.
-        FlutterBridge.onPayload(island, ISLAND_EVENT, p -> FlutterBridge.send(island, ISLAND_EVENT, info));
-        FlutterBridge.send(island, ISLAND_EVENT, info);
+        CommService comm = FlutterBridge.commFor(child.getImpl());
+        int[] window = describe(frame, comm);
+        listen(parent.getDisplay(), comm);
+        mount(child, window[0], window[1], false);
 
         // The child goes with the EMBEDDED composite, so this covers the parent's dispose too.
         child.addListener(SWT.Dispose, e -> frame.dispose());
@@ -77,8 +116,144 @@ public final class SwingIslandHost {
         return frame;
     }
 
+    /**
+     * Tells {@code child}'s region which window it mirrors: {@code windowId} on the engine at
+     * {@code port}, and with {@code surface} that the window has a Shell of its own rather than
+     * being an island.
+     */
+    static void mount(SwingIsland child, int windowId, int port, boolean surface) {
+        DartSwingIsland island = (DartSwingIsland) child.getImpl();
+        Map<String, Object> info = new LinkedHashMap<>();
+        info.put("windowId", windowId);
+        info.put("port", port);
+        if (surface) info.put("surface", true);
+        // The region asks when it mounts (it may not exist yet, and a push nobody listens to is
+        // dropped) and is answered on its own channel; the push covers a region already there.
+        FlutterBridge.onPayload(island, ISLAND_EVENT, p -> FlutterBridge.send(island, ISLAND_EVENT, info));
+        FlutterBridge.send(island, ISLAND_EVENT, info);
+
+        Map<Integer, SwingIsland> islands = registry(child.getDisplay(), ISLANDS_KEY);
+        islands.put(windowId, child);
+        child.addListener(SWT.Dispose, e -> islands.remove(windowId, child));
+    }
+
+    /** Answers the mirror bundle's Shell requests on {@code comm}, once per Display. */
+    static void listen(Display display, CommService comm) {
+        if (display.getData(LISTENING_KEY) != null) return;
+        display.setData(LISTENING_KEY, Boolean.TRUE);
+        comm.on(SURFACE_EVENT, Object.class, p -> {
+            if (p instanceof Map) onDisplay(display, () -> openSurface(display, comm, (Map<?, ?>) p));
+        });
+        comm.on(DISPOSE_EVENT, Object.class, p -> {
+            if (p instanceof Map) onDisplay(display, () -> {
+                Shell shell = surfaceShell(display, intOf((Map<?, ?>) p, "windowId"));
+                if (shell != null) shell.dispose();
+            });
+        });
+        comm.on(RESIZE_EVENT, Object.class, p -> {
+            if (p instanceof Map) onDisplay(display, () -> {
+                Map<?, ?> resize = (Map<?, ?>) p;
+                Shell shell = surfaceShell(display, intOf(resize, "windowId"));
+                if (shell != null) setClientSize(shell, intOf(resize, "w"), intOf(resize, "h"));
+            });
+        });
+    }
+
+    private static void setClientSize(Shell shell, int width, int height) {
+        Rectangle area = shell.getClientArea();
+        if (area.width == width && area.height == height) return;
+        Rectangle trim = shell.computeTrim(0, 0, width, height);
+        shell.setSize(trim.width, trim.height);
+    }
+
+    /** The Shell built for {@code windowId}, or null. */
+    static Shell surfaceShell(Display display, int windowId) {
+        Map<Integer, Shell> surfaces = registry(display, SURFACES_KEY);
+        Shell shell = surfaces.get(windowId);
+        return shell == null || shell.isDisposed() ? null : shell;
+    }
+
+    private static void onDisplay(Display display, Runnable task) {
+        if (!display.isDisposed()) display.asyncExec(() -> {
+            if (!display.isDisposed()) task.run();
+        });
+    }
+
+    private static void openSurface(Display display, CommService comm, Map<?, ?> request) {
+        int windowId = intOf(request, "windowId");
+        Shell previous = surfaceShell(display, windowId);
+        if (previous != null) previous.dispose();
+
+        Map<Integer, SwingIsland> islands = registry(display, ISLANDS_KEY);
+        SwingIsland owner = islands.get(intOf(request, "hostOwnerId"));
+        if (owner != null && owner.isDisposed()) owner = null;
+        Shell parent = owner != null ? owner.getShell() : display.getActiveShell();
+        String kind = String.valueOf(request.get("kind"));
+        boolean resizable = Boolean.TRUE.equals(request.get("resizable"));
+        Shell shell;
+        if ("frame".equals(kind)) {
+            shell = new Shell(display, resizable ? SWT.SHELL_TRIM : SWT.SHELL_TRIM & ~(SWT.RESIZE | SWT.MAX));
+        } else {
+            int style = "dialog".equals(kind) ? SWT.DIALOG_TRIM | (resizable ? SWT.RESIZE : 0) : SWT.NO_TRIM;
+            shell = parent != null ? new Shell(parent, style) : new Shell(display, style);
+        }
+        shell.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        Object title = request.get("title");
+        shell.setText(title == null ? "" : title.toString());
+        shell.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(shell, SWT.NONE);
+
+        setClientSize(shell, intOf(request, "w"), intOf(request, "h"));
+        shell.setLocation(locationOf(request, kind, owner, parent, shell.getSize()));
+
+        Map<Integer, Shell> surfaces = registry(display, SURFACES_KEY);
+        surfaces.put(windowId, shell);
+        shell.addListener(SWT.Dispose, e -> surfaces.remove(windowId, shell));
+        // Java's window decides its own close: a DO_NOTHING_ON_CLOSE one stays, a validating one
+        // may refuse. Only the mirror bundle's teardown, once Java has hidden it, disposes the Shell.
+        shell.addListener(SWT.Close, e -> {
+            e.doit = false;
+            FlutterBridge.send(comm, CLOSE_EVENT, Map.of("windowId", windowId));
+        });
+        mount(island, windowId, intOf(request, "port"), true);
+        shell.layout(true);
+        shell.open();
+        FlutterBridge.send(comm, OPENED_EVENT, Map.of("windowId", windowId));
+    }
+
+    /**
+     * A top-level frame keeps its own position, which is in the Evolve view's coordinates; a window
+     * whose offset from its island or Shell'd owner is known keeps that offset; any other is
+     * centred on its parent.
+     */
+    private static Point locationOf(Map<?, ?> request, String kind, SwingIsland owner, Shell parent,
+            Point size) {
+        if ("frame".equals(kind)) return new Point(intOf(request, "x"), intOf(request, "y"));
+        if (owner != null && request.get("dx") instanceof Number && request.get("dy") instanceof Number) {
+            return owner.toDisplay(intOf(request, "dx"), intOf(request, "dy"));
+        }
+        if (parent == null) return new Point(intOf(request, "x"), intOf(request, "y"));
+        Rectangle bounds = parent.getBounds();
+        return new Point(bounds.x + (bounds.width - size.x) / 2, bounds.y + (bounds.height - size.y) / 2);
+    }
+
+    private static int intOf(Map<?, ?> request, String key) {
+        Object value = request.get(key);
+        return value instanceof Number ? (int) Math.round(((Number) value).doubleValue()) : 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Map<Integer, T> registry(Display display, String key) {
+        Object registry = display.getData(key);
+        if (registry == null) {
+            registry = new HashMap<Integer, T>();
+            display.setData(key, registry);
+        }
+        return (Map<Integer, T>) registry;
+    }
+
     /** The frame's {@code windowId} and the engine's comm port, which is all the region needs. */
-    private static Map<String, Object> describe(Frame frame, CommService displayComm) {
+    private static int[] describe(Frame frame, CommService displayComm) {
         EngineCalls calls = EngineCalls.INSTANCE;
         if (calls.unavailable != null) throw new IllegalStateException(calls.unavailable, calls.cause);
         try {
@@ -91,10 +266,7 @@ public final class SwingIslandHost {
                 throw new IllegalStateException("swing-evolve's engine has no socket of its own and no "
                         + SwingIslandTransport.class.getName() + " carries its traffic over this Display's connection");
             }
-            Map<String, Object> info = new LinkedHashMap<>();
-            info.put("windowId", windowId);
-            info.put("port", port);
-            return info;
+            return new int[] {windowId, port};
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(NOT_CALLABLE, e);
         }
