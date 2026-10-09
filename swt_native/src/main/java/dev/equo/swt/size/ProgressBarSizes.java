@@ -29,10 +29,18 @@ public class ProgressBarSizes {
     }
 
     static class VERTICAL {
-        static final double MIN_WIDTH = 200.0;
-        static final double MIN_HEIGHT = 20.0;
+        static final double MIN_WIDTH = 20.0;
+        static final double MIN_HEIGHT = 200.0;
 
         private VERTICAL() {
+        }
+    }
+
+    static class VERTICAL_SMOOTH {
+        static final double MIN_WIDTH = 20.0;
+        static final double MIN_HEIGHT = 200.0;
+
+        private VERTICAL_SMOOTH() {
         }
     }
 
@@ -47,10 +55,13 @@ public class ProgressBarSizes {
 
         double width, height;
 
-        if (hasFlags(style, SWT.VERTICAL)) {
+        if (hasFlags(style, (SWT.VERTICAL | SWT.SMOOTH)) || hasFlags(style, (SWT.VERTICAL | SWT.INDETERMINATE))) {
+            width = wHint != SWT.DEFAULT ? wHint : VERTICAL_SMOOTH.MIN_WIDTH;
+            height = hHint != SWT.DEFAULT ? hHint : VERTICAL_SMOOTH.MIN_HEIGHT;
+        } else if (hasFlags(style, SWT.VERTICAL)) {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
-        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, HORIZONTAL|INDETERMINATE, VERTICAL|SMOOTH, VERTICAL|INDETERMINATE
+        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, HORIZONTAL|INDETERMINATE
             width = wHint != SWT.DEFAULT ? wHint : HORIZONTAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : HORIZONTAL.MIN_HEIGHT;
         }

@@ -15200,29 +15200,29 @@
         {
           "discoveredComponents": {},
           "expectedComponents": {},
-          "height": 20.0,
+          "height": 200.0,
           "name": "ProgressBar_VERTICAL_",
           "style": "VERTICAL",
           "useFontTheme": false,
-          "width": 200.0
+          "width": 20.0
         },
         {
           "discoveredComponents": {},
           "expectedComponents": {},
-          "height": 20.0,
+          "height": 200.0,
           "name": "ProgressBar_VERTICAL|SMOOTH_",
           "style": "VERTICAL|SMOOTH",
           "useFontTheme": false,
-          "width": 200.0
+          "width": 20.0
         },
         {
           "discoveredComponents": {},
           "expectedComponents": {},
-          "height": 20.0,
+          "height": 200.0,
           "name": "ProgressBar_VERTICAL|INDETERMINATE_",
           "style": "VERTICAL|INDETERMINATE",
           "useFontTheme": false,
-          "width": 200.0
+          "width": 20.0
         }
       ]
     },
