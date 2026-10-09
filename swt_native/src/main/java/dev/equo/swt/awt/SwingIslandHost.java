@@ -116,9 +116,41 @@ public final class SwingIslandHost {
         mount(child, window[0], window[1], false);
 
         // The child goes with the EMBEDDED composite, so this covers the parent's dispose too.
-        child.addListener(SWT.Dispose, e -> frame.dispose());
+        child.addListener(SWT.Dispose, e -> {
+            frame.dispose();
+            dropFromAwtShutdown(frame);
+        });
         parent.setData(EMBEDDED_FRAME_KEY, frame);
         return frame;
+    }
+
+    /**
+     * Drops a disposed island frame from {@code sun.awt.AWTAutoShutdown}'s peer map.
+     *
+     * <p>swing-evolve's engine gives every AWT window a fake peer and registers it with
+     * AWTAutoShutdown — so the JVM stays alive while a window is shown — but never unregisters it,
+     * on hide or on dispose. A disposed frame's stale registration keeps the peer map non-empty, so
+     * the non-daemon AWT event thread never auto-shuts-down and the JVM does not exit once the
+     * Display is gone. Remove the entry here, the way the engine's peer would.
+     *
+     * <p>Reflective because AWTAutoShutdown's {@code getPeer}/{@code unregisterPeer} are
+     * package-private; the engine's own launch flags open {@code sun.awt}. Fails closed: if it
+     * cannot reach them the JVM lingers exactly as it did before, no worse.
+     */
+    private static void dropFromAwtShutdown(Frame frame) {
+        try {
+            Class<?> autoShutdown = Class.forName("sun.awt.AWTAutoShutdown");
+            Object instance = autoShutdown.getMethod("getInstance").invoke(null);
+            Method getPeer = autoShutdown.getDeclaredMethod("getPeer", Object.class);
+            getPeer.setAccessible(true);
+            Object peer = getPeer.invoke(instance, frame);
+            if (peer == null) return;
+            Method unregisterPeer = autoShutdown.getDeclaredMethod("unregisterPeer", Object.class, Object.class);
+            unregisterPeer.setAccessible(true);
+            unregisterPeer.invoke(instance, frame, peer);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError unreachable) {
+            // Without the hook AWT shuts down (or not) exactly as it would have.
+        }
     }
 
     /**
