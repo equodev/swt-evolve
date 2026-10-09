@@ -147,6 +147,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 

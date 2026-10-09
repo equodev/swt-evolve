@@ -162,6 +162,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 

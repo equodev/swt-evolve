@@ -518,6 +518,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 

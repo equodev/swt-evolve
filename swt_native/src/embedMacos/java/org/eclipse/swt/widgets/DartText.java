@@ -336,6 +336,7 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
