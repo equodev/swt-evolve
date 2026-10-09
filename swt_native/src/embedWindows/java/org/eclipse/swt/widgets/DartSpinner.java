@@ -593,11 +593,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setMaximum(int value) {
-        getValue().markDirty(VSpinner.MAXIMUM);
         checkWidget();
         if (value < this.minimum)
             return;
+        int pos = getSelection();
+        getValue().markDirty(VSpinner.MAXIMUM);
         this.maximum = value;
+        if (pos > value)
+            setSelection(value, true, true, false);
     }
 
     /**
@@ -614,11 +617,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setMinimum(int value) {
-        getValue().markDirty(VSpinner.MINIMUM);
         checkWidget();
         if (value > this.maximum)
             return;
+        int pos = getSelection();
+        getValue().markDirty(VSpinner.MINIMUM);
         this.minimum = value;
+        if (pos < value)
+            setSelection(value, true, true, false);
     }
 
     /**
