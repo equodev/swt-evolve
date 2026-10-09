@@ -780,7 +780,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     boolean isValidThread() {

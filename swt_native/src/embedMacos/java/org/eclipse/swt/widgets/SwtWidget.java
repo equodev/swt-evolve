@@ -1250,7 +1250,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     boolean isValidThread() {

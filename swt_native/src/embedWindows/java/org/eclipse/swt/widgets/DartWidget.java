@@ -823,7 +823,7 @@ public abstract class DartWidget implements IWidget {
  * @return <code>true</code> when subclassing is allowed and <code>false</code> otherwise
  */
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     /*
