@@ -111,11 +111,12 @@ class TextImpl<T extends TextSwt, V extends VText>
       );
 
       if (state.selection != null) {
-        final newSelection = TextSelection(
-          baseOffset: state.selection!.x,
-          extentOffset: state.selection!.y,
+        // The selection Java last sent may belong to a longer text.
+        final end = newText.length;
+        _controller.selection = TextSelection(
+          baseOffset: state.selection!.x.clamp(0, end),
+          extentOffset: state.selection!.y.clamp(0, end),
         );
-        _controller.selection = newSelection;
       }
     }
 
