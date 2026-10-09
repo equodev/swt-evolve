@@ -242,6 +242,23 @@ class TextEventsFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("an edit is answered when only a Display filter watches Verify")
+    void editIsAnsweredWhenOnlyADisplayFilterWatches() {
+        Text text = text(SWT.SINGLE, "old");
+        DartDisplay impl = dartDisplay();
+        when(impl.filters(SWT.Verify)).thenReturn(true);
+        try {
+            fromFlutter(text, "Modify/Modify", event("typed", 5, 5));
+            runQueued();
+        } finally {
+            when(impl.filters(SWT.Verify)).thenReturn(false);
+        }
+
+        assertThat(text.getText()).isEqualTo("typed");
+        assertThat(verdicts()).singleElement().asString().contains("true");
+    }
+
+    @Test
     @DisplayName("a segment request from Flutter reaches the segment listeners")
     void segmentRequestReachesListeners() {
         Text text = text(SWT.SINGLE, "abc");
