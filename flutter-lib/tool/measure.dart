@@ -2193,9 +2193,15 @@ class WidgetMeasurer {
     );
 
     // Both paint their text without the '&' that marks a mnemonic, so that is the text to measure.
-    final drawnText = widgetType == 'Label' || widgetType == 'Button'
-        ? 'Mnemonics.display(widget.getText())'
-        : 'widget.getText()';
+    // A Label shows its text or its image, whichever was set last, and measures only that one.
+    final drawnText = switch (widgetType) {
+      'Label' => 'Mnemonics.display(widget._displayedText())',
+      'Button' => 'Mnemonics.display(widget.getText())',
+      _ => 'widget.getText()',
+    };
+    final drawnImage = widgetType == 'Label'
+        ? 'widget._displayedImage()'
+        : 'widget.getImage()';
 
     // Generate computeSize method (public API)
     buffer.writeln(
@@ -2650,7 +2656,7 @@ class WidgetMeasurer {
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
-        buffer.writeln('        Image image = widget.getImage();');
+        buffer.writeln('        Image image = $drawnImage;');
         buffer.writeln('        if (image != null) {');
         buffer.writeln(
           '            return ImageMetricUtil.getImageSize(image.getImageData());',

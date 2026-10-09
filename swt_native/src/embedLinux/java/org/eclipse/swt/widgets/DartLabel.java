@@ -530,6 +530,14 @@ public class DartLabel extends DartControl implements ILabel {
         return text;
     }
 
+    public String _displayedText() {
+        return getText();
+    }
+
+    public Image _displayedImage() {
+        return image;
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

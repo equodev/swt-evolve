@@ -297,6 +297,7 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public void setImage(Image image) {
         getValue().markDirty(VLabel.IMAGE);
+        getValue().markDirty(VLabel.TEXT);
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
@@ -370,6 +371,14 @@ public class DartLabel extends DartControl implements ILabel {
 
     public boolean _isImage() {
         return isImage;
+    }
+
+    public String _displayedText() {
+        return isImage || (getApi().style & SWT.SEPARATOR) != 0 ? "" : text;
+    }
+
+    public Image _displayedImage() {
+        return isImage ? image : null;
     }
 
     protected void _hookEvents() {
