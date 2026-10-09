@@ -36,6 +36,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** Last control the client was asked to focus, so one focus move is not sent twice: a single
      *  {@code Control.forceFocus()} reaches {@link #setFocus} again through the shell's restoreFocus. */
     private DartControl focusRequested = null;
+
+    /**
+     * The control the client was last asked to focus and has not reported back yet, or null.
+     *
+     * <p>The client reports its focus as it changes, so a report can already be in flight when Java
+     * asks for a different control. That report still names the control the client had before the
+     * request; applying it moves the focus straight back off the one just asked for.
+     */
+    private DartControl pendingClientFocus = null;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
 
@@ -1057,6 +1066,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Control api = widget == null ? null : widget.getApi();
         if (api != null && !api.isDisposed() && !api.isEnabled())
             return;
+        if (reportPrecedesPendingRequest(widget))
+            return;
         focusRequested = widget;
         setFocus(widget);
     }
@@ -1146,6 +1157,21 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <p>A focus that started on the client comes back through here too (the FocusIn handler tracks
      * it the same way); the cell-editor guard below is what keeps that from re-pushing anything.
      */
+    /**
+     * Whether {@code widget} names the focus the client held before the request it has not answered
+     * yet, in which case the report is older than the request and applying it would undo it. Only the
+     * one report in flight is dropped: the request stops standing either way, so a client that never
+     * honours it cannot freeze focus tracking.
+     */
+    private boolean reportPrecedesPendingRequest(DartControl widget) {
+        DartControl pending = pendingClientFocus;
+        pendingClientFocus = null;
+        if (pending == null || pending == widget)
+            return false;
+        Control api = pending.getApi();
+        return api != null && !api.isDisposed();
+    }
+
     private void requestClientFocus(DartControl widget, boolean always) {
         Control api = widget == null ? null : widget.getApi();
         if (api == null || api.isDisposed())
@@ -1155,6 +1181,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (widget == focusRequested)
             return;
         focusRequested = widget;
+        pendingClientFocus = widget;
         long id = FlutterBridge.id(widget);
         FlutterBridge.update().whenComplete((result, error) -> {
             try {

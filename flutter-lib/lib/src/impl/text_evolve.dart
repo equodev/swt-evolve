@@ -330,11 +330,16 @@ class TextImpl<T extends TextSwt, V extends VText>
   ) {
     final constraints = getConstraintsFromBounds(state.bounds);
 
-    if (hasValidBounds && constraints != null) {
-      return ConstrainedBox(constraints: constraints, child: textField);
-    }
-
-    return IntrinsicWidth(child: textField);
+    // The wrapper's type must not depend on whether the bounds have arrived: a cell editor is
+    // created, focused, and only then placed, and swapping the wrapper when they land remounts the
+    // field, closing its input connection and dropping the keyboard. The constraints are tight, so
+    // the nested IntrinsicWidth changes no layout.
+    return ConstrainedBox(
+      constraints: hasValidBounds && constraints != null
+          ? constraints
+          : const BoxConstraints(),
+      child: IntrinsicWidth(child: textField),
+    );
   }
 
   static String? _obscuringCharacter(int? echoCharacter) {

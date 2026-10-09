@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Focus reports from the client that SWT would never act on: a shown popup menu takes the keyboard
- * without moving the focus control, and a disabled control never holds the focus.
+ * without moving the focus control, a disabled control never holds the focus, and a report that was
+ * already in flight when Java asked for a different control is older than that request.
  *
  * <pre>./gradlew :swt-evolve:swt_native:test --tests '*ClientFocusReportsFlutterTest'</pre>
  */
@@ -111,7 +112,62 @@ class ClientFocusReportsFlutterTest {
         assertThat(events).isEmpty();
     }
 
+    @Test
+    void aFocusReportOlderThanTheRequestItAnswersDoesNotUndoIt() {
+        web = install(TestWebBridge::new);
+        Shell shell = openBareShell();
+        Tree tree = new Tree(shell, SWT.NONE);
+        Text editor = cellEditorOn(newTable(shell), 0);
+        clientReports(tree, "Focus/FocusIn");
+
+        assertThat(editor.setFocus()).as("the editor accepts focus").isTrue();
+        // The report the client had already sent when the request went out: it still names the
+        // control the client held before being asked, so applying it moves focus straight back off
+        // the editor -- which closes it, the editor committing on focus lost.
+        clientReports(tree, "Focus/FocusIn");
+
+        assertThat(display.getFocusControl()).isSameAs(editor);
+    }
+
+    @Test
+    void onlyTheOneReportInFlightIsDroppedSoTheNextOneIsStillTracked() {
+        web = install(TestWebBridge::new);
+        Shell shell = openBareShell();
+        Tree tree = new Tree(shell, SWT.NONE);
+        Text editor = cellEditorOn(newTable(shell), 0);
+        clientReports(tree, "Focus/FocusIn");
+        editor.setFocus();
+        clientReports(tree, "Focus/FocusIn");
+
+        // A request stops standing once a report answers it, whichever control that report named.
+        clientReports(tree, "Focus/FocusIn");
+
+        assertThat(display.getFocusControl()).isSameAs(tree);
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
+
+    private Shell openBareShell() {
+        Shell bare = new Shell(display);
+        bare.setSize(400, 300);
+        bare.open();
+        return bare;
+    }
+
+    private static Table newTable(Shell parent) {
+        Table table = new Table(parent, SWT.NONE);
+        new TableColumn(table, SWT.NONE);
+        new TableItem(table, SWT.NONE);
+        return table;
+    }
+
+    /** See {@code ControlFocusRequestFlutterTest.cellEditorOn} -- the only shape focus is pushed for. */
+    private static Text cellEditorOn(Table table, int column) {
+        Text text = new Text(table, SWT.SINGLE);
+        org.eclipse.swt.custom.TableEditor editor = new org.eclipse.swt.custom.TableEditor(table);
+        editor.setEditor(text, table.getItem(0), column);
+        return text;
+    }
 
     private static String channel(Widget widget, String suffix) {
         return "/" + widget.hashCode() + "/" + suffix;

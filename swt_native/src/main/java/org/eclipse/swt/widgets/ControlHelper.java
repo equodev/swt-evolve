@@ -732,8 +732,17 @@ public class ControlHelper {
         }
     }
 
+    /**
+     * Whether [candidate] is [control] or one of its ancestors.
+     *
+     * A Deactivate listener runs application code and is free to dispose the controls these walks
+     * compare -- a cell editor commits and destroys itself on losing focus, while the chain it was
+     * found in is still being walked. A disposed control therefore ends the chain instead of
+     * raising: the chain it belonged to is gone, which is what a non-match already means to both
+     * callers.
+     */
     private static boolean isAncestorOfOrSame(Widget candidate, Control control) {
-        for (Control c = control; c != null; c = c.getParent())
+        for (Control c = control; c != null && !c.isDisposed(); c = c.getParent())
             if (c == candidate)
                 return true;
         return false;
