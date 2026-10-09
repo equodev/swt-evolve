@@ -75,6 +75,86 @@ public final class EvolveSwingHost {
 
     private static final AtomicBoolean TOOLKIT_STARTED = new AtomicBoolean(false);
 
+    private static final AtomicBoolean SWING_OPEN_TRIED = new AtomicBoolean(false);
+
+    private static final AtomicBoolean UNAVAILABLE_WARNED = new AtomicBoolean(false);
+
+    /**
+     * Whether the Swing bridge's restricted-package classes can actually be defined on this JVM.
+     *
+     * <p>{@code EvolveContent implements sun.swing.LightweightContent}, and from Java 17 on defining
+     * a class whose superinterface sits in a non-exported package fails at <em>class definition</em>
+     * with {@code IllegalAccessError}. Merely loading this host — which {@link dev.equo.swt.Jdk9}
+     * does to find {@code newFrame} — does not reach that definition, so it is not proof the bridge
+     * can run. This asks {@link #openSwingInternals()} to open the packages itself and then forces
+     * the content class to be defined; if it still cannot, the bridge degrades to {@code SWT_AWT}'s
+     * stock path instead of letting the error reach the host application's editor.</p>
+     */
+    public static boolean canHost() {
+        openSwingInternals();
+        try {
+            Class.forName("dev.equo.swt.awt.EvolveSwingHost$Host$EvolveContent");
+            return true;
+        } catch (ClassNotFoundException | LinkageError cannotDefine) {
+            warnUnavailable(cannotDefine);
+            return false;
+        }
+    }
+
+    /**
+     * Exports the JDK internals the bridge is built on — {@code java.desktop/sun.swing},
+     * {@code java.desktop/sun.awt} and {@code jdk.unsupported.desktop/jdk.swing.interop} — to this
+     * module, so that defining {@code EvolveContent implements sun.swing.LightweightContent} and
+     * using {@code JLightweightFrame}, {@code AWTAccessor} and the AWT dispatcher pass the JVM's
+     * access check. The command-line {@code --add-exports} for the same packages also works (all
+     * three live in boot-layer modules), so an app that already carries those flags needs none of
+     * this — it is the path for one that carries only {@code --add-opens=java.base/java.lang=ALL-UNNAMED}.
+     *
+     * <p>{@code Module.addExports} is caller-sensitive, so it goes through {@code implAddExports},
+     * which needs {@code java.lang} opened to us; that one flag works from the command line because
+     * {@code java.base} is always in the boot layer. Without it this is a no-op and {@link #canHost()}
+     * reports the bridge unavailable. Mirrors {@code FXCanvas.openFxInternals()} for JavaFX.</p>
+     */
+    static void openSwingInternals() {
+        if (!SWING_OPEN_TRIED.compareAndSet(false, true)) return;
+        try {
+            Method implAddExports = Module.class.getDeclaredMethod("implAddExports", String.class, Module.class);
+            implAddExports.setAccessible(true);
+            Module self = EvolveSwingHost.class.getModule();
+            selfExport(implAddExports, self, "java.desktop", "sun.swing", "sun.awt");
+            selfExport(implAddExports, self, "jdk.unsupported.desktop", "jdk.swing.interop");
+        } catch (Throwable notOpenable) {
+            // Left closed: canHost() reports it and SWT_AWT falls back. Enable with
+            // --add-opens=java.base/java.lang=ALL-UNNAMED.
+        }
+    }
+
+    private static void selfExport(Method implAddExports, Module self, String moduleName, String... pkgs)
+            throws ReflectiveOperationException {
+        // By boot-layer name, never a class literal: referencing a class in one of these packages
+        // would itself fail the access check we are here to remove.
+        Module owner = ModuleLayer.boot().findModule(moduleName).orElse(null);
+        if (owner == null || !owner.isNamed()) return; // not a modular JDK, or module absent/on classpath
+        for (String pkg : pkgs) {
+            if (owner.getPackages().contains(pkg) && !owner.isExported(pkg, self)) {
+                implAddExports.invoke(owner, pkg, self);
+            }
+        }
+    }
+
+    /** Explains the degraded (stock-path) Swing bridge once per JVM — otherwise it is undiagnosable. */
+    private static void warnUnavailable(Throwable cause) {
+        if (UNAVAILABLE_WARNED.compareAndSet(false, true)) {
+            System.err.println("[EvolveSwingHost] Swing embedding disabled — SWT_AWT falls back to its "
+                    + "stock path. The JDK internals the bridge needs (sun.swing, sun.awt) are not "
+                    + "reachable from this module. Add either "
+                    + "--add-exports=java.desktop/sun.swing=ALL-UNNAMED and "
+                    + "--add-exports=java.desktop/sun.awt=ALL-UNNAMED, or "
+                    + "--add-opens=java.base/java.lang=ALL-UNNAMED (which lets Evolve open them itself), "
+                    + "to the JVM command line. Cause: " + cause);
+        }
+    }
+
     /**
      * One paint-and-push callback per active embedding, keyed by its content root.
      * {@link JLightweightFrame}'s own repaint cycle only reacts to the lightweight tree, so a
@@ -94,6 +174,9 @@ public final class EvolveSwingHost {
         // Under swing-evolve's engine there is no LightweightFrame peer to blit from: the island
         // path replaces this one, toolkit set-up included.
         if (Config.hasSwingEngine()) return SwingIslandHost.newFrame(parent);
+        // Idempotent with the canHost() gate the Jdk9 guard already ran; keeps this method correct
+        // even if a caller reaches it without that gate.
+        openSwingInternals();
         startToolkit();
         installOutsideClickRepaintFilter(parent.getDisplay());
 

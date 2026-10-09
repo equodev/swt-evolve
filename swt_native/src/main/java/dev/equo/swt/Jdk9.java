@@ -35,6 +35,10 @@ final class Jdk9 {
         Class<?> host = load("dev.equo.swt.awt.EvolveSwingHost");
         if (host == null) return null;
         try {
+            // The sun.swing access check fires at class definition, which loading the host above did
+            // not reach; canHost() self-exports and forces that definition, so a false means stay on
+            // SWT_AWT's stock path rather than let IllegalAccessError reach the application.
+            if (!Boolean.TRUE.equals(host.getMethod("canHost").invoke(null))) return null;
             return host.getMethod("newFrame", Class.forName("org.eclipse.swt.widgets.Composite"));
         } catch (ReflectiveOperationException | LinkageError e) {
             return null;
