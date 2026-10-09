@@ -1638,6 +1638,24 @@ public abstract class FlutterBridge {
         return true;
     }
 
+    /**
+     * Whether {@code shell} may be sent {@code SWT.Activate} now, by a caller about to announce it as
+     * the shell that became active.
+     *
+     * <p>Natively that event is the OS making the shell's window the active one, and
+     * {@code Display.getActiveShell()} answers with that same window, so a listener told a shell is
+     * active always finds it active. Hence the same answer as {@link #hostsActiveWindow} by default; a
+     * surface that owns a top-level window overrides this to follow that window.
+     */
+    public boolean shellActivates(Shell shell) {
+        return hostsActiveWindow(shell);
+    }
+
+    /** Whether {@code shell} may be sent {@code SWT.Deactivate} now; see {@link #shellActivates}. */
+    public boolean shellDeactivates(Shell shell) {
+        return true;
+    }
+
     /** Screen position of the window content that hosts {@code control}: what a point at (0, 0) of its
      *  top-level shell maps to in display coordinates. */
     public Point getWindowOrigin(DartControl control) {

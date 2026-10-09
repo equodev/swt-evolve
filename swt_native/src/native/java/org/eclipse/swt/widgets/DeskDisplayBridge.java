@@ -141,6 +141,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             onWindowClosed();
         }
         pumpShellWindows();
+        followWindowActivation();
     }
 
     // ---- one native window per detached shell (see WindowPolicy) ----------------------------------
@@ -164,7 +165,13 @@ public class DeskDisplayBridge extends DisplayBridge {
         Rectangle bounds = shell.getBounds();
         int width = bounds.width > 0 ? bounds.width : 640;
         int height = bounds.height > 0 ? bounds.height : 480;
-        long context = openNativeWindow(shell.hashCode(), "Shell", width, height);
+        long context;
+        openingShellWindow = true;
+        try {
+            context = openNativeWindow(shell.hashCode(), "Shell", width, height);
+        } finally {
+            openingShellWindow = false;
+        }
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
         shellWindowsToPump.add(window);
@@ -360,6 +367,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         private boolean gone;
         /** A window is created showing, and is only told when that changes. */
         private boolean shown = true;
+        final WindowActivation activation = new WindowActivation();
 
         NativeShellWindow(Shell shell, long context) {
             this.shell = shell;
@@ -550,6 +558,8 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public void destroy(DartWidget control) {
+        if (control instanceof DartShell)
+            forgetActivation((Shell) ((DartShell) control).getApi());
         super.destroy(control);
         if (closingOnRequest && control instanceof DartShell && hasNativeWindow()
                 && forDisplay != null && mainShell(forDisplay) == null) {
@@ -627,6 +637,8 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setVisible(DartControl control, boolean visible) {
         if (control instanceof DartShell) {
+            if (!visible)
+                forgetActivation((Shell) ((DartShell) control).getApi());
             if (visible) {
                 ((Shell) ((DartShell) control).getApi()).layout(true, true);
             }
@@ -664,6 +676,125 @@ public class DeskDisplayBridge extends DisplayBridge {
             if (w.shell == shell) return w.isActive();
         }
         return hasNativeWindow() && windowActive(windowContext);
+    }
+
+    /**
+     * What the shells of one native window have been told about activation: whether the window was
+     * the OS's active one when last looked at, and the shell in it sent SWT.Activate and no
+     * SWT.Deactivate since.
+     */
+    static final class WindowActivation {
+        boolean active;
+        Shell announced;
+    }
+
+    /** The Display's own window, which every shell without a window of its own is drawn into. */
+    private final WindowActivation mainWindowActivation = new WindowActivation();
+
+    /** Set while a detached shell's native window is being created; see {@link #followWindowActivation()}. */
+    private boolean openingShellWindow;
+
+    private WindowActivation activationOf(Shell shell) {
+        for (NativeShellWindow w : shellWindowsToPump) {
+            if (w.shell == shell) return w.activation;
+        }
+        return mainWindowActivation;
+    }
+
+    /**
+     * A shell is announced active only while its window is the OS's active one, and only once until
+     * it is announced inactive: natively SWT.Activate is the window becoming the key window, which a
+     * window that already is one does not do again, and getActiveShell() answers from that window.
+     */
+    @Override
+    public boolean shellActivates(Shell shell) {
+        if (!hostsActiveWindow(shell)) return false;
+        WindowActivation activation = activationOf(shell);
+        // Seen active here, so the next pass has no change of the window's left to announce.
+        activation.active = true;
+        if (activation.announced == shell) return false;
+        activation.announced = shell;
+        return true;
+    }
+
+    @Override
+    public boolean shellDeactivates(Shell shell) {
+        WindowActivation activation = activationOf(shell);
+        if (activation.announced == shell) {
+            activation.announced = null;
+            return true;
+        }
+        // Nothing to withdraw from a shell whose window the OS is not giving the keyboard to: it was
+        // never told it is active.
+        return hostsActiveWindow(shell);
+    }
+
+    /** A hidden or disposed shell is not the one its window has announced active. */
+    private void forgetActivation(Shell shell) {
+        if (mainWindowActivation.announced == shell) mainWindowActivation.announced = null;
+        for (NativeShellWindow w : shellWindowsToPump) {
+            if (w.activation.announced == shell) w.activation.announced = null;
+        }
+    }
+
+    /**
+     * Announces what the OS did to each window since the last pass: the window becoming active is
+     * the shell getActiveShell() now reports becoming active, and the window stopping being active is
+     * the shell that was told it is active stopping being so.
+     */
+    private void followWindowActivation() {
+        // A pass that re-enters while a window is being opened leaves it to the next one: a listener
+        // reacting here would push the Display while that shell has no window yet, opening a second.
+        if (openingShellWindow) return;
+        followWindowActivation(mainWindowActivation, hasNativeWindow() && windowActive(windowContext));
+        for (NativeShellWindow w : new java.util.ArrayList<>(shellWindowsToPump)) {
+            followWindowActivation(w.activation, w.isActive());
+        }
+    }
+
+    private void followWindowActivation(WindowActivation activation, boolean active) {
+        if (active == activation.active) return;
+        activation.active = active;
+        if (active) {
+            // Nothing is announced while a window is not active, so whoever it reports now is news.
+            Shell shell = forDisplay.getApi().getActiveShell();
+            if (shell == null || activationOf(shell) != activation) return;
+            activation.announced = shell;
+            ((DartShell) shell.getImpl()).sendEvent(SWT.Activate);
+        } else {
+            // Never a disposed shell: destroy() forgets it first.
+            Shell shell = activation.announced;
+            activation.announced = null;
+            if (shell != null) ((DartShell) shell.getImpl()).sendEvent(SWT.Deactivate);
+        }
+    }
+
+    @Override
+    public void activateWindow(DartControl control) {
+        if (!(control instanceof DartShell)) return;
+        Shell shell = (Shell) ((DartShell) control).getApi();
+        // Only live windows are in the list: a window is dropped from it as it goes.
+        for (NativeShellWindow w : shellWindowsToPump) {
+            if (w.shell == shell) {
+                activateNativeWindow(w.context);
+                return;
+            }
+        }
+        if (hasNativeWindow()) activateNativeWindow(windowContext);
+    }
+
+    /** Whether the bridge library knows how to activate a window; see {@link #canAskWhetherActive}. */
+    private static boolean canActivate = true;
+
+    /** Test seam: asks the OS to make this native window the active one, its application frontmost. */
+    protected void activateNativeWindow(long context) {
+        if (!canActivate)
+            return;
+        try {
+            FlutterNative.activate(context);
+        } catch (UnsatisfiedLinkError builtBeforeThisCallExisted) {
+            canActivate = false;
+        }
     }
 
     /**

@@ -57,6 +57,7 @@ class FlutterSurface: NSObject {
     func setVisible(_ visible: Bool) {}
     func origin() -> (Int32, Int32)? { return nil }
     func isActive() -> Bool { return false }
+    func activate() {}
     func dispose() {}
 }
 
@@ -352,6 +353,15 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         return window?.isKeyWindow ?? false
     }
 
+    /// Shell.forceActive: what SWT's Cocoa backend does there -- make the window key and activate the
+    /// application, even while another one is in front. AppKit reports the result through
+    /// `windowDidBecomeKey`, possibly on a later turn of the run loop.
+    override func activate() {
+        guard let win = window else { return }
+        win.makeKeyAndOrderFront(nil)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+
     /// Where the window's CONTENT starts on screen, in the same top-left space setBounds takes.
     /// Content rather than frame, so the title bar is already accounted for and a caller converting
     /// a window-local point needs no further correction. Flips against the primary screen, the one
@@ -629,6 +639,11 @@ public func FlutterNative_getOrigin(env: UnsafeMutablePointer<JNIEnv?>, cls: jcl
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_IsActive")
 public func FlutterNative_isActive(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jboolean {
     return (surfaceFrom(context)?.isActive() ?? false) ? jboolean(1) : jboolean(0)
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_Activate")
+public func FlutterNative_activate(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) {
+    surfaceFrom(context)?.activate()
 }
 
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetVisible")

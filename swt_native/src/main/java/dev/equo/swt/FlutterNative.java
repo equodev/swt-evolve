@@ -139,6 +139,15 @@ public final class FlutterNative {
         return IsActive(context);
     }
 
+    /**
+     * Makes this surface's window the key or foreground window and brings the application forward,
+     * even from behind another application: what {@code Shell.forceActive()} asks of the OS. The
+     * window becoming active is reported afterwards, through {@link #isActive}.
+     */
+    public static void activate(long context) {
+        Activate(context);
+    }
+
     public static final long ORIGIN_UNKNOWN = Long.MIN_VALUE;
 
     /**
@@ -177,6 +186,8 @@ public final class FlutterNative {
     private static native long GetOrigin(long context);
 
     private static native boolean IsActive(long context);
+
+    private static native void Activate(long context);
 
 
     private static native void SetBundleDir(String bundleDir);
