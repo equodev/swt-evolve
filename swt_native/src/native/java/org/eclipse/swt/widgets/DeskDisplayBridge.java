@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
@@ -101,7 +102,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         // here would make the Flutter theme render a pure-black background.
         Color bg = forDisplay.getApi().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
         int backgroundColor = (bg.getRed() << 16) | (bg.getGreen() << 8) | bg.getBlue();
-        String theme = Display.isSystemDarkTheme() ? "dark" : "light";
+        String theme = Config.systemDarkTheme() ? "dark" : "light";
         return FlutterNative.initialize(comm().getPort(), 0, widgetId, widgetName, theme,
                 backgroundColor, backgroundColor, width, height);
     }

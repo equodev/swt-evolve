@@ -324,6 +324,8 @@ sourceSets {
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
             // Text's theme colours (updateThemeColors, lastAppAppearance) were added in 3.116.
             if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/TextThemeColorsNativeTest.java")
+            // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
+            if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.

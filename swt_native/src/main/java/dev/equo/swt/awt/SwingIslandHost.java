@@ -13,6 +13,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartSwingIsland;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -115,9 +116,41 @@ public final class SwingIslandHost {
         mount(child, window[0], window[1], false);
 
         // The child goes with the EMBEDDED composite, so this covers the parent's dispose too.
-        child.addListener(SWT.Dispose, e -> frame.dispose());
+        child.addListener(SWT.Dispose, e -> {
+            frame.dispose();
+            dropFromAwtShutdown(frame);
+        });
         parent.setData(EMBEDDED_FRAME_KEY, frame);
         return frame;
+    }
+
+    /**
+     * Drops a disposed island frame from {@code sun.awt.AWTAutoShutdown}'s peer map.
+     *
+     * <p>swing-evolve's engine gives every AWT window a fake peer and registers it with
+     * AWTAutoShutdown — so the JVM stays alive while a window is shown — but never unregisters it,
+     * on hide or on dispose. A disposed frame's stale registration keeps the peer map non-empty, so
+     * the non-daemon AWT event thread never auto-shuts-down and the JVM does not exit once the
+     * Display is gone. Remove the entry here, the way the engine's peer would.
+     *
+     * <p>Reflective because AWTAutoShutdown's {@code getPeer}/{@code unregisterPeer} are
+     * package-private; the engine's own launch flags open {@code sun.awt}. Fails closed: if it
+     * cannot reach them the JVM lingers exactly as it did before, no worse.
+     */
+    private static void dropFromAwtShutdown(Frame frame) {
+        try {
+            Class<?> autoShutdown = Class.forName("sun.awt.AWTAutoShutdown");
+            Object instance = autoShutdown.getMethod("getInstance").invoke(null);
+            Method getPeer = autoShutdown.getDeclaredMethod("getPeer", Object.class);
+            getPeer.setAccessible(true);
+            Object peer = getPeer.invoke(instance, frame);
+            if (peer == null) return;
+            Method unregisterPeer = autoShutdown.getDeclaredMethod("unregisterPeer", Object.class, Object.class);
+            unregisterPeer.setAccessible(true);
+            unregisterPeer.invoke(instance, frame, peer);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError unreachable) {
+            // Without the hook AWT shuts down (or not) exactly as it would have.
+        }
     }
 
     /**
@@ -257,7 +290,7 @@ public final class SwingIslandHost {
         SwingIsland island = new SwingIsland(shell, SWT.NONE);
 
         setClientSize(shell, intOf(request, "w"), intOf(request, "h"));
-        shell.setLocation(locationOf(request, kind, owner, parent, shell.getSize()));
+        shell.setLocation(locationOf(display, request, kind, owner, parent, shell.getSize()));
 
         Map<Integer, Shell> surfaces = registry(display, SURFACES_KEY);
         surfaces.put(windowId, shell);
@@ -279,15 +312,43 @@ public final class SwingIslandHost {
      * whose offset from its island or Shell'd owner is known keeps that offset; any other is
      * centred on its parent.
      */
-    private static Point locationOf(Map<?, ?> request, String kind, SwingIsland owner, Shell parent,
-            Point size) {
-        if ("frame".equals(kind)) return new Point(intOf(request, "x"), intOf(request, "y"));
+    private static Point locationOf(Display display, Map<?, ?> request, String kind, SwingIsland owner,
+            Shell parent, Point size) {
+        if ("frame".equals(kind)) return viewToDisplay(display, intOf(request, "x"), intOf(request, "y"));
         if (owner != null && request.get("dx") instanceof Number && request.get("dy") instanceof Number) {
             return owner.toDisplay(intOf(request, "dx"), intOf(request, "dy"));
         }
-        if (parent == null) return new Point(intOf(request, "x"), intOf(request, "y"));
+        if (parent == null) return viewToDisplay(display, intOf(request, "x"), intOf(request, "y"));
         Rectangle bounds = parent.getBounds();
         return new Point(bounds.x + (bounds.width - size.x) / 2, bounds.y + (bounds.height - size.y) / 2);
+    }
+
+    /**
+     * The Display location of a point at ({@code x}, {@code y}) in the Evolve view. The view is the
+     * window that draws inline Shells; a floating Shell's bounds are read as a screen position from
+     * which the client subtracts that window's origin (its {@code WindowOriginScope}). That origin is
+     * the main Shell's bounds, which is the Display's (0, 0) on web and the window's screen position on
+     * desktop; reading the main Shell's own location gives the exact value the client subtracts, so the
+     * two cancel and the Shell lands at ({@code x}, {@code y}) inside the view. No main Shell (e.g. a
+     * headless test) leaves the request's coordinates as-is.
+     */
+    private static Point viewToDisplay(Display display, int x, int y) {
+        Shell main = mainShell(display);
+        if (main == null) return new Point(x, y);
+        Point origin = main.getLocation();
+        return new Point(origin.x + x, origin.y + y);
+    }
+
+    /** The Shell the client draws its viewport as, as the bridge that owns it reports it, or null. */
+    private static Shell mainShell(Display display) {
+        for (Shell shell : display.getShells()) {
+            if (shell.isDisposed() || !(shell.getImpl() instanceof DartControl)) continue;
+            // The widget's own bridge in production, the injected one under test -- the order commFor uses.
+            FlutterBridge bridge = ((DartControl) shell.getImpl()).getBridge();
+            if (bridge == null) bridge = FlutterBridge.injected();
+            if (bridge != null && Boolean.TRUE.equals(bridge.hostsAsMainShell(shell))) return shell;
+        }
+        return null;
     }
 
     private static String textOf(Map<?, ?> request, String key) {
