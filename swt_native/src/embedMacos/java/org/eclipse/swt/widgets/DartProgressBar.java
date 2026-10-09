@@ -76,6 +76,7 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public DartProgressBar(Composite parent, int style, ProgressBar api) {
         super(parent, checkStyle(style), api);
+        maximum = 100;
     }
 
     static int checkStyle(int style) {
