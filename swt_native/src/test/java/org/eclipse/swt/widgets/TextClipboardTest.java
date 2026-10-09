@@ -5,6 +5,7 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.RTFTransfer;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.junit.jupiter.api.AfterAll;
@@ -96,6 +97,25 @@ class TextClipboardTest {
             text.paste();
             assertThat(text.getText()).as("style " + style).isEqualTo("afrom outsideb");
         }
+    }
+
+    @Test
+    void pasteOfAClipboardWithoutTextInsertsNothing() {
+        Shell shell = Mocks.shell();
+        Text text = new Text(shell, SWT.SINGLE);
+        text.setText("keep");
+        Clipboard clipboard = new Clipboard(shell.getDisplay());
+        try {
+            clipboard.setContents(new Object[] {"{\\rtf1 rich}"}, new Transfer[] {RTFTransfer.getInstance()});
+        } finally {
+            clipboard.dispose();
+        }
+        text.setSelection(1, 2);
+
+        text.paste();
+
+        assertThat(text.getText()).isEqualTo("keep");
+        assertThat(text.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(1, 2));
     }
 
     @Test
