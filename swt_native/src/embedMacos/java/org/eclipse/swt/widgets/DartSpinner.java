@@ -184,6 +184,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
