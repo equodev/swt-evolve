@@ -18,12 +18,18 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class TableItemSizes {
 
+    private TableItemSizes() {
+    }
+
     static class NONE {
         static final double MIN_WIDTH = 16.0;
         static final double MIN_HEIGHT = 20.0;
         static final double HORIZONTAL_PADDING = 16.0;
         static final double VERTICAL_PADDING = 8.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
+
+        private NONE() {
+        }
     }
 
     public static Point computeSize(DartTableItem widget, int wHint, int hHint, boolean changed) {

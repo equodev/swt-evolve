@@ -19,6 +19,9 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class LabelSizes {
 
+    private LabelSizes() {
+    }
+
     static class NONE {
         static final double MIN_WIDTH = 8.0;
         static final double MIN_HEIGHT = 4.0;
@@ -26,16 +29,25 @@ public class LabelSizes {
         static final double VERTICAL_PADDING = 4.0;
         static final double IMAGE_SPACING = 8.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
+
+        private NONE() {
+        }
     }
 
     static class HORIZONTAL_SEPARATOR {
         static final double MIN_WIDTH = 7.0;
         static final double MIN_HEIGHT = 0.0;
+
+        private HORIZONTAL_SEPARATOR() {
+        }
     }
 
     static class VERTICAL_SEPARATOR {
         static final double MIN_WIDTH = 0.0;
         static final double MIN_HEIGHT = 7.0;
+
+        private VERTICAL_SEPARATOR() {
+        }
     }
 
     static class WRAP {
@@ -45,6 +57,9 @@ public class LabelSizes {
         static final double VERTICAL_PADDING = 4.0;
         static final double IMAGE_SPACING = 8.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
+
+        private WRAP() {
+        }
     }
 
     public static Point computeSize(DartLabel widget, int wHint, int hHint, boolean changed) {

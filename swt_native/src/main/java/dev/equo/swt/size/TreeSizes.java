@@ -13,6 +13,9 @@ import org.eclipse.swt.widgets.DartTreeItem;
 
 public class TreeSizes {
 
+    private TreeSizes() {
+    }
+
     private static final double ROW_HEIGHT = 34.0;
     private static final double ROW_HEIGHT_WITH_COLS = 40.0;
 

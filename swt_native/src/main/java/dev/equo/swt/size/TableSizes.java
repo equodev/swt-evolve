@@ -12,6 +12,9 @@ import org.eclipse.swt.widgets.DartTableItem;
 
 public class TableSizes {
 
+    private TableSizes() {
+    }
+
     private static final double ROW_HEIGHT = 24.0;
     private static final double ROW_HEIGHT_WITH_COLS = 24.0;
 

@@ -2086,6 +2086,9 @@ class WidgetMeasurer {
     buffer.writeln(' */');
     buffer.writeln('public class ${widgetType}Sizes {');
     buffer.writeln();
+    buffer.writeln('    private ${widgetType}Sizes() {');
+    buffer.writeln('    }');
+    buffer.writeln();
 
     // Group analyses by their constants to avoid duplicating identical sizing logic
     // IMPORTANT: VERTICAL styles must never be grouped with HORIZONTAL styles due to dimension swap
@@ -2172,6 +2175,9 @@ class WidgetMeasurer {
         buffer.writeln('        static final double TEXT_SLACK = 1.0;');
       }
 
+      buffer.writeln();
+      buffer.writeln('        private $javaClassName() {');
+      buffer.writeln('        }');
       buffer.writeln('    }');
       buffer.writeln();
     }
@@ -3630,6 +3636,9 @@ public class CoolBarSizes {
     }
     buffer.writeln();
     buffer.writeln('public class ${widgetType}Sizes {');
+    buffer.writeln();
+    buffer.writeln('    private ${widgetType}Sizes() {');
+    buffer.writeln('    }');
     buffer.writeln();
     // Heights at the default font. For a widget whose rows track the font these are the floor
     // Flutter lays out against, not the final height.
