@@ -322,6 +322,8 @@ sourceSets {
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
             // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
+            // Text's theme colours (updateThemeColors, lastAppAppearance) were added in 3.116.
+            if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/TextThemeColorsNativeTest.java")
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.

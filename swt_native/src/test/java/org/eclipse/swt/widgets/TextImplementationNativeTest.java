@@ -218,22 +218,6 @@ class TextImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("the theme colours of a text are refreshed once per appearance, and only for a multi-line text")
-    void themeColorsAreRefreshedOncePerAppearance() {
-        DartText multi = impl(SWT.MULTI);
-        DartText single = impl(SWT.SINGLE);
-        multi.lastAppAppearance = Display.APPEARANCE.Dark;
-        single.lastAppAppearance = Display.APPEARANCE.Dark;
-
-        multi.updateThemeColors();
-        single.updateThemeColors();
-        multi.updateThemeColors();
-
-        assertThat(multi.lastAppAppearance).isEqualTo(((DartDisplay) display.getImpl()).appAppearance);
-        assertThat(single.lastAppAppearance).isEqualTo(((DartDisplay) display.getImpl()).appAppearance);
-    }
-
-    @Test
     @DisplayName("copying nothing leaves the clipboard alone")
     void copyingNothingKeepsTheClipboard() {
         DartText impl = impl(SWT.SINGLE);
