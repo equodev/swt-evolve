@@ -4,6 +4,9 @@ import org.eclipse.swt.SWT;
 
 public class SpinnerHelper {
 
+    private SpinnerHelper() {
+    }
+
     public static String getText(DartSpinner c) {
         c.checkWidget();
         return format(c.selection, c.digits);
