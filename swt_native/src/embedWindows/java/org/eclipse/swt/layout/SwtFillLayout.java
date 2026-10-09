@@ -153,7 +153,7 @@ public final class SwtFillLayout extends SwtLayout implements IFillLayout {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;

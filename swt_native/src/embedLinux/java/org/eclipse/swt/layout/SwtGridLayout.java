@@ -653,7 +653,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;

@@ -701,7 +701,7 @@ public abstract class DartWidget implements IWidget {
      * @return the name of the widget
      */
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;
