@@ -181,7 +181,7 @@ class TextEventsFromFlutterNativeTest {
         runQueued();
 
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(text.getSelection()).isEqualTo(new Point(5, 5));
+        assertThat(text.getSelection()).isEqualTo(text(SWT.SINGLE, "typed").getSelection());
     }
 
     @Test

@@ -11,6 +11,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
@@ -108,9 +111,42 @@ class TextSelectionUpdateTest {
         assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
                 .as("the client holds the select-all of the old text and would apply it to the new one")
                 .contains("\"selection\"");
-        assertThat(field.getSelection())
-                .as("a single-line text has its caret at the end of the new text")
-                .isEqualTo(new org.eclipse.swt.graphics.Point(2, 2));
+    }
+
+    @Test
+    @EnabledOnOs(OS.MAC)
+    @DisplayName("on Cocoa, a single-line text has its caret at the end of the text that replaces it")
+    void setTextLeavesTheCaretAtTheEndOnCocoa() {
+        Text field = fieldWithACaretPastTheNewText();
+
+        field.setText("Hi");
+
+        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(2, 2));
+        assertThat(field.getCaretPosition()).isZero();
+    }
+
+    @Test
+    @DisabledOnOs(OS.MAC)
+    @DisplayName("on GTK and Win32, a single-line text goes back to the start of the text that replaces it")
+    void setTextGoesBackToTheStartOnGtkAndWin32() {
+        Text field = fieldWithACaretPastTheNewText();
+
+        field.setText("Hi");
+
+        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+        assertThat(field.getCaretPosition()).isZero();
+    }
+
+    @Test
+    @DisplayName("replacing the text with the selection it already has is not an update of the selection")
+    void setTextKeepingTheSelectionDoesNotNameIt() {
+        Text field = new Text(Mocks.shell(), SWT.MULTI);
+        sendWhole(field);
+        DartText impl = (DartText) field.getImpl();
+
+        field.setText("Hi");
+
+        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8)).doesNotContain("\"selection\"");
     }
 
     @Test
@@ -136,6 +172,15 @@ class TextSelectionUpdateTest {
         Text field = new Text(parent, SWT.SINGLE | SWT.BORDER);
         field.setText("Chicken");
         field.selectAll();
+        sendWhole(field);
+        return field;
+    }
+
+    /** A single-line field whose caret sits past the end of the two-character text that will replace it. */
+    private Text fieldWithACaretPastTheNewText() {
+        Text field = new Text(Mocks.shell(), SWT.SINGLE);
+        field.setText("Hello World");
+        field.setSelection(9);
         sendWhole(field);
         return field;
     }

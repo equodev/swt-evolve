@@ -351,11 +351,14 @@ public class TextHelper {
 
         text.setEditText(string);
         text.text = string;
-        // The old selection belonged to the old text. A single-line text is left without one, and its
-        // caret is at the end; a multi-line text goes back to the start. The client is told either
-        // way: an update that did not name the selection would leave it holding the old one.
-        text.selection = (text.getApi().style & SWT.SINGLE) != 0 ? null : new Point(0, 0);
-        text.getValue().markDirty(VText.SELECTION);
+        // The old selection belonged to the old text. Cocoa leaves a single-line text without one, its
+        // caret at the end; GTK, Win32 and a Cocoa multi-line text go back to the start. A change is
+        // recorded: an update that did not name it would leave the client holding the old selection.
+        boolean cocoaSingle = (text.getApi().style & SWT.SINGLE) != 0 && "cocoa".equals(SWT.getPlatform());
+        Point selection = cocoaSingle ? null : new Point(0, 0);
+        if (!java.util.Objects.equals(text.selection, selection))
+            text.getValue().markDirty(VText.SELECTION);
+        text.selection = selection;
 
         text.updateAutoTextDirectionIfNeeded();
         // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,
