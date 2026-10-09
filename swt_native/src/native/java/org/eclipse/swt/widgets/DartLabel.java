@@ -298,11 +298,11 @@ public class DartLabel extends DartControl implements ILabel {
     public void setImage(Image image) {
         getValue().markDirty(VLabel.IMAGE);
         checkWidget();
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if ((getApi().style & SWT.SEPARATOR) != 0)
-            return;
         if (image != null) {
             this.image = GraphicsUtils.copyImage(display, image);
             isImage = true;
