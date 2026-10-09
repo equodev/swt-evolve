@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -85,6 +86,14 @@ class SpinnerImplementationNativeTest {
         spinner.setValues(137, 20, 250, 2, 3, 40);
         spinner.setTextLimit(12);
         assertThat(held(impl)).containsExactly(20, 250, 137, 3, 40, 2, 12);
+    }
+
+    @Test
+    @DisplayName("the subclass check accepts a spinner of the SWT class")
+    void subclassCheckAcceptsTheSwtClass() {
+        Spinner spinner = new Spinner(shell, SWT.NONE);
+
+        assertThatCode(spinner::checkSubclass).doesNotThrowAnyException();
     }
 
     @Test
