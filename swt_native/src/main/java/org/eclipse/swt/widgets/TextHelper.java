@@ -8,6 +8,9 @@ import org.eclipse.swt.graphics.Point;
 
 public class TextHelper {
 
+    private TextHelper() {
+    }
+
     public static void insertEditText(DartText text, String string) {
         int length = string.length();
         Point selection = text.getSelection();

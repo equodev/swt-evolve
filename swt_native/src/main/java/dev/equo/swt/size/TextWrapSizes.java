@@ -18,10 +18,10 @@ public final class TextWrapSizes {
     }
 
     public static Point computeSize(DartText widget, int wHint, int hHint, boolean changed) {
-        Measure m = TextSizes.computeSizes(widget, wHint, hHint, changed);
         if (hHint != SWT.DEFAULT || wHint == SWT.DEFAULT || !hasFlags(widget.getStyle(), SWT.WRAP) || widget.getText().isEmpty()) {
-            return m.widget;
+            return TextSizes.computeSize(widget, wHint, hHint, changed);
         }
+        Measure m = TextSizes.computeSizes(widget, wHint, hHint, changed);
         double available = Math.max(1.0, wHint - TextSizes.LEFT.HORIZONTAL_PADDING);
         PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, available);
         double height = Math.max(wrapped.y() + TextSizes.LEFT.VERTICAL_PADDING, TextSizes.LEFT.MIN_HEIGHT);
