@@ -182,7 +182,12 @@ public abstract class DartWidget implements IWidget {
     }
 
     String getClipboardText() {
-        return _webClipboard;
+        org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(display);
+        try {
+            return (String) clipboard.getContents(org.eclipse.swt.dnd.TextTransfer.getInstance());
+        } finally {
+            clipboard.dispose();
+        }
     }
 
     /**
@@ -438,8 +443,14 @@ public abstract class DartWidget implements IWidget {
     }
 
     void copyToClipboard(char[] buffer) {
-        if (buffer != null && buffer.length > 0)
-            _webClipboard = new String(buffer);
+        if (buffer == null || buffer.length == 0)
+            return;
+        org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(display);
+        try {
+            clipboard.setContents(new Object[] { new String(buffer) }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+        } finally {
+            clipboard.dispose();
+        }
     }
 
     void createHandle() {
@@ -1298,8 +1309,6 @@ public abstract class DartWidget implements IWidget {
     public long _jniRef() {
         return jniRef;
     }
-
-    static String _webClipboard = null;
 
     protected FlutterBridge bridge;
 
