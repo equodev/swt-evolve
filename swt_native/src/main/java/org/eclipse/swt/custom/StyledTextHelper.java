@@ -101,10 +101,15 @@ public class StyledTextHelper {
         return rows == null ? null : (int) Math.round(rows[0].y);
     }
 
-    /** The width of the widest row the render side laid out, or null. */
-    static Integer measuredContentWidth(DartStyledText styledText) {
+    /** The width of the widest row the render side laid out among the lines {@code counted} accepts, or null. */
+    static Integer measuredContentWidth(DartStyledText styledText, java.util.function.IntPredicate counted) {
         TextGeometry g = freshGeometry(styledText);
-        return g == null ? null : (int) Math.ceil(g.contentWidth);
+        if (g == null) return null;
+        double widest = 0;
+        for (VisualLine row : g.lines) {
+            if (counted.test(row.logicalLine)) widest = Math.max(widest, row.x + row.w);
+        }
+        return (int) Math.ceil(widest);
     }
 
     /** The height the render side gave {@code lineIndex}, below its vertical indent, or null. */
@@ -312,7 +317,12 @@ public class StyledTextHelper {
                 int count = changedLines == null || changedLines[0] < 0
                         ? lineCount
                         : Math.min(changedLines[1] - changedLines[0] + 1, lineCount - from);
-                ((DartStyledTextRenderer) styledText.renderer.getImpl()).reset(from, Math.max(1, count));
+                DartStyledTextRenderer renderer = (DartStyledTextRenderer) styledText.renderer.getImpl();
+                int widestLine = renderer.maxWidthLineIndex;
+                renderer.reset(from, Math.max(1, count));
+                // As resetCache() does: the horizontal range counts calculated lines only.
+                renderer.calculateClientArea();
+                if (widestLine >= 0 && widestLine < lineCount) renderer.calculate(widestLine, 1);
                 styledText.setScrollBars(true);
             }
             repaintRulerSiblings(styledText);
