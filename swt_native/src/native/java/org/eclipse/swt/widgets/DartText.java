@@ -323,9 +323,7 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        if (selection != null) {
-            setSelection(selection.y);
-        }
+        setSelection("cocoa".equals(SWT.getPlatform()) ? selection.x : selection.y);
     }
 
     @Override
@@ -395,8 +393,14 @@ public class DartText extends DartScrollable implements IText {
         Point oldSelection = getSelection();
         if (oldSelection.x == oldSelection.y)
             return;
+        String replacement = "";
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            replacement = verifyText(replacement, oldSelection.x, oldSelection.y);
+            if (replacement == null)
+                return;
+        }
         copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
-        insertEditText("");
+        insertEditText(replacement);
         if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
     }
@@ -762,9 +766,10 @@ public class DartText extends DartScrollable implements IText {
     public Point getSelection() {
         checkWidget();
         if (selection == null) {
-            return new Point(caretPosition, caretPosition);
+            int caret = (getApi().style & SWT.SINGLE) != 0 ? getCharCount() : caretPosition;
+            return new Point(caret, caret);
         }
-        return this.selection;
+        return new Point(selection.x, selection.y);
     }
 
     /**
@@ -899,11 +904,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public char[] getTextChars() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            return getEditText();
-        } else {
-        }
-        return this.textChars;
+        return getEditText();
     }
 
     /**
@@ -1079,6 +1080,12 @@ public class DartText extends DartScrollable implements IText {
         String newText = getClipboardText();
         if (newText == null)
             return;
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            Point selection = getSelection();
+            newText = verifyText(newText, selection.x, selection.y);
+            if (newText == null)
+                return;
+        }
         if (textLimit != Text.LIMIT) {
             Point sel = getSelection();
             int charCount = getCharCount();
@@ -1616,18 +1623,10 @@ public class DartText extends DartScrollable implements IText {
      * @since 3.7
      */
     public void setTextChars(char[] text) {
-        char[] newValue = text;
         checkWidget();
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-        }
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            setEditText(text);
-        } else {
-        }
-        this.textChars = newValue;
-        sendEvent(SWT.Modify);
+        TextHelper.setText(this, new String(text));
     }
 
     /**
@@ -1682,8 +1681,10 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        int newValue = Math.max(0, Math.min(index, Math.max(0, getLineCount() - 1)));
-        this.topIndex = newValue;
+        int lines = getLineCount();
+        int lineHeight = getLineHeight();
+        int lastTop = Math.max(0, lines * lineHeight - getClientArea().height) / lineHeight;
+        this.topIndex = Math.max(0, Math.min(index, Math.min(lines - 1, lastTop)));
     }
 
     /**

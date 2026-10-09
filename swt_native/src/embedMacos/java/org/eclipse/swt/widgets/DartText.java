@@ -323,9 +323,7 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        if (selection != null) {
-            setSelection(selection.y);
-        }
+        setSelection("cocoa".equals(SWT.getPlatform()) ? selection.x : selection.y);
     }
 
     @Override
@@ -769,9 +767,10 @@ public class DartText extends DartScrollable implements IText {
     public Point getSelection() {
         checkWidget();
         if (selection == null) {
-            return new Point(caretPosition, caretPosition);
+            int caret = (getApi().style & SWT.SINGLE) != 0 ? getCharCount() : caretPosition;
+            return new Point(caret, caret);
         }
-        return this.selection;
+        return new Point(selection.x, selection.y);
     }
 
     /**
@@ -906,11 +905,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public char[] getTextChars() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            return getEditText();
-        } else {
-        }
-        return this.textChars;
+        return getEditText();
     }
 
     /**
@@ -1636,18 +1631,10 @@ public class DartText extends DartScrollable implements IText {
      * @since 3.7
      */
     public void setTextChars(char[] text) {
-        char[] newValue = text;
         checkWidget();
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-        }
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            setEditText(text);
-        } else {
-        }
-        this.textChars = newValue;
-        sendEvent(SWT.Modify);
+        TextHelper.setText(this, new String(text));
     }
 
     /**

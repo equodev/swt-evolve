@@ -348,7 +348,11 @@ public class TextHelper {
 
         text.setEditText(string);
         text.text = string;
-        text.selection = null;
+        // The old selection belonged to the old text. A single-line text is left without one, and its
+        // caret is at the end; a multi-line text goes back to the start. The client is told either
+        // way: an update that did not name the selection would leave it holding the old one.
+        text.selection = (text.getApi().style & SWT.SINGLE) != 0 ? null : new Point(0, 0);
+        text.getValue().markDirty(VText.SELECTION);
 
         text.updateAutoTextDirectionIfNeeded();
         // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,
