@@ -335,7 +335,7 @@ public class WebDisplayBridge extends DisplayBridge {
             String normalized = forced.trim().toLowerCase();
             if ("dark".equals(normalized) || "light".equals(normalized)) return normalized;
         }
-        return Display.isSystemDarkTheme() ? "dark" : "light";
+        return dev.equo.swt.Config.systemDarkTheme() ? "dark" : "light";
     }
 
     /** The browser would not open the window: remember it, and re-push so the shell is drawn inline. */

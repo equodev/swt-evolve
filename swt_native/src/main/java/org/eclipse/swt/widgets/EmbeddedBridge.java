@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.GCImageDrawer;
@@ -129,7 +130,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             return theme;
         }
         // Fallback to OS theme
-        boolean isDark = Display.isSystemDarkTheme();
+        boolean isDark = Config.systemDarkTheme();
         theme = isDark ? "dark" : "light";
         System.out.println("Using OS theme (fallback): " + theme);
         cachedTheme = theme;

@@ -1160,6 +1160,35 @@ public class Config {
         return debug;
     }
 
+    private static volatile java.lang.reflect.Method systemDarkThemeMethod;
+    private static volatile boolean systemDarkThemeLookedUp;
+
+    /**
+     * Whether the system theme is dark. {@code Display.isSystemDarkTheme()} is SWT API from 3.112;
+     * an older release has no notion of a system theme, so the theme the application forced is the
+     * only answer there is. Looked up reflectively because this class compiles against every
+     * release, and resolving it eagerly would load {@code Display} during this class' own init.
+     */
+    public static boolean systemDarkTheme() {
+        if (!systemDarkThemeLookedUp) {
+            try {
+                systemDarkThemeMethod = Display.class.getMethod("isSystemDarkTheme");
+            } catch (NoSuchMethodException e) {
+                systemDarkThemeMethod = null;
+            }
+            systemDarkThemeLookedUp = true;
+        }
+        java.lang.reflect.Method m = systemDarkThemeMethod;
+        if (m != null) {
+            try {
+                return (Boolean) m.invoke(null);
+            } catch (ReflectiveOperationException e) {
+                // fall through to the forced theme
+            }
+        }
+        return "dark".equals(getConfigFlags().force_theme);
+    }
+
     /**
      * Whether the widget/list system colors use the dark scheme. A dark theme makes them dark, the
      * way a dark desktop does natively: an application that colors its own widgets from this palette
