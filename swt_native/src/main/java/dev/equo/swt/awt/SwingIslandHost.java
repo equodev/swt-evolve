@@ -13,6 +13,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartSwingIsland;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -257,7 +258,7 @@ public final class SwingIslandHost {
         SwingIsland island = new SwingIsland(shell, SWT.NONE);
 
         setClientSize(shell, intOf(request, "w"), intOf(request, "h"));
-        shell.setLocation(locationOf(request, kind, owner, parent, shell.getSize()));
+        shell.setLocation(locationOf(display, request, kind, owner, parent, shell.getSize()));
 
         Map<Integer, Shell> surfaces = registry(display, SURFACES_KEY);
         surfaces.put(windowId, shell);
@@ -279,15 +280,43 @@ public final class SwingIslandHost {
      * whose offset from its island or Shell'd owner is known keeps that offset; any other is
      * centred on its parent.
      */
-    private static Point locationOf(Map<?, ?> request, String kind, SwingIsland owner, Shell parent,
-            Point size) {
-        if ("frame".equals(kind)) return new Point(intOf(request, "x"), intOf(request, "y"));
+    private static Point locationOf(Display display, Map<?, ?> request, String kind, SwingIsland owner,
+            Shell parent, Point size) {
+        if ("frame".equals(kind)) return viewToDisplay(display, intOf(request, "x"), intOf(request, "y"));
         if (owner != null && request.get("dx") instanceof Number && request.get("dy") instanceof Number) {
             return owner.toDisplay(intOf(request, "dx"), intOf(request, "dy"));
         }
-        if (parent == null) return new Point(intOf(request, "x"), intOf(request, "y"));
+        if (parent == null) return viewToDisplay(display, intOf(request, "x"), intOf(request, "y"));
         Rectangle bounds = parent.getBounds();
         return new Point(bounds.x + (bounds.width - size.x) / 2, bounds.y + (bounds.height - size.y) / 2);
+    }
+
+    /**
+     * The Display location of a point at ({@code x}, {@code y}) in the Evolve view. The view is the
+     * window that draws inline Shells; a floating Shell's bounds are read as a screen position from
+     * which the client subtracts that window's origin (its {@code WindowOriginScope}). That origin is
+     * the main Shell's bounds, which is the Display's (0, 0) on web and the window's screen position on
+     * desktop; reading the main Shell's own location gives the exact value the client subtracts, so the
+     * two cancel and the Shell lands at ({@code x}, {@code y}) inside the view. No main Shell (e.g. a
+     * headless test) leaves the request's coordinates as-is.
+     */
+    private static Point viewToDisplay(Display display, int x, int y) {
+        Shell main = mainShell(display);
+        if (main == null) return new Point(x, y);
+        Point origin = main.getLocation();
+        return new Point(origin.x + x, origin.y + y);
+    }
+
+    /** The Shell the client draws its viewport as, as the bridge that owns it reports it, or null. */
+    private static Shell mainShell(Display display) {
+        for (Shell shell : display.getShells()) {
+            if (shell.isDisposed() || !(shell.getImpl() instanceof DartControl)) continue;
+            // The widget's own bridge in production, the injected one under test -- the order commFor uses.
+            FlutterBridge bridge = ((DartControl) shell.getImpl()).getBridge();
+            if (bridge == null) bridge = FlutterBridge.injected();
+            if (bridge != null && Boolean.TRUE.equals(bridge.hostsAsMainShell(shell))) return shell;
+        }
+        return null;
     }
 
     private static String textOf(Map<?, ?> request, String key) {

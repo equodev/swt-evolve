@@ -43,12 +43,26 @@ class SwingIslandSurfaceTest {
 
     private static final int PORT = 8765;
 
-    private RecordingBridge bridge;
+    private MainShellBridge bridge;
     private Display display;
+
+    /**
+     * A {@link RecordingBridge} that lets a test name the Shell the client would draw its viewport as,
+     * so {@link SwingIslandHost}'s view-origin lookup resolves to it as it does against the real
+     * display bridge in production. Names none by default, which is the headless default.
+     */
+    private static final class MainShellBridge extends RecordingBridge {
+        private Shell main;
+
+        @Override
+        public Boolean hostsAsMainShell(Shell shell) {
+            return main != null && shell == main ? Boolean.TRUE : super.hostsAsMainShell(shell);
+        }
+    }
 
     @BeforeEach
     void setUp() {
-        bridge = new RecordingBridge();
+        bridge = new MainShellBridge();
         FlutterBridge.set(bridge);
         display = new Display();
         SwingIslandHost.listen(display, bridge.comm);
@@ -187,6 +201,21 @@ class SwingIslandSurfaceTest {
         Rectangle area = shell.getClientArea();
         assertThat(new Point(area.width, area.height)).isEqualTo(new Point(300, 200));
         assertThat(shell.getLocation()).isEqualTo(new Point(40, 30));
+    }
+
+    @Test
+    @DisplayName("a frame's position is relative to the view, so it opens inside a main Shell not at the origin")
+    void frameSitsInsideTheView() {
+        Shell main = new Shell(display);
+        main.setBounds(100, 70, 800, 600);
+        main.open();
+        bridge.main = main;
+
+        Shell shell = open(request(9, "frame", 0));
+
+        // Request x/y are 40/30 in the view; the client subtracts the main Shell's origin when it
+        // places a floating Shell, so Java adds it here for the two to cancel at the view position.
+        assertThat(shell.getLocation()).isEqualTo(new Point(140, 100));
     }
 
     @Test
