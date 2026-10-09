@@ -859,6 +859,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
         return textLimit;
     }
 
+    String wireDecimalSeparator() {
+        return SpinnerHelper.decimalSeparator();
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {

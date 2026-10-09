@@ -44,6 +44,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         state.pageIncrement ?? widgetTheme.defaultPageIncrement;
     final digits = state.digits ?? widgetTheme.defaultDigits;
     final textLimit = state.textLimit ?? widgetTheme.defaultTextLimit;
+    final decimalSeparator = state.decimalSeparator ?? '.';
 
     final currentValue = selection!.clamp(minimum, maximum);
     final enabled = state.enabled ?? false;
@@ -85,6 +86,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         max: maximum,
         increment: increment,
         digits: digits,
+        decimalSeparator: decimalSeparator,
         pageIncrement: pageIncrement,
         textLimit: textLimit,
         enabled: enabled,
@@ -138,6 +140,7 @@ class _ThemedSpinner extends StatefulWidget {
   final int max;
   final int increment;
   final int digits;
+  final String decimalSeparator;
   final int pageIncrement;
   final int textLimit;
   final bool enabled;
@@ -162,6 +165,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.max,
     required this.increment,
     required this.digits,
+    required this.decimalSeparator,
     required this.pageIncrement,
     required this.textLimit,
     required this.enabled,
@@ -204,7 +208,10 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   @override
   void didUpdateWidget(_ThemedSpinner oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_localValue == null && oldWidget.value != widget.value) {
+    final shown = oldWidget.value != widget.value ||
+        oldWidget.digits != widget.digits ||
+        oldWidget.decimalSeparator != widget.decimalSeparator;
+    if (_localValue == null && shown) {
       _controller.text = _formatValue(widget.value);
     }
   }
@@ -288,7 +295,9 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       ),
       inputFormatters: [
         FilteringTextInputFormatter.allow(
-          widget.digits > 0 ? RegExp(r'^-?\d*\.?\d*$') : RegExp(r'^-?\d*$'),
+          widget.digits > 0
+              ? RegExp('^-?\\d*${RegExp.escape(widget.decimalSeparator)}?\\d*\$')
+              : RegExp(r'^-?\d*$'),
         ),
         TextInputFormatter.withFunction(_gateEdit),
       ],
@@ -379,8 +388,14 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       return value.toString();
     }
     final displayValue = value / _getMultiplier();
-    return displayValue.toStringAsFixed(widget.digits);
+    return displayValue
+        .toStringAsFixed(widget.digits)
+        .replaceFirst('.', widget.decimalSeparator);
   }
+
+  // The number a typed text stands for, or null when it is not one.
+  double? _parseNumber(String text) =>
+      double.tryParse(text.replaceFirst(widget.decimalSeparator, '.'));
 
   int _getMultiplier() {
     int multiplier = 1;
@@ -413,7 +428,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   void _handleTextChanged(String text) {
     if (text.isEmpty) return;
 
-    final parsedValue = double.tryParse(text);
+    final parsedValue = _parseNumber(text);
     if (parsedValue != null) {
       final scaledValue = (parsedValue * _getMultiplier()).round();
       final clampedValue = scaledValue.clamp(widget.min, widget.max);
@@ -423,7 +438,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   void _handleSubmitted(String text) {
     try {
-      final parsedValue = double.parse(text.isEmpty ? "0" : text);
+      final parsedValue = _parseNumber(text.isEmpty ? '0' : text);
+      if (parsedValue == null) throw const FormatException();
       final scaledValue = (parsedValue * _getMultiplier()).round();
       final clampedValue = scaledValue.clamp(widget.min, widget.max);
 
