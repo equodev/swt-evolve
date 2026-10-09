@@ -86,8 +86,8 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public DartSpinner(Composite parent, int style, Spinner api) {
         super(parent, checkStyle(style), api);
-        maximum = 100;
-        increment = 1;
+        this.increment = 1;
+        this.maximum = 100;
     }
 
     static int checkStyle(int style) {

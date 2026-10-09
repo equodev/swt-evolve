@@ -80,6 +80,7 @@ public class DartScale extends DartControl implements IScale {
      */
     public DartScale(Composite parent, int style, Scale api) {
         super(parent, checkStyle(style), api);
+        this.maximum = 100;
     }
 
     /**
