@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridLayout;
@@ -12,6 +13,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,6 +53,14 @@ class ToStringNamesApiClassTest {
         assertThat(composite.toString()).startsWith("Composite {");
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("org.eclipse.swt.widgets.ComputeSizeChecksWidgetTest#controls")
+    void everyControlNamesItsSwtClass(String name, Function<Shell, Control> factory) {
+        Control control = factory.apply(DartMocks.dartShell());
+
+        assertThat(control.toString()).as(name).startsWith(control.getClass().getSimpleName() + " {");
+    }
+
     @Test
     @DisplayName("a layout's toString() names its SWT class, not the implementation's")
     void layoutsNameTheirApiClass() {
@@ -55,5 +68,6 @@ class ToStringNamesApiClassTest {
         assertThat(new FillLayout().toString()).startsWith("FillLayout {");
         assertThat(new RowLayout().toString()).startsWith("RowLayout {");
         assertThat(new FormLayout().toString()).startsWith("FormLayout {");
+        assertThat(new StackLayout().toString()).startsWith("StackLayout {");
     }
 }
