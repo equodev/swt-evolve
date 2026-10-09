@@ -13922,7 +13922,7 @@
             "image": null,
             "text": ""
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_empty_font10_noimg",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -13942,7 +13942,7 @@
             ],
             "text": ""
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_empty_font10_16x16",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -13962,7 +13962,7 @@
             ],
             "text": ""
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_empty_font10_48x48",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -13974,7 +13974,7 @@
             "image": null,
             "text": ""
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_empty_font18_noimg",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -13994,7 +13994,7 @@
             ],
             "text": ""
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_empty_font18_16x16",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14014,7 +14014,7 @@
             ],
             "text": ""
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_empty_font18_48x48",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14026,7 +14026,7 @@
             "image": null,
             "text": "Yes"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_small_font10_noimg",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14046,7 +14046,7 @@
             ],
             "text": "Yes"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_small_font10_16x16",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14066,7 +14066,7 @@
             ],
             "text": "Yes"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_small_font10_48x48",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14078,7 +14078,7 @@
             "image": null,
             "text": "Yes"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_small_font18_noimg",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14098,7 +14098,7 @@
             ],
             "text": "Yes"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_small_font18_16x16",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14118,7 +14118,7 @@
             ],
             "text": "Yes"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_small_font18_48x48",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14130,7 +14130,7 @@
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_large_font10_noimg",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14150,7 +14150,7 @@
             ],
             "text": "This is a long widget text"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_large_font10_16x16",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14170,7 +14170,7 @@
             ],
             "text": "This is a long widget text"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_large_font10_48x48",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14182,7 +14182,7 @@
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_large_font18_noimg",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14202,7 +14202,7 @@
             ],
             "text": "This is a long widget text"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_large_font18_16x16",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14222,7 +14222,7 @@
             ],
             "text": "This is a long widget text"
           },
-          "height": 0.0,
+          "height": 2.0,
           "name": "Label_HORIZONTAL|SEPARATOR_large_font18_48x48",
           "style": "HORIZONTAL|SEPARATOR",
           "useFontTheme": false,
@@ -14238,7 +14238,7 @@
           "name": "Label_VERTICAL|SEPARATOR_empty_font10_noimg",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14258,7 +14258,7 @@
           "name": "Label_VERTICAL|SEPARATOR_empty_font10_16x16",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14278,7 +14278,7 @@
           "name": "Label_VERTICAL|SEPARATOR_empty_font10_48x48",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {},
@@ -14290,7 +14290,7 @@
           "name": "Label_VERTICAL|SEPARATOR_empty_font18_noimg",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14310,7 +14310,7 @@
           "name": "Label_VERTICAL|SEPARATOR_empty_font18_16x16",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14330,7 +14330,7 @@
           "name": "Label_VERTICAL|SEPARATOR_empty_font18_48x48",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {},
@@ -14342,7 +14342,7 @@
           "name": "Label_VERTICAL|SEPARATOR_small_font10_noimg",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14362,7 +14362,7 @@
           "name": "Label_VERTICAL|SEPARATOR_small_font10_16x16",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14382,7 +14382,7 @@
           "name": "Label_VERTICAL|SEPARATOR_small_font10_48x48",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {},
@@ -14394,7 +14394,7 @@
           "name": "Label_VERTICAL|SEPARATOR_small_font18_noimg",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14414,7 +14414,7 @@
           "name": "Label_VERTICAL|SEPARATOR_small_font18_16x16",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14434,7 +14434,7 @@
           "name": "Label_VERTICAL|SEPARATOR_small_font18_48x48",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {},
@@ -14446,7 +14446,7 @@
           "name": "Label_VERTICAL|SEPARATOR_large_font10_noimg",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14466,7 +14466,7 @@
           "name": "Label_VERTICAL|SEPARATOR_large_font10_16x16",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14486,7 +14486,7 @@
           "name": "Label_VERTICAL|SEPARATOR_large_font10_48x48",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {},
@@ -14498,7 +14498,7 @@
           "name": "Label_VERTICAL|SEPARATOR_large_font18_noimg",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14518,7 +14518,7 @@
           "name": "Label_VERTICAL|SEPARATOR_large_font18_16x16",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {
@@ -14538,7 +14538,7 @@
           "name": "Label_VERTICAL|SEPARATOR_large_font18_48x48",
           "style": "VERTICAL|SEPARATOR",
           "useFontTheme": false,
-          "width": 0.0
+          "width": 2.0
         },
         {
           "discoveredComponents": {},
