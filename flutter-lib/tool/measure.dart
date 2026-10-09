@@ -2192,6 +2192,11 @@ class WidgetMeasurer {
       (a) => a.widgetType.split('-')[1] == 'VERTICAL',
     );
 
+    // Both paint their text without the '&' that marks a mnemonic, so that is the text to measure.
+    final drawnText = widgetType == 'Label' || widgetType == 'Button'
+        ? 'Mnemonics.display(widget.getText())'
+        : 'widget.getText()';
+
     // Generate computeSize method (public API)
     buffer.writeln(
       '    public static Point computeSize(Dart$widgetType widget, int wHint, int hHint, boolean changed) {',
@@ -2408,7 +2413,7 @@ class WidgetMeasurer {
               );
             }
             buffer.writeln(
-              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);',
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped($drawnText, m.textStyle, availableWidth);',
             );
             if (imageAffectsHeight && useVerticalPadding) {
               buffer.writeln(
@@ -2670,7 +2675,7 @@ class WidgetMeasurer {
           "        // untouched (never setText()) CLabel sizes the same as one explicitly set to \"\".",
         );
       }
-      buffer.writeln('        String text = widget.getText();');
+      buffer.writeln('        String text = $drawnText;');
       if (widgetType == 'CLabel') {
         buffer.writeln('        if (text == null) text = "";');
       }
