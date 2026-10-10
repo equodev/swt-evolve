@@ -62,6 +62,9 @@ VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..headerBackground = json['headerBackground'] == null
       ? null
       : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>)
+  ..headerForeground = json['headerForeground'] == null
+      ? null
+      : VColor.fromJson(json['headerForeground'] as Map<String, dynamic>)
   ..headerVisible = json['headerVisible'] as bool?
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
@@ -70,6 +73,10 @@ VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..sortColumn = json['sortColumn'] == null
+      ? null
+      : VTreeColumn.fromJson(json['sortColumn'] as Map<String, dynamic>)
+  ..sortDirection = (json['sortDirection'] as num?)?.toInt()
   ..topItem = json['topItem'] == null
       ? null
       : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>);
@@ -101,9 +108,12 @@ Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'columns': ?instance.columns,
   'editors': ?instance.editors,
   'headerBackground': ?instance.headerBackground,
+  'headerForeground': ?instance.headerForeground,
   'headerVisible': ?instance.headerVisible,
   'items': ?instance.items,
   'linesVisible': ?instance.linesVisible,
   'selection': ?instance.selection,
+  'sortColumn': ?instance.sortColumn,
+  'sortDirection': ?instance.sortDirection,
   'topItem': ?instance.topItem,
 };

@@ -62,10 +62,13 @@ class VTree extends VComposite {
   List<VTreeColumn>? columns;
   List<VTreeEditor>? editors;
   VColor? headerBackground;
+  VColor? headerForeground;
   bool? headerVisible;
   List<VTreeItem>? items;
   bool? linesVisible;
   List<VTreeItem>? selection;
+  VTreeColumn? sortColumn;
+  int? sortDirection;
   VTreeItem? topItem;
 
   @override
@@ -75,10 +78,13 @@ class VTree extends VComposite {
       columns = other.columns;
       editors = other.editors;
       headerBackground = other.headerBackground;
+      headerForeground = other.headerForeground;
       headerVisible = other.headerVisible;
       items = other.items;
       linesVisible = other.linesVisible;
       selection = other.selection;
+      sortColumn = other.sortColumn;
+      sortDirection = other.sortDirection;
       topItem = other.topItem;
     }
   }
@@ -96,6 +102,8 @@ class VTree extends VComposite {
             .toList();
       case 'headerBackground':
         headerBackground = VColor.read(json['headerBackground']);
+      case 'headerForeground':
+        headerForeground = VColor.read(json['headerForeground']);
       case 'headerVisible':
         headerVisible = json['headerVisible'] as bool?;
       case 'items':
@@ -108,6 +116,12 @@ class VTree extends VComposite {
         selection = (json['selection'] as List<dynamic>?)
             ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
             .toList();
+      case 'sortColumn':
+        sortColumn = json['sortColumn'] == null
+            ? null
+            : VTreeColumn.fromJson(json['sortColumn'] as Map<String, dynamic>);
+      case 'sortDirection':
+        sortDirection = (json['sortDirection'] as num?)?.toInt();
       case 'topItem':
         topItem = json['topItem'] == null
             ? null
@@ -124,6 +138,7 @@ class VTree extends VComposite {
     VWidget.adoptEach(editors, adopt);
     VWidget.adoptEach(items, adopt);
     VWidget.adoptEach(selection, adopt);
+    sortColumn = VWidget.adoptOne(sortColumn, adopt);
     topItem = VWidget.adoptOne(topItem, adopt);
   }
 

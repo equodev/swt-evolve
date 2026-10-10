@@ -2312,6 +2312,9 @@ public class DartTree extends DartComposite implements ITree {
     public void setHeaderForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        if (!java.util.Objects.equals(this._headerForeground, newValue)) {
+            getValue().markDirty(VTree.HEADER_FOREGROUND);
+        }
         checkWidget();
         int pixel = -1;
         if (color != null) {
@@ -2584,6 +2587,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortColumn(TreeColumn column) {
         checkWidget();
+        if (!java.util.Objects.equals(this.sortColumn, column)) {
+            getValue().markDirty(VTree.SORT_COLUMN);
+        }
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (sortColumn != null && !sortColumn.isDisposed()) {
@@ -2610,6 +2616,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortDirection(int direction) {
         checkWidget();
+        if (!java.util.Objects.equals(this.sortDirection, direction)) {
+            getValue().markDirty(VTree.SORT_DIRECTION);
+        }
         if ((direction & (SWT.UP | SWT.DOWN)) == 0 && direction != SWT.NONE)
             return;
         sortDirection = direction;

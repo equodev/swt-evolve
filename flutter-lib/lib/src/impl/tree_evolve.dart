@@ -7,6 +7,7 @@ import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/gen/treecolumn.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/gen/widgets.dart';
+import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/droptarget.dart';
 import '../impl/composite_evolve.dart';
@@ -1023,11 +1024,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {
     final columns = getTreeColumns();
     final bool isLastColumn = columnIndex == columns.length - 1;
+    final bool sorted = state.sortColumn != null && state.sortColumn!.id == column.id;
     return TreeColumnIndexProvider(
       columnIndex: columnIndex,
       child: TreeColumnIsLastProvider(
         isLastColumn: isLastColumn,
-        child: TreeColumnSwt(value: column),
+        child: TreeHeaderCellProvider(
+          sortDirection: sorted ? (state.sortDirection ?? SWT.NONE) : SWT.NONE,
+          foreground: state.headerForeground,
+          child: TreeColumnSwt(value: column),
+        ),
       ),
     );
   }
@@ -2157,6 +2163,26 @@ class TreeLinesVisibleProvider extends InheritedWidget {
   bool updateShouldNotify(TreeLinesVisibleProvider oldWidget) {
     return linesVisible != oldWidget.linesVisible;
   }
+}
+
+/// What the Tree decides about one header cell: the sort indicator it shows and the colour of its text.
+class TreeHeaderCellProvider extends InheritedWidget {
+  final int sortDirection;
+  final VColor? foreground;
+
+  const TreeHeaderCellProvider({
+    super.key,
+    required this.sortDirection,
+    required this.foreground,
+    required super.child,
+  });
+
+  static TreeHeaderCellProvider? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TreeHeaderCellProvider>();
+
+  @override
+  bool updateShouldNotify(TreeHeaderCellProvider oldWidget) =>
+      sortDirection != oldWidget.sortDirection || foreground != oldWidget.foreground;
 }
 
 class TreeColumnIsLastProvider extends InheritedWidget {

@@ -58,7 +58,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).headerBackground = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Color getHeaderForeground() {
         return ((DartTree) impl).headerForeground;
     }
@@ -111,7 +110,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).selection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TreeColumn getSortColumn() {
         TreeColumn val = ((DartTree) impl).sortColumn;
         if (val != null && !(val.getImpl() instanceof DartTreeColumn))
@@ -123,7 +121,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).sortColumn = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getSortDirection() {
         return ((DartTree) impl).getSortDirection();
     }
@@ -149,6 +146,8 @@ public class VTree extends VComposite {
 
     public static final String HEADER_BACKGROUND = "headerBackground";
 
+    public static final String HEADER_FOREGROUND = "headerForeground";
+
     public static final String HEADER_VISIBLE = "headerVisible";
 
     public static final String ITEMS = "items";
@@ -156,6 +155,10 @@ public class VTree extends VComposite {
     public static final String LINES_VISIBLE = "linesVisible";
 
     public static final String SELECTION = "selection";
+
+    public static final String SORT_COLUMN = "sortColumn";
+
+    public static final String SORT_DIRECTION = "sortDirection";
 
     public static final String TOP_ITEM = "topItem";
 
@@ -171,6 +174,9 @@ public class VTree extends VComposite {
             case "headerBackground":
                 Serializer.writeKeyValue(writer, "headerBackground", getHeaderBackground());
                 return;
+            case "headerForeground":
+                Serializer.writeKeyValue(writer, "headerForeground", getHeaderForeground());
+                return;
             case "headerVisible":
                 Serializer.writeKeyValue(writer, "headerVisible", getHeaderVisible());
                 return;
@@ -182,6 +188,12 @@ public class VTree extends VComposite {
                 return;
             case "selection":
                 Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "sortColumn":
+                Serializer.writeKeyValue(writer, "sortColumn", getSortColumn());
+                return;
+            case "sortDirection":
+                Serializer.writeKeyValue(writer, "sortDirection", getSortDirection());
                 return;
             case "topItem":
                 Serializer.writeKeyValue(writer, "topItem", getTopItem());

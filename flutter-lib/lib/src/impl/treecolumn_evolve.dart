@@ -77,10 +77,19 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     required Color bgColor,
     required bool hasMultiColumn,
   }) {
-    final TextStyle effectiveStyle = hasMultiColumn
+    final cell = TreeHeaderCellProvider.of(context);
+    TextStyle effectiveStyle = hasMultiColumn
         ? (theme.headerTextStyleWithCols ?? theme.columnTextStyle ?? const TextStyle())
         : (theme.columnTextStyle ?? theme.headerTextStyle ?? const TextStyle())
             .copyWith(color: textColor);
+    // Tree.setHeaderForeground is the application's, and wins where its colours are honoured.
+    final Color headerColor = getForegroundColor(
+      context: context,
+      foreground: cell?.foreground,
+      defaultColor: effectiveStyle.color ?? textColor,
+    );
+    effectiveStyle = effectiveStyle.copyWith(color: headerColor);
+    final int sortDirection = cell?.sortDirection ?? SWT.NONE;
     return Container(
       padding: adjustedPadding,
       decoration: BoxDecoration(color: bgColor),
@@ -96,6 +105,12 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (sortDirection == SWT.UP || sortDirection == SWT.DOWN)
+            Icon(
+              sortDirection == SWT.UP ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              size: (effectiveStyle.fontSize ?? 12) + 2,
+              color: headerColor,
+            ),
         ],
       ),
     );
