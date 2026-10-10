@@ -1796,15 +1796,29 @@ public class StyledTextHelper {
         int lineLength = lineText.length();
 
         int singleLineHeight = getLineHeightAtOffset(renderer, content, lineOffset);
+        int breaks = segmentLineBreaks(renderer, lineOffset, lineText);
 
         if (wrapWidth <= 0 || lineLength == 0) {
-            return singleLineHeight;
+            return singleLineHeight * (1 + breaks);
         }
 
         int textWidth = computeTextWidth(lineText, renderer.regularFont);
         int visualLines = Math.max(1, (textWidth + wrapWidth - 1) / wrapWidth);
 
-        return singleLineHeight * visualLines;
+        return singleLineHeight * (visualLines + breaks);
+    }
+
+    /** The rows a BidiSegmentListener's line breaks among its segment characters add to the line. */
+    private static int segmentLineBreaks(DartStyledTextRenderer renderer, int lineOffset, String lineText) {
+        DartStyledText styledText = widgetOf(renderer);
+        if (styledText == null || !styledText.visualWrap) return 0;
+        StyledTextEvent event = styledText.getBidiSegments(lineOffset, lineText);
+        if (event == null || event.segmentsChars == null) return 0;
+        int breaks = 0;
+        for (char c : event.segmentsChars) {
+            if (c == '\n' || c == '\r') breaks++;
+        }
+        return breaks;
     }
 
     /**
