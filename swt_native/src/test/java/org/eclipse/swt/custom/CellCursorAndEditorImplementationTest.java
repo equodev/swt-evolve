@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * What the Dart-backed TreeCursor, TableCursor and cell editors do when they are driven directly rather than
@@ -113,6 +114,22 @@ class CellCursorAndEditorImplementationTest {
         assertThat(impl._column()).isSameAs(column);
         assertThat(impl._background()).isSameAs(red);
         assertThat(impl._foreground()).isSameAs(red);
+    }
+
+    @Test
+    @DisplayName("a tree disposed under its cursor: the cursor, moving off each released row, shows only live rows")
+    void treeDisposedUnderItsCursor() {
+        Tree tree = new Tree(shell, SWT.NONE);
+        new TreeColumn(tree, SWT.NONE);
+        new TreeItem(tree, SWT.NONE);
+        TreeItem middle = new TreeItem(tree, SWT.NONE);
+        new TreeItem(tree, SWT.NONE);
+        TreeCursor cursor = new TreeCursor(tree, SWT.NONE);
+        cursor.setSelection(middle, 0);
+
+        assertThatCode(shell::dispose).doesNotThrowAnyException();
+        assertThat(tree.isDisposed()).isTrue();
+        assertThat(cursor.isDisposed()).isTrue();
     }
 
     @Test

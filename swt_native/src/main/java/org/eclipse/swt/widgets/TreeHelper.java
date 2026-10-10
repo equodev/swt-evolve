@@ -414,12 +414,17 @@ public class TreeHelper {
 
     /**
      * Recursively collects only visible (expanded) tree items in visual order.
-     * This mimics the behavior of how items appear in the tree UI.
+     * This mimics the behavior of how items appear in the tree UI. A released item is skipped: while a Tree
+     * is being disposed its items go one by one, and a Dispose listener of a later item (a TreeCursor moving
+     * to its neighbour) still shows that neighbour.
      *
      * @param item   the current tree item
      * @param result the list to collect visible items into
      */
     private static void collectVisibleItemsRecursive(TreeItem item, java.util.List<TreeItem> result) {
+        if (item.isDisposed()) {
+            return;
+        }
         result.add(item);
         if (item.getExpanded()) {
             for (TreeItem childItem : item.getItems()) {
