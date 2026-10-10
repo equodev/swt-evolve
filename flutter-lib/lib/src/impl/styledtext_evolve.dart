@@ -3381,10 +3381,11 @@ class TextShape extends Shape {
   }
 
   /// Cocoa's selection rectangles on a wrapped line: a row the selection goes on from is filled to
-  /// the layout's right edge, and a row it goes on to is filled from the layout's left edge.
+  /// the layout's right edge, and a row it goes on to is filled from the layout's left edge. GTK and
+  /// Windows highlight only the selected glyphs.
   List<Rect> _rowContinuations(
       TextPainter tp, List<TextBox> boxes, Offset origin, double layoutLeft, double? layoutRight) {
-    if (direction != TextDirection.ltr) return const [];
+    if (direction != TextDirection.ltr || defaultTargetPlatform != TargetPlatform.macOS) return const [];
     final byRow = <int, Rect>{};
     for (final box in boxes) {
       final row = _rowIndexAt(tp, (box.top + box.bottom) / 2);

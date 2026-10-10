@@ -154,9 +154,7 @@ void main() {
 
       for (final r in rects) {
         final glyphs = plain.matching(r, _black);
-        // The fill a selection gets past a wrapped row's end, or before the row it goes on to, has no glyphs.
-        final rowContinuation = r.right == _canvas.width || r.left == 0;
-        expect(glyphs.isNotEmpty || rowContinuation, isTrue, reason: 'the highlight $r covers glyphs of the plain paint');
+        expect(glyphs, isNotEmpty, reason: 'the highlight $r covers glyphs of the plain paint');
         expect(selected.matching(r, _white), glyphs,
             reason: 'inside the highlight $r, the selection foreground is exactly where the glyphs are');
         expect(selected.matching(r, _black), isEmpty,

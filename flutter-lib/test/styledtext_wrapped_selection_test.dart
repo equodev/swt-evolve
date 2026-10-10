@@ -1,8 +1,10 @@
 // TextLayout.draw on Cocoa (NSLayoutManager's selection rectangles) highlights a selection that goes on
 // past a wrapped row to the layout's right edge, and the rows it continues on from the layout's left edge.
+// GTK and Windows highlight only the selected glyphs.
 
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -37,6 +39,8 @@ Future<void> _paint(TextShape shape) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.macOS);
+  tearDown(() => debugDefaultTargetPlatformOverride = null);
 
   const line = 'aaaaaaa bbbbbbb ccccccc ddddddd eeeeeee';
   for (final (name, props) in [
@@ -67,5 +71,13 @@ void main() {
     await _paint(shape);
     final rects = shape.debugPaintedSelectionRects;
     expect(rects.map((r) => (r.left, r.right)).toList(), [(20.0, 50.0)]);
+  });
+
+  test('off macOS a selection across wrapped rows stays on its glyphs', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    final shape = _shape(line, const LineProperties(),
+        selection: SelectionInfo(start: 10, end: 20, selectionForeground: const Color(0xFFFFFFFF)));
+    await _paint(shape);
+    expect(shape.debugPaintedSelectionRects.map((r) => (r.left, r.right)).toList(), [(100.0, 160.0), (0.0, 40.0)]);
   });
 }
