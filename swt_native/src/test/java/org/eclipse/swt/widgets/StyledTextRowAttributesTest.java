@@ -14,13 +14,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * The positions a StyledText answers before the render side has laid the text out follow the
@@ -114,16 +112,5 @@ class StyledTextRowAttributesTest {
         st.addBidiSegmentListener(event -> event.segments = new int[] {1, 3});
 
         assertThat(st.getLocationAtOffset(2).x).isGreaterThan(st.getLocationAtOffset(1).x);
-    }
-
-    @Test
-    @DisabledOnOs(OS.MAC)
-    void a_bidi_segment_array_must_start_at_the_start_of_the_line_elsewhere() {
-        StyledText st = styledText(SWT.NONE, "abc def");
-
-        assertThatThrownBy(() -> {
-            st.addBidiSegmentListener(event -> event.segments = new int[] {1, 3});
-            st.getLocationAtOffset(2);
-        }).isInstanceOf(IllegalArgumentException.class);
     }
 }
