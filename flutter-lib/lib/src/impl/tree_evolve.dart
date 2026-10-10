@@ -15,11 +15,13 @@ import '../impl/widget_config.dart';
 import '../gen/swt.dart';
 import '../gen/tree.dart';
 import '../gen/treeitem.dart';
+import '../gen/treeeditor.dart';
 import 'treeitem_evolve.dart' show VTreeItemChildren;
 import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../testing/tree_test_registry.dart';
@@ -347,6 +349,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           widgetTheme!,
           effectiveWidths,
         );
+        final childControls = buildChildControlLayer(
+          state,
+          (state.editors ?? const <VTreeEditor>[]).map((e) => e.editor),
+        );
 
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -404,6 +410,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                     ),
                   ),
                 ),
+                if (childControls != null) childControls,
                 ...editorOverlays,
               ],
             ),

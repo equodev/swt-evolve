@@ -21,6 +21,7 @@ import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/item_list_children.dart';
 import '../gen/image.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
@@ -298,9 +299,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final wrappedTable = super.wrap(tableContent);
 
+    final childControls = buildChildControlLayer(
+      state,
+      (state.editors ?? const <VTableEditor>[]).map((e) => e.editor),
+    );
+
     return Stack(
       children: [
         wrappedTable,
+        if (childControls != null) childControls,
         ...editorOverlays,
       ],
     );
