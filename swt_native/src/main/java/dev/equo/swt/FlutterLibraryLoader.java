@@ -53,8 +53,10 @@ public class FlutterLibraryLoader {
     private static final String LINUX_WEBVIEW_PLUGIN_NAME = "libwebview_all_linux_plugin.so";
     private static final String WIN_LIB1_NAME = "flutter_windows.dll";
     private static final String WIN_LIB_NAME = "flutter_bridge.dll";
-    public static final String LINUX_X64_RELEASE = "linux/x64/" + BUILD_MODE_LOWER;
-    public static final String WIN_X64_RELEASE = "windows/x64/runner/" + BUILD_MODE_CAP;
+    // Flutter's own name for the target arch in its build output dirs (build/linux/<arch>, build/windows/<arch>).
+    private static final String FLUTTER_ARCH = "aarch64".equals(System.getProperty("os.arch")) ? "arm64" : "x64";
+    public static final String LINUX_RELEASE = "linux/" + FLUTTER_ARCH + "/" + BUILD_MODE_LOWER;
+    public static final String WIN_RELEASE = "windows/" + FLUTTER_ARCH + "/runner/" + BUILD_MODE_CAP;
 
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
@@ -177,9 +179,9 @@ public class FlutterLibraryLoader {
             loadLibrary(libFile.getAbsolutePath());
         } else {
             String bundleLib = LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP;
-            loadOSLibraries(LINUX_X64_RELEASE, bundleLib + LINUX_ENGINE_LIB_NAME);
-            loadOSLibraries(LINUX_X64_RELEASE, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME);
-            loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
+            loadOSLibraries(LINUX_RELEASE, bundleLib + LINUX_ENGINE_LIB_NAME);
+            loadOSLibraries(LINUX_RELEASE, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME);
+            loadOSLibraries(LINUX_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
         }
     }
 
@@ -199,10 +201,10 @@ public class FlutterLibraryLoader {
             loadLibrary(libWebFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
-            loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB1_NAME);
-            loadOSLibraries(WIN_X64_RELEASE, SEP + "WebView2Loader.dll");
-            loadOSLibraries(WIN_X64_RELEASE, SEP + "webview_all_windows_plugin.dll");
-            loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB_NAME);
+            loadOSLibraries(WIN_RELEASE, SEP + WIN_LIB1_NAME);
+            loadOSLibraries(WIN_RELEASE, SEP + "WebView2Loader.dll");
+            loadOSLibraries(WIN_RELEASE, SEP + "webview_all_windows_plugin.dll");
+            loadOSLibraries(WIN_RELEASE, SEP + WIN_LIB_NAME);
         }
     }
 
@@ -445,9 +447,9 @@ public class FlutterLibraryLoader {
         // "Invalid ELF path". Only the Linux path is verified; Win/mac follow their own layout.
         String bundleBase;
         if (OS_LINUX.equals(os)) {
-            bundleBase = new File(dir, LINUX_X64_RELEASE).getAbsolutePath();
+            bundleBase = new File(dir, LINUX_RELEASE).getAbsolutePath();
         } else if (OS_WIN.equals(os)) {
-            bundleBase = new File(dir, WIN_X64_RELEASE).getAbsolutePath();
+            bundleBase = new File(dir, WIN_RELEASE).getAbsolutePath();
         } else { // macOS
             bundleBase = new File(dir, SWTFLUTTER_APP_CONTENTS).getAbsolutePath();
         }

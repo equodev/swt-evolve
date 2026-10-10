@@ -12,7 +12,7 @@ public interface ExternalBundleProvider {
     /**
      * Extracts (once, cached) the external combined bundle and returns the base directory
      * that CONTAINS the per-OS "release" layout — the value for dev.equo.ewt.bundleDir,
-     * such that {@code <base>/linux/x64/release/bundle/lib/libapp.so} exists. Returns
+     * such that {@code <base>/linux/<x64|arm64>/release/bundle/lib/libapp.so} exists. Returns
      * {@code null} when no bundle is available.
      */
     String extractAndGetBundleBaseDir();

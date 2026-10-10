@@ -186,10 +186,12 @@ dependencies {
     run {
         val javafxVersion = libs.versions.javafx.get()
         val fxArch = getSwtArch(arch)
+        // OpenJFX 21 publishes no linux-aarch64 (nor any win-aarch64) jars; the classifier only changes
+        // the bundled natives, so the x64 jar compiles the same API on those hosts.
         val javafxClassifier = when (currentOs) {
             "macos" -> if (fxArch == "aarch64") "mac-aarch64" else "mac"
             "windows" -> "win"
-            else -> if (fxArch == "aarch64") "linux-aarch64" else "linux"
+            else -> "linux"
         }
         compileOnly("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
         compileOnly("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
@@ -366,7 +368,7 @@ run {
         val javafxClassifier = when (currentOs) {
             "macos" -> if (getSwtArch(arch) == "aarch64") "mac-aarch64" else "mac"
             "windows" -> "win"
-            else -> if (getSwtArch(arch) == "aarch64") "linux-aarch64" else "linux"
+            else -> "linux"
         }
         "testImplementation"("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
         "testImplementation"("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
