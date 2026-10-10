@@ -62,6 +62,20 @@ public class StyledTextLineAttributeDeliveryNativeTest {
     }
 
     @Test
+    @DisplayName("a bulleted line adds its bullet's width to its own indent, or to the widget's when it has none")
+    void bulletOverTheLineOrWidgetIndent() {
+        text.setIndent(10);
+        text.setLineBullet(0, 1, dot());
+        text.setLineIndent(2, 1, 4);
+        text.setLineBullet(2, 1, dot());
+
+        VStyledTextRenderer.VLineInfo[] lines = StyledTextHelper.wireLines(renderer());
+        assertThat(lines[0].getIndent()).isEqualTo(30);
+        assertThat(lines[2].getIndent()).isEqualTo(24);
+        assertThat(StyledTextHelper.wireBulletWidths(renderer())).containsExactly(20, 0, 20, 0);
+    }
+
+    @Test
     @DisplayName("a bullet already on another line, set on one more line, is reported")
     void sharedBulletOnAnotherLine() {
         Bullet bullet = dot();

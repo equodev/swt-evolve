@@ -1227,9 +1227,13 @@ public class StyledTextHelper {
                 DartStyledTextRenderer.LineInfo resolved = new DartStyledTextRenderer.LineInfo(info);
                 resolved.background = background;
                 // A bullet reserves its glyph width before the text, the way the renderer adds it
-                // to the layout's indent when it draws the line itself.
-                resolved.indent += bulletIndent;
-                if (bulletIndent != 0) resolved.flags |= DartStyledTextRenderer.INDENT;
+                // to the layout's indent (the line's own, else the widget's) when it draws the line itself.
+                if (bulletIndent != 0) {
+                    if ((info.flags & DartStyledTextRenderer.INDENT) == 0)
+                        resolved.indent = styledText == null ? 0 : styledText.indent;
+                    resolved.indent += bulletIndent;
+                    resolved.flags |= DartStyledTextRenderer.INDENT;
+                }
                 info = resolved;
             }
             result[i] = new VStyledTextRenderer.VLineInfo(info);
@@ -1260,6 +1264,23 @@ public class StyledTextHelper {
     /** The width a bullet reserves before its line's text, from its style's glyph metrics. */
     private static int bulletWidth(Bullet bullet) {
         return bullet.style == null || bullet.style.metrics == null ? 0 : bullet.style.metrics.width;
+    }
+
+    /**
+     * The width each line's bullet reserves at the start of the line (0 for a line without one), or
+     * null when no line has one. The client draws the bullet inside it, whatever indent the text has.
+     */
+    public static int[] wireBulletWidths(DartStyledTextRenderer renderer) {
+        if (renderer.bullets == null || renderer.content == null) return null;
+        int[] widths = null;
+        int count = renderer.content.getLineCount();
+        for (int i = 0; i < count; i++) {
+            Object[] found = bulletOf(renderer, i);
+            if (found == null) continue;
+            if (widths == null) widths = new int[count];
+            widths[i] = bulletWidth((Bullet) found[0]);
+        }
+        return widths;
     }
 
     /**

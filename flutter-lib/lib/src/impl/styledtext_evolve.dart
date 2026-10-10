@@ -632,6 +632,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             verticalIndent: flags & _lineVerticalIndent != 0 ? vLineInfo.verticalIndent : null,
             wrapIndent: flags & _lineWrapIndent != 0 ? vLineInfo.wrapIndent : null,
             bulletText: (renderer.bulletTexts?.length ?? 0) > i ? renderer.bulletTexts![i] : null,
+            bulletWidth: (renderer.bulletWidths?.length ?? 0) > i ? renderer.bulletWidths![i] : null,
             background: vLineInfo.background == null ? null : colorFromVColor(vLineInfo.background),
             tabStops: flags & _lineTabStops != 0 ? vLineInfo.tabStops : null,
           );
@@ -1331,7 +1332,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     facts['bullets'] = [
       for (final entry in shape.editingState?.lineProperties.entries ?? const <MapEntry<int, LineProperties>>[])
         if (entry.value.bulletText != null)
-          {'line': entry.key.toDouble(), 'text': entry.value.bulletText},
+          {
+            'line': entry.key.toDouble(),
+            'text': entry.value.bulletText,
+            'width': (entry.value.bulletWidth ?? 0).toDouble(),
+          },
     ];
     final block = state.blockSelection == true ? state.blockSelectionBounds : null;
     if (block != null && block.width != 0 && block.height != 0) {
@@ -1982,11 +1987,11 @@ class TextShape extends Shape {
 
   /// Per-line properties that affect layout, from [editingState] when present.
   /// Computed once and shared by every pass over the document.
-  List<({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})?>?
+  List<({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})?>?
       _linePropsCache;
   List<_LineLayout?>? _measuredLineCache;
 
-  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
+  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})
       _linePropsFor(int lineIndex) {
     final memo = _linePropsCache ??= List.filled(_lineStarts.length + 1, null);
     if (lineIndex >= 0 && lineIndex < memo.length) {
@@ -2019,7 +2024,7 @@ class TextShape extends Shape {
     return layout;
   }
 
-  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
+  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})
       _buildLinePropsFor(int lineIndex) {
     final props = editingState?.lineProperties[lineIndex];
     final indent = props?.indent ?? widgetLine.indent ?? 0;
@@ -2034,6 +2039,7 @@ class TextShape extends Shape {
       align: (props?.justify ?? widgetLine.justify ?? false) ? TextAlign.justify : align,
       vIndent: props?.verticalIndent ?? 0,
       bulletText: props?.bulletText,
+      bulletWidth: props?.bulletWidth ?? 0,
     );
   }
 
@@ -2053,7 +2059,7 @@ class TextShape extends Shape {
 
   /// StyledText#setLineWrapIndent: the rows a line continues on start at the wrap indent
   /// instead of at the line's own indent.
-  double _rowOriginX(({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText}) props,
+  double _rowOriginX(({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth}) props,
           double lineOriginX, int row) =>
       row == 0 ? lineOriginX : lineOriginX - props.indent + props.wrapIndent;
 
@@ -2324,10 +2330,11 @@ class TextShape extends Shape {
     if (clip != null) c.restore();
   }
 
-  /// StyledText#setLineBullet: the bullet sits in the width it reserved before the text, right
-  /// aligned against it the way the renderer draws it (8px of margin, as BULLET_MARGIN).
+  /// StyledText#setLineBullet: the bullet sits at the line start in the width it reserved, right
+  /// aligned against it the way the renderer draws it (8px of margin, as BULLET_MARGIN); the line's
+  /// own indent moves only the text.
   void _drawBullet(Canvas c,
-      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText}) props,
+      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth}) props,
       double originX, double y) {
     final bullet = props.bulletText;
     if (bullet == null || bullet.isEmpty) return;
@@ -2335,7 +2342,7 @@ class TextShape extends Shape {
       text: TextSpan(text: bullet, style: style),
       textDirection: direction,
     )..layout();
-    final x = math.max(0.0, props.indent - painter.width - _bulletMargin);
+    final x = math.max(0.0, props.bulletWidth - painter.width - _bulletMargin);
     painter.paint(c, Offset(originX + x, y));
     painter.dispose();
   }
@@ -3249,7 +3256,7 @@ class TextShape extends Shape {
 
   /// The visual row [posInLine] starts, when it starts one after the first.
   int? _rowStartingAt(String line, int lineIndex,
-      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText}) props,
+      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth}) props,
       double maxW, int posInLine) {
     if (posInLine == 0) return null;
     final rowEnds = _lineLayout(line, lineIndex,
@@ -4102,6 +4109,8 @@ class LineProperties {
   /// StyledText#setLineBullet: what to paint before the line, inside the width its style's glyph
   /// metrics reserved (which is already part of [indent]).
   final String? bulletText;
+  /// The width the bullet's glyph metrics reserve at the start of the line.
+  final int? bulletWidth;
   /// StyledText#setLineBackground: painted behind the whole line.
   final Color? background;
   /// StyledText#setLineTabStops: absolute stops, the last interval repeating past the end.
@@ -4114,6 +4123,7 @@ class LineProperties {
     this.verticalIndent,
     this.wrapIndent,
     this.bulletText,
+    this.bulletWidth,
     this.background,
     this.tabStops,
   });
@@ -4127,6 +4137,7 @@ class LineProperties {
           other.verticalIndent == verticalIndent &&
           other.wrapIndent == wrapIndent &&
           other.bulletText == bulletText &&
+          other.bulletWidth == bulletWidth &&
           other.background == background &&
           const ListEquality<int>().equals(other.tabStops, tabStops));
 }

@@ -2421,6 +2421,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return StyledTextHelper.wireBulletTexts(this);
     }
 
+    int[] wireBulletWidths() {
+        return StyledTextHelper.wireBulletWidths(this);
+    }
+
     int[] wireRanges() {
         return StyledTextHelper.wireRanges(this);
     }
