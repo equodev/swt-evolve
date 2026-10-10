@@ -108,6 +108,39 @@ public class ComboHelper {
         sendSegments(combo);
     }
 
+    /**
+     * The selected index. Cocoa's combo box keeps the row of its list that was last selected whatever happens to
+     * the items, and answers it as long as the list is long enough: after {@code select(1)} and a {@code setItems}
+     * of three items it still answers 1, and a list that is too short answers -1 until it grows again. A pop-up
+     * button and the other natives answer the index of the item itself.
+     */
+    public static int getSelectionIndex(DartCombo combo) {
+        int row = combo.selectedIndex;
+        return cocoa() && !readOnly(combo) && row >= combo.items.length ? -1 : row;
+    }
+
+    /** All items are gone: only Cocoa's combo box keeps its selected row. */
+    public static void listEmptied(DartCombo combo) {
+        if (!cocoa() || readOnly(combo))
+            combo.selectedIndex = -1;
+        syncReadOnlyText(combo);
+    }
+
+    /**
+     * Deselects whatever is selected. A read-only combo shows nothing then and says so, even when nothing was
+     * selected; Cocoa's combo box deselects the row only while it answers it, so a row the list is too short
+     * for survives.
+     */
+    public static void deselectAll(DartCombo combo) {
+        if (readOnly(combo)) {
+            combo.selectedIndex = -1;
+            syncReadOnlyText(combo);
+            combo.sendEvent(SWT.Modify);
+        } else if (!cocoa() || combo.getSelectionIndex() != -1) {
+            combo.selectedIndex = -1;
+        }
+    }
+
     /** A read-only combo shows its selected item, or nothing: its text follows whatever moved the selection. */
     public static void syncReadOnlyText(DartCombo combo) {
         if (!readOnly(combo))
@@ -147,8 +180,8 @@ public class ComboHelper {
 
     /**
      * Takes the item at {@code index} out. Cocoa's pop-up button hands the selection of the removed item to
-     * the first item, and its combo box keeps the index it had (nothing when that no longer exists) and the
-     * text; neither tells the listeners. The other natives deselect the item, empty the text and say so.
+     * the first item, and its combo box keeps the row it had (see {@link #getSelectionIndex}) and the text;
+     * neither tells the listeners. The other natives deselect the item, empty the text and say so.
      */
     public static void removeAt(DartCombo combo, int index) {
         combo.getValue().markDirty(VCombo.ITEMS);
@@ -158,11 +191,8 @@ public class ComboHelper {
         combo.items = items;
         int selected = combo.selectedIndex;
         if (cocoa()) {
-            if (!readOnly(combo)) {
-                if (selected >= items.length)
-                    combo.selectedIndex = -1;
+            if (!readOnly(combo))
                 return;
-            }
             if (index == selected)
                 combo.selectedIndex = items.length > 0 ? 0 : -1;
             else if (index < selected)
