@@ -652,7 +652,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       const Color(0xFF3399FF);
 
   /// StyledText#setSelectionForeground, the CSS engine's other selection setter: the selected
-  /// glyphs are repainted in it over the highlight. Null keeps the glyphs as they are.
+  /// glyphs are drawn in it over the highlight. Null leaves [SelectionInfo]'s default.
   Color? get _selectionForeground => state.selectionForeground == null
       ? null
       : colorFromVColor(state.selectionForeground);
@@ -2154,6 +2154,8 @@ class TextShape extends Shape {
     // Running line tops, kept with the layout; the paint starts and stops at the band's lines.
     final tops = _lineTops(lines);
     int firstLine = _lineAtTop(tops, cullTop - paintOffset.dy);
+    final selections = [for (final s in allSelections) if (s.hasSelection) s];
+    debugPaintedSelectionRects.clear();
 
     for (int i = firstLine; i < lines.length; i++) {
       currentY = paintOffset.dy + tops[i];
@@ -2193,15 +2195,20 @@ class TextShape extends Shape {
       // A wrap indent shifts only the rows the line continues on, so the layout is painted
       // once per indent, each pass clipped to the rows it applies to.
       final wrapShift = props.wrapIndent - props.indent;
+      final selected = _selectionsOnLine(selections, i, line);
       void paintRows(double x, Rect? band) {
         if (band != null) {
           c.save();
           c.clipRect(band);
         }
-        _drawRangeBackgrounds(c, i, line, tp, Offset(x, currentY + vIndent), currentY + advance);
-        _paintLineWithRises(c, tp, i, line, Offset(x, currentY + vIndent));
-        _drawRangeBorders(c, i, line, tp, Offset(x, currentY + vIndent));
-        _drawSeparateStrikeouts(c, i, line, tp, Offset(x, currentY + vIndent));
+        final origin = Offset(x, currentY + vIndent);
+        _drawRangeBackgrounds(c, i, line, tp, origin, currentY + advance);
+        _paintLineWithRises(c, tp, i, line, origin);
+        _drawRangeBorders(c, i, line, tp, origin);
+        _drawSeparateStrikeouts(c, i, line, tp, origin);
+        for (final run in selected) {
+          if (run.from < run.to) _drawSelectedRun(c, run, i, line, tp, maxW, origin, band);
+        }
         if (band != null) c.restore();
       }
       _drawBullet(c, props, paintOffset.dx, currentY + vIndent);
@@ -2214,11 +2221,9 @@ class TextShape extends Shape {
         paintRows(originX + wrapShift,
             Rect.fromLTRB(0, split, width, currentY + vIndent + tp.height));
       }
-    }
-
-    debugPaintedSelectionRects.clear();
-    for (final selection in allSelections) {
-      if (selection.hasSelection) _drawSelection(c, selection);
+      for (final run in selected) {
+        if (run.delimiter) _drawSelectedDelimiter(c, run.selection, tp, originX, currentY + vIndent);
+      }
     }
 
     if (clipRect != null) {
@@ -3282,135 +3287,84 @@ class TextShape extends Shape {
   /// The highlight rectangles the last paint drew, for [StyledTextImpl.debugRenderFacts].
   final List<Rect> debugPaintedSelectionRects = [];
 
-  void _drawSelection(Canvas c, SelectionInfo selection) {
-    final startOffset = selection.normalizedStart.clamp(0, text.length);
-    final endOffset = selection.normalizedEnd.clamp(0, text.length);
-
-    if (startOffset == endOffset) return;
-
-    final lines = _lines;
-
-    int currentLineStartOffset = 0;
-    int startLineIndex = 0;
-    int endLineIndex = 0;
-    int startPositionInLine = 0;
-    int endPositionInLine = 0;
-
-    for (int i = 0; i < lines.length; i++) {
-      final lineLength = lines[i].length;
-      final lineEndOffset = currentLineStartOffset + lineLength;
-
-      if (startOffset >= currentLineStartOffset &&
-          startOffset <= lineEndOffset) {
-        startLineIndex = i;
-        startPositionInLine = startOffset - currentLineStartOffset;
-      }
-
-      if (endOffset >= currentLineStartOffset && endOffset <= lineEndOffset) {
-        endLineIndex = i;
-        endPositionInLine = endOffset - currentLineStartOffset;
-        break;
-      }
-
-      currentLineStartOffset = lineEndOffset + 1;
-    }
-
-    final tops = _lineTops(lines);
-
-    for (
-      int lineIndex = startLineIndex;
-      lineIndex <= endLineIndex;
-      lineIndex++
-    ) {
-      final line = lines[lineIndex];
-      final props = _linePropsFor(lineIndex);
-
-      final tp = _layoutLine(
-        line,
-        lineIndex,
-          align: props.align,
-        maxWidth: _lineMaxWidth(props.layoutIndent),
-      );
-
-      final currentY = off.dy + tops[lineIndex] + props.vIndent;
-
-      int lineSelectionStart = 0;
-      int lineSelectionEnd = line.length;
-
-      if (lineIndex == startLineIndex) {
-        lineSelectionStart = startPositionInLine;
-      }
-      if (lineIndex == endLineIndex) {
-        lineSelectionEnd = endPositionInLine;
-      }
-
-      // A line whose delimiter is inside the selection is highlighted past its last character:
-      // to the right edge with FULL_SELECTION, by the delimiter's own extent otherwise. It is the
-      // only highlight an empty line inside a selection gets.
-      if (lineIndex < endLineIndex) {
-        final tail = tp.width + off.dx + props.indent;
-        final right = fullSelection
-            ? math.max(tail, canvasSize?.width ?? tail)
-            : tail + _measureRun(' ', style);
-        final rect = Rect.fromLTRB(tail, currentY, right, currentY + _advance(tp.height));
-        debugPaintedSelectionRects.add(rect);
-        c.drawRect(rect, Paint()..color = selection.selectionColor);
-      }
-
-      if (lineSelectionStart < lineSelectionEnd) {
-        final boxes = tp.getBoxesForSelection(
-          TextSelection(
-            baseOffset: lineSelectionStart.clamp(0, line.length),
-            extentOffset: lineSelectionEnd.clamp(0, line.length),
+  /// What each selection covers of line [lineIndex]: the columns of its glyphs, and whether it
+  /// goes on past the line's delimiter.
+  List<({SelectionInfo selection, int from, int to, bool delimiter})> _selectionsOnLine(
+      List<SelectionInfo> selections, int lineIndex, String line) {
+    if (selections.isEmpty) return const [];
+    final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
+    final lineEnd = lineStart + line.length;
+    return [
+      for (final selection in selections)
+        if (selection.normalizedStart.clamp(0, text.length) <= lineEnd &&
+            selection.normalizedEnd.clamp(0, text.length) >= lineStart)
+          (
+            selection: selection,
+            from: math.max(selection.normalizedStart.clamp(0, text.length), lineStart) - lineStart,
+            to: math.min(selection.normalizedEnd.clamp(0, text.length), lineEnd) - lineStart,
+            delimiter: selection.normalizedEnd.clamp(0, text.length) > lineEnd,
           ),
-        );
+    ];
+  }
 
-        for (final box in boxes) {
-          final selectionRect = Rect.fromLTWH(
-            off.dx + props.indent.toDouble() + box.left,
-            currentY + box.top,
-            box.right - box.left,
-            box.bottom - box.top,
-          );
-          debugPaintedSelectionRects.add(selectionRect);
-
-          c.drawRect(
-            selectionRect,
-            Paint()
-              ..color = selection.selectionColor
-              ..style = PaintingStyle.fill,
-          );
-        }
-
-        final selectionForeground = selection.selectionForeground;
-        if (selectionForeground != null && boxes.isNotEmpty) {
-          final recoloured = TextPainter(
-            text: _recolour(tp.text!, selectionForeground),
-            textAlign: tp.textAlign,
-            textDirection: TextDirection.ltr,
-          );
-          if (tp.inlinePlaceholderBoxes != null) {
-            recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
-          }
-          recoloured.layout(maxWidth: _lineMaxWidth(props.layoutIndent));
-          c.save();
-          c.clipRect(boxes
-              .map((b) => Rect.fromLTRB(
-                  off.dx + props.indent + b.left, currentY + b.top,
-                  off.dx + props.indent + b.right, currentY + b.bottom))
-              .reduce((a, b) => a.expandToInclude(b)));
-          recoloured.paint(c, Offset(off.dx + props.indent.toDouble(), currentY));
-          c.restore();
-        }
-      }
+  /// TextLayout.draw's order for a selected run: the highlight over whatever the run painted
+  /// behind and under its glyphs, then the glyphs again on top in the selection foreground, laid
+  /// out and placed as the line's own so they land on the glyphs they replace.
+  void _drawSelectedRun(
+      Canvas c,
+      ({SelectionInfo selection, int from, int to, bool delimiter}) run,
+      int lineIndex,
+      String line,
+      TextPainter tp,
+      double maxWidth,
+      Offset origin,
+      Rect? band) {
+    final boxes = tp.getBoxesForSelection(TextSelection(baseOffset: run.from, extentOffset: run.to));
+    if (boxes.isEmpty) return;
+    final highlight = Paint()..color = run.selection.selectionColor;
+    final selected = Path();
+    for (final box in boxes) {
+      final rect = box.toRect().shift(origin);
+      if (band == null || rect.overlaps(band)) debugPaintedSelectionRects.add(rect);
+      c.drawRect(rect, highlight);
+      selected.addRect(rect);
     }
+    final recoloured = TextPainter(
+      text: _recolour(tp.text!, run.selection.selectionForeground),
+      textAlign: tp.textAlign,
+      textDirection: direction,
+    );
+    if (tp.inlinePlaceholderBoxes != null) {
+      recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
+    }
+    recoloured.layout(maxWidth: maxWidth);
+    c.save();
+    c.clipPath(selected);
+    _paintLineWithRises(c, recoloured, lineIndex, line, origin);
+    c.restore();
+    recoloured.dispose();
+  }
+
+  /// A line whose delimiter is inside the selection is highlighted past its last character: to
+  /// the right edge with FULL_SELECTION, by the delimiter's own extent otherwise. It is the only
+  /// highlight an empty line inside a selection gets.
+  void _drawSelectedDelimiter(Canvas c, SelectionInfo selection, TextPainter tp, double originX, double top) {
+    final tail = originX + tp.width;
+    final right = fullSelection
+        ? math.max(tail, canvasSize?.width ?? tail)
+        : tail + _measureRun(' ', style);
+    final rect = Rect.fromLTRB(tail, top, right, top + _advance(tp.height));
+    debugPaintedSelectionRects.add(rect);
+    c.drawRect(rect, Paint()..color = selection.selectionColor);
   }
 
   InlineSpan _recolour(InlineSpan span, Color color) {
     if (span is! TextSpan) return span;
     return TextSpan(
       text: span.text,
-      style: (span.style ?? const TextStyle()).copyWith(color: color),
+      // The highlight is the selected run's background: a range's own would cover it again.
+      style: (span.style ?? const TextStyle())
+          .copyWith(color: color, background: Paint()..color = const Color(0x00000000)),
       children: span.children?.map((s) => _recolour(s, color)).toList(),
     );
   }
@@ -3995,16 +3949,19 @@ class StyleRange {
 class SelectionInfo {
   final int start;
   final int end;
+  /// The highlight behind the selected run. The default is the Display's COLOR_LIST_SELECTION,
+  /// what StyledText#getSelectionBackground answers while none is set.
   final Color selectionColor;
-  /// Colour the selected glyphs are repainted in; null leaves them in their own colour.
-  final Color? selectionForeground;
+  /// The colour the selected glyphs are drawn in over the highlight. The default is the Display's
+  /// COLOR_LIST_SELECTION_TEXT, what StyledText#getSelectionForeground answers while none is set.
+  final Color selectionForeground;
   final bool isActive;
 
   SelectionInfo({
     required this.start,
     required this.end,
     this.selectionColor = const Color(0xFF3399FF),
-    this.selectionForeground,
+    this.selectionForeground = const Color(0xFFFFFFFF),
     this.isActive = false,
   });
 
