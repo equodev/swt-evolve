@@ -1505,8 +1505,21 @@ public class StyledTextHelper {
         renderer.ascent = metrics.ascent;
         renderer.descent = metrics.descent;
         renderer.averageCharWidth = metrics.averageCharWidth;
-        renderer.tabWidth = metrics.tabWidth;
+        renderer.tabWidth = spacesWidth(renderer.device, font, tabLength, metrics.tabWidth);
         renderer.fixedPitch = isFixedPitch(font);
+    }
+
+    /** StyledTextRenderer.setFont's tab width: the width of a layout holding {@code count} spaces. */
+    private static int spacesWidth(org.eclipse.swt.graphics.Device device, Font font, int count, int fallback) {
+        if (device == null || device.isDisposed() || font == null || font.isDisposed()) return fallback;
+        org.eclipse.swt.graphics.TextLayout layout = new org.eclipse.swt.graphics.TextLayout(device);
+        try {
+            layout.setFont(font);
+            layout.setText(" ".repeat(count));
+            return layout.getBounds().width;
+        } finally {
+            layout.dispose();
+        }
     }
 
     /** Whether "l" and "W" are as wide as each other in the font, which is how SWT tells a fixed pitch font. */

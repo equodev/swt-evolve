@@ -57,14 +57,15 @@ class StyledTextRowAttributesTest {
 
     @Test
     void the_tab_setting_sets_the_width_of_a_tab() {
-        StyledText st = styledText(SWT.NONE, "a\tb");
+        // A tab at the line start: a stop narrower than a character before it would land on the next one.
+        StyledText st = styledText(SWT.NONE, "\tb");
 
         st.setTabs(2);
-        int narrow = st.getLocationAtOffset(2).x;
+        int narrow = st.getLocationAtOffset(1).x;
         st.setTabs(4);
-        int normal = st.getLocationAtOffset(2).x;
+        int normal = st.getLocationAtOffset(1).x;
         st.setTabs(8);
-        int wide = st.getLocationAtOffset(2).x;
+        int wide = st.getLocationAtOffset(1).x;
 
         assertThat(narrow).isLessThan(normal);
         assertThat(normal).isLessThan(wide);
