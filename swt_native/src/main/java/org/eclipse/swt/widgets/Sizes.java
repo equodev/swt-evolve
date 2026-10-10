@@ -777,7 +777,13 @@ public class Sizes {
         return result;
     }
 
+    /**
+     * A released item is skipped: while a Tree is being disposed its items go one by one, and a Dispose
+     * listener of a later item (a TreeCursor moving to its neighbour) still asks for that neighbour's bounds.
+     */
     private static void addVisible(List<TreeItem> result, TreeItem item) {
+        if (item.isDisposed())
+            return;
         result.add(item);
         if (item.getExpanded()) {
             for (TreeItem child : item.getItems()) {
