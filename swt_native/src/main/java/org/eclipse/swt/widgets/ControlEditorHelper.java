@@ -7,6 +7,9 @@ import java.lang.reflect.Array;
 
 public class ControlEditorHelper {
 
+    private ControlEditorHelper() {
+    }
+
     /**
      * Whether any of {@code editors} holds {@code control}. Called when the control leaves its parent --
      * which, for a cell editor, is how an application closes one: it disposes the control it put over the
