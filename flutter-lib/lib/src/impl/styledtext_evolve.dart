@@ -2230,7 +2230,10 @@ class TextShape extends Shape {
         _drawRangeBorders(c, i, line, tp, origin);
         _drawSeparateStrikeouts(c, i, line, tp, origin);
         for (final run in selected) {
-          if (run.from < run.to) _drawSelectedRun(c, run, i, line, tp, maxW, origin, band);
+          if (run.from < run.to) {
+            _drawSelectedRun(c, run, i, line, tp, maxW, origin, band, paintOffset.dx,
+                maxW.isFinite ? paintOffset.dx + props.layoutIndent + maxW : null);
+          }
         }
         if (band != null) c.restore();
       }
@@ -3342,16 +3345,24 @@ class TextShape extends Shape {
       TextPainter tp,
       double maxWidth,
       Offset origin,
-      Rect? band) {
+      Rect? band,
+      double layoutLeft,
+      double? layoutRight) {
     final boxes = tp.getBoxesForSelection(TextSelection(baseOffset: run.from, extentOffset: run.to));
     if (boxes.isEmpty) return;
     final highlight = Paint()..color = run.selection.selectionColor;
     final selected = Path();
-    for (final box in boxes) {
-      final rect = box.toRect().shift(origin);
+    void fill(Rect rect) {
       if (band == null || rect.overlaps(band)) debugPaintedSelectionRects.add(rect);
       c.drawRect(rect, highlight);
       selected.addRect(rect);
+    }
+
+    for (final box in boxes) {
+      fill(box.toRect().shift(origin));
+    }
+    for (final rect in _rowContinuations(tp, boxes, origin, layoutLeft, layoutRight)) {
+      fill(rect);
     }
     final recoloured = TextPainter(
       text: _recolour(tp.text!, run.selection.selectionForeground),
@@ -3367,6 +3378,29 @@ class TextShape extends Shape {
     _paintLineWithRises(c, recoloured, lineIndex, line, origin);
     c.restore();
     recoloured.dispose();
+  }
+
+  /// Cocoa's selection rectangles on a wrapped line: a row the selection goes on from is filled to
+  /// the layout's right edge, and a row it goes on to is filled from the layout's left edge.
+  List<Rect> _rowContinuations(
+      TextPainter tp, List<TextBox> boxes, Offset origin, double layoutLeft, double? layoutRight) {
+    if (direction != TextDirection.ltr) return const [];
+    final byRow = <int, Rect>{};
+    for (final box in boxes) {
+      final row = _rowIndexAt(tp, (box.top + box.bottom) / 2);
+      final rect = box.toRect().shift(origin);
+      byRow[row] = byRow[row]?.expandToInclude(rect) ?? rect;
+    }
+    if (byRow.length < 2) return const [];
+    final rows = byRow.keys.toList()..sort();
+    return [
+      for (final row in rows) ...[
+        if (row != rows.last && layoutRight != null && byRow[row]!.right < layoutRight)
+          Rect.fromLTRB(byRow[row]!.right, byRow[row]!.top, layoutRight, byRow[row]!.bottom),
+        if (row != rows.first && byRow[row]!.left > layoutLeft)
+          Rect.fromLTRB(layoutLeft, byRow[row]!.top, byRow[row]!.left, byRow[row]!.bottom),
+      ],
+    ];
   }
 
   /// A line whose delimiter is inside the selection is highlighted past its last character: to
