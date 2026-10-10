@@ -1617,7 +1617,9 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             boldFont = italicFont = boldItalicFont = null;
             regularFont = font;
             StyledTextHelper.markRendererDirty(this);
-            StyledTextHelper.updateRendererFontMetrics(this, font, tabs);
+        }
+        if (regularFont != null) {
+            StyledTextHelper.updateRendererFontMetrics(this, regularFont, tabs);
         }
     }
 
