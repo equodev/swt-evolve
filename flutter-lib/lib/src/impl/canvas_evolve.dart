@@ -401,20 +401,23 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final showVBar = vBar != null && vBar.visible != false && _isScrollable(vBar);
     
     if (!showVBar && !showHBar) {
+      void onSignal(PointerSignalEvent event) {
+        if (event is PointerScrollEvent && onWheel != null) {
+          onWheel(event);
+        } else if (event is PointerScrollEvent) {
+          widget.sendMouseWheelMouseWheel(
+            state,
+            VEvent()
+              ..x = event.localPosition.dx.round()
+              ..y = event.localPosition.dy.round()
+              ..count = event.scrollDelta.dy > 0 ? -3 : 3,
+          );
+        }
+      }
+
       return Listener(
-        onPointerSignal: (event) {
-          if (event is PointerScrollEvent && onWheel != null) {
-            onWheel(event);
-          } else if (event is PointerScrollEvent) {
-            widget.sendMouseWheelMouseWheel(
-              state,
-              VEvent()
-                ..x = event.localPosition.dx.round()
-                ..y = event.localPosition.dy.round()
-                ..count = event.scrollDelta.dy > 0 ? -3 : 3,
-            );
-          }
-        },
+        onPointerSignal: onSignal,
+        onPointerPanZoomUpdate: (event) => _panAsWheel(event, onSignal),
         child: base,
       );
     }
@@ -437,17 +440,20 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChild = state.children != null && state.children!.isNotEmpty;
-    return Listener(
-      onPointerSignal: (event) {
-        if (event is PointerScrollEvent && onWheel != null) {
-          onWheel(event);
-        } else if (event is PointerScrollEvent) {
-          final now = DateTime.now().millisecondsSinceEpoch;
-          if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
-            _handleMouseWheel(event);
-          }
+    void onSignal(PointerSignalEvent event) {
+      if (event is PointerScrollEvent && onWheel != null) {
+        onWheel(event);
+      } else if (event is PointerScrollEvent) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
+          _handleMouseWheel(event);
         }
-      },
+      }
+    }
+
+    return Listener(
+      onPointerSignal: onSignal,
+      onPointerPanZoomUpdate: (event) => _panAsWheel(event, onSignal),
       child: Stack(
         children: [
           base,
@@ -541,6 +547,21 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       "ScrollBar/${bar.id}/Selection/Selection",
       (VEvent()..index = newValue..detail = detail).toJson(),
     );
+  }
+
+  /// Desktop embedders report a two-finger trackpad swipe as pan/zoom updates, not scroll signals.
+  /// The fingers drag the content, so the equivalent wheel delta is the pan reversed.
+  void _panAsWheel(PointerPanZoomUpdateEvent event, void Function(PointerSignalEvent) onSignal) {
+    final delta = -event.panDelta;
+    if (delta == Offset.zero) return;
+    onSignal(PointerScrollEvent(
+      timeStamp: event.timeStamp,
+      kind: event.kind,
+      device: event.device,
+      position: event.position,
+      scrollDelta: delta,
+      embedderId: event.embedderId,
+    ).transformed(event.transform));
   }
 
   void _handleMouseWheel(PointerScrollEvent event) {
