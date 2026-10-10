@@ -1268,7 +1268,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public TreeItem[] getSelection() {
         checkWidget();
-        return this.selection;
+        return this.selection.clone();
     }
 
     /**
@@ -1854,9 +1854,7 @@ public class DartTree extends DartComposite implements ITree {
         boolean fixColumn = showFirstColumn();
         if (fixColumn)
             hideFirstColumn();
-        items = TreeHelper.collectAllItems(this);
-        selection = items;
-        getValue().markDirty(VTree.ITEMS);
+        TreeHelper.selectAll(this);
     }
 
     @Override

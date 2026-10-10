@@ -1535,7 +1535,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public TreeItem[] getSelection() {
         checkWidget();
-        return this.selection;
+        return this.selection.clone();
     }
 
     /**
@@ -2092,9 +2092,7 @@ public class DartTree extends DartComposite implements ITree {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        items = TreeHelper.collectAllItems(this);
-        selection = items;
-        getValue().markDirty(VTree.ITEMS);
+        TreeHelper.selectAll(this);
     }
 
     Event sendMeasureItemEvent(TreeItem item, int index, long hDC, int detail) {

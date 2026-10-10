@@ -11,6 +11,9 @@ import dev.equo.swt.Serializer;
 
 public class TreeHelper {
 
+    private TreeHelper() {
+    }
+
     // How far Flutter has scrolled the tree, in pixels. A Tree's rows are laid out and scrolled on
     // the Dart side, so Java has no other way to know: without it every coordinate-to-row lookup
     // counts from the first item of the model and resolves the wrong row on a scrolled tree.
@@ -27,19 +30,54 @@ public class TreeHelper {
         return offset == null ? 0 : offset;
     }
 
+    /** The selection Cocoa reports: each item once, in the order of the rows they show on. */
+    static TreeItem[] inRowOrder(DartTree tree, TreeItem[] items) {
+        java.util.LinkedHashSet<TreeItem> unique = new java.util.LinkedHashSet<>();
+        for (TreeItem item : items) {
+            if (item != null && !item.isDisposed()) unique.add(item);
+        }
+        if (unique.size() < 2) return unique.toArray(new TreeItem[0]);
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        java.util.List<TreeItem> ordered = new java.util.ArrayList<>(unique.size());
+        for (TreeItem row : rows) {
+            if (unique.remove(row)) ordered.add(row);
+        }
+        ordered.addAll(unique);
+        return ordered.toArray(new TreeItem[0]);
+    }
+
+    static void setSelection(DartTree tree, TreeItem[] selection) {
+        if (!java.util.Arrays.equals(tree.selection, selection)) {
+            tree.selection = selection;
+            tree.getValue().markDirty(VTree.SELECTION);
+        }
+    }
+
+    /** Adds {@code item} to the selection of a multi-selection tree; a single-selection tree selects only it. */
+    public static void select(DartTree tree, TreeItem item) {
+        boolean multi = (tree.getApi().style & SWT.MULTI) != 0;
+        TreeItem[] current = multi ? tree.selection : new TreeItem[0];
+        TreeItem[] next = java.util.Arrays.copyOf(current, current.length + 1);
+        next[current.length] = item;
+        setSelection(tree, inRowOrder(tree, next));
+    }
+
+    public static void deselect(DartTree tree, TreeItem item) {
+        java.util.List<TreeItem> kept = new java.util.ArrayList<>(java.util.Arrays.asList(tree.selection));
+        if (kept.remove(item)) setSelection(tree, kept.toArray(new TreeItem[0]));
+    }
+
+    public static void deselectAll(DartTree tree) {
+        setSelection(tree, new TreeItem[0]);
+    }
+
+    /** Selects every row the tree shows: the children of a collapsed item are not rows. */
+    public static void selectAll(DartTree tree) {
+        setSelection(tree, visibleItems(tree).toArray(new TreeItem[0]));
+    }
+
     /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */
     public static final int EMPTINESS_CHANGED = 56;
-
-    public static TreeItem[] collectAllItems(DartTree dartTree) {
-        java.util.List<TreeItem> result = new java.util.ArrayList<>();
-        TreeItem[] rootItems = dartTree.getApi().getItems();
-        for (TreeItem rootItem : rootItems) {
-            if (rootItem != null) {
-                collectAllItemsRecursive(rootItem, result);
-            }
-        }
-        return result.toArray(new TreeItem[result.size()]);
-    }
 
     /**
      * Sends a selection event for the tree item at the specified visual index.
@@ -247,30 +285,6 @@ public class TreeHelper {
         }
     }
 
-    public static int getNonNullItemCount(DartTree dartTree) {
-        TreeItem[] items = dartTree.getItems();
-        if (items == null) return 0;
-        int count = 0;
-        for (TreeItem item : items) {
-            if (item != null) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static void collectAllItemsRecursive(TreeItem item, java.util.List<TreeItem> result) {
-        if (item != null) {
-            result.add(item);
-            TreeItem[] childItems = item.getItems();
-            for (TreeItem childItem : childItems) {
-                if (childItem != null) {
-                    collectAllItemsRecursive(childItem, result);
-                }
-            }
-        }
-    }
-
     /**
      * The row a client event is about. The client names it by id: its row index counts the rows it
      * shows, and the tree may have been rebuilt since (a filter refresh), putting another item at
@@ -292,7 +306,7 @@ public class TreeHelper {
      * @return the TreeItem at the specified index, or null if invalid
      */
     private static TreeItem getVisibleItemAtIndex(DartTree tree, int index) {
-        if (tree == null || index < 0) {
+        if (index < 0) {
             return null;
         }
 
@@ -306,13 +320,11 @@ public class TreeHelper {
         return visibleItems.get(index);
     }
 
-    /** The items the tree shows, in visual order. */
-    private static java.util.List<TreeItem> visibleItems(DartTree tree) {
+    /** The items the tree shows as rows, in row order: the roots and the children of every expanded item. */
+    static java.util.List<TreeItem> visibleItems(DartTree tree) {
         java.util.List<TreeItem> visibleItems = new java.util.ArrayList<>();
         for (TreeItem rootItem : tree.getApi().getItems()) {
-            if (rootItem != null) {
-                collectVisibleItemsRecursive(rootItem, visibleItems);
-            }
+            collectVisibleItemsRecursive(rootItem, visibleItems);
         }
         return visibleItems;
     }
@@ -325,16 +337,10 @@ public class TreeHelper {
      * @param result the list to collect visible items into
      */
     private static void collectVisibleItemsRecursive(TreeItem item, java.util.List<TreeItem> result) {
-        if (item != null) {
-            result.add(item);
-            // Only add children if this item is expanded
-            if (item.getExpanded()) {
-                TreeItem[] childItems = item.getItems();
-                for (TreeItem childItem : childItems) {
-                    if (childItem != null) {
-                        collectVisibleItemsRecursive(childItem, result);
-                    }
-                }
+        result.add(item);
+        if (item.getExpanded()) {
+            for (TreeItem childItem : item.getItems()) {
+                collectVisibleItemsRecursive(childItem, result);
             }
         }
     }

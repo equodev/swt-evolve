@@ -208,31 +208,21 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void setValue(V value) {
-    final incomingSelection = value.selection ?? [];
-    final hasLocalSelection =
-        _pendingSelection != null && _pendingSelection!.isNotEmpty;
-
-    bool selectionsDiffer = false;
-    if (hasLocalSelection && incomingSelection.isNotEmpty) {
-      final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
-      final incomingIds = Set.from(incomingSelection.map((item) => item.id));
-      selectionsDiffer =
-          pendingIds.length != incomingIds.length ||
-          pendingIds.any((id) => !incomingIds.contains(id)) ||
-          incomingIds.any((id) => !pendingIds.contains(id));
-    }
-
-    if (_pendingSelection != null && _pendingSelection!.isNotEmpty) {
-      final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
-      final incomingIds = Set.from(incomingSelection.map((item) => item.id));
+    final pending = _pendingSelection;
+    if (pending != null && pending.isNotEmpty) {
+      final pendingIds = Set.from(pending.map((item) => item.id));
+      final incomingIds = Set.from((value.selection ?? []).map((item) => item.id));
       final confirmed =
           pendingIds.length == incomingIds.length &&
           pendingIds.every((id) => incomingIds.contains(id));
-      if (!confirmed) {
-        // Java sent stale state — override with our pending selection to avoid flicker
-        value.selection = List<VTreeItem>.from(_pendingSelection!);
-      } else {
+      // A delivery that names the selection is Java changing it, and Java owns the selection: it
+      // wins over what the last click painted. Anything else may predate the click, so the click's
+      // selection stays on screen until Java confirms or replaces it.
+      final javaSetSelection = lastChange?.changed?.contains('selection') ?? false;
+      if (confirmed || javaSetSelection) {
         _pendingSelection = null;
+      } else {
+        value.selection = List<VTreeItem>.from(pending);
       }
     }
     super.setValue(value);
