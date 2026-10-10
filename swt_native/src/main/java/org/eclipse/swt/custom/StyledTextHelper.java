@@ -119,7 +119,9 @@ public class StyledTextHelper {
     /** The line holding the first offset edited since the held table was measured, or -1 when that table cannot answer. */
     private static int editedLine(DartStyledText styledText, TextGeometry g) {
         if (g == null || g.lines.length == 0 || g.editedFrom < 0 || styledText.content == null
-                || g.charCount + g.charDelta != styledText.getCharCount()) return -1;
+                || g.charCount + g.charDelta != styledText.getCharCount()
+                // Mid-change (a replace that removed the top line): the scroll state is not settled yet.
+                || styledText.topIndex >= styledText.content.getLineCount()) return -1;
         return styledText.content.getLineAtOffset(Math.min(g.editedFrom, styledText.content.getCharCount()));
     }
 
@@ -570,8 +572,11 @@ public class StyledTextHelper {
     /** Logical line at a widget-space y, clamped to the content like the estimate path. */
     public static Integer geometryLineIndex(DartStyledText styledText, int y) {
         TextGeometry g = freshGeometry(styledText);
+        if (g == null) {
+            if (editedLine(styledText, textGeometries.get(styledText)) < 0) return null;
+            return staleLineIndex(styledText, y - styledText.topMargin + styledText.getVerticalScrollOffset());
+        }
         double contentY = y - styledText.topMargin + styledText.getVerticalScrollOffset();
-        if (g == null) return staleLineIndex(styledText, contentY);
         if (contentY < 0) return 0;
         for (VisualLine v : g.lines) {
             if (contentY < v.y + v.h) return v.logicalLine;
