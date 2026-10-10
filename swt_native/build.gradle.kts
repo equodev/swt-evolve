@@ -354,12 +354,20 @@ run {
     val jfaceVersion: String by project
     val coreCommandsVersion: String by project
     val equinoxCommonVersion: String by project
+    val jfaceTextVersion: String by project
+    val eclipseTextVersion: String by project
     dependencies {
         "testImplementation"("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
             exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
         }
         "testImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
         "testImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
+        // A text editor's own ruler columns (CompositeRuler, LineNumberRulerColumn), so the gutter
+        // is tested as the code that draws it, not an imitation.
+        "testImplementation"("org.eclipse.platform:org.eclipse.jface.text:$jfaceTextVersion") {
+            exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+        }
+        "testImplementation"("org.eclipse.platform:org.eclipse.text:$eclipseTextVersion")
 
         // FXCanvasSwtThreadDispatchNativeTest drives the FXCanvas SWT-thread dispatch against a
         // live JavaFX toolkit. It needs JavaFX + headless Monocle on the test classpath (unnamed
