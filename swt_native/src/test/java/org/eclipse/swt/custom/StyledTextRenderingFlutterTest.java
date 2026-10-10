@@ -359,6 +359,24 @@ class StyledTextRenderingFlutterTest {
     }
 
     @Test
+    @DisplayName("a bullet another line already has is painted on the line it is set on")
+    void sharedBulletIsPainted() {
+        fresh(SWT.MULTI, "one\ntwo\nthree");
+        StyleRange bulletStyle = new StyleRange();
+        bulletStyle.metrics = new GlyphMetrics(0, 0, 20);
+        Bullet bullet = new Bullet(ST.BULLET_DOT, bulletStyle);
+        text.setLineBullet(0, 1, bullet);
+        show();
+
+        text.setLineBullet(2, 1, bullet);
+        show();
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> bullets = (List<Map<String, Object>>) stage.facts(text).get("bullets");
+        assertThat(bullets).extracting(b -> StyledTextFlutterStage.num(b.get("line"))).containsExactly(0.0, 2.0);
+    }
+
+    @Test
     @DisplayName("per-line tab stops are used")
     void lineTabStops() {
         fresh(SWT.MULTI, "\tX\n\tY");
