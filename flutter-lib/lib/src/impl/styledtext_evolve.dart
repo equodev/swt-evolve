@@ -510,12 +510,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final styleIndex = _splicedStyleIndex ?? state.styleIndex;
     final defaultStyle = styles == null || styles.isEmpty ? _stableDefaultStyle() : null;
     final held = _heldEditingState;
+    // The ground the line backgrounds are shades of.
+    final ground = (bg, state.background);
     if (held != null &&
         identical(held.renderer, state.renderer) &&
         identical(held.styles, styles) &&
         identical(held.styleIndex, styleIndex) &&
         identical(held.text, state.text) &&
-        identical(held.defaultStyle, defaultStyle)) {
+        identical(held.defaultStyle, defaultStyle) &&
+        held.ground == ground) {
       return held.editingState;
     }
     final editingState = _buildEditingStateFromRenderer(shownText);
@@ -525,6 +528,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       styleIndex: styleIndex,
       text: state.text,
       defaultStyle: defaultStyle,
+      ground: ground,
       editingState: editingState,
     );
     return editingState;
@@ -536,6 +540,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     Object? styleIndex,
     String? text,
     TextStyle? defaultStyle,
+    (Color, VColor?) ground,
     TextEditingState editingState,
   })? _heldEditingState;
 
@@ -633,7 +638,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             wrapIndent: flags & _lineWrapIndent != 0 ? vLineInfo.wrapIndent : null,
             bulletText: (renderer.bulletTexts?.length ?? 0) > i ? renderer.bulletTexts![i] : null,
             bulletWidth: (renderer.bulletWidths?.length ?? 0) > i ? renderer.bulletWidths![i] : null,
-            background: vLineInfo.background == null ? null : colorFromVColor(vLineInfo.background),
+            background: vLineInfo.background == null
+                ? null
+                : _shadeOfGround(colorFromVColor(vLineInfo.background)),
             tabStops: flags & _lineTabStops != 0 ? vLineInfo.tabStops : null,
           );
         }
@@ -643,6 +650,24 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return TextEditingState(
       characterRanges: characterRanges,
       lineProperties: lineProps,
+    );
+  }
+
+  /// A line background is a shade of the editor's background -- the application's, or the platform's
+  /// list background it falls back to. When the theme's ground is painted instead, the shade moves with
+  /// it: painted as is, the application's colour shows as a band of another colour across an editor it
+  /// no longer matches.
+  Color _shadeOfGround(Color line) {
+    final own = state.background == null ? null : colorFromVColor(state.background);
+    final ground = bg;
+    if (own == null || own == ground) return line;
+    int channel(double ground, double line, double own) =>
+        ((ground + line - own) * 255).round().clamp(0, 255);
+    return Color.fromARGB(
+      (line.a * 255).round(),
+      channel(ground.r, line.r, own.r),
+      channel(ground.g, line.g, own.g),
+      channel(ground.b, line.b, own.b),
     );
   }
 
@@ -1254,6 +1279,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       'selections': <Map<String, dynamic>>[],
       'selectionRects': <Map<String, double>>[],
       'lineBackgrounds': <Map<String, dynamic>>[],
+      'background': _hex(bg),
       'bullets': <Map<String, dynamic>>[],
     };
     final shape = _currentTextShape();
