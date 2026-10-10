@@ -66,6 +66,7 @@ class VTree extends VComposite {
   List<VTreeItem>? items;
   bool? linesVisible;
   List<VTreeItem>? selection;
+  VTreeItem? topItem;
 
   @override
   void copyFrom(VWidget other) {
@@ -78,6 +79,7 @@ class VTree extends VComposite {
       items = other.items;
       linesVisible = other.linesVisible;
       selection = other.selection;
+      topItem = other.topItem;
     }
   }
 
@@ -106,6 +108,10 @@ class VTree extends VComposite {
         selection = (json['selection'] as List<dynamic>?)
             ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
             .toList();
+      case 'topItem':
+        topItem = json['topItem'] == null
+            ? null
+            : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>);
       default:
         super.readProperty(key, json);
     }
@@ -118,6 +124,7 @@ class VTree extends VComposite {
     VWidget.adoptEach(editors, adopt);
     VWidget.adoptEach(items, adopt);
     VWidget.adoptEach(selection, adopt);
+    topItem = VWidget.adoptOne(topItem, adopt);
   }
 
   factory VTree.fromJson(Map<String, dynamic> json) =>

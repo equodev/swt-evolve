@@ -69,7 +69,10 @@ VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..linesVisible = json['linesVisible'] as bool?
   ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
-      .toList();
+      .toList()
+  ..topItem = json['topItem'] == null
+      ? null
+      : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -102,4 +105,5 @@ Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'items': ?instance.items,
   'linesVisible': ?instance.linesVisible,
   'selection': ?instance.selection,
+  'topItem': ?instance.topItem,
 };

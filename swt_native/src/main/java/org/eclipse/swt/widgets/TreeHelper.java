@@ -21,13 +21,80 @@ public class TreeHelper {
     private static final java.util.Map<DartTree, Integer> SCROLL_OFFSETS =
         java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
+    /**
+     * Flutter scrolled the tree. The row now at the top also becomes the item Flutter is asked to
+     * show at the top, so describing the tree again does not move it back to where the API last
+     * put it.
+     */
     public static void recordScrollOffset(DartTree tree, Event event) {
-        SCROLL_OFFSETS.put(tree, Math.max(0, event.y));
+        int offset = Math.max(0, event.y);
+        SCROLL_OFFSETS.put(tree, offset);
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        int row = offset / Math.max(1, tree.getItemHeight());
+        tree.topItem = row < rows.size() ? rows.get(row) : null;
     }
 
     public static int scrollOffsetY(DartTree tree) {
         Integer offset = SCROLL_OFFSETS.get(tree);
         return offset == null ? 0 : offset;
+    }
+
+    /** The row at the top of the tree, null when it has no rows. */
+    public static TreeItem getTopItem(DartTree tree) {
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        if (rows.isEmpty()) return null;
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
+        SCROLL_OFFSETS.put(tree, offset);
+        return rows.get(Math.min(offset / itemHeight, rows.size() - 1));
+    }
+
+    /** Scrolls so that {@code item} is the row at the top, as far as the rows below it allow. */
+    public static void setTopItem(DartTree tree, TreeItem item) {
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        int row = rows.indexOf(item);
+        if (row >= 0) scrollToRow(tree, rows, row);
+    }
+
+    /** Scrolls the least that shows all of {@code item}'s row; a row already shown does not scroll. */
+    public static void showItem(DartTree tree, TreeItem item) {
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        int row = rows.indexOf(item);
+        if (row < 0) return;
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int viewport = viewportHeight(tree);
+        int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
+        if (row * itemHeight < offset) {
+            scrollToRow(tree, rows, row);
+        } else if ((row + 1) * itemHeight > offset + viewport) {
+            scrollToRow(tree, rows, Math.max(0, row + 1 - Math.max(1, viewport / itemHeight)));
+        }
+    }
+
+    /** The tree was emptied: whatever comes next starts at the top. */
+    public static void resetScroll(DartTree tree) {
+        SCROLL_OFFSETS.remove(tree);
+        tree.topItem = null;
+    }
+
+    /**
+     * Flutter is told which item to bring to the top and clamps the distance itself; Java records the
+     * distance it will end at, so what the API reads back right away is where the tree will be.
+     */
+    private static void scrollToRow(DartTree tree, java.util.List<TreeItem> rows, int row) {
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        SCROLL_OFFSETS.put(tree, Math.min(row * itemHeight, maxScrollOffset(tree, rows.size(), itemHeight)));
+        tree.topItem = rows.get(row);
+        tree.getValue().markDirty(VTree.TOP_ITEM);
+    }
+
+    /** The height the rows scroll in: Flutter's scroll bars float over the rows and take none of it. */
+    private static int viewportHeight(DartTree tree) {
+        return Math.max(0, tree.getBounds().height - tree.getHeaderHeight());
+    }
+
+    private static int maxScrollOffset(DartTree tree, int rowCount, int itemHeight) {
+        return Math.max(0, rowCount * itemHeight - viewportHeight(tree));
     }
 
     /** The selection Cocoa reports: each item once, in the order of the rows they show on. */
@@ -113,7 +180,8 @@ public class TreeHelper {
         if (event.detail == SWT.CHECK) {
             item.setChecked(!item.getChecked());
         }
-        tree.setSelection(item);
+        // The row the user clicked is on screen already: selecting it must not scroll.
+        setSelection(tree, new TreeItem[] {item});
         tree.sendSelectionEvent(selectionType, event, true);
     }
 

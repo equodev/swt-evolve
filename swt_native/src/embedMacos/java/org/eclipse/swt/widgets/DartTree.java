@@ -1303,7 +1303,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public TreeItem getTopItem() {
         checkWidget();
-        return this.topItem;
+        return TreeHelper.getTopItem(this);
     }
 
     /**
@@ -1442,6 +1442,7 @@ public class DartTree extends DartComposite implements ITree {
         itemCount = 0;
         imageBounds = null;
         insertItem = null;
+        TreeHelper.resetScroll(this);
         TreeHelper.deselectAll(this);
         ignoreSelect = true;
         ignoreSelect = false;
@@ -2110,7 +2111,6 @@ public class DartTree extends DartComposite implements ITree {
      * @since 2.1
      */
     public void setTopItem(TreeItem item) {
-        TreeItem newValue = item;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2118,7 +2118,7 @@ public class DartTree extends DartComposite implements ITree {
             error(SWT.ERROR_INVALID_ARGUMENT);
         checkItems();
         showItem(item, false);
-        this.topItem = newValue;
+        TreeHelper.setTopItem(this, item);
     }
 
     /**
@@ -2190,8 +2190,8 @@ public class DartTree extends DartComposite implements ITree {
                 sendEvent(SWT.Expand, event);
             }
         }
-        if (scroll) {
-        }
+        if (scroll)
+            TreeHelper.showItem(this, item);
     }
 
     /**

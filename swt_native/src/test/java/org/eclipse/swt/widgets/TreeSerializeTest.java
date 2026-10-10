@@ -32,6 +32,7 @@ class TreeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("headerBackground").equalsTo(w.getHeaderBackground(), orAbsentIfNull));
         assertJ.satisfies(node("headerVisible").equalsTo(w.getHeaderVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("linesVisible").equalsTo(w.getLinesVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("topItem").equalsTo(value(w).getTopItem(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));

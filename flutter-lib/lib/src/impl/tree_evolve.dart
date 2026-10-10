@@ -85,6 +85,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       expand: _testExpandTreeItem,
     );
     registerTestTree(_testTreeKey, _testTreeHandle);
+    if (state.topItem != null) _scrollToTopItemAfterLayout();
   }
 
   late final String _testTreeKey;
@@ -226,6 +227,29 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       }
     }
     super.setValue(value);
+    if (lastChange?.touches('topItem') ?? true) _scrollToTopItemAfterLayout();
+  }
+
+  /// Brings the item Java asked for to the top, once the rows it is among are laid out. Flutter
+  /// clamps the distance at the end of the list, as a native tree does; a tree already showing
+  /// that row at the top does not move.
+  void _scrollToTopItemAfterLayout() {
+    final target = state.topItem;
+    if (target == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = _verticalController;
+      final rowHeight = _cachedItemHeight;
+      if (controller == null || !controller.hasClients) return;
+      if (rowHeight == null || rowHeight <= 0) return;
+      final row = findItemIndex(target.id);
+      if (row < 0) return;
+      final position = controller.position;
+      if ((position.pixels / rowHeight).floor() == row) return;
+      controller.jumpTo(
+        (row * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
   }
 
   Widget createTreeView() {

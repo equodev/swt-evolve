@@ -132,7 +132,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).sortDirection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TreeItem getTopItem() {
         TreeItem val = ((DartTree) impl).topItem;
         if (val != null && !(val.getImpl() instanceof DartTreeItem))
@@ -158,6 +157,8 @@ public class VTree extends VComposite {
 
     public static final String SELECTION = "selection";
 
+    public static final String TOP_ITEM = "topItem";
+
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
@@ -181,6 +182,9 @@ public class VTree extends VComposite {
                 return;
             case "selection":
                 Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "topItem":
+                Serializer.writeKeyValue(writer, "topItem", getTopItem());
                 return;
         }
         super.writeProperty(writer, key);

@@ -2640,6 +2640,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setTopItem(TreeItem item) {
         TreeItem newValue = item;
+        if (!java.util.Objects.equals(this.topItem, newValue)) {
+            getValue().markDirty(VTree.TOP_ITEM);
+        }
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
