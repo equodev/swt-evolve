@@ -158,7 +158,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 if (wrapWidth > 0) {
                     int lineStart = paraStart, lastSpace = -1;
                     for (int j = paraStart; j < i; j++) {
-                        if (j > lineStart && _measureRange(lineStart, j + 1) > wrapWidth) {
+                        if (j > lineStart && _measureRange(lineStart, j + 1) > Math.max(1, wrapWidth - (lineStart == paraStart ? indent : wrapIndent))) {
                             int brk = (lastSpace > lineStart) ? lastSpace + 1 : j;
                             offs.add(brk);
                             lineStart = brk;
@@ -277,7 +277,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (text == null || text.length() == 0)
             return;
         y += getVerticalIndent();
-        int lineHeight = _effLineHeight();
         int[] offs = getLineOffsets();
         org.eclipse.swt.graphics.Font gcFont = gc.getFont();
         Color gcForeground = gc.getForeground();
@@ -289,7 +288,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             if (le <= ls)
                 continue;
             int lineX = x + _alignShift(ls, le);
-            int lineY = y + line * lineHeight;
+            int lineY = y + _rowTop(line);
+            int lineHeight = _rowHeight(line);
             int runStart = ls;
             while (runStart < le) {
                 if (text.charAt(runStart) == '\t') {
@@ -338,6 +338,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     void freeRuns() {
+        rowTops = null;
         measured = null;
         lineOffsets = null;
         for (int i = 0; i < stylesCount - 1; i++) {
@@ -397,17 +398,16 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         checkLayout();
         if (_measured() != null)
             return measured.bounds(wrapWidth);
-        int lineH = _effLineHeight();
         int lineCount = getLineCount();
         int[] offs = getLineOffsets();
         double maxW = 0;
         for (int i = 0; i < lineCount; i++) {
             int ls = offs[i], le = offs[i + 1];
             while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-            maxW = Math.max(maxW, _measureRange(ls, le));
+            maxW = Math.max(maxW, _measureRange(ls, le) + _rowIndent(ls));
         }
         int w = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(maxW);
-        return new Rectangle(0, 0, w, lineH * lineCount + getVerticalIndent());
+        return new Rectangle(0, 0, w, _rowTop(lineCount) + getVerticalIndent());
     }
 
     /**
@@ -436,12 +436,20 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         end = Math.min(Math.max(0, end), length - 1);
         int ts = translateOffset(start);
         int te = translateOffset(end);
-        int lineH = _effLineHeight();
-        int lineIndex = _lineOf(ts);
-        int ls = getLineOffsets()[lineIndex];
-        int x = (int) Math.round(_measureRange(ls, ts));
-        int width = (int) Math.ceil(_measureRange(ts, te + 1));
-        return new Rectangle(x, lineIndex * lineH, width, lineH + getVerticalIndent());
+        int[] offs = getLineOffsets();
+        int firstRow = _lineOf(ts);
+        int lastRow = _lineOf(te);
+        int left = Integer.MAX_VALUE, right = 0;
+        for (int row = firstRow; row <= lastRow; row++) {
+            int ls = offs[row], le = offs[row + 1];
+            while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
+            int from = Math.max(ls, ts), to = Math.max(from, Math.min(le, te + 1));
+            int rowLeft = _alignShift(ls, le) + (int) Math.round(_measureRange(ls, from));
+            left = Math.min(left, rowLeft);
+            right = Math.max(right, rowLeft + (int) Math.ceil(_measureRange(from, to)));
+        }
+        int trailingSpacing = lastRow == offs.length - 2 ? spacing : 0;
+        return new Rectangle(left, _rowTop(firstRow), right - left, _rowTop(lastRow + 1) - trailingSpacing - _rowTop(firstRow) + getVerticalIndent());
     }
 
     /**
@@ -614,14 +622,13 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         if (_measured() != null)
             return measured.lineBounds(lineIndex);
-        int lineHeight = getLineMetrics(lineIndex).getHeight();
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
         while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
         int lineWidth = (int) Math.ceil(_measureRange(ls, le));
         // Horizontal alignment shifts the line within the layout width when wrapWidth exceeds it.
         int x = _alignShift(ls, le);
-        return new Rectangle(x, lineIndex * lineHeight, lineWidth, lineHeight);
+        return new Rectangle(x, _rowTop(lineIndex), lineWidth, _rowHeight(lineIndex));
     }
 
     /**
@@ -670,7 +677,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             }
         } finally {
         }
-        return TextLayoutHelper.lineMetrics(getFont(), getAscent(), getDescent());
+        return TextLayoutHelper.lineMetrics(_rowFont(lineIndex), getAscent(), getDescent());
     }
 
     /**
@@ -723,7 +730,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int xi = Math.abs(x - totalWidth) < 0.75 ? (int) Math.ceil(totalWidth) : (int) Math.round(x);
         // The vertical indent is blank space above the first line, inside the layout
         // (setVerticalIndent): locations sit below it, exactly like the native layouts.
-        return new Point(xi + _alignShift(ls, le), lineIndex * _effLineHeight() + getVerticalIndent());
+        return new Point(xi + _alignShift(ls, le), _rowTop(lineIndex) + getVerticalIndent());
     }
 
     /**
@@ -849,11 +856,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             return 0;
         if (_measured() != null)
             return measured.offset(x, y, trailing);
-        int lineH = _effLineHeight();
         // Inverse of getLocation: y is measured below the vertical indent.
         y -= getVerticalIndent();
         int lineCount = getLineCount();
-        int lineIndex = (y > 0 && lineH > 0) ? Math.min(lineCount - 1, y / lineH) : 0;
+        int lineIndex = 0;
+        while (lineIndex + 1 < lineCount && y >= _rowTop(lineIndex + 1)) lineIndex++;
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
         while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
@@ -2152,6 +2159,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         double px = dev.equo.swt.FontMetricsUtil.dpiScale();
         double x = 0;
         double atStart = 0;
+        // The tab stops are measured from the layout's left edge, the indent of the line included.
+        int tabOrigin = _rowIndent(lineStart);
         int i = lineStart;
         while (i < end) {
             if (i == start)
@@ -2169,7 +2178,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 continue;
             }
             if (c == '\t') {
-                x = _nextTabStop(x);
+                x = _nextTabStop(x + tabOrigin) - tabOrigin;
                 i++;
                 continue;
             }
@@ -2227,6 +2236,44 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             fontH = Math.max(fontH, ascent + descent);
         return Math.max(1, fontH);
     }
+
+    org.eclipse.swt.graphics.Font _rowFont(int row) {
+        org.eclipse.swt.graphics.Font tallest = font;
+        int[] offs = getLineOffsets();
+        if (stylesCount <= 2 || row < 0 || row + 1 >= offs.length)
+            return tallest;
+        int ls = offs[row], le = offs[row + 1];
+        int tallestHeight = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(tallest);
+        for (int i = 0; i < stylesCount - 1; i++) {
+            StyleItem item = styles[i];
+            if (item == null || item.style == null || item.style.font == null || item.style.font.isDisposed())
+                continue;
+            if (styles[i + 1].start <= ls || item.start >= le)
+                continue;
+            int height = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(item.style.font);
+            if (height > tallestHeight) {
+                tallest = item.style.font;
+                tallestHeight = height;
+            }
+        }
+        return tallest;
+    }
+
+    int _rowHeight(int row) {
+        return Math.max(_effLineHeight(), org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(_rowFont(row)));
+    }
+
+    int _rowTop(int row) {
+        int rows = Math.max(0, getLineOffsets().length - 1);
+        if (rowTops == null || rowTops.length != rows + 1) {
+            int[] tops = new int[rows + 1];
+            for (int r = 0; r < rows; r++) tops[r + 1] = tops[r] + _rowHeight(r) + spacing;
+            rowTops = tops;
+        }
+        return rowTops[Math.min(Math.max(0, row), rows)];
+    }
+
+    int[] rowTops;
 
     byte[] _bidiLevels(String s, int paraLevel) {
         int n = s.length();
@@ -2388,17 +2435,23 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     int _alignShift(int ls, int le) {
+        int rowIndent = _rowIndent(ls);
         if (wrapWidth == -1)
-            return 0;
+            return rowIndent;
         int lineWidth = (int) Math.ceil(_measureRange(ls, le));
-        int extra = wrapWidth - lineWidth;
+        int extra = wrapWidth - rowIndent - lineWidth;
         if (extra <= 0)
-            return 0;
+            return rowIndent;
         if ((alignment & SWT.CENTER) != 0)
-            return extra / 2;
+            return rowIndent + extra / 2;
         if ((alignment & SWT.RIGHT) != 0)
-            return extra;
-        return 0;
+            return rowIndent + extra;
+        return rowIndent;
+    }
+
+    int _rowIndent(int ls) {
+        boolean paragraphStart = ls <= 0 || ls > text.length() || text.charAt(ls - 1) == '\n';
+        return paragraphStart ? indent : wrapIndent;
     }
 
     void _bidiVisual(int ls, int le, double[] left, double[] right, boolean[] rtl) {
