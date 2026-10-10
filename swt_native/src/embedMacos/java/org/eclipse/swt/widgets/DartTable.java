@@ -673,6 +673,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        int shownAt = ColumnHelper.displayIndex(getColumnOrder(), index);
         System.arraycopy(columns, index + 1, columns, index, --columnCount - index);
         columns[columnCount] = null;
         TableHelper.updateColumnOrderOnDestroy(this, index);
@@ -680,6 +681,7 @@ public class DartTable extends DartComposite implements ITable {
             setScrollWidth();
         } else {
         }
+        ColumnHelper.columnsShiftedFrom(this.getApi(), shownAt);
     }
 
     void destroyItem(TableItem item) {
@@ -1740,6 +1742,8 @@ public class DartTable extends DartComposite implements ITable {
             int[] newX = new int[order.length];
             for (int i = 0; i < order.length; i++) {
             }
+            oldX = ColumnHelper.positions(this.getApi(), oldOrder);
+            newX = ColumnHelper.positions(this.getApi(), order);
             TableColumn[] newColumns = new TableColumn[columnCount];
             System.arraycopy(columns, 0, newColumns, 0, columnCount);
             for (int i = 0; i < columnCount; i++) {

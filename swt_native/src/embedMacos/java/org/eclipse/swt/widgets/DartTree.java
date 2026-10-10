@@ -704,6 +704,7 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
+        int shownAt = ColumnHelper.displayIndex(getColumnOrder(), index);
         System.arraycopy(columns, index + 1, columns, index, --columnCount - index);
         columns[columnCount] = null;
         if (this.columnOrder != null && this.columnOrder.length > 0) {
@@ -727,6 +728,7 @@ public class DartTree extends DartComposite implements ITree {
             if (index == 0) {
             }
         }
+        ColumnHelper.columnsShiftedFrom(this.getApi(), shownAt);
     }
 
     void destroyItem(TreeItem item) {
@@ -1679,6 +1681,8 @@ public class DartTree extends DartComposite implements ITree {
             int[] newX = new int[order.length];
             for (int i = 0; i < order.length; i++) {
             }
+            oldX = ColumnHelper.positions(this.getApi(), oldOrder);
+            newX = ColumnHelper.positions(this.getApi(), order);
             TreeColumn[] newColumns = new TreeColumn[columnCount];
             System.arraycopy(columns, 0, newColumns, 0, columnCount);
             for (int i = 0; i < columnCount; i++) {

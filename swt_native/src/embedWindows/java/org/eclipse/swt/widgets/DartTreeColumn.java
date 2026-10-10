@@ -591,8 +591,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         ((DartControl) parent.getImpl()).forceResize();
         this.width = newValue;
         ((DartTree) parent.getImpl()).setScrollWidth();
-        if (widthChanged)
+        if (widthChanged) {
             sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     void updateToolTip(int index) {

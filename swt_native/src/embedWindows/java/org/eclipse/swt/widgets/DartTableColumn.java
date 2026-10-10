@@ -669,8 +669,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         if (index == -1)
             return;
         this.width = newValue;
-        if (widthChanged)
+        if (widthChanged) {
             sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     void updateToolTip(int index) {

@@ -555,8 +555,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         // TODO how to differentiate 0 and 1 cases?
         width = Math.max(0, width - DartTable.CELL_GAP);
         this.width = newValue;
-        if (widthChanged)
+        if (widthChanged) {
             sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     @Override
