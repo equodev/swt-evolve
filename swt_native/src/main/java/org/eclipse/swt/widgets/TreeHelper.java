@@ -76,6 +76,21 @@ public class TreeHelper {
         setSelection(tree, visibleItems(tree).toArray(new TreeItem[0]));
     }
 
+    /**
+     * Inserts the column created at {@code index} into a column order the application set: Cocoa
+     * shows a new column at the position of its index, and shifts the indexes after it.
+     */
+    public static void insertColumnOrder(DartTree tree, int index) {
+        int[] order = tree.columnOrder;
+        int count = tree.columnCount;
+        if (order.length != count - 1 || count < 2) return;
+        int[] next = new int[count];
+        for (int i = 0, j = 0; i < count; i++) {
+            next[i] = i == index ? index : (order[j] >= index ? order[j++] + 1 : order[j++]);
+        }
+        tree.columnOrder = next;
+    }
+
     /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */
     public static final int EMPTINESS_CHANGED = 56;
 

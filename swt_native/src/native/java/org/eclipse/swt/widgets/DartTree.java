@@ -499,6 +499,7 @@ public class DartTree extends DartComposite implements ITree {
         ((DartWidget) column.getImpl()).register();
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
+        TreeHelper.insertColumnOrder(this, index);
         for (int i = 0; i < itemCount; i++) {
             TreeItem item = items[i];
             if (item != null) {
@@ -882,7 +883,7 @@ public class DartTree extends DartComposite implements ITree {
         if (columnCount == 0)
             return new int[0];
         if (this.columnOrder != null && this.columnOrder.length == columnCount) {
-            return this.columnOrder;
+            return this.columnOrder.clone();
         }
         int[] order = new int[columnCount];
         for (int i = 0; i < columnCount; i++) {
@@ -1664,7 +1665,7 @@ public class DartTree extends DartComposite implements ITree {
             if (order[i] != oldOrder[i])
                 reorder = true;
         }
-        this.columnOrder = newValue;
+        this.columnOrder = order.clone();
         if (reorder) {
             int[] oldX = new int[oldOrder.length];
             for (int i = 0; i < oldOrder.length; i++) {
