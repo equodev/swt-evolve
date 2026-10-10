@@ -460,6 +460,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       carets,
       selections,
       _styleToken,
+      state.fixedLineHeight ?? false,
     );
     if (previousShape != null) shape.inheritMeasurementsFrom(previousShape);
     _shape = shape;
@@ -822,6 +823,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Widget build(BuildContext context) {
     if (_shapeStale) _rebuildShape();
     _oweGeometry();
+    if (_shape?._uniformRows ?? false) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refitRows());
+    }
     final bounds = getBounds();
     final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
     final hasVScroll = hasStyle(state.style, SWT.V_SCROLL);
@@ -1102,6 +1106,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       return built;
     }
     return last;
+  }
+
+  /// A line painted in this frame was taller than the rows: place them again, at its height.
+  void _refitRows() {
+    if (mounted && (_shape?.rowsOutgrown ?? false)) setState(() => _shapeStale = true);
   }
 
   /// A font that becomes available changes how the lines measured before it lay out.
@@ -1888,10 +1897,65 @@ class TextShape extends Shape {
     this.carets = const [],
     this.selections = const [],
     this.styleToken = 0,
+    this.fixedLineHeight = false,
   ]);
 
   /// Stands for [style] in a layout key: a change count, since comparing the style is expensive.
   final int styleToken;
+
+  /// StyledText#isFixedLineHeight: every line is one height, as native SWT lays such an editor out.
+  final bool fixedLineHeight;
+
+  /// Every row is [_rowHeight] tall: the rows are known without measuring a line, so the lines out of
+  /// view are left unmeasured, as native SWT leaves them.
+  bool get _uniformRows =>
+      fixedLineHeight && wordWrap != true && lineHeight > 0 && lineSpacing == 0 && lineSpacings == null;
+
+  /// The tallest line measured by this shape and the ones it took over from. Native SWT makes every
+  /// line as tall as the tallest one it has laid out (a fallback glyph's font can be taller than the
+  /// editor's), and so does [_rowHeight].
+  double _tallestLine = 0;
+  double? _rowHeightValue;
+
+  /// Set when a line measured after the rows were placed turned out taller than they are: the owner
+  /// builds the shape again, with rows that fit it.
+  bool rowsOutgrown = false;
+
+  double get _rowHeight =>
+      _rowHeightValue ??= math.max(lineHeight, math.max(_tallestLine, _plainLineHeight));
+
+  /// How tall a line of the editor's own font lays out, before any line is measured.
+  late final double _plainLineHeight = () {
+    final tp = TextPainter(text: TextSpan(text: ' ', style: style), textDirection: TextDirection.ltr)
+      ..layout();
+    final height = tp.height;
+    tp.dispose();
+    return height;
+  }();
+
+  /// A line holding a character that breaks it (a form feed, U+2028) lays out on several rows even
+  /// without wrapping; native SWT sizes the rows by the tallest of them, and the rest overflow.
+  static double _tallestRowOf(_LineLayout layout) {
+    if (layout.metrics.isEmpty) return layout.height;
+    var tallest = 0.0;
+    for (final row in layout.metrics) {
+      if (row.height > tallest) tallest = row.height;
+    }
+    return tallest;
+  }
+
+  void _noteLineHeight(double height) {
+    if (height <= _tallestLine) return;
+    _tallestLine = height;
+    final rows = _rowHeightValue;
+    if (rows != null && height > rows + 0.5) rowsOutgrown = true;
+  }
+
+  /// What the rows of [other] were placed with, for a shape that shares its line tops.
+  void _takeRowHeight(TextShape other) {
+    _tallestLine = math.max(_tallestLine, other._tallestLine);
+    _rowHeightValue = other._rowHeightValue;
+  }
 
   /// Everything a line's measured height depends on; shapes that agree on it share measurements.
   late final int layoutSignature = Object.hash(
@@ -1906,7 +1970,7 @@ class TextShape extends Shape {
       wordWrap == true ? Object.hash(canvasSize?.width, off.dx) : null,
       tabs,
       const ListEquality<int>().hash(tabStops),
-      Object.hash(lineSpacing, lineHeight, direction),
+      Object.hash(lineSpacing, lineHeight, direction, fixedLineHeight),
       lineSpacings == null ? 0 : const ListEquality<int>().hash(lineSpacings!),
       widgetLine.indent,
       widgetLine.wrapIndent,
@@ -1916,8 +1980,15 @@ class TextShape extends Shape {
   /// Takes over what [other] measured when both lay out the same way. After an edit, [other] answers
   /// for the lines the edit did not reach ([_donatedLine]).
   void inheritMeasurementsFrom(TextShape other) {
+    if (other._frameSignature == _frameSignature) {
+      _tallestLine = math.max(_tallestLine, other._tallestLine);
+    }
     if (other.layoutSignature == layoutSignature) {
-      _lineTopsCache = other._lineTopsCache;
+      // Rows that a measured line outgrew are placed again, at the height that fits it.
+      if (!other.rowsOutgrown) {
+        _lineTopsCache = other._lineTopsCache;
+        _rowHeightValue = other._rowHeightValue;
+      }
       _measuredLineCache = other._measuredLineCache;
       _linePropsCache = other._linePropsCache;
       _rangesTokenCache = other._rangesTokenCache;
@@ -2041,6 +2112,12 @@ class TextShape extends Shape {
 
   /// The layout of [lineIndex] as this shape lays it out, measured once.
   _LineLayout _measuredLine(int lineIndex, String lineText, {bool wantCaretX = false}) {
+    final layout = _measuredLineNow(lineIndex, lineText, wantCaretX);
+    if (_uniformRows) _noteLineHeight(_tallestRowOf(layout));
+    return layout;
+  }
+
+  _LineLayout _measuredLineNow(int lineIndex, String lineText, bool wantCaretX) {
     final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
     final inRange = lineIndex >= 0 && lineIndex < memo.length;
     if (inRange && !wantCaretX) {
@@ -2057,6 +2134,40 @@ class TextShape extends Shape {
         align: props.align, maxWidth: _lineMaxWidth(props.layoutIndent), wantCaretX: wantCaretX);
     if (inRange) memo[lineIndex] = layout;
     return layout;
+  }
+
+  /// The layout of [lineIndex] if it was measured already, by this shape or one it took after.
+  _LineLayout? _peekLine(int lineIndex, String lineText) {
+    final memo = _measuredLineCache;
+    if (memo != null && lineIndex >= 0 && lineIndex < memo.length && memo[lineIndex] != null) {
+      return memo[lineIndex];
+    }
+    final donated = _donatedLine(lineIndex, lineText, false);
+    if (donated != null) return donated;
+    final props = _linePropsFor(lineIndex);
+    return _lineLayoutCache[_LineLayoutKey(
+      lineText,
+      styleToken,
+      _rangesTokenFor(lineIndex, lineText.length),
+      props.align,
+      _lineMaxWidth(props.layoutIndent),
+      tabs,
+      _tabStopsFor(lineIndex),
+    )];
+  }
+
+  double? _columnAdvance;
+
+  /// A line's width from its column count, tabs expanded to their stops: exact in a fixed-pitch font,
+  /// an estimate otherwise, until the line is laid out.
+  double _estimatedWidth(String lineText) {
+    final advance = _columnAdvance ??= _measureRun('0' * 10, style) / 10;
+    final tabColumns = tabs > 0 ? tabs : 4;
+    int columns = 0;
+    for (int k = 0; k < lineText.length; k++) {
+      columns = lineText.codeUnitAt(k) == 0x09 ? (columns ~/ tabColumns + 1) * tabColumns : columns + 1;
+    }
+    return columns * advance;
   }
 
   ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})
@@ -2134,7 +2245,7 @@ class TextShape extends Shape {
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
-      y += props.vIndent + _advance(_measuredLine(i, lines[i]).height, i);
+      y += props.vIndent + (_uniformRows ? _rowHeight : _advance(_measuredLine(i, lines[i]).height, i));
     }
     tops[lines.length] = y;
     debugLineTopsMicros += watch.elapsedMicroseconds;
@@ -2164,6 +2275,7 @@ class TextShape extends Shape {
   // so advance by tpHeight; fall back to lineHeight as a floor (empty lines whose painter
   // measures ~0, or to keep a consistent single-line height).
   double _advance(double tpHeight, [int lineIndex = -1]) {
+    if (_uniformRows) return _rowHeight;
     final lh = lineHeight > 0 ? lineHeight : (style.fontSize ?? 16) * 1.2;
     return (tpHeight > lh ? tpHeight : lh) + _spacingFor(lineIndex);
   }
@@ -2273,7 +2385,10 @@ class TextShape extends Shape {
         if (band != null) c.restore();
       }
       _drawBullet(c, props, paintOffset.dx, currentY + vIndent);
-      if (wrapShift == 0 || rows.length < 2) {
+      if (_uniformRows && rows.length > 1) {
+        // The rows its own characters broke it onto lie under the lines below, as natively.
+        paintRows(originX, Rect.fromLTRB(0, currentY, canvasSize?.width ?? tp.width, currentY + advance));
+      } else if (wrapShift == 0 || rows.length < 2) {
         paintRows(originX, null);
       } else {
         final split = currentY + vIndent + rows.first.height;
@@ -2624,6 +2739,28 @@ class TextShape extends Shape {
       final vIndent = props.vIndent;
       final maxW = _lineMaxWidth(props.layoutIndent);
 
+      if (!wholeDocument && _uniformRows && !rowIsVisible(currentY, vIndent + _rowHeight)) {
+        // Out of view: its width as far as known, without laying the line out for it.
+        final width = _peekLine(i, line)?.width ?? _estimatedWidth(line);
+        final x = _lineOriginX(
+            props.indent, props.align, width, canvasSize == null ? double.infinity : maxW);
+        maxWidth = math.max(maxWidth, x + width);
+        visual.add(GeometryRow(
+          i,
+          docOffset,
+          docOffset + line.length,
+          _roundPx(x),
+          _roundPx(currentY),
+          _roundPx(width),
+          _roundPx(vIndent + _rowHeight),
+          vIndent != 0 ? vIndent : null,
+          null,
+        ));
+        currentY += vIndent + _rowHeight;
+        docOffset += line.length + 1;
+        continue;
+      }
+
       var layout = _measuredLine(i, line, wantCaretX: wholeDocument);
       // Per-character x is worth its weight only for the rows someone can see; the line has to
       // be laid out to know where it ends, so the decision comes after.
@@ -2648,7 +2785,8 @@ class TextShape extends Shape {
       // text-position queries and uses the box for line/pixel queries.
       final metrics = layout.metrics;
       final includeCharX = caretX != null;
-      if (metrics.length <= 1) {
+      // Uniform rows hold one line each, whatever rows its layout broke into.
+      if (metrics.length <= 1 || _uniformRows) {
         maxWidth = math.max(maxWidth, finalX + layout.width);
         visual.add(GeometryRow(
           i,
@@ -3496,7 +3634,10 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
-    ).._lineTopsCache = _lineTopsCache;
+      fixedLineHeight,
+    )
+      .._lineTopsCache = _lineTopsCache
+      .._takeRowHeight(this);
   }
 
   TextShape copyWithEditingState(TextEditingState newEditingState) {
@@ -3525,6 +3666,7 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
+      fixedLineHeight,
     );
   }
 
@@ -3578,6 +3720,7 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
+      fixedLineHeight,
     );
   }
 
@@ -3607,7 +3750,10 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
-    ).._lineTopsCache = _lineTopsCache;
+      fixedLineHeight,
+    )
+      .._lineTopsCache = _lineTopsCache
+      .._takeRowHeight(this);
   }
 
   TextShape updateCaretOffset(int offset) {
