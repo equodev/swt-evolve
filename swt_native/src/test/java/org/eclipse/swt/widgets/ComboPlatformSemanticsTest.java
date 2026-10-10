@@ -114,6 +114,62 @@ class ComboPlatformSemanticsTest {
     }
 
     @Test
+    @EnabledOnOs(OS.MAC)
+    @DisplayName("on Cocoa, an editable combo keeps its selected row when the list is replaced and gets it back when the list grows")
+    void cocoaEditableKeepsItsRow() {
+        for (int style : new int[] {SWT.NONE, SWT.SIMPLE}) {
+            Combo combo = abc(style, 1);
+
+            combo.setItems("m", "n", "o");
+            assertThat(combo.getSelectionIndex()).as("style %d replaced", style).isEqualTo(1);
+            assertThat(combo.getText()).as("style %d replaced", style).isEmpty();
+
+            combo.setItems("x");
+            assertThat(combo.getSelectionIndex()).as("style %d too short", style).isEqualTo(-1);
+            combo.add("y");
+            assertThat(combo.getSelectionIndex()).as("style %d long enough again", style).isEqualTo(1);
+
+            combo.deselectAll();
+            combo.setItems("m", "n", "o");
+            assertThat(combo.getSelectionIndex()).as("style %d deselected", style).isEqualTo(-1);
+        }
+    }
+
+    @Test
+    @EnabledOnOs(OS.MAC)
+    @DisplayName("on Cocoa, selecting the row a combo already answers changes nothing, and deselecting leaves a row the list is too short for")
+    void cocoaSelectingTheAnsweredRowChangesNothing() {
+        Combo combo = abc(SWT.NONE, 1);
+        combo.setItems("m", "n", "o");
+
+        combo.select(1);
+        assertThat(combo.getText()).isEmpty();
+
+        combo = abc(SWT.NONE, 1);
+        combo.removeAll();
+        combo.deselectAll();
+        combo.setItems("m", "n", "o");
+        assertThat(combo.getSelectionIndex()).isEqualTo(1);
+    }
+
+    @Test
+    @DisabledOnOs(OS.MAC)
+    @DisplayName("on GTK and Win32, replacing the list deselects, and the index does not come back with a longer list")
+    void replacingTheListDeselects() {
+        for (int style : new int[] {SWT.NONE, SWT.SIMPLE, SWT.READ_ONLY}) {
+            Combo combo = abc(style, 1);
+
+            combo.setItems("m", "n", "o");
+            assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(-1);
+
+            combo = abc(style, 2);
+            combo.removeAll();
+            combo.setItems("p", "q", "r");
+            assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(-1);
+        }
+    }
+
+    @Test
     @DisabledOnOs(OS.MAC)
     @DisplayName("on GTK and Win32, removing the selected item deselects it, empties the text and tells the listeners")
     void removeDeselectsAndEmptiesTheText() {
