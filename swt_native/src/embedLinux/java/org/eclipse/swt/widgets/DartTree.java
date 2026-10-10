@@ -2611,7 +2611,7 @@ public class DartTree extends DartComposite implements ITree {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTree.EDITORS);
         }
     }

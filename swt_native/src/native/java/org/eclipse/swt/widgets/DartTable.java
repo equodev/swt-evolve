@@ -2563,7 +2563,7 @@ public class DartTable extends DartComposite implements ITable {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTable.EDITORS);
         }
     }
