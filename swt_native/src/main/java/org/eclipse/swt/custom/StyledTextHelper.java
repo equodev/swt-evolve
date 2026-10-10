@@ -1815,10 +1815,14 @@ public class StyledTextHelper {
             return singleLineHeight * (1 + breaks);
         }
 
-        int textWidth = computeTextWidth(lineText, renderer.regularFont);
-        int visualLines = Math.max(1, (textWidth + wrapWidth - 1) / wrapWidth);
-
-        return singleLineHeight * (visualLines + breaks);
+        // The rows the renderer's own layout breaks the line into: word wrap in the width the indent,
+        // the bullet and the wrap indent leave, and the breaks among the segment characters.
+        org.eclipse.swt.graphics.TextLayout layout = renderer.getTextLayout(lineIndex);
+        try {
+            return singleLineHeight * Math.max(1 + breaks, layout.getLineCount());
+        } finally {
+            renderer.disposeTextLayout(layout);
+        }
     }
 
     /** The rows a BidiSegmentListener's line breaks among its segment characters add to the line. */
