@@ -53,6 +53,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
+  // The rows' list moves between parents when a columnless tree starts or stops scrolling
+  // horizontally; keyed, it keeps its scroll position instead of starting again at the top.
+  final GlobalKey _rowsKey = GlobalKey(debugLabel: 'tree rows');
   final FocusNode _focusNode = FocusNode();
 
   @override
@@ -831,6 +834,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final bool hasMultiColumn = columns.length > 1;
 
     Widget listView = ListView.builder(
+      key: _rowsKey,
       controller: _verticalController,
       itemCount: flatItems.length,
       itemBuilder: (context, index) {
