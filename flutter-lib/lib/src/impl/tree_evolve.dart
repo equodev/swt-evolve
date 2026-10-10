@@ -60,6 +60,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   // horizontally; keyed, it keeps its scroll position instead of starting again at the top.
   final GlobalKey _rowsKey = GlobalKey(debugLabel: 'tree rows');
   final FocusNode _focusNode = FocusNode();
+  // The width of the column whose divider is being dragged, as the drag has made it so far.
+  double? _resizeStartWidth;
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -923,6 +925,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final bool showHeaderBorder = effectiveHeaderBorderWidth > 0;
 
     final List<double> linePositions = [];
+    final List<double> columnWidths = [];
     double cumulativeWidth = 0.0;
 
     Widget headerContent = Stack(
@@ -947,6 +950,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                           ? effectiveWidths[columnIndex]
                           : (column.width ?? defaultWidth).toDouble();
                       cumulativeWidth += width;
+                      columnWidths.add(width);
                       if (columnIndex < columns.length - 1) {
                         linePositions.add(cumulativeWidth - borderWidth);
                       }
@@ -987,6 +991,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               color: widgetTheme.headerBorderColor,
             ),
           ),
+        ..._buildColumnResizeHandles(columns, columnWidths, headerHeight, widgetTheme),
         if (state.linesVisible == true &&
             linePositions.isNotEmpty &&
             !hasMultiColumn)
@@ -1026,6 +1031,57 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
 
     return headerContent;
+  }
+
+  /// Native SWT has no sash on a column boundary: the header itself switches to the resize cursor a
+  /// few pixels either side of the boundary and drags it. These transparent strips straddle each
+  /// boundary of a resizable column, so the grip answers from both sides of it.
+  List<Widget> _buildColumnResizeHandles(
+    List<VTreeColumn> columns,
+    List<double> widths,
+    double headerHeight,
+    TreeThemeExtension theme,
+  ) {
+    final grip = theme.columnResizeHandleWidth * 2;
+    final handles = <Widget>[];
+    double boundary = 0.0;
+    for (int i = 0; i < columns.length && i < widths.length; i++) {
+      boundary += widths[i];
+      // SWT's TreeColumn.resizable defaults to true.
+      if (columns[i].resizable == false) continue;
+      final column = columns[i];
+      final renderedWidth = widths[i];
+      handles.add(Positioned(
+        left: boundary - grip / 2,
+        top: 0,
+        width: grip,
+        height: headerHeight,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.resizeColumn,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart: (_) =>
+                _resizeStartWidth = (column.width ?? renderedWidth.round()).toDouble(),
+            onHorizontalDragUpdate: (details) => _updateColumnResize(column, details.delta.dx),
+            onHorizontalDragEnd: (_) => _resizeStartWidth = null,
+            onHorizontalDragCancel: () => _resizeStartWidth = null,
+          ),
+        ),
+      ));
+    }
+    return handles;
+  }
+
+  void _updateColumnResize(VTreeColumn column, double deltaX) {
+    final start = _resizeStartWidth;
+    if (start == null) return;
+    final next = (start + deltaX).clamp(0.0, double.infinity);
+    _resizeStartWidth = next;
+    if (next.round() == column.width) return;
+    setState(() => column.width = next.round());
+    // Native SWT resizes the column live and sends Resize on every change: JFace relays out from it.
+    final e = VEvent()..width = column.width;
+    TreeColumnSwt<VTreeColumn>(value: column).sendControlResize(column, e);
   }
 
   Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {

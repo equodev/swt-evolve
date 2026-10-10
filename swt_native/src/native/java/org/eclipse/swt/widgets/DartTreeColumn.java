@@ -484,6 +484,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
+        if (!java.util.Objects.equals(this.resizable, newValue)) {
+            getValue().markDirty(VTreeColumn.RESIZABLE);
+        }
         checkWidget();
         this.resizable = newValue;
     }
