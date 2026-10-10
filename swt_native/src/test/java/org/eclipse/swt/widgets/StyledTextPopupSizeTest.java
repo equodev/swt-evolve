@@ -72,6 +72,17 @@ class StyledTextPopupSizeTest {
     }
 
     @Test
+    void a_popup_whose_shell_has_no_grid_layout_wraps_to_its_whole_client_width() {
+        String text = "word ".repeat(60);
+        StyledText inGrid = styledIn(SWT.ON_TOP | SWT.NO_TRIM, text);
+        StyledText inPlain = styledIn(SWT.ON_TOP | SWT.NO_TRIM, text);
+        when(inPlain.getParent().getLayout()).thenReturn(null);
+
+        assertThat(inPlain.computeSize(SWT.DEFAULT, SWT.DEFAULT).x).isLessThanOrEqualTo(160)
+                .isGreaterThan(inGrid.computeSize(SWT.DEFAULT, SWT.DEFAULT).x);
+    }
+
+    @Test
     void a_shell_that_cannot_say_how_wide_it_is_leaves_the_text_unwrapped() {
         StyledText st = styledIn(SWT.ON_TOP | SWT.NO_TRIM, "word ".repeat(60));
         when(st.getParent().getClientArea()).thenReturn(new Rectangle(0, 0, 0, 0));
