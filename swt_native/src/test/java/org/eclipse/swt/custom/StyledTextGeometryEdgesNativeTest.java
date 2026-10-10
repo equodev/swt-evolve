@@ -285,7 +285,7 @@ public class StyledTextGeometryEdgesNativeTest {
         assertThat(StyledTextHelper.measuredLineTop(st, 1)).isEqualTo(15);
         assertThat(StyledTextHelper.measuredLineTop(st, 7)).isNull();
         assertThat(StyledTextHelper.measuredContentHeight(st)).isEqualTo(30);
-        assertThat(StyledTextHelper.measuredContentWidth(st)).isEqualTo(20);
+        assertThat(StyledTextHelper.measuredContentWidth(st, line -> true)).isEqualTo(20);
         assertThat(StyledTextHelper.measuredLineHeight(st, 0)).isEqualTo(15);
     }
 
