@@ -23,6 +23,24 @@ String stripAccelerators(String? text) {
   return result;
 }
 
+/// The text SWT shows for [text] where it fixes mnemonics (an item's header, a column's title): a single
+/// `&` is not drawn, `&&` draws one, and a `&` that ends the text is drawn.
+String fixMnemonic(String? text) {
+  if (text == null || text.isEmpty) return text ?? '';
+  final shown = StringBuffer();
+  for (var i = 0; i < text.length; i++) {
+    final c = text[i];
+    final last = i == text.length - 1;
+    if (c != '&' || last) {
+      shown.write(c);
+    } else if (text[i + 1] == '&') {
+      shown.write('&');
+      i++;
+    }
+  }
+  return shown.toString();
+}
+
 (int start, int end) getWordBoundaries(String text, int offset) {
   if (text.isEmpty) return (0, 0);
   final clamped = offset.clamp(0, text.length);

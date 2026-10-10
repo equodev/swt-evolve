@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../gen/treecolumn.dart';
 import '../gen/event.dart';
+import '../gen/image.dart';
 import '../gen/swt.dart';
 import '../impl/item_evolve.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'tree_evolve.dart';
+import 'utils/image_utils.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
@@ -65,10 +68,31 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     });
   }
 
+  /// The room between a header's image and its text.
+  static const double _headerImageGap = 4.0;
+
+  Widget _buildHeaderImage(VImage image) {
+    final render = ImageUtils.buildVImageAsync(
+      image,
+      enabled: true,
+      useBinaryImage: true,
+      renderAsIcon: true,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(right: _headerImageGap),
+      child: FutureBuilder<Widget?>(
+        future: render,
+        initialData: ImageUtils.resolvedRender(render),
+        builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
+      ),
+    );
+  }
+
   Widget _buildColumnContent({
     required BuildContext context,
     required TreeThemeExtension theme,
     required String text,
+    required VImage? image,
     required Color textColor,
     required bool uppercase,
     required EdgeInsets adjustedPadding,
@@ -96,6 +120,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       child: Row(
         mainAxisAlignment: textAlignment,
         children: [
+          if (image != null) _buildHeaderImage(image),
           Expanded(
             child: Text(
               uppercase ? text.toUpperCase() : text,
@@ -138,7 +163,8 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final bool linesVisible = TreeLinesVisibleProvider.of(context);
     final bool isLastColumn = TreeColumnIsLastProvider.of(context);
 
-    final String text = state.text ?? "";
+    // A single & marks the header's mnemonic and is not drawn; && draws one.
+    final String text = fixMnemonic(state.text);
     final int? alignment = state.alignment;
     final bool moveable = state.moveable ?? false;
     final int width = state.width ?? widgetTheme.columnDefaultWidth.round();
@@ -191,6 +217,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
               context: context,
               theme: widgetTheme,
               text: text,
+              image: state.image,
               textColor: textColor,
               uppercase: hasMultiColumn,
               adjustedPadding: adjustedPadding,
