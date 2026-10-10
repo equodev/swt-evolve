@@ -1357,6 +1357,17 @@ public class StyledTextHelper {
         renderer.descent = metrics.descent;
         renderer.averageCharWidth = metrics.averageCharWidth;
         renderer.tabWidth = metrics.tabWidth;
+        renderer.fixedPitch = isFixedPitch(font);
+    }
+
+    /** Whether "l" and "W" are as wide as each other in the font, which is how SWT tells a fixed pitch font. */
+    static boolean isFixedPitch(Font font) {
+        if (font == null || font.isDisposed()) {
+            return false;
+        }
+        double scale = dpiScale();
+        return Math.round(FontMetricsUtil.getFontSize("l", font).x() * scale)
+                == Math.round(FontMetricsUtil.getFontSize("W", font).x() * scale);
     }
 
     /**
