@@ -504,6 +504,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 cellPadding: widgetTheme.cellMultiColumnPadding,
                 columnIndex: columnIndex,
                 hasMultiColumn: hasMultiColumn,
+                image: _cellImage(columnIndex),
               ),
             );
           }),
@@ -674,8 +675,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         cellPadding: theme.cellMultiColumnPadding,
         columnIndex: columnIndex,
         hasMultiColumn: hasMultiColumn,
+        image: _cellImage(columnIndex),
       ),
     );
+  }
+
+  /// The image of a cell after the tree column; the tree column's own is drawn by the row's prefix.
+  VImage? _cellImage(int columnIndex) {
+    final images = state.images;
+    if (images == null || columnIndex >= images.length) return null;
+    return images[columnIndex];
   }
 
   Widget _buildTextContent(
@@ -1135,6 +1144,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required EdgeInsets cellPadding,
     required int columnIndex,
     bool hasMultiColumn = false,
+    VImage? image,
   }) {
     // Text the row's owner-draw overlay paints keeps its place and semantics, but is not painted
     // twice.
@@ -1162,6 +1172,25 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
+    // As natively, a cell draws its image before its text, in every column.
+    final icon = image == null
+        ? null
+        : _buildItemIcon(
+            theme,
+            _context?.parentTreeValue.enabled ?? true,
+            _context?.treeImpl?.isItemSelected(state.id) ?? false,
+            false,
+            false,
+            image,
+          );
+    if (icon != null) {
+      textWidget = Row(
+        children: [
+          Padding(padding: EdgeInsets.only(right: theme.itemIconSpacing), child: icon),
+          Expanded(child: textWidget),
+        ],
+      );
+    }
 
     EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: cellPadding,
