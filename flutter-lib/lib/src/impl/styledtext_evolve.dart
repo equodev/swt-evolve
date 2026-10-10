@@ -119,6 +119,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void initState() {
     super.initState();
+    PaintingBinding.instance.systemFonts.addListener(_systemFontsChanged);
     _focusNode.addListener(_onFocusChange);
     _textChangeToken =
         EquoCommService.onRaw("StyledText/${state.id}/TextChange", _onTextChange);
@@ -231,6 +232,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   void dispose() {
+    PaintingBinding.instance.systemFonts.removeListener(_systemFontsChanged);
     EquoCommService.remove("StyledText/${state.id}/TextChange", _textChangeToken);
     _geometryTimer?.cancel();
     EquoCommService.remove("StyledText/${state.id}/ResendGeometry", _resendGeometryToken);
@@ -1059,6 +1061,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   GeometryTable? _geometrySent;
 
   /// Comparing the widget's text style is expensive, so layout keys carry a count of its changes.
+  /// The count is shared by every StyledText, because the line layouts they key are too: two
+  /// widgets on the same count would take each other's lines, measured in each other's font.
+  static int _styleTokens = 0;
   TextStyle? _lastDefaultStyle;
   int _styleToken = 0;
 
@@ -1067,10 +1072,17 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final last = _lastDefaultStyle;
     if (last == null || built != last) {
       _lastDefaultStyle = built;
-      _styleToken++;
+      _styleToken = ++_styleTokens;
       return built;
     }
     return last;
+  }
+
+  /// A font that becomes available changes how the lines measured before it lay out.
+  void _systemFontsChanged() {
+    if (!mounted) return;
+    _lastDefaultStyle = null;
+    setState(() => _shapeStale = true);
   }
 
   /// Microseconds the last geometry computation and shape rebuild took.
@@ -4679,3 +4691,4 @@ class TextEditor {
     return '\n'.allMatches(text.substring(0, offset)).length;
   }
 }
+
