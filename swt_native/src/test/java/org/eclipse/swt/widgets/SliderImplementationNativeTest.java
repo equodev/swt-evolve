@@ -13,21 +13,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
 
 /** What {@link DartSlider} does when it is driven directly rather than through {@link Slider}. */
 @Tag("native-unit")
 class SliderImplementationNativeTest {
 
+    private Display display;
     private Shell shell;
 
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
-        shell = DartMocks.dartShell();
+        display = DartMocks.dartDisplay();
+        shell = DartMocks.dartShell(display);
+        // The mock display would swallow every event; its real dispatch only needs the listener table.
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        doCallRealMethod().when(impl).sendEvent(any(EventTable.class), any(Event.class));
     }
 
     @AfterEach
     void tearDown() {
+        // The display mock is shared by the whole suite: hand it back as the other tests expect it.
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
         FlutterBridge.set(null);
     }
 
