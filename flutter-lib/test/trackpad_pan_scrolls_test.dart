@@ -94,6 +94,28 @@ Future<void> _swipeUp(WidgetTester tester, {double distance = 60, int steps = 3}
   await tester.pump();
 }
 
+/// A swipe up of [distance] in [steps] updates [stepMs] apart, released while still moving.
+Future<void> _flickUp(WidgetTester tester,
+    {double distance = 120, int steps = 6, int stepMs = 16}) async {
+  final gesture = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+  await gesture.panZoomStart(const Offset(150, 100));
+  for (var i = 1; i <= steps; i++) {
+    await gesture.panZoomUpdate(const Offset(150, 100),
+        pan: Offset(0, -distance * i / steps), timeStamp: Duration(milliseconds: i * stepMs));
+    await tester.pump(Duration(milliseconds: stepMs));
+  }
+  await gesture.panZoomEnd(timeStamp: Duration(milliseconds: steps * stepMs));
+  await tester.pump();
+}
+
+Future<void> _frames(WidgetTester tester, int count) async {
+  for (var i = 0; i < count; i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+}
+
+int _travel(List<VEvent> wheels) => wheels.fold<int>(0, (sum, e) => sum + e.detail!);
+
 void main() {
   testWidgets('a two-finger swipe over a Canvas reaches Java as a mouse wheel', (tester) async {
     final wheels = <VEvent>[];
@@ -129,5 +151,69 @@ void main() {
     await tester.pump();
 
     expect(wheels, isEmpty);
+  });
+
+  testWidgets('a flick keeps scrolling after the fingers lift, slowing to a stop', (tester) async {
+    final wheels = <VEvent>[];
+    await _pump(tester, _WheelStyledTextSwt(value: _styledText(), wheels: wheels));
+
+    await _flickUp(tester, distance: 120);
+    final atRelease = _travel(wheels);
+    expect(atRelease, 120);
+
+    await _frames(tester, 10);
+    final early = _travel(wheels) - atRelease;
+    await _frames(tester, 10);
+    final later = _travel(wheels) - atRelease - early;
+    expect(early, greaterThan(0), reason: 'the content glides on after the release');
+    expect(later, lessThan(early), reason: 'and slows down');
+    expect(wheels.every((e) => e.detail! > 0), isTrue, reason: 'in the direction of the swipe');
+
+    await _frames(tester, 300);
+    final stopped = _travel(wheels);
+    await _frames(tester, 30);
+    expect(_travel(wheels), stopped, reason: 'until it stops');
+  });
+
+  testWidgets('touching the trackpad again stops the glide', (tester) async {
+    final wheels = <VEvent>[];
+    await _pump(tester, _WheelStyledTextSwt(value: _styledText(), wheels: wheels));
+
+    await _flickUp(tester, distance: 120);
+    await _frames(tester, 3);
+    tester.binding.handlePointerEvent(const PointerScrollInertiaCancelEvent(
+        kind: PointerDeviceKind.trackpad, position: Offset(150, 100)));
+    final stopped = _travel(wheels);
+    await _frames(tester, 30);
+
+    expect(_travel(wheels), stopped);
+  });
+
+  testWidgets('a swipe that comes to rest before the release does not glide', (tester) async {
+    final wheels = <VEvent>[];
+    await _pump(tester, _WheelStyledTextSwt(value: _styledText(), wheels: wheels));
+
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+    await gesture.panZoomStart(const Offset(150, 100));
+    await gesture.panZoomUpdate(const Offset(150, 100),
+        pan: const Offset(0, -60), timeStamp: const Duration(milliseconds: 16));
+    await gesture.panZoomUpdate(const Offset(150, 100),
+        pan: const Offset(0, -60), timeStamp: const Duration(milliseconds: 400));
+    await gesture.panZoomEnd(timeStamp: const Duration(milliseconds: 400));
+    await _frames(tester, 30);
+
+    expect(_travel(wheels), 60);
+  });
+
+  testWidgets('a flick over a Canvas glides as further mouse wheel ticks', (tester) async {
+    final wheels = <VEvent>[];
+    await _pump(tester, _WheelCanvasSwt(value: _canvas(), wheels: wheels));
+
+    await _flickUp(tester, distance: 120);
+    final atRelease = wheels.length;
+    await _frames(tester, 20);
+
+    expect(wheels.length, greaterThan(atRelease));
+    expect(wheels.every((e) => e.count! < 0), isTrue);
   });
 }

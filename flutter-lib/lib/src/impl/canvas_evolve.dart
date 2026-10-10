@@ -21,6 +21,7 @@ import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
+import 'utils/trackpad_momentum.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'widget_config.dart';
@@ -138,6 +139,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   @override
   void dispose() {
+    _momentum.dispose();
     _keyboardFocus.removeListener(_handleKeyboardFocusChange);
     _keyboardFocus.dispose();
     super.dispose();
@@ -415,11 +417,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         }
       }
 
-      return Listener(
-        onPointerSignal: onSignal,
-        onPointerPanZoomUpdate: (event) => _panAsWheel(event, onSignal),
-        child: base,
-      );
+      return _readsWheelAndTrackpad(base, onSignal);
     }
 
     void onDragStateChanged(bool dragging) {
@@ -451,10 +449,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       }
     }
 
-    return Listener(
-      onPointerSignal: onSignal,
-      onPointerPanZoomUpdate: (event) => _panAsWheel(event, onSignal),
-      child: Stack(
+    return _readsWheelAndTrackpad(Stack(
         children: [
           base,
           if (showVBar)
@@ -506,7 +501,52 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
             ),
         ],
       ),
+      onSignal,
     );
+  }
+
+  /// The last pan update, which the glide after it is delivered as if from.
+  PointerPanZoomUpdateEvent? _lastPan;
+  void Function(PointerSignalEvent)? _wheelSink;
+  late final TrackpadMomentum _momentum = TrackpadMomentum(_glideAsWheel);
+
+  Widget _readsWheelAndTrackpad(Widget child, void Function(PointerSignalEvent) onSignal) {
+    _wheelSink = onSignal;
+    return Listener(
+      onPointerSignal: (event) {
+        // A wheel turned, or fingers back on the trackpad, end the glide.
+        _momentum.stop();
+        onSignal(event);
+      },
+      onPointerDown: (_) => _momentum.stop(),
+      onPointerPanZoomStart: _momentum.panStart,
+      onPointerPanZoomUpdate: (event) {
+        _lastPan = event;
+        _momentum.panUpdate(event);
+        _panAsWheel(event, onSignal);
+      },
+      onPointerPanZoomEnd: (_) => _momentum.panEnd(
+          ScrollConfiguration.of(context).getScrollPhysics(context),
+          MediaQuery.devicePixelRatioOf(context)),
+      child: child,
+    );
+  }
+
+  void _glideAsWheel(Offset wheelDelta) {
+    final last = _lastPan;
+    final sink = _wheelSink;
+    if (!mounted || last == null || sink == null) {
+      _momentum.stop();
+      return;
+    }
+    sink(PointerScrollEvent(
+      timeStamp: last.timeStamp,
+      kind: last.kind,
+      device: last.device,
+      position: last.position,
+      scrollDelta: wheelDelta,
+      embedderId: last.embedderId,
+    ).transformed(last.transform));
   }
 
   void _tickSnap() {
