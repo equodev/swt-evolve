@@ -59,7 +59,7 @@ VStyledText _styledText() => VStyledText()
   ..cursor = (VCursor()..cursorStyle = SWT.CURSOR_IBEAM)
   ..verticalBar = _bar(11);
 
-Future<List<String>> _pump(WidgetTester tester) async {
+Future<List<String>> _pump(WidgetTester tester, [VStyledText? value]) async {
   final calls = <String>[];
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
@@ -68,12 +68,19 @@ Future<List<String>> _pump(WidgetTester tester) async {
       child: SizedBox(
         width: 300,
         height: 200,
-        child: _RecordingStyledTextSwt(value: _styledText(), calls: calls),
+        child: _RecordingStyledTextSwt(value: value ?? _styledText(), calls: calls),
       ),
     ),
   ));
   await tester.pump();
   return calls;
+}
+
+double _thumbOffset(WidgetTester tester) {
+  final bar = tester
+      .widgetList<CustomPaint>(find.byType(CustomPaint))
+      .firstWhere((p) => p.painter.runtimeType.toString() == '_ScrollBarPainter');
+  return (bar.painter as dynamic).thumbOffset as double;
 }
 
 void main() {
@@ -114,6 +121,22 @@ void main() {
     expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
         SystemMouseCursors.basic);
     await mouse.removePointer();
+  });
+
+  testWidgets('after a press on the track the thumb follows the application moving the bar',
+      (tester) async {
+    final value = _styledText();
+    await _pump(tester, value);
+    await tester.tapAt(const Offset(294, 150), kind: PointerDeviceKind.mouse);
+    await tester.pump();
+    expect(_thumbOffset(tester), greaterThan(100), reason: 'sanity: the press moved the thumb down');
+
+    // The wheel scrolls on: the application moves the bar, which arrives changed in place.
+    value.verticalBar!.selection = 100;
+    await _pump(tester, value);
+
+    // 100 of the 950 the 16px thumb travels over the 200px track.
+    expect(_thumbOffset(tester), closeTo(100 / 950 * 184, 0.5));
   });
 
   group('a press on the track', () {

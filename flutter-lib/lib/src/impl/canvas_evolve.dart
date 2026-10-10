@@ -642,6 +642,10 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   double? _dragStartPointerOffset;
   int? _dragStartSelection;
   int? _currentDragSelection;
+  /// What a press or drag asked for, so an echo of one is told apart from a move made elsewhere.
+  final Set<int> _sentSelections = {};
+  /// The bar is changed in place, so the old widget's bar is this one: changes are told by this value.
+  int? _seenSelection;
   bool _hovered = false;
   double _opacity = 0.0;
   Timer? _hideTimer;
@@ -650,6 +654,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   @override
   void initState() {
     super.initState();
+    _seenSelection = widget.bar.selection;
     _showBar();
     _scheduleHide();
   }
@@ -657,14 +662,24 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   @override
   void didUpdateWidget(_CanvasScrollBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.bar.selection != widget.bar.selection) {
+    final selection = widget.bar.selection;
+    if (selection != _seenSelection) {
+      _seenSelection = selection;
       _showBar();
       _scheduleHide();
 
+      // The value a press or drag asked for holds until the application reports it, or reports
+      // a move of its own (the wheel, the keyboard), which is not one of the values asked for.
       if (_dragStartPointerOffset == null) {
-        if (_currentDragSelection == null || widget.bar.selection == _currentDragSelection) {
+        if (_currentDragSelection == null ||
+            selection == _currentDragSelection ||
+            !_sentSelections.contains(selection)) {
           _currentDragSelection = null;
-          widget.onDragPixelDelta?.call(0.0);
+          _sentSelections.clear();
+          // The owner is mid-build here; its drag preview is reset once the frame is done.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onDragPixelDelta?.call(0.0);
+          });
         }
       }
     }
@@ -742,8 +757,13 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragThrottleTimer ??= Timer(const Duration(milliseconds: 50), () {
       _dragThrottleTimer = null;
       final sel = _currentDragSelection;
-      if (sel != null) widget.onSelection(widget.bar, sel, 0);
+      if (sel != null) _send(sel);
     });
+  }
+
+  void _send(int selection) {
+    _sentSelections.add(selection);
+    widget.onSelection(widget.bar, selection, 0);
   }
 
   /// Centres the thumb under a track press, so a drag that follows carries on from there.
@@ -763,7 +783,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     if (target == null || target == _displaySelection) return;
     setState(() => _currentDragSelection = target);
     _showBar();
-    widget.onSelection(widget.bar, target, 0);
+    _send(target);
   }
 
   void _onDragEnd(DragEndDetails details) {
@@ -773,7 +793,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragStartPointerOffset = null;
     _dragStartSelection = null;
     widget.onDragStateChanged?.call(false);
-    widget.onSelection(widget.bar, finalSel, 0);
+    _send(finalSel);
     _scheduleHide();
   }
 
@@ -783,6 +803,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragStartPointerOffset = null;
     _dragStartSelection = null;
     _currentDragSelection = null;
+    _sentSelections.clear();
     widget.onDragStateChanged?.call(false);
     widget.onDragPixelDelta?.call(0.0);
     _scheduleHide();
