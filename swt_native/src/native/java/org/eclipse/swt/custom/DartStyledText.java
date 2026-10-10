@@ -4929,7 +4929,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return null;
         int lineLength = line.length();
         int[] segments = event.segments = event.segments.clone();
-        if (segments[0] != 0)
+        if (!"cocoa".equals(SWT.getPlatform()) && segments[0] != 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (segments[0] > lineLength) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
