@@ -750,6 +750,19 @@ public class Sizes {
         return new Rectangle(x, y, width, itemHeight);
     }
 
+    /** Where a cell's image is drawn: at the start of the cell, on the item's row, as wide as the image. */
+    public static Rectangle getImageBounds(DartTableItem item, int index) {
+        Table parent = item._parent();
+        DartTable dartTable = (DartTable) parent.getImpl();
+        if (!(0 <= index && index < Math.max(1, dartTable.columnCount)))
+            return new Rectangle(0, 0, 0, 0);
+        Rectangle cellBounds = getBounds(item, index);
+        Image[] images = item._images();
+        Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
+        int width = image != null ? image.getBounds().width : 0;
+        return new Rectangle(cellBounds.x, cellBounds.y, width, cellBounds.height);
+    }
+
     public static Rectangle getTextBounds(DartTableItem item, int index) {
         Table parent = item._parent();
         DartTable dartTable = (DartTable) parent.getImpl();
