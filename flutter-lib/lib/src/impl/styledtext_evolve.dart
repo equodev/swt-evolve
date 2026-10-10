@@ -1019,8 +1019,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ? (javaAscent + javaDescent).toDouble()
         : fontSize * 1.4;
     _ensureTextMetrics(text);
-    final totalHeight =
-        math.max(getBounds().height, _metricsLineCount * lineHeight);
+    // The laid-out rows once there are any: a row taller than the font (a vertical indent, line spacing, a larger
+    // styled font) makes the estimate fall short, and the band below its end would paint nothing.
+    final shape = _shape;
+    final contentHeight = shape != null
+        ? shape._lineTops(shape._lines).last + (state.topMargin ?? 0) + (state.bottomMargin ?? 0)
+        : _metricsLineCount * lineHeight;
+    final totalHeight = math.max(getBounds().height, contentHeight);
 
     double totalWidth = getBounds().width;
     if (state.wordWrap != true) {
