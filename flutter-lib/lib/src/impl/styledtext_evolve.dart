@@ -1526,11 +1526,19 @@ class _LineTopsCache {
 /// so a cached entry cannot go stale: a line whose text, styles, alignment, wrap width
 /// or tab width changes hashes to a different key.
 class _LineLayout {
-  _LineLayout(this.width, this.height, this.metrics, this.rowEnds, this.cost);
+  _LineLayout(this.width, this.height, this.metrics, this.rowEnds);
 
-  /// The line's length in characters — what this entry is charged against the cache
-  /// budget, whether or not [caretX] has been materialized yet.
-  final int cost;
+  /// What a layout without caret positions is charged against the cache budget: its rows, the
+  /// object itself and its key, which together weigh about what a dozen caret positions do.
+  static const int _entryCost = 16;
+
+  /// What this entry weighs against the cache budget now: one unit per caret position, the array
+  /// the memory goes into, plus [_entryCost]. A line measured only for its height and width costs
+  /// little, so a large document's layouts all fit and a rebuilt shape finds them again.
+  int get cost => _entryCost + metrics.length + (caretX?.length ?? 0);
+
+  /// [cost] when the entry was last put in the cache: what it gives back when it leaves.
+  int charged = 0;
 
   final double width;
   final double height;
@@ -1591,8 +1599,8 @@ class _LineLayoutKey {
 /// own inputs turns those back into lookups for the lines the edit did not touch.
 ///
 /// Insertion-ordered, so the eldest entry is the least recently used once a hit
-/// re-inserts its key. The budget counts characters rather than entries because the
-/// per-character x array is what the memory goes into.
+/// re-inserts its key. The budget counts caret positions (see [_LineLayout.cost]) rather than
+/// entries because the per-character x array is what the memory goes into.
 final Map<_LineLayoutKey, _LineLayout> _lineLayoutCache = {};
 int _lineLayoutCacheChars = 0;
 const int _lineLayoutCacheCharBudget = 200000;
@@ -1601,16 +1609,17 @@ void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
   // The replaced entry stops counting, so a re-inserted line is charged to the budget once.
   final replaced = _lineLayoutCache.remove(key);
   if (replaced != null) {
-    _lineLayoutCacheChars -= replaced.cost;
+    _lineLayoutCacheChars -= replaced.charged;
     // Same key, same layout: keep the caret positions an earlier pass measured.
     layout.caretX ??= replaced.caretX;
   }
   _lineLayoutCache[key] = layout;
-  _lineLayoutCacheChars += layout.cost;
+  layout.charged = layout.cost;
+  _lineLayoutCacheChars += layout.charged;
   while (_lineLayoutCacheChars > _lineLayoutCacheCharBudget &&
       _lineLayoutCache.length > 1) {
     final evicted = _lineLayoutCache.remove(_lineLayoutCache.keys.first);
-    if (evicted != null) _lineLayoutCacheChars -= evicted.cost;
+    if (evicted != null) _lineLayoutCacheChars -= evicted.charged;
   }
 }
 
@@ -2834,7 +2843,6 @@ class TextShape extends Shape {
         tp.height,
         metrics,
         rowEnds,
-        lineText.length + 1,
       );
       if (wantCaretX) {
         layout.caretX = [
