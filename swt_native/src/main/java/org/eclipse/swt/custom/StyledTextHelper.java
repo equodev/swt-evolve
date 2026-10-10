@@ -1515,7 +1515,9 @@ public class StyledTextHelper {
         org.eclipse.swt.graphics.TextLayout layout = new org.eclipse.swt.graphics.TextLayout(device);
         try {
             layout.setFont(font);
-            layout.setText(" ".repeat(count));
+            char[] spaces = new char[Math.max(0, count)];
+            java.util.Arrays.fill(spaces, ' ');
+            layout.setText(new String(spaces));
             return layout.getBounds().width;
         } finally {
             layout.dispose();
