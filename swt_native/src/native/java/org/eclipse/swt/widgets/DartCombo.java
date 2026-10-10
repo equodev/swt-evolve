@@ -172,6 +172,7 @@ public class DartCombo extends DartComposite implements ICombo {
         newItems[index] = string;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
+        ComboHelper.itemInserted(this, index);
         ComboHelper.sendSegments(this, string);
     }
 
@@ -373,7 +374,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (selection.x == selection.y)
             return;
         copyToClipboard(getText(selection.x, selection.y));
-        ComboHelper.sendSegments(this, getText());
+        ComboHelper.sendSegments(this);
     }
 
     @Override
@@ -384,6 +385,7 @@ public class DartCombo extends DartComposite implements ICombo {
     void createWidget() {
         text = "";
         selection = new Point(0, 0);
+        visibleItemCount = ComboHelper.defaultVisibleItemCount(this);
         super.createWidget();
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }
@@ -417,6 +419,7 @@ public class DartCombo extends DartComposite implements ICombo {
         String oldText = text.substring(start, end);
         String newText = "";
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            newText = ComboHelper.verifyText(this, newText, start, end);
             if (newText == null)
                 return;
         }
@@ -427,7 +430,7 @@ public class DartCombo extends DartComposite implements ICombo {
         start += newText.length();
         setSelection(new Point(start, start));
         sendEvent(SWT.Modify);
-        ComboHelper.sendSegments(this, getText());
+        ComboHelper.sendSegments(this);
     }
 
     @Override
@@ -461,19 +464,8 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (index == -1)
             return;
-        {
-            if (index == getSelectionIndex()) {
-                selectedIndex = -1;
-                this.text = "";
-                getValue().markDirty(VCombo.TEXT);
-            }
-        }
-        if (index == getSelectionIndex()) {
-            if ((getApi().style & SWT.READ_ONLY) != 0) {
-                sendEvent(SWT.Modify);
-            } else {
-            }
-        }
+        if (index == getSelectionIndex())
+            ComboHelper.deselect(this);
     }
 
     /**
@@ -494,8 +486,8 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         selectedIndex = -1;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
+            ComboHelper.syncReadOnlyText(this);
             sendEvent(SWT.Modify);
-        } else {
         }
     }
 
@@ -524,7 +516,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getCaretPosition() {
         checkWidget();
-        return 0;
+        return ComboHelper.getCaretPosition(this);
     }
 
     /**
@@ -542,16 +534,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public Point getCaretLocation() {
         checkWidget();
-        if (this.hasFocus()) {
-        }
-        return null;
-    }
-
-    int getCharCount() {
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-        }
-        return 0;
+        return new Point(0, 0);
     }
 
     /**
@@ -709,11 +692,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public Point getSelection() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            return new Point(0, getCharCount());
-        } else {
-        }
-        return this.selection;
+        return ComboHelper.getSelection(this);
     }
 
     /**
@@ -914,6 +893,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (newText == null)
             return;
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            newText = ComboHelper.verifyText(this, newText, start, end);
             if (newText == null)
                 return;
         }
@@ -927,7 +907,7 @@ public class DartCombo extends DartComposite implements ICombo {
         start += newText.length();
         setSelection(new Point(start, start));
         sendEvent(SWT.Modify);
-        ComboHelper.sendSegments(this, getText());
+        ComboHelper.sendSegments(this);
     }
 
     @Override
@@ -967,22 +947,7 @@ public class DartCombo extends DartComposite implements ICombo {
         int count = getItemCount();
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length - 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
-        items = newItems;
-        if (index == selectedIndex) {
-            // Removing the selected item leaves nothing selected, as GTK and Win32 do, whatever
-            // the host; clearing it clears the shown text and fires Modify.
-            selectedIndex = -1;
-            if (text != null && !text.isEmpty()) {
-                text = "";
-                sendEvent(SWT.Modify);
-            }
-        } else if (index < selectedIndex) {
-            selectedIndex--;
-        }
+        ComboHelper.removeAt(this, index);
     }
 
     /**
@@ -1051,14 +1016,13 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void removeAll() {
         checkWidget();
+        ignoreSelection = true;
+        if ((getApi().style & SWT.READ_ONLY) == 0)
+            setText("", true);
         getValue().markDirty(VCombo.ITEMS);
         items = new String[0];
         selectedIndex = -1;
-        ignoreSelection = true;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-            setText("", true);
-        }
+        ComboHelper.syncReadOnlyText(this);
         ignoreSelection = false;
     }
 
@@ -1191,7 +1155,7 @@ public class DartCombo extends DartComposite implements ICombo {
             selectedIndex = index;
             ignoreSelection = true;
             if ((getApi().style & SWT.READ_ONLY) != 0) {
-                text = items[index];
+                ComboHelper.syncReadOnlyText(this);
                 sendEvent(SWT.Modify);
             } else {
                 setText(items[index], true);
@@ -1244,6 +1208,7 @@ public class DartCombo extends DartComposite implements ICombo {
         getValue().markDirty(VCombo.ITEMS);
         items[index] = string;
         getValue().markDirty(VCombo.ITEMS);
+        ComboHelper.syncReadOnlyText(this);
         int selection = getSelectionIndex();
         ignoreSelection = true;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1287,7 +1252,7 @@ public class DartCombo extends DartComposite implements ICombo {
             } else {
             }
         }
-        this.items = newValue;
+        this.items = items.clone();
         ignoreSelection = false;
         for (String item : this.items) ComboHelper.sendSegments(this, item);
     }
@@ -1362,17 +1327,14 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if ((getApi().style & SWT.READ_ONLY) != 0)
+            return;
         int start = Math.min(selection.x, selection.y);
         int end = Math.max(selection.x, selection.y);
         int length = getText().length();
         start = Math.min(Math.max(start, 0), length);
         end = Math.min(Math.max(end, 0), length);
-        Point newValue = new Point(start, end);
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-        }
-        this.selection = newValue;
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-        }
+        this.selection = new Point(start, end);
     }
 
     /**
@@ -1408,31 +1370,11 @@ public class DartCombo extends DartComposite implements ICombo {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setText(string, true);
-        ComboHelper.sendSegments(this, getText());
+        ComboHelper.sendSegments(this);
     }
 
     void setText(String string, boolean notify) {
-        if (notify) {
-            if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-                if (string == null)
-                    return;
-            }
-        }
-        if (!java.util.Objects.equals(this.text, string)) {
-            getValue().markDirty(VCombo.TEXT);
-        }
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            int index = indexOf(string);
-            if (index != -1) {
-                select(index);
-            }
-        } else {
-            char[] buffer = new char[Math.min(string.length(), textLimit)];
-            string.getChars(0, buffer.length, buffer, 0);
-            text = new String(buffer, 0, buffer.length);
-            if (notify)
-                sendEvent(SWT.Modify);
-        }
+        ComboHelper.setText(this, string, notify, notify);
     }
 
     /**
@@ -1562,7 +1504,7 @@ public class DartCombo extends DartComposite implements ICombo {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                setText(e.text);
+                ComboHelper.handleModify(this, e);
             });
         });
         FlutterBridge.on(this, "Segment", "Segments", e -> {
