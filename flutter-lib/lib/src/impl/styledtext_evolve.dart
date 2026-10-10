@@ -284,6 +284,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Keys reach Java from the Display's handler when one is mounted, else from here, and are kept
   /// from Flutter's shortcuts (which would scroll or move focus); only Tab goes on, to traversal.
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    // Unhandled, it reaches the platform's text input; skipping the rest keeps app shortcuts off it.
+    if (compositionTakesKey(event)) return KeyEventResult.skipRemainingHandlers;
     if (!displayLevelKeyForwardingActive) {
       final v = mapNewKeyEventToSwt(event);
       // A key the composition owns must not reach the document twice (ComposedTextInput.swallowsKey).

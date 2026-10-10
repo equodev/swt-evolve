@@ -1,12 +1,14 @@
 // On the web the keydown that commits a dead-key composition (`´` + `a` = `á`) also carries the
 // composed letter, so the editor is offered it twice and must insert it once.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/impl/utils/composed_text_input.dart';
 
 void main() {
   _sharedGateTests();
+  group('macOS', _macosTests);
   late List<String> committed;
   late List<String> composing;
   late ComposedTextInput input;
@@ -79,6 +81,62 @@ void main() {
 
     expect(committed, isEmpty);
     expect(input.swallowsKey('a'), isFalse);
+  });
+}
+
+void _macosTests() {
+  // On macOS the text input only receives the keys the editor leaves to it, so it gets the key that
+  // ends a composition itself and nothing follows it to a forwarder.
+  late List<String> committed;
+  late ComposedTextInput input;
+
+  setUp(() {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    committed = [];
+    input = ComposedTextInput(onComposedText: committed.add);
+  });
+  tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+  void update(String text, {bool composing = false}) => input.updateEditingValue(TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+        composing: composing ? TextRange(start: 0, end: text.length) : TextRange.empty,
+      ));
+
+  test('on macOS a letter the dead key does not combine with is typed after the accent', () {
+    update('´', composing: true);
+    update('´');
+    update('´x');
+
+    expect(committed, ['´', 'x']);
+  });
+
+  test('on macOS a composition that follows a commit commits only its own text', () {
+    update('´', composing: true);
+    update('é');
+    input.updateEditingValue(const TextEditingValue(
+        text: 'é¨', selection: TextSelection.collapsed(offset: 2), composing: TextRange(start: 1, end: 2)));
+    update('éü');
+
+    expect(committed, ['é', 'ü']);
+  });
+
+  test('on macOS an abandoned composition commits nothing and clears what it showed', () {
+    final shown = <String>[];
+    input = ComposedTextInput(onComposedText: committed.add, onComposing: (text, _) => shown.add(text));
+    update('´', composing: true);
+    update('');
+
+    expect(committed, isEmpty);
+    expect(shown, ['´', '']);
+  });
+
+  test('on macOS the next keystroke is never taken for the committing key', () {
+    update('´', composing: true);
+    update('é');
+
+    expect(committed, ['é']);
+    expect(input.swallowsKey('é'), isFalse, reason: 'the committing key went to the composition');
   });
 }
 
