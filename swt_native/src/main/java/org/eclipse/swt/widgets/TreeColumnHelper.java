@@ -106,8 +106,8 @@ public final class TreeColumnHelper {
             width = event.width;
         }
         if (index == 0) {
-            TreeItem item = cell.getApi();
-            width += TreeSizes.getContentLeft(tree, item) - (int) Math.ceil(TreeSizes.getExpanderLeft(tree, 0));
+            // Column 0 starts at the tree's edge and holds the edge gap, row padding, indent and expander.
+            width += TreeSizes.getContentLeft(tree, cell.getApi());
         }
         return width;
     }
