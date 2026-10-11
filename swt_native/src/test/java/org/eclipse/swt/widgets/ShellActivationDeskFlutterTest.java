@@ -24,8 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Natively a shell receives {@code SWT.Activate} when its window becomes the key window and
  * {@code SWT.Deactivate} when it stops being one, and {@code getActiveShell()} answers with that same
  * window, so the two never disagree: an application that is not frontmost gets no activation at all.
- * Announcing the activation from the shell's own bookkeeping instead hands a listener an active shell
- * that {@code getActiveShell()} reports as {@code null}.
  *
  * <p>The native window is stubbed behind the bridge's seams, as in {@link ShellCloseContractFlutterTest},
  * so whether the OS gives it the keyboard is scripted.
