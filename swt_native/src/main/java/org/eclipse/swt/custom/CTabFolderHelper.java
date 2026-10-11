@@ -391,12 +391,11 @@ public class CTabFolderHelper {
     }
 
     /**
-     * Whether the render side draws the close button, which is what the tab has to leave room for.
-     * It reads the item's own flag only - a folder-wide SWT.CLOSE does not reach it - so a width
-     * that took the folder's flag into account would reserve room for a button nobody draws.
+     * Whether the render side draws the close button, which is what the tab has to leave room for:
+     * the tab's own flag or the folder's SWT.CLOSE.
      */
     private static boolean isCloseButtonDrawn(CTabItem item, DartCTabFolder parent, int state) {
-        return ((DartCTabItem) item.getImpl()).showClose
+        return (((DartCTabItem) item.getImpl()).showClose || parent.showClose)
                 && ((state & SWT.SELECTED) != 0 || parent.showUnselectedClose);
     }
 

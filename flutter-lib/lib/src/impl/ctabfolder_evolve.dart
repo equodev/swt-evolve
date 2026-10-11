@@ -322,9 +322,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   CTabItem getWidgetForTabItem(VCTabItem tabItem) {
     final tabItemWidget = CTabItemSwt(value: tabItem);
 
+    // SWT.CLOSE on the folder puts a close button on every tab, as the tab's own flag does.
+    final folderCloses = (state.style & SWT.CLOSE) != 0;
     return CTabItem(
       label: tabItem.text ?? "",
-      showCloseButton: tabItem.showClose ?? false,
+      showCloseButton: (tabItem.showClose ?? false) || folderCloses,
       customContent: tabItemWidget,
       toolTipText: tabItem.toolTipText,
       vItem: tabItem,
