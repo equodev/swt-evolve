@@ -360,19 +360,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        Point size = getSize();
-        int range = maximum - minimum;
-        if (range <= 0)
-            range = 1;
-        if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            int thumbWidth = Math.max(1, (thumb * size.x) / range);
-            int thumbPos = ((selection - minimum) * (size.x - thumbWidth)) / Math.max(1, range - thumb);
-            return new Rectangle(thumbPos, 0, thumbWidth, size.y);
-        } else {
-            int thumbHeight = Math.max(1, (thumb * size.y) / range);
-            int thumbPos = ((selection - minimum) * (size.y - thumbHeight)) / Math.max(1, range - thumb);
-            return new Rectangle(0, thumbPos, size.x, thumbHeight);
-        }
+        return ScrollBarHelper.thumbBounds(this);
     }
 
     Rectangle getThumbBoundsInPixels() {
@@ -399,12 +387,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbTrackBounds() {
         checkWidget();
-        Point size = getSize();
-        if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            return new Rectangle(0, 0, size.x, size.y);
-        } else {
-            return new Rectangle(0, 0, size.x, size.y);
-        }
+        return ScrollBarHelper.trackBounds(this);
     }
 
     Rectangle getThumbTrackBoundsInPixels() {
