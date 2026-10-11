@@ -92,23 +92,165 @@ public class SpinnerHelper {
     }
 
     /**
-     * A value typed into the client and committed with Enter. The client sends nothing while the text is being
-     * edited, so this is the one place the application can hear that the value changed: Selection for a value
-     * that differs from the one it had, then DefaultSelection for the Enter.
+     * A value committed with Enter in the client. The edits that typed it were already handled by
+     * {@link #editedInFlutter}, so a value that stands only gets DefaultSelection; one that differs (the client
+     * clamps what Java held out of range) is applied first and notified as Selection.
      */
     static void committedInFlutter(DartSpinner c, Event e) {
         int previous = c.selection;
-        c.setSelection(e.index);
-        if (c.isDisposed()) {
+        // An edit already moved the value and notified Modify, so an Enter on a value that stands only commits.
+        if (e.index != previous) {
+            c.setSelection(e.index);
+            if (c.isDisposed()) {
+                return;
+            }
+            if (c.selection != previous) {
+                c.sendSelectionEvent(SWT.Selection, null, true);
+                if (c.isDisposed()) {
+                    return;
+                }
+            }
+        }
+        c.sendEvent(SWT.DefaultSelection, e);
+    }
+
+    /**
+     * The value a text field stands for, read as Cocoa's {@code getSelectionText} reads it: the host's decimal
+     * separator, scaled by the digits, and a value outside the range is no value. Null when there is none, which is
+     * what a partial edit ("", "-", "5x") or an out-of-range one leaves the selection on.
+     */
+    static Integer parseText(String string, int digits, int minimum, int maximum, String separator) {
+        try {
+            int value;
+            if (digits > 0) {
+                int index = string.indexOf(separator);
+                if (index != -1) {
+                    int startIndex = string.startsWith("+") || string.startsWith("-") ? 1 : 0;
+                    String wholePart = startIndex != index ? string.substring(startIndex, index) : "0";
+                    StringBuilder decimalPart = new StringBuilder(string.substring(index + separator.length()));
+                    if (decimalPart.length() > digits) {
+                        decimalPart.setLength(digits);
+                    }
+                    while (decimalPart.length() < digits) {
+                        decimalPart.append('0');
+                    }
+                    int wholeValue = Integer.parseInt(wholePart);
+                    int decimalValue = Integer.parseInt(decimalPart.toString());
+                    for (int i = 0; i < digits; i++) wholeValue *= 10;
+                    value = wholeValue + decimalValue;
+                    if (string.startsWith("-")) value = -value;
+                } else {
+                    value = Integer.parseInt(string);
+                    for (int i = 0; i < digits; i++) value *= 10;
+                }
+            } else {
+                value = Integer.parseInt(string);
+            }
+            if (minimum <= value && value <= maximum) {
+                return value;
+            }
+        } catch (NumberFormatException ex) {
+            // not a number: no value
+        }
+        return null;
+    }
+
+    /**
+     * An edit of the text typed in the client, in the order a native spinner takes it: Verify is asked about the
+     * characters being replaced when anyone listens, then a text that stands for a value in range moves the
+     * selection and notifies Selection, then Modify, whatever the text was. The selection of a partial or
+     * out-of-range text stays where it was.
+     */
+    static void editedInFlutter(DartSpinner c, Event e) {
+        editedInFlutter(c, e, SWT.getPlatform());
+    }
+
+    /**
+     * The event carries the new text, the range of the previous text it replaced ({@code start}, {@code end}) and
+     * the number of characters it put there ({@code count}). Cocoa and GTK post Selection and Modify, Win32 sends
+     * them; Cocoa's Verify refuses anything but digits (and the point of a decimal spinner), the others also take
+     * the minus of a spinner that can go below zero and the separator of the locale.
+     */
+    static void editedInFlutter(DartSpinner c, Event e, String platform) {
+        if (e.text == null) {
+            // A notice with no edit in it: there is nothing to ask or to read.
+            c.sendEvent(SWT.Modify, e);
             return;
         }
-        if (c.selection != previous) {
-            c.sendSelectionEvent(SWT.Selection, null, true);
+        String text = e.text;
+        if (c.hooks(SWT.Verify) || c.filters(SWT.Verify)) {
+            int count = Math.max(0, Math.min(e.count, text.length() - e.start));
+            String typed = text.substring(e.start, e.start + count);
+            String verified = verifyText(c, typed, e.start, e.end, "cocoa".equals(platform));
+            if (c.isDisposed()) {
+                return;
+            }
+            boolean accepted = typed.equals(verified);
+            // The client shows what was typed until told otherwise: a veto, or text a listener changed, sends it
+            // back to the value Java holds.
+            dev.equo.swt.FlutterBridge.send(c, "modify/verdict", dev.equo.swt.Java8.map("doit", accepted));
+            if (verified == null) {
+                return;
+            }
+            if (!accepted) {
+                text = text.substring(0, e.start) + verified + text.substring(e.start + count);
+            }
+        }
+        boolean post = !"win32".equals(platform);
+        Integer value = parseText(text, c.digits, c.minimum, c.maximum, decimalSeparator());
+        if (value != null && value != c.selection) {
+            c.getValue().markDirty(VSpinner.SELECTION);
+            c.selection = value;
+            c.sendSelectionEvent(SWT.Selection, null, !post);
             if (c.isDisposed()) {
                 return;
             }
         }
-        c.sendEvent(SWT.DefaultSelection, e);
+        if (post) {
+            c.postEvent(SWT.Modify);
+        } else {
+            c.sendEvent(SWT.Modify);
+        }
+    }
+
+    /** What a Verify listener answers to characters the user is putting into the field; null vetoes them. */
+    private static String verifyText(DartSpinner c, String string, int start, int end, boolean cocoa) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        String digitsOnly = string;
+        int index = 0;
+        if (cocoa) {
+            if (c.digits > 0) {
+                int point = digitsOnly.indexOf('.');
+                if (point != -1) {
+                    digitsOnly = digitsOnly.substring(0, point) + digitsOnly.substring(point + 1);
+                }
+            }
+        } else {
+            if (c.digits > 0) {
+                int point = digitsOnly.indexOf(decimalSeparator());
+                if (point != -1) {
+                    digitsOnly = digitsOnly.substring(0, point) + digitsOnly.substring(point + decimalSeparator().length());
+                }
+            }
+            if (c.minimum < 0 && digitsOnly.startsWith("-")) {
+                index++;
+            }
+        }
+        while (index < digitsOnly.length()) {
+            if (!Character.isDigit(digitsOnly.charAt(index))) {
+                break;
+            }
+            index++;
+        }
+        event.doit = index == digitsOnly.length();
+        c.sendEvent(SWT.Verify, event);
+        if (!event.doit || c.isDisposed()) {
+            return null;
+        }
+        return event.text;
     }
 
 }
