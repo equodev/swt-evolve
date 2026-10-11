@@ -753,7 +753,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public Point getMaximumSize() {
         checkWidget();
-        return this.maximumSize;
+        return ShellHelper.sizeLimit(this.maximumSize, Integer.MAX_VALUE);
     }
 
     /**
@@ -773,7 +773,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return this.minimumSize;
+        return ShellHelper.sizeLimit(this.minimumSize, 0);
     }
 
     /**
@@ -1243,6 +1243,11 @@ public class DartShell extends DartDecorations implements IShell {
         } else {
         }
         {
+            if (resize) {
+                Point atLeast = ShellHelper.atLeastMinimum(this.getApi(), width, height);
+                width = atLeast.x;
+                height = atLeast.y;
+            }
             super.setBounds(x, y, width, height, move, resize);
             resized = true;
             sendEvent(SWT.Resize);
@@ -1369,10 +1374,10 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.116
      */
     public void setMaximumSize(int width, int height) {
-        getValue().markDirty(VShell.MAXIMUM_SIZE);
-        Point newValue = new Point(width, height);
         checkWidget();
-        this.maximumSize = newValue;
+        getValue().markDirty(VShell.MAXIMUM_SIZE);
+        this.maximumSize = new Point(width, height);
+        ShellHelper.shrinkToMaximum(this.getApi());
     }
 
     /**
@@ -1436,6 +1441,7 @@ public class DartShell extends DartDecorations implements IShell {
         checkWidget();
         getValue().markDirty(VShell.MINIMUM_SIZE);
         this.minimumSize = new Point(width, height);
+        ShellHelper.growToMinimum(this.getApi());
     }
 
     /**
