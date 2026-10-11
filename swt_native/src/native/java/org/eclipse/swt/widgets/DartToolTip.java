@@ -154,6 +154,14 @@ public class DartToolTip extends DartWidget implements IToolTip {
         addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
+    void configure() {
+        Point point = x == -1 || y == -1 ? getDisplay().getCursorLocation() : new Point(x, y);
+        if (!point.equals(location)) {
+            location = point;
+            getValue().markDirty(VToolTip.LOCATION);
+        }
+    }
+
     /**
      * Returns <code>true</code> if the receiver is automatically
      * hidden by the platform, and <code>false</code> otherwise.
@@ -410,7 +418,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.x = x;
         this.y = y;
         this.location = newValue;
-        ;
+        if (visible)
+            configure();
         getValue().markDirty(VToolTip.LOCATION);
         if (display != null) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
@@ -476,7 +485,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutMessage.setText(string);
         }
         this.message = newValue;
-        ;
+        if (visible)
+            configure();
     }
 
     /**
@@ -517,7 +527,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutText.setStyle(style, 0, string.length());
         }
         this.text = newValue;
-        ;
+        if (visible)
+            configure();
     }
 
     /**
@@ -542,7 +553,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             getValue().markDirty(VToolTip.VISIBLE);
         }
         checkWidget();
-        ;
+        if (visible)
+            configure();
         ;
         Display display = getDisplay();
         if (runnable != null)
