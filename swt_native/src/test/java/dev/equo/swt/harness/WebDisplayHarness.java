@@ -154,9 +154,14 @@ public final class WebDisplayHarness {
 
     /** Pushes Java's pending state and waits until the client has painted a frame with it. */
     public void flush() {
+        flush(TIMEOUT_MS);
+    }
+
+    /** {@link #flush()} for a step that gives the client far more than one frame of layout to do. */
+    public void flush(long timeoutMs) {
         FlutterBridge.update();
-        if (!syncFrame(TIMEOUT_MS))
-            throw new IllegalStateException("the client painted no frame within " + TIMEOUT_MS + "ms" + lastStall
+        if (!syncFrame(timeoutMs))
+            throw new IllegalStateException("the client painted no frame within " + timeoutMs + "ms" + lastStall
                     + " (" + input.pageState() + ")");
     }
 
