@@ -477,6 +477,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -682,6 +683,7 @@ public class DartTable extends DartComposite implements ITable {
         } else {
         }
         ColumnHelper.columnsShiftedFrom(this.getApi(), shownAt);
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {
