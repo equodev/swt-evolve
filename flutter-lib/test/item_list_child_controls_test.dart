@@ -1,7 +1,6 @@
 // A Tree or a Table draws the controls it holds besides its items at their own bounds: a TreeCursor or a
-// TableCursor over the cell it covers, or any control an application put over the rows. Natively those
-// are child views of the list; here the list used to drop every child that was not a cell editor, so a
-// cursor never showed. A cursor itself is a plain Canvas that paints from its SWT.Paint listener.
+// TableCursor over the cell it covers, or any control an application put over the rows, as the child
+// views a native list holds. A cursor itself is a plain Canvas that paints from its SWT.Paint listener.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
