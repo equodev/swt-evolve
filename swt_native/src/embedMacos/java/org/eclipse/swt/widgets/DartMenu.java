@@ -342,6 +342,7 @@ public class DartMenu extends DartWidget implements IMenu {
     @Override
     void createWidget() {
         checkOrientation(parent);
+        ((SwtDisplay) display.getImpl()).addMenu(this.getApi());
         super.createWidget();
         items = new MenuItem[4];
         getValue().markDirty(VMenu.ITEMS);
@@ -610,6 +611,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public boolean getVisible() {
         checkWidget();
         if ((getApi().style & SWT.BAR) != 0) {
+            return parent != null && this.getApi() == ((SwtDecorations) parent.getImpl()).menuBar;
         }
         if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;
