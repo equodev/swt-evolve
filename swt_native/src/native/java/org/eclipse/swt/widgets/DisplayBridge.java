@@ -30,6 +30,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Display-wide: a focus request can name a control the client has not built yet. */
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+    /** The client's answer to a focus request, sent as it receives the request: {@code {seq}}. */
+    private static final String FOCUS_SEEN_CHANNEL = "swt.evolve.focus.seen";
 
     protected DartDisplay forDisplay;
     private DartControl focused = null;
@@ -45,6 +47,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * request; applying it moves the focus straight back off the one just asked for.
      */
     private DartControl pendingClientFocus = null;
+    /** The number of the last focus request sent, which the client echoes once it has received it. */
+    private long focusRequestSeq;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
 
@@ -179,6 +183,26 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // a GC's paint included, is measured with these flags on this side.
         broadcastSwtEvolveProperties();
         registerClientReadyHandler(display, displayId);
+        registerFocusRequestSeen(display);
+    }
+
+    /**
+     * The client received focus request {@code seq}. The channel is ordered, so every focus report
+     * read before this was sent before the client knew of the request, and every one after it is
+     * newer. Queued on the Display thread like those reports, so it lands between the same two.
+     */
+    private void registerFocusRequestSeen(DartDisplay display) {
+        comm().on(FOCUS_SEEN_CHANNEL, java.util.Map.class, seen -> {
+            Display api = display.getApi();
+            Object seq = seen == null ? null : seen.get("seq");
+            if (api == null || api.isDisposed() || !(seq instanceof Number))
+                return;
+            long answered = ((Number) seq).longValue();
+            api.asyncExec(() -> {
+                if (answered == focusRequestSeq)
+                    pendingClientFocus = null;
+            });
+        });
     }
 
     /**
@@ -1158,18 +1182,22 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * it the same way); the cell-editor guard below is what keeps that from re-pushing anything.
      */
     /**
-     * Whether {@code widget} names the focus the client held before the request it has not answered
-     * yet, in which case the report is older than the request and applying it would undo it. Only the
-     * one report in flight is dropped: the request stops standing either way, so a client that never
-     * honours it cannot freeze focus tracking.
+     * Whether the report naming {@code widget} was sent before the client received the focus request
+     * still standing, in which case it names the focus the client held before it and applying it
+     * would undo the request. Every such report is dropped, however many were in flight. The request
+     * stands until the client says it has received it, which it does whether or not any control
+     * takes the focus, or until the requested control itself reports the focus.
      */
     private boolean reportPrecedesPendingRequest(DartControl widget) {
         DartControl pending = pendingClientFocus;
-        pendingClientFocus = null;
-        if (pending == null || pending == widget)
+        if (pending == null)
             return false;
         Control api = pending.getApi();
-        return api != null && !api.isDisposed();
+        if (pending == widget || api == null || api.isDisposed()) {
+            pendingClientFocus = null;
+            return false;
+        }
+        return true;
     }
 
     private void requestClientFocus(DartControl widget, boolean always) {
@@ -1183,9 +1211,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         focusRequested = widget;
         pendingClientFocus = widget;
         long id = FlutterBridge.id(widget);
+        long seq = ++focusRequestSeq;
         FlutterBridge.update().whenComplete((result, error) -> {
             try {
-                serializeAndSend(FOCUS_CHANNEL, dev.equo.swt.Java8.map("id", id));
+                serializeAndSend(FOCUS_CHANNEL, dev.equo.swt.Java8.map("id", id, "seq", seq));
             } catch (java.io.IOException e) {
                 e.printStackTrace();
             }

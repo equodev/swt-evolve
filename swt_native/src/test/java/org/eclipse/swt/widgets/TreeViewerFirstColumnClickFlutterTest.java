@@ -18,6 +18,7 @@ import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,13 @@ class TreeViewerFirstColumnClickFlutterTest {
         flutter.teardown();
     }
 
+    @AfterEach
+    void disposeTrees() {
+        for (Control child : shell.getChildren())
+            child.dispose();
+        settle();
+    }
+
     private void settle() {
         int quiet = 0;
         for (int round = 0; round < 40 && quiet < 3; round++) {
@@ -76,7 +84,8 @@ class TreeViewerFirstColumnClickFlutterTest {
         tree.setBounds(0, 0, 380, 200);
         tree.setHeaderVisible(true);
         TreeViewerColumn name = column(viewer, "Name", 150);
-        name.setEditingSupport(new NameEditing(viewer));
+        NameEditing editing = new NameEditing(viewer);
+        name.setEditingSupport(editing);
         column(viewer, "Value", 120);
         // The Expressions view's activation: a click on the cell, no double-click or slow second click.
         TreeViewerEditor.create(viewer, new ColumnViewerEditorActivationStrategy(viewer) {
@@ -141,8 +150,51 @@ class TreeViewerFirstColumnClickFlutterTest {
                 .isTrue();
         assertThat(row.getBounds(1).contains(press)).as("getBounds(1) does not").isFalse();
         assertThat(activatedColumns).as("the first column's editor was activated").containsExactly(0);
-        if (viewer.isCellEditorActive())
-            viewer.cancelEditing();
+        assertThat(viewer.isCellEditorActive()).as("the editor is still open once the click settles").isTrue();
+        Control editorText = editing.editor.getControl();
+        assertThat(display.getFocusControl()).as("the focus control").isSameAs(editorText);
+        assertThat(flutter.devTools().evaluate("window.evolveTest.queryPrimaryFocus()").getAsString())
+                .as("the client's keyboard focus").isEqualTo("Text/" + editorText.hashCode());
+        viewer.cancelEditing();
+    }
+
+    @Test
+    void after_scrolling_sideways_a_click_lands_in_the_column_drawn_under_it() {
+        Tree tree = new Tree(shell, SWT.SINGLE | SWT.FULL_SELECTION | SWT.H_SCROLL | SWT.V_SCROLL);
+        tree.setBounds(0, 0, 220, 160);
+        tree.setHeaderVisible(true);
+        TreeColumn[] columns = new TreeColumn[3];
+        for (int i = 0; i < columns.length; i++) {
+            columns[i] = new TreeColumn(tree, SWT.NONE);
+            columns[i].setText("Column " + i);
+            columns[i].setWidth(150);
+        }
+        TreeItem row = new TreeItem(tree, SWT.NONE);
+        row.setText(new String[] {"a", "b", "c"});
+        settle();
+        double[] rowRect = flutter.renderedRect(row);
+        double[] treeRect = flutter.renderedRect(tree);
+        flutter.input().wheel(treeRect[0] + 100, rowRect[1] + rowRect[3] / 2, 120, 0, SWT.NONE);
+        settle();
+
+        List<Point> presses = new ArrayList<>();
+        tree.addListener(SWT.MouseDown, e -> presses.add(new Point(e.x, e.y)));
+        // The middle of the second column where the client now draws it, its header having
+        // scrolled along with the rows.
+        double[] header = flutter.renderedRect(columns[1]);
+        assertThat(header[0]).as("the second column scrolled left").isLessThan(treeRect[0] + 150);
+        flutter.input().click(header[0] + header[2] / 2, rowRect[1] + rowRect[3] / 2);
+        settle();
+
+        assertThat(presses).as("the click reached the tree").hasSize(1);
+        Point press = presses.get(0);
+        assertThat(tree.getItem(press)).as("the row under the click").isSameAs(row);
+        assertThat(row.getBounds(1).contains(press))
+                .as("getBounds(1) %s holds the press %s", row.getBounds(1), press)
+                .isTrue();
+        assertThat(row.getBounds(0).contains(press))
+                .as("getBounds(0) %s does not hold the press %s", row.getBounds(0), press)
+                .isFalse();
     }
 
     private static TreeViewerColumn column(TreeViewer viewer, String title, int width) {

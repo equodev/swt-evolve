@@ -1,3 +1,5 @@
+import 'dart:async' show scheduleMicrotask;
+
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show OverflowBoxFit;
@@ -72,7 +74,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   void initState() {
     super.initState();
-    _horizontalController = ScrollController()..addListener(_followRowsWithHeader);
+    _horizontalController = ScrollController()
+      ..addListener(_followRowsWithHeader)
+      ..addListener(_reportScrollOffset);
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
     _verticalController!.addListener(_requestVisibleChildren);
@@ -341,8 +345,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             // (opening the double-clicked file) silently do nothing.
             onFocusChange: (hasFocus) {
               if (showsTreeItemFocusRing(widgetTheme)) setState(() {});
+              // Called whenever the focus moves within the tree too: a cell editor's field taking
+              // it from the rows calls this with true again. The field reports its own focus;
+              // reporting the tree's as well would hand the focus back to the tree and close the
+              // editor. Only the tree gaining and losing the focus is reported.
+              if (hasFocus == _reportedHasFocus) return;
+              _reportedHasFocus = hasFocus;
               if (hasFocus) {
-                widget.sendFocusFocusIn(state, null);
+                if (!_focusInSentOnPress) widget.sendFocusFocusIn(state, null);
               } else {
                 widget.sendFocusFocusOut(state, null);
               }
@@ -369,17 +379,20 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                             edgeGap,
                           ),
                         Expanded(
-                          child: _buildContentWithEdgeGaps(
-                            flatItems,
-                            columns,
-                            widgetTheme!,
-                            context,
-                            hasVScroll,
-                            hasHScroll,
-                            effectiveWidths,
-                            maxWidth,
-                            hasMultiColumn,
-                            backgroundColor,
+                          child: Listener(
+                            onPointerDown: (_) => _takeFocusOnRowsPress(),
+                            child: _buildContentWithEdgeGaps(
+                              flatItems,
+                              columns,
+                              widgetTheme!,
+                              context,
+                              hasVScroll,
+                              hasHScroll,
+                              effectiveWidths,
+                              maxWidth,
+                              hasMultiColumn,
+                              backgroundColor,
+                            ),
                           ),
                         ),
                       ],
@@ -1028,14 +1041,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
     if (item == null) return;
-    _focusNode.requestFocus();
-    // Report focus on the gesture, not only on a Flutter focus change. Java owns the SWT
-    // focus holder and moves it on its own — activating an editor part focuses that part's
-    // control — while this tree keeps its Flutter focus, so a later click produces no focus
-    // change here and Java would never learn the tree is focused again. The workbench picks
-    // the active part from the SWT focus holder, so leaving it stale makes every action bound
-    // to this tree's part (opening the double-clicked file) silently do nothing.
-    widget.sendFocusFocusIn(state, null);
+    // The press that started a click already focused the tree (_takeFocusOnRowsPress). Focusing
+    // it again here, on the release, would take the focus back from an editor the MouseDown opened.
 
     final bool isMultiMode = StyleBits(state.style).has(SWT.MULTI);
     setState(() {
@@ -1050,6 +1057,39 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       widget.sendSelectionSelection(state, _createDefaultEvent(itemId));
     }
   }
+
+  /// Set by a press that focused the tree until Flutter applies that focus, so the focus change it
+  /// causes is not reported a second time.
+  bool _focusInSentOnPress = false;
+
+  /// Whether the focus was in the tree, its child controls included, when last reported.
+  bool _reportedHasFocus = false;
+
+  /// A press on the rows focuses the tree before its MouseDown goes out, as natively: a cell editor
+  /// that MouseDown opens takes the focus from the tree, and nothing on the release takes it back.
+  ///
+  /// The focus is reported on every press, not only on a Flutter focus change. Java owns the SWT
+  /// focus holder and moves it on its own — activating an editor part focuses that part's
+  /// control — while this tree keeps its Flutter focus, so a later click produces no focus change
+  /// here and Java would never learn the tree is focused again. The workbench picks the active
+  /// part from the SWT focus holder, so leaving it stale makes every action bound to this tree's
+  /// part (opening the double-clicked file) silently do nothing.
+  void _takeFocusOnRowsPress() {
+    if (state.enabled != true) return;
+    final bool hadFocus = _focusNode.hasFocus;
+    _focusNode.requestFocus();
+    widget.sendFocusFocusIn(state, null);
+    if (!hadFocus) {
+      _focusInSentOnPress = true;
+      // Flutter applies the focus in a microtask requestFocus queued; this one runs after it.
+      scheduleMicrotask(() => _focusInSentOnPress = false);
+    }
+  }
+
+  /// A tree is not a childless composite surface: its focus is [_focusNode], which a press on the
+  /// rows takes and a press on the header does not.
+  @override
+  void takeFocusOnPress() {}
 
   void _handleSingleSelection(VTreeItem item, int flatIndex) {
     state.selection = [item];
@@ -1792,15 +1832,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   /// ScrollController fires without movement; an actual drag still reports once per frame, the same
   /// rate a mouse move is throttled to. Reporting every settled position is what keeps the lookups
   /// correct, so it is not throttled further.
+  ///
+  /// The sideways scroll goes with it, as x: a cell's bounds are in the tree's client area, so
+  /// Java takes it off the column positions to map a point to the column now under it.
   int _reportedScrollOffset = 0;
+  int _reportedHorizontalOffset = 0;
 
   void _reportScrollOffset() {
     final controller = _verticalController;
     if (controller == null || !controller.hasClients) return;
     final offset = controller.offset.round();
-    if (offset == _reportedScrollOffset) return;
+    final horizontal = _horizontalController;
+    final across = horizontal != null && horizontal.hasClients ? horizontal.offset.round() : 0;
+    if (offset == _reportedScrollOffset && across == _reportedHorizontalOffset) return;
     _reportedScrollOffset = offset;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+    _reportedHorizontalOffset = across;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..x = across..y = offset);
   }
 
   void _followRowsWithHeader() {

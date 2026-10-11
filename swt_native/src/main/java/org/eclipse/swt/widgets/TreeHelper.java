@@ -27,6 +27,7 @@ public class TreeHelper {
      * put it.
      */
     public static void recordScrollOffset(DartTree tree, Event event) {
+        SCROLL_OFFSETS_X.put(tree, Math.max(0, event.x));
         int offset = Math.max(0, event.y);
         SCROLL_OFFSETS.put(tree, offset);
         java.util.List<TreeItem> rows = visibleItems(tree);
@@ -36,6 +37,17 @@ public class TreeHelper {
 
     public static int scrollOffsetY(DartTree tree) {
         Integer offset = SCROLL_OFFSETS.get(tree);
+        return offset == null ? 0 : offset;
+    }
+
+    // How far Flutter has scrolled the rows sideways, which a tree whose columns are wider than it
+    // does with H_SCROLL. Cell bounds are in the tree's client area, as natively, so they move left
+    // by it; a click after scrolling sideways otherwise maps to the column that was there before.
+    private static final java.util.Map<DartTree, Integer> SCROLL_OFFSETS_X =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    public static int scrollOffsetX(DartTree tree) {
+        Integer offset = SCROLL_OFFSETS_X.get(tree);
         return offset == null ? 0 : offset;
     }
 
@@ -74,6 +86,7 @@ public class TreeHelper {
     /** The tree was emptied: whatever comes next starts at the top. */
     public static void resetScroll(DartTree tree) {
         SCROLL_OFFSETS.remove(tree);
+        SCROLL_OFFSETS_X.remove(tree);
         tree.topItem = null;
     }
 

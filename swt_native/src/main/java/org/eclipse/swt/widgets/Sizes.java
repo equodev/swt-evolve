@@ -818,18 +818,22 @@ public class Sizes {
         return new Rectangle(0, y, parentBounds != null ? parentBounds.width : 100, itemHeight);
     }
 
-    /** Where cell {@code index}'s content starts and how wide it may be: the first cell after its indent. */
+    /**
+     * Where cell {@code index}'s content starts and how wide it may be: the first cell after its indent.
+     * In the tree's client area, so a tree scrolled sideways moves its cells left by that much.
+     */
     private static Rectangle treeCell(DartTreeItem item, int index, Rectangle row) {
         DartTree dartTree = (DartTree) item._parent().getImpl();
         int left = dev.equo.swt.size.TreeSizes.getContentLeft(dartTree, item.getApi());
+        int scrolled = TreeHelper.scrollOffsetX(dartTree);
         TreeColumn[] columns = dartTree.columnCount > 0 ? dartTree.columns : null;
         if (columns == null) {
             Image image = item.getImage();
             int width = (image != null ? dev.equo.swt.size.TreeSizes.getIconSpace() : 0)
                     + dev.equo.swt.size.TreeSizes.getTextWidth(item.getApi(), 0);
-            return new Rectangle(left, row.y, width, row.height);
+            return new Rectangle(left - scrolled, row.y, width, row.height);
         }
-        int x = 0;
+        int x = -scrolled;
         for (int i = 0; i < index && i < columns.length; i++) x += columns[i].getWidth();
         int width = index < columns.length ? columns[index].getWidth() : 0;
         if (index == 0) return new Rectangle(x + left, row.y, Math.max(0, width - left), row.height);
