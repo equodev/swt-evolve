@@ -268,29 +268,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       enabled,
     );
 
-    double? totalTreeWidth = _context?.treeWidth;
-    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    if (totalTreeWidth == null) {
-      if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
-        final prefix =
-            widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
-        totalTreeWidth = prefix + effectiveWidths.reduce((a, b) => a + b);
-      } else {
-        final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-        if (columns.isNotEmpty) {
-          double calculatedWidth = 0.0;
-          for (final column in columns) {
-            calculatedWidth +=
-                (column.width ?? widgetTheme.columnDefaultWidth.round())
-                    .toDouble();
-          }
-          totalTreeWidth =
-              widgetTheme.expandIconSize +
-              widgetTheme.expandIconSpacing +
-              calculatedWidth;
-        }
-      }
-    }
+    final double? totalTreeWidth = _context?.treeWidth ?? _columnsTotal(context, widgetTheme);
 
     final bool hasMultiColumn =
         (_context?.treeImpl?.getTreeColumns().length ?? 0) > 1;
@@ -394,6 +372,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }).toList();
   }
 
+  /// The widths Java gives the columns: the ones `TreeItem.getBounds(int)` lays the cells out by.
+  List<double> _columnWidths(
+    BuildContext context,
+    List<VTreeColumn> columns,
+    TreeThemeExtension theme,
+  ) {
+    final widths = TreeEffectiveColumnWidthsProvider.of(context);
+    if (widths != null && widths.length == columns.length) return widths;
+    return [
+      for (final column in columns)
+        (column.width ?? theme.columnDefaultWidth.round()).toDouble(),
+    ];
+  }
+
+  double? _columnsTotal(BuildContext context, TreeThemeExtension theme) {
+    final columns = _context?.treeImpl?.getTreeColumns() ?? const <VTreeColumn>[];
+    if (columns.isEmpty) return null;
+    return _columnWidths(context, columns, theme).fold<double>(0.0, (sum, w) => sum + w);
+  }
+
   Widget _buildRowWithColumns(
     BuildContext context,
     List<String?>? texts,
@@ -442,124 +440,83 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       );
     }
 
+    // Column i spans the widths of the columns before it to those plus its own, as
+    // TreeItem.getBounds(i) has it: the tree's edge gap, the row's padding, the indent and the
+    // expander are all inside column 0, and push no column to the right.
+    final widths = _columnWidths(context, columns, widgetTheme);
     final firstColumn = columns[0];
-    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    final double firstColumnWidth =
-        effectiveWidths != null && effectiveWidths.isNotEmpty
-        ? effectiveWidths[0]
-        : (firstColumn.width ?? widgetTheme.columnDefaultWidth.round())
-              .toDouble();
+    final EdgeInsets rowPadding = hasMultiColumn
+        ? widgetTheme.itemPaddingWithCols
+        : widgetTheme.itemPadding;
+    final double firstInset =
+        TreeEffectiveColumnWidthsProvider.edgeGapOf(context) + rowPadding.left;
+    final double prefixWidth =
+        widgetTheme.itemIndent * level +
+        widgetTheme.expandIconSize +
+        widgetTheme.expandIconSpacing +
+        (isCheckMode ? widgetTheme.checkboxSize + widgetTheme.checkboxSpacing : 0.0) +
+        (image != null ? widgetTheme.itemIconSize + widgetTheme.itemIconSpacing : 0.0);
 
     final String firstColumnText = text.isNotEmpty
         ? text
         : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
 
-    if (effectiveWidths != null && effectiveWidths.length == columns.length) {
-      final cells = <Widget>[
-          SizedBox(
-            width: firstColumnWidth,
-            child: Row(
-              children: [
-                _buildItemPrefix(
-                  theme: widgetTheme,
-                  level: level,
-                  hasChildren: hasChildren,
-                  expanded: expanded,
-                  isCheckMode: isCheckMode,
-                  checked: checked,
-                  grayed: grayed,
-                  enabled: enabled,
-                  selected: selected,
-                  image: image,
-                  hasMultiColumn: hasMultiColumn,
-                ),
-                Expanded(
-                  child: _buildCellText(
-                    context: context,
-                    text: firstColumnText,
-                    textColor: textColor,
-                    theme: widgetTheme,
-                    columnAlignment: firstColumn.alignment,
-                    cellPadding: widgetTheme.cellMultiColumnPadding,
-                    columnIndex: 0,
-                    hasMultiColumn: hasMultiColumn,
-                  ),
-                ),
-              ],
+    final cells = <Widget>[
+      TreeCellBox(
+        key: ValueKey('tree_cell_${state.id}_0'),
+        width: widths[0],
+        minContentWidth: firstInset + prefixWidth,
+        child: Row(
+          children: [
+            SizedBox(width: firstInset),
+            _buildItemPrefix(
+              theme: widgetTheme,
+              level: level,
+              hasChildren: hasChildren,
+              expanded: expanded,
+              isCheckMode: isCheckMode,
+              checked: checked,
+              grayed: grayed,
+              enabled: enabled,
+              selected: selected,
+              image: image,
+              hasMultiColumn: hasMultiColumn,
             ),
-          ),
-          ...columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
-            final int columnIndex = entry.key + 1;
-            final column = entry.value;
-            final String columnText = _getColumnText(texts, columnIndex);
-            final double w = effectiveWidths[columnIndex];
-            return SizedBox(
-              width: w,
+            Expanded(
               child: _buildCellText(
                 context: context,
-                text: columnText,
+                text: firstColumnText,
                 textColor: textColor,
                 theme: widgetTheme,
-                columnAlignment: column.alignment,
+                columnAlignment: firstColumn.alignment,
                 cellPadding: widgetTheme.cellMultiColumnPadding,
-                columnIndex: columnIndex,
-                hasMultiColumn: hasMultiColumn,
-                image: _cellImage(columnIndex),
-              ),
-            );
-          }),
-      ];
-      // Each cell is drawn where the column order shows its column; the tree column keeps the expander.
-      final order = columnDisplayOrder(_context?.treeImpl?.state.columnOrder, cells.length);
-      return Row(children: [for (final index in order) cells[index]]);
-    }
-
-    return Row(
-      children: [
-        SizedBox(
-          width: firstColumnWidth,
-          child: Row(
-            children: [
-              _buildItemPrefix(
-                theme: widgetTheme,
-                level: level,
-                hasChildren: hasChildren,
-                expanded: expanded,
-                isCheckMode: isCheckMode,
-                checked: checked,
-                grayed: grayed,
-                enabled: enabled,
-                selected: selected,
-                image: image,
+                columnIndex: 0,
                 hasMultiColumn: hasMultiColumn,
               ),
-              Expanded(
-                child: _buildCellText(
-                  context: context,
-                  text: firstColumnText,
-                  textColor: textColor,
-                  theme: widgetTheme,
-                  columnAlignment: firstColumn.alignment,
-                  cellPadding: widgetTheme.cellMultiColumnPadding,
-                  columnIndex: 0,
-                  hasMultiColumn: hasMultiColumn,
-                ),
-              ),
-            ],
+            ),
+          ],
+        ),
+      ),
+      for (int columnIndex = 1; columnIndex < columns.length; columnIndex++)
+        TreeCellBox(
+          key: ValueKey('tree_cell_${state.id}_$columnIndex'),
+          width: widths[columnIndex],
+          child: _buildCellText(
+            context: context,
+            text: _getColumnText(texts, columnIndex),
+            textColor: textColor,
+            theme: widgetTheme,
+            columnAlignment: columns[columnIndex].alignment,
+            cellPadding: widgetTheme.cellMultiColumnPadding,
+            columnIndex: columnIndex,
+            hasMultiColumn: hasMultiColumn,
+            image: _cellImage(columnIndex),
           ),
         ),
-        Expanded(
-          child: _buildOtherColumns(
-            context,
-            texts,
-            textColor,
-            widgetTheme,
-            columns,
-            hasMultiColumn,
-          ),
-        ),
-      ],
-    );
+    ];
+    // Each cell is drawn where the column order shows its column; the tree column keeps the expander.
+    final order = columnDisplayOrder(_context?.treeImpl?.state.columnOrder, cells.length);
+    return Row(children: [for (final index in order) cells[index]]);
   }
 
   Widget? _buildItemIcon(
@@ -618,68 +575,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return selected ? theme.itemIconSelectedColor : theme.itemIconColor;
   }
 
-  Widget _buildOtherColumns(
-    BuildContext context,
-    List<String?>? texts,
-    Color textColor,
-    TreeThemeExtension widgetTheme,
-    List<VTreeColumn> columns,
-    bool hasMultiColumn,
-  ) {
-    return Row(
-      children: columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
-        final int columnIndex = entry.key + 1;
-        final column = entry.value;
-        final String columnText = _getColumnText(texts, columnIndex);
-
-        return _buildColumnCell(
-          context: context,
-          text: columnText,
-          textColor: textColor,
-          theme: widgetTheme,
-          column: column,
-          columnIndex: columnIndex,
-          hasMultiColumn: hasMultiColumn,
-        );
-      }).toList(),
-    );
-  }
-
   String _getColumnText(List<String?>? texts, int columnIndex) {
     if (texts != null && columnIndex < texts.length) {
       return texts[columnIndex] ?? '';
     }
     return '';
-  }
-
-  Widget _buildColumnCell({
-    required BuildContext context,
-    required String text,
-    required Color textColor,
-    required TreeThemeExtension theme,
-    required VTreeColumn column,
-    required int columnIndex,
-    required bool hasMultiColumn,
-  }) {
-    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    final double columnWidth =
-        effectiveWidths != null && columnIndex < effectiveWidths.length
-        ? effectiveWidths[columnIndex]
-        : (column.width ?? theme.columnDefaultWidth.round()).toDouble();
-    return SizedBox(
-      width: columnWidth,
-      child: _buildCellText(
-        context: context,
-        text: text,
-        textColor: textColor,
-        theme: theme,
-        columnAlignment: column.alignment,
-        cellPadding: theme.cellMultiColumnPadding,
-        columnIndex: columnIndex,
-        hasMultiColumn: hasMultiColumn,
-        image: _cellImage(columnIndex),
-      ),
-    );
   }
 
   /// The image of a cell after the tree column; the tree column's own is drawn by the row's prefix.
@@ -689,6 +589,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return images[columnIndex];
   }
 
+  /// A columnless row's text; a row with columns lays its cells out in _buildRowWithColumns.
   Widget _buildTextContent(
     BuildContext context,
     List<String?>? texts,
@@ -696,62 +597,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     Color textColor,
     TreeThemeExtension widgetTheme,
   ) {
-    final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-
-    if (columns.isEmpty) {
-      final displayText = text.isNotEmpty
-          ? text
-          : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
-      return _buildCellText(
-        context: context,
-        text: displayText,
-        textColor: textColor,
-        theme: widgetTheme,
-        columnAlignment: null,
-        cellPadding: widgetTheme.cellPadding,
-        columnIndex: 0,
-      );
-    }
-
-    return _buildTextContentWithLines(
-      context,
-      texts,
-      text,
-      textColor,
-      widgetTheme,
-    );
-  }
-
-  Widget _buildTextContentWithLines(
-    BuildContext context,
-    List<String?>? texts,
-    String text,
-    Color textColor,
-    TreeThemeExtension widgetTheme,
-  ) {
-    final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-    final hasMultiColumn = (columns.length) > 1;
-
-    return Row(
-      children: columns.asMap().entries.map<Widget>((entry) {
-        final int columnIndex = entry.key;
-        final column = entry.value;
-        final String columnText = columnIndex == 0
-            ? (text.isNotEmpty
-                  ? text
-                  : (texts?.isNotEmpty == true ? texts![0] ?? "" : ''))
-            : _getColumnText(texts, columnIndex);
-
-        return _buildColumnCell(
-          context: context,
-          text: columnText,
-          textColor: textColor,
-          theme: widgetTheme,
-          column: column,
-          columnIndex: columnIndex,
-          hasMultiColumn: hasMultiColumn,
-        );
-      }).toList(),
+    final displayText = text.isNotEmpty
+        ? text
+        : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
+    return _buildCellText(
+      context: context,
+      text: displayText,
+      textColor: textColor,
+      theme: widgetTheme,
+      columnAlignment: null,
+      cellPadding: widgetTheme.cellPadding,
+      columnIndex: 0,
     );
   }
 
@@ -934,34 +790,18 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final EdgeInsets rowPadding = hasMultiColumn
         ? widgetTheme.itemPaddingWithCols
         : widgetTheme.itemPadding;
+    // A row with columns starts at the tree's left edge and carries its left padding, and the
+    // tree's edge gap, inside column 0 (see _buildRowWithColumns).
+    final bool hasColumns =
+        _context?.treeImpl?.getTreeColumns().isNotEmpty ?? false;
     final double expanderHitLeft =
-        rowPadding.left + widgetTheme.itemIndent * level;
+        (hasColumns ? TreeEffectiveColumnWidthsProvider.edgeGapOf(context) : 0.0) +
+        rowPadding.left +
+        widgetTheme.itemIndent * level;
     final double expanderHitRight =
         expanderHitLeft + widgetTheme.expandIconSize;
 
-    double? totalTreeWidth = _context?.treeWidth;
-    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    if (totalTreeWidth == null) {
-      if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
-        final prefix =
-            widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
-        totalTreeWidth = prefix + effectiveWidths.reduce((a, b) => a + b);
-      } else {
-        final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-        if (columns.isNotEmpty) {
-          double calculatedWidth = 0.0;
-          for (final column in columns) {
-            calculatedWidth +=
-                (column.width ?? widgetTheme.columnDefaultWidth.round())
-                    .toDouble();
-          }
-          totalTreeWidth =
-              widgetTheme.expandIconSize +
-              widgetTheme.expandIconSpacing +
-              calculatedWidth;
-        }
-      }
-    }
+    final double? totalTreeWidth = _context?.treeWidth ?? _columnsTotal(context, widgetTheme);
 
     return SizedBox(
       width: totalTreeWidth ?? double.infinity,
@@ -1111,9 +951,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 hasMultiColumn: hasMultiColumn,
               ),
             ),
-            padding: hasMultiColumn
-                ? widgetTheme.itemPaddingWithCols
-                : widgetTheme.itemPadding,
+            padding: hasColumns
+                ? EdgeInsets.only(top: rowPadding.top, bottom: rowPadding.bottom)
+                : rowPadding,
             child: _buildRowWithColumns(
               context,
               texts,
