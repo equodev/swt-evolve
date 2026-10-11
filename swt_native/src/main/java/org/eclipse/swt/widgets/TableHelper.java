@@ -13,6 +13,81 @@ import java.lang.reflect.Array;
 
 public class TableHelper {
 
+    // How far Flutter has scrolled the rows, in pixels. The rows are laid out and scrolled on the Dart side,
+    // so this is the only thing the row at the top, a row's bounds and API scrolling can be computed from.
+    // Weak keys so a disposed Table does not hold its entry.
+    private static final java.util.Map<DartTable, Integer> SCROLL_OFFSETS =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * Flutter scrolled the table. The top index Flutter is sent is read from here, so describing the table
+     * again does not move it back to where the API last put it.
+     */
+    public static void recordScrollOffset(DartTable table, Event event) {
+        SCROLL_OFFSETS.put(table, Math.max(0, event.y));
+    }
+
+    /** How far the rows are scrolled, never past the point where the last row is shown. */
+    public static int scrollOffsetY(DartTable table) {
+        Integer offset = SCROLL_OFFSETS.get(table);
+        return offset == null ? 0 : Math.min(offset, maxScrollOffset(table, Math.max(1, table.getItemHeight())));
+    }
+
+    /** The rows changed: a scroll past where they now end stops at their end. */
+    public static void keepScrollInRows(DartTable table) {
+        Integer offset = SCROLL_OFFSETS.get(table);
+        if (offset != null && offset > scrollOffsetY(table))
+            SCROLL_OFFSETS.put(table, scrollOffsetY(table));
+    }
+
+    /** The index of the row at the top; 0 for an empty table. */
+    public static int getTopIndex(DartTable table) {
+        if (table.getItemCount() == 0) return 0;
+        return Math.min(scrollOffsetY(table) / Math.max(1, table.getItemHeight()), table.getItemCount() - 1);
+    }
+
+    /** Scrolls so that row {@code index} is at the top, as far as the rows below it allow. */
+    public static void setTopIndex(DartTable table, int index) {
+        if (table.getItemCount() == 0) return;
+        scrollToRow(table, Math.max(0, Math.min(index, table.getItemCount() - 1)));
+    }
+
+    /**
+     * Scrolls the least that shows all of row {@code index}; a row already shown does not scroll. A table
+     * not laid out yet shows every row, as Cocoa makes it when its view has no size, so it does not scroll.
+     */
+    public static void showIndex(DartTable table, int index) {
+        if (!(0 <= index && index < table.getItemCount())) return;
+        int viewport = viewportHeight(table);
+        if (viewport <= 0) return;
+        int itemHeight = Math.max(1, table.getItemHeight());
+        int offset = scrollOffsetY(table);
+        if (index * itemHeight < offset) {
+            scrollToRow(table, index);
+        } else if ((index + 1) * itemHeight > offset + viewport) {
+            scrollToRow(table, Math.max(0, index + 1 - Math.max(1, viewport / itemHeight)));
+        }
+    }
+
+    /**
+     * Flutter is told which row to bring to the top and clamps the distance itself; Java records the distance
+     * it will end at, so what the API reads back right away is where the table will be.
+     */
+    private static void scrollToRow(DartTable table, int row) {
+        int itemHeight = Math.max(1, table.getItemHeight());
+        SCROLL_OFFSETS.put(table, Math.min(row * itemHeight, maxScrollOffset(table, itemHeight)));
+        table.getValue().markDirty(VTable.TOP_INDEX);
+    }
+
+    /** The height the rows scroll in: Flutter's scroll bars float over the rows and take none of it. */
+    private static int viewportHeight(DartTable table) {
+        return Math.max(0, table.getBounds().height - table.getHeaderHeight());
+    }
+
+    private static int maxScrollOffset(DartTable table, int itemHeight) {
+        return Math.max(0, table.getItemCount() * itemHeight - viewportHeight(table));
+    }
+
     public static void selectAll(DartTable table, int itemCount) {
         table.selection = new int[itemCount];
         for (int i = 0; i < itemCount; i++) {

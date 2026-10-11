@@ -327,7 +327,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   ) {
     final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
     final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
-    return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
+    // In the table's own coordinates, as Table.getItem(Point) reads them: the scrolled rows moved up.
+    final scrolled = _context?.tableImpl?.verticalScrollOffset ?? 0.0;
+    return (headerOffset + rowIndex * rowHeight + rowHeight / 2 - scrolled).round();
   }
 
   Widget buildCheckbox(TableThemeExtension theme, bool enabled) {

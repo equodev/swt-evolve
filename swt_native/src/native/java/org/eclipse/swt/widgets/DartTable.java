@@ -1006,7 +1006,8 @@ public class DartTable extends DartComposite implements ITable {
             return null;
         int headerH = getHeaderHeight();
         int y = point.y - headerH;
-        int index = topIndex + (y >= 0 ? y / itemHeight : -1);
+        // point is in viewport coordinates; the rows count from the top of the model.
+        int index = y >= 0 ? (y + TableHelper.scrollOffsetY(this)) / itemHeight : -1;
         boolean valid = y >= 0 && index >= 0 && index < getItemCount() && items[index] != null;
         if (!valid)
             return null;
@@ -1228,7 +1229,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getTopIndex() {
         checkWidget();
-        return this.topIndex;
+        return TableHelper.getTopIndex(this);
     }
 
     /**
@@ -2252,9 +2253,8 @@ public class DartTable extends DartComposite implements ITable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        int newValue = index;
         checkWidget();
-        this.topIndex = newValue;
+        TableHelper.setTopIndex(this, index);
     }
 
     /**
@@ -2288,8 +2288,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void showIndex(int index) {
-        if (0 <= index && index < itemCount) {
-        }
+        TableHelper.showIndex(this, index);
     }
 
     /**
@@ -2417,6 +2416,7 @@ public class DartTable extends DartComposite implements ITable {
         ;
         ;
         setRedraw(true);
+        TableHelper.keepScrollInRows(this);
     }
 
     int[] columnOrder = new int[0];
@@ -2579,6 +2579,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

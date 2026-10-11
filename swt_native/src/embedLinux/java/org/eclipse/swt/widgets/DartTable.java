@@ -2569,6 +2569,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setTopIndex(int index) {
         checkWidget();
+        if (!java.util.Objects.equals(this.topIndex, index)) {
+            getValue().markDirty(VTable.TOP_INDEX);
+        }
         if (!(0 <= index && index < itemCount))
             return;
         topIndex = index;
@@ -2910,6 +2913,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

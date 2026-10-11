@@ -76,7 +76,8 @@ VTable _$VTableFromJson(Map<String, dynamic> json) => VTable()
   ..linesVisible = json['linesVisible'] as bool?
   ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
-      .toList();
+      .toList()
+  ..topIndex = (json['topIndex'] as num?)?.toInt();
 
 Map<String, dynamic> _$VTableToJson(VTable instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -112,4 +113,5 @@ Map<String, dynamic> _$VTableToJson(VTable instance) => <String, dynamic>{
   'items': ?instance.items,
   'linesVisible': ?instance.linesVisible,
   'selection': ?instance.selection,
+  'topIndex': ?instance.topIndex,
 };

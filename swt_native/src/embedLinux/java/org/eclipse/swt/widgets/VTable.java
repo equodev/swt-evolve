@@ -124,7 +124,6 @@ public class VTable extends VComposite {
         ((DartTable) impl).sortDirection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartTable) impl).getTopIndex();
     }
@@ -160,6 +159,8 @@ public class VTable extends VComposite {
 
     public static final String SELECTION = "selection";
 
+    public static final String TOP_INDEX = "topIndex";
+
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
@@ -189,6 +190,9 @@ public class VTable extends VComposite {
                 return;
             case "selection":
                 Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "topIndex":
+                Serializer.writeKeyValue(writer, "topIndex", getTopIndex());
                 return;
             case "itemCount":
                 Serializer.writeKeyValue(writer, "itemCount", getItemCount());

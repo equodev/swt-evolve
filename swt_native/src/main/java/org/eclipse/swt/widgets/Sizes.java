@@ -715,7 +715,8 @@ public class Sizes {
         if (itemHeight <= 0)
             itemHeight = 20;
         int headerHeight = dartTable.getHeaderHeight();
-        int y = headerHeight + (itemIndex * itemHeight);
+        // The row index counts from the top of the model; take off however far Flutter has scrolled.
+        int y = headerHeight + (itemIndex * itemHeight) - TableHelper.scrollOffsetY(dartTable);
         Rectangle parentBounds = parent.getBounds();
         int width = parentBounds != null ? parentBounds.width : 100;
         return new Rectangle(0, y, width, itemHeight);
@@ -734,7 +735,8 @@ public class Sizes {
         if (itemHeight <= 0)
             itemHeight = 20;
         int headerHeight = dartTable.getHeaderHeight();
-        int y = headerHeight + (itemIndex * itemHeight);
+        // The row index counts from the top of the model; take off however far Flutter has scrolled.
+        int y = headerHeight + (itemIndex * itemHeight) - TableHelper.scrollOffsetY(dartTable);
         // The first cell's content starts after its inset (and checkbox); the others fill their column.
         int inset = dev.equo.swt.size.TableSizes.getLeadingInset(dartTable);
         if (columnCount == 0)

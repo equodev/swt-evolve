@@ -61,6 +61,7 @@ class VTable extends VComposite {
   List<VTableItem>? items;
   bool? linesVisible;
   List<int>? selection;
+  int? topIndex;
 
   @override
   void copyFrom(VWidget other) {
@@ -75,6 +76,7 @@ class VTable extends VComposite {
       items = other.items;
       linesVisible = other.linesVisible;
       selection = other.selection;
+      topIndex = other.topIndex;
       itemCount = other.itemCount;
     }
   }
@@ -110,6 +112,8 @@ class VTable extends VComposite {
         selection = (json['selection'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
             .toList();
+      case 'topIndex':
+        topIndex = (json['topIndex'] as num?)?.toInt();
       case 'itemCount':
         itemCount = (json['itemCount'] as num?)?.toInt();
       default:

@@ -1227,7 +1227,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getTopIndex() {
         checkWidget();
-        return this.topIndex;
+        return TableHelper.getTopIndex(this);
     }
 
     /**
@@ -2258,9 +2258,8 @@ public class DartTable extends DartComposite implements ITable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        int newValue = index;
         checkWidget();
-        this.topIndex = newValue;
+        TableHelper.setTopIndex(this, index);
     }
 
     /**
@@ -2294,8 +2293,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void showIndex(int index) {
-        if (0 <= index && index < itemCount) {
-        }
+        TableHelper.showIndex(this, index);
     }
 
     /**
@@ -2423,6 +2421,7 @@ public class DartTable extends DartComposite implements ITable {
         ;
         ;
         setRedraw(true);
+        TableHelper.keepScrollInRows(this);
     }
 
     int[] columnOrder = new int[0];
@@ -2581,6 +2580,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

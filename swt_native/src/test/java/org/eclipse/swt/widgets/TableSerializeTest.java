@@ -35,6 +35,7 @@ class TableSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("headerVisible").equalsTo(w.getHeaderVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("linesVisible").equalsTo(w.getLinesVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
+        assertJ.satisfies(node("topIndex").equalsTo(w.getTopIndex(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));

@@ -93,6 +93,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void initState() {
     super.initState();
     _verticalScrollController.addListener(() => setState(() {}));
+    _verticalScrollController.addListener(_reportScrollOffset);
+    if (state.topIndex != null) _scrollToTopIndexAfterLayout();
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
     _registerGetItemHeightListener();
@@ -220,6 +222,46 @@ class TableImpl<T extends TableSwt, V extends VTable>
     state.items = state.items ?? items;
     state.columns = state.columns ?? columns;
     state.editors = state.editors ?? editors;
+  }
+
+  @override
+  void setValue(V value) {
+    super.setValue(value);
+    if (lastChange?.touches('topIndex') ?? true) _scrollToTopIndexAfterLayout();
+  }
+
+  /// How far the rows are scrolled.
+  double get verticalScrollOffset =>
+      _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+
+  int? _reportedScrollOffset;
+
+  /// Java keeps how far the rows are scrolled: the row at the top, a row's bounds and API scrolling
+  /// are computed from it.
+  void _reportScrollOffset() {
+    if (!_verticalScrollController.hasClients) return;
+    final offset = _verticalScrollController.offset.round();
+    if (offset == _reportedScrollOffset) return;
+    _reportedScrollOffset = offset;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+  }
+
+  /// Brings the row Java asked for to the top, once the rows are laid out. Flutter clamps the distance
+  /// at the end of the rows, as a native table does; a table already showing that row at the top does
+  /// not move.
+  void _scrollToTopIndexAfterLayout() {
+    final target = state.topIndex;
+    if (target == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_verticalScrollController.hasClients) return;
+      final rowHeight = _cachedRowHeight;
+      if (rowHeight == null || rowHeight <= 0) return;
+      final position = _verticalScrollController.position;
+      if ((position.pixels / rowHeight).floor() == target) return;
+      _verticalScrollController.jumpTo(
+        (target * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
   }
 
   @override
