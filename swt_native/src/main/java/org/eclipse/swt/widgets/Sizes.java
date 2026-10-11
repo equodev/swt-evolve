@@ -705,21 +705,14 @@ public class Sizes {
         return new Rectangle(x, y, width, height);
     }
 
+    /** Where the text of the first cell is: after the image, as wide as the text, and no wider than the cell. */
     public static Rectangle getBounds(DartTableItem item) {
         Table parent = item._parent();
-        int itemIndex = parent.indexOf(item.getApi());
-        if (itemIndex == -1)
+        if (parent.indexOf(item.getApi()) == -1)
             return new Rectangle(0, 0, 0, 0);
-        DartTable dartTable = (DartTable) parent.getImpl();
-        int itemHeight = dartTable.getItemHeight();
-        if (itemHeight <= 0)
-            itemHeight = 20;
-        int headerHeight = dartTable.getHeaderHeight();
-        // The row index counts from the top of the model; take off however far Flutter has scrolled.
-        int y = headerHeight + (itemIndex * itemHeight) - TableHelper.scrollOffsetY(dartTable);
-        Rectangle parentBounds = parent.getBounds();
-        int width = parentBounds != null ? parentBounds.width : 100;
-        return new Rectangle(0, y, width, itemHeight);
+        Rectangle text = getTextBounds(item, 0);
+        int width = Math.min(dev.equo.swt.size.TableSizes.getTextWidth(item.getApi()), text.width);
+        return new Rectangle(text.x, text.y, width, text.height);
     }
 
     public static Rectangle getBounds(DartTableItem item, int index) {
@@ -739,8 +732,9 @@ public class Sizes {
         int y = headerHeight + (itemIndex * itemHeight) - TableHelper.scrollOffsetY(dartTable);
         // The first cell's content starts after its inset (and checkbox); the others fill their column.
         int inset = dev.equo.swt.size.TableSizes.getLeadingInset(dartTable);
+        // Without columns the one cell fills the table.
         if (columnCount == 0)
-            return new Rectangle(inset, y, dev.equo.swt.size.TableSizes.getCellContentWidth(item.getApi()), itemHeight);
+            return new Rectangle(inset, y, Math.max(0, dartTable.getClientArea().width - inset), itemHeight);
         TableColumn[] columns = dartTable.getColumns();
         int x = tableColumnLeft(dartTable, index);
         int width = index < columns.length ? columns[index].getWidth() : 0;

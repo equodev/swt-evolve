@@ -945,6 +945,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setImage(int index, Image image) {
+        checkWidget();
         int itemIndex = parent.indexOf(this.getApi());
         if (itemIndex == -1)
             return;

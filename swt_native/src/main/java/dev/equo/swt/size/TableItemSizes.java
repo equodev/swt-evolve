@@ -1,6 +1,5 @@
 package dev.equo.swt.size;
 
-import dev.equo.swt.Config;
 import dev.equo.swt.FontMetricsUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
@@ -71,7 +70,7 @@ public class TableItemSizes {
     private static PointD computeText(DartTableItem widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
+            if (!TableSizes.usesApplicationFont(widget)) {
                 m.textStyle = TableItemTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());
