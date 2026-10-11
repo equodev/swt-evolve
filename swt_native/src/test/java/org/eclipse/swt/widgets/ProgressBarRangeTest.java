@@ -12,9 +12,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * A new progress bar spans 0 to 100 with its selection at 0, as on every SWT platform. The range lives in the
- * implementation's fields, which start at zero, so a bar that kept them clamped every selection and minimum
- * against an empty range.
+ * A new progress bar spans 0 to 100 with its selection at 0, as on every SWT platform.
  */
 @Tag("native-unit")
 class ProgressBarRangeTest {
