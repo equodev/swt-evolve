@@ -20,15 +20,20 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
   // A KeyDown listener may veto the keystroke, so an edit is held un-rendered until Java answers.
   final VetoGate _keyGate = VetoGate('key');
 
+  // Java answers an edit it was asked to Verify; a veto sends the field back to the value Java holds.
+  final VetoGate _modifyGate = VetoGate('modify');
+
   @override
   void initState() {
     super.initState();
     _keyGate.attach(state.swt, state.id);
+    _modifyGate.attach(state.swt, state.id);
   }
 
   @override
   void dispose() {
     _keyGate.detach();
+    _modifyGate.detach();
     super.dispose();
   }
 
@@ -92,6 +97,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         enabled: enabled,
         readOnly: readOnly,
         keyGate: _keyGate,
+        modifyGate: _modifyGate,
         width: size.width,
         height: size.height,
         widgetTheme: widgetTheme,
@@ -106,6 +112,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
             VEvent()..index = state.selection,
           );
         },
+        onEdited: (edit) => widget.sendModifyModify(state, edit),
         onSubmitted: (value) {
           state.selection = value;
           widget.sendSelectionDefaultSelection(
@@ -119,6 +126,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
             widget.sendFocusFocusIn(state, null);
           } else {
             _keyGate.armed = false;
+            _modifyGate.armed = false;
             widget.sendFocusFocusOut(state, null);
           }
         },
@@ -147,6 +155,7 @@ class _ThemedSpinner extends StatefulWidget {
   final bool readOnly;
 
   final VetoGate keyGate;
+  final VetoGate modifyGate;
   final double width;
   final double height;
   final SpinnerThemeExtension widgetTheme;
@@ -155,6 +164,7 @@ class _ThemedSpinner extends StatefulWidget {
   final Color borderColor;
   final TextStyle textStyle;
   final ValueChanged<int> onChanged;
+  final ValueChanged<VEvent> onEdited;
   final ValueChanged<int> onSubmitted;
   final ValueChanged<bool> onFocusChanged;
   final ValueChanged<bool> onHover;
@@ -171,6 +181,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.enabled,
     required this.readOnly,
     required this.keyGate,
+    required this.modifyGate,
     required this.width,
     required this.height,
     required this.widgetTheme,
@@ -179,6 +190,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.borderColor,
     required this.textStyle,
     required this.onChanged,
+    required this.onEdited,
     required this.onSubmitted,
     required this.onFocusChanged,
     required this.onHover,
@@ -192,6 +204,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   int? _localValue;
+  // The text the field showed before the edit that is being reported: what the range of that edit is relative to.
+  String _editedFrom = '';
   bool _isUpHovered = false;
   bool _isDownHovered = false;
   bool _isUpPressed = false;
@@ -203,6 +217,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     _controller = TextEditingController(text: _formatValue(widget.value));
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
+    widget.modifyGate.onUnmatched = _revertVetoedEdit;
   }
 
   @override
@@ -225,14 +240,26 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text != oldValue.text) _editedFrom = oldValue.text;
     if (!widget.keyGate.armed) return newValue;
     if (newValue.text == oldValue.text) return newValue;
     widget.keyGate.propose((doit) {
       if (!doit || !mounted) return;
       _controller.value = newValue;
-      _handleTextChanged(newValue.text);
+      _handleTextChanged(newValue.text, oldValue.text);
     });
     return oldValue;
+  }
+
+  // Java vetoed the edit, or changed what was typed: the field shows the value Java holds.
+  void _revertVetoedEdit(bool doit) {
+    if (doit || !mounted) return;
+    _localValue = null;
+    final held = _formatValue(widget.value);
+    _controller.value = TextEditingValue(
+      text: held,
+      selection: TextSelection.collapsed(offset: held.length),
+    );
   }
 
   @override
@@ -301,7 +328,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
         ),
         TextInputFormatter.withFunction(_gateEdit),
       ],
-      onChanged: _handleTextChanged,
+      onChanged: (text) => _handleTextChanged(text, _editedFrom),
       onSubmitted: _handleSubmitted,
     );
   }
@@ -425,7 +452,32 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   // Event handlers
-  void _handleTextChanged(String text) {
+
+  // What a user edit did to the text: the range of the previous text it replaced and how many characters it put
+  // there. Java asks its Verify listeners about that range and reads the value out of the new text.
+  void _reportEdit(String from, String to) {
+    final shorter = from.length < to.length ? from.length : to.length;
+    var start = 0;
+    while (start < shorter && from.codeUnitAt(start) == to.codeUnitAt(start)) {
+      start++;
+    }
+    var tail = 0;
+    while (tail < shorter - start &&
+        from.codeUnitAt(from.length - 1 - tail) ==
+            to.codeUnitAt(to.length - 1 - tail)) {
+      tail++;
+    }
+    widget.onEdited(
+      VEvent()
+        ..text = to
+        ..start = start
+        ..end = from.length - tail
+        ..count = to.length - tail - start,
+    );
+  }
+
+  void _handleTextChanged(String text, String from) {
+    _reportEdit(from, text);
     if (text.isEmpty) return;
 
     final parsedValue = _parseNumber(text);
