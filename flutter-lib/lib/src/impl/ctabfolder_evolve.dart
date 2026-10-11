@@ -45,7 +45,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   bool get raisesDragDetectFromPointer => false;
 
   late int _selectedIndex;
-  int? _lastShowListPopupSeq;
+  int _lastShowListPopupSeq = 0;
   int? _pendingTabIndex;
   Object? _activationToken;
 
@@ -57,6 +57,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
     final selection = state.selection;
     _selectedIndex = (selection != null && selection >= 0) ? selection : 0;
+    // Java leaves a zero seq off the wire, so null is 0; a list requested before this mounted is
+    // not reopened.
+    _lastShowListPopupSeq = state.showListPopupSeq ?? 0;
     _activationToken = EquoCommService.onRaw(_activationChannel, (args) {
       final decoded = args is String ? jsonDecode(args) : args;
       if (mounted && decoded is Map && decoded['active'] is bool) {
@@ -113,12 +116,13 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       }
     }
 
-    if (state.showListPopupSeq != null) {
-      final seq = state.showListPopupSeq!;
-      if (_lastShowListPopupSeq == null) {
-        _lastShowListPopupSeq = seq;
-      } else if (seq != _lastShowListPopupSeq) {
-        _lastShowListPopupSeq = seq;
+    // Java bumps the seq when no CTabFolder2Listener took the chevron's showList (doit stayed
+    // true): the folder's own list is what the user gets then.
+    final seq = state.showListPopupSeq ?? 0;
+    if (seq != _lastShowListPopupSeq) {
+      final requested = seq > _lastShowListPopupSeq;
+      _lastShowListPopupSeq = seq;
+      if (requested) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _doShowChevronPopup();
         });
@@ -377,9 +381,20 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     } else {
       _chevronButtonRect = null;
     }
-    // Web-mode Java can't measure the viewport (marks every item showing=true), so drive
-    // the overflow menu client-side rather than round-tripping through Java.
-    _doShowChevronPopup();
+    // The chevron is CTabFolder2Listener.showList, with the chevron's bounds in the folder's own
+    // coordinates. A listener that shows its own list (the workbench's part list) sets doit=false;
+    // otherwise Java bumps showListPopupSeq and the folder's list opens from extraSetState.
+    final e = VEvent();
+    final folderBox = context.findRenderObject();
+    if (box != null && box.hasSize && folderBox is RenderBox && folderBox.hasSize) {
+      final origin = box.localToGlobal(Offset.zero, ancestor: folderBox);
+      e
+        ..x = origin.dx.round()
+        ..y = origin.dy.round()
+        ..width = box.size.width.round()
+        ..height = box.size.height.round();
+    }
+    widget.sendCTabFolder2showList(state, e);
   }
 
   void _doShowChevronPopup() {
@@ -613,6 +628,7 @@ class _CTabBarState extends State<_CTabBar> {
   void initState() {
     super.initState();
     _horizontalScrollController = ScrollController();
+    _revealSelectedAfterLayout();
   }
 
   @override
@@ -621,6 +637,45 @@ class _CTabBarState extends State<_CTabBar> {
     if (_pendingFrom != null) {
       _pendingFrom = null;
       _pendingTo = null;
+    }
+    if (widget.selectedIndex != oldWidget.selectedIndex ||
+        widget.tabItems.length != oldWidget.tabItems.length) {
+      _revealSelectedAfterLayout();
+    }
+  }
+
+  bool _revealPending = false;
+  bool _revealing = false;
+  double? _revealedViewport;
+
+  /// A native CTabFolder keeps the selected tab in view (`showItem`): where upstream picks which
+  /// tabs to show and parks the rest behind the chevron, this strip scrolls to it instead.
+  void _revealSelectedAfterLayout() {
+    if (_revealPending) return;
+    _revealPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealPending = false;
+      if (mounted) _revealSelected();
+    });
+  }
+
+  void _revealSelected() {
+    if (!_horizontalScrollController.hasClients) return;
+    final position = _horizontalScrollController.position;
+    if (!position.hasContentDimensions || !position.hasViewportDimension) return;
+    _revealedViewport = position.viewportDimension;
+    final index = (widget.state.single ?? false)
+        ? 0
+        : _computeEffectiveSelected(widget.selectedIndex);
+    final tab = _rowState.currentState?.tabBox(index);
+    if (tab == null || !tab.attached || !tab.hasSize) return;
+    // The end first, then the start: a tab wider than the strip shows its leading edge.
+    _revealing = true;
+    try {
+      position.ensureVisible(tab, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+      position.ensureVisible(tab, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart);
+    } finally {
+      _revealing = false;
     }
   }
 
@@ -1360,8 +1415,10 @@ class _CTabBarState extends State<_CTabBar> {
           },
           child: NotificationListener<ScrollUpdateNotification>(
             onNotification: (notification) {
-              _showScrollbar();
-              _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              if (!_revealing) {
+                _showScrollbar();
+                _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              }
               // Scrolling moves the tabs without rebuilding the row, so the row is asked to say
               // where they are once this frame has painted them at the new offset.
               _rowState.currentState?.scheduleStripReport();
@@ -1432,6 +1489,11 @@ class _CTabBarState extends State<_CTabBar> {
         position.maxScrollExtent > 0.5;
     if (overflow != _hasOverflow) {
       setState(() => _hasOverflow = overflow);
+    }
+    // A strip that starts to overflow, or narrows while it does, can leave the selected tab out.
+    if (overflow && position.hasViewportDimension &&
+        position.viewportDimension != _revealedViewport) {
+      _revealSelectedAfterLayout();
     }
   }
 
@@ -1824,6 +1886,9 @@ class _TabDragRowState extends State<TabDragRow> {
   }
 
   RenderBox? get _row => _rowKey.currentContext?.findRenderObject() as RenderBox?;
+
+  /// The tab at [index] as drawn, for the strip to scroll it into view.
+  RenderBox? tabBox(int index) => _itemBox(index);
 
   RenderBox? _itemBox(int index) => index < _itemKeys.length
       ? _itemKeys[index].currentContext?.findRenderObject() as RenderBox?
