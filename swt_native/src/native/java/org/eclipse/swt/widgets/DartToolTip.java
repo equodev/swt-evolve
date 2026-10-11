@@ -113,6 +113,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
         super(parent, checkStyle(style), api);
         this.parent = parent;
         createWidget();
+        listener = event -> onDispose(event);
+        addListener(SWT.Dispose, listener);
+        parentListener = event -> dispose();
+        parent.addListener(SWT.Dispose, parentListener);
     }
 
     static int checkStyle(int style) {
