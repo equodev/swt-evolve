@@ -4073,8 +4073,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean updateTabHeight(boolean force) {
-        tabHeight = 25;
-        return false;
+        int oldHeight = tabHeight;
+        tabHeight = fixedTabHeight == SWT.DEFAULT ? 25 : (fixedTabHeight == 0 ? 0 : fixedTabHeight + 1);
+        if (!force && tabHeight == oldHeight)
+            return false;
+        oldSize = null;
+        return true;
     }
 
     void updateFolder(int flags) {
