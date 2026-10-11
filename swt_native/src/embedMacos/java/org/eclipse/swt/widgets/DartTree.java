@@ -1096,7 +1096,8 @@ public class DartTree extends DartComposite implements ITree {
         if (index < 0 || index >= flat.size())
             return null;
         TreeItem item = flat.get(index);
-        if (TreeSizes.isOverExpander(this, item, point.x))
+        // Likewise across: the expander sits where the rows put it before scrolling sideways.
+        if (TreeSizes.isOverExpander(this, item, point.x + TreeHelper.scrollOffsetX(this)))
             return null;
         return item;
     }

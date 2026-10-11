@@ -19,6 +19,11 @@ class FocusRequests extends ChangeNotifier {
 
   static const String channel = 'swt.evolve.focus';
 
+  /// Where each request's `seq` is echoed back as soon as it arrives. Java holds a request until
+  /// then and drops the focus reports that reach it first: they were sent before this client knew
+  /// of the request, so they name the focus it held before, and applying them would undo it.
+  static const String seenChannel = 'swt.evolve.focus.seen';
+
   static bool _listening = false;
 
   int? _pendingId;
@@ -30,6 +35,8 @@ class FocusRequests extends ChangeNotifier {
     EquoCommService.onRaw(channel, (dynamic args) {
       final decoded = args is String ? jsonDecode(args) : args;
       if (decoded is! Map) return;
+      final seq = decoded['seq'];
+      if (seq is num) EquoCommService.sendPayload(seenChannel, {'seq': seq});
       final id = (decoded['id'] as num?)?.toInt();
       if (id != null) instance.request(id);
     });
