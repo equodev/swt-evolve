@@ -640,6 +640,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
                     return;
             }
         }
+        if (backgroundImage != null)
+            getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
+        if (gradientColors != null) {
+            getValue().markDirty(VCLabel.GRADIENT_COLORS);
+            getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
+        }
         background = color;
         backgroundImage = null;
         gradientColors = null;
@@ -707,7 +713,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      *  @since 3.0
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
+        getValue().markDirty(VCLabel.GRADIENT_VERTICAL);
+        getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
         checkWidget();
+        if (!java.util.Objects.equals(this.gradientColors, colors)) {
+            getValue().markDirty(VCLabel.GRADIENT_COLORS);
+        }
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -748,6 +759,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             }
         } else {
             backgroundImage = null;
+            getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
         }
         // Store the new settings
         if (colors == null) {
@@ -785,6 +797,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         if (image == backgroundImage)
             return;
         if (image != null) {
+            if (gradientColors != null) {
+                getValue().markDirty(VCLabel.GRADIENT_COLORS);
+                getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
+            }
             gradientColors = null;
             gradientPercents = null;
         }

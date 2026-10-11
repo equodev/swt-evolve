@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart';
 import '../gen/clabel.dart';
+import '../gen/color.dart';
 import '../gen/widget.dart';
 import '../gen/image.dart';
 import '../gen/swt.dart';
@@ -121,16 +123,34 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       widgetTheme.textAlign,
     );
     final parentBg = ParentBackgroundScope.backgroundOf(context);
+    final resolvedBackground = getBackgroundColor(
+      background: state.background,
+      defaultColor: parentBg ?? widgetTheme.backgroundColor,
+    );
     // Gate on backgroundImage (not background, which Java always resolves non-null):
     // stay transparent so an inherited image, already painted by the ancestor, shows through.
     final stayTransparentForImage = state.backgroundImage == null &&
         ParentBackgroundScope.backgroundImageOf(context) != null;
-    final backgroundColor = stayTransparentForImage
-        ? null
-        : getBackgroundColor(
-            background: state.background,
-            defaultColor: parentBg ?? widgetTheme.backgroundColor,
-          );
+    var backgroundColor = stayTransparentForImage ? null : resolvedBackground;
+    // CLabel.onPaint draws the image when there is one, the gradient otherwise, and the plain
+    // background only when it has neither; Java keeps at most one of the two set. The application
+    // chose these colours and this image for the label, so use_swt_colors does not gate them the
+    // way it does the plain background.
+    final tiledImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
+    Gradient? gradient;
+    if (state.backgroundImage == null) {
+      final gradientColors = state.gradientColors;
+      if (gradientColors != null && gradientColors.length == 1) {
+        backgroundColor = colorFromVColor(gradientColors.first);
+      } else if (gradientColors != null && gradientColors.length > 1) {
+        gradient = clabelGradient(
+          colors: gradientColors,
+          percents: state.gradientPercents ?? const [],
+          vertical: state.gradientVertical ?? false,
+          background: resolvedBackground ?? Colors.transparent,
+        );
+      }
+    }
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -159,8 +179,14 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           child: Container(
             constraints: constraints,
             padding: padding,
-            decoration: backgroundColor != null
-                ? BoxDecoration(color: backgroundColor)
+            decoration: backgroundColor != null ||
+                    gradient != null ||
+                    tiledImage != null
+                ? BoxDecoration(
+                    color: backgroundColor,
+                    gradient: gradient,
+                    image: tiledImage,
+                  )
                 : null,
             alignment: hasValidBounds
                 ? getAlignmentFromTextAlign(textAlign)
@@ -321,4 +347,44 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     }
     return defaultAlign;
   }
+}
+
+/// What `CLabel.onPaint` draws for `setBackground(Color[], int[], boolean)` with two or more
+/// colours: colour `i` runs into colour `i + 1` over the span that ends at `percents[i]` of the
+/// width (of the height when [vertical]) and starts where the previous one ended, and whatever
+/// lies past the last percent is the widget's [background], not the last colour.
+///
+/// A colour Java was given as null is already the background by the time it is sent: SWT stores
+/// the background in its place when the gradient is set.
+@visibleForTesting
+Gradient clabelGradient({
+  required List<VColor> colors,
+  required List<int> percents,
+  required bool vertical,
+  required Color background,
+}) {
+  // Java sends one percent fewer than colours; tolerate a list that is out of step rather than
+  // paint nothing.
+  final spans = percents.length < colors.length - 1
+      ? percents.length
+      : colors.length - 1;
+  final stops = <double>[0.0];
+  for (var i = 0; i < spans; i++) {
+    final previous = stops.last;
+    stops.add((percents[i] / 100.0).clamp(previous, 1.0));
+  }
+  final painted = <Color>[
+    for (var i = 0; i <= spans; i++) colorFromVColor(colors[i]),
+  ];
+  if (stops.last < 1.0) {
+    // A hard edge: two stops at the same place.
+    painted.add(background);
+    stops.add(stops.last);
+  }
+  return LinearGradient(
+    begin: vertical ? Alignment.topCenter : Alignment.centerLeft,
+    end: vertical ? Alignment.bottomCenter : Alignment.centerRight,
+    colors: painted,
+    stops: stops,
+  );
 }
