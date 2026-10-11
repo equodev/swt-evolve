@@ -315,6 +315,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       }
       return KeyEventResult.ignored;
     }
+    // A Command key equivalent goes on to the native menu bar, as from any other control, so the
+    // application menu's own items (Settings…, Hide, Quit) work while the editor has focus.
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.macOS &&
+        HardwareKeyboard.instance.isMetaPressed) {
+      return KeyEventResult.skipRemainingHandlers;
+    }
     return KeyEventResult.handled;
   }
 
