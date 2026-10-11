@@ -838,22 +838,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @return the shortened text
      */
     public String shortenText(GC gc, String t, int width) {
-        if (t == null)
-            return null;
-        int l = t.length();
-        int max = l / 2;
-        int min = 0;
-        int mid = (max + min) / 2 - 1;
-        if (mid <= 0)
-            return t;
-        TextLayout layout = new TextLayout(getDisplay());
-        layout.setText(t);
-        mid = validateOffset(layout, mid);
-        while (min < mid && mid < max) {
-        }
-        String result = mid == 0 ? t : t.substring(0, mid) + ELLIPSIS + t.substring(validateOffset(layout, l - mid), l);
-        layout.dispose();
-        return result;
+        return CLabelHelper.shortenText(getDisplay(), gc, t, width);
     }
 
     int validateOffset(TextLayout layout, int offset) {

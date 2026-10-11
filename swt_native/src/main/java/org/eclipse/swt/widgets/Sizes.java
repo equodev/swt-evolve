@@ -7,6 +7,7 @@ import org.eclipse.swt.SWT;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.swt.custom.DartCCombo;
+import org.eclipse.swt.custom.CLabelHelper;
 import org.eclipse.swt.custom.DartCLabel;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.DartCTabFolder;
@@ -152,7 +153,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartCLabel c, int wHint, int hHint, boolean changed) {
-        return CLabelSizes.computeSize(c, wHint, hHint, changed);
+        return CLabelHelper.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {

@@ -2192,11 +2192,12 @@ class WidgetMeasurer {
       (a) => a.widgetType.split('-')[1] == 'VERTICAL',
     );
 
-    // Both paint their text without the '&' that marks a mnemonic, so that is the text to measure.
+    // These paint their text without the '&' that marks a mnemonic, so that is the text to measure.
     // A Label shows its text or its image, whichever was set last, and measures only that one.
     final drawnText = switch (widgetType) {
       'Label' => 'Mnemonics.display(widget._displayedText())',
       'Button' => 'Mnemonics.display(widget.getText())',
+      'CLabel' => 'Mnemonics.display(widget.getText())',
       _ => 'widget.getText()',
     };
     final drawnImage = widgetType == 'Label'
