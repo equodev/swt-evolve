@@ -508,6 +508,7 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -728,6 +729,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         ColumnHelper.columnsShiftedFrom(this.getApi(), shownAt);
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item) {
