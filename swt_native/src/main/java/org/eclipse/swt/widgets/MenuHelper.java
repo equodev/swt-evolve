@@ -8,6 +8,8 @@ public class MenuHelper {
     static void hookEvents(DartMenu menu) {
         FlutterBridge.on(menu, "Help", "Help", e -> {
             menu.getDisplay().asyncExec(() -> {
+                if (menu.isDisposed())
+                    return;
                 menu.sendEvent(SWT.Help, e);
             });
         });
@@ -16,6 +18,8 @@ public class MenuHelper {
         });
         FlutterBridge.on(menu, "Menu", "Show", e -> {
             menu.getDisplay().asyncExec(() -> {
+                if (menu.isDisposed())
+                    return;
                 try {
                     menu.sendEvent(SWT.Show, e);
                 } catch (RuntimeException ex) {
@@ -33,8 +37,9 @@ public class MenuHelper {
      * state. Without it the menu keeps reporting itself visible and gets shown straight back.
      */
     static void onClientHid(DartMenu menu, Event e) {
-        if (!menu.getApi().isDisposed())
-            menu.getApi().setVisible(false);
+        if (menu.isDisposed())
+            return;
+        menu.getApi().setVisible(false);
         menu.sendEvent(SWT.Hide, e);
     }
 
