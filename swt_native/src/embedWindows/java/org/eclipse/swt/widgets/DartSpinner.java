@@ -878,15 +878,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
                     return;
                 if (!isActive())
                     return;
-                setSelection(e.index);
-                sendEvent(SWT.DefaultSelection, e);
+                SpinnerHelper.committedInFlutter(this, e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                setSelection(e.index);
+                SpinnerHelper.selectedInFlutter(this, e.index);
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
