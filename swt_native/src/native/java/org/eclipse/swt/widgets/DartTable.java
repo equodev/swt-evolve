@@ -404,6 +404,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void createColumn(TableItem item, int index) {
+        TableHelper.keepFirstImage(item, columnCount - 1);
         String[] strings = ((DartTableItem) item.getImpl()).strings;
         if (strings != null) {
             String[] temp = new String[columnCount];
@@ -465,6 +466,7 @@ public class DartTable extends DartComposite implements ITable {
         ((DartWidget) column.getImpl()).register();
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
+        TableHelper.insertColumnOrder(this, index);
         for (int i = 0; i < itemCount; i++) {
             TableItem item = items[i];
             if (item != null) {
@@ -600,9 +602,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void deselectAll() {
         checkWidget();
-        ;
-        ;
-        selection = new int[0];
+        TableHelper.replaceSelection(this, new int[0], 0);
     }
 
     void destroyItem(TableColumn column) {
@@ -1170,7 +1170,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int[] getSelectionIndices() {
         checkWidget();
-        return this.selection;
+        return TableHelper.selectionIndices(this);
     }
 
     /**
@@ -1660,13 +1660,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void select(int[] indices, int count, boolean clear) {
-        int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            getValue().markDirty(VTable.SELECTION);
-        }
-        ;
-        ;
-        this.selection = newValue;
+        TableHelper.replaceSelection(this, indices, count);
     }
 
     /**
@@ -1739,7 +1733,7 @@ public class DartTable extends DartComposite implements ITable {
             if (order[i] != oldOrder[i])
                 reorder = true;
         }
-        this.columnOrder = newValue;
+        this.columnOrder = order.clone();
         if (reorder) {
             int[] oldX = new int[oldOrder.length];
             for (int i = 0; i < oldOrder.length; i++) {
@@ -2011,12 +2005,8 @@ public class DartTable extends DartComposite implements ITable {
      * @see Table#select(int)
      */
     public void setSelection(int index) {
-        getValue().markDirty(VTable.SELECTION);
-        int[] newValue = new int[] { index };
         checkWidget();
-        //TODO - optimize to use expand flag
         deselectAll();
-        this.selection = newValue;
         if (0 <= index && index < itemCount) {
             select(index);
             showIndex(index);
@@ -2416,6 +2406,7 @@ public class DartTable extends DartComposite implements ITable {
         ;
         ;
         setRedraw(true);
+        TableHelper.keepSelectionInRows(this);
         TableHelper.keepScrollInRows(this);
     }
 

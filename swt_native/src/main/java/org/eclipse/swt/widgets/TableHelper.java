@@ -88,6 +88,46 @@ public class TableHelper {
         return Math.max(0, table.getItemCount() * itemHeight - viewportHeight(table));
     }
 
+    /** A column is about to be inserted: the image of the first cell moves into the images of the cells. */
+    public static void keepFirstImage(TableItem item, int columnsBefore) {
+        DartTableItem impl = (DartTableItem) item.getImpl();
+        if (impl.images == null && impl.image != null) {
+            impl.images = new Image[columnsBefore];
+            impl.images[0] = impl.image;
+        }
+    }
+
+    /** The selected rows, in row order; the caller may keep or change the array. */
+    public static int[] selectionIndices(DartTable table) {
+        return table.selection == null ? new int[0] : table.selection.clone();
+    }
+
+    /** The first {@code count} of {@code indices} become the selection. */
+    public static void replaceSelection(DartTable table, int[] indices, int count) {
+        int[] next = Arrays.copyOf(indices, count);
+        if (!Arrays.equals(table.selection, next)) {
+            table.getValue().markDirty(VTable.SELECTION);
+            table.selection = next;
+        }
+    }
+
+    /** The rows changed: a selected row that is no longer one is dropped from the selection. */
+    public static void keepSelectionInRows(DartTable table) {
+        int[] selection = table.selection;
+        if (selection == null) return;
+        int rows = table.getItemCount();
+        int kept = 0;
+        for (int index : selection)
+            if (index < rows) kept++;
+        if (kept < selection.length) {
+            int[] next = new int[kept];
+            for (int i = 0, j = 0; i < selection.length; i++)
+                if (selection[i] < rows) next[j++] = selection[i];
+            table.selection = next;
+            table.getValue().markDirty(VTable.SELECTION);
+        }
+    }
+
     public static void selectAll(DartTable table, int itemCount) {
         table.selection = new int[itemCount];
         for (int i = 0; i < itemCount; i++) {
@@ -433,7 +473,23 @@ public class TableHelper {
             }
             return order;
         }
-        return table.columnOrder;
+        return table.columnOrder.clone();
+    }
+
+    /**
+     * Inserts the column created at {@code index} into a column order the application set: Cocoa shows a
+     * new column at the position of its index, and shifts the indexes after it.
+     */
+    public static void insertColumnOrder(DartTable table, int index) {
+        int[] order = table.columnOrder;
+        int count = table.columnCount;
+        if (order.length != count - 1 || count < 2) return;
+        int[] next = new int[count];
+        for (int i = 0, j = 0; i < count; i++) {
+            next[i] = i == index ? index : (order[j] >= index ? order[j++] + 1 : order[j++]);
+        }
+        table.columnOrder = next;
+        table.getValue().markDirty(VTable.COLUMN_ORDER);
     }
 
     public static TableItem[] getSelection(DartTable table) {
@@ -826,9 +882,7 @@ public class TableHelper {
             return false;
         if (item.images == null && (index != 0 || initializeFromPrimaryImage)) {
             item.images = new Image[count];
-            if (initializeFromPrimaryImage) {
-                item.images[0] = item.image;
-            }
+            item.images[0] = item.image;
         }
         if (item.images != null) {
             Image toStore = index == 0 ? item.image : dartImage;
@@ -878,6 +932,8 @@ public class TableHelper {
         try {
             for (int i = 0; i < end; i++) {
                 if (table.isDisposed()) return;
+                // A SetData listener may dispose rows, which leaves fewer than there were.
+                if (i >= table.getItemCount()) break;
                 TableItem item = table._getItem(i);
                 if (item == null || ((DartTableItem) item.getImpl()).cached) continue;
                 table.checkData(item, i);
