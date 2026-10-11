@@ -15,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-/** The size limits, alpha and region of a shell answer as every platform's SWT does. */
+/** The minimum size, alpha and region of a shell answer as every platform's SWT does. The maximum size is in {@link ShellMaximumSizeNativeTest}. */
 @Tag("native-unit")
 class ShellStateNativeTest {
 
@@ -42,21 +42,17 @@ class ShellStateNativeTest {
     }
 
     @Test
-    @DisplayName("a shell with no limit given has a minimum of zero and a maximum nothing can reach")
-    void defaultLimits() {
+    @DisplayName("a shell with no minimum given has a minimum of zero")
+    void defaultMinimum() {
         assertThat(shell.getMinimumSize()).isEqualTo(new Point(0, 0));
-        assertThat(shell.getMaximumSize()).isEqualTo(new Point(Integer.MAX_VALUE, Integer.MAX_VALUE));
     }
 
     @Test
-    @DisplayName("the limits are handed out as copies")
-    void limitsAreCopies() {
+    @DisplayName("the minimum is handed out as a copy")
+    void minimumIsACopy() {
         shell.setMinimumSize(100, 80);
-        shell.setMaximumSize(900, 700);
         shell.getMinimumSize().x = 1;
-        shell.getMaximumSize().x = 1;
         assertThat(shell.getMinimumSize()).isEqualTo(new Point(100, 80));
-        assertThat(shell.getMaximumSize()).isEqualTo(new Point(900, 700));
     }
 
     @Test
@@ -82,13 +78,6 @@ class ShellStateNativeTest {
         shell.setMinimumSize(200, 100);
         shell.setLocation(70, 80);
         assertThat(shell.getBounds()).isEqualTo(new Rectangle(70, 80, 250, 180));
-    }
-
-    @Test
-    @DisplayName("a shell larger than its new maximum shrinks to it where it stands")
-    void maximumShrinksTheShell() {
-        shell.setMaximumSize(200, 300);
-        assertThat(shell.getBounds()).isEqualTo(new Rectangle(10, 20, 200, 180));
     }
 
     @Test
