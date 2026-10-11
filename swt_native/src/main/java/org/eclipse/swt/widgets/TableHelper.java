@@ -34,6 +34,23 @@ public class TableHelper {
     }
 
     /**
+     * Where Cocoa differs from Win32 and GTK: an index past the last row scrolls to the top, since its view has
+     * no frame for a row that does not exist; {@code setSelection(TableItem[])} shows the last item it was given,
+     * not the first row of the selection; and the one cell of a table without columns is as wide as what it holds.
+     */
+    private static boolean isCocoa() {
+        return "cocoa".equals(SWT.getPlatform());
+    }
+
+    /**
+     * The width of the one cell of a table without columns, which holds {@code content} and has {@code room}
+     * left in the table. Win32 and GTK stretch it across the table; Cocoa makes it as wide as what it holds.
+     */
+    static int columnlessCellWidth(int content, int room) {
+        return isCocoa() ? content : Math.max(content, room);
+    }
+
+    /**
      * Flutter scrolled the table. The top index Flutter is sent is read from here, so describing the table
      * again does not move it back to where the API last put it.
      */
@@ -76,14 +93,24 @@ public class TableHelper {
     }
 
     /**
-     * Scrolls so that row {@code index} is at the top. Cocoa and Win32 stop where the rows below it end; GTK
-     * keeps the index it was given, see {@link #keepsRequestedTopIndex}.
+     * Scrolls so that row {@code index} is at the top. Cocoa and Win32 stop where the rows below it end, and
+     * Cocoa goes to the top for an index past the last row, see {@link #isCocoa}; GTK keeps the
+     * index it was given, see {@link #keepsRequestedTopIndex}.
      */
     public static void setTopIndex(DartTable table, int index) {
         if (table.getItemCount() == 0) return;
         int row = Math.max(0, Math.min(index, table.getItemCount() - 1));
+        if (index >= table.getItemCount() && isCocoa()) row = 0;
         scrollToRow(table, row);
         if (keepsRequestedTopIndex()) REQUESTED_TOP_INDEXES.put(table, row);
+    }
+
+    /**
+     * The row {@code setSelection(TableItem[])} scrolls to, out of {@code count} selected {@code indices}
+     * in the order their items were given.
+     */
+    public static int rowToShowForSelection(int[] indices, int count) {
+        return isCocoa() ? indices[count - 1] : Arrays.stream(indices, 0, count).min().getAsInt();
     }
 
     /**

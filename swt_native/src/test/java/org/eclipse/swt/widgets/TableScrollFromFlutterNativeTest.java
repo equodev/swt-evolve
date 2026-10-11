@@ -52,7 +52,11 @@ class TableScrollFromFlutterNativeTest {
     }
 
     private Table table(int rows) {
-        Table table = new Table(DartMocks.dartShell(display), SWT.SINGLE);
+        return table(rows, SWT.SINGLE);
+    }
+
+    private Table table(int rows, int style) {
+        Table table = new Table(DartMocks.dartShell(display), style);
         table.setBounds(0, 0, 200, 100);
         for (int i = 0; i < rows; i++)
             new TableItem(table, SWT.NONE).setText("row " + i);
@@ -175,6 +179,69 @@ class TableScrollFromFlutterNativeTest {
         boolean keepsTheRequest = "gtk".equals(SWT.getPlatform());
         assertThat(table.getTopIndex()).isEqualTo(keepsTheRequest ? 1 : 0);
         assertThat(table.getItem(1).getBounds().y).isEqualTo(table.getItem(0).getBounds().y + table.getItemHeight());
+    }
+
+    @Test
+    @DisplayName("an index past the last row scrolls to the top on Cocoa, stops at the last page on Win32 and is kept on GTK")
+    void aTopIndexPastTheRowsFollowsThePlatform() {
+        Table table = table(60);
+
+        table.setTopIndex(20);
+        table.setTopIndex(1000);
+        int pastTheRows = table.getTopIndex();
+        table.setTopIndex(20);
+        table.setTopIndex(60);
+        int firstWithoutARow = table.getTopIndex();
+        table.setTopIndex(20);
+        table.setTopIndex(59);
+        int lastRow = table.getTopIndex();
+
+        if ("cocoa".equals(SWT.getPlatform())) {
+            assertThat(pastTheRows).isZero();
+            assertThat(firstWithoutARow).isZero();
+            assertThat(lastRow).isGreaterThan(0).isLessThan(59);
+        } else if ("gtk".equals(SWT.getPlatform())) {
+            assertThat(pastTheRows).isEqualTo(59);
+            assertThat(firstWithoutARow).isEqualTo(59);
+            assertThat(lastRow).isEqualTo(59);
+        } else {
+            assertThat(pastTheRows).isGreaterThan(0).isLessThan(59);
+            assertThat(firstWithoutARow).isEqualTo(pastTheRows);
+            assertThat(lastRow).isEqualTo(pastTheRows);
+        }
+    }
+
+    @Test
+    @DisplayName("an index below the first row is the first row on every platform")
+    void aTopIndexBeforeTheRowsIsTheTop() {
+        Table table = table(60);
+        table.setTopIndex(20);
+
+        table.setTopIndex(-5);
+
+        assertThat(table.getTopIndex()).isZero();
+    }
+
+    @Test
+    @DisplayName("setSelection(TableItem[]) shows the last item it was given on Cocoa, the first row of the selection elsewhere")
+    void aSelectionOfItemsShowsTheRowThePlatformShows() {
+        Table table = table(100, SWT.MULTI);
+        TableItem[] rows = table.getItems();
+        int visible = Math.max(1, (table.getClientArea().height - table.getHeaderHeight()) / table.getItemHeight());
+        boolean cocoa = "cocoa".equals(SWT.getPlatform());
+
+        table.setSelection(new TableItem[] { rows[80], rows[90] });
+        int top = table.getTopIndex();
+        int shown = cocoa ? 90 : 80;
+        assertThat(top).isLessThanOrEqualTo(shown);
+        assertThat(top + visible).isGreaterThan(shown);
+
+        // The last item given, not the highest row: here Cocoa shows the same row as the others.
+        table.setTopIndex(0);
+        table.setSelection(new TableItem[] { rows[90], rows[80] });
+        top = table.getTopIndex();
+        assertThat(top).isLessThanOrEqualTo(80);
+        assertThat(top + visible).isGreaterThan(80);
     }
 
     @Test

@@ -2166,9 +2166,10 @@ public class DartTable extends DartComposite implements ITable {
             // Trim the array to the actual count
             int[] trimmedIndices = new int[count];
             System.arraycopy(indices, 0, trimmedIndices, 0, count);
+            int shown = TableHelper.rowToShowForSelection(trimmedIndices, count);
             Arrays.sort(trimmedIndices);
             select(trimmedIndices);
-            showIndex(trimmedIndices[0]);
+            showIndex(shown);
         }
     }
 

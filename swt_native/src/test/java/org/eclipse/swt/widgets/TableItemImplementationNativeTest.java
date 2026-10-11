@@ -121,7 +121,7 @@ class TableItemImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("the one cell of a table without columns fills the table, and is as wide as its content where the table has no room")
+    @DisplayName("the one cell of a table without columns is as wide as its content on Cocoa; elsewhere it fills the table, and holds its content where the table has no room")
     void theCellOfAColumnlessTable() {
         Table plain = new Table(DartMocks.dartShell(), SWT.NONE);
         TableItem item = new TableItem(plain, SWT.NONE);
@@ -136,8 +136,12 @@ class TableItemImplementationNativeTest {
         item.setImage(image);
         assertThat(item.getBounds(0).width).isGreaterThan(withoutImage);
 
+        int withImage = item.getBounds(0).width;
         plain.setBounds(0, 0, 400, 300);
-        assertThat(item.getBounds(0).width).isGreaterThan(300);
+        if ("cocoa".equals(SWT.getPlatform()))
+            assertThat(item.getBounds(0).width).isEqualTo(withImage);
+        else
+            assertThat(item.getBounds(0).width).isGreaterThan(300);
         assertThat(item.getBounds().width).isLessThan(item.getBounds(0).width);
     }
 }
