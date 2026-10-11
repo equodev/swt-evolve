@@ -1,8 +1,7 @@
 // An editor whose lines all have one height (StyledText#isFixedLineHeight) is laid out as native SWT
 // lays it out: every row as tall as the tallest line laid out so far, at least the renderer's line
 // height. The rows are then known without measuring the lines, so the ones out of view are not
-// measured: on desktop the client shares the main thread with the application, and a large file used
-// to block it for one layout per line before anything showed.
+// measured: on desktop the client shares the main thread with the application.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

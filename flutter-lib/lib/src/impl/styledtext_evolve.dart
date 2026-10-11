@@ -1919,7 +1919,7 @@ class TextShape extends Shape {
   double _tallestLine = 0;
   double? _rowHeightValue;
 
-  /// Set when a line measured after the rows were placed turned out taller than they are: the owner
+  /// Set when a line measured after the rows were placed is taller than they are: the owner
   /// builds the shape again, with rows that fit it.
   bool rowsOutgrown = false;
 

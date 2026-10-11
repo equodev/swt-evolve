@@ -334,7 +334,7 @@ void main() {
   test('a document past the caret budget is not re-measured by a shape built afresh', () {
     // A shape built without a predecessor to inherit from -- a remounted editor -- has only this
     // cache to find the document's layouts in. A line measured for its height and width holds no
-    // caret positions, so charging it its length emptied the cache on a pass over a large file.
+    // caret positions and is charged little, so a pass over a large file keeps its layouts.
     final lines = List.generate(4000, (i) => 'line $i ${'of a large file, ' * 4}');
     final text = lines.join('\n');
     expect(text.length, greaterThan(200000), reason: 'sanity: past the budget in characters');
