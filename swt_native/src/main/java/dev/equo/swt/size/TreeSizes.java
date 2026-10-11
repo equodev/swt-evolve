@@ -10,7 +10,6 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.DartTreeItem;
-import org.eclipse.swt.widgets.Sizes;
 
 public class TreeSizes {
 
@@ -110,7 +109,7 @@ public class TreeSizes {
         double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
         Rectangle bounds = tree.getBounds();
         double widgetWidth = bounds != null ? bounds.width : 0;
-        return Sizes.treeColumnLeft(tree, 0) + widgetWidth * gapFraction + paddingLeft + indent * level;
+        return org.eclipse.swt.widgets.Sizes.treeColumnLeft(tree, 0) + widgetWidth * gapFraction + paddingLeft + indent * level;
     }
 
     /** Where an item's first cell content starts: after its indent, the expander and any checkbox. */

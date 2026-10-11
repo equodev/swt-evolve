@@ -71,6 +71,12 @@ const String defaultSizeOutputDir =
 /// lets a machine without one re-emit the Java and check it (`tool/emit_sizes.dart`).
 const String sizesModelPath = 'tool/sizes-model.json';
 
+/// Hand-written answers the emitted Java asks instead of deciding itself. What they compute is
+/// application state or the column order, which no measurement sees.
+const String _tableUsesApplicationFont =
+    'org.eclipse.swt.widgets.TableHelper.usesApplicationFont';
+const String _treeColumnLeft = 'org.eclipse.swt.widgets.Sizes.treeColumnLeft';
+
 /// Bumped when the shape below changes, so a stale model fails loudly instead of emitting
 /// half-populated Java.
 const int sizesModelVersion = 2;
@@ -2709,8 +2715,12 @@ class WidgetMeasurer {
             : '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
       );
 
+      // A table row is measured in the application's font when its table was given one too, which
+      // only the table knows; every other widget answers from its own font.
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {',
+        widgetType == 'TableItem'
+            ? '            if (!$_tableUsesApplicationFont(widget)) {'
+            : '            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {',
       );
       buffer.writeln(
         '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom(widget.getFont());',
@@ -3417,27 +3427,33 @@ public class CoolBarSizes {
       buffer.writeln(
         '    public static int getCellContentWidth($itemType item) {',
       );
-      buffer.writeln('        TextStyle ts;');
-      buffer.writeln(
-        '        if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
-      );
-      buffer.writeln(
-        '            ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
-      );
-      buffer.writeln('        } else {');
-      buffer.writeln('            ts = TextStyle.from(item.getFont());');
-      buffer.writeln('        }');
-      buffer.writeln('        int cellWidth = 0;');
-      buffer.writeln('        String text = item.getText();');
-      buffer.writeln('        if (text != null && !text.isEmpty()) {');
-      buffer.writeln(
-        '            cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
-      buffer.writeln('        }');
+      buffer.writeln('        int cellWidth = getTextWidth(item);');
       buffer.writeln('        if (item.getImage() != null) {');
-      buffer.writeln('            cellWidth += ts.size() + CELL_PADDING_LEFT;');
+      buffer.writeln(
+        '            cellWidth += cellTextStyle(item).size() + CELL_PADDING_LEFT;',
+      );
       buffer.writeln('        }');
       buffer.writeln('        return cellWidth;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The width the first cell\'s text takes. */');
+      buffer.writeln('    public static int getTextWidth($itemType item) {');
+      buffer.writeln('        String text = item.getText();');
+      buffer.writeln('        if (text == null || text.isEmpty()) return 0;');
+      buffer.writeln(
+        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    private static TextStyle cellTextStyle($itemType item) {');
+      buffer.writeln(
+        '        if (!$_tableUsesApplicationFont((Dart$itemType) item.getImpl())) {',
+      );
+      buffer.writeln(
+        '            return $themeClass.get().textStyle().withStyleFrom(item.getFont());',
+      );
+      buffer.writeln('        }');
+      buffer.writeln('        return TextStyle.from(item.getFont());');
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
@@ -3792,7 +3808,11 @@ public class CoolBarSizes {
     final param = widgetType.toLowerCase();
     final itemType = '${widgetType}Item';
     // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
+    // It sits inside the first column shown, which is not at 0 once the columns are reordered.
     buffer.writeln();
+    buffer.writeln(
+      '    /** Where an item\'s expander starts: inside the $param column, wherever the column order shows it. */',
+    );
     buffer.writeln(
       '    public static double getExpanderLeft(Dart$widgetType $param, int level) {',
     );
@@ -3811,7 +3831,7 @@ public class CoolBarSizes {
       '        double widgetWidth = bounds != null ? bounds.width : 0;',
     );
     buffer.writeln(
-      '        return widgetWidth * gapFraction + paddingLeft + indent * level;',
+      '        return $_treeColumnLeft($param, 0) + widgetWidth * gapFraction + paddingLeft + indent * level;',
     );
     buffer.writeln('    }');
     // Where an item's own content begins, and what its parts are reported to take. These answer

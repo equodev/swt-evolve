@@ -78,36 +78,25 @@ public class TableSizes {
 
     /** The width the first cell's image and text take, without the cell's padding. */
     public static int getCellContentWidth(TableItem item) {
-        TextStyle ts;
-        if (!usesApplicationFont((DartTableItem) item.getImpl())) {
-            ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
-        } else {
-            ts = TextStyle.from(item.getFont());
-        }
         int cellWidth = getTextWidth(item);
         if (item.getImage() != null) {
-            cellWidth += ts.size() + CELL_PADDING_LEFT;
+            cellWidth += cellTextStyle(item).size() + CELL_PADDING_LEFT;
         }
         return cellWidth;
     }
 
     /** The width the first cell's text takes. */
     public static int getTextWidth(TableItem item) {
-        TextStyle ts;
-        if (!usesApplicationFont((DartTableItem) item.getImpl())) {
-            ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
-        } else {
-            ts = TextStyle.from(item.getFont());
-        }
         String text = item.getText();
         if (text == null || text.isEmpty()) return 0;
-        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
+        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());
     }
 
-    /** Whether a row is measured in the font the application gave it or its table, and not the theme's. */
-    public static boolean usesApplicationFont(DartTableItem item) {
-        return Config.getConfigFlags().use_swt_fonts
-                && (item.getExplicitFont() != null || ((DartTable) item.getParent().getImpl()).getExplicitFont() != null);
+    private static TextStyle cellTextStyle(TableItem item) {
+        if (!org.eclipse.swt.widgets.TableHelper.usesApplicationFont((DartTableItem) item.getImpl())) {
+            return TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
+        }
+        return TextStyle.from(item.getFont());
     }
 
     /** Where the first cell's content starts: after the checkbox, if any, and the cell's padding. */

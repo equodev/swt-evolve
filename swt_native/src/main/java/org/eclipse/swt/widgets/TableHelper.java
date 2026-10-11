@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
@@ -25,6 +26,15 @@ public class TableHelper {
      */
     public static void recordScrollOffset(DartTable table, Event event) {
         SCROLL_OFFSETS.put(table, Math.max(0, event.y));
+    }
+
+    /**
+     * Whether a row is measured in the font the application gave it or its table, and not the theme's.
+     * Read by the emitted {@code TableSizes} and {@code TableItemSizes}.
+     */
+    public static boolean usesApplicationFont(DartTableItem item) {
+        return Config.getConfigFlags().use_swt_fonts
+            && (item.getExplicitFont() != null || ((DartTable) item.getParent().getImpl()).getExplicitFont() != null);
     }
 
     /** How far the rows are scrolled, never past the point where the last row is shown. */
