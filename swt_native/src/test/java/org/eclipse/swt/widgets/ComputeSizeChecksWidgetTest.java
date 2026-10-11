@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 /**
  * {@code computeSize} on a disposed control throws {@code ERROR_WIDGET_DISPOSED}, as SWT's does: it
- * starts with {@code checkWidget()}. The sizing behind it is our own, and a widget whose sizing never
- * reads a checked getter (an ARROW button ignores its text, a separator has none) measured a disposed
- * control as if it were alive. Every Dart-backed control with a computeSize of its own is listed.
+ * starts with {@code checkWidget()}. The sizing behind it is our own and does not always read a checked
+ * getter (an ARROW button ignores its text, a separator has none), so every Dart-backed control with a
+ * computeSize of its own is listed.
  */
 @Tag("native-unit")
 class ComputeSizeChecksWidgetTest {
