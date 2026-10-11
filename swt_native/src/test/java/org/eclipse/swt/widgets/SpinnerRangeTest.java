@@ -13,8 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Editing a spinner's range moves a selection that falls outside the new range to its nearest end, and its text
- * follows. A spinner that only stored the new bound left the selection, the text and the arrows disagreeing about
- * what the value is.
+ * follows.
  */
 @Tag("native-unit")
 class SpinnerRangeTest {
