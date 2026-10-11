@@ -1,6 +1,6 @@
 // The painted band follows the rows as laid out. Rows taller than the font (here, line spacing)
-// make the document longer than the line count times the font's height; scrolled past where that
-// estimate ends, the band used to get no height and the view showed no text.
+// make the document longer than the line count times the font's height, and the band keeps painting
+// text past where that estimate ends.
 
 import 'dart:ui' as ui;
 
