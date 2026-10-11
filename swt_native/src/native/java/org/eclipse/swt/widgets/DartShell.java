@@ -1539,6 +1539,7 @@ public class DartShell extends DartDecorations implements IShell {
             if (region.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        ShellHelper.fitToRegion(this.getApi(), region);
         this.region = region;
         if (region != null) {
         } else {

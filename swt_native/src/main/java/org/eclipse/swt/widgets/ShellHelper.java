@@ -1,6 +1,8 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 
 /** The size rules of a {@link Shell} that are kept out of the generated implementation. */
 public class ShellHelper {
@@ -33,5 +35,13 @@ public class ShellHelper {
     static Point atLeastMinimum(Shell shell, int width, int height) {
         Point min = shell.getMinimumSize();
         return new Point(Math.max(width, min.x), Math.max(height, min.y));
+    }
+
+    /** A shell shaped by a region is as big as the region reaches. */
+    static void fitToRegion(Shell shell, Region region) {
+        if (region == null)
+            return;
+        Rectangle bounds = region.getBounds();
+        shell.setSize(bounds.x + bounds.width, bounds.y + bounds.height);
     }
 }

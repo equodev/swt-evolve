@@ -8,6 +8,7 @@ import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -110,4 +111,17 @@ class ShellStateNativeTest {
         assertThat(shell.isDisposed()).isTrue();
     }
 
+    @Test
+    @DisplayName("a shell without trim is as big as its region reaches, and one with trim ignores the region")
+    void regionSizesTheShell() {
+        Shell bare = shell(SWT.NO_TRIM);
+        Region region = new Region(bare.getDisplay());
+        region.add(10, 20, 100, 50);
+        bare.setRegion(region);
+        assertThat(bare.getSize()).isEqualTo(new Point(110, 70));
+
+        shell.setRegion(region);
+        assertThat(shell.getRegion()).isNull();
+        assertThat(shell.getSize()).isEqualTo(new Point(250, 180));
+    }
 }
