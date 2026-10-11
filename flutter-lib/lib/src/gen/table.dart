@@ -52,6 +52,7 @@ class VTable extends VComposite {
   }
 
   int? itemCount;
+  List<int>? columnOrder;
   List<VTableColumn>? columns;
   List<VTableEditor>? editors;
   VColor? headerBackground;
@@ -65,6 +66,7 @@ class VTable extends VComposite {
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VTable) {
+      columnOrder = other.columnOrder;
       columns = other.columns;
       editors = other.editors;
       headerBackground = other.headerBackground;
@@ -80,6 +82,10 @@ class VTable extends VComposite {
   @override
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
+      case 'columnOrder':
+        columnOrder = (json['columnOrder'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
       case 'columns':
         columns = (json['columns'] as List<dynamic>?)
             ?.map((e) => VTableColumn.fromJson(e as Map<String, dynamic>))

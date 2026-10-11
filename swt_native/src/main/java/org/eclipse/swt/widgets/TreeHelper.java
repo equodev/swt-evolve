@@ -156,6 +156,7 @@ public class TreeHelper {
             next[i] = i == index ? index : (order[j] >= index ? order[j++] + 1 : order[j++]);
         }
         tree.columnOrder = next;
+        tree.getValue().markDirty(VTree.COLUMN_ORDER);
     }
 
     /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */

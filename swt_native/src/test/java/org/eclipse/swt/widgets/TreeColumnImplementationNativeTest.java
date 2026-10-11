@@ -133,19 +133,84 @@ class TreeColumnImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("a header click and a header drag reach the column's listeners")
-    void headerClickAndDragReachTheListeners() {
+    @DisplayName("a header click reaches the column's listeners")
+    void headerClickReachesTheListeners() {
         TreeColumn column = new TreeColumn(tree, SWT.NONE);
         List<Integer> types = new ArrayList<>();
-        for (int type : new int[] {SWT.Selection, SWT.DefaultSelection, SWT.Move})
+        for (int type : new int[] {SWT.Selection, SWT.DefaultSelection})
             column.addListener(type, e -> types.add(e.type));
 
         fromFlutter(column, "Selection/Selection", new Event());
         fromFlutter(column, "Selection/DefaultSelection", new Event());
-        fromFlutter(column, "Control/Move", new Event());
         runQueued();
 
-        assertThat(types).containsExactly(SWT.Selection, SWT.DefaultSelection, SWT.Move);
+        assertThat(types).containsExactly(SWT.Selection, SWT.DefaultSelection);
+    }
+
+    private TreeColumn[] columns(int... widths) {
+        TreeColumn[] columns = new TreeColumn[widths.length];
+        for (int i = 0; i < widths.length; i++) {
+            columns[i] = new TreeColumn(tree, SWT.NONE);
+            columns[i].setWidth(widths[i]);
+        }
+        return columns;
+    }
+
+    private static Event droppedAt(int displayIndex) {
+        Event event = new Event();
+        event.index = displayIndex;
+        return event;
+    }
+
+    @Test
+    @DisplayName("a moveable column dragged in the header is shown where it was dropped, and the columns that moved hear it")
+    void headerDragReordersTheColumns() {
+        TreeColumn[] columns = columns(50, 60, 70);
+        columns[0].setMoveable(true);
+        List<TreeColumn> moved = new ArrayList<>();
+        for (TreeColumn column : columns)
+            column.addListener(SWT.Move, e -> moved.add(column));
+
+        fromFlutter(columns[0], "Control/Move", droppedAt(2));
+        runQueued();
+
+        assertThat(tree.getColumnOrder()).containsExactly(1, 2, 0);
+        assertThat(moved).containsExactlyInAnyOrder(columns);
+        assertThat(((DartTree) tree.getImpl()).getValue().changedKeys()).contains(VTree.COLUMN_ORDER);
+    }
+
+    @Test
+    @DisplayName("a header drag past the last column puts the column last; one dropped on its own place moves nothing")
+    void headerDragIsClampedAndADropInPlaceIsNoMove() {
+        TreeColumn[] columns = columns(50, 60, 70);
+        columns[1].setMoveable(true);
+        List<TreeColumn> moved = new ArrayList<>();
+        for (TreeColumn column : columns)
+            column.addListener(SWT.Move, e -> moved.add(column));
+
+        fromFlutter(columns[1], "Control/Move", droppedAt(1));
+        runQueued();
+        assertThat(moved).isEmpty();
+
+        fromFlutter(columns[1], "Control/Move", droppedAt(9));
+        runQueued();
+        assertThat(tree.getColumnOrder()).containsExactly(0, 2, 1);
+        assertThat(moved).containsExactlyInAnyOrder(columns[1], columns[2]);
+    }
+
+    @Test
+    @DisplayName("a column that is not moveable stays where it is when its header is dragged")
+    void headerDragOfAColumnThatIsNotMoveableMovesNothing() {
+        TreeColumn[] columns = columns(50, 60);
+        List<TreeColumn> moved = new ArrayList<>();
+        for (TreeColumn column : columns)
+            column.addListener(SWT.Move, e -> moved.add(column));
+
+        fromFlutter(columns[0], "Control/Move", droppedAt(1));
+        runQueued();
+
+        assertThat(tree.getColumnOrder()).containsExactly(0, 1);
+        assertThat(moved).isEmpty();
     }
 
     @Test

@@ -63,7 +63,59 @@ public final class ColumnHelper {
         sendMovesFrom(table.getColumns(), table.getColumnOrder(), fromDisplayIndex);
     }
 
+    /**
+     * A column the user dragged in the header and dropped at {@code displayIndex}: the columns are reordered as a
+     * native header drag does, which sends SWT.Move to the columns whose place changed. Only a moveable column
+     * moves.
+     */
+    public static void movedByUser(TreeColumn column, int displayIndex) {
+        Tree tree = column.getParent();
+        int[] order = moved(tree.getColumnOrder(), tree.indexOf(column), displayIndex, column.getMoveable());
+        if (order != null)
+            tree.setColumnOrder(order);
+    }
+
+    /**
+     * A column the user dragged in the header and dropped at {@code displayIndex}: the columns are reordered as a
+     * native header drag does, which sends SWT.Move to the columns whose place changed. Only a moveable column
+     * moves.
+     */
+    public static void movedByUser(TableColumn column, int displayIndex) {
+        Table table = column.getParent();
+        int[] order = moved(table.getColumnOrder(), table.indexOf(column), displayIndex, column.getMoveable());
+        if (order != null)
+            table.setColumnOrder(order);
+    }
+
+    /** {@code order} with column {@code index} shown at {@code displayIndex}, or null when nothing moves. */
+    static int[] moved(int[] order, int index, int displayIndex, boolean moveable) {
+        int from = displayIndex(order, index);
+        int to = Math.max(0, Math.min(displayIndex, order.length - 1));
+        if (!moveable || from == -1 || from == to)
+            return null;
+        int[] result = new int[order.length];
+        for (int i = 0, j = 0; i < order.length; i++) {
+            if (i == to) {
+                result[i] = index;
+                continue;
+            }
+            if (j == from)
+                j++;
+            result[i] = order[j++];
+        }
+        return result;
+    }
+
+    /**
+     * The left edge of every column, by column index, with the columns shown in {@code order}; an order that does
+     * not list every column is the creation order.
+     */
     static int[] positions(int[] widths, int[] order) {
+        if (order == null || order.length != widths.length) {
+            order = new int[widths.length];
+            for (int i = 0; i < order.length; i++)
+                order[i] = i;
+        }
         int[] x = new int[widths.length];
         int left = 0;
         for (int index : order) {

@@ -16,6 +16,7 @@ import '../gen/tablecolumn.dart';
 import '../gen/tableeditor.dart';
 import '../gen/droptarget.dart';
 import '../gen/font.dart';
+import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
@@ -62,6 +63,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double? _resizeStartWidth;
 
   final Set<int> _userResizedColumns = {};
+
+  final GlobalKey _headerKey = GlobalKey(debugLabel: 'table header');
+
+  /// Where the header drag of a moveable column has got to.
+  Offset? _columnDragPosition;
 
   /// Consecutive-click count of the most recent row tap (1, 2 or 3), as SWT
   /// numbers the clicks of a multi-click on MouseDown. JFace's ColumnViewer
@@ -194,11 +200,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double x = 0.0;
     double width = state.bounds?.width?.toDouble() ?? 200.0;
 
-    if (columns.isNotEmpty && columnWidths != null) {
-      for (int i = 0; i < columnIndex && i < columns.length; i++) {
-        final w = columnWidths[i];
-        if (w is FixedColumnWidth) x += w.value;
-      }
+    if (columns.isNotEmpty && columnWidths != null && columnIndex < columns.length) {
+      x = columnLefts(fixedColumnWidths(columns.length), displayOrder)[columnIndex];
       final colW = columnWidths[columnIndex];
       if (colW is FixedColumnWidth) width = colW.value;
     }
@@ -370,7 +373,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final grip = theme.columnResizeHandleWidth * 2;
     final handles = <Widget>[];
     double boundary = 0.0;
-    for (int i = 0; i < columns.length; i++) {
+    for (final i in displayOrder) {
       final width = columnWidths[i];
       if (width is! FixedColumnWidth) return const [];
       boundary += width.value;
@@ -429,18 +432,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
     TableThemeExtension theme,
   ) {
     return Table(
-      columnWidths: columnWidths,
+      key: _headerKey,
+      columnWidths: inDisplayOrder(columnWidths),
       border: buildHeaderBorder(showLines, theme),
       children: <TableRow>[
         TableRow(
           children: [
-            ...columns
-                .asMap()
-                .entries
-                .map(
-                  (entry) =>
-                      buildHeaderCell(entry.value, textStyle, theme, entry.key),
-                ),
+            for (final index in displayOrder)
+              buildHeaderCell(columns[index], textStyle, theme, index),
             const SizedBox.shrink(),
           ],
         ),
@@ -504,6 +503,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         ),
       ),
     );
+    final moveable = column.moveable ?? false;
     return tagItemSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -512,6 +512,24 @@ class TableImpl<T extends TableSwt, V extends VTable>
           null,
         );
       },
+      // A native header drag reorders the columns where it is dropped; Java applies the order and
+      // sends SWT.Move to the columns whose place changed.
+      onHorizontalDragStart:
+          moveable ? (details) => _columnDragPosition = details.globalPosition : null,
+      onHorizontalDragUpdate:
+          moveable ? (details) => _columnDragPosition = details.globalPosition : null,
+      onHorizontalDragEnd: moveable
+          ? (_) {
+              final position = _columnDragPosition;
+              _columnDragPosition = null;
+              if (position == null) return;
+              TableColumnSwt<VTableColumn>(value: column).sendControlMove(
+                column,
+                VEvent()..index = headerDropIndexAt(position),
+              );
+            }
+          : null,
+      onHorizontalDragCancel: moveable ? () => _columnDragPosition = null : null,
       onSecondaryTapDown: (details) {
         MenuDetectGate.withhold(
           state.swt,
@@ -535,10 +553,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   int _computeHeaderCellCenterX(int columnIndex) {
     double x = 0.0;
     if (_cachedColumnWidths != null) {
-      for (int i = 0; i < columnIndex; i++) {
-        final w = _cachedColumnWidths![i];
-        if (w is FixedColumnWidth) x += w.value;
-      }
+      x = columnLefts(fixedColumnWidths(getColumns().length), displayOrder)[columnIndex];
       final colW = _cachedColumnWidths![columnIndex];
       if (colW is FixedColumnWidth) x += colW.value / 2;
     } else {
@@ -586,7 +601,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     // at half the list width with an empty gap on the right.
     final trailingColumnWidths = columns.isEmpty
         ? const {0: FlexColumnWidth(), 1: FixedColumnWidth(0)}
-        : columnWidths;
+        : inDisplayOrder(columnWidths);
 
     return Container(
       color: backgroundColor,
@@ -758,13 +773,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
       tableForeground: state.foreground,
     ).buildCells(context, theme);
 
+    final order = displayOrder;
+    final shown = order.length == cells.length ? [for (final i in order) cells[i]] : cells;
     return TableRow(
       decoration: BoxDecoration(
         color: backgroundColor,
         border: getTableRowBorder(isSelected, theme, showLines: showLines),
       ),
       children: [
-        ...cells.map((cell) => wrapCellForRowDrag(cell, rowIndex, item)),
+        ...shown.map((cell) => wrapCellForRowDrag(cell, rowIndex, item)),
         const SizedBox.shrink(),
       ],
     );
@@ -967,14 +984,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
       double editorX = borderWidth;
       double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
 
-      if (columns.isNotEmpty && columnWidths != null) {
-        for (int i = 0; i < columnIndex && i < columns.length; i++) {
-          final w = columnWidths[i];
-          if (w is FixedColumnWidth) {
-            editorX += w.value;
-          }
-          editorX += lineWidth;
-        }
+      if (columns.isNotEmpty && columnWidths != null && columnIndex < columns.length) {
+        final order = displayOrder;
+        editorX += columnLefts(fixedColumnWidths(columns.length), order)[columnIndex] +
+            lineWidth * order.indexOf(columnIndex);
 
         final colW = columnWidths[columnIndex];
         if (colW is FixedColumnWidth) {
@@ -1373,6 +1386,41 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   List<VTableColumn> getColumns() {
     return state.columns ?? [];
+  }
+
+  /// The column indexes in the order the columns are shown.
+  List<int> get displayOrder => columnDisplayOrder(state.columnOrder, getColumns().length);
+
+  /// Each column's drawn width, by column index; 0 for one that is not a fixed width.
+  List<double> fixedColumnWidths(int count) => [
+        for (int i = 0; i < count; i++)
+          switch (_cachedColumnWidths?[i]) {
+            FixedColumnWidth(:final value) => value,
+            _ => 0.0,
+          },
+      ];
+
+  /// [widths], keyed by column index, keyed instead by the place each column is shown at, as a Flutter
+  /// Table lays its cells out; the filler after the last column keeps its key.
+  Map<int, TableColumnWidth>? inDisplayOrder(Map<int, TableColumnWidth>? widths) {
+    if (widths == null) return null;
+    final order = displayOrder;
+    return {
+      for (int position = 0; position < order.length; position++)
+        if (widths[order[position]] != null) position: widths[order[position]]!,
+      if (widths[order.length] != null) order.length: widths[order.length]!,
+    };
+  }
+
+  /// Where on the header a column dragged to [globalPosition] is dropped.
+  int headerDropIndexAt(Offset globalPosition) {
+    final box = _headerKey.currentContext?.findRenderObject();
+    if (box is! RenderBox) return 0;
+    return dropDisplayIndex(
+      fixedColumnWidths(getColumns().length),
+      displayOrder,
+      box.globalToLocal(globalPosition).dx,
+    );
   }
 
   List<VTableItem> getItems() {

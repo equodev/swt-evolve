@@ -20,6 +20,7 @@ import 'treeitem_evolve.dart' show VTreeItemChildren;
 import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
+import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
@@ -62,6 +63,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final FocusNode _focusNode = FocusNode();
   // The width of the column whose divider is being dragged, as the drag has made it so far.
   double? _resizeStartWidth;
+  // The header row and the widths its cells were drawn at, where a dragged header is dropped.
+  final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');
+  List<double>? _headerColumnWidths;
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -187,12 +191,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       final effectiveWidths = _cachedEffectiveWidths!;
       final prefix = theme.expandIconSize + theme.expandIconSpacing;
       x = prefix;
-
-      for (int i = 0; i < columnIndex && i < effectiveWidths.length; i++) {
-        x += effectiveWidths[i];
-      }
-
       if (columnIndex < effectiveWidths.length) {
+        x += columnLefts(effectiveWidths, displayOrder)[columnIndex];
         width = effectiveWidths[columnIndex];
       }
     }
@@ -445,6 +445,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     return uniqueColumns;
   }
+
+  /// The column indexes in the order the columns are shown.
+  List<int> get displayOrder => columnDisplayOrder(state.columnOrder, getTreeColumns().length);
 
   List<VTreeItem> _collectAllTreeItems(List<VWidget>? items) {
     if (items == null) return [];
@@ -925,7 +928,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final bool showHeaderBorder = effectiveHeaderBorderWidth > 0;
 
     final List<double> linePositions = [];
-    final List<double> columnWidths = [];
+    final List<int> order = displayOrder;
+    final List<double> columnWidths = [
+      for (int i = 0; i < columns.length; i++)
+        effectiveWidths != null && i < effectiveWidths.length
+            ? effectiveWidths[i]
+            : (columns[i].width ?? defaultWidth).toDouble(),
+    ];
+    _headerColumnWidths = columnWidths;
     double cumulativeWidth = 0.0;
 
     Widget headerContent = Stack(
@@ -940,18 +950,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               child: TreeHasMultiColumnProvider(
                 hasMultiColumn: hasMultiColumn,
                 child: Row(
+                  key: _headerRowKey,
                   children: [
-                    ...columns.asMap().entries.map((entry) {
-                      final int columnIndex = entry.key;
-                      final column = entry.value;
-                      final double width =
-                          effectiveWidths != null &&
-                              columnIndex < effectiveWidths.length
-                          ? effectiveWidths[columnIndex]
-                          : (column.width ?? defaultWidth).toDouble();
+                    // In the column order; the tree column keeps its expander room wherever it is.
+                    ...order.asMap().entries.map((entry) {
+                      final int position = entry.key;
+                      final int columnIndex = entry.value;
+                      final column = columns[columnIndex];
+                      final double width = columnWidths[columnIndex];
                       cumulativeWidth += width;
-                      columnWidths.add(width);
-                      if (columnIndex < columns.length - 1) {
+                      if (position < order.length - 1) {
                         linePositions.add(cumulativeWidth - borderWidth);
                       }
                       if (columnIndex == 0) {
@@ -991,7 +999,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               color: widgetTheme.headerBorderColor,
             ),
           ),
-        ..._buildColumnResizeHandles(columns, columnWidths, headerHeight, widgetTheme),
+        ..._buildColumnResizeHandles(columns, columnWidths, order, headerHeight, widgetTheme),
         if (state.linesVisible == true &&
             linePositions.isNotEmpty &&
             !hasMultiColumn)
@@ -1039,13 +1047,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   List<Widget> _buildColumnResizeHandles(
     List<VTreeColumn> columns,
     List<double> widths,
+    List<int> order,
     double headerHeight,
     TreeThemeExtension theme,
   ) {
     final grip = theme.columnResizeHandleWidth * 2;
     final handles = <Widget>[];
     double boundary = 0.0;
-    for (int i = 0; i < columns.length && i < widths.length; i++) {
+    for (final i in order) {
       boundary += widths[i];
       // SWT's TreeColumn.resizable defaults to true.
       if (columns[i].resizable == false) continue;
@@ -1085,8 +1094,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {
-    final columns = getTreeColumns();
-    final bool isLastColumn = columnIndex == columns.length - 1;
+    final bool isLastColumn = isLastShown(columnIndex);
     final bool sorted = state.sortColumn != null && state.sortColumn!.id == column.id;
     return TreeColumnIndexProvider(
       columnIndex: columnIndex,
@@ -1095,10 +1103,25 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         child: TreeHeaderCellProvider(
           sortDirection: sorted ? (state.sortDirection ?? SWT.NONE) : SWT.NONE,
           foreground: state.headerForeground,
+          dropIndexAt: _headerDropIndexAt,
           child: TreeColumnSwt(value: column),
         ),
       ),
     );
+  }
+
+  /// Where on the header row a column dragged to [globalPosition] is dropped.
+  int _headerDropIndexAt(Offset globalPosition) {
+    final box = _headerRowKey.currentContext?.findRenderObject();
+    final widths = _headerColumnWidths;
+    if (box is! RenderBox || widths == null) return 0;
+    return dropDisplayIndex(widths, displayOrder, box.globalToLocal(globalPosition).dx);
+  }
+
+  /// Whether column [columnIndex] is the one shown last.
+  bool isLastShown(int columnIndex) {
+    final order = displayOrder;
+    return order.isNotEmpty && order.last == columnIndex;
   }
 
   Widget _buildFlatTreeItemWidget(_FlatTreeItem flatItem) {
@@ -1578,14 +1601,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       double editorX = 0.0;
       double editorWidth = state.bounds?.width?.toDouble() ?? 0.0;
 
-      if (columns.isNotEmpty && effectiveWidths != null) {
-        for (int i = 0; i < columnIndex && i < effectiveWidths.length; i++) {
-          editorX += effectiveWidths[i];
-        }
-
-        if (columnIndex < effectiveWidths.length) {
-          editorWidth = effectiveWidths[columnIndex];
-        }
+      if (columns.isNotEmpty &&
+          effectiveWidths != null &&
+          columnIndex < effectiveWidths.length) {
+        editorX = columnLefts(effectiveWidths, displayOrder)[columnIndex];
+        editorWidth = effectiveWidths[columnIndex];
       }
 
       final editorWidget = mapWidgetFromValue(editable.editor!);
@@ -2233,10 +2253,14 @@ class TreeHeaderCellProvider extends InheritedWidget {
   final int sortDirection;
   final VColor? foreground;
 
+  /// The display position a header cell dragged to a global position is dropped at.
+  final int Function(Offset globalPosition)? dropIndexAt;
+
   const TreeHeaderCellProvider({
     super.key,
     required this.sortDirection,
     required this.foreground,
+    this.dropIndexAt,
     required super.child,
   });
 

@@ -10,6 +10,7 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.DartTreeItem;
+import org.eclipse.swt.widgets.Sizes;
 
 public class TreeSizes {
 
@@ -101,6 +102,7 @@ public class TreeSizes {
         return (int) Math.ceil(minHeight);
     }
 
+    /** Where an item's expander starts: inside the tree column, wherever the column order shows it. */
     public static double getExpanderLeft(DartTree tree, int level) {
         boolean withCols = tree.getColumnCount() > 1;
         double gapFraction = withCols ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;
@@ -108,7 +110,7 @@ public class TreeSizes {
         double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
         Rectangle bounds = tree.getBounds();
         double widgetWidth = bounds != null ? bounds.width : 0;
-        return widgetWidth * gapFraction + paddingLeft + indent * level;
+        return Sizes.treeColumnLeft(tree, 0) + widgetWidth * gapFraction + paddingLeft + indent * level;
     }
 
     /** Where an item's first cell content starts: after its indent, the expander and any checkbox. */

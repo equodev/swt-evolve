@@ -19,7 +19,6 @@ public class VTree extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getColumnOrder() {
         return ((DartTree) impl).columnOrder;
     }
@@ -140,6 +139,8 @@ public class VTree extends VComposite {
         ((DartTree) impl).topItem = value;
     }
 
+    public static final String COLUMN_ORDER = "columnOrder";
+
     public static final String COLUMNS = "columns";
 
     public static final String EDITORS = "editors";
@@ -165,6 +166,9 @@ public class VTree extends VComposite {
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
+            case "columnOrder":
+                Serializer.writeKeyValue(writer, "columnOrder", getColumnOrder());
+                return;
             case "columns":
                 Serializer.writeKeyValue(writer, "columns", getColumns());
                 return;

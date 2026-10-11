@@ -12,6 +12,7 @@ import '../impl/table_evolve.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
+import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
@@ -297,11 +298,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
   int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {
     final columnWidths = _context?.tableImpl?.cachedColumnWidths;
+    final tableImpl = _context?.tableImpl;
     double x = 0.0;
-    if (columnWidths != null) {
-      for (int i = 0; i < columnIndex; i++) {
-        final w = columnWidths[i];
-        if (w is FixedColumnWidth) x += w.value;
+    if (columnWidths != null && tableImpl != null) {
+      final count = tableImpl.getColumns().length;
+      if (columnIndex < count) {
+        x = columnLefts(tableImpl.fixedColumnWidths(count), tableImpl.displayOrder)[columnIndex];
       }
       final colW = columnWidths[columnIndex];
       if (colW is FixedColumnWidth) x += colW.value / 2;

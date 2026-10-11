@@ -14,7 +14,7 @@ import 'utils/widget_utils.dart';
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     extends ItemImpl<T, V> {
   bool _isDragging = false;
-  double _startDragOffset = 0.0;
+  Offset? _dragPosition;
 
   double _calculateLeftPadding(bool isFirstColumn, TreeThemeExtension theme) {
     if (!isFirstColumn) return 0.0;
@@ -35,36 +35,33 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     return e;
   }
 
-  void _handleDragStart(LongPressStartDetails details) {
+  void _handleDragStart(DragStartDetails details) {
     setState(() {
       _isDragging = true;
-      _startDragOffset = details.localPosition.dx;
+      _dragPosition = details.globalPosition;
     });
   }
 
-  void _handleDragUpdate(
-    LongPressMoveUpdateDetails details,
-    TreeThemeExtension theme,
-    int width,
-  ) {
-    if (!_isDragging) return;
-
-    final dragDistance = details.localPosition.dx - _startDragOffset;
-    if (dragDistance.abs() > theme.columnDragThreshold) {
-      final e = _createEvent(
-        theme: theme,
-        width: width,
-        x: details.localPosition.dx.round(),
-        y: details.localPosition.dy.round(),
-      );
-      widget.sendControlMove(state, e);
-    }
+  void _handleDragUpdate(DragUpdateDetails details) {
+    _dragPosition = details.globalPosition;
   }
 
-  void _handleDragEnd() {
+  /// A native header drag reorders the columns where it is dropped; Java applies the order and sends
+  /// SWT.Move to the columns whose place changed.
+  void _handleDragEnd(int Function(Offset globalPosition)? dropIndexAt) {
+    final position = _dragPosition;
     setState(() {
       _isDragging = false;
-      _startDragOffset = 0.0;
+      _dragPosition = null;
+    });
+    if (position == null || dropIndexAt == null) return;
+    widget.sendControlMove(state, VEvent()..index = dropIndexAt(position));
+  }
+
+  void _handleDragCancel() {
+    setState(() {
+      _isDragging = false;
+      _dragPosition = null;
     });
   }
 
@@ -206,11 +203,12 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
           final e = _createEvent(theme: widgetTheme, width: width);
           widget.sendSelectionSelection(state, e);
         },
-        onLongPressStart: moveable ? _handleDragStart : null,
-        onLongPressMoveUpdate: moveable
-            ? (details) => _handleDragUpdate(details, widgetTheme, width)
+        onHorizontalDragStart: moveable ? _handleDragStart : null,
+        onHorizontalDragUpdate: moveable ? _handleDragUpdate : null,
+        onHorizontalDragEnd: moveable
+            ? (_) => _handleDragEnd(TreeHeaderCellProvider.of(context)?.dropIndexAt)
             : null,
-        onLongPressEnd: moveable ? (_) => _handleDragEnd() : null,
+        onHorizontalDragCancel: moveable ? _handleDragCancel : null,
         child: Stack(
           children: [
             _buildColumnContent(

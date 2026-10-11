@@ -59,6 +59,7 @@ class VTree extends VComposite {
     swt = "Tree";
   }
 
+  List<int>? columnOrder;
   List<VTreeColumn>? columns;
   List<VTreeEditor>? editors;
   VColor? headerBackground;
@@ -75,6 +76,7 @@ class VTree extends VComposite {
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VTree) {
+      columnOrder = other.columnOrder;
       columns = other.columns;
       editors = other.editors;
       headerBackground = other.headerBackground;
@@ -92,6 +94,10 @@ class VTree extends VComposite {
   @override
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
+      case 'columnOrder':
+        columnOrder = (json['columnOrder'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
       case 'columns':
         columns = (json['columns'] as List<dynamic>?)
             ?.map((e) => VTreeColumn.fromJson(e as Map<String, dynamic>))

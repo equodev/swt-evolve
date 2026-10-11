@@ -15,6 +15,7 @@ import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
+import 'utils/column_order.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
@@ -454,8 +455,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
 
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
-      return Row(
-        children: [
+      final cells = <Widget>[
           SizedBox(
             width: firstColumnWidth,
             child: Row(
@@ -508,8 +508,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               ),
             );
           }),
-        ],
-      );
+      ];
+      // Each cell is drawn where the column order shows its column; the tree column keeps the expander.
+      final order = columnDisplayOrder(_context?.treeImpl?.state.columnOrder, cells.length);
+      return Row(children: [for (final index in order) cells[index]]);
     }
 
     return Row(
@@ -1198,7 +1200,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       extraPadding: 4.0,
     );
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-    if (columns.isNotEmpty && columnIndex < columns.length - 1) {
+    if (columns.isNotEmpty && !(_context?.treeImpl?.isLastShown(columnIndex) ?? false)) {
       adjustedPadding = adjustedPadding.copyWith(
         right: adjustedPadding.right + theme.columnDividerGap,
       );

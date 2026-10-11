@@ -471,6 +471,7 @@ public class TableHelper {
                 }
             }
             table.columnOrder = newOrder;
+            table.getValue().markDirty(VTable.COLUMN_ORDER);
         }
     }
 

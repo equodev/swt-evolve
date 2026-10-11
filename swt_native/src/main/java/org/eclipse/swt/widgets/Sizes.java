@@ -740,14 +740,20 @@ public class Sizes {
         if (columnCount == 0)
             return new Rectangle(inset, y, dev.equo.swt.size.TableSizes.getCellContentWidth(item.getApi()), itemHeight);
         TableColumn[] columns = dartTable.getColumns();
-        int x = 0;
-        for (int i = 0; i < index && i < columns.length; i++) {
-            x += columns[i].getWidth();
-        }
+        int x = tableColumnLeft(dartTable, index);
         int width = index < columns.length ? columns[index].getWidth() : 0;
         if (index == 0)
             return new Rectangle(x + inset, y, Math.max(0, width - inset), itemHeight);
         return new Rectangle(x, y, width, itemHeight);
+    }
+
+    /** Where column {@code index} of a table starts: after the columns shown before it in the table's order. */
+    static int tableColumnLeft(DartTable table, int index) {
+        TableColumn[] columns = table.getColumns();
+        int[] widths = new int[columns.length];
+        for (int i = 0; i < columns.length; i++)
+            widths[i] = columns[i].getWidth();
+        return ColumnHelper.positions(widths, table.getColumnOrder())[index];
     }
 
     /** Where a cell's image is drawn: at the start of the cell, on the item's row, as wide as the image. */
@@ -829,11 +835,19 @@ public class Sizes {
                     + dev.equo.swt.size.TreeSizes.getTextWidth(item.getApi(), 0);
             return new Rectangle(left, row.y, width, row.height);
         }
-        int x = 0;
-        for (int i = 0; i < index && i < columns.length; i++) x += columns[i].getWidth();
+        int x = treeColumnLeft(dartTree, index);
         int width = index < columns.length ? columns[index].getWidth() : 0;
-        if (index == 0) return new Rectangle(x + left, row.y, Math.max(0, width - left), row.height);
+        if (index == 0) return new Rectangle(left, row.y, Math.max(0, x + width - left), row.height);
         return new Rectangle(x, row.y, width, row.height);
+    }
+
+    /** Where column {@code index} of a tree starts: after the columns shown before it in the tree's order; 0 without columns. */
+    public static int treeColumnLeft(DartTree tree, int index) {
+        int count = tree.columnCount;
+        if (index >= count) return 0;
+        int[] widths = new int[count];
+        for (int i = 0; i < count; i++) widths[i] = tree.columns[i].getWidth();
+        return ColumnHelper.positions(widths, tree.getColumnOrder())[index];
     }
 
     private static boolean isTreeCell(DartTreeItem item, int index) {

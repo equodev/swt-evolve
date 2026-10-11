@@ -53,6 +53,9 @@ VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..columnOrder = (json['columnOrder'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..columns = (json['columns'] as List<dynamic>?)
       ?.map((e) => VTreeColumn.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -105,6 +108,7 @@ Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
+  'columnOrder': ?instance.columnOrder,
   'columns': ?instance.columns,
   'editors': ?instance.editors,
   'headerBackground': ?instance.headerBackground,
