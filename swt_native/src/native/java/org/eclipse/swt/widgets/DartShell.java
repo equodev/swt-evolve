@@ -1155,6 +1155,8 @@ public class DartShell extends DartDecorations implements IShell {
      * @see Shell#setActive
      */
     public void setActive() {
+        if (isDisposed())
+            return;
         checkWidget();
         if (!isVisible())
             return;
@@ -1224,13 +1226,12 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.4
      */
     public void setAlpha(int alpha) {
-        int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
-            getValue().markDirty(VShell.ALPHA);
-        }
+        if (isDisposed())
+            return;
         checkWidget();
         alpha &= 0xFF;
-        this.alpha = newValue;
+        getValue().markDirty(VShell.ALPHA);
+        this.alpha = alpha;
     }
 
     @Override

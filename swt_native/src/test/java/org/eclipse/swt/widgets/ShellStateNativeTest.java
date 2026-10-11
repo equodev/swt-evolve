@@ -90,4 +90,24 @@ class ShellStateNativeTest {
         assertThat(shell.getBounds()).isEqualTo(new Rectangle(10, 20, 200, 180));
     }
 
+    @Test
+    @DisplayName("only the low byte of an alpha counts")
+    void alphaKeepsTheLowByte() {
+        shell.setAlpha(300);
+        assertThat(shell.getAlpha()).isEqualTo(44);
+        shell.setAlpha(-1);
+        assertThat(shell.getAlpha()).isEqualTo(255);
+        shell.setAlpha(128);
+        assertThat(shell.getAlpha()).isEqualTo(128);
+    }
+
+    @Test
+    @DisplayName("a disposed shell answers setAlpha and setActive silently")
+    void disposedShellIsSilent() {
+        shell.dispose();
+        shell.setAlpha(10);
+        shell.setActive();
+        assertThat(shell.isDisposed()).isTrue();
+    }
+
 }
