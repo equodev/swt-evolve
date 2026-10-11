@@ -43,7 +43,7 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).image = value;
     }
 
-    @JsonAttribute(ignore = true)
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartCaret) impl).getVisible();
     }
@@ -59,13 +59,30 @@ public class VCaret extends VWidget {
     public void setBounds(Rectangle value) {
     }
 
+    public boolean getFocused() {
+        return ((DartCaret) impl).isFocusCaret();
+    }
+
+    public void setFocused(boolean value) {
+    }
+
     public static final String BOUNDS = "bounds";
+
+    public static final String FOCUSED = "focused";
+
+    public static final String VISIBLE = "visible";
 
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
+            case "visible":
+                Serializer.writeKeyValue(writer, "visible", getVisible());
+                return;
             case "bounds":
                 Serializer.writeKeyValue(writer, "bounds", getBounds());
+                return;
+            case "focused":
+                Serializer.writeKeyValue(writer, "focused", getFocused());
                 return;
         }
         super.writeProperty(writer, key);

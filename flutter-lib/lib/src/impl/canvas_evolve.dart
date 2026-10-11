@@ -204,6 +204,14 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       base = wrap(_paintBackground(content));
     }
 
+    final caret = state.caret;
+    if (caret != null) {
+      base = Stack(children: [
+        base,
+        Positioned.fill(child: IgnorePointer(child: mapWidgetFromValue(caret))),
+      ]);
+    }
+
     if (_localVScrollPx != 0.0 || _localHScrollPx != 0.0) {
       base = ColoredBox(
         color: bg,

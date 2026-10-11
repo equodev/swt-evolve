@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -112,7 +113,9 @@ public class DartCaret extends DartWidget implements ICaret {
     void createWidget(int index) {
         super.createWidget(index);
         blinkRate = ((SwtDisplay) display.getImpl()).getCaretBlinkTime();
+        getValue().markDirty(VCaret.BLINK_RATE);
         isVisible = true;
+        getValue().markDirty(VCaret.VISIBLE);
         if (parent.getCaret() == null) {
             parent.setCaret(this.getApi());
         }
@@ -543,6 +546,9 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
+        if (!java.util.Objects.equals(this.isVisible, visible)) {
+            getValue().markDirty(VCaret.VISIBLE);
+        }
         Canvas canvas = getParent();
         if (canvas.getImpl() instanceof DartCanvas) {
             ((DartCanvas) canvas.getImpl()).blink = true;
@@ -560,6 +566,7 @@ public class DartCaret extends DartWidget implements ICaret {
         if (visible == isVisible)
             return;
         isVisible = visible;
+        getValue().markDirty(VCaret.VISIBLE);
         if (!isFocusCaret())
             return;
         if (isVisible) {

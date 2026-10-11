@@ -94,8 +94,10 @@ public class DartCaret extends DartWidget implements ICaret {
 
     void createWidget() {
         isVisible = true;
+        getValue().markDirty(VCaret.VISIBLE);
         if (parent.getCaret() == null) {
             parent.setCaret(this.getApi());
+            getValue().markDirty(VCaret.FOCUSED);
         }
     }
 
@@ -600,9 +602,13 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
+        if (!java.util.Objects.equals(this.isVisible, visible)) {
+            getValue().markDirty(VCaret.VISIBLE);
+        }
         if (visible == isVisible)
             return;
         isVisible = visible;
+        getValue().markDirty(VCaret.VISIBLE);
         if (!isVisible) {
         } else {
             if (resized) {
