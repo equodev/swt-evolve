@@ -20,11 +20,25 @@ public class TableHelper {
     private static final java.util.Map<DartTable, Integer> SCROLL_OFFSETS =
         java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
+    // The index setTopIndex was last asked for, on the platform whose table reports it even when the rows have
+    // nowhere to scroll to it. Dropped by whatever else moves the rows.
+    private static final java.util.Map<DartTable, Integer> REQUESTED_TOP_INDEXES =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * GTK reports the top index it was asked for, whether or not the rows can scroll that far; Cocoa and Win32
+     * clamp it to what the table can scroll to. Each follows the platform the application runs on.
+     */
+    private static boolean keepsRequestedTopIndex() {
+        return "gtk".equals(SWT.getPlatform());
+    }
+
     /**
      * Flutter scrolled the table. The top index Flutter is sent is read from here, so describing the table
      * again does not move it back to where the API last put it.
      */
     public static void recordScrollOffset(DartTable table, Event event) {
+        REQUESTED_TOP_INDEXES.remove(table);
         SCROLL_OFFSETS.put(table, Math.max(0, event.y));
     }
 
@@ -45,6 +59,9 @@ public class TableHelper {
 
     /** The rows changed: a scroll past where they now end stops at their end. */
     public static void keepScrollInRows(DartTable table) {
+        Integer requested = REQUESTED_TOP_INDEXES.get(table);
+        if (requested != null && requested >= table.getItemCount())
+            REQUESTED_TOP_INDEXES.remove(table);
         Integer offset = SCROLL_OFFSETS.get(table);
         if (offset != null && offset > scrollOffsetY(table))
             SCROLL_OFFSETS.put(table, scrollOffsetY(table));
@@ -53,13 +70,20 @@ public class TableHelper {
     /** The index of the row at the top; 0 for an empty table. */
     public static int getTopIndex(DartTable table) {
         if (table.getItemCount() == 0) return 0;
+        Integer requested = REQUESTED_TOP_INDEXES.get(table);
+        if (requested != null) return Math.min(requested, table.getItemCount() - 1);
         return Math.min(scrollOffsetY(table) / Math.max(1, table.getItemHeight()), table.getItemCount() - 1);
     }
 
-    /** Scrolls so that row {@code index} is at the top, as far as the rows below it allow. */
+    /**
+     * Scrolls so that row {@code index} is at the top. Cocoa and Win32 stop where the rows below it end; GTK
+     * keeps the index it was given, see {@link #keepsRequestedTopIndex}.
+     */
     public static void setTopIndex(DartTable table, int index) {
         if (table.getItemCount() == 0) return;
-        scrollToRow(table, Math.max(0, Math.min(index, table.getItemCount() - 1)));
+        int row = Math.max(0, Math.min(index, table.getItemCount() - 1));
+        scrollToRow(table, row);
+        if (keepsRequestedTopIndex()) REQUESTED_TOP_INDEXES.put(table, row);
     }
 
     /**
@@ -84,6 +108,7 @@ public class TableHelper {
      * it will end at, so what the API reads back right away is where the table will be.
      */
     private static void scrollToRow(DartTable table, int row) {
+        REQUESTED_TOP_INDEXES.remove(table);
         int itemHeight = Math.max(1, table.getItemHeight());
         SCROLL_OFFSETS.put(table, Math.min(row * itemHeight, maxScrollOffset(table, itemHeight)));
         table.getValue().markDirty(VTable.TOP_INDEX);

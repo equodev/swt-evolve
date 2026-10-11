@@ -166,6 +166,51 @@ class TableScrollFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("a top index the rows cannot scroll to is the one asked for on GTK, and the top on Cocoa and Win32")
+    void aTopIndexWithNowhereToScrollFollowsThePlatform() {
+        Table table = table(2);
+
+        table.setTopIndex(1);
+
+        boolean keepsTheRequest = "gtk".equals(SWT.getPlatform());
+        assertThat(table.getTopIndex()).isEqualTo(keepsTheRequest ? 1 : 0);
+        assertThat(table.getItem(1).getBounds().y).isEqualTo(table.getItem(0).getBounds().y + table.getItemHeight());
+    }
+
+    @Test
+    @DisplayName("a top index the rows can scroll to is the same on every platform")
+    void aTopIndexWithRoomToScrollIsTheOneAskedFor() {
+        Table table = table(60);
+
+        table.setTopIndex(20);
+
+        assertThat(table.getTopIndex()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("a scroll the client reports replaces the top index asked for")
+    void aClientScrollReplacesTheTopIndexAskedFor() {
+        Table table = table(2);
+        table.setTopIndex(1);
+
+        fromFlutter(table, "Scroll/Scroll", scrolledTo(0));
+        runQueued();
+
+        assertThat(table.getTopIndex()).isZero();
+    }
+
+    @Test
+    @DisplayName("a top index asked for does not outlive the rows it named")
+    void aTopIndexAskedForStopsAtTheRowsThatRemain() {
+        Table table = table(3);
+        table.setTopIndex(2);
+
+        table.remove(1, 2);
+
+        assertThat(table.getTopIndex()).isLessThan(table.getItemCount());
+    }
+
+    @Test
     @DisplayName("removing the rows brings the scroll back to the top")
     void removingTheRowsGoesBackToTheTop() {
         Table table = table(60);
