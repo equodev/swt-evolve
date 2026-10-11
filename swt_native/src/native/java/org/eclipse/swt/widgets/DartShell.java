@@ -1378,7 +1378,7 @@ public class DartShell extends DartDecorations implements IShell {
         checkWidget();
         getValue().markDirty(VShell.MAXIMUM_SIZE);
         this.maximumSize = new Point(width, height);
-        ShellHelper.shrinkToMaximum(this.getApi());
+        ShellHelper.shrinkToMaximum(this.getApi(), this.maximumSize);
     }
 
     /**

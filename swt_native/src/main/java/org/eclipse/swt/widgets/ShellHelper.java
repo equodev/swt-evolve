@@ -24,9 +24,8 @@ public class ShellHelper {
     }
 
     /** A shell that is larger than its new maximum size shrinks to it, keeping its location. */
-    static void shrinkToMaximum(Shell shell) {
+    static void shrinkToMaximum(Shell shell, Point max) {
         Point size = shell.getSize();
-        Point max = shell.getMaximumSize();
         if (max.x < size.x || max.y < size.y)
             shell.setSize(Math.min(max.x, size.x), Math.min(max.y, size.y));
     }
