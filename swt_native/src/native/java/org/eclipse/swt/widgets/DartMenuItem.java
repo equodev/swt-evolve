@@ -683,6 +683,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setID(int id) {
         int newValue = id;
         checkWidget();
+        if (id < 0)
+            error(SWT.ERROR_INVALID_ARGUMENT);
         this.ID = newValue;
     }
 
@@ -1078,6 +1080,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
+        if (parent == null)
+            return null;
         Composite p = parent.getParent();
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
         if (p != null)

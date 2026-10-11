@@ -811,6 +811,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
+        if (parent == null)
+            return null;
         Composite p = parent.getParent();
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
         return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
