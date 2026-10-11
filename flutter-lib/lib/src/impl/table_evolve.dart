@@ -18,6 +18,7 @@ import '../gen/droptarget.dart';
 import '../gen/font.dart';
 import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
@@ -499,6 +500,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final showCheckboxSpace = hasCheckStyle && columnIndex == 0;
     final headerHeight = calculateHeaderHeight(textStyle, theme);
 
+    final headerText = fixMnemonic(column.text);
     final double? columnWidth = _columnWidthAt(columnIndex);
     final EdgeInsets headerPadding = columnWidth == null
         ? theme.headerPadding
@@ -506,7 +508,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
             theme.headerPadding,
             available: columnWidth -
                 (showCheckboxSpace ? 20.0 + theme.cellPadding.left : 0.0),
-            contentWidth: measureTableText(column.text ?? "", textStyle),
+            contentWidth: measureTableText(headerText, textStyle),
           );
 
     Widget cell = SizedBox(
@@ -536,7 +538,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
               ),
             Expanded(
               child: Text(
-                column.text ?? "",
+                headerText,
                 style: textStyle,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1244,7 +1246,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double checkboxWidth,
   ) {
     if ((column.width ?? 0) <= 0) return 0.0;
-    final headerText = column.text ?? "";
+    final headerText = fixMnemonic(column.text);
     if (headerText.isEmpty) return 0.0;
 
     double floor = measureTableText(headerText, headerTextStyle);
@@ -1361,7 +1363,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     TextStyle headerTextStyle,
     TableThemeExtension theme,
   ) {
-    final headerText = column.text ?? "";
+    final headerText = fixMnemonic(column.text);
     if (headerText.isEmpty) return 0.0;
 
     final headerPainter = TextPainter(
