@@ -119,4 +119,25 @@ class TableItemImplementationNativeTest {
         assertThat(item.toString()).isEqualTo("TableItem {hello}");
         assertThat(pending.toString()).isEqualTo("TableItem {*virtual*}");
     }
+
+    @Test
+    @DisplayName("the one cell of a table without columns fills the table, and is as wide as its content where the table has no room")
+    void theCellOfAColumnlessTable() {
+        Table plain = new Table(DartMocks.dartShell(), SWT.NONE);
+        TableItem item = new TableItem(plain, SWT.NONE);
+        item.setText("hello");
+
+        assertThat(plain.getClientArea().width).isZero();
+        assertThat(item.getBounds(0).width).isPositive();
+        assertThat(item.getBounds().width).isEqualTo(item.getBounds(0).width);
+
+        Image image = new Image(plain.getDisplay(), 16, 16);
+        int withoutImage = item.getBounds(0).width;
+        item.setImage(image);
+        assertThat(item.getBounds(0).width).isGreaterThan(withoutImage);
+
+        plain.setBounds(0, 0, 400, 300);
+        assertThat(item.getBounds(0).width).isGreaterThan(300);
+        assertThat(item.getBounds().width).isLessThan(item.getBounds(0).width);
+    }
 }
