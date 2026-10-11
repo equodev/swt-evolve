@@ -13,8 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * A new scale spans 0 to 100 with its selection at 0, an increment of 1 and a page increment of 10, as on every
- * SWT platform. The range lives in the implementation's fields, which start at zero, so a scale that kept them
- * clamped every selection and minimum against an empty range.
+ * SWT platform.
  */
 @Tag("native-unit")
 class ScaleRangeTest {
