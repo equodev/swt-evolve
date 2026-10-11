@@ -1,6 +1,5 @@
 // Every StyledText keys its line layouts in one shared cache. A line one editor measured in its font
-// must not be taken by another editor in a different font: an empty line laid out in a large font
-// made every empty line of a small-font editor twice as tall as its other lines.
+// must not be taken by another editor in a different font.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
