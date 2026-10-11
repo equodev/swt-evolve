@@ -79,4 +79,36 @@ public class SpinnerHelper {
             c.sendSelectionEvent(SWT.Selection);
     }
 
+    /**
+     * A value the user chose with the arrows of the client. The text follows it, so listeners hear Modify and then
+     * Selection, in the order a native spinner sends them.
+     */
+    static void selectedInFlutter(DartSpinner c, int value) {
+        c.setSelection(value);
+        if (c.isDisposed()) {
+            return;
+        }
+        c.sendSelectionEvent(SWT.Selection, null, true);
+    }
+
+    /**
+     * A value typed into the client and committed with Enter. The client sends nothing while the text is being
+     * edited, so this is the one place the application can hear that the value changed: Selection for a value
+     * that differs from the one it had, then DefaultSelection for the Enter.
+     */
+    static void committedInFlutter(DartSpinner c, Event e) {
+        int previous = c.selection;
+        c.setSelection(e.index);
+        if (c.isDisposed()) {
+            return;
+        }
+        if (c.selection != previous) {
+            c.sendSelectionEvent(SWT.Selection, null, true);
+            if (c.isDisposed()) {
+                return;
+            }
+        }
+        c.sendEvent(SWT.DefaultSelection, e);
+    }
+
 }

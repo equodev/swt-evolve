@@ -90,6 +90,66 @@ class ScaleEventsFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("a Selection from Flutter notifies the Selection listeners once, with the knob already moved")
+    void selectionNotifiesTheListeners() {
+        Scale scale = new Scale(DartMocks.dartShell(display), SWT.NONE);
+        List<Integer> seen = new ArrayList<>();
+        List<Event> events = new ArrayList<>();
+        scale.addListener(SWT.Selection, e -> {
+            events.add(e);
+            seen.add(scale.getSelection());
+        });
+
+        fromFlutter(scale, "Selection", 60);
+        runQueued();
+
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).widget).isSameAs(scale);
+        assertThat(seen).containsExactly(60);
+    }
+
+    @Test
+    @DisplayName("Selections sent while the Display thread is busy notify once, with the newest position")
+    void selectionsSentWhileBusyNotifyOnceWithTheNewest() {
+        Scale scale = new Scale(DartMocks.dartShell(display), SWT.NONE);
+        List<Integer> seen = new ArrayList<>();
+        scale.addListener(SWT.Selection, e -> seen.add(scale.getSelection()));
+
+        fromFlutter(scale, "Selection", 10);
+        fromFlutter(scale, "Selection", 20);
+        fromFlutter(scale, "Selection", 30);
+        runQueued();
+
+        assertThat(seen).containsExactly(30);
+        assertThat(scale.getSelection()).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("a Selection from Flutter does not reach the DefaultSelection listeners")
+    void selectionDoesNotNotifyDefaultSelection() {
+        Scale scale = new Scale(DartMocks.dartShell(display), SWT.NONE);
+        List<Event> events = record(scale, SWT.DefaultSelection);
+
+        fromFlutter(scale, "Selection", 60);
+        runQueued();
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Selection that arrives after the scale was disposed notifies nothing")
+    void selectionToADisposedScaleNotifiesNothing() {
+        Scale scale = new Scale(DartMocks.dartShell(display), SWT.NONE);
+        List<Event> events = record(scale, SWT.Selection);
+
+        fromFlutter(scale, "Selection", 60);
+        scale.dispose();
+        runQueued();
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
     @DisplayName("a Selection that arrives after the scale was disposed is dropped")
     void selectionToADisposedScaleIsDropped() {
         Scale scale = new Scale(DartMocks.dartShell(display), SWT.NONE);

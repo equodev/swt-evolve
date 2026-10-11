@@ -146,6 +146,79 @@ class SpinnerEventsFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("a Selection from Flutter notifies Modify then Selection, once each, with the value already moved")
+    void selectionNotifiesModifyThenSelection() {
+        Spinner spinner = spinner();
+        List<String> order = new ArrayList<>();
+        List<Integer> valueSeenBySelection = new ArrayList<>();
+        spinner.addListener(SWT.Modify, e -> order.add("Modify"));
+        spinner.addListener(SWT.Selection, e -> {
+            order.add("Selection");
+            valueSeenBySelection.add(spinner.getSelection());
+        });
+
+        fromFlutter(spinner, "Selection/Selection", 60);
+        runQueued();
+
+        assertThat(order).containsExactly("Modify", "Selection");
+        assertThat(valueSeenBySelection).containsExactly(60);
+    }
+
+    @Test
+    @DisplayName("each Selection from Flutter notifies the Selection listeners")
+    void everySelectionNotifies() {
+        Spinner spinner = spinner();
+        List<Integer> seen = new ArrayList<>();
+        spinner.addListener(SWT.Selection, e -> seen.add(spinner.getSelection()));
+
+        fromFlutter(spinner, "Selection/Selection", 1);
+        fromFlutter(spinner, "Selection/Selection", 2);
+        fromFlutter(spinner, "Selection/Selection", 3);
+        runQueued();
+
+        assertThat(seen).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    @DisplayName("a Selection from Flutter does not reach the DefaultSelection listeners")
+    void selectionDoesNotNotifyDefaultSelection() {
+        Spinner spinner = spinner();
+        List<Event> events = record(spinner, SWT.DefaultSelection);
+
+        fromFlutter(spinner, "Selection/Selection", 60);
+        runQueued();
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Selection that arrives after the spinner was disposed notifies nothing")
+    void selectionToADisposedSpinnerNotifiesNothing() {
+        Spinner spinner = spinner();
+        List<Event> events = record(spinner, SWT.Selection);
+
+        fromFlutter(spinner, "Selection/Selection", 60);
+        spinner.dispose();
+        runQueued();
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Modify listener that disposes the spinner ends the notification before Selection")
+    void selectionIsNotSentToASpinnerDisposedByItsModifyListener() {
+        Spinner spinner = spinner();
+        spinner.addListener(SWT.Modify, e -> spinner.dispose());
+        List<Event> events = record(spinner, SWT.Selection);
+
+        fromFlutter(spinner, "Selection/Selection", 60);
+        runQueued();
+
+        assertThat(spinner.isDisposed()).isTrue();
+        assertThat(events).isEmpty();
+    }
+
+    @Test
     @DisplayName("a Selection that arrives after the spinner was disposed is dropped")
     void selectionToADisposedSpinnerIsDropped() {
         Spinner spinner = spinner();
@@ -169,6 +242,69 @@ class SpinnerEventsFromFlutterNativeTest {
         assertThat(spinner.getSelection()).isEqualTo(60);
         assertThat(events).hasSize(1);
         assertThat(events.get(0).widget).isSameAs(spinner);
+    }
+
+    @Test
+    @DisplayName("a typed value committed with Enter notifies Selection once, before DefaultSelection, with the value moved")
+    void typedCommitNotifiesSelectionBeforeDefaultSelection() {
+        Spinner spinner = spinner();
+        List<String> order = new ArrayList<>();
+        List<Integer> valueSeenBySelection = new ArrayList<>();
+        spinner.addListener(SWT.Selection, e -> {
+            order.add("Selection");
+            valueSeenBySelection.add(spinner.getSelection());
+        });
+        spinner.addListener(SWT.DefaultSelection, e -> order.add("DefaultSelection"));
+
+        fromFlutter(spinner, "Selection/DefaultSelection", 60);
+        runQueued();
+
+        assertThat(order).containsExactly("Selection", "DefaultSelection");
+        assertThat(valueSeenBySelection).containsExactly(60);
+    }
+
+    @Test
+    @DisplayName("a Modify listener that disposes the spinner ends a typed commit before Selection and DefaultSelection")
+    void typedCommitStopsWhenTheModifyListenerDisposesTheSpinner() {
+        Spinner spinner = spinner();
+        spinner.addListener(SWT.Modify, e -> spinner.dispose());
+        List<Event> selections = record(spinner, SWT.Selection);
+        List<Event> defaults = record(spinner, SWT.DefaultSelection);
+
+        fromFlutter(spinner, "Selection/DefaultSelection", 60);
+        runQueued();
+
+        assertThat(selections).isEmpty();
+        assertThat(defaults).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Selection listener that disposes the spinner ends a typed commit before DefaultSelection")
+    void typedCommitStopsWhenTheSelectionListenerDisposesTheSpinner() {
+        Spinner spinner = spinner();
+        spinner.addListener(SWT.Selection, e -> spinner.dispose());
+        List<Event> defaults = record(spinner, SWT.DefaultSelection);
+
+        fromFlutter(spinner, "Selection/DefaultSelection", 60);
+        runQueued();
+
+        assertThat(spinner.isDisposed()).isTrue();
+        assertThat(defaults).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Enter on a value that did not change notifies DefaultSelection only")
+    void enterOnAnUnchangedValueNotifiesDefaultSelectionOnly() {
+        Spinner spinner = spinner();
+        spinner.setSelection(60);
+        List<Event> selections = record(spinner, SWT.Selection);
+        List<Event> defaults = record(spinner, SWT.DefaultSelection);
+
+        fromFlutter(spinner, "Selection/DefaultSelection", 60);
+        runQueued();
+
+        assertThat(selections).isEmpty();
+        assertThat(defaults).hasSize(1);
     }
 
     @Test
