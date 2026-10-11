@@ -484,11 +484,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void deselectAll() {
         checkWidget();
-        selectedIndex = -1;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            ComboHelper.syncReadOnlyText(this);
-            sendEvent(SWT.Modify);
-        }
+        ComboHelper.deselectAll(this);
     }
 
     @Override
@@ -708,10 +704,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getSelectionIndex() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-        }
-        return selectedIndex;
+        return ComboHelper.getSelectionIndex(this);
     }
 
     /**
@@ -1021,8 +1014,7 @@ public class DartCombo extends DartComposite implements ICombo {
             setText("", true);
         getValue().markDirty(VCombo.ITEMS);
         items = new String[0];
-        selectedIndex = -1;
-        ComboHelper.syncReadOnlyText(this);
+        ComboHelper.listEmptied(this);
         ignoreSelection = false;
     }
 
