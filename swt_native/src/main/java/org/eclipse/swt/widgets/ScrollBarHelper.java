@@ -17,6 +17,29 @@ public final class ScrollBarHelper {
     private ScrollBarHelper() {
     }
 
+    /** Whether {@code setVisible} changes this bar on the platform Evolve runs on. */
+    static boolean changesVisibility(DartScrollBar bar) {
+        bar.checkWidget();
+        Scrollable parent = bar.getParent();
+        return changesVisibility(SWT.getPlatform(), scrollsACanvas(parent));
+    }
+
+    /**
+     * On Cocoa only a parent that scrolls a canvas (Canvas, Composite, Shell) shows or hides its bars; the
+     * scroll view of a List, Text, Table or Tree keeps them. GTK and Win32 change the bars of any parent.
+     */
+    static boolean changesVisibility(String platform, boolean parentScrollsACanvas) {
+        return !"cocoa".equals(platform) || parentScrollsACanvas;
+    }
+
+    /**
+     * Cocoa's CANVAS state. Evolve gives it to every Composite, Table and Tree included, where Cocoa's Table
+     * and Tree create their own scroll view instead.
+     */
+    static boolean scrollsACanvas(Scrollable parent) {
+        return (parent.state & DartWidget.CANVAS) != 0 && !(parent instanceof Table) && !(parent instanceof Tree);
+    }
+
     public static Rectangle trackBounds(DartScrollBar bar) {
         Rectangle client = bar.getParent().getClientArea();
         Point size = bar.getSize();

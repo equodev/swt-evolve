@@ -732,6 +732,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setVisible(boolean visible) {
+        if (!ScrollBarHelper.changesVisibility(this))
+            return;
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
             getValue().markDirty(VScrollBar.VISIBLE);

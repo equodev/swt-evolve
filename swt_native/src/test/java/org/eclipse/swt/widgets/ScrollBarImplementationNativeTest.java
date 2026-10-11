@@ -71,4 +71,22 @@ class ScrollBarImplementationNativeTest {
         ScrollBar none = canvas(200, 0).getVerticalBar();
         assertThat(none.getThumbBounds()).isEqualTo(new Rectangle(200, 0, 17, 0));
     }
+
+    @Test
+    @DisplayName("only Cocoa keeps the bars of a parent that does not scroll a canvas")
+    void whichBarsSetVisibleChanges() {
+        assertThat(ScrollBarHelper.changesVisibility("cocoa", true)).isTrue();
+        assertThat(ScrollBarHelper.changesVisibility("cocoa", false)).isFalse();
+        assertThat(ScrollBarHelper.changesVisibility("gtk", false)).isTrue();
+        assertThat(ScrollBarHelper.changesVisibility("win32", false)).isTrue();
+    }
+
+    @Test
+    @DisplayName("a canvas or composite scrolls a canvas, a table or a tree does not")
+    void whichParentsScrollACanvas() {
+        Shell shell = canvas(200, 150).getShell();
+        assertThat(ScrollBarHelper.scrollsACanvas(new Composite(shell, SWT.V_SCROLL))).isTrue();
+        assertThat(ScrollBarHelper.scrollsACanvas(new Table(shell, SWT.V_SCROLL))).isFalse();
+        assertThat(ScrollBarHelper.scrollsACanvas(new Tree(shell, SWT.V_SCROLL))).isFalse();
+    }
 }
