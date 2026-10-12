@@ -2,6 +2,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.custom.StyledTextHelper;
 import org.eclipse.swt.widgets.DartMocks;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.AfterEach;
@@ -77,6 +78,26 @@ class TextLayoutLinesNativeTest {
         assertThat(mixed.getLineBounds(1).height).isEqualTo(plain.getLineBounds(1).height);
         assertThat(mixed.getLocation(10, false).y).isEqualTo(mixed.getLineBounds(1).y);
         assertThat(mixed.getBounds().height).isEqualTo(bigOnly.getBounds().height + plain.getLineBounds(1).height);
+    }
+
+    @Test
+    void aLineIsAsHighAsStyledTextEstimatesItForAFamilyWithoutMetrics() {
+        for (int size = 6; size <= 48; size++) {
+            Font font = new DartFont(display, "NoSuchFamily", size, SWT.NORMAL, null).getApi();
+            Font big = new DartFont(display, "NoSuchFamily", size * 2, SWT.NORMAL, null).getApi();
+            Font little = new DartFont(display, "NoSuchFamily", Math.max(1, size / 2), SWT.NORMAL, null).getApi();
+            TextLayout single = layout("a");
+            single.setFont(font);
+            assertThat(single.getBounds().height).as("one run at %d", size).isEqualTo(StyledTextHelper.computeLineHeight(font));
+            TextLayout bigOnly = layout("a");
+            bigOnly.setFont(big);
+            TextLayout mixed = layout("abc");
+            mixed.setFont(font);
+            mixed.setStyle(new TextStyle(big, null, null), 0, 0);
+            mixed.setStyle(new TextStyle(little, null, null), 1, 1);
+            assertThat(mixed.getLineBounds(0).height).as("a line with a big and a little run at %d", size)
+                    .isEqualTo(bigOnly.getBounds().height).isEqualTo(StyledTextHelper.computeLineHeight(big));
+        }
     }
 
     @Test
@@ -182,7 +203,8 @@ class TextLayoutLinesNativeTest {
         String text = "aa bb cc dd ee ff gg hh ii";
         TextLayout plain = layout(text);
         TextLayout justified = layout(text);
-        int wrap = width("aa bb cc dd") + 20;
+        // Half-way to the next word: it stays on the second line and the first keeps room to stretch.
+        int wrap = (width("aa bb cc dd") + width("aa bb cc dd ee")) / 2;
         plain.setWidth(wrap);
         justified.setWidth(wrap);
         justified.setJustify(true);

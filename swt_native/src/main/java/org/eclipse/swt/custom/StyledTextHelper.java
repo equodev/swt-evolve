@@ -1460,8 +1460,10 @@ public class StyledTextHelper {
         }
 
         if (metrics == null) {
+            // The descent is what the ascent leaves of computeLineHeight's line, so a line laid out from
+            // these metrics is as high as the line height StyledText estimates for the same font.
             int defaultAscent = (int) Math.round(fontSizePixels * 1.1);
-            int defaultDescent = (int) Math.round(fontSizePixels * 0.25);
+            int defaultDescent = (int) Math.round(fontSizePixels * 1.35) - defaultAscent;
             int defaultAvgCharWidth = (int) Math.round(fontSizePixels * 0.5);
             return new RendererFontMetrics(defaultAscent, defaultDescent, defaultAvgCharWidth,
                     defaultAvgCharWidth * tabLength);
