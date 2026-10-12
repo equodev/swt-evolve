@@ -205,10 +205,9 @@ public final class FontMetricsUtil {
     public static int[] computeFontMetrics(Font font) {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
-        Metrics m = metrics(getId(fd));
         // The same fallback text is measured with (lineHeight, measureLine), so a line's extent and
         // the font's height agree for a family without metrics of its own.
-        if (m == null) m = metrics("System-0-3");
+        Metrics m = measuredMetrics(getId(fd));
         if (m == null) m = metrics("Verdana-0-3");
         if (m == null) return null;
         Display display = Display.getCurrent();
@@ -372,17 +371,30 @@ public final class FontMetricsUtil {
         return new PointD(w, h);
     }
 
-    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+    /**
+     * The metrics text in {@code fontId} is measured with. Flutter paints a family it has no face
+     * for in the default face, at the weight and slant asked for, so such a family is measured as
+     * the "System" entry of the same style: measuring a bold run with regular advances would leave
+     * it narrower than it is painted, and whatever follows it would be drawn over its tail.
+     */
+    private static Metrics measuredMetrics(String fontId) {
         Metrics metrics = metrics(fontId);
+        if (metrics == null) {
+            int styleAt = fontId.lastIndexOf('-', fontId.lastIndexOf('-') - 1);
+            if (styleAt >= 0) metrics = metrics("System" + fontId.substring(styleAt));
+        }
         if (metrics == null) metrics = metrics("System-0-3");
+        return metrics;
+    }
+
+    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+        Metrics metrics = measuredMetrics(fontId);
         if (metrics == null) return fontSize;
         return fontHeight != 0 ? fontHeight * fontSize : metrics.height() * fontSize;
     }
 
     private static double measureLine(String text, String fontId, int fontSize) {
-        Metrics metrics = metrics(fontId);
-        if (metrics == null)
-            metrics = metrics("System-0-3");
+        Metrics metrics = measuredMetrics(fontId);
         if (metrics == null)
             return 0;
 
