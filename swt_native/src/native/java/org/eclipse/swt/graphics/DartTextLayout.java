@@ -2210,9 +2210,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             left = span[0];
             right = e >= le ? Math.max(span[1], lineRight) : span[1];
         }
-        int x = (int) Math.floor(left + 0.001);
         int height = _lineHeight[line] + (line < _lines.length - 2 ? getSpacing() : 0);
-        return new Rectangle(x, _lineTop[line], Math.max(0, (int) Math.ceil(right - 0.001) - x), height);
+        return new Rectangle((int) Math.round(left), _lineTop[line], Math.max(0, (int) Math.ceil(right - left - 0.001)), height);
     }
 
     double[][] _boxes(int line) {

@@ -1428,13 +1428,6 @@ public class StyledTextHelper {
             this.averageCharWidth = averageCharWidth;
             this.tabWidth = tabWidth;
         }
-
-        /**
-         * Returns the line height (ascent + descent).
-         */
-        public int getLineHeight() {
-            return ascent + descent;
-        }
     }
 
     /**
