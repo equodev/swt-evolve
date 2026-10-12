@@ -799,6 +799,10 @@ public class DartTracker extends DartWidget implements ITracker {
 
     private boolean pointerSeen;
 
+    private Display keysDisplay;
+
+    private ControlHelper.KeyCapture keysBefore;
+
     private DartWidget flutterHost() {
         if (parent == null || parent.isDisposed())
             return null;
@@ -815,6 +819,8 @@ public class DartTracker extends DartWidget implements ITracker {
 
     void openOnFlutter() {
         pointerSeen = false;
+        keysDisplay = display;
+        keysBefore = ControlHelper.captureKeys(display, this::key);
         DartWidget host = flutterHost();
         if (host == null)
             return;
@@ -857,6 +863,10 @@ public class DartTracker extends DartWidget implements ITracker {
     }
 
     void closeOnFlutter() {
+        if (keysDisplay != null)
+            ControlHelper.captureKeys(keysDisplay, keysBefore);
+        keysDisplay = null;
+        keysBefore = null;
         DartWidget host = flutterHost();
         if (host == null)
             return;
@@ -902,6 +912,72 @@ public class DartTracker extends DartWidget implements ITracker {
         }
         oldX = newX;
         oldY = newY;
+    }
+
+    boolean key(int type, Event event) {
+        if (!tracking || isDisposed())
+            return false;
+        event.doit = true;
+        if (!sendKeyEvent(type, event))
+            return true;
+        if (type == SWT.KeyUp && !"cocoa".equals(SWT.getPlatform()))
+            return true;
+        int stepSize = (event.stateMask & SWT.CTRL) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
+        int xChange = 0, yChange = 0;
+        switch(event.keyCode) {
+            case SWT.ESC:
+                cancelled = true;
+                tracking = false;
+                break;
+            case SWT.KEYPAD_CR:
+            case SWT.CR:
+                tracking = false;
+                break;
+            case SWT.ARROW_LEFT:
+                xChange = -stepSize;
+                break;
+            case SWT.ARROW_RIGHT:
+                xChange = stepSize;
+                break;
+            case SWT.ARROW_UP:
+                yChange = -stepSize;
+                break;
+            case SWT.ARROW_DOWN:
+                yChange = stepSize;
+                break;
+        }
+        if (xChange == 0 && yChange == 0)
+            return true;
+        Event moved = new Event();
+        moved.x = oldX + xChange;
+        moved.y = oldY + yChange;
+        Point cursorPos;
+        if ((getApi().style & SWT.RESIZE) != 0) {
+            resizeRectangles(xChange, yChange);
+            inEvent = true;
+            sendEvent(SWT.Resize, moved);
+            inEvent = false;
+            if (isDisposed()) {
+                cancelled = true;
+                return true;
+            }
+            cursorPos = adjustResizeCursor(true);
+        } else {
+            moveRectangles(xChange, yChange);
+            inEvent = true;
+            sendEvent(SWT.Move, moved);
+            inEvent = false;
+            if (isDisposed()) {
+                cancelled = true;
+                return true;
+            }
+            cursorPos = adjustMoveCursor();
+        }
+        if (cursorPos != null) {
+            oldX = cursorPos.x;
+            oldY = cursorPos.y;
+        }
+        return true;
     }
 
     @Override

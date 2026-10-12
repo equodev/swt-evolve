@@ -192,6 +192,126 @@ class TrackerLoopFlutterTest {
         assertThat(open(tracker, () -> release(tracker))).as("the next open() starts afresh").isTrue();
     }
 
+    // ---- the keyboard -------------------------------------------------------------------------------
+
+    @Test
+    void escapeCancelsAndTheKeyGoesToTheTrackerAlone() {
+        Text focused = new Text(shell, SWT.SINGLE);
+        web.setFocus((DartControl) focused.getImpl());
+        List<Integer> focusedHeard = new ArrayList<>();
+        focused.addListener(SWT.KeyDown, e -> focusedHeard.add(e.keyCode));
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        List<Integer> trackerHeard = new ArrayList<>();
+        tracker.addListener(SWT.KeyDown, e -> trackerHeard.add(e.keyCode));
+
+        boolean ended = open(tracker, () -> display.post(key(SWT.KeyDown, SWT.ESC, 0)));
+
+        assertThat(ended).isFalse();
+        assertThat(trackerHeard).containsExactly((int) SWT.ESC);
+        assertThat(focusedHeard).isEmpty();
+        display.post(key(SWT.KeyDown, 'a', 0));
+        while (display.readAndDispatch()) {
+        }
+        assertThat(focusedHeard).as("the keys go back to the focus once the loop is over").containsExactly(Integer.valueOf('a'));
+    }
+
+    @Test
+    void returnAndTheKeypadEnterEndTheLoop() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        List<Integer> trackerHeard = new ArrayList<>();
+        tracker.addListener(SWT.KeyDown, e -> trackerHeard.add(e.keyCode));
+        assertThat(open(tracker, () -> display.post(key(SWT.KeyDown, SWT.CR, 0)))).isTrue();
+        assertThat(open(tracker, () -> display.post(key(SWT.KeyDown, SWT.KEYPAD_CR, 0)))).isTrue();
+        assertThat(trackerHeard).containsExactly((int) SWT.CR, SWT.KEYPAD_CR);
+    }
+
+    @Test
+    void aKeyAListenerVetoesDoesNothing() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.addListener(SWT.KeyDown, e -> e.doit = e.keyCode != SWT.ESC);
+
+        boolean ended = open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ESC, 0));
+            display.asyncExec(() -> release(tracker));
+        });
+
+        assertThat(ended).isTrue();
+    }
+
+    @Test
+    void anArrowStepsTheRectanglesNineOrOneWithControl() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        listen(tracker);
+        Point anchor = shell.toDisplay(20, 10);
+        // Cocoa acts on an arrow's release as well as on its press.
+        int steps = "cocoa".equals(SWT.getPlatform()) ? 2 : 1;
+
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
+            display.post(key(SWT.KeyUp, SWT.ARROW_RIGHT, 0));
+            display.post(key(SWT.KeyDown, SWT.ARROW_DOWN, SWT.CTRL));
+            display.asyncExec(() -> release(tracker));
+        });
+
+        int x = 10 + 9 * steps;
+        assertThat(heard.get(0)).isEqualTo("Move " + (anchor.x + 9) + "," + anchor.y + " " + rects(new Rectangle(19, 10, 20, 20)));
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(x, 11, 20, 20));
+    }
+
+    @Test
+    void anArrowResizesAResizeTracker() {
+        Tracker tracker = new Tracker(shell, SWT.RESIZE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        listen(tracker);
+
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ARROW_LEFT, SWT.CTRL));
+            display.asyncExec(() -> release(tracker));
+        });
+
+        assertThat(heard).hasSize(1);
+        assertThat(heard.get(0)).startsWith("Resize ").endsWith(rects(new Rectangle(9, 10, 21, 20)));
+    }
+
+    @Test
+    void aKeyFromTheFocusedControlsOwnChannelGoesToTheTracker() {
+        Text focused = new Text(shell, SWT.SINGLE);
+        web.setFocus((DartControl) focused.getImpl());
+        List<Integer> focusedHeard = new ArrayList<>();
+        focused.addListener(SWT.KeyDown, e -> focusedHeard.add(e.keyCode));
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+
+        boolean ended = open(tracker, () -> web.comm.fireContaining("/" + focused.hashCode() + "/Key/KeyDown",
+                key(SWT.KeyDown, SWT.ESC, 0)));
+
+        assertThat(ended).isFalse();
+        assertThat(focusedHeard).isEmpty();
+    }
+
+    @Test
+    void aKeyFromTheDisplayChannelGoesToTheTrackerAndTheFocusIsToldNo() {
+        web.registerDisplayKeyEvents((DartDisplay) display.getImpl());
+        Text focused = new Text(shell, SWT.SINGLE);
+        web.setFocus((DartControl) focused.getImpl());
+        focused.addListener(SWT.KeyDown, e -> {
+        });
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        List<Integer> trackerHeard = new ArrayList<>();
+        tracker.addListener(SWT.KeyUp, e -> trackerHeard.add(e.keyCode));
+        long displayId = display.hashCode();
+
+        boolean ended = open(tracker, () -> {
+            web.comm.fireContaining("Display/" + displayId + "/Key/KeyUp", key(SWT.KeyUp, 'x', 0));
+            web.comm.fireContaining("Display/" + displayId + "/Key/KeyDown", key(SWT.KeyDown, SWT.CR, 0));
+        });
+
+        assertThat(ended).isTrue();
+        assertThat(trackerHeard).containsExactly(Integer.valueOf('x'));
+        assertThat(web.comm.sent.stream().anyMatch(f -> f.event.contains("/" + focused.hashCode() + "/key/verdict")
+                && f.json.contains("false"))).isTrue();
+    }
+
     /** See {@code ControlFocusRequestFlutterTest.install} — a Display whose bridge is the test bridge. */
     private <B extends DisplayBridge> B install(Function<DartDisplay, B> factory) {
         FlutterBridge.set(new NoopBridge());

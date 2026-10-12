@@ -309,7 +309,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.isDisposed())
                 return;
             Control focus = api.getFocusControl();
-            if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl))
+            boolean dartFocus = focus != null && !focus.isDisposed() && focus.getImpl() instanceof DartControl;
+            if (ControlHelper.capturedKey(api, type, ev)) {
+                // The focus control's client holds the keystroke for a verdict it would otherwise get below.
+                if (dartFocus && type == org.eclipse.swt.SWT.KeyDown && focus.isListening(org.eclipse.swt.SWT.KeyDown)
+                        && !ControlHelper.isModifierKey(ev.keyCode))
+                    dev.equo.swt.FlutterBridge.send((DartControl) focus.getImpl(), "key/verdict", dev.equo.swt.Java8.map("doit", false));
+                return;
+            }
+            if (!dartFocus)
                 return;
             DartControl dc = (DartControl) focus.getImpl();
             if (type == org.eclipse.swt.SWT.KeyDown) {
