@@ -253,6 +253,44 @@ class TrackerLoopFlutterTest {
         assertThat(tracker.getRectangles()).containsExactly(new Rectangle(10, 25, 20, 9), new Rectangle(10, 34, 20, 4));
     }
 
+    @Test
+    void aSingleRectangleFlipsWithoutProportionsToMirror() {
+        Tracker tracker = new Tracker(shell, SWT.RESIZE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+
+        open(tracker, () -> {
+            pointer(tracker, 100, 100);
+            pointer(tracker, 95, 95);
+            display.asyncExec(() -> {
+                Point corner = shell.toDisplay(5, 5);
+                pointer(tracker, corner.x + 40, corner.y + 40);
+                display.asyncExec(() -> {
+                    Point other = shell.toDisplay(40, 40);
+                    pointer(tracker, other.x - 20, other.y - 20);
+                    release(tracker);
+                });
+            });
+        });
+
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(20, 20, 10, 10));
+    }
+
+    @Test
+    void aCursorSetWhileResizingReplacesTheResizeCursor() {
+        Tracker tracker = new Tracker(shell, SWT.RESIZE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        tracker.addListener(SWT.Resize, e -> tracker.setCursor(display.getSystemCursor(SWT.CURSOR_HAND)));
+
+        boolean ended = open(tracker, () -> {
+            pointer(tracker, 100, 100);
+            pointer(tracker, 104, 100);
+            display.timerExec(50, () -> release(tracker));
+        });
+
+        assertThat(ended).isTrue();
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(10, 10, 24, 20));
+    }
+
     /** A Tracker resizing one way only starts on that edge, and does not flip past the opposite one. */
     @Test
     void aOneWayResizeTrackerDoesNotFlip() {
@@ -352,14 +390,45 @@ class TrackerLoopFlutterTest {
     @Test
     void aTrackerDisposedDuringTheLoopEndsIt() {
         Tracker tracker = new Tracker(shell, SWT.NONE);
+        listen(tracker);
 
         boolean ended = open(tracker, () -> {
-            tracker.dispose();
+            pointer(tracker, 100, 100);
             release(tracker);
+            client(tracker, "Tracker/cancel", new Event());
+            tracker.dispose();
         });
 
-        assertThat(ended).isTrue();
+        assertThat(ended).as("ended unless cancelled, as upstream ends it at the release").isTrue();
+        assertThat(heard).as("what the client sent before the dispose is dropped").isEmpty();
         assertThat(sentToShell("Tracker/close")).isTrue();
+    }
+
+    /** The keys queued after the one that ends or disposes the tracker are the focus control's again. */
+    @Test
+    void theKeysAfterTheOneThatEndsTheTrackerGoToTheFocus() {
+        Text focused = new Text(shell, SWT.SINGLE);
+        web.setFocus((DartControl) focused.getImpl());
+        List<Integer> focusedHeard = new ArrayList<>();
+        focused.addListener(SWT.KeyDown, e -> focusedHeard.add(e.keyCode));
+        for (int ending : new int[] {SWT.ESC, 'd'}) {
+            focusedHeard.clear();
+            Tracker tracker = new Tracker(shell, SWT.NONE);
+            tracker.addListener(SWT.KeyDown, e -> {
+                if (e.keyCode == 'd')
+                    tracker.dispose();
+            });
+            open(tracker, () -> {
+                display.post(key(SWT.KeyDown, 'c', 0));
+                display.post(key(SWT.KeyDown, ending, 0));
+                display.post(key(SWT.KeyDown, 'b', 0));
+            });
+            while (display.readAndDispatch()) {
+            }
+            assertThat(focusedHeard).as("ended by " + ending).containsExactly(Integer.valueOf('b'));
+            if (!tracker.isDisposed())
+                tracker.dispose();
+        }
     }
 
     @Test
@@ -424,26 +493,33 @@ class TrackerLoopFlutterTest {
     }
 
     @Test
-    void aTrackerOnTheDisplayFollowsTheActiveShellAndSkipsHiddenOnes() {
-        Shell hidden = new Shell(display);
+    void aTrackerOnTheDisplayFollowsTheActiveShell() {
         Shell other = new Shell(display);
         other.setBounds(0, 0, 200, 200);
         other.open();
-        shell.setVisible(false);
         Tracker tracker = new Tracker(display, SWT.NONE);
         open(tracker, () -> release(tracker));
-        String otherChannel = "/" + other.hashCode() + "/Tracker/open";
-        assertThat(web.comm.sent.stream().anyMatch(f -> f.event.contains(otherChannel))).isTrue();
+        Shell active = display.getActiveShell();
+        assertThat(active).isNotNull();
+        String channel = "/" + active.hashCode() + "/Tracker/open";
+        assertThat(web.comm.sent.stream().anyMatch(f -> f.event.contains(channel))).isTrue();
+        tracker.dispose();
+    }
 
-        shell.setVisible(true);
-        web.comm.fireContaining("/" + shell.hashCode() + "/Shell/Activate", new Event());
-        while (display.readAndDispatch()) {
-        }
-        if (display.getActiveShell() == shell) {
-            open(tracker, () -> release(tracker));
-            assertThat(sentToShell("Tracker/open")).isTrue();
-        }
-        assertThat(hidden.isVisible()).isFalse();
+    /** A Shell that takes no focus is never the active one, but the pointer is still seen over it. */
+    @Test
+    void aTrackerOnTheDisplayWithNoActiveShellFollowsAVisibleOne() {
+        shell.setVisible(false);
+        Shell noFocus = new Shell(display, SWT.NO_FOCUS);
+        noFocus.setBounds(0, 0, 200, 200);
+        noFocus.setVisible(true);
+        assertThat(display.getActiveShell()).isNull();
+        Tracker tracker = new Tracker(display, SWT.NONE);
+
+        open(tracker, () -> release(tracker));
+
+        String channel = "/" + noFocus.hashCode() + "/Tracker/open";
+        assertThat(web.comm.sent.stream().anyMatch(f -> f.event.contains(channel))).isTrue();
         tracker.dispose();
     }
 
