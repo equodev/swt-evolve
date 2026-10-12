@@ -318,6 +318,8 @@ sourceSets {
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
             if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            // BusyIndicator.showWhile(Future) was added in 3.127.
+            if (swtMinorNative < 127) exclude("org/eclipse/swt/custom/BusyIndicatorFutureNativeTest.java")
             // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.
