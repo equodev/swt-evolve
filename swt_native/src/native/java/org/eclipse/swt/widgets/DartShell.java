@@ -547,7 +547,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public Control findBackgroundControl() {
-        return null;
+        return _background != null || backgroundImage != null ? this.getApi() : null;
     }
 
     @Override

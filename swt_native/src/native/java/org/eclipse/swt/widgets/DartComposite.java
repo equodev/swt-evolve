@@ -218,10 +218,9 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        Control control = findBackgroundControl();
-        if (control != null) {
-        } else {
-        }
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        CompositeHelper.fillBackground(this, gc, x, y, width, height, offsetX, offsetY);
     }
 
     public Composite findDeferredControl() {

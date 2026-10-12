@@ -834,6 +834,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     public Control findBackgroundControl() {
+        if (_background != null || backgroundImage != null)
+            return this.getApi();
+        if (parent == null || (getApi().state & PARENT_BACKGROUND) == 0)
+            return null;
+        if ("cocoa".equals(SWT.getPlatform()) && isTransparent())
+            return null;
         return parent.getImpl().findBackgroundControl();
     }
 
@@ -1673,6 +1679,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     public boolean isTransparent() {
+        if (_background != null)
+            return false;
         return parent.getImpl().isTransparent();
     }
 
@@ -2627,10 +2635,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         boolean sizeChanged = resize && (this.bounds.width != newValue.width || this.bounds.height != newValue.height);
+        boolean positionChanged = move && (this.bounds.x != newValue.x || this.bounds.y != newValue.y);
         laidOut = true;
         this.bounds = newValue;
         getBridge().setBounds(this, bounds);
-        if (sizeChanged) {
+        if (positionChanged)
+            moved();
+        if (sizeChanged && !isDisposed()) {
             resized();
             ControlHelper.markDamaged(this);
         }

@@ -702,6 +702,7 @@ public class Sizes {
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
         // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
         if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
+        if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.computeTrim((DartComposite) widget, x, y, width, height);
         return new Rectangle(x, y, width, height);
     }
 
@@ -974,6 +975,7 @@ public class Sizes {
         // A CoolBar inherits this method rather than declaring its own, so the call that reaches
         // here was resolved against DartScrollable and has to be handed to the bar's overload.
         if (widget instanceof DartCoolBar) return getClientArea((DartCoolBar) widget);
+        if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.getClientArea((DartComposite) widget);
         Rectangle b = widget.getBounds();
         int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;

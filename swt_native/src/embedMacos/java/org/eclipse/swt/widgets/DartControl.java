@@ -2670,9 +2670,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         boolean sizeChanged = resize && (this.bounds.width != newValue.width || this.bounds.height != newValue.height);
+        boolean positionChanged = move && (this.bounds.x != newValue.x || this.bounds.y != newValue.y);
         this.bounds = newValue;
         getBridge().setBounds(this, bounds);
-        if (sizeChanged) {
+        if (positionChanged)
+            moved();
+        if (sizeChanged && !isDisposed()) {
             resized();
             ControlHelper.markDamaged(this);
         }

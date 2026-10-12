@@ -229,6 +229,8 @@ public class DartCanvas extends DartComposite implements ICanvas {
             return;
         if (!isDrawing())
             return;
+        if (!CanvasHelper.scrolls(this.getApi(), SWT.getPlatform()))
+            return;
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)
             ((DartCaret) caret.getImpl()).killFocus();
@@ -363,7 +365,8 @@ public class DartCanvas extends DartComposite implements ICanvas {
 
     @Override
     Color defaultBackground() {
-        return ((DartDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
+        int id = Config.getConfigFlags().use_swt_colors ? SWT.COLOR_WIDGET_BACKGROUND : SWT.COLOR_LIST_BACKGROUND;
+        return ((DartDisplay) display.getImpl()).getWidgetColor(id);
     }
 
     protected void _hookEvents() {
