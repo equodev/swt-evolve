@@ -476,6 +476,7 @@ public class DartCaret extends DartWidget implements ICaret {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.image = image;
+        getValue().markDirty(VCaret.IMAGE);
         getValue().markDirty(VCaret.BOUNDS);
         if (isVisible && hasFocus())
             resize();

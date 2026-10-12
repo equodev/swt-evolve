@@ -433,6 +433,7 @@ public class DartCaret extends DartWidget implements ICaret {
         if (isFocus && isVisible)
             hideCaret();
         this.image = image;
+        getValue().markDirty(VCaret.IMAGE);
         getValue().markDirty(VCaret.BOUNDS);
         if (isFocus && isVisible)
             showCaret();

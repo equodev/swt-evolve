@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,6 +64,31 @@ class CaretImplementationNativeTest {
         impl.killFocus();
         assertThat(value.getFocused()).isFalse();
         assertThat(value.changedKeys()).contains(VCaret.FOCUSED);
+    }
+
+    @Test
+    @DisplayName("the value carries the image the caret draws instead of a bar, and its size as the bounds")
+    void theValueCarriesTheImage() {
+        Canvas canvas = new Canvas(shell, SWT.NONE);
+        Caret caret = new Caret(canvas, SWT.NONE);
+        caret.setBounds(30, 12, 2, 18);
+        DartCaret impl = (DartCaret) caret.getImpl();
+        VCaret value = impl.getValue();
+        assertThat(value.getImage()).isNull();
+
+        value.clearDirty();
+        Image image = new Image(shell.getDisplay(), 6, 14);
+        caret.setImage(image);
+        assertThat(value.getImage()).isNotNull();
+        assertThat(value.getBounds().width).isEqualTo(6);
+        assertThat(value.getBounds().height).isEqualTo(14);
+        assertThat(value.changedKeys()).contains(VCaret.IMAGE, VCaret.BOUNDS);
+
+        value.clearDirty();
+        caret.setImage(null);
+        assertThat(value.getImage()).isNull();
+        assertThat(value.changedKeys()).contains(VCaret.IMAGE);
+        image.dispose();
     }
 
     @Test

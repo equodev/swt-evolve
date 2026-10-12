@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../gen/widget.dart';
 import '../impl/caret_evolve.dart';
@@ -24,6 +25,7 @@ class VCaret extends VWidget {
   bool? visible;
 
   VRectangle? bounds;
+  VImage? image;
   bool? focused;
   int? blinkRate;
 
@@ -33,6 +35,7 @@ class VCaret extends VWidget {
     if (other is VCaret) {
       visible = other.visible;
       bounds = other.bounds;
+      image = other.image;
       focused = other.focused;
       blinkRate = other.blinkRate;
     }
@@ -47,6 +50,10 @@ class VCaret extends VWidget {
         bounds = json['bounds'] == null
             ? null
             : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>);
+      case 'image':
+        image = json['image'] == null
+            ? null
+            : VImage.fromJson(json['image'] as Map<String, dynamic>);
       case 'focused':
         focused = json['focused'] as bool?;
       case 'blinkRate':

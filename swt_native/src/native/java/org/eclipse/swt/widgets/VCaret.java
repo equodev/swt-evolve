@@ -28,18 +28,6 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).font = value;
     }
 
-    @JsonAttribute(ignore = true)
-    public Image getImage() {
-        Image val = ((DartCaret) impl).image;
-        if (val != null && !(val.getImpl() instanceof DartImage))
-            return null;
-        return val;
-    }
-
-    public void setImage(Image value) {
-        ((DartCaret) impl).image = value;
-    }
-
     @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartCaret) impl).getVisible();
@@ -54,6 +42,13 @@ public class VCaret extends VWidget {
     }
 
     public void setBounds(Rectangle value) {
+    }
+
+    public Image getImage() {
+        return ((DartCaret) impl).image;
+    }
+
+    public void setImage(Image value) {
     }
 
     public boolean getFocused() {
@@ -76,6 +71,8 @@ public class VCaret extends VWidget {
 
     public static final String FOCUSED = "focused";
 
+    public static final String IMAGE = "image";
+
     public static final String VISIBLE = "visible";
 
     @Override
@@ -86,6 +83,9 @@ public class VCaret extends VWidget {
                 return;
             case "bounds":
                 Serializer.writeKeyValue(writer, "bounds", getBounds());
+                return;
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
                 return;
             case "focused":
                 Serializer.writeKeyValue(writer, "focused", getFocused());
