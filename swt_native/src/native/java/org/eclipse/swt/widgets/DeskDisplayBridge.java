@@ -552,6 +552,8 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void destroy(DartWidget control) {
         super.destroy(control);
+        if (control instanceof DartShell)
+            showWindowForItsShells();
         if (closingOnRequest && control instanceof DartShell && hasNativeWindow()
                 && forDisplay != null && mainShell(forDisplay) == null) {
             disposeNativeWindow();
@@ -632,7 +634,35 @@ public class DeskDisplayBridge extends DisplayBridge {
                 ((Shell) ((DartShell) control).getApi()).layout(true, true);
             }
             sendDisplayUpdate(forDisplay);
+            showWindowForItsShells();
         }
+    }
+
+    /** Set while the Display's window is kept off screen for a splash its own window draws. */
+    private boolean hiddenForSplash;
+
+    /**
+     * Keeps the Display's window off screen while the only top-level shells showing are drawn by
+     * windows of their own: the launcher's splash during startup, which the user then sees as it is
+     * rather than an empty window, or the splash stretched across it.
+     */
+    void showWindowForItsShells() {
+        if (!hasNativeWindow() || forDisplay == null)
+            return;
+        boolean splash = false, other = false;
+        for (Shell shell : forDisplay._shells()) {
+            if (shell == null || shell.isDisposed() || shell.getParent() != null || !shell.getVisible())
+                continue;
+            if (NativeWindowShells.drawnByItsOwnWindow(shell))
+                splash = true;
+            else
+                other = true;
+        }
+        boolean hide = splash && !other;
+        if (hide == hiddenForSplash)
+            return;
+        hiddenForSplash = hide;
+        setShellWindowVisible(windowContext, !hide);
     }
 
     /** Whether a live native top-level window backs this Display (false in headless tests, and once

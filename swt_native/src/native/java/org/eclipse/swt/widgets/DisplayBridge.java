@@ -564,6 +564,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (shell.getParent() != null) {
             return false;
         }
+        // The launcher's splash is on screen in its own window; it is never the application's main shell.
+        if (NativeWindowShells.drawnByItsOwnWindow(shell)) {
+            return false;
+        }
         String text = shell.getText();
         if (text != null && text.contains("limbo")) {
             return false;
@@ -875,12 +879,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * The shells the client must leave out of the Display's own window because each is drawn in a
      * window of its own. Null when there are none, so the common frame is unchanged.
      */
-    private long[] windowedShellIds() {
-        if (shellWindows.isEmpty()) return null;
-        long[] ids = new long[shellWindows.size()];
+    long[] windowedShellIds() {
+        java.util.List<Shell> windowed = new java.util.ArrayList<>(shellWindows.keySet());
+        if (forDisplay != null) {
+            for (Shell shell : forDisplay._shells()) {
+                if (NativeWindowShells.drawnByItsOwnWindow(shell)) windowed.add(shell);
+            }
+        }
+        long[] ids = new long[windowed.size()];
         int n = 0;
-        for (Shell shell : shellWindows.keySet()) {
-            if (!shell.isDisposed() && shell.getVisible()) ids[n++] = shell.hashCode();
+        for (Shell shell : windowed) {
+            if (shell != null && !shell.isDisposed() && shell.getVisible()) ids[n++] = shell.hashCode();
         }
         if (n == 0) return null;
         return n == ids.length ? ids : java.util.Arrays.copyOf(ids, n);
