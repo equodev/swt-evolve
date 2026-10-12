@@ -45,6 +45,10 @@ class Win32Window {
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
 
+  // Keeps the window off screen until called again with false. Java hides a window before
+  // Flutter's first frame, and the show that follows that frame must not bring it back.
+  void SetHiddenByRequest(bool hidden);
+
   // Release OS resources associated with window.
   void Destroy();
 
@@ -122,6 +126,8 @@ class Win32Window {
   bool close_requested_ = false;
 
   bool headless_ = false;
+
+  bool hidden_by_request_ = false;
 
   // True for the desktop-native Display window, whose title bar is drawn by Flutter (CSD).
   bool frameless_ = false;

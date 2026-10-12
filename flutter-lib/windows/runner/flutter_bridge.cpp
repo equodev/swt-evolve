@@ -369,6 +369,8 @@ JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv* env,
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return;
+    // Remembered, so the show that follows Flutter's first frame leaves a hidden window hidden.
+    s->window->SetHiddenByRequest(!visible);
     HWND hwnd = s->window->GetHandle();
     if (!hwnd) return;
     // Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding

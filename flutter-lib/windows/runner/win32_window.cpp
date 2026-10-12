@@ -200,11 +200,15 @@ void Win32Window::SetFrameless(bool frameless) {
 }
 
 bool Win32Window::Show() {
-  // Don't show window in headless mode
-  if (headless_) {
+  // Don't show window in headless mode, or one Java asked to keep hidden
+  if (headless_ || hidden_by_request_) {
     return true;
   }
   return ShowWindow(window_handle_, SW_SHOWNORMAL);
+}
+
+void Win32Window::SetHiddenByRequest(bool hidden) {
+  hidden_by_request_ = hidden;
 }
 
 // static
