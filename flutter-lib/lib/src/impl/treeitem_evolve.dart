@@ -69,11 +69,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       state: parentTreeValue,
       dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
       onDragStarted: () {
-        ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+        // A drag carries the selection: starting one on a selected row keeps the rows selected
+        // with it, and only a row outside the selection replaces it.
+        if (treeImpl == null || treeImpl.isItemSelected(state.id)) return;
+        treeImpl.handleTreeItemSelection(state.id, notifyJava: false);
         final e = _createEvent();
         e.count = 1;
         e.button = 1;
-        parentTree.sendSelectionSelection(parentTreeValue, e);
+        parentTree.sendSelectionSelection(parentTreeValue, treeImpl.withSelection(e));
       },
     );
   }
@@ -155,6 +158,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return e;
   }
 
+  VEvent _withSelection(VEvent e) => _context?.treeImpl?.withSelection(e) ?? e;
+
   void _secondaryActivate({required int button}) {
     final bool enabled = _context?.parentTreeValue.enabled ?? true;
     final bool selected =
@@ -167,7 +172,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       e.button = button;
       _context?.parentTree.sendSelectionSelection(
         _context!.parentTreeValue,
-        e,
+        _withSelection(e),
       );
     }
     if (_lastTapGlobalPosition != null) {
@@ -668,7 +673,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             final e = _createEvent(detail: SWT.CHECK);
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
-              e,
+              _withSelection(e),
             );
           },
         ),
@@ -741,10 +746,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             width: widgetTheme.rowSeparatorWidthWithCols,
           )
         : BorderSide.none;
-    final selectedSide = BorderSide(
-      color: widgetTheme.itemSelectedBorderColor,
-      width: widgetTheme.itemSelectedBorderWidth,
-    );
+    // A side that paints nothing is left out: Flutter cannot draw a hairline (width 0) side on a
+    // rounded row whose sides differ, which a selected row with a selected row below it has.
+    final selectedSide = widgetTheme.itemSelectedBorderColor.a == 0
+        ? BorderSide.none
+        : BorderSide(
+            color: widgetTheme.itemSelectedBorderColor,
+            width: widgetTheme.itemSelectedBorderWidth,
+          );
     if (selected) {
       return Border(
         left: selectedSide,
@@ -866,9 +875,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             // until the next keystroke and turns every plain click into a toggle click.
             final keyboard = HardwareKeyboard.instance;
             final isControlPressed = keyboard.isControlPressed;
+            final macOS = defaultTargetPlatform == TargetPlatform.macOS;
 
-            if (defaultTargetPlatform == TargetPlatform.macOS &&
-                isControlPressed) {
+            if (macOS && isControlPressed) {
               // macOS treats Ctrl+Click as a secondary click (it neither
               // toggles multi-selection — that's Cmd — nor counts toward a
               // double-click): select the item, keeping an existing
@@ -884,35 +893,33 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               de.button = 1;
               _context?.parentTree.sendSelectionDefaultSelection(
                 _context!.parentTreeValue,
-                de,
+                _withSelection(de),
               );
               return;
             }
 
-            final isCtrlPressed = isControlPressed || keyboard.isMetaPressed;
+            // The modifier that adds a row to the selection or takes it out is the one each
+            // platform's native tree reads: Command on macOS, Control on Windows and GTK.
             final isShiftPressed = keyboard.isShiftPressed;
-
             _context?.treeImpl?.handleTreeItemSelection(
               state.id,
-              isCtrlPressed: isCtrlPressed,
+              toggle: macOS ? keyboard.isMetaPressed : isControlPressed,
               isShiftPressed: isShiftPressed,
               notifyJava: false,
             );
 
             int stateMask = 0;
-            if (isCtrlPressed) {
-              stateMask |= SWT.CTRL;
-            }
-            if (isShiftPressed) {
-              stateMask |= SWT.SHIFT;
-            }
+            if (isControlPressed) stateMask |= SWT.CTRL;
+            if (keyboard.isMetaPressed) stateMask |= SWT.COMMAND;
+            if (isShiftPressed) stateMask |= SWT.SHIFT;
+            if (keyboard.isAltPressed) stateMask |= SWT.ALT;
             final e = _createEvent(stateMask: stateMask);
             e.count = 1;
             e.button = 1;
 
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
-              e,
+              _withSelection(e),
             );
 
             if (selected) {

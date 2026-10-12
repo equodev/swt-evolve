@@ -1032,9 +1032,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   /// [notifyJava] defaults to true so keyboard-driven callers emit the SWT Selection
   /// event; row-tap/checkbox sites pass false because they send their own richer event
   /// (button, count, stateMask) — see treeitem_evolve.
+  ///
+  /// On a multi-selection tree, [toggle] adds the item to the selection or takes it out, and
+  /// [isShiftPressed] selects the rows from the anchor to it; with neither, it is selected alone.
   void handleTreeItemSelection(
     Object itemId, {
-    bool isCtrlPressed = false,
+    bool toggle = false,
     bool isShiftPressed = false,
     bool notifyJava = true,
   }) {
@@ -1048,14 +1051,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     setState(() {
       if (isMultiMode) {
         final flatIndex = _findFlatIndexForItem(itemId, 0, 0).index;
-        _handleMultiSelection(item, flatIndex, isCtrlPressed, isShiftPressed);
+        _handleMultiSelection(item, flatIndex, toggle, isShiftPressed);
       } else {
         _handleSingleSelection(item, 0);
       }
     });
     if (notifyJava) {
-      widget.sendSelectionSelection(state, _createDefaultEvent(itemId));
+      widget.sendSelectionSelection(state, withSelection(_createDefaultEvent(itemId)));
     }
+  }
+
+  /// [event], carrying the ids of the items this tree shows selected. A modifier click or a
+  /// Shift+arrow builds the selection out of more than the row the event names, so Java takes the
+  /// selection from here instead of selecting that row alone.
+  VEvent withSelection(VEvent event) {
+    event.segments = [for (final item in state.selection ?? const <VTreeItem>[]) item.id];
+    return event;
   }
 
   /// Set by a press that focused the tree until Flutter applies that focus, so the focus change it
@@ -1097,20 +1108,23 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _lastSelectedItemId = item.id;
   }
 
+  /// A toggle click moves the anchor a later Shift+click ranges from, as a plain click does; a
+  /// Shift+click leaves it where it was.
   void _handleMultiSelection(
     VTreeItem item,
     int flatIndex,
-    bool isCtrlPressed,
+    bool toggle,
     bool isShiftPressed,
   ) {
     final currentSelection = List<VTreeItem>.from(state.selection ?? []);
 
-    if (isCtrlPressed) {
+    if (toggle) {
       if (currentSelection.any((selected) => selected.id == item.id)) {
         currentSelection.removeWhere((selected) => selected.id == item.id);
       } else {
         currentSelection.add(item);
       }
+      _lastSelectedItemId = item.id;
     } else if (isShiftPressed && _lastSelectedItemId != null) {
       final lastIndex = _findFlatIndexForItem(_lastSelectedItemId!, 0, 0).index;
       final rangeItems = _getItemsInRange(lastIndex, flatIndex);
@@ -1544,7 +1558,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(newItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(newItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(newItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1565,7 +1579,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(newItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(newItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(newItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1630,7 +1644,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       var e = _createDefaultEvent(selectedItem.id);
       e.detail = SWT.CHECK;
 
-      widget.sendSelectionSelection(state, e);
+      widget.sendSelectionSelection(state, withSelection(e));
     } else {
       handleTreeItemSelection(selectedItem.id);
     }
@@ -1644,7 +1658,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(firstItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(firstItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(firstItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1657,7 +1671,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(lastItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(lastItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(lastItemId, toggle: isCtrlPressed);
       }
     }
   }

@@ -189,13 +189,39 @@ public class TreeHelper {
             return;
         }
 
+        TreeItem[] selection = selectionOf(tree, event, item);
+        event.segments = null;
         event.item = item;
         if (event.detail == SWT.CHECK) {
             item.setChecked(!item.getChecked());
         }
         // The row the user clicked is on screen already: selecting it must not scroll.
-        setSelection(tree, new TreeItem[] {item});
+        setSelection(tree, selection);
         tree.sendSelectionEvent(selectionType, event, true);
+    }
+
+    /**
+     * The selection a client event leaves the tree with. The client names the items it shows
+     * selected after the event in {@code segments}, by id: on a multi-selection tree a modifier click
+     * adds the clicked row to the selection or takes it out, and a Shift+click selects the rows from
+     * the anchor, so the selection is more than the row the event is about. A single-selection tree,
+     * or a client that names none, selects that row alone.
+     */
+    private static TreeItem[] selectionOf(DartTree tree, Event event, TreeItem item) {
+        if (event.segments == null || (tree.getApi().style & SWT.MULTI) == 0) {
+            return new TreeItem[] {item};
+        }
+        // A row just picked is shown; one selected before may have been hidden since by collapsing
+        // its parent, and is still in the selection the tree holds.
+        java.util.Map<Long, TreeItem> byId = new java.util.HashMap<>();
+        for (TreeItem row : visibleItems(tree)) byId.put(FlutterBridge.id(row), row);
+        for (TreeItem selected : tree.selection) byId.put(FlutterBridge.id(selected), selected);
+        java.util.List<TreeItem> picked = new java.util.ArrayList<>(event.segments.length);
+        for (int id : event.segments) {
+            TreeItem selected = byId.get((long) id);
+            if (selected != null) picked.add(selected);
+        }
+        return inRowOrder(tree, picked.toArray(new TreeItem[0]));
     }
 
     public static void sendExpand(DartTree dartTree, Event event, boolean expand) {

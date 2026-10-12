@@ -110,6 +110,106 @@ class TreeEventsFromFlutterNativeTest {
         assertThat(events.get(0).item).isSameAs(items[2]);
     }
 
+    private static Event selecting(TreeItem clicked, TreeItem... selection) {
+        Event event = item(clicked);
+        event.segments = new int[selection.length];
+        for (int i = 0; i < selection.length; i++) event.segments[i] = (int) FlutterBridge.id(selection[i]);
+        return event;
+    }
+
+    @Test
+    @DisplayName("a modifier click on a multi-selection tree leaves Java with every row the client selected")
+    void aModifierClickKeepsTheWholeSelection() {
+        Tree tree = tree(SWT.MULTI);
+        TreeItem[] items = roots(tree, 4);
+        List<Event> events = record(tree, SWT.Selection);
+
+        fromFlutter(tree, "Selection/Selection", selecting(items[0], items[0]));
+        fromFlutter(tree, "Selection/Selection", selecting(items[3], items[0], items[3]));
+        fromFlutter(tree, "Selection/Selection", selecting(items[2], items[0], items[3], items[2]));
+        runQueued();
+
+        assertThat(tree.getSelection()).containsExactly(items[0], items[2], items[3]);
+        assertThat(tree.getSelectionCount()).isEqualTo(3);
+        assertThat(events).extracting(e -> e.item).containsExactly(items[0], items[3], items[2]);
+        assertThat(events.get(2).segments).as("the ids are the client's, not the listener's").isNull();
+        assertThat(((DartTree) tree.getImpl()).getValue().changedKeys()).contains(VTree.SELECTION);
+    }
+
+    @Test
+    @DisplayName("a modifier click that takes a row out of the selection still names that row")
+    void aModifierClickDeselectingARowNamesIt() {
+        Tree tree = tree(SWT.MULTI);
+        TreeItem[] items = roots(tree, 3);
+        tree.setSelection(new TreeItem[] {items[0], items[1], items[2]});
+        List<Event> events = record(tree, SWT.Selection);
+
+        fromFlutter(tree, "Selection/Selection", selecting(items[1], items[0], items[2]));
+        runQueued();
+        assertThat(tree.getSelection()).containsExactly(items[0], items[2]);
+        assertThat(events.get(0).item).isSameAs(items[1]);
+
+        fromFlutter(tree, "Selection/Selection", selecting(items[0], items[2]));
+        fromFlutter(tree, "Selection/Selection", selecting(items[2]));
+        runQueued();
+        assertThat(tree.getSelectionCount()).isZero();
+        assertThat(events).extracting(e -> e.item).containsExactly(items[1], items[0], items[2]);
+    }
+
+    @Test
+    @DisplayName("a Shift+click's range is held in row order, a child row among its parents")
+    void aRangeIsHeldInRowOrder() {
+        Tree tree = tree(SWT.MULTI);
+        TreeItem[] items = roots(tree, 3);
+        TreeItem child = new TreeItem(items[1], SWT.NONE);
+        items[1].setExpanded(true);
+
+        fromFlutter(tree, "Selection/Selection", selecting(items[0], items[2], child, items[1], items[0]));
+        runQueued();
+
+        assertThat(tree.getSelection()).containsExactly(items[0], items[1], child, items[2]);
+    }
+
+    @Test
+    @DisplayName("a single-selection tree selects the clicked row alone, whatever the client reports")
+    void aSingleSelectionTreeSelectsOneRow() {
+        Tree tree = tree(SWT.SINGLE);
+        TreeItem[] items = roots(tree, 3);
+
+        fromFlutter(tree, "Selection/Selection", selecting(items[2], items[0], items[2]));
+        runQueued();
+
+        assertThat(tree.getSelection()).containsExactly(items[2]);
+    }
+
+    @Test
+    @DisplayName("a double click on a multi-selection leaves the selection as the client shows it")
+    void aDoubleClickKeepsTheSelection() {
+        Tree tree = tree(SWT.MULTI);
+        TreeItem[] items = roots(tree, 3);
+        List<Event> events = record(tree, SWT.DefaultSelection);
+
+        fromFlutter(tree, "Selection/DefaultSelection", selecting(items[2], items[1], items[2]));
+        runQueued();
+
+        assertThat(tree.getSelection()).containsExactly(items[1], items[2]);
+        assertThat(events.get(0).item).isSameAs(items[2]);
+    }
+
+    @Test
+    @DisplayName("an id the client still shows selected but whose item is gone is left out")
+    void aGoneItemIsLeftOutOfTheSelection() {
+        Tree tree = tree(SWT.MULTI);
+        TreeItem[] items = roots(tree, 3);
+        Event event = selecting(items[2], items[0], items[2]);
+        items[0].dispose();
+
+        fromFlutter(tree, "Selection/Selection", event);
+        runQueued();
+
+        assertThat(tree.getSelection()).containsExactly(items[2]);
+    }
+
     @Test
     @DisplayName("a click selects without scrolling: the row clicked is on screen")
     void aClickDoesNotScroll() {
