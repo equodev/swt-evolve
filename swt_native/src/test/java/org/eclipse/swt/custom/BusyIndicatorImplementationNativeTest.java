@@ -7,7 +7,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,13 +67,5 @@ class BusyIndicatorImplementationNativeTest {
         });
         verify(gone, never()).setCursor(any());
         verify(gone, never()).setData(anyString(), any());
-    }
-
-    @Test
-    void aDisplayDisposedByTheRunnableIsNotCleared() {
-        Display own = mock(Display.class);
-        when(own.getShells()).thenReturn(new Shell[0]);
-        BusyIndicator.showWhile(own, () -> when(own.isDisposed()).thenReturn(true));
-        verify(own, times(1)).getShells();
     }
 }

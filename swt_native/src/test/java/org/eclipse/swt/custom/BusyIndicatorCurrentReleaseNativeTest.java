@@ -7,9 +7,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.FutureTask;
@@ -28,12 +30,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 /**
- * What {@link BusyIndicator#showWhile(java.util.concurrent.Future)}, which SWT has from 3.127, does when the display
- * goes away while it waits.
+ * What SWT 3.134's BusyIndicator does when the display goes away: while a {@link
+ * BusyIndicator#showWhile(java.util.concurrent.Future)} waits, or during the runnable of {@link
+ * BusyIndicator#showWhile(Display, Runnable)}. Older releases do neither the same way, so these run from 3.134.
  */
 @Tag("native-unit")
 @ExtendWith(Mocks.class)
-class BusyIndicatorFutureNativeTest {
+class BusyIndicatorCurrentReleaseNativeTest {
 
     private Display display;
     private final AtomicBoolean disposed = new AtomicBoolean();
@@ -107,5 +110,13 @@ class BusyIndicatorFutureNativeTest {
         org.mockito.Mockito.clearInvocations(display);
         poll.run();
         verify(display, never()).timerExec(anyInt(), any());
+    }
+
+    @Test
+    void aDisplayDisposedByTheRunnableIsNotCleared() {
+        Display own = mock(Display.class);
+        when(own.getShells()).thenReturn(new Shell[0]);
+        BusyIndicator.showWhile(own, () -> when(own.isDisposed()).thenReturn(true));
+        verify(own, times(1)).getShells();
     }
 }
