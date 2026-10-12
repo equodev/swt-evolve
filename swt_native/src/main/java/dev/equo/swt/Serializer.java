@@ -395,7 +395,7 @@ public class Serializer {
         }
         // Identity stub. A null here is undecodable where the reference sits inside a widget array
         // (children, items) and would abort the ancestor's payload; style is read off the api
-        // field, not a checkWidget()-guarded getter, so it is safe on a disposed widget.
+        // field, not getStyle(), which refuses a disposed widget as SWT's does.
         //
         // No write stamp, for the same reason a reference carries none: this says which widget, not
         // what it holds. Stamping it made the far side record a state it had not been given and
@@ -403,7 +403,7 @@ public class Serializer {
         // not hold, and the stub itself, being newer than everything, displaced the real widget.
         if (converter == null || disposed) {
             writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-            NumberConverter.serialize(api.getStyle(), writer);
+            NumberConverter.serialize(org.eclipse.swt.widgets.WidgetHelper.styleOf(api), writer);
             writer.writeByte((byte)'}');
             return;
         }
