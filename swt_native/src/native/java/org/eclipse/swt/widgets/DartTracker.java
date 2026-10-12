@@ -449,6 +449,9 @@ public class DartTracker extends DartWidget implements ITracker {
         while (tracking && !cancelled) {
             ((DartDisplay) display.getImpl()).addPool();
             try {
+                inLoop = true;
+                if (isDisposed())
+                    break;
                 if (parent != null && parent.isDisposed())
                     break;
                 ((DartDisplay) display.getImpl()).runSkin();
@@ -467,6 +470,7 @@ public class DartTracker extends DartWidget implements ITracker {
                 ((DartDisplay) display.getImpl()).runAsyncMessages(false);
             } finally {
                 ((DartDisplay) display.getImpl()).removePool();
+                inLoop = false;
             }
         }
         closeOnFlutter();
@@ -801,6 +805,8 @@ public class DartTracker extends DartWidget implements ITracker {
 
     private boolean pointerSeen;
 
+    private boolean inLoop;
+
     private Display keysDisplay;
 
     private ControlHelper.KeyCapture keysBefore;
@@ -848,9 +854,9 @@ public class DartTracker extends DartWidget implements ITracker {
             this.bridge = host.getBridge();
         if (!flutterHooked) {
             flutterHooked = true;
-            // _hookEvents() ran in the constructor, before the bridge above was in place, so
-            // its Move handler is bound to the wrong comm and never fires. Re-register it
-            // here, where the bridge is known, or the loop never learns where the pointer is.
+            // A Tracker makes no handle, so it is never registered and _hookEvents() never
+            // runs for it: what the loop hears from the client is hooked here, where the
+            // bridge is known.
             FlutterBridge.on(this, "Control", "Move", e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
                     mouse(e);
@@ -932,7 +938,7 @@ public class DartTracker extends DartWidget implements ITracker {
     }
 
     boolean key(int type, Event event) {
-        if (!tracking || isDisposed())
+        if (!tracking || !inLoop || isDisposed())
             return false;
         event.doit = true;
         if (!sendKeyEvent(type, event))

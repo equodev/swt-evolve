@@ -207,6 +207,201 @@ class TrackerLoopFlutterTest {
         assertThat(tracker.isDisposed()).isFalse();
     }
 
+    @Test
+    void aResizeTrackerFlipsWhenThePointerCrossesTheOtherVerticalEdge() {
+        Tracker tracker = new Tracker(shell, SWT.RESIZE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20), new Rectangle(30, 10, 10, 20)});
+        Point[] edge = new Point[1];
+        tracker.addListener(SWT.Resize, e -> edge[0] = null);
+
+        open(tracker, () -> {
+            pointer(tracker, 100, 100);
+            pointer(tracker, 95, 100);
+            display.asyncExec(() -> {
+                Point left = shell.toDisplay(5, 20);
+                pointer(tracker, left.x + 50, left.y);
+                display.asyncExec(() -> {
+                    Point right = shell.toDisplay(55, 20);
+                    pointer(tracker, right.x - 30, right.y);
+                    release(tracker);
+                });
+            });
+        });
+
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(25, 10, 9, 20), new Rectangle(34, 10, 4, 20));
+    }
+
+    @Test
+    void aResizeTrackerFlipsWhenThePointerCrossesTheOtherHorizontalEdge() {
+        Tracker tracker = new Tracker(shell, SWT.RESIZE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20), new Rectangle(10, 30, 20, 10)});
+
+        open(tracker, () -> {
+            pointer(tracker, 100, 100);
+            pointer(tracker, 100, 95);
+            display.asyncExec(() -> {
+                Point top = shell.toDisplay(20, 5);
+                pointer(tracker, top.x, top.y + 50);
+                display.asyncExec(() -> {
+                    Point bottom = shell.toDisplay(20, 55);
+                    pointer(tracker, bottom.x, bottom.y - 30);
+                    release(tracker);
+                });
+            });
+        });
+
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(10, 25, 20, 9), new Rectangle(10, 34, 20, 4));
+    }
+
+    /** A Tracker resizing one way only starts on that edge, and does not flip past the opposite one. */
+    @Test
+    void aOneWayResizeTrackerDoesNotFlip() {
+        int[][] cases = {
+                // style, pointer delta x, delta y, then the push past the opposite edge
+                {SWT.LEFT, 30, 0}, {SWT.RIGHT, -30, 0}, {SWT.UP, 0, 30}, {SWT.DOWN, 0, -30}};
+        for (int[] c : cases) {
+            Tracker tracker = new Tracker(shell, SWT.RESIZE | c[0]);
+            tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+            open(tracker, () -> {
+                pointer(tracker, 100, 100);
+                pointer(tracker, 100 + c[1], 100 + c[2]);
+                release(tracker);
+            });
+            assertThat(tracker.getRectangles()).as("style " + c[0]).containsExactly(new Rectangle(10, 10, 20, 20));
+            tracker.dispose();
+        }
+    }
+
+    @Test
+    void aTrackerMovingRightAndDownOnlyIgnoresTheOtherWays() {
+        Tracker tracker = new Tracker(shell, SWT.RIGHT | SWT.DOWN);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+
+        open(tracker, () -> {
+            pointer(tracker, 100, 100);
+            pointer(tracker, 90, 90);
+            pointer(tracker, 95, 95);
+            release(tracker);
+        });
+
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(15, 15, 20, 20));
+    }
+
+    @Test
+    void aTrackerWithoutRectanglesStillAnnouncesThePointer() {
+        for (int style : new int[] {SWT.NONE, SWT.RESIZE}) {
+            Tracker tracker = new Tracker(shell, style);
+            listen(tracker);
+            heard.clear();
+            open(tracker, () -> {
+                pointer(tracker, 100, 100);
+                pointer(tracker, 120, 130);
+                display.post(key(SWT.KeyDown, SWT.ARROW_UP, 0));
+                display.asyncExec(() -> release(tracker));
+            });
+            assertThat(heard).as("style " + style).hasSize(3);
+            assertThat(tracker.getRectangles()).isEmpty();
+            tracker.dispose();
+        }
+    }
+
+    @Test
+    void aResizeTrackerOnTheDisplayOrWithACursorOfItsOwn() {
+        Tracker onDisplay = new Tracker(display, SWT.RESIZE | SWT.LEFT | SWT.DOWN);
+        onDisplay.setRectangles(new Rectangle[] {new Rectangle(50, 50, 20, 20)});
+        open(onDisplay, () -> {
+            pointer(onDisplay, 100, 100);
+            pointer(onDisplay, 90, 110);
+            release(onDisplay);
+        });
+        assertThat(onDisplay.getRectangles()).containsExactly(new Rectangle(40, 50, 30, 30));
+        onDisplay.dispose();
+
+        Tracker upOnly = new Tracker(shell, SWT.RESIZE | SWT.UP);
+        upOnly.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        upOnly.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+        open(upOnly, () -> {
+            pointer(upOnly, 100, 100);
+            pointer(upOnly, 100, 95);
+            release(upOnly);
+        });
+        assertThat(upOnly.getRectangles()).containsExactly(new Rectangle(10, 5, 20, 25));
+    }
+
+    @Test
+    void aTrackerWithACursorAndAnInterruptedThreadKeepsTracking() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        tracker.setCursor(display.getSystemCursor(SWT.CURSOR_CROSS));
+        try {
+            boolean ended = open(tracker, () -> {
+                Thread.currentThread().interrupt();
+                display.timerExec(100, () -> {
+                    pointer(tracker, 100, 100);
+                    pointer(tracker, 101, 102);
+                    release(tracker);
+                });
+            });
+            assertThat(ended).isTrue();
+            assertThat(tracker.getRectangles()).containsExactly(new Rectangle(11, 12, 20, 20));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void aTrackerDisposedDuringTheLoopEndsIt() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+
+        boolean ended = open(tracker, () -> {
+            tracker.dispose();
+            release(tracker);
+        });
+
+        assertThat(ended).isTrue();
+        assertThat(sentToShell("Tracker/close")).isTrue();
+    }
+
+    @Test
+    void aShellDisposedDuringTheLoopEndsItWithNothingToTell() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        boolean ended = open(tracker, shell::dispose);
+        assertThat(ended).isTrue();
+        assertThat(sentToShell("Tracker/close")).isFalse();
+    }
+
+    @Test
+    void aParentDisposedBeforeOpenEndsItAtOnce() {
+        Composite composite = new Composite(shell, SWT.NONE);
+        Tracker tracker = new Tracker(composite, SWT.NONE);
+        composite.dispose();
+        assertThat(open(tracker, () -> {
+        })).isTrue();
+        assertThat(sentToShell("Tracker/open")).isFalse();
+    }
+
+    @Test
+    void theKeysGoBackToTheFocusWhenAListenerThrowsOutOfTheLoop() {
+        Text focused = new Text(shell, SWT.SINGLE);
+        web.setFocus((DartControl) focused.getImpl());
+        List<Integer> focusedHeard = new ArrayList<>();
+        focused.addListener(SWT.KeyDown, e -> focusedHeard.add(e.keyCode));
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.addListener(SWT.Move, e -> {
+            throw new IllegalStateException("listener failed");
+        });
+
+        try {
+            open(tracker, () -> pointer(tracker, 100, 100));
+        } catch (RuntimeException expected) {
+        }
+        display.post(key(SWT.KeyDown, 'a', 0));
+        while (display.readAndDispatch()) {
+        }
+
+        assertThat(focusedHeard).containsExactly(Integer.valueOf('a'));
+    }
+
     // ---- a Tracker on the display -------------------------------------------------------------------
 
     @Test
@@ -226,6 +421,61 @@ class TrackerLoopFlutterTest {
         assertThat(sentToShell("Tracker/close")).isTrue();
         assertThat(tracker.getRectangles()).containsExactly(new Rectangle(60, 70, 10, 10));
         tracker.dispose();
+    }
+
+    @Test
+    void aTrackerOnTheDisplayFollowsTheActiveShellAndSkipsHiddenOnes() {
+        Shell hidden = new Shell(display);
+        Shell other = new Shell(display);
+        other.setBounds(0, 0, 200, 200);
+        other.open();
+        shell.setVisible(false);
+        Tracker tracker = new Tracker(display, SWT.NONE);
+        open(tracker, () -> release(tracker));
+        String otherChannel = "/" + other.hashCode() + "/Tracker/open";
+        assertThat(web.comm.sent.stream().anyMatch(f -> f.event.contains(otherChannel))).isTrue();
+
+        shell.setVisible(true);
+        web.comm.fireContaining("/" + shell.hashCode() + "/Shell/Activate", new Event());
+        while (display.readAndDispatch()) {
+        }
+        if (display.getActiveShell() == shell) {
+            open(tracker, () -> release(tracker));
+            assertThat(sentToShell("Tracker/open")).isTrue();
+        }
+        assertThat(hidden.isVisible()).isFalse();
+        tracker.dispose();
+    }
+
+    @Test
+    void anArrowUpSteps() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 20, 5, 5)});
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ARROW_UP, SWT.CTRL));
+            display.asyncExec(() -> release(tracker));
+        });
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(10, 19, 5, 5));
+    }
+
+    @Test
+    void aTrackerDisposedByAListenerOfAnArrowIsCancelled() {
+        for (int style : new int[] {SWT.NONE, SWT.RESIZE}) {
+            Tracker tracker = new Tracker(shell, style);
+            tracker.setRectangles(new Rectangle[] {new Rectangle(10, 20, 5, 5)});
+            tracker.addListener(SWT.Move, e -> tracker.dispose());
+            tracker.addListener(SWT.Resize, e -> tracker.dispose());
+            boolean ended = open(tracker, () -> display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0)));
+            assertThat(ended).as("style " + style).isFalse();
+        }
+    }
+
+    @Test
+    void aResizeTrackerDisposedByItsListenerIsCancelled() {
+        Tracker tracker = new Tracker(shell, SWT.RESIZE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        tracker.addListener(SWT.Resize, e -> tracker.dispose());
+        assertThat(open(tracker, () -> pointer(tracker, 100, 100))).isFalse();
     }
 
     @Test
