@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// The editor currently able to compose, if any. Shared by both key routes to Java: the focused
@@ -8,6 +9,28 @@ ComposedTextInput? _activeComposition;
 /// forwards a given key.
 bool compositionOwnsKey(String character) =>
     _activeComposition?.swallowsKey(character) ?? false;
+
+/// macOS hands the platform's text input only the keys Flutter leaves unhandled, so it composes
+/// nothing unless the editor lets them through.
+bool get _textInputSeesUnhandledKeysOnly => !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+
+/// Whether [event] belongs to the platform's text input rather than to Java: a dead key, which
+/// arrives with no character and opens a composition, and every key while one is open. SWT Cocoa
+/// sends no KeyDown for either; the composition reaches Java through [ComposedTextInput]. Asking
+/// changes nothing, so both key routes may ask about the same key.
+bool compositionTakesKey(KeyEvent event) {
+  final composition = _activeComposition;
+  if (composition == null || !_textInputSeesUnhandledKeysOnly || event is KeyUpEvent) return false;
+  return composition.isComposing || (event is KeyDownEvent && _isDeadKey(event));
+}
+
+bool _isDeadKey(KeyDownEvent event) {
+  if ((event.character ?? '').isNotEmpty) return false;
+  final keys = HardwareKeyboard.instance;
+  if (keys.isMetaPressed || keys.isControlPressed) return false;
+  final label = event.logicalKey.keyLabel;
+  return label.length == 1 && label.trim().isNotEmpty;
+}
 
 /// Gives a canvas-painted editor somewhere for the platform to compose text.
 ///
@@ -59,6 +82,7 @@ class ComposedTextInput with TextInputClient {
     _activeComposition = this;
     if (_connection?.attached ?? false) return;
     _composing = false;
+    _settled = '';
     _connection = TextInput.attach(this, _configuration)
       ..setEditingState(const TextEditingValue())
       ..show();
@@ -79,6 +103,10 @@ class ComposedTextInput with TextInputClient {
 
   @override
   void updateEditingValue(TextEditingValue value) {
+    if (_textInputSeesUnhandledKeysOnly) {
+      _takeUnhandledKeysText(value);
+      return;
+    }
     if (value.composing.isValid) {
       _composing = true;
       onComposing?.call(value.text, value.selection.baseOffset.clamp(0, value.text.length));
@@ -92,6 +120,32 @@ class ComposedTextInput with TextInputClient {
     if (committed.isNotEmpty) {
       _justCommitted = committed;
       onComposedText(committed);
+    }
+  }
+
+  /// The buffer's text outside any composition, as far as it has been reported.
+  String _settled = '';
+
+  /// On macOS the text input only sees the keys left to it, so every character it settles is
+  /// theirs, composed or not: a dead key followed by a letter it does not combine with commits the
+  /// accent, then inserts the letter. The buffer is not cleared there, since a clear can cross an
+  /// insertion already on its way and have it repeat what was reported; only what it gains is.
+  void _takeUnhandledKeysText(TextEditingValue value) {
+    final composing = value.composing;
+    final settled = composing.isValid ? value.text.substring(0, composing.start) : value.text;
+    final wasComposing = _composing;
+    _composing = composing.isValid;
+    final gained = settled.length > _settled.length && settled.startsWith(_settled)
+        ? settled.substring(_settled.length)
+        : '';
+    _settled = settled;
+    if (gained.isNotEmpty) onComposedText(gained);
+    if (_composing) {
+      final composed = composing.textInside(value.text);
+      onComposing?.call(
+          composed, (value.selection.baseOffset - composing.start).clamp(0, composed.length));
+    } else if (wasComposing && gained.isEmpty) {
+      onComposing?.call('', 0);
     }
   }
 

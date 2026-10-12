@@ -119,6 +119,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void initState() {
     super.initState();
+    PaintingBinding.instance.systemFonts.addListener(_systemFontsChanged);
     _focusNode.addListener(_onFocusChange);
     _textChangeToken =
         EquoCommService.onRaw("StyledText/${state.id}/TextChange", _onTextChange);
@@ -231,6 +232,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   void dispose() {
+    PaintingBinding.instance.systemFonts.removeListener(_systemFontsChanged);
     EquoCommService.remove("StyledText/${state.id}/TextChange", _textChangeToken);
     _geometryTimer?.cancel();
     EquoCommService.remove("StyledText/${state.id}/ResendGeometry", _resendGeometryToken);
@@ -282,6 +284,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Keys reach Java from the Display's handler when one is mounted, else from here, and are kept
   /// from Flutter's shortcuts (which would scroll or move focus); only Tab goes on, to traversal.
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    // Unhandled, it reaches the platform's text input; skipping the rest keeps app shortcuts off it.
+    if (compositionTakesKey(event)) return KeyEventResult.skipRemainingHandlers;
     if (!displayLevelKeyForwardingActive) {
       final v = mapNewKeyEventToSwt(event);
       // A key the composition owns must not reach the document twice (ComposedTextInput.swallowsKey).
@@ -310,6 +314,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
+    }
+    // A Command key equivalent goes on to the native menu bar, as from any other control, so the
+    // application menu's own items (Settings…, Hide, Quit) work while the editor has focus.
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.macOS &&
+        HardwareKeyboard.instance.isMetaPressed) {
+      return KeyEventResult.skipRemainingHandlers;
     }
     return KeyEventResult.handled;
   }
@@ -458,6 +469,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       carets,
       selections,
       _styleToken,
+      state.fixedLineHeight ?? false,
     );
     if (previousShape != null) shape.inheritMeasurementsFrom(previousShape);
     _shape = shape;
@@ -508,12 +520,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final styleIndex = _splicedStyleIndex ?? state.styleIndex;
     final defaultStyle = styles == null || styles.isEmpty ? _stableDefaultStyle() : null;
     final held = _heldEditingState;
+    // The ground the line backgrounds are shades of.
+    final ground = (bg, state.background);
     if (held != null &&
         identical(held.renderer, state.renderer) &&
         identical(held.styles, styles) &&
         identical(held.styleIndex, styleIndex) &&
         identical(held.text, state.text) &&
-        identical(held.defaultStyle, defaultStyle)) {
+        identical(held.defaultStyle, defaultStyle) &&
+        held.ground == ground) {
       return held.editingState;
     }
     final editingState = _buildEditingStateFromRenderer(shownText);
@@ -523,6 +538,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       styleIndex: styleIndex,
       text: state.text,
       defaultStyle: defaultStyle,
+      ground: ground,
       editingState: editingState,
     );
     return editingState;
@@ -534,6 +550,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     Object? styleIndex,
     String? text,
     TextStyle? defaultStyle,
+    (Color, VColor?) ground,
     TextEditingState editingState,
   })? _heldEditingState;
 
@@ -630,7 +647,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             verticalIndent: flags & _lineVerticalIndent != 0 ? vLineInfo.verticalIndent : null,
             wrapIndent: flags & _lineWrapIndent != 0 ? vLineInfo.wrapIndent : null,
             bulletText: (renderer.bulletTexts?.length ?? 0) > i ? renderer.bulletTexts![i] : null,
-            background: vLineInfo.background == null ? null : colorFromVColor(vLineInfo.background),
+            bulletWidth: (renderer.bulletWidths?.length ?? 0) > i ? renderer.bulletWidths![i] : null,
+            background: vLineInfo.background == null
+                ? null
+                : _shadeOfGround(colorFromVColor(vLineInfo.background)),
             tabStops: flags & _lineTabStops != 0 ? vLineInfo.tabStops : null,
           );
         }
@@ -643,6 +663,24 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     );
   }
 
+  /// A line background is a shade of the editor's background -- the application's, or the platform's
+  /// list background it falls back to. When the theme's ground is painted instead, the shade moves with
+  /// it: painted as is, the application's colour shows as a band of another colour across an editor it
+  /// no longer matches.
+  Color _shadeOfGround(Color line) {
+    final own = state.background == null ? null : colorFromVColor(state.background);
+    final ground = bg;
+    if (own == null || own == ground) return line;
+    int channel(double ground, double line, double own) =>
+        ((ground + line - own) * 255).round().clamp(0, 255);
+    return Color.fromARGB(
+      (line.a * 255).round(),
+      channel(ground.r, line.r, own.r),
+      channel(ground.g, line.g, own.g),
+      channel(ground.b, line.b, own.b),
+    );
+  }
+
   /// StyledText#setSelectionBackground is a real SWT setter the CSS engine drives, so the
   /// application's choice replaces the built-in highlight rather than going through [getBackgroundColor].
   Color get _selectionColor =>
@@ -652,7 +690,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       const Color(0xFF3399FF);
 
   /// StyledText#setSelectionForeground, the CSS engine's other selection setter: the selected
-  /// glyphs are repainted in it over the highlight. Null keeps the glyphs as they are.
+  /// glyphs are drawn in it over the highlight. Null leaves [SelectionInfo]'s default.
   Color? get _selectionForeground => state.selectionForeground == null
       ? null
       : colorFromVColor(state.selectionForeground);
@@ -794,6 +832,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Widget build(BuildContext context) {
     if (_shapeStale) _rebuildShape();
     _oweGeometry();
+    if (_shape?._uniformRows ?? false) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refitRows());
+    }
     final bounds = getBounds();
     final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
     final hasVScroll = hasStyle(state.style, SWT.V_SCROLL);
@@ -1019,8 +1060,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ? (javaAscent + javaDescent).toDouble()
         : fontSize * 1.4;
     _ensureTextMetrics(text);
-    final totalHeight =
-        math.max(getBounds().height, _metricsLineCount * lineHeight);
+    // The laid-out rows once there are any: a row taller than the font (a vertical indent, line spacing, a larger
+    // styled font) makes the estimate fall short, and the band below its end would paint nothing.
+    final shape = _shape;
+    final contentHeight = shape != null
+        ? shape._lineTops(shape._lines).last + (state.topMargin ?? 0) + (state.bottomMargin ?? 0)
+        : _metricsLineCount * lineHeight;
+    final totalHeight = math.max(getBounds().height, contentHeight);
 
     double totalWidth = getBounds().width;
     if (state.wordWrap != true) {
@@ -1054,6 +1100,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   GeometryTable? _geometrySent;
 
   /// Comparing the widget's text style is expensive, so layout keys carry a count of its changes.
+  /// The count is shared by every StyledText, because the line layouts they key are too: two
+  /// widgets on the same count would take each other's lines, measured in each other's font.
+  static int _styleTokens = 0;
   TextStyle? _lastDefaultStyle;
   int _styleToken = 0;
 
@@ -1062,10 +1111,22 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final last = _lastDefaultStyle;
     if (last == null || built != last) {
       _lastDefaultStyle = built;
-      _styleToken++;
+      _styleToken = ++_styleTokens;
       return built;
     }
     return last;
+  }
+
+  /// A line painted in this frame was taller than the rows: place them again, at its height.
+  void _refitRows() {
+    if (mounted && (_shape?.rowsOutgrown ?? false)) setState(() => _shapeStale = true);
+  }
+
+  /// A font that becomes available changes how the lines measured before it lay out.
+  void _systemFontsChanged() {
+    if (!mounted) return;
+    _lastDefaultStyle = null;
+    setState(() => _shapeStale = true);
   }
 
   /// Microseconds the last geometry computation and shape rebuild took.
@@ -1236,6 +1297,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       'selections': <Map<String, dynamic>>[],
       'selectionRects': <Map<String, double>>[],
       'lineBackgrounds': <Map<String, dynamic>>[],
+      'background': _hex(bg),
       'bullets': <Map<String, dynamic>>[],
     };
     final shape = _currentTextShape();
@@ -1314,7 +1376,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     facts['bullets'] = [
       for (final entry in shape.editingState?.lineProperties.entries ?? const <MapEntry<int, LineProperties>>[])
         if (entry.value.bulletText != null)
-          {'line': entry.key.toDouble(), 'text': entry.value.bulletText},
+          {
+            'line': entry.key.toDouble(),
+            'text': entry.value.bulletText,
+            'width': (entry.value.bulletWidth ?? 0).toDouble(),
+          },
     ];
     final block = state.blockSelection == true ? state.blockSelectionBounds : null;
     if (block != null && block.width != 0 && block.height != 0) {
@@ -1504,11 +1570,19 @@ class _LineTopsCache {
 /// so a cached entry cannot go stale: a line whose text, styles, alignment, wrap width
 /// or tab width changes hashes to a different key.
 class _LineLayout {
-  _LineLayout(this.width, this.height, this.metrics, this.rowEnds, this.cost);
+  _LineLayout(this.width, this.height, this.metrics, this.rowEnds);
 
-  /// The line's length in characters — what this entry is charged against the cache
-  /// budget, whether or not [caretX] has been materialized yet.
-  final int cost;
+  /// What a layout without caret positions is charged against the cache budget: its rows, the
+  /// object itself and its key, which together weigh about what a dozen caret positions do.
+  static const int _entryCost = 16;
+
+  /// What this entry weighs against the cache budget now: one unit per caret position, the array
+  /// the memory goes into, plus [_entryCost]. A line measured only for its height and width costs
+  /// little, so a large document's layouts all fit and a rebuilt shape finds them again.
+  int get cost => _entryCost + metrics.length + (caretX?.length ?? 0);
+
+  /// [cost] when the entry was last put in the cache: what it gives back when it leaves.
+  int charged = 0;
 
   final double width;
   final double height;
@@ -1569,8 +1643,8 @@ class _LineLayoutKey {
 /// own inputs turns those back into lookups for the lines the edit did not touch.
 ///
 /// Insertion-ordered, so the eldest entry is the least recently used once a hit
-/// re-inserts its key. The budget counts characters rather than entries because the
-/// per-character x array is what the memory goes into.
+/// re-inserts its key. The budget counts caret positions (see [_LineLayout.cost]) rather than
+/// entries because the per-character x array is what the memory goes into.
 final Map<_LineLayoutKey, _LineLayout> _lineLayoutCache = {};
 int _lineLayoutCacheChars = 0;
 const int _lineLayoutCacheCharBudget = 200000;
@@ -1579,16 +1653,17 @@ void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
   // The replaced entry stops counting, so a re-inserted line is charged to the budget once.
   final replaced = _lineLayoutCache.remove(key);
   if (replaced != null) {
-    _lineLayoutCacheChars -= replaced.cost;
+    _lineLayoutCacheChars -= replaced.charged;
     // Same key, same layout: keep the caret positions an earlier pass measured.
     layout.caretX ??= replaced.caretX;
   }
   _lineLayoutCache[key] = layout;
-  _lineLayoutCacheChars += layout.cost;
+  layout.charged = layout.cost;
+  _lineLayoutCacheChars += layout.charged;
   while (_lineLayoutCacheChars > _lineLayoutCacheCharBudget &&
       _lineLayoutCache.length > 1) {
     final evicted = _lineLayoutCache.remove(_lineLayoutCache.keys.first);
-    if (evicted != null) _lineLayoutCacheChars -= evicted.cost;
+    if (evicted != null) _lineLayoutCacheChars -= evicted.charged;
   }
 }
 
@@ -1831,10 +1906,65 @@ class TextShape extends Shape {
     this.carets = const [],
     this.selections = const [],
     this.styleToken = 0,
+    this.fixedLineHeight = false,
   ]);
 
   /// Stands for [style] in a layout key: a change count, since comparing the style is expensive.
   final int styleToken;
+
+  /// StyledText#isFixedLineHeight: every line is one height, as native SWT lays such an editor out.
+  final bool fixedLineHeight;
+
+  /// Every row is [_rowHeight] tall: the rows are known without measuring a line, so the lines out of
+  /// view are left unmeasured, as native SWT leaves them.
+  bool get _uniformRows =>
+      fixedLineHeight && wordWrap != true && lineHeight > 0 && lineSpacing == 0 && lineSpacings == null;
+
+  /// The tallest line measured by this shape and the ones it took over from. Native SWT makes every
+  /// line as tall as the tallest one it has laid out (a fallback glyph's font can be taller than the
+  /// editor's), and so does [_rowHeight].
+  double _tallestLine = 0;
+  double? _rowHeightValue;
+
+  /// Set when a line measured after the rows were placed is taller than they are: the owner
+  /// builds the shape again, with rows that fit it.
+  bool rowsOutgrown = false;
+
+  double get _rowHeight =>
+      _rowHeightValue ??= math.max(lineHeight, math.max(_tallestLine, _plainLineHeight));
+
+  /// How tall a line of the editor's own font lays out, before any line is measured.
+  late final double _plainLineHeight = () {
+    final tp = TextPainter(text: TextSpan(text: ' ', style: style), textDirection: TextDirection.ltr)
+      ..layout();
+    final height = tp.height;
+    tp.dispose();
+    return height;
+  }();
+
+  /// A line holding a character that breaks it (a form feed, U+2028) lays out on several rows even
+  /// without wrapping; native SWT sizes the rows by the tallest of them, and the rest overflow.
+  static double _tallestRowOf(_LineLayout layout) {
+    if (layout.metrics.isEmpty) return layout.height;
+    var tallest = 0.0;
+    for (final row in layout.metrics) {
+      if (row.height > tallest) tallest = row.height;
+    }
+    return tallest;
+  }
+
+  void _noteLineHeight(double height) {
+    if (height <= _tallestLine) return;
+    _tallestLine = height;
+    final rows = _rowHeightValue;
+    if (rows != null && height > rows + 0.5) rowsOutgrown = true;
+  }
+
+  /// What the rows of [other] were placed with, for a shape that shares its line tops.
+  void _takeRowHeight(TextShape other) {
+    _tallestLine = math.max(_tallestLine, other._tallestLine);
+    _rowHeightValue = other._rowHeightValue;
+  }
 
   /// Everything a line's measured height depends on; shapes that agree on it share measurements.
   late final int layoutSignature = Object.hash(
@@ -1849,7 +1979,7 @@ class TextShape extends Shape {
       wordWrap == true ? Object.hash(canvasSize?.width, off.dx) : null,
       tabs,
       const ListEquality<int>().hash(tabStops),
-      Object.hash(lineSpacing, lineHeight, direction),
+      Object.hash(lineSpacing, lineHeight, direction, fixedLineHeight),
       lineSpacings == null ? 0 : const ListEquality<int>().hash(lineSpacings!),
       widgetLine.indent,
       widgetLine.wrapIndent,
@@ -1859,8 +1989,15 @@ class TextShape extends Shape {
   /// Takes over what [other] measured when both lay out the same way. After an edit, [other] answers
   /// for the lines the edit did not reach ([_donatedLine]).
   void inheritMeasurementsFrom(TextShape other) {
+    if (other._frameSignature == _frameSignature) {
+      _tallestLine = math.max(_tallestLine, other._tallestLine);
+    }
     if (other.layoutSignature == layoutSignature) {
-      _lineTopsCache = other._lineTopsCache;
+      // Rows that a measured line outgrew are placed again, at the height that fits it.
+      if (!other.rowsOutgrown) {
+        _lineTopsCache = other._lineTopsCache;
+        _rowHeightValue = other._rowHeightValue;
+      }
       _measuredLineCache = other._measuredLineCache;
       _linePropsCache = other._linePropsCache;
       _rangesTokenCache = other._rangesTokenCache;
@@ -1965,11 +2102,11 @@ class TextShape extends Shape {
 
   /// Per-line properties that affect layout, from [editingState] when present.
   /// Computed once and shared by every pass over the document.
-  List<({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})?>?
+  List<({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})?>?
       _linePropsCache;
   List<_LineLayout?>? _measuredLineCache;
 
-  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
+  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})
       _linePropsFor(int lineIndex) {
     final memo = _linePropsCache ??= List.filled(_lineStarts.length + 1, null);
     if (lineIndex >= 0 && lineIndex < memo.length) {
@@ -1984,6 +2121,12 @@ class TextShape extends Shape {
 
   /// The layout of [lineIndex] as this shape lays it out, measured once.
   _LineLayout _measuredLine(int lineIndex, String lineText, {bool wantCaretX = false}) {
+    final layout = _measuredLineNow(lineIndex, lineText, wantCaretX);
+    if (_uniformRows) _noteLineHeight(_tallestRowOf(layout));
+    return layout;
+  }
+
+  _LineLayout _measuredLineNow(int lineIndex, String lineText, bool wantCaretX) {
     final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
     final inRange = lineIndex >= 0 && lineIndex < memo.length;
     if (inRange && !wantCaretX) {
@@ -2002,7 +2145,41 @@ class TextShape extends Shape {
     return layout;
   }
 
-  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
+  /// The layout of [lineIndex] if it was measured already, by this shape or one it took after.
+  _LineLayout? _peekLine(int lineIndex, String lineText) {
+    final memo = _measuredLineCache;
+    if (memo != null && lineIndex >= 0 && lineIndex < memo.length && memo[lineIndex] != null) {
+      return memo[lineIndex];
+    }
+    final donated = _donatedLine(lineIndex, lineText, false);
+    if (donated != null) return donated;
+    final props = _linePropsFor(lineIndex);
+    return _lineLayoutCache[_LineLayoutKey(
+      lineText,
+      styleToken,
+      _rangesTokenFor(lineIndex, lineText.length),
+      props.align,
+      _lineMaxWidth(props.layoutIndent),
+      tabs,
+      _tabStopsFor(lineIndex),
+    )];
+  }
+
+  double? _columnAdvance;
+
+  /// A line's width from its column count, tabs expanded to their stops: exact in a fixed-pitch font,
+  /// an estimate otherwise, until the line is laid out.
+  double _estimatedWidth(String lineText) {
+    final advance = _columnAdvance ??= _measureRun('0' * 10, style) / 10;
+    final tabColumns = tabs > 0 ? tabs : 4;
+    int columns = 0;
+    for (int k = 0; k < lineText.length; k++) {
+      columns = lineText.codeUnitAt(k) == 0x09 ? (columns ~/ tabColumns + 1) * tabColumns : columns + 1;
+    }
+    return columns * advance;
+  }
+
+  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth})
       _buildLinePropsFor(int lineIndex) {
     final props = editingState?.lineProperties[lineIndex];
     final indent = props?.indent ?? widgetLine.indent ?? 0;
@@ -2017,6 +2194,7 @@ class TextShape extends Shape {
       align: (props?.justify ?? widgetLine.justify ?? false) ? TextAlign.justify : align,
       vIndent: props?.verticalIndent ?? 0,
       bulletText: props?.bulletText,
+      bulletWidth: props?.bulletWidth ?? 0,
     );
   }
 
@@ -2036,7 +2214,7 @@ class TextShape extends Shape {
 
   /// StyledText#setLineWrapIndent: the rows a line continues on start at the wrap indent
   /// instead of at the line's own indent.
-  double _rowOriginX(({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText}) props,
+  double _rowOriginX(({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth}) props,
           double lineOriginX, int row) =>
       row == 0 ? lineOriginX : lineOriginX - props.indent + props.wrapIndent;
 
@@ -2076,7 +2254,7 @@ class TextShape extends Shape {
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
-      y += props.vIndent + _advance(_measuredLine(i, lines[i]).height, i);
+      y += props.vIndent + (_uniformRows ? _rowHeight : _advance(_measuredLine(i, lines[i]).height, i));
     }
     tops[lines.length] = y;
     debugLineTopsMicros += watch.elapsedMicroseconds;
@@ -2106,6 +2284,7 @@ class TextShape extends Shape {
   // so advance by tpHeight; fall back to lineHeight as a floor (empty lines whose painter
   // measures ~0, or to keep a consistent single-line height).
   double _advance(double tpHeight, [int lineIndex = -1]) {
+    if (_uniformRows) return _rowHeight;
     final lh = lineHeight > 0 ? lineHeight : (style.fontSize ?? 16) * 1.2;
     return (tpHeight > lh ? tpHeight : lh) + _spacingFor(lineIndex);
   }
@@ -2154,6 +2333,8 @@ class TextShape extends Shape {
     // Running line tops, kept with the layout; the paint starts and stops at the band's lines.
     final tops = _lineTops(lines);
     int firstLine = _lineAtTop(tops, cullTop - paintOffset.dy);
+    final selections = [for (final s in allSelections) if (s.hasSelection) s];
+    debugPaintedSelectionRects.clear();
 
     for (int i = firstLine; i < lines.length; i++) {
       currentY = paintOffset.dy + tops[i];
@@ -2193,19 +2374,30 @@ class TextShape extends Shape {
       // A wrap indent shifts only the rows the line continues on, so the layout is painted
       // once per indent, each pass clipped to the rows it applies to.
       final wrapShift = props.wrapIndent - props.indent;
+      final selected = _selectionsOnLine(selections, i, line);
       void paintRows(double x, Rect? band) {
         if (band != null) {
           c.save();
           c.clipRect(band);
         }
-        _drawRangeBackgrounds(c, i, line, tp, Offset(x, currentY + vIndent), currentY + advance);
-        _paintLineWithRises(c, tp, i, line, Offset(x, currentY + vIndent));
-        _drawRangeBorders(c, i, line, tp, Offset(x, currentY + vIndent));
-        _drawSeparateStrikeouts(c, i, line, tp, Offset(x, currentY + vIndent));
+        final origin = Offset(x, currentY + vIndent);
+        _drawRangeBackgrounds(c, i, line, tp, origin, currentY + advance);
+        _paintLineWithRises(c, tp, i, line, origin);
+        _drawRangeBorders(c, i, line, tp, origin);
+        _drawSeparateStrikeouts(c, i, line, tp, origin);
+        for (final run in selected) {
+          if (run.from < run.to) {
+            _drawSelectedRun(c, run, i, line, tp, maxW, origin, band, paintOffset.dx,
+                maxW.isFinite ? paintOffset.dx + props.layoutIndent + maxW : null);
+          }
+        }
         if (band != null) c.restore();
       }
       _drawBullet(c, props, paintOffset.dx, currentY + vIndent);
-      if (wrapShift == 0 || rows.length < 2) {
+      if (_uniformRows && rows.length > 1) {
+        // The rows its own characters broke it onto lie under the lines below, as natively.
+        paintRows(originX, Rect.fromLTRB(0, currentY, canvasSize?.width ?? tp.width, currentY + advance));
+      } else if (wrapShift == 0 || rows.length < 2) {
         paintRows(originX, null);
       } else {
         final split = currentY + vIndent + rows.first.height;
@@ -2214,11 +2406,9 @@ class TextShape extends Shape {
         paintRows(originX + wrapShift,
             Rect.fromLTRB(0, split, width, currentY + vIndent + tp.height));
       }
-    }
-
-    debugPaintedSelectionRects.clear();
-    for (final selection in allSelections) {
-      if (selection.hasSelection) _drawSelection(c, selection);
+      for (final run in selected) {
+        if (run.delimiter) _drawSelectedDelimiter(c, run.selection, tp, originX, currentY + vIndent);
+      }
     }
 
     if (clipRect != null) {
@@ -2302,10 +2492,11 @@ class TextShape extends Shape {
     if (clip != null) c.restore();
   }
 
-  /// StyledText#setLineBullet: the bullet sits in the width it reserved before the text, right
-  /// aligned against it the way the renderer draws it (8px of margin, as BULLET_MARGIN).
+  /// StyledText#setLineBullet: the bullet sits at the line start in the width it reserved, right
+  /// aligned against it the way the renderer draws it (8px of margin, as BULLET_MARGIN); the line's
+  /// own indent moves only the text.
   void _drawBullet(Canvas c,
-      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText}) props,
+      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth}) props,
       double originX, double y) {
     final bullet = props.bulletText;
     if (bullet == null || bullet.isEmpty) return;
@@ -2313,7 +2504,7 @@ class TextShape extends Shape {
       text: TextSpan(text: bullet, style: style),
       textDirection: direction,
     )..layout();
-    final x = math.max(0.0, props.indent - painter.width - _bulletMargin);
+    final x = math.max(0.0, props.bulletWidth - painter.width - _bulletMargin);
     painter.paint(c, Offset(originX + x, y));
     painter.dispose();
   }
@@ -2557,6 +2748,28 @@ class TextShape extends Shape {
       final vIndent = props.vIndent;
       final maxW = _lineMaxWidth(props.layoutIndent);
 
+      if (!wholeDocument && _uniformRows && !rowIsVisible(currentY, vIndent + _rowHeight)) {
+        // Out of view: its width as far as known, without laying the line out for it.
+        final width = _peekLine(i, line)?.width ?? _estimatedWidth(line);
+        final x = _lineOriginX(
+            props.indent, props.align, width, canvasSize == null ? double.infinity : maxW);
+        maxWidth = math.max(maxWidth, x + width);
+        visual.add(GeometryRow(
+          i,
+          docOffset,
+          docOffset + line.length,
+          _roundPx(x),
+          _roundPx(currentY),
+          _roundPx(width),
+          _roundPx(vIndent + _rowHeight),
+          vIndent != 0 ? vIndent : null,
+          null,
+        ));
+        currentY += vIndent + _rowHeight;
+        docOffset += line.length + 1;
+        continue;
+      }
+
       var layout = _measuredLine(i, line, wantCaretX: wholeDocument);
       // Per-character x is worth its weight only for the rows someone can see; the line has to
       // be laid out to know where it ends, so the decision comes after.
@@ -2581,7 +2794,8 @@ class TextShape extends Shape {
       // text-position queries and uses the box for line/pixel queries.
       final metrics = layout.metrics;
       final includeCharX = caretX != null;
-      if (metrics.length <= 1) {
+      // Uniform rows hold one line each, whatever rows its layout broke into.
+      if (metrics.length <= 1 || _uniformRows) {
         maxWidth = math.max(maxWidth, finalX + layout.width);
         visual.add(GeometryRow(
           i,
@@ -2802,7 +3016,6 @@ class TextShape extends Shape {
         tp.height,
         metrics,
         rowEnds,
-        lineText.length + 1,
       );
       if (wantCaretX) {
         layout.caretX = [
@@ -3227,7 +3440,7 @@ class TextShape extends Shape {
 
   /// The visual row [posInLine] starts, when it starts one after the first.
   int? _rowStartingAt(String line, int lineIndex,
-      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText}) props,
+      ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText, int bulletWidth}) props,
       double maxW, int posInLine) {
     if (posInLine == 0) return null;
     final rowEnds = _lineLayout(line, lineIndex,
@@ -3282,135 +3495,116 @@ class TextShape extends Shape {
   /// The highlight rectangles the last paint drew, for [StyledTextImpl.debugRenderFacts].
   final List<Rect> debugPaintedSelectionRects = [];
 
-  void _drawSelection(Canvas c, SelectionInfo selection) {
-    final startOffset = selection.normalizedStart.clamp(0, text.length);
-    final endOffset = selection.normalizedEnd.clamp(0, text.length);
-
-    if (startOffset == endOffset) return;
-
-    final lines = _lines;
-
-    int currentLineStartOffset = 0;
-    int startLineIndex = 0;
-    int endLineIndex = 0;
-    int startPositionInLine = 0;
-    int endPositionInLine = 0;
-
-    for (int i = 0; i < lines.length; i++) {
-      final lineLength = lines[i].length;
-      final lineEndOffset = currentLineStartOffset + lineLength;
-
-      if (startOffset >= currentLineStartOffset &&
-          startOffset <= lineEndOffset) {
-        startLineIndex = i;
-        startPositionInLine = startOffset - currentLineStartOffset;
-      }
-
-      if (endOffset >= currentLineStartOffset && endOffset <= lineEndOffset) {
-        endLineIndex = i;
-        endPositionInLine = endOffset - currentLineStartOffset;
-        break;
-      }
-
-      currentLineStartOffset = lineEndOffset + 1;
-    }
-
-    final tops = _lineTops(lines);
-
-    for (
-      int lineIndex = startLineIndex;
-      lineIndex <= endLineIndex;
-      lineIndex++
-    ) {
-      final line = lines[lineIndex];
-      final props = _linePropsFor(lineIndex);
-
-      final tp = _layoutLine(
-        line,
-        lineIndex,
-          align: props.align,
-        maxWidth: _lineMaxWidth(props.layoutIndent),
-      );
-
-      final currentY = off.dy + tops[lineIndex] + props.vIndent;
-
-      int lineSelectionStart = 0;
-      int lineSelectionEnd = line.length;
-
-      if (lineIndex == startLineIndex) {
-        lineSelectionStart = startPositionInLine;
-      }
-      if (lineIndex == endLineIndex) {
-        lineSelectionEnd = endPositionInLine;
-      }
-
-      // A line whose delimiter is inside the selection is highlighted past its last character:
-      // to the right edge with FULL_SELECTION, by the delimiter's own extent otherwise. It is the
-      // only highlight an empty line inside a selection gets.
-      if (lineIndex < endLineIndex) {
-        final tail = tp.width + off.dx + props.indent;
-        final right = fullSelection
-            ? math.max(tail, canvasSize?.width ?? tail)
-            : tail + _measureRun(' ', style);
-        final rect = Rect.fromLTRB(tail, currentY, right, currentY + _advance(tp.height));
-        debugPaintedSelectionRects.add(rect);
-        c.drawRect(rect, Paint()..color = selection.selectionColor);
-      }
-
-      if (lineSelectionStart < lineSelectionEnd) {
-        final boxes = tp.getBoxesForSelection(
-          TextSelection(
-            baseOffset: lineSelectionStart.clamp(0, line.length),
-            extentOffset: lineSelectionEnd.clamp(0, line.length),
+  /// What each selection covers of line [lineIndex]: the columns of its glyphs, and whether it
+  /// goes on past the line's delimiter.
+  List<({SelectionInfo selection, int from, int to, bool delimiter})> _selectionsOnLine(
+      List<SelectionInfo> selections, int lineIndex, String line) {
+    if (selections.isEmpty) return const [];
+    final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
+    final lineEnd = lineStart + line.length;
+    return [
+      for (final selection in selections)
+        if (selection.normalizedStart.clamp(0, text.length) <= lineEnd &&
+            selection.normalizedEnd.clamp(0, text.length) >= lineStart)
+          (
+            selection: selection,
+            from: math.max(selection.normalizedStart.clamp(0, text.length), lineStart) - lineStart,
+            to: math.min(selection.normalizedEnd.clamp(0, text.length), lineEnd) - lineStart,
+            delimiter: selection.normalizedEnd.clamp(0, text.length) > lineEnd,
           ),
-        );
+    ];
+  }
 
-        for (final box in boxes) {
-          final selectionRect = Rect.fromLTWH(
-            off.dx + props.indent.toDouble() + box.left,
-            currentY + box.top,
-            box.right - box.left,
-            box.bottom - box.top,
-          );
-          debugPaintedSelectionRects.add(selectionRect);
-
-          c.drawRect(
-            selectionRect,
-            Paint()
-              ..color = selection.selectionColor
-              ..style = PaintingStyle.fill,
-          );
-        }
-
-        final selectionForeground = selection.selectionForeground;
-        if (selectionForeground != null && boxes.isNotEmpty) {
-          final recoloured = TextPainter(
-            text: _recolour(tp.text!, selectionForeground),
-            textAlign: tp.textAlign,
-            textDirection: TextDirection.ltr,
-          );
-          if (tp.inlinePlaceholderBoxes != null) {
-            recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
-          }
-          recoloured.layout(maxWidth: _lineMaxWidth(props.layoutIndent));
-          c.save();
-          c.clipRect(boxes
-              .map((b) => Rect.fromLTRB(
-                  off.dx + props.indent + b.left, currentY + b.top,
-                  off.dx + props.indent + b.right, currentY + b.bottom))
-              .reduce((a, b) => a.expandToInclude(b)));
-          recoloured.paint(c, Offset(off.dx + props.indent.toDouble(), currentY));
-          c.restore();
-        }
-      }
+  /// TextLayout.draw's order for a selected run: the highlight over whatever the run painted
+  /// behind and under its glyphs, then the glyphs again on top in the selection foreground, laid
+  /// out and placed as the line's own so they land on the glyphs they replace.
+  void _drawSelectedRun(
+      Canvas c,
+      ({SelectionInfo selection, int from, int to, bool delimiter}) run,
+      int lineIndex,
+      String line,
+      TextPainter tp,
+      double maxWidth,
+      Offset origin,
+      Rect? band,
+      double layoutLeft,
+      double? layoutRight) {
+    final boxes = tp.getBoxesForSelection(TextSelection(baseOffset: run.from, extentOffset: run.to));
+    if (boxes.isEmpty) return;
+    final highlight = Paint()..color = run.selection.selectionColor;
+    final selected = Path();
+    void fill(Rect rect) {
+      if (band == null || rect.overlaps(band)) debugPaintedSelectionRects.add(rect);
+      c.drawRect(rect, highlight);
+      selected.addRect(rect);
     }
+
+    for (final box in boxes) {
+      fill(box.toRect().shift(origin));
+    }
+    for (final rect in _rowContinuations(tp, boxes, origin, layoutLeft, layoutRight)) {
+      fill(rect);
+    }
+    final recoloured = TextPainter(
+      text: _recolour(tp.text!, run.selection.selectionForeground),
+      textAlign: tp.textAlign,
+      textDirection: direction,
+    );
+    if (tp.inlinePlaceholderBoxes != null) {
+      recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
+    }
+    recoloured.layout(maxWidth: maxWidth);
+    c.save();
+    c.clipPath(selected);
+    _paintLineWithRises(c, recoloured, lineIndex, line, origin);
+    c.restore();
+    recoloured.dispose();
+  }
+
+  /// Cocoa's selection rectangles on a wrapped line: a row the selection goes on from is filled to
+  /// the layout's right edge, and a row it goes on to is filled from the layout's left edge. GTK and
+  /// Windows highlight only the selected glyphs.
+  List<Rect> _rowContinuations(
+      TextPainter tp, List<TextBox> boxes, Offset origin, double layoutLeft, double? layoutRight) {
+    if (direction != TextDirection.ltr || defaultTargetPlatform != TargetPlatform.macOS) return const [];
+    final byRow = <int, Rect>{};
+    for (final box in boxes) {
+      final row = _rowIndexAt(tp, (box.top + box.bottom) / 2);
+      final rect = box.toRect().shift(origin);
+      byRow[row] = byRow[row]?.expandToInclude(rect) ?? rect;
+    }
+    if (byRow.length < 2) return const [];
+    final rows = byRow.keys.toList()..sort();
+    return [
+      for (final row in rows) ...[
+        if (row != rows.last && layoutRight != null && byRow[row]!.right < layoutRight)
+          Rect.fromLTRB(byRow[row]!.right, byRow[row]!.top, layoutRight, byRow[row]!.bottom),
+        if (row != rows.first && byRow[row]!.left > layoutLeft)
+          Rect.fromLTRB(layoutLeft, byRow[row]!.top, byRow[row]!.left, byRow[row]!.bottom),
+      ],
+    ];
+  }
+
+  /// A line whose delimiter is inside the selection is highlighted past its last character: to
+  /// the right edge with FULL_SELECTION, by the delimiter's own extent otherwise. It is the only
+  /// highlight an empty line inside a selection gets.
+  void _drawSelectedDelimiter(Canvas c, SelectionInfo selection, TextPainter tp, double originX, double top) {
+    final tail = originX + tp.width;
+    final right = fullSelection
+        ? math.max(tail, canvasSize?.width ?? tail)
+        : tail + _measureRun(' ', style);
+    final rect = Rect.fromLTRB(tail, top, right, top + _advance(tp.height));
+    debugPaintedSelectionRects.add(rect);
+    c.drawRect(rect, Paint()..color = selection.selectionColor);
   }
 
   InlineSpan _recolour(InlineSpan span, Color color) {
     if (span is! TextSpan) return span;
     return TextSpan(
       text: span.text,
-      style: (span.style ?? const TextStyle()).copyWith(color: color),
+      // The highlight is the selected run's background: a range's own would cover it again.
+      style: (span.style ?? const TextStyle())
+          .copyWith(color: color, background: Paint()..color = const Color(0x00000000)),
       children: span.children?.map((s) => _recolour(s, color)).toList(),
     );
   }
@@ -3449,7 +3643,10 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
-    ).._lineTopsCache = _lineTopsCache;
+      fixedLineHeight,
+    )
+      .._lineTopsCache = _lineTopsCache
+      .._takeRowHeight(this);
   }
 
   TextShape copyWithEditingState(TextEditingState newEditingState) {
@@ -3478,6 +3675,7 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
+      fixedLineHeight,
     );
   }
 
@@ -3531,6 +3729,7 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
+      fixedLineHeight,
     );
   }
 
@@ -3560,7 +3759,10 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
-    ).._lineTopsCache = _lineTopsCache;
+      fixedLineHeight,
+    )
+      .._lineTopsCache = _lineTopsCache
+      .._takeRowHeight(this);
   }
 
   TextShape updateCaretOffset(int offset) {
@@ -3995,16 +4197,19 @@ class StyleRange {
 class SelectionInfo {
   final int start;
   final int end;
+  /// The highlight behind the selected run. The default is the Display's COLOR_LIST_SELECTION,
+  /// what StyledText#getSelectionBackground answers while none is set.
   final Color selectionColor;
-  /// Colour the selected glyphs are repainted in; null leaves them in their own colour.
-  final Color? selectionForeground;
+  /// The colour the selected glyphs are drawn in over the highlight. The default is the Display's
+  /// COLOR_LIST_SELECTION_TEXT, what StyledText#getSelectionForeground answers while none is set.
+  final Color selectionForeground;
   final bool isActive;
 
   SelectionInfo({
     required this.start,
     required this.end,
     this.selectionColor = const Color(0xFF3399FF),
-    this.selectionForeground,
+    this.selectionForeground = const Color(0xFFFFFFFF),
     this.isActive = false,
   });
 
@@ -4128,6 +4333,8 @@ class LineProperties {
   /// StyledText#setLineBullet: what to paint before the line, inside the width its style's glyph
   /// metrics reserved (which is already part of [indent]).
   final String? bulletText;
+  /// The width the bullet's glyph metrics reserve at the start of the line.
+  final int? bulletWidth;
   /// StyledText#setLineBackground: painted behind the whole line.
   final Color? background;
   /// StyledText#setLineTabStops: absolute stops, the last interval repeating past the end.
@@ -4140,6 +4347,7 @@ class LineProperties {
     this.verticalIndent,
     this.wrapIndent,
     this.bulletText,
+    this.bulletWidth,
     this.background,
     this.tabStops,
   });
@@ -4153,6 +4361,7 @@ class LineProperties {
           other.verticalIndent == verticalIndent &&
           other.wrapIndent == wrapIndent &&
           other.bulletText == bulletText &&
+          other.bulletWidth == bulletWidth &&
           other.background == background &&
           const ListEquality<int>().equals(other.tabStops, tabStops));
 }
@@ -4717,3 +4926,4 @@ class TextEditor {
     return '\n'.allMatches(text.substring(0, offset)).length;
   }
 }
+

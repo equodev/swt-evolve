@@ -1251,14 +1251,21 @@ class GCDrawer extends GCDrawerBase {
     required Rect srcRect,
     required Offset destOffset,
     Offset baseOffset = Offset.zero,
+    double baseScale = 1,
   }) {
     final destRect = srcRect.shift(destOffset);
+    // The base of an Image held at the raster scale is in the buffer's pixels, the area in the
+    // Image's units, and the copy is drawn under the scale to the buffer.
+    final baseSrc = baseScale == 1
+        ? srcRect
+        : Rect.fromLTRB(srcRect.left * baseScale, srcRect.top * baseScale,
+            srcRect.right * baseScale, srcRect.bottom * baseScale);
     return [
       // Under the shapes drawn through this GC, so the copy keeps their z-order.
       if (basePicture != null)
-        ImageShape.picture(basePicture, srcRect, destRect, clipRect: destRect)
+        ImageShape.picture(basePicture, baseSrc, destRect, clipRect: destRect)
       else if (baseImage != null)
-        ImageShape.raster(baseImage.clone(), srcRect.shift(baseOffset), destRect, clipRect: destRect),
+        ImageShape.raster(baseImage.clone(), baseSrc.shift(baseOffset), destRect, clipRect: destRect),
       for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
         _translateShapeWithClip(shape, destOffset, srcRect),
     ];
@@ -1634,6 +1641,7 @@ class GCDrawer extends GCDrawerBase {
       destOffset:
           Offset((destX - srcX).toDouble(), (destY - srcY).toDouble()),
       baseOffset: captured?.offset ?? Offset.zero,
+      baseScale: captured != null ? 1 : _bufferScale,
     ));
     captured?.image.dispose();
   }
@@ -3331,10 +3339,16 @@ class ImageShape extends Shape {
   void _drawPicture(ui.Canvas c) {
     final picture = remotePicture;
     if (picture == null) return;
+    final src = srcRect ?? Rect.fromLTWH(0, 0, destRect.width, destRect.height);
     c.save();
     // Clip first so a picture larger than the blit cannot spill past it.
     c.clipRect(destRect);
-    c.translate(destRect.left - (srcRect?.left ?? 0), destRect.top - (srcRect?.top ?? 0));
+    c.translate(destRect.left, destRect.top);
+    if (src.width > 0 && src.height > 0 &&
+        (src.width != destRect.width || src.height != destRect.height)) {
+      c.scale(destRect.width / src.width, destRect.height / src.height);
+    }
+    c.translate(-src.left, -src.top);
     c.drawPicture(picture);
     c.restore();
   }

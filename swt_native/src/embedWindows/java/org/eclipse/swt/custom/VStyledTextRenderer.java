@@ -379,6 +379,13 @@ public class VStyledTextRenderer {
     public void setBulletTexts(String[] value) {
     }
 
+    public int[] getBulletWidths() {
+        return ((DartStyledTextRenderer) impl).wireBulletWidths();
+    }
+
+    public void setBulletWidths(int[] value) {
+    }
+
     @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
     public static class VLineSizeInfo {
 

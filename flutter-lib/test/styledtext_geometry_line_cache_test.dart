@@ -330,4 +330,21 @@ void main() {
           'keys on the width a line was laid out against',
     );
   });
+
+  test('a document past the caret budget is not re-measured by a shape built afresh', () {
+    // A shape built without a predecessor to inherit from -- a remounted editor -- has only this
+    // cache to find the document's layouts in. A line measured for its height and width holds no
+    // caret positions and is charged little, so a pass over a large file keeps its layouts.
+    final lines = List.generate(4000, (i) => 'line $i ${'of a large file, ' * 4}');
+    final text = lines.join('\n');
+    expect(text.length, greaterThan(200000), reason: 'sanity: past the budget in characters');
+    _shape(text, wrap: false).computeGeometry(visibleTop: 0, visibleBottom: 600);
+
+    TextShape.debugLayoutLineCalls = 0;
+    // Another String with the same content, as a remount receives it.
+    final again = String.fromCharCodes(text.codeUnits);
+    _shape(again, wrap: false).computeGeometry(visibleTop: 0, visibleBottom: 600);
+
+    expect(TextShape.debugLayoutLineCalls, 0);
+  });
 }
