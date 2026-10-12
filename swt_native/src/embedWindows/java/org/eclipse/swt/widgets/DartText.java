@@ -1487,6 +1487,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTabs(int tabs) {
         checkWidget();
+        if (TextHelper.ignoresTabs(tabs, SWT.getPlatform()))
+            return;
         if (tabs < 0)
             return;
         setTabStops(this.tabs = tabs);

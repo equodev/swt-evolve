@@ -11,6 +11,11 @@ public class TextHelper {
     private TextHelper() {
     }
 
+    /** Whether the given platform's Text.setTabs ignores this value: Win32 and GTK refuse a negative one, Cocoa keeps it. */
+    public static boolean ignoresTabs(int tabs, String platform) {
+        return tabs < 0 && !"cocoa".equals(platform);
+    }
+
     public static void insertEditText(DartText text, String string) {
         int length = string.length();
         Point selection = text.getSelection();
