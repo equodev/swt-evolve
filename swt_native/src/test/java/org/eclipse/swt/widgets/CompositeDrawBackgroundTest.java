@@ -17,6 +17,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,18 +77,23 @@ class CompositeDrawBackgroundTest {
             gc.dispose();
             surface.dispose();
         }
-        String wire = bridge.comm.sent.stream()
+        return bridge.comm.sent.stream()
                 .filter(f -> f.event.startsWith("GC/") || f.event.equals(MessageBatch.EVENT))
                 .map(f -> f.json)
                 .collect(Collectors.joining());
-        return wire;
     }
 
-    private static int count(String text, String part) {
-        int n = 0;
-        for (int i = text.indexOf(part); i >= 0; i = text.indexOf(part, i + 1))
-            n++;
-        return n;
+    /**
+     * The eight numbers after the image of each drawImage on the wire, in order. Compared against drawImage calls
+     * made directly, because how the source rectangle travels depends on the release: SWT 3.114 sends it in the
+     * image's pixels at the device zoom.
+     */
+    private static List<String> drawImageArguments(String wire) {
+        List<String> arguments = new ArrayList<>();
+        Matcher m = Pattern.compile("},(-?\\d+(?:,-?\\d+){7})]").matcher(wire);
+        while (m.find())
+            arguments.add(m.group(1));
+        return arguments;
     }
 
     @Test
@@ -155,14 +164,17 @@ class CompositeDrawBackgroundTest {
             Composite child = new Composite(parent, SWT.NONE);
             child.setBounds(3, 4, 50, 50);
             String wire = drawn(child, gc -> child.drawBackground(gc, 0, 0, 10, 10, 0, 0));
-            // The parent's tiles start at (-3, -4) in the child: the 10x10 rectangle meets four of them.
-            assertThat(count(wire, "\"swt\":\"Image\"")).isEqualTo(4);
-            assertThat(wire).contains(",3,4,7,6,0,0,7,6]").contains(",3,0,7,4,0,6,7,4]")
-                    .contains(",0,4,3,6,7,0,3,6]").contains(",0,0,3,4,7,6,3,4]");
+            // The parent's tiles start at (-3, -4) in the child: the 10x10 rectangle meets four of them, row by row.
+            assertThat(drawImageArguments(wire)).isEqualTo(drawImageArguments(drawn(child, gc -> {
+                gc.drawImage(image, 3, 4, 7, 6, 0, 0, 7, 6);
+                gc.drawImage(image, 0, 4, 3, 6, 7, 0, 3, 6);
+                gc.drawImage(image, 3, 0, 7, 4, 0, 6, 7, 4);
+                gc.drawImage(image, 0, 0, 3, 4, 7, 6, 3, 4);
+            }))).hasSize(4);
             assertThat(wire).doesNotContain("fillRectangle");
             String shifted = drawn(child, gc -> child.drawBackground(gc, 0, 0, 7, 6, -3, -4));
-            assertThat(count(shifted, "\"swt\":\"Image\"")).isEqualTo(1);
-            assertThat(shifted).contains(",0,0,7,6,0,0,7,6]");
+            assertThat(drawImageArguments(shifted))
+                    .isEqualTo(drawImageArguments(drawn(child, gc -> gc.drawImage(image, 0, 0, 7, 6, 0, 0, 7, 6)))).hasSize(1);
         } finally {
             image.dispose();
         }
