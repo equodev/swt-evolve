@@ -183,6 +183,7 @@ class TrackerLoopFlutterTest {
 
         assertThat(ended).isFalse();
         assertThat(tracker.isDisposed()).isTrue();
+        assertThat(sentToShell("Tracker/close")).as("the client is told the band is gone").isTrue();
     }
 
     @Test
@@ -190,6 +191,53 @@ class TrackerLoopFlutterTest {
         Tracker tracker = new Tracker(shell, SWT.NONE);
         assertThat(open(tracker, () -> client(tracker, "Tracker/cancel", new Event()))).isFalse();
         assertThat(open(tracker, () -> release(tracker))).as("the next open() starts afresh").isTrue();
+    }
+
+    @Test
+    void aDisposedParentEndsTheLoopAndTheShellStillHearsTheEnd() {
+        Composite composite = new Composite(shell, SWT.NONE);
+        Tracker tracker = new Tracker(composite, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(1, 1, 1, 1)});
+
+        boolean ended = open(tracker, composite::dispose);
+
+        assertThat(ended).isTrue();
+        assertThat(sentToShell("Tracker/open")).isTrue();
+        assertThat(sentToShell("Tracker/close")).isTrue();
+        assertThat(tracker.isDisposed()).isFalse();
+    }
+
+    // ---- a Tracker on the display -------------------------------------------------------------------
+
+    @Test
+    void aTrackerOnTheDisplayFollowsThePointerOverTheShell() {
+        Tracker tracker = new Tracker(display, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(50, 50, 10, 10)});
+        listen(tracker);
+
+        boolean ended = open(tracker, () -> {
+            pointer(tracker, 200, 200);
+            pointer(tracker, 210, 220);
+            release(tracker);
+        });
+
+        assertThat(ended).isTrue();
+        assertThat(sentToShell("Tracker/open")).as("announced on the shell the pointer is seen over").isTrue();
+        assertThat(sentToShell("Tracker/close")).isTrue();
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(60, 70, 10, 10));
+        tracker.dispose();
+    }
+
+    @Test
+    void aTrackerOnTheDisplayWithNoShellToFollowWaitsForItsClose() {
+        shell.setVisible(false);
+        Tracker tracker = new Tracker(display, SWT.NONE);
+
+        boolean ended = open(tracker, tracker::close);
+
+        assertThat(ended).isTrue();
+        assertThat(sentToShell("Tracker/open")).isFalse();
+        tracker.dispose();
     }
 
     // ---- the keyboard -------------------------------------------------------------------------------

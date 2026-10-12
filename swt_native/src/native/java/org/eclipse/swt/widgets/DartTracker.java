@@ -797,6 +797,8 @@ public class DartTracker extends DartWidget implements ITracker {
 
     private final java.util.concurrent.Semaphore clientInput = new java.util.concurrent.Semaphore(0);
 
+    private DartWidget announcedOn;
+
     private boolean pointerSeen;
 
     private Display keysDisplay;
@@ -804,7 +806,9 @@ public class DartTracker extends DartWidget implements ITracker {
     private ControlHelper.KeyCapture keysBefore;
 
     private DartWidget flutterHost() {
-        if (parent == null || parent.isDisposed())
+        if (parent == null)
+            return displayHost();
+        if (parent.isDisposed())
             return null;
         // The Shell rather than the immediate parent: the Shell is what subscribes to the
         // Tracker channel and what knows how to convert a pointer position into display
@@ -817,11 +821,23 @@ public class DartTracker extends DartWidget implements ITracker {
         return parent.getImpl() instanceof DartWidget ? (DartWidget) parent.getImpl() : null;
     }
 
+    private DartWidget displayHost() {
+        Shell active = display.getActiveShell();
+        if (active != null && active.isVisible() && active.getImpl() instanceof DartWidget)
+            return (DartWidget) active.getImpl();
+        for (Shell shell : display.getShells()) {
+            if (shell.isVisible() && shell.getImpl() instanceof DartWidget)
+                return (DartWidget) shell.getImpl();
+        }
+        return null;
+    }
+
     void openOnFlutter() {
         pointerSeen = false;
         keysDisplay = display;
         keysBefore = ControlHelper.captureKeys(display, this::key);
         DartWidget host = flutterHost();
+        announcedOn = host;
         if (host == null)
             return;
         // Without the parent's bridge, commFor() falls back to a comm the client is not on,
@@ -867,8 +883,9 @@ public class DartTracker extends DartWidget implements ITracker {
             ControlHelper.captureKeys(keysDisplay, keysBefore);
         keysDisplay = null;
         keysBefore = null;
-        DartWidget host = flutterHost();
-        if (host == null)
+        DartWidget host = announcedOn;
+        announcedOn = null;
+        if (host == null || host.isDisposed())
             return;
         Event e = new Event();
         e.itemId = FlutterBridge.id(this);
