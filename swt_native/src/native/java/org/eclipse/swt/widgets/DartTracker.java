@@ -797,6 +797,8 @@ public class DartTracker extends DartWidget implements ITracker {
 
     private final java.util.concurrent.Semaphore clientInput = new java.util.concurrent.Semaphore(0);
 
+    private boolean pointerSeen;
+
     private DartWidget flutterHost() {
         if (parent == null || parent.isDisposed())
             return null;
@@ -812,6 +814,7 @@ public class DartTracker extends DartWidget implements ITracker {
     }
 
     void openOnFlutter() {
+        pointerSeen = false;
         DartWidget host = flutterHost();
         if (host == null)
             return;
@@ -828,7 +831,7 @@ public class DartTracker extends DartWidget implements ITracker {
             // here, where the bridge is known, or the loop never learns where the pointer is.
             FlutterBridge.on(this, "Control", "Move", e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
-                    sendEvent(SWT.Move, e);
+                    mouse(e);
             }));
             FlutterBridge.on(this, "Tracker", "close", e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
@@ -860,6 +863,45 @@ public class DartTracker extends DartWidget implements ITracker {
         Event e = new Event();
         e.itemId = FlutterBridge.id(this);
         FlutterBridge.sendNow(host, "Tracker/close", e);
+    }
+
+    void mouse(Event e) {
+        int newX = e.x, newY = e.y;
+        if (!pointerSeen) {
+            pointerSeen = true;
+            oldX = newX;
+            oldY = newY;
+        }
+        boolean moved = newX != oldX || newY != oldY;
+        Event event = new Event();
+        event.x = newX;
+        event.y = newY;
+        if ((getApi().style & SWT.RESIZE) != 0) {
+            boolean orientationInit = moved && resizeRectangles(newX - oldX, newY - oldY);
+            inEvent = true;
+            sendEvent(SWT.Resize, event);
+            inEvent = false;
+            if (isDisposed()) {
+                cancelled = true;
+                return;
+            }
+            Point cursorPos = moved ? adjustResizeCursor(orientationInit) : null;
+            if (cursorPos != null) {
+                newX = cursorPos.x;
+                newY = cursorPos.y;
+            }
+        } else {
+            moveRectangles(newX - oldX, newY - oldY);
+            inEvent = true;
+            sendEvent(SWT.Move, event);
+            inEvent = false;
+            if (isDisposed()) {
+                cancelled = true;
+                return;
+            }
+        }
+        oldX = newX;
+        oldY = newY;
     }
 
     @Override
