@@ -318,6 +318,8 @@ sourceSets {
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
             if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            // TextLayout.setFixedLineMetrics was added in 3.125.
+            if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
             // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.
