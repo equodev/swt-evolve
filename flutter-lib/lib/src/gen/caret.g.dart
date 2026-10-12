@@ -15,6 +15,9 @@ VCaret _$VCaretFromJson(Map<String, dynamic> json) => VCaret()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
+  ..image = json['image'] == null
+      ? null
+      : VImage.fromJson(json['image'] as Map<String, dynamic>)
   ..focused = json['focused'] as bool?
   ..blinkRate = (json['blinkRate'] as num?)?.toInt();
 
@@ -24,6 +27,7 @@ Map<String, dynamic> _$VCaretToJson(VCaret instance) => <String, dynamic>{
   'style': instance.style,
   'visible': ?instance.visible,
   'bounds': ?instance.bounds,
+  'image': ?instance.image,
   'focused': ?instance.focused,
   'blinkRate': ?instance.blinkRate,
 };

@@ -95,6 +95,16 @@ List<int> _rgb((ByteData, int) pixels, int x, int y) {
 Future<void> _unmount(WidgetTester tester) => tester.pumpWidget(const SizedBox());
 
 void main() {
+  test('the image travels in the value', () {
+    final value = VCaret.fromJson({
+      'swt': 'Caret',
+      'id': 21,
+      'style': SWT.NONE,
+      'image': <String, dynamic>{'filename': 'caret.png'},
+    });
+    expect(value.image?.filename, 'caret.png');
+  });
+
   testWidgets('a visible focus caret is drawn at its bounds', (tester) async {
     await _pump(tester, _caret());
 
