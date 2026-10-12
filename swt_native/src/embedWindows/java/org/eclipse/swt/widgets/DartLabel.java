@@ -283,8 +283,8 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.image, image)) {
             getValue().markDirty(VLabel.IMAGE);
         }

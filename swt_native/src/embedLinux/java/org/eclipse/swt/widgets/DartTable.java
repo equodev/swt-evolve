@@ -2105,8 +2105,8 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerBackground, color)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
@@ -2159,8 +2159,8 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerForeground, color)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }

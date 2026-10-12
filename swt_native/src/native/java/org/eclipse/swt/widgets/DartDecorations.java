@@ -536,8 +536,8 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.image = image;

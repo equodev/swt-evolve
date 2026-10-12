@@ -286,8 +286,8 @@ public class DartTaskItem extends DartItem implements ITaskItem {
      * </ul>
      */
     public void setOverlayImage(Image overlayImage) {
-        overlayImage = GraphicsUtils.copyImage(getDisplay(), overlayImage);
         checkWidget();
+        overlayImage = GraphicsUtils.copyImage(getDisplay(), overlayImage);
         if (overlayImage != null && overlayImage.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.overlayImage = overlayImage;

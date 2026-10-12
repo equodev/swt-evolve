@@ -2272,12 +2272,12 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -2312,9 +2312,9 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())

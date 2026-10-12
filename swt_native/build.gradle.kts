@@ -306,6 +306,11 @@ sourceSets {
             // (absent in 3.131), so the test covering that path cannot compile against older SWT.
             val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
             if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+            // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
+            // The widget tracker is told of each widget from 3.130.
+            if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
             // tests covering that constructor cannot compile against older SWT.
             if (swtMinorNative < 129) {

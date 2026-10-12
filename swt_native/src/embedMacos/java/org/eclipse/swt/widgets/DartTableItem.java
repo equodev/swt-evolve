@@ -640,8 +640,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.background, color)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
@@ -745,8 +745,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VTableItem.FONT);
         }
@@ -829,8 +829,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.foreground, color)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }

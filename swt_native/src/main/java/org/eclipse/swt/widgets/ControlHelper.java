@@ -608,11 +608,9 @@ public class ControlHelper {
             return;
         Control control = null;
         boolean fixFocus = false;
-        if (!enabled) {
-//            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
-//                control = c.display.getFocusControl();
-//                fixFocus = c.isFocusAncestor(control);
-//            }
+        if (!enabled && c.mayFixFocus()) {
+            control = c.display.getFocusControl();
+            fixFocus = c.isFocusAncestor(control);
         }
         if (enabled) {
             c.getApi().state &= ~DartWidget.DISABLED;
@@ -666,6 +664,11 @@ public class ControlHelper {
      */
     public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
+            return;
+        // A bridge whose focus changes reach the Shell's own setActiveControl announces the activation
+        // there, once, the way SWT does; walking the chain here as well would announce it twice.
+        FlutterBridge bridge = control.getBridge();
+        if (bridge != null && bridge.activate(control, detail))
             return;
         Control now = control.getApi();
         Shell shell = now.getShell();

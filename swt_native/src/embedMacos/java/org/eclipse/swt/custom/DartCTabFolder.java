@@ -3414,13 +3414,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         if (inDispose)
             return;
         if (!java.util.Objects.equals(this.selectionBackground, color)) {
             getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         }
-        checkWidget();
         if (selectionBackground == color)
             return;
         if (color == null)
@@ -3581,8 +3581,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.selectionBgImage, image)) {
             getValue().markDirty(VCTabFolder.SELECTION_BG_IMAGE);
         }
@@ -3608,8 +3608,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.selectionForeground, color)) {
             getValue().markDirty(VCTabFolder.SELECTION_FOREGROUND);
         }

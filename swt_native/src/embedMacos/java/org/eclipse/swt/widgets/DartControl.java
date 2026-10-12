@@ -126,7 +126,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public DartControl(Composite parent, int style, Control api) {
         super(parent, style, api);
         this.parent = parent;
-        notifyCreationTracker();
         createWidget();
         ControlUtils.addToParentChildren(this);
     }
@@ -1503,6 +1502,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     @Override
     public long internal_new_GC(GCData data) {
+        checkWidget();
         if (data != null) {
             int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
             if ((data.style & mask) == 0) {
@@ -1878,6 +1878,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         return true;
     }
 
@@ -2603,8 +2605,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
@@ -2850,8 +2852,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
@@ -2881,13 +2883,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4171,6 +4173,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Font getExplicitFont() {
         return font;
+    }
+
+    boolean mayFixFocus() {
+        return false;
     }
 
     public FlutterBridge getBridge() {
