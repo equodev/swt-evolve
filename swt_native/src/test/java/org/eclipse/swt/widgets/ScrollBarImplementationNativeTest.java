@@ -33,7 +33,11 @@ class ScrollBarImplementationNativeTest {
     }
 
     private Canvas canvas(int width, int height) {
-        Canvas canvas = new Canvas(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+        return canvas(SWT.H_SCROLL | SWT.V_SCROLL, width, height);
+    }
+
+    private Canvas canvas(int style, int width, int height) {
+        Canvas canvas = new Canvas(shell, style);
         canvas.setBounds(0, 0, width, height);
         return canvas;
     }
@@ -42,34 +46,41 @@ class ScrollBarImplementationNativeTest {
     @DisplayName("each track lies along the far edge of the parent's client area")
     void theTracksLieAlongTheFarEdges() {
         Canvas canvas = canvas(200, 150);
-        assertThat(canvas.getVerticalBar().getThumbTrackBounds()).isEqualTo(new Rectangle(200, 0, 17, 150));
-        assertThat(canvas.getHorizontalBar().getThumbTrackBounds()).isEqualTo(new Rectangle(0, 150, 200, 17));
+        Rectangle area = canvas.getClientArea();
+        assertThat(canvas.getVerticalBar().getThumbTrackBounds())
+                .isEqualTo(new Rectangle(area.x + area.width, area.y, 17, area.height));
+        assertThat(canvas.getHorizontalBar().getThumbTrackBounds())
+                .isEqualTo(new Rectangle(area.x, area.y + area.height, area.width, 17));
     }
 
     @Test
     @DisplayName("the thumb is as long as its share of the range, never under 16, and travels the rest of the track")
     void theThumbFollowsFlutter() {
-        Canvas canvas = canvas(200, 150);
+        Canvas canvas = canvas(SWT.V_SCROLL, 200, 150);
+        int x = canvas.getClientArea().width;
         ScrollBar vertical = canvas.getVerticalBar();
         vertical.setValues(0, 0, 100, 10, 1, 10);
-        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(200, 0, 17, 16));
+        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 0, 17, 16));
         vertical.setSelection(90);
-        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(200, 134, 17, 16));
+        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 134, 17, 16));
         vertical.setValues(25, 0, 100, 50, 1, 10);
-        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(200, 38, 17, 75));
+        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 38, 17, 75));
 
-        ScrollBar horizontal = canvas.getHorizontalBar();
+        Canvas wide = canvas(SWT.H_SCROLL, 200, 150);
+        ScrollBar horizontal = wide.getHorizontalBar();
         horizontal.setValues(50, 0, 200, 100, 1, 10);
-        assertThat(horizontal.getThumbBounds()).isEqualTo(new Rectangle(50, 150, 100, 17));
+        assertThat(horizontal.getThumbBounds()).isEqualTo(new Rectangle(50, wide.getClientArea().height, 100, 17));
     }
 
     @Test
     @DisplayName("a track shorter than the thumb's floor is filled, and an empty one has no thumb")
     void aShortTrackIsFilled() {
-        ScrollBar bar = canvas(200, 10).getVerticalBar();
-        assertThat(bar.getThumbBounds()).isEqualTo(new Rectangle(200, 0, 17, 10));
-        ScrollBar none = canvas(200, 0).getVerticalBar();
-        assertThat(none.getThumbBounds()).isEqualTo(new Rectangle(200, 0, 17, 0));
+        Canvas shortOne = canvas(SWT.V_SCROLL, 200, 10);
+        assertThat(shortOne.getVerticalBar().getThumbBounds())
+                .isEqualTo(new Rectangle(shortOne.getClientArea().width, 0, 17, 10));
+        Canvas empty = canvas(SWT.V_SCROLL, 200, 0);
+        assertThat(empty.getVerticalBar().getThumbBounds())
+                .isEqualTo(new Rectangle(empty.getClientArea().width, 0, 17, 0));
     }
 
     @Test
