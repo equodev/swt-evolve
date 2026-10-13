@@ -41,6 +41,14 @@ class ProgressBarRangeTest {
     }
 
     @Test
+    @DisplayName("the default maximum is recorded as a change, like every other value the bar is given")
+    void theDefaultMaximumIsRecordedAsAChange() {
+        ProgressBar bar = new ProgressBar(DartMocks.dartShell(), SWT.NONE);
+
+        assertThat(((DartProgressBar) bar.getImpl()).getValue().changedKeys()).contains(VProgressBar.MAXIMUM);
+    }
+
+    @Test
     @DisplayName("the selection and the minimum are clamped against the default range")
     void clampsAgainstTheDefaultRange() {
         ProgressBar bar = new ProgressBar(DartMocks.dartShell(), SWT.NONE);

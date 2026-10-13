@@ -336,11 +336,17 @@ abstract class EquoCommBase {
           : (first is int && first >= 0 && first < i ? names[first] : null);
       if (name == null) continue;
       names[i] = name;
-      final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
-      if (identical(delivered, _noHandler)) {
-        _hold(name, entry[1]);
-      } else if (delivered is Future) {
-        await delivered;
+      // An entry that fails is that entry's failure alone: the rest of the run applies, as it would
+      // have arriving in frames of its own.
+      try {
+        final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
+        if (identical(delivered, _noHandler)) {
+          _hold(name, entry[1]);
+        } else if (delivered is Future) {
+          await delivered;
+        }
+      } catch (e, st) {
+        print('[comm] Handler error for "$name": $e\n$st');
       }
     }
   }
