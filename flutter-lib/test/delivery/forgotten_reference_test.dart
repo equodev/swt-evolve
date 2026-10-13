@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
@@ -196,5 +197,36 @@ void main() {
         reason: 'the item was in the payload and nothing else has ever described it');
     expect((registry.valueOn('Tree/$treeId') as VTree).items, isEmpty,
         reason: 'the tree itself is not rewound: that frame is still older than what it holds');
+  });
+
+  test('a widget named before it is described, then described inside another payload, fills in '
+      'the object its parent holds', () async {
+    // A parent built around one child: the parent's payload names the child, whose own description
+    // lands inside a different payload a moment later. The parent lays the child out from the object
+    // in its child list, so content that lands anywhere else lays it out at no size at all.
+    const int parentId = 81;
+    const int otherId = 82;
+    const int childId = 83;
+
+    Map<String, dynamic> composite(int id, List<Map<String, dynamic>> children, int seq) =>
+        {'swt': 'Composite', 'id': id, '_s': seq, 'style': SWT.NONE, 'children': children};
+    final described = {
+      'swt': 'Composite',
+      'id': childId,
+      '_s': 50,
+      'style': SWT.NONE,
+      'bounds': {'x': 0, 'y': 0, 'width': 500, 'height': 326},
+    };
+
+    final parent = registry.register(
+        VComposite.fromJson(composite(parentId, [_reference(childId, 'Composite')], 40))) as VComposite;
+    registry.register(VComposite.fromJson(composite(otherId, [], 45)));
+    await _deliver('Composite/$otherId', composite(otherId, [described], 50));
+
+    final laidOutByTheParent = parent.children!.single;
+    expect(laidOutByTheParent.bounds?.width, 500,
+        reason: 'the parent lays its child out from this object, and an empty one gets no size');
+    expect(identical(laidOutByTheParent, registry.valueOn('Composite/$childId')), isTrue,
+        reason: 'one widget, one object - whoever named it and whoever described it agree');
   });
 }
