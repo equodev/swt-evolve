@@ -36,9 +36,8 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
 
     final isInToolbar = ToolbarAreaMarker.of(context);
     if (isInToolbar && _isChipMode) {
-      final rawText = state.text ?? '';
-      final effectiveText = rawText == '<none>' ? '' : stripAccelerators(rawText);
-      return wrap(_buildToolbarChip(context, widgetTheme, enabled, effectiveText, state.image!));
+      final text = clabelDrawnText(state.text);
+      return wrap(_buildToolbarChip(context, widgetTheme, enabled, text, state.image!));
     }
 
     return _buildCLabel(context, widgetTheme, enabled);
@@ -111,9 +110,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     CLabelThemeExtension widgetTheme,
     bool enabled,
   ) {
-    // Treat "<none>" as empty text
-    final rawText = state.text ?? '';
-    final text = rawText == '<none>' ? '' : stripAccelerators(rawText);
+    final text = clabelDrawnText(state.text);
     final image = state.image;
 
     final textAlign = _getTextAlignFromAlignment(
