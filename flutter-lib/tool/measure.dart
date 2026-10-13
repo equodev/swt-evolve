@@ -2561,7 +2561,20 @@ class WidgetMeasurer {
             styles[i],
       ];
 
-      final conditions = minimalStyles.map((style) {
+      // The flags every style of the group shares say it alone when no style outside it holds them
+      // all: a Text wraps whatever its other bits, so its WRAP branch tests WRAP, not each style.
+      final common = styleFlags.reduce((a, b) => a.intersection(b));
+      final groupStyles = styles.toSet();
+      final sharedSaysIt = common.isNotEmpty &&
+          analyses
+              .map((a) => a.widgetType.split('-')[1])
+              .where((s) => !groupStyles.contains(s))
+              .every((s) => !s.split('|').toSet().containsAll(common));
+      final testedStyles = sharedSaysIt && minimalStyles.length > 1
+          ? [(common.toList()..sort()).join('|')]
+          : minimalStyles;
+
+      final conditions = testedStyles.map((style) {
         final styleCheck = style.contains('|')
             ? '(${style.split('|').map((s) => 'SWT.$s').join(' | ')})'
             : 'SWT.$style';

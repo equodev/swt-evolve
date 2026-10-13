@@ -53,7 +53,7 @@ public class TextSizes {
 
         double width, height;
 
-        if (hasFlags(style, (SWT.LEFT | SWT.WRAP)) || hasFlags(style, (SWT.CENTER | SWT.WRAP)) || hasFlags(style, (SWT.RIGHT | SWT.WRAP)) || hasFlags(style, (SWT.MULTI | SWT.WRAP)) || hasFlags(style, (SWT.SINGLE | SWT.WRAP))) {
+        if (hasFlags(style, SWT.WRAP)) {
             m.text = computeText(widget, m, LEFT_WRAP.EMPTY_TEXT_AFFECTS_SIZING);
             double naturalWidth = Math.max(m.text.x() + (m.text.x() > 0 ? LEFT_WRAP.HORIZONTAL_PADDING : 0), LEFT_WRAP.MIN_WIDTH);
             width = wHint != SWT.DEFAULT ? wHint : naturalWidth;
