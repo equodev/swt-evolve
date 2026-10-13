@@ -130,6 +130,9 @@ class VRegistry {
     final channel = channelOf(value);
     final node = _nodes[channel];
     if (node != null && !node.awaitingValue) return _takeNewerOf(channel, node, value);
+    // The stand-in an unresolved reference left, handed back by whatever was built from the name:
+    // nothing has described the widget, so it is still awaited and still asked for.
+    if (node != null && identical(node.value, value)) return value;
 
     if (node == null) {
       // Assigned before subscribing: a payload held for this channel is replayed on subscription,
