@@ -366,15 +366,6 @@ JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv* env,
     return (fg == hwnd || ::IsChild(hwnd, fg)) ? JNI_TRUE : JNI_FALSE;
 }
 
-// Shell.forceActive: what SWT's win32 backend does there, SetForegroundWindow.
-JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_Activate(JNIEnv* env, jclass cls, jlong context) {
-    Surface* s = reinterpret_cast<Surface*>(context);
-    if (!s || !s->window) return;
-    HWND hwnd = s->window->GetHandle();
-    if (!hwnd) return;
-    ::SetForegroundWindow(hwnd);
-}
-
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return;

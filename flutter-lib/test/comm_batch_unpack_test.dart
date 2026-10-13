@@ -41,6 +41,27 @@ void main() {
     expect(seen, ['line:7', 'line:8', 'dispose']);
   });
 
+  test('an entry whose handler fails does not drop the rest of the batch', () async {
+    final seen = <String>[];
+    EquoCommService.onRaw('GC/41/drawLine', (p) => seen.add('line:${(p as Map)["x1"]}'));
+    EquoCommService.onRaw('GC/41/broken', (_) => throw StateError('broken handler'));
+    EquoCommService.onRaw('GC/41/failsLater', (_) async {
+      await Future<void>.delayed(Duration.zero);
+      throw StateError('broken later');
+    });
+
+    _receive(batchEvent, [
+      ['GC/41/drawLine', {'x1': 1}],
+      ['GC/41/broken', {}],
+      ['GC/41/drawLine', {'x1': 2}],
+      ['GC/41/failsLater', {}],
+      ['GC/41/drawLine', {'x1': 3}],
+    ]);
+    await Future.delayed(const Duration(milliseconds: 10));
+
+    expect(seen, ['line:1', 'line:2', 'line:3']);
+  });
+
   test('a batched entry a synchronous handler took is not kept for the next one', () async {
     final first = <int>[];
     EquoCommService.onRaw('GC/901/drawLine', (p) {

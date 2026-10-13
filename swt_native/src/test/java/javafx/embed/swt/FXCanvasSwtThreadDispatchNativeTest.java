@@ -7,6 +7,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * reentrant, and restores the thread ownership afterwards.</p>
  */
 @Tag("native-unit")
+// OpenJFX publishes no win-aarch64 jars in any version (nor linux-aarch64 for 21.x), so these hosts
+// only get x64 JavaFX natives.
+@DisabledOnOs(value = { OS.LINUX, OS.WINDOWS }, architectures = "aarch64")
 public class FXCanvasSwtThreadDispatchNativeTest {
 
     @BeforeAll
