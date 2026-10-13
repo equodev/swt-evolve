@@ -105,17 +105,63 @@ class OneRuleOnEveryPlatformTest {
     }
 
     @Test
-    @DisplayName("clearing the selection leaves the caret at its end, as on Win32 and GTK")
-    void clearSelectionLeavesTheCaretAtTheEnd() {
+    @DisplayName("clearing the selection of a single-line text leaves the caret at its end, as on Win32 and GTK")
+    void clearSelectionOfALineLeavesTheCaretAtTheEnd() {
+        Text text = new Text(shell, SWT.SINGLE);
+        text.setText("Hello World");
+        text.setSelection(2, 7);
+
+        text.clearSelection();
+
+        assertThat(text.getSelection()).isEqualTo(new Point(7, 7));
+        assertThat(text.getSelectionText()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("clearing the selection of a multi-line text leaves the caret at its start, as on GTK and Cocoa")
+    void clearSelectionOfAMultiLineTextLeavesTheCaretAtTheStart() {
+        Text text = new Text(shell, SWT.MULTI);
+        text.setText("Hello World");
+        text.setSelection(2, 7);
+
+        text.clearSelection();
+
+        assertThat(text.getSelection()).isEqualTo(new Point(2, 2));
+        assertThat(text.getSelectionText()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a negative text limit means no limit, as on Win32 and GTK")
+    void aNegativeTextLimitMeansNoLimit() {
         for (int style : new int[] {SWT.SINGLE, SWT.MULTI}) {
             Text text = new Text(shell, style);
-            text.setText("Hello World");
-            text.setSelection(2, 7);
+            text.setTextLimit(7);
 
-            text.clearSelection();
+            text.setTextLimit(-1);
 
-            assertThat(text.getSelection()).isEqualTo(new Point(7, 7));
-            assertThat(text.getSelectionText()).isEmpty();
+            assertThat(text.getTextLimit()).isEqualTo(Text.LIMIT);
         }
+    }
+
+    @Test
+    @DisplayName("a password text answers the character it draws until another one is set, as on Win32 and GTK")
+    void aPasswordTextAnswersItsEchoCharacter() {
+        Text password = new Text(shell, SWT.PASSWORD);
+        assertThat(password.getEchoChar()).isEqualTo('•');
+
+        password.setEchoChar('\0');
+        assertThat(password.getEchoChar()).isEqualTo('\0');
+        assertThat(new Text(shell, SWT.SINGLE).getEchoChar()).isEqualTo('\0');
+    }
+
+    @Test
+    @DisplayName("a primary click's drag detection does not fail, as on Win32 and GTK")
+    void dragDetectOnAPrimaryClickDoesNotFail() {
+        Event click = new Event();
+        click.button = 1;
+        click.count = 1;
+
+        assertThat(new Button(shell, SWT.PUSH).dragDetect(click)).isFalse();
+        assertThat(new List(shell, SWT.SINGLE).dragDetect(click)).isFalse();
     }
 }
