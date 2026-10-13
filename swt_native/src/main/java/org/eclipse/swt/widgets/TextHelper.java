@@ -11,11 +11,6 @@ public class TextHelper {
     private TextHelper() {
     }
 
-    /** Whether the given platform's Text.setTabs ignores this value: Win32 and GTK refuse a negative one, Cocoa keeps it. */
-    public static boolean ignoresTabs(int tabs, String platform) {
-        return tabs < 0 && !"cocoa".equals(platform);
-    }
-
     public static void insertEditText(DartText text, String string) {
         int length = string.length();
         Point selection = text.getSelection();
@@ -356,11 +351,10 @@ public class TextHelper {
 
         text.setEditText(string);
         text.text = string;
-        // The old selection belonged to the old text. Cocoa leaves a single-line text without one, its
-        // caret at the end; GTK, Win32 and a Cocoa multi-line text go back to the start. A change is
-        // recorded: an update that did not name it would leave the client holding the old selection.
-        boolean cocoaSingle = (text.getApi().style & SWT.SINGLE) != 0 && "cocoa".equals(SWT.getPlatform());
-        Point selection = cocoaSingle ? null : new Point(0, 0);
+        // The old selection belonged to the old text: the caret goes back to the start, as on Win32 and GTK
+        // (Cocoa leaves a single-line text's caret at the end). A change is recorded: an update that did
+        // not name it would leave the client holding the old selection.
+        Point selection = new Point(0, 0);
         if (!java.util.Objects.equals(text.selection, selection))
             text.getValue().markDirty(VText.SELECTION);
         text.selection = selection;

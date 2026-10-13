@@ -168,7 +168,7 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public int getAlignment() {
         checkWidget();
-        return LabelHelper.alignmentOf(getApi().style, SWT.getPlatform());
+        return LabelHelper.alignmentOf(getApi().style);
     }
 
     /**

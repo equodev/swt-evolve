@@ -323,7 +323,7 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        setSelection("cocoa".equals(SWT.getPlatform()) ? selection.x : selection.y);
+        setSelection(selection.y);
     }
 
     @Override
@@ -766,8 +766,7 @@ public class DartText extends DartScrollable implements IText {
     public Point getSelection() {
         checkWidget();
         if (selection == null) {
-            int caret = (getApi().style & SWT.SINGLE) != 0 ? getCharCount() : caretPosition;
-            return new Point(caret, caret);
+            return new Point(caretPosition, caretPosition);
         }
         return new Point(selection.x, selection.y);
     }
@@ -1560,7 +1559,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTabs(int tabs) {
         checkWidget();
-        if (TextHelper.ignoresTabs(tabs, SWT.getPlatform()))
+        if (tabs < 0)
             return;
         if (this.tabs == tabs)
             return;
