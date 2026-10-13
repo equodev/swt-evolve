@@ -146,7 +146,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             _layoutLines();
             return;
         }
-        _lines = TextLayoutHelper.lineBreaks(text, wrapWidth, getIndent(), getWrapIndent(), SWT.getPlatform(), this::_advance, _breaks);
+        _lines = TextLayoutHelper.lineBreaks(text, wrapWidth, getIndent(), getWrapIndent(), this::_advance, _breaks);
         int[] offsets = new int[_lines.length];
         for (int i = 0; i < offsets.length; i++) offsets[i] = translateOffset(_lines[i]);
         lineOffsets = offsets;
@@ -275,7 +275,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             }
             gc.setBackground(gcBackground);
         }
-        boolean selectionForegrounds = hasSelection && selectionForeground != null && TextLayoutHelper.drawsSelectionForeground(SWT.getPlatform());
+        boolean selectionForegrounds = hasSelection && selectionForeground != null;
         org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics base = org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(font, 1);
         for (int line = 0; line < count; line++) {
             int ls = _lines[line];
@@ -690,16 +690,12 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         if (_measured() != null)
             return measured.location(offset, trailing);
-        boolean cocoa = "cocoa".equals(SWT.getPlatform());
         if (length == 0)
-            return new Point(0, cocoa ? 0 : getVerticalIndent());
+            return new Point(0, getVerticalIndent());
         int line = _lineAt(offset);
         int ls = _lines[line];
         int le = TextLayoutHelper.contentEnd(text, ls, _lines[line + 1]);
         double right = _lineX[line] + _lineWidth[line];
-        // Cocoa answers the end of the text with the last line's right edge, the vertical indent left out.
-        if (offset == length && cocoa)
-            return new Point(_lineX[line] + (int) Math.ceil(_lineWidth[line]), _lineTop[line]);
         double x;
         if (offset >= le) {
             x = (orientation & SWT.RIGHT_TO_LEFT) != 0 ? _lineX[line] : right;
@@ -756,10 +752,9 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int step = forward ? 1 : -1;
         if ((movement & SWT.MOVEMENT_CHAR) != 0)
             return offset + step;
-        String platform = SWT.getPlatform();
         if (movement == SWT.MOVEMENT_CLUSTER)
-            return TextLayoutHelper.nextCluster(text, offset, forward, platform);
-        return TextLayoutHelper.wordOffset(text, offset, movement, forward, platform);
+            return TextLayoutHelper.nextCluster(text, offset, forward);
+        return TextLayoutHelper.wordOffset(text, offset, movement, forward);
     }
 
     /**
@@ -829,15 +824,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             trailing[0] = 0;
         y -= getVerticalIndent();
         int last = _lines.length - 2;
-        // Cocoa answers like a mouse selection: above the text is its start, below it its end.
-        if ("cocoa".equals(SWT.getPlatform())) {
-            if (y < 0)
-                return 0;
-            if (y >= _lineTop[last] + _lineHeight[last] + getSpacing()) {
-                int end = text.charAt(length - 1) == '\n' && length > 1 ? length - 2 : length - 1;
-                return _hitEnd(end, trailing);
-            }
-        }
         int line = 0;
         while (line < last && y >= _lineTop[line + 1]) line++;
         int ls = _lines[line];
@@ -1143,7 +1129,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public int getTextDirection() {
         checkLayout();
-        return TextLayoutHelper.resolvedTextDirection(SWT.getPlatform(), orientation, textDirection, text);
+        return TextLayoutHelper.resolvedTextDirection(textDirection, text);
     }
 
     /**
@@ -1808,7 +1794,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public void setTextDirection(int textDirection) {
         checkLayout();
-        int direction = TextLayoutHelper.textDirection(SWT.getPlatform(), this.textDirection, textDirection);
+        int direction = TextLayoutHelper.textDirection(this.textDirection, textDirection);
         if (direction == this.textDirection)
             return;
         this.textDirection = direction;
@@ -2313,7 +2299,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     double _nextTabStop(double x) {
-        return TextLayoutHelper.nextTabStop(x, tabs, defaultTabWidth, SWT.getPlatform(), () -> {
+        return TextLayoutHelper.nextTabStop(x, tabs, defaultTabWidth, () -> {
             org.eclipse.swt.graphics.Font f = _fontFor(0);
             return f != null ? dev.equo.swt.FontMetricsUtil.getFontSize(" ", f).x() * dev.equo.swt.FontMetricsUtil.dpiScale() : 0;
         });

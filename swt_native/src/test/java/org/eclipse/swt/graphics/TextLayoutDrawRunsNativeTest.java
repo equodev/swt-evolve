@@ -232,20 +232,14 @@ class TextLayoutDrawRunsNativeTest {
     }
 
     @Test
-    void theSelectionForegroundIsTheSelectedTextsWhereThePlatformDrawsIt() {
+    void theSelectionForegroundIsTheSelectedTexts() {
         TextLayout layout = layout("Hello world");
         Color selected = new Color(display, 200, 0, 0);
         layout.draw(gc(), 0, 0, 2, 6, selected, null);
-        boolean drawsIt = TextLayoutHelper.drawsSelectionForeground(SWT.getPlatform());
-        if (drawsIt) {
-            assertThat(texts()).containsExactly("He", "llo w", "orld");
-            assertThat(run("llo w").foreground).isSameAs(selected);
-            assertThat(run("He").foreground).isSameAs(black);
-            assertThat(run("orld").x).isEqualTo(layout.getLocation(7, false).x);
-        } else {
-            assertThat(texts()).containsExactly("Hello world");
-            assertThat(run("Hello world").foreground).isSameAs(black);
-        }
+        assertThat(texts()).containsExactly("He", "llo w", "orld");
+        assertThat(run("llo w").foreground).isSameAs(selected);
+        assertThat(run("He").foreground).isSameAs(black);
+        assertThat(run("orld").x).isEqualTo(layout.getLocation(7, false).x);
     }
 
     @Test

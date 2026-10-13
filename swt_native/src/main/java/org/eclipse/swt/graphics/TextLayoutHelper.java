@@ -7,9 +7,9 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 
 /**
- * Hand-written support for {@code DartTextLayout}: what its layout engine decides from the text alone, and where
- * each platform's SWT lays text out differently. Every method that differs by platform takes the platform's name,
- * as {@code SWT.getPlatform()} gives it.
+ * Hand-written support for {@code DartTextLayout}: what its layout engine decides from the text alone. Where the
+ * platforms' SWT lay text out differently, the layout does the same on every OS: what the javadoc says, otherwise
+ * what two of Win32, GTK and Cocoa do.
  */
 public final class TextLayoutHelper {
 
@@ -60,12 +60,11 @@ public final class TextLayoutHelper {
      * The offset each line starts at, then the text's length. A line delimiter ({@code \n}, {@code \r} or
      * {@code \r\n}) ends a paragraph; with a wrap width, a paragraph breaks at the last break opportunity whose text
      * fits, its first line {@code indent} pixels in and the others {@code wrapIndent}, and a word wider than the line
-     * breaks inside. The whitespace before a break hangs past the width. GTK and Win32 lay an empty line after a
-     * final delimiter; Cocoa does not. A paragraph also ends before each offset of {@code breaks}, where a line
-     * delimiter is given as a segment character.
+     * breaks inside. The whitespace before a break hangs past the width. A final delimiter is followed by an empty
+     * line, as on GTK and Win32 (Cocoa lays none). A paragraph also ends before each offset of {@code breaks}, where
+     * a line delimiter is given as a segment character.
      */
-    public static int[] lineBreaks(String text, int wrapWidth, int indent, int wrapIndent, String platform, Advance advance,
-            int[] breaks) {
+    public static int[] lineBreaks(String text, int wrapWidth, int indent, int wrapIndent, Advance advance, int[] breaks) {
         int length = text.length();
         List<Integer> starts = new ArrayList<>();
         starts.add(0);
@@ -77,7 +76,6 @@ public final class TextLayoutHelper {
             if (end == length) break;
             int next = !isDelimiter(text.charAt(end)) ? end
                     : end + (text.charAt(end) == '\r' && end + 1 < length && text.charAt(end + 1) == '\n' ? 2 : 1);
-            if (next == length && "cocoa".equals(platform)) break;
             starts.add(next);
             paragraph = next;
         }
@@ -131,20 +129,9 @@ public final class TextLayoutHelper {
 
     /**
      * The next cluster boundary from {@code offset}, which is neither the end when moving forward nor 0 when moving
-     * backward. Cocoa steps one code point, keeping only a surrogate pair together; GTK and Win32 keep a character
-     * with its combining marks.
+     * backward: a character keeps its combining marks, as on GTK and Win32 (Cocoa steps one code point).
      */
-    public static int nextCluster(String text, int offset, boolean forward, String platform) {
-        int length = text.length();
-        if ("cocoa".equals(platform)) {
-            int step = forward ? 1 : -1;
-            offset += step;
-            if (0 < offset && offset < length && Character.isLowSurrogate(text.charAt(offset))
-                    && Character.isHighSurrogate(text.charAt(offset - 1))) {
-                offset += step;
-            }
-            return offset;
-        }
+    public static int nextCluster(String text, int offset, boolean forward) {
         BreakIterator clusters = BreakIterator.getCharacterInstance();
         clusters.setText(text);
         return forward ? clusters.following(offset) : clusters.preceding(offset);
@@ -153,13 +140,11 @@ public final class TextLayoutHelper {
     /**
      * The next word boundary from {@code offset} for {@code SWT.MOVEMENT_WORD}, {@code MOVEMENT_WORD_START} or
      * {@code MOVEMENT_WORD_END} ({@code offset} is neither the end when moving forward nor 0 when moving backward).
-     * Cocoa builds on {@code NSAttributedString.nextWordFromIndex}: a word is a run of letters and digits as the
-     * Unicode word boundaries delimit it, so an apostrophe, a period or an underscore inside one does not end it,
-     * and a line delimiter is no stop of its own. Elsewhere a word is a run of letters, digits and underscores, and
-     * a line delimiter is a stop.
+     * A word is a run of letters, digits and underscores, and a line delimiter is a stop, as on GTK and Win32 (Cocoa's
+     * {@code NSAttributedString.nextWordFromIndex} keeps an apostrophe or a period inside a word and stops at no
+     * delimiter).
      */
-    public static int wordOffset(String text, int offset, int movement, boolean forward, String platform) {
-        if ("cocoa".equals(platform)) return cocoaWordOffset(text, offset, movement, forward);
+    public static int wordOffset(String text, int offset, int movement, boolean forward) {
         switch (movement) {
             case SWT.MOVEMENT_WORD:
                 return forward ? wordEnd(text, offset) : previousWordStart(text, offset);
@@ -210,77 +195,20 @@ public final class TextLayoutHelper {
         return offset;
     }
 
-    static int cocoaWordOffset(String text, int offset, int movement, boolean forward) {
-        int length = text.length();
-        switch (movement) {
-            case SWT.MOVEMENT_WORD:
-                return nextWord(text, offset, forward);
-            case SWT.MOVEMENT_WORD_END:
-                if (forward) return nextWord(text, offset, true);
-                for (int result = 0; result < length; ) {
-                    int wordEnd = nextWord(text, result, true);
-                    if (wordEnd >= offset) return result;
-                    result = wordEnd;
-                }
-                return offset;
-            case SWT.MOVEMENT_WORD_START:
-                if (!forward) return nextWord(text, offset, false);
-                for (int result = length; result > 0; ) {
-                    int wordStart = nextWord(text, result, false);
-                    if (wordStart <= offset) return result;
-                    result = wordStart;
-                }
-                return offset;
-            default:
-                return offset;
-        }
-    }
-
-    /** Forward, the end of the first word that ends after {@code offset}; backward, the start of the last word that starts before it. */
-    static int nextWord(String text, int offset, boolean forward) {
-        BreakIterator words = BreakIterator.getWordInstance();
-        words.setText(text);
-        int found = forward ? text.length() : 0;
-        for (int start = words.first(), end = words.next(); end != BreakIterator.DONE; start = end, end = words.next()) {
-            if (!isWord(text, start, end)) continue;
-            if (forward && end > offset) return end;
-            if (!forward && start < offset) found = start;
-        }
-        return found;
-    }
-
-    private static boolean isWord(String text, int start, int end) {
-        for (int i = start; i < end; i++) {
-            if (Character.isLetterOrDigit(text.charAt(i))) return true;
-        }
-        return false;
-    }
-
-    /** Whether a selection drawn by {@code TextLayout.draw} takes the selection foreground: Cocoa only fills its background. */
-    public static boolean drawsSelectionForeground(String platform) {
-        return !"cocoa".equals(platform);
-    }
-
-    /** Whether {@code setTextDirection} is the platform's own setting: on GTK and Cocoa it does nothing and the text direction is the orientation. */
-    public static boolean hasTextDirection(String platform) {
-        return !"cocoa".equals(platform) && !"gtk".equals(platform);
-    }
-
     /**
      * What {@code setTextDirection(requested)} leaves the text direction at, given the {@code current} one: only
-     * the direction bits count, nothing changes for none, and left to right wins over right to left.
+     * the direction bits count, nothing changes for none, and left to right wins over right to left. The text
+     * direction is its own setting, as the javadoc describes it and Win32 implements it (GTK and Cocoa ignore it).
      */
-    public static int textDirection(String platform, int current, int requested) {
-        if (!hasTextDirection(platform)) return current;
+    public static int textDirection(int current, int requested) {
         requested &= SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
         if (requested == 0) return current;
         if (requested != SWT.AUTO_TEXT_DIRECTION && (requested & SWT.LEFT_TO_RIGHT) != 0) return SWT.LEFT_TO_RIGHT;
         return requested;
     }
 
-    /** What {@code getTextDirection()} answers: the orientation, or the direction set, the automatic one resolved from the text. */
-    public static int resolvedTextDirection(String platform, int orientation, int textDirection, String text) {
-        if (!hasTextDirection(platform)) return orientation;
+    /** What {@code getTextDirection()} answers: the direction set, the automatic one resolved from the text. */
+    public static int resolvedTextDirection(int textDirection, String text) {
         if (textDirection != SWT.AUTO_TEXT_DIRECTION) return textDirection;
         return new java.text.Bidi(text, java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).baseIsLeftToRight()
                 ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
@@ -288,11 +216,11 @@ public final class TextLayoutHelper {
 
     /**
      * The next tab stop strictly after {@code x}, in pixels from the layout's left edge. The stops set are honoured in
-     * order, and past them the last interval repeats (a single stop repeats as a fixed interval). With none set, Cocoa
-     * has no stops (a tab takes no space) and the others put one every {@code defaultTabWidth}, or every 8 spaces.
+     * order, and past them the last interval repeats (a single stop repeats as a fixed interval). With none set, there
+     * is one every {@code defaultTabWidth}, or every 8 spaces, as on GTK and Win32 (on Cocoa a tab then takes no space).
      * The epsilon keeps a run measured a hair under an exact stop from advancing to that same stop.
      */
-    public static double nextTabStop(double x, int[] tabs, double defaultTabWidth, String platform, java.util.function.DoubleSupplier spaceWidth) {
+    public static double nextTabStop(double x, int[] tabs, double defaultTabWidth, java.util.function.DoubleSupplier spaceWidth) {
         if (tabs != null && tabs.length > 0) {
             for (int tab : tabs) {
                 if (tab > x + 0.01) return tab;
@@ -304,7 +232,6 @@ public final class TextLayoutHelper {
             while (stop <= x + 0.01) stop += interval;
             return stop;
         }
-        if ("cocoa".equals(platform)) return x;
         double width = defaultTabWidth > 0 ? defaultTabWidth : spaceWidth.getAsDouble() * 8;
         if (width <= 0) return x;
         return (Math.floor((x + 0.01) / width) + 1) * width;
