@@ -34,8 +34,6 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   ) {
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final separatorColor = widgetTheme.borderColor;
-    // A separator has a thickness of its own: Java sizes it from the same theme value, and a
-    // zero-height box counts as no bounds (hasBounds), so the line would never be drawn.
     final thickness = widgetTheme.separatorThickness;
 
     final hasValidBounds = hasBounds(state.bounds);

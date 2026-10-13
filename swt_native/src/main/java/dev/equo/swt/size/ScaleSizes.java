@@ -17,23 +17,14 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class ScaleSizes {
 
-    private ScaleSizes() {
-    }
-
     static class HORIZONTAL {
         static final double MIN_WIDTH = 120.0;
         static final double MIN_HEIGHT = 40.0;
-
-        private HORIZONTAL() {
-        }
     }
 
     static class VERTICAL {
         static final double MIN_WIDTH = 40.0;
         static final double MIN_HEIGHT = 120.0;
-
-        private VERTICAL() {
-        }
     }
 
     public static Point computeSize(DartScale widget, int wHint, int hHint, boolean changed) {

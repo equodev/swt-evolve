@@ -11,8 +11,6 @@ import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
-import 'package:swtflutter/src/theme/theme_settings/label_theme_settings.dart'
-    show labelSeparatorThickness;
 
 import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
@@ -1610,14 +1608,6 @@ class WidgetMeasurer {
     constants['minWidth'] = minWidth;
     constants['minHeight'] = minHeight;
 
-    // A separator is as thick as the theme declares, which is what Flutter draws it with
-    // (label_theme_settings.dart); Java sizes it from that number, not from a copy of it.
-    final styleBits = style.toUpperCase().split('|');
-    if (widgetType == 'Label' && styleBits.contains('SEPARATOR')) {
-      constants[styleBits.contains('VERTICAL') ? 'minWidth' : 'minHeight'] =
-          labelSeparatorThickness;
-    }
-
     // Extract TextStyle from cases that have useFontTheme=true
     // Only consider results where useFontTheme is true
     final resultsWithFontTheme = styleResults
@@ -1936,11 +1926,13 @@ class WidgetMeasurer {
     // A style that declares WRAP wraps at the width it is given, even where the probe finds no
     // soft-wrapping Text: a Text draws an EditableText, whose wrapping it does not see.
     final declaresWrap = style.toUpperCase().split('|').contains('WRAP');
-    constants['wrapsMode'] = softWrapCount == 0 && !declaresWrap
-        ? 'none'
-        : softWrapCount == styleResults.length && !declaresWrap
-            ? 'always'
-            : 'whenWrapStyle';
+    constants['wrapsMode'] = declaresWrap
+        ? 'whenWrapStyle'
+        : softWrapCount == 0
+            ? 'none'
+            : softWrapCount == styleResults.length
+                ? 'always'
+                : 'whenWrapStyle';
 
     final algorithm = _deriveAlgorithm(widgetType, style, constants);
 
@@ -2099,33 +2091,38 @@ class WidgetMeasurer {
     buffer.writeln(' */');
     buffer.writeln('public class ${widgetType}Sizes {');
     buffer.writeln();
-    // Never instantiated: a private empty constructor, which JaCoCo leaves out of the coverage the
-    // parity gate demands, where the implicit public one would count as a line no test runs.
-    buffer.writeln('    private ${widgetType}Sizes() {');
-    buffer.writeln('    }');
-    buffer.writeln();
-
     // Group analyses by their constants to avoid duplicating identical sizing logic: styles of
     // equal values share one class and one branch.
-    // IMPORTANT: a VERTICAL style that draws text must never be grouped with a HORIZONTAL one, due
-    // to the dimension swap. A widget that draws no text has nothing to swap or wrap, so only its
-    // size tells its styles apart.
-    String getConstantsKey(Map<String, dynamic> constants) {
-      final isConstantSize = constants['isConstantSize'] == true;
+    // IMPORTANT: VERTICAL styles must never be grouped with HORIZONTAL styles due to dimension swap.
+    // A constant-size style uses none of the padding or wrapping values, so only its size and the
+    // orientation its style declares tell it from another. A style that wraps only with the WRAP
+    // bit shares its branch with the ones that never wrap: the branch tests the bit.
+    String getConstantsKey(WidgetAnalysis analysis) {
+      final constants = analysis.derivedConstants;
       final size = '${constants['minWidth']}_${constants['minHeight']}';
-      if (isConstantSize) return '${size}_constant';
+      if (constants['isConstantSize'] == true) {
+        final vertical = analysis.widgetType.split('-')[1].split('|').contains('VERTICAL');
+        return '${size}_constant_vertical:$vertical';
+      }
       final useHorizontalPadding = constants['useHorizontalPadding'] as bool;
       final useVerticalPadding = constants['useVerticalPadding'] as bool;
-      final isVerticalStyle = constants['isVerticalStyle'] == true;
+      final wrap = constants['wrapsMode'] == 'always' ? 'always' : 'byStyle';
       return '${size}_${useHorizontalPadding}_${useVerticalPadding}_'
           '${constants['horizontalPadding']}_${constants['verticalPadding']}_'
-          'vertical:${isVerticalStyle}_wrap:${constants['wrapsMode'] ?? 'none'}';
+          'vertical:${constants['isVerticalStyle'] == true}_wrap:$wrap';
     }
 
     final Map<String, List<WidgetAnalysis>> groupsByConstants = {};
     for (var analysis in analyses) {
-      final key = getConstantsKey(analysis.derivedConstants);
+      final key = getConstantsKey(analysis);
       groupsByConstants.putIfAbsent(key, () => []).add(analysis);
+    }
+    for (final group in groupsByConstants.values) {
+      if (group.any((a) => a.derivedConstants['wrapsMode'] == 'whenWrapStyle')) {
+        for (final a in group) {
+          a.derivedConstants['wrapsMode'] = 'whenWrapStyle';
+        }
+      }
     }
 
     // Map from style to class name (for merged groups)
@@ -2149,9 +2146,6 @@ class WidgetMeasurer {
       final useHorizontalPadding = constants['useHorizontalPadding'] as bool;
       final useVerticalPadding = constants['useVerticalPadding'] as bool;
 
-      // A style that draws no text (an ARROW button, a separator, a progress bar) is constant-size:
-      // MIN_WIDTH and MIN_HEIGHT are the size it was measured at, its natural size. An ARROW button's
-      // is its arrow icon inside its border.
       buffer.writeln('    static class $javaClassName {');
       buffer.writeln(
         '        static final double MIN_WIDTH = ${constants['minWidth']};',
@@ -2197,10 +2191,6 @@ class WidgetMeasurer {
         buffer.writeln('        static final double TEXT_SLACK = 1.0;');
       }
 
-      // Never instantiated either; see the class's own constructor above.
-      buffer.writeln();
-      buffer.writeln('        private $javaClassName() {');
-      buffer.writeln('        }');
       buffer.writeln('    }');
       buffer.writeln();
     }
@@ -3651,9 +3641,6 @@ public class CoolBarSizes {
     }
     buffer.writeln();
     buffer.writeln('public class ${widgetType}Sizes {');
-    buffer.writeln();
-    buffer.writeln('    private ${widgetType}Sizes() {');
-    buffer.writeln('    }');
     buffer.writeln();
     // Heights at the default font. For a widget whose rows track the font these are the floor
     // Flutter lays out against, not the final height.
