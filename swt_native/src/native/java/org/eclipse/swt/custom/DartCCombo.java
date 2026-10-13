@@ -331,11 +331,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (index < 0 || index > items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        String[] newItems = new String[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = string;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
+        items = ListItemsHelper.insert(items, index, string);
         list.add(string);
         getValue().markDirty(VCCombo.ITEMS);
     }
@@ -1486,10 +1482,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         checkWidget();
         if (index < 0 || index >= items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        String[] newItems = new String[items.length - 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
-        items = newItems;
+        items = ListItemsHelper.remove(items, index, index);
         getValue().markDirty(VCCombo.ITEMS);
     }
 
@@ -1515,11 +1508,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             return;
         if (start < 0 || end >= items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        int count = end - start + 1;
-        String[] newItems = new String[items.length - count];
-        System.arraycopy(items, 0, newItems, 0, start);
-        System.arraycopy(items, end + 1, newItems, start, items.length - end - 1);
-        items = newItems;
+        items = ListItemsHelper.remove(items, start, end);
         getValue().markDirty(VCCombo.ITEMS);
     }
 

@@ -681,21 +681,7 @@ public class DartList extends DartScrollable implements IList {
             error(SWT.ERROR_INVALID_RANGE);
         }
         int removeCount = end - start + 1;
-        int[] oldSelection = getSelectionIndices();
-        if (oldSelection.length > 0) {
-            int newCount = 0;
-            int[] newSelection = new int[oldSelection.length];
-            for (int idx : oldSelection) {
-                if (idx < start) {
-                    newSelection[newCount++] = idx;
-                } else if (idx > end) {
-                    newSelection[newCount++] = idx - removeCount;
-                }
-            }
-            if (newCount != oldSelection.length) {
-                select(java.util.Arrays.copyOf(newSelection, newCount), newCount, true);
-            }
-        }
+        ListHelper.itemsRemoved(this, start, end);
         System.arraycopy(items, end + 1, items, start, itemCount - end - 1);
         for (int i = itemCount - removeCount; i < itemCount; i++) {
             items[i] = null;
