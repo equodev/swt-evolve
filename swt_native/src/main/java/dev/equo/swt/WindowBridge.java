@@ -45,12 +45,4 @@ public interface WindowBridge {
     default long nativeWindowHandle(Object shell) {
         return 0;
     }
-
-    /**
-     * {@code Shell.forceActive()}: asks the OS to make the window this shell is drawn into the active
-     * one, even while another application is in front. The activation itself is announced once the
-     * OS reports the window active, not here.
-     */
-    default void activateWindow(DartControl shell) {
-    }
 }
