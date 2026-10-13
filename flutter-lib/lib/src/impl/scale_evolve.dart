@@ -48,9 +48,10 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
       },
       // A press that moves nothing still reports a Selection, ahead of its MouseUp, as a native
       // Scale does for a click on its knob; this Listener is reached before the control's own.
+      // The second press of a double click reports none: Win32 and GTK leave it to the first.
       onPointerUp: (_) {
         _pressed = false;
-        if (_changedDuringPress || !enabled) return;
+        if (_changedDuringPress || !enabled || swtClickCount > 1) return;
         widget.sendSelectionSelection(state, VEvent()
           ..index = state.selection
           ..stateMask = SWT.BUTTON1);

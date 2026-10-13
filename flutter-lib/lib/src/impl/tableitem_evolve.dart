@@ -181,23 +181,28 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final cellPadding = _fitCellPadding(
         columnIndex, cellText, textStyle, theme, showCheckbox, cellImage);
 
+    // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in only
+    // for a press that carries no position.
+    VEvent pointedEvent(Offset? globalPosition) {
+      final e = VEvent();
+      final tableBox = _context!.tableImpl?.context.findRenderObject();
+      if (globalPosition != null && tableBox is RenderBox && tableBox.attached) {
+        final local = tableBox.globalToLocal(globalPosition);
+        e.x = local.dx.round();
+        e.y = local.dy.round();
+      } else {
+        e.x = _computeCellCenterX(columnIndex, theme);
+        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+      }
+      return e;
+    }
+
     void sendMouseDown(int button, int count, [Offset? globalPosition]) {
       if (enabled && _context != null) {
         if ((button == 1 || button == 3) && _context!.tableImpl != null) {
           _context!.tableImpl!.selectRowLocally(rowIndex);
         }
-        final e = VEvent();
-        // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in
-        // only for a press that carries no position.
-        final tableBox = _context!.tableImpl?.context.findRenderObject();
-        if (globalPosition != null && tableBox is RenderBox && tableBox.attached) {
-          final local = tableBox.globalToLocal(globalPosition);
-          e.x = local.dx.round();
-          e.y = local.dy.round();
-        } else {
-          e.x = _computeCellCenterX(columnIndex, theme);
-          e.y = _computeCellCenterY(rowIndex, textStyle, theme);
-        }
+        final e = pointedEvent(globalPosition);
         e.button = button;
         e.count = count;
         e.segments = [rowIndex];
@@ -209,12 +214,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       }
     }
 
-    void sendMouseDoubleClick(int button) {
+    // The second press delivers MouseDoubleClick, then the row's DefaultSelection, both ahead of
+    // the release, as Win32 and GTK do.
+    void sendDoubleClick(int button, [Offset? globalPosition]) {
       if (enabled && _context?.tableImpl != null) {
         _context!.tableImpl!.selectRowLocally(rowIndex);
-        final e = VEvent();
-        e.x = _computeCellCenterX(columnIndex, theme);
-        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        final e = pointedEvent(globalPosition);
         e.count = 2;
         e.button = button;
         _context!.parentTable.sendEvent(
@@ -222,6 +227,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           "Mouse/MouseDoubleClick",
           e,
         );
+        _context!.tableImpl!.handleRowDoubleTap(rowIndex, state, buttonHeld: true);
       }
     }
 
@@ -235,12 +241,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       onPointerDown: (e) {
         if (e.buttons != kPrimaryButton) return;
         _pressSent = true;
-        sendMouseDown(
-            1,
-            enabled && _context?.tableImpl != null
-                ? _context!.tableImpl!.registerRowTap(rowIndex)
-                : 1,
-            e.position);
+        final count = enabled && _context?.tableImpl != null
+            ? _context!.tableImpl!.registerRowTap(rowIndex)
+            : 1;
+        sendMouseDown(1, count, e.position);
+        if (count == 2) sendDoubleClick(1, e.position);
       },
       child: GestureDetector(
       // A tap through the semantics tree arrives here with no press before it; one that follows a
@@ -250,11 +255,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           _pressSent = false;
           return;
         }
-        sendMouseDown(
-            1,
-            enabled && _context?.tableImpl != null
-                ? _context!.tableImpl!.registerRowTap(rowIndex)
-                : 1);
+        final count = enabled && _context?.tableImpl != null
+            ? _context!.tableImpl!.registerRowTap(rowIndex)
+            : 1;
+        sendMouseDown(1, count);
+        if (count == 2) sendDoubleClick(1);
       },
       onTapCancel: () => _pressSent = false,
       onSecondaryTapDown: (details) {
@@ -275,16 +280,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         }
       },
       onTertiaryTapDown: (_) => sendMouseDown(2, 1),
-      onTap: () {
-        if (enabled && _context?.tableImpl != null) {
-          if (_context!.tableImpl!.lastRowTapCount == 2) {
-            sendMouseDoubleClick(1);
-            // A double-click is SWT's DefaultSelection, not just the generic mouse event
-            // — handleRowDoubleTap already existed but nothing called it.
-            _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);
-          }
-        }
-      },
       child: SizedBox(
         height: rowHeight,
         child: Container(

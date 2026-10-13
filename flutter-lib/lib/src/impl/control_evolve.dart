@@ -54,6 +54,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   Offset? _lastPointerCrossing;
   int _lastDragMoveMs = 0;
+
+  /// Where the held pointer was last reported, by its press or a move.
+  int? _lastHeldX;
+  int? _lastHeldY;
   int? _dragDetectPointer;
   Offset? _dragDetectOrigin;
   bool _dragDetectSent = false;
@@ -300,9 +304,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   void sendThrottledDragMove(V state, VEvent event, int buttons) {
+    // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
+    // with the press.
+    if (event.x == _lastHeldX && event.y == _lastHeldY) return;
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
       _lastDragMoveMs = now;
+      _lastHeldX = event.x;
+      _lastHeldY = event.y;
       event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
       RoundTripTiming.trace();
@@ -403,6 +412,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// a native scroll bar is outside the client area.
   final Set<int> scrollBarPointers = {};
 
+  /// Whether this press continues the click chain [registerPointerDown] counts: same button, inside
+  /// the double-click window. Answers before the press is registered, for a handler nested inside
+  /// the control's own, which is reached first.
+  bool continuesClickChain(PointerDownEvent e) =>
+      _lastClickStamp != null &&
+      _lastClickPosition != null &&
+      swtButtonOf(e.buttons) == _lastButton &&
+      e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
+      (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
+
   /// Records the SWT button/count pair a pointer-down carries, chaining consecutive same-button
   /// downs inside the double-click window. Both interaction chromes funnel through here — [wrap]
   /// below and wrapCompositeInteractionChrome() in composite_evolve.dart, which serves a Composite
@@ -410,17 +429,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// pointer.
   void registerPointerDown(PointerDownEvent e) {
     final button = swtButtonOf(e.buttons);
-    final chained = _lastClickStamp != null &&
-        _lastClickPosition != null &&
-        button == _lastButton &&
-        e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
-        (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
-    _clickCount = chained ? _clickCount + 1 : 1;
+    _clickCount = continuesClickChain(e) ? _clickCount + 1 : 1;
     _lastClickStamp = e.timeStamp;
     _lastClickPosition = e.position;
     _lastButton = button;
     _dragDetectPointer = e.pointer;
     _dragDetectOrigin = e.localPosition;
+    _lastHeldX = e.localPosition.dx.round();
+    _lastHeldY = e.localPosition.dy.round();
     _dragDetectSent = false;
   }
 
@@ -527,6 +543,21 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// The click count of the pointer-down still in flight, never 0 — an application gating on
   /// `count == 1` must see a plain click as one.
   int get swtClickCount => _clickCount == 0 ? 1 : _clickCount;
+
+  /// The second press of a chain delivers MouseDoubleClick right after its MouseDown, with the
+  /// same position and button, as every native does; a third press is a plain MouseDown again.
+  void sendDoubleClickOnSecondPress(VEvent press) {
+    if (swtClickCount != 2) return;
+    widget.sendMouseMouseDoubleClick(
+      state,
+      VEvent()
+        ..button = press.button
+        ..x = press.x
+        ..y = press.y
+        ..count = 2
+        ..stateMask = press.stateMask,
+    );
+  }
 
   MouseCursor swtCursorToFlutter(int style) {
     switch (style) {
@@ -736,6 +767,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ..count = swtClickCount
             ..stateMask = swtStateMask(released: false, flutterButtons: e.buttons);
           widget.sendMouseMouseDown(state, event);
+          sendDoubleClickOnSecondPress(event);
         }
         // After MouseDown: Java orders the press's activation and focus ahead of the MouseDown it
         // delivers (ControlHelper.pressed), and a focus reported first would arrive as a separate,

@@ -108,6 +108,12 @@ void main() {
     expect(calls.where((c) => c.startsWith('Selection/DefaultSelection:')),
         hasLength(1),
         reason: 'a double-click sends exactly one DefaultSelection');
+    final second = calls.sublist(calls.lastIndexOf('Mouse/MouseDown:2'));
+    expect(second.map((c) => c.split(':').first).where((e) => e != 'Selection/Selection').toList(),
+        equals(['Mouse/MouseDown', 'Mouse/MouseDoubleClick', 'Selection/DefaultSelection',
+            'Mouse/MouseUp']),
+        reason: 'Win32 and GTK deliver the double-click and the DefaultSelection with the second '
+            'press, ahead of its release');
   });
 
   testWidgets('a tap through the semantics tree sends one MouseDown', (tester) async {

@@ -112,16 +112,15 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
           impl.capturedPointerDowns.add(e.pointer);
           impl.registerPointerDown(e);
-          impl.widget.sendMouseMouseDown(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = impl.swtButton
-              ..count = impl.swtClickCount
-              ..stateMask =
-                  impl.swtStateMask(released: false, flutterButtons: e.buttons),
-          );
+          final press = VEvent()
+            ..x = pos.dx.round()
+            ..y = pos.dy.round()
+            ..button = impl.swtButton
+            ..count = impl.swtClickCount
+            ..stateMask =
+                impl.swtStateMask(released: false, flutterButtons: e.buttons);
+          impl.widget.sendMouseMouseDown(state, press);
+          impl.sendDoubleClickOnSecondPress(press);
           // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
           // "has children" path bypasses it, so MenuDetect never fired over the composite's
           // own area -- the gap a container with a lazily-built context menu falls into.
@@ -129,17 +128,6 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
             impl.handleMenuDetect(e.pointer, e.localPosition);
           }
-        }
-        if (!impl.forwardsCompositeDoubleClick) return;
-        if (impl.dblTap.registerTap(position: pos) == 2) {
-          impl.widget.sendMouseMouseDoubleClick(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = 1
-              ..count = 2,
-          );
         }
       },
       onPointerUp: (e) {
@@ -289,11 +277,6 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
   /// Pointer ids whose MouseDown this composite (not a descendant) forwarded to Java.
   final Set<int> capturedPointerDowns = {};
-
-  /// Whether this composite forwards MouseDoubleClick from the interaction
-  /// chrome. CanvasImpl overrides this to false because it forwards its own
-  /// double-click in build(); forwarding here too would double-fire.
-  bool get forwardsCompositeDoubleClick => true;
 
   @override
   Widget build(BuildContext context) {

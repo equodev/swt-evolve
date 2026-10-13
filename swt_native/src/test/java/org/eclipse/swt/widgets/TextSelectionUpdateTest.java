@@ -97,6 +97,30 @@ class TextSelectionUpdateTest {
                 .isFalse();
     }
 
+    @Test
+    @DisplayName("a word the user selects reaches Java, with the caret at its end")
+    void clientSelectionIsRecordedWithItsCaret() {
+        Text field = openedDialogField();
+        DartText impl = (DartText) field.getImpl();
+
+        TextHelper.clientCaretMoved(impl, 3, 0);
+
+        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(0, 3));
+        assertThat(field.getCaretPosition())
+                .as("Win32 and GTK put the caret where the selection ends, after a double-click")
+                .isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("a range the application selects keeps the caret at its start")
+    void programmaticSelectionKeepsTheCaretAtItsStart() {
+        Text field = openedDialogField();
+
+        field.setSelection(2, 5);
+
+        assertThat(field.getCaretPosition()).isEqualTo(2);
+    }
+
     /** A field as a JFace input dialog leaves it: a name in it, all of it selected, client told. */
     private Text openedDialogField() {
         Shell shell = Mocks.shell();

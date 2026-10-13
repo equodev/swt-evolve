@@ -302,18 +302,12 @@ class TextImpl<T extends TextSwt, V extends VText>
       controller: _controller,
       focusNode: _focusNode,
       text: state.text ?? '',
+      // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
+      // as a selection report, through _updateCaretPosition.
       onWordSelected: (start, end) {
         state.selection = VPoint()
           ..x = start
           ..y = end;
-        widget.sendMouseMouseDoubleClick(
-          state,
-          VEvent()
-            ..button = 1
-            ..count = 2
-            ..start = start
-            ..end = end,
-        );
       },
       child: textField,
     );
@@ -397,6 +391,9 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// Java's own, so it is not reported back as a move.
   bool _applyingJavaValue = false;
 
+  /// The selection anchor last reported to Java, alongside [VText.caretPosition].
+  int? _reportedAnchor;
+
   void _fromJava(void Function() apply) {
     _applyingJavaValue = true;
     try {
@@ -409,22 +406,28 @@ class TextImpl<T extends TextSwt, V extends VText>
   void _updateCaretPosition() {
     if (!mounted) return;
 
-    // Get the character index position of the cursor
-    final cursorOffset = _controller.selection.baseOffset;
-    if (cursorOffset < 0) return;
+    // The caret is the selection's moving end; the anchor is the end it was started from.
+    final selection = _controller.selection;
+    final cursorOffset = selection.extentOffset;
+    final anchor = selection.baseOffset;
+    if (cursorOffset < 0 || anchor < 0) return;
 
-    // Only update if position actually changed
-    if (state.caretPosition == null || state.caretPosition != cursorOffset) {
-      state.caretPosition = cursorOffset;
-      if (_applyingJavaValue) return;
+    final caretMoved = state.caretPosition != cursorOffset;
+    final anchorMoved = _reportedAnchor != anchor;
+    if (!caretMoved && !anchorMoved) return;
+    state.caretPosition = cursorOffset;
+    _reportedAnchor = anchor;
+    if (_applyingJavaValue) return;
 
-      // Send the caret position to Java via Verify event
-      var e = VEvent()
+    // A Verify that proposes no edit reports the caret (start) and the anchor (index) to Java.
+    widget.sendVerifyVerify(
+      state,
+      VEvent()
         ..start = cursorOffset
         ..end = cursorOffset
-        ..text = "";
-      widget.sendVerifyVerify(state, e);
-    }
+        ..index = anchor
+        ..text = "",
+    );
   }
 
   @override

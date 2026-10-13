@@ -329,13 +329,16 @@ public class TextHelper {
     }
 
     /**
-     * The user moved the caret in the client's field without editing. getCaretPosition() and
+     * The user moved the caret or the selection in the client's field without editing: the caret
+     * at {@code offset}, the selection running from {@code anchor} to it. getCaretPosition() and
      * getSelection() answer from Java's copy, so it follows; nothing is pushed back.
      */
-    public static void clientCaretMoved(DartText text, int offset) {
-        int caret = Math.max(0, Math.min(offset, text.getCharCount()));
+    public static void clientCaretMoved(DartText text, int offset, int anchor) {
+        int count = text.getCharCount();
+        int caret = Math.max(0, Math.min(offset, count));
+        int from = Math.max(0, Math.min(anchor, count));
         text.caretPosition = caret;
-        text.selection = new Point(caret, caret);
+        text.selection = new Point(Math.min(from, caret), Math.max(from, caret));
     }
 
     public static void setText(DartText text, String string) {

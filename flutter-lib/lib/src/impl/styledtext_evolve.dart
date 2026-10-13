@@ -320,21 +320,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (scrollBarPointers.contains(event.pointer)) return;
     widget.sendFocusFocusIn(state, null);
     _focusNode.requestFocus();
-    // The second press of a double click also delivers MouseDoubleClick, after its MouseDown. The
-    // MouseDown is sent by the same pointer dispatch, once this handler returns.
-    final position = event.localPosition;
-    scheduleMicrotask(() {
-      if (!mounted || swtClickCount != 2) return;
-      widget.sendMouseMouseDoubleClick(
-        state,
-        VEvent()
-          ..button = swtButton
-          ..count = 2
-          ..x = position.dx.round()
-          ..y = position.dy.round()
-          ..stateMask = moveStateMask(0),
-      );
-    });
   }
 
   /// Line count and longest line in one pass, over code units — `text[i]` allocates a

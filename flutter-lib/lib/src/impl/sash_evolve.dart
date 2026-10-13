@@ -126,14 +126,21 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         },
         // A press and a release each report the sash's position, ahead of their MouseDown and
         // MouseUp, as a native Sash does; this Listener sits inside the control's own, so it is
-        // reached first. The drag in between reports its moves from the pan below.
+        // reached first. The drag in between reports its moves from the pan below. The second
+        // press of a double click reports neither, as on Win32 and Cocoa.
         child: Listener(
           onPointerDown: enabled
               ? (e) {
-                  if (e.buttons == kPrimaryButton) _sendPositionSelection(pressed: true);
+                  if (e.buttons == kPrimaryButton && !continuesClickChain(e)) {
+                    _sendPositionSelection(pressed: true);
+                  }
                 }
               : null,
-          onPointerUp: enabled ? (_) => _sendPositionSelection(pressed: false) : null,
+          onPointerUp: enabled
+              ? (_) {
+                  if (swtClickCount == 1) _sendPositionSelection(pressed: false);
+                }
+              : null,
           child: GestureDetector(
           onPanStart: enabled
               ? (details) {

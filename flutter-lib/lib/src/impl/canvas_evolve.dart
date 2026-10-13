@@ -106,7 +106,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   final int _alpha = 255;
   Rect? clipRect;
-  final DoubleTapDetector _dblTap = DoubleTapDetector();
 
   // Keyboard focus for a childless Canvas so it can be typed into (e.g. an FXCanvas
   // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
@@ -147,11 +146,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // window rather than a surface the application paints content onto: its children are ordinary
   // widgets and keep the theme. Only a plain Canvas hands its own colors to what is hosted over it.
   bool get hostsAppColoredContent => true;
-
-  // Canvas forwards its own MouseDoubleClick from build()'s Listener, so the
-  // shared composite interaction chrome must not also forward it.
-  @override
-  bool get forwardsCompositeDoubleClick => false;
 
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
@@ -225,23 +219,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // the Canvas hosts child widgets — they manage their own focus and stealing
         // it on every click would break them.
         if (!hasActiveChildren) _keyboardFocus.requestFocus();
-        final pos = e.localPosition;
-        if (_dblTap.registerTap(position: pos) == 2) {
-          // Nested Canvases (the editor's ruler columns sit inside a ruler container
-          // inside the text Canvas) each receive a pointer as it propagates to the
-          // ancestors. Only the deepest Canvas under the pointer may forward the gesture;
-          // otherwise the SWT double-click action (e.g. toggle breakpoint) runs once per
-          // ancestor, duplicating breakpoints.
-          if (_pointerHitsChild(pos)) return;
-          widget.sendMouseMouseDoubleClick(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = 1
-              ..count = 2,
-          );
-        }
       },
       child: wrapWithScrollbars(base),
     );
@@ -277,24 +254,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       },
       child: content,
     );
-  }
-
-  bool _pointerHitsChild(Offset pos) {
-    final kids = state.children;
-    if (kids == null) return false;
-    for (final child in kids) {
-      if (child.visible == false) continue;
-      final b = child.bounds;
-      if (b == null) continue;
-      final rect = Rect.fromLTWH(
-        b.x.toDouble(),
-        b.y.toDouble(),
-        b.width.toDouble(),
-        b.height.toDouble(),
-      );
-      if (rect.contains(pos)) return true;
-    }
-    return false;
   }
 
   // From Flutter 3.41 a semantics node with no action of its own is unreliable in the web DOM:

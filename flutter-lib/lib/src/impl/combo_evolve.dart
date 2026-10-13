@@ -340,17 +340,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       controller: _controller,
       focusNode: _focusNode,
       text: _controller.text,
-      onWordSelected: (start, end) {
-        widget.sendMouseMouseDoubleClick(
-          state,
-          VEvent()
-            ..button = 1
-            ..count = 2
-            ..start = start
-            ..end = end,
-        );
-        _focusNode.requestFocus();
-      },
+      // The MouseDoubleClick itself is the press's, sent by trackPointer below.
+      onWordSelected: (start, end) => _focusNode.requestFocus(),
       child: trackPointer(SizedBox(width: width, height: height, child: content)),
     ));
   }

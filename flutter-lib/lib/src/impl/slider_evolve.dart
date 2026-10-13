@@ -86,6 +86,9 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
           widget.sendSelectionSelection(state, e);
         },
         onChangeEnd: (value) {
+          // GTK ignores the second press of a double click on a range: one that moved nothing
+          // reports nothing.
+          if (swtClickCount > 1 && value.round() == state.selection) return;
           state.selection = value.round();
           var e = VEvent()..index = state.selection;
           widget.sendSelectionDefaultSelection(state, e);

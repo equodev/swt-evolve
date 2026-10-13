@@ -634,7 +634,9 @@ public class DartText extends DartScrollable implements IText {
     public int getCaretPosition() {
         checkWidget();
         if (selection != null) {
-            return selection.x;
+            // Where the user left it: the end of a selection made forward, as Win32 and GTK
+            // report it. One the application set keeps the caret at its start.
+            return caretPosition == selection.y ? selection.y : selection.x;
         }
         return 0;
     }
@@ -2067,7 +2069,7 @@ public class DartText extends DartScrollable implements IText {
                 if (isDisposed())
                     return;
                 if (TextHelper.proposesNoChange(e)) {
-                    TextHelper.clientCaretMoved(this, e.start);
+                    TextHelper.clientCaretMoved(this, e.start, e.index);
                     return;
                 }
                 sendEvent(SWT.Verify, e);
