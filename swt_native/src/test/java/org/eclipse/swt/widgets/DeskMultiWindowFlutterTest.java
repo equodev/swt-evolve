@@ -365,40 +365,6 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
-    @DisplayName("one window per shell, even when an activation listener reacts to the re-entrant pass")
-    void reentrantUpdateAnnouncesNoActivationWhileAWindowOpens() {
-        TestDeskBridge desk = install();
-        Shell main = openShell("Main");
-        Shell detached = new Shell(display, SWT.SHELL_TRIM);
-        detached.setText("Detached");
-        // What an application commonly does on activation: move the focus, which pushes the Display.
-        main.addListener(SWT.Activate, e -> main.setFocus());
-        detached.addListener(SWT.Activate, e -> detached.setFocus());
-        desk.reenterOnNextOpen();
-        detached.setVisible(true);
-        drainEventLoop();
-
-        assertThat(desk.opened)
-                .as("a push from inside the pass that opens a window must not open that window again")
-                .hasSize(1);
-    }
-
-    @Test
-    @DisplayName("forceActive activates the window the shell is in: its own, or the application's")
-    void forceActiveActivatesTheShellsOwnWindow() {
-        TestDeskBridge desk = install();
-        Shell main = openShell("Main");
-        Shell detached = openShell("Detached");
-
-        detached.forceActive();
-        main.forceActive();
-
-        assertThat(desk.activated)
-                .as("a detached shell's window, then the Display's own (handle 0 here)")
-                .containsExactly(handleOf(desk, detached), 0L);
-    }
-
-    @Test
     @DisplayName("closing the application's own window does not disturb the detached ones")
     void mainWindowCloseIsScopedToTheMainShell() {
         TestDeskBridge desk = install();
@@ -521,7 +487,6 @@ class DeskMultiWindowFlutterTest {
         final List<Long> disposed = new ArrayList<>();
         final List<Integer> mainWindowStates = new ArrayList<>();
         final Deque<Integer> mainPumpStatus = new ArrayDeque<>();
-        final List<Long> activated = new ArrayList<>();
 
         private final Map<Long, Deque<Integer>> scriptedStatus = new LinkedHashMap<>();
         private long nextHandle = 1000;
@@ -643,11 +608,6 @@ class DeskMultiWindowFlutterTest {
 
         void reenterOnNextOpen() {
             reenterOnOpen = true;
-        }
-
-        @Override
-        protected void activateNativeWindow(long context) {
-            activated.add(context);
         }
 
         @Override

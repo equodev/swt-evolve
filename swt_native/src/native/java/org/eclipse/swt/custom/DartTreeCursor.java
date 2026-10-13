@@ -639,17 +639,8 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
         gc.fillRectangle(event.x, event.y, event.width, event.height);
         Image image = row.getImage(columnIndex);
         int x = 0;
-        // Temporary code - need a better way to determine trim
-        String platform = SWT.getPlatform();
         if (image != null) {
-            if ("win32".equals(platform)) {
-                //$NON-NLS-1$
-                if (orderedIndex > 0) {
-                    x += 2;
-                }
-            } else {
-                x += 2;
-            }
+            x += 2;
         }
         Point size = getSize();
         if (image != null) {
@@ -662,41 +653,20 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
         if (text.length() > 0) {
             Rectangle bounds = row.getBounds(columnIndex);
             Point extent = gc.stringExtent(text);
-            // Temporary code - need a better way to determine trim
-            if ("win32".equals(platform)) {
-                //$NON-NLS-1$
-                if (tree.getColumnCount() == 0 || orderedIndex == 0) {
-                    x += image == null ? 2 : 5;
-                } else {
-                    int alignmnent = column.getAlignment();
-                    switch(alignmnent) {
-                        case SWT.LEFT:
-                            x += image == null ? 5 : 3;
-                            break;
-                        case SWT.RIGHT:
-                            x = bounds.width - extent.x - 2;
-                            break;
-                        case SWT.CENTER:
-                            x += Math.ceil((bounds.width - x - extent.x) / 2.0);
-                            break;
-                    }
-                }
+            if (tree.getColumnCount() == 0) {
+                x += image == null ? 4 : 3;
             } else {
-                if (tree.getColumnCount() == 0) {
-                    x += image == null ? 4 : 3;
-                } else {
-                    int alignmnent = column.getAlignment();
-                    switch(alignmnent) {
-                        case SWT.LEFT:
-                            x += image == null ? 5 : 3;
-                            break;
-                        case SWT.RIGHT:
-                            x = bounds.width - extent.x - 2;
-                            break;
-                        case SWT.CENTER:
-                            x += (bounds.width - x - extent.x) / 2 + 2;
-                            break;
-                    }
+                int alignmnent = column.getAlignment();
+                switch(alignmnent) {
+                    case SWT.LEFT:
+                        x += image == null ? 5 : 3;
+                        break;
+                    case SWT.RIGHT:
+                        x = bounds.width - extent.x - 2;
+                        break;
+                    case SWT.CENTER:
+                        x += (bounds.width - x - extent.x) / 2 + 2;
+                        break;
                 }
             }
             int textY = (size.y - extent.y) / 2;

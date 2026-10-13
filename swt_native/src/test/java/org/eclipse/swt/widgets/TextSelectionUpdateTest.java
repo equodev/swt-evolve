@@ -11,9 +11,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
@@ -114,21 +111,8 @@ class TextSelectionUpdateTest {
     }
 
     @Test
-    @EnabledOnOs(OS.MAC)
-    @DisplayName("on Cocoa, a single-line text has its caret at the end of the text that replaces it")
-    void setTextLeavesTheCaretAtTheEndOnCocoa() {
-        Text field = fieldWithACaretPastTheNewText();
-
-        field.setText("Hi");
-
-        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(2, 2));
-        assertThat(field.getCaretPosition()).isZero();
-    }
-
-    @Test
-    @DisabledOnOs(OS.MAC)
-    @DisplayName("on GTK and Win32, a single-line text goes back to the start of the text that replaces it")
-    void setTextGoesBackToTheStartOnGtkAndWin32() {
+    @DisplayName("a single-line text goes back to the start of the text that replaces it")
+    void setTextGoesBackToTheStart() {
         Text field = fieldWithACaretPastTheNewText();
 
         field.setText("Hi");

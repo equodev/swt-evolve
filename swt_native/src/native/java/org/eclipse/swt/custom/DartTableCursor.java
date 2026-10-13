@@ -331,42 +331,20 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
         if (text.length() > 0) {
             Rectangle bounds = row.getBounds(columnIndex);
             Point extent = gc.stringExtent(text);
-            // Temporary code - need a better way to determine table trim
-            String platform = SWT.getPlatform();
-            if ("win32".equals(platform)) {
-                //$NON-NLS-1$
-                if (table.getColumnCount() == 0 || columnIndex == 0) {
-                    x += 2;
-                } else {
-                    int alignmnent = column.getAlignment();
-                    switch(alignmnent) {
-                        case SWT.LEFT:
-                            x += 6;
-                            break;
-                        case SWT.RIGHT:
-                            x = bounds.width - extent.x - 6;
-                            break;
-                        case SWT.CENTER:
-                            x += (bounds.width - x - extent.x) / 2;
-                            break;
-                    }
-                }
+            if (table.getColumnCount() == 0) {
+                x += 5;
             } else {
-                if (table.getColumnCount() == 0) {
-                    x += 5;
-                } else {
-                    int alignmnent = column.getAlignment();
-                    switch(alignmnent) {
-                        case SWT.LEFT:
-                            x += 5;
-                            break;
-                        case SWT.RIGHT:
-                            x = bounds.width - extent.x - 2;
-                            break;
-                        case SWT.CENTER:
-                            x += (bounds.width - x - extent.x) / 2 + 2;
-                            break;
-                    }
+                int alignmnent = column.getAlignment();
+                switch(alignmnent) {
+                    case SWT.LEFT:
+                        x += 5;
+                        break;
+                    case SWT.RIGHT:
+                        x = bounds.width - extent.x - 2;
+                        break;
+                    case SWT.CENTER:
+                        x += (bounds.width - x - extent.x) / 2 + 2;
+                        break;
                 }
             }
             int textY = (size.y - extent.y) / 2;
