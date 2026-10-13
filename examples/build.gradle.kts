@@ -88,12 +88,13 @@ dependencies {
 
     // JavaFX (for FXCanvas / embedded-scene snippets). Classifier pulls the
     // platform-specific classes + native libraries. JavaFX 21 targets JDK 21.
+    // OpenJFX 21 publishes no linux-aarch64 (nor any win-aarch64) jars, so the FXCanvas snippets
+    // only run on the x64 and macOS hosts.
     val javafxVersion = libs.versions.javafx.get()
     val javafxClassifier = when {
         currentOs == "macos" && currentArch == "aarch64" -> "mac-aarch64"
         currentOs == "macos" -> "mac"
         currentOs == "windows" -> "win"
-        currentArch == "aarch64" -> "linux-aarch64"
         else -> "linux"
     }
     implementation("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")

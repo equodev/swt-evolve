@@ -93,6 +93,29 @@ class LabelTextOrImageTest {
     }
 
     @Test
+    @DisplayName("switching between the text and the image changes both values sent; replacing either changes only itself")
+    void whatASetterChanges() {
+        Label label = new Label(shell, SWT.NONE);
+        label.setText("OK");
+
+        value(label).clearDirty();
+        label.setText("Cancel");
+        assertThat(value(label).changedKeys()).containsExactly(VLabel.TEXT);
+
+        value(label).clearDirty();
+        label.setImage(new Image(display, 16, 16));
+        assertThat(value(label).changedKeys()).containsExactlyInAnyOrder(VLabel.TEXT, VLabel.IMAGE);
+
+        value(label).clearDirty();
+        label.setImage(new Image(display, 8, 8));
+        assertThat(value(label).changedKeys()).containsExactly(VLabel.IMAGE);
+
+        value(label).clearDirty();
+        label.setText("Back");
+        assertThat(value(label).changedKeys()).containsExactlyInAnyOrder(VLabel.TEXT, VLabel.IMAGE);
+    }
+
+    @Test
     @DisplayName("a separator is sent no text and no image")
     void separator() {
         Image image = new Image(display, 16, 16);

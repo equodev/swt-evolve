@@ -40,8 +40,6 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, j
 
 JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv* env, jclass cls, jlong context);
 
-JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_Activate(JNIEnv* env, jclass cls, jlong context);
-
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible);
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state);
