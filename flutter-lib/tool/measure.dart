@@ -3400,16 +3400,7 @@ public class CoolBarSizes {
       buffer.writeln(
         '    public static int getCellContentWidth($itemType item) {',
       );
-      buffer.writeln('        TextStyle ts;');
-      buffer.writeln(
-        '        if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
-      );
-      buffer.writeln(
-        '            ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
-      );
-      buffer.writeln('        } else {');
-      buffer.writeln('            ts = TextStyle.from(item.getFont());');
-      buffer.writeln('        }');
+      buffer.writeln('        TextStyle ts = getTextStyle(item);');
       buffer.writeln('        int cellWidth = 0;');
       buffer.writeln('        String text = item.getText();');
       buffer.writeln('        if (text != null && !text.isEmpty()) {');
@@ -3418,9 +3409,42 @@ public class CoolBarSizes {
       );
       buffer.writeln('        }');
       buffer.writeln('        if (item.getImage() != null) {');
-      buffer.writeln('            cellWidth += ts.size() + CELL_PADDING_LEFT;');
+      buffer.writeln('            cellWidth += getIconSpace(item);');
       buffer.writeln('        }');
       buffer.writeln('        return cellWidth;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      // The icon is drawn in a square of the cell's font size whatever the image's own size, and
+      // {Widget}Item.getImageBounds()/getTextBounds() have to agree with computeSize on it.
+      buffer.writeln(
+        '    /** The square an item\'s image is rendered in: the cell\'s font size, whatever the image\'s own size. */',
+      );
+      buffer.writeln(
+        '    public static int getIconSize($itemType item) {',
+      );
+      buffer.writeln('        return getTextStyle(item).size();');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width an image takes before the text, its spacing included. */',
+      );
+      buffer.writeln(
+        '    public static int getIconSpace($itemType item) {',
+      );
+      buffer.writeln('        return getIconSize(item) + CELL_PADDING_LEFT;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    private static TextStyle getTextStyle($itemType item) {',
+      );
+      buffer.writeln(
+        '        if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+      );
+      buffer.writeln(
+        '            return $themeClass.get().textStyle().withStyleFrom(item.getFont());',
+      );
+      buffer.writeln('        }');
+      buffer.writeln('        return TextStyle.from(item.getFont());');
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
