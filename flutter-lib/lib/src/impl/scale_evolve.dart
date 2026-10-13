@@ -45,7 +45,11 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
     return wrap(Listener(
       onPointerDown: (e) {
         _changedDuringPress = false;
-        _pressed = e.buttons == kPrimaryButton;
+        // Only a press on the track counts; one beyond its ends does nothing (see _InertMargin).
+        final along = isVertical ? e.localPosition.dy : e.localPosition.dx;
+        final length = isVertical ? size.height : size.width;
+        final inset = widgetTheme.horizontalPadding;
+        _pressed = e.buttons == kPrimaryButton && along >= inset && along <= length - inset;
       },
       // A primary press that moves nothing still reports a Selection, ahead of its MouseUp, as a
       // native Scale does for a click on its knob; this Listener is reached before the control's
@@ -239,13 +243,28 @@ class _ThemedScaleState extends State<_ThemedScale> {
           overlayRadius: widget.widgetTheme.horizontalPadding,
         ),
       ),
-      child: Slider(
-        value: displayValue.clamp(widget.min, widget.max),
-        min: widget.min,
-        max: widget.max,
-        focusNode: widget.focusNode,
-        onChanged: widget.enabled ? _handleChanged : null,
-        onChangeEnd: widget.enabled ? _handleChangeEnd : null,
+      child: Stack(
+        children: [
+          Slider(
+            value: displayValue.clamp(widget.min, widget.max),
+            min: widget.min,
+            max: widget.max,
+            focusNode: widget.focusNode,
+            onChanged: widget.enabled ? _handleChanged : null,
+            onChangeEnd: widget.enabled ? _handleChangeEnd : null,
+          ),
+          // Beyond the ends of the track a press moves nothing, as on Win32 and GTK; Flutter's
+          // Slider would take it as a press on the track's nearest end.
+          for (final left in [true, false])
+            Positioned(
+              left: left ? 0 : null,
+              right: left ? null : 0,
+              top: 0,
+              bottom: 0,
+              width: widget.widgetTheme.horizontalPadding,
+              child: const _InertMargin(),
+            ),
+        ],
       ),
     );
   }
@@ -349,4 +368,14 @@ class _TickMarkPainter extends CustomPainter {
         oldDelegate.tickWidth != tickWidth ||
         oldDelegate.horizontalPadding != horizontalPadding;
   }
+}
+
+/// Takes the pointer so the Slider beneath never sees it; the control's own handlers, which are
+/// ancestors, still do.
+class _InertMargin extends StatelessWidget {
+  const _InertMargin();
+
+  @override
+  Widget build(BuildContext context) =>
+      const SizedBox.expand(child: ColoredBox(color: Color(0x00000000)));
 }

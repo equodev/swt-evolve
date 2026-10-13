@@ -60,4 +60,34 @@ void main() {
     expect(selections, isNotEmpty);
     expect(selections.last, 93);
   });
+
+  testWidgets('a drag that starts beyond the end of the track moves nothing', (tester) async {
+    final selections = <int?>[];
+    final value = _scale()..selection = 25;
+
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 300,
+          height: 40,
+          child: _RecordingScaleSwt(value: value, selections: selections),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    final origin = tester.getTopLeft(find.byType(_RecordingScaleSwt));
+    final gesture = await tester.startGesture(origin + const Offset(4, 20));
+    for (var x = 30.0; x <= 295; x += 30) {
+      await gesture.moveTo(origin + Offset(x, 20));
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    await gesture.up();
+    await tester.pump();
+
+    expect(value.selection, 25);
+    expect(selections, isEmpty);
+  });
 }

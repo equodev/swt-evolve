@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import '../gen/button.dart';
 import '../gen/color.dart';
@@ -75,17 +78,47 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
 
     // Push and toggle buttons draw their focus ring themselves, around the surface inside the
     // bezel margin rather than around the whole frame.
+    final Widget button;
     if (hasStyle(state.style, SWT.CHECK)) {
-      return _withFocusRing(widgetTheme, _buildCheckBox(context, widgetTheme, enabled, text));
+      button = _withFocusRing(widgetTheme, _buildCheckBox(context, widgetTheme, enabled, text));
     } else if (hasStyle(state.style, SWT.RADIO)) {
-      return _withFocusRing(widgetTheme, _buildRadioButton(context, widgetTheme, enabled, text));
+      button = _withFocusRing(widgetTheme, _buildRadioButton(context, widgetTheme, enabled, text));
     } else if (hasStyle(state.style, SWT.TOGGLE)) {
-      return _buildToggleButton(context, widgetTheme, enabled, text);
+      button = _buildToggleButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.ARROW)) {
-      return _withFocusRing(widgetTheme, _buildArrowButton(context, widgetTheme, enabled, text));
+      button = _withFocusRing(widgetTheme, _buildArrowButton(context, widgetTheme, enabled, text));
+    } else {
+      button = _buildPushButton(context, widgetTheme, enabled, text);
     }
-    return _buildPushButton(context, widgetTheme, enabled, text);
+    // A check box or radio is selected only over its box and label, as on GTK and Cocoa; the
+    // tap on those already covers it.
+    final selectableAnywhere = !hasStyle(state.style, SWT.CHECK) && !hasStyle(state.style, SWT.RADIO);
+    return _selectOnReleaseInside(button, selectableAnywhere);
   }
+
+  bool _primaryPressed = false;
+  bool _tapped = false;
+
+  /// A native button is selected by a primary release over it, however far the pointer travelled
+  /// while held; Flutter's tap gives up once it moves past its slop.
+  Widget _selectOnReleaseInside(Widget button, bool active) => Listener(
+        onPointerDown: (e) {
+          _primaryPressed = active && e.buttons == kPrimaryButton && (state.enabled ?? false);
+          _tapped = false;
+        },
+        onPointerUp: (e) {
+          if (!_primaryPressed) return;
+          _primaryPressed = false;
+          final size = context.size;
+          if (size == null || !(Offset.zero & size).contains(e.localPosition)) return;
+          // After the gesture arena, which delivers a tap within its slop on this same release.
+          scheduleMicrotask(() {
+            if (mounted && !_tapped) _onPressed();
+          });
+        },
+        onPointerCancel: (_) => _primaryPressed = false,
+        child: button,
+      );
 
   // Always a DecoratedBox, so gaining focus never remounts the button and drops that focus.
   Widget _withFocusRing(ButtonThemeExtension widgetTheme, Widget button) => DecoratedBox(
@@ -658,6 +691,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   void _onPressed() {
+    _tapped = true;
     final isRadio = hasStyle(state.style, SWT.RADIO);
     if (isRadio ||
         hasStyle(state.style, SWT.CHECK) ||

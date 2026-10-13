@@ -4189,6 +4189,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return;
                 if (!isActive())
                     return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
+                    return;
                 sendEvent(SWT.DragDetect, e);
             });
         });

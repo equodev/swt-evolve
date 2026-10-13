@@ -789,6 +789,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..count = swtClickCount
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
         widget.sendMouseMouseUp(state, event);
+        // The pointer rests where the release left it; the hover starts counting from there.
+        final size = context.size;
+        if (size != null && (Offset.zero & size).contains(e.localPosition)) {
+          _lastHoverPosition = e.position;
+          _resetHoverTimer(state, VEvent()
+            ..x = event.x
+            ..y = event.y);
+        }
       },
       onPointerCancel: (e) {
         forgetDragDetect(e.pointer);
@@ -796,6 +804,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       },
       onPointerMove: (e) {
         if (scrollBarPointers.contains(e.pointer)) return;
+        // No hover while a button is held: the pointer is moving, not resting.
+        _hoverTimer?.cancel();
         maybeSendDragDetect(e);
         final event = VEvent()
           ..x = e.localPosition.dx.round()
