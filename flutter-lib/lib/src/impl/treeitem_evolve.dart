@@ -875,9 +875,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             // until the next keystroke and turns every plain click into a toggle click.
             final keyboard = HardwareKeyboard.instance;
             final isControlPressed = keyboard.isControlPressed;
-            final macOS = defaultTargetPlatform == TargetPlatform.macOS;
 
-            if (macOS && isControlPressed) {
+            if (defaultTargetPlatform == TargetPlatform.macOS &&
+                isControlPressed) {
               // macOS treats Ctrl+Click as a secondary click (it neither
               // toggles multi-selection — that's Cmd — nor counts toward a
               // double-click): select the item, keeping an existing
@@ -898,12 +898,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               return;
             }
 
-            // The modifier that adds a row to the selection or takes it out is the one each
-            // platform's native tree reads: Command on macOS, Control on Windows and GTK.
+            // Control or Command adds the row to the selection or takes it out, on every OS,
+            // as in a List.
             final isShiftPressed = keyboard.isShiftPressed;
             _context?.treeImpl?.handleTreeItemSelection(
               state.id,
-              toggle: macOS ? keyboard.isMetaPressed : isControlPressed,
+              toggle: isControlPressed || keyboard.isMetaPressed,
               isShiftPressed: isShiftPressed,
               notifyJava: false,
             );

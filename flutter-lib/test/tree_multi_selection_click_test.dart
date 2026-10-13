@@ -1,6 +1,6 @@
-// A multi-selection Tree builds its selection the way each platform's native tree does: the
-// toggle modifier (Command on macOS, Control on Windows and GTK) adds the clicked row or takes it
-// out and moves the anchor, Shift selects the rows from the anchor, and a plain click selects one.
+// A multi-selection Tree builds its selection the same way on every OS: Control or Command adds
+// the clicked row or takes it out and moves the anchor, Shift selects the rows from the anchor, and
+// a plain click selects one. On macOS, Control+click is a secondary click instead.
 // Every Selection event names the clicked row and carries the ids of the rows the tree now shows
 // selected, which is what Java selects.
 
@@ -137,15 +137,16 @@ void main() {
     expect(tree.selections.last.stateMask, 0);
   }, variant: everyPlatform);
 
-  testWidgets('on Windows and GTK the Windows/Super key does not toggle', (tester) async {
+  testWidgets('Command toggles on Windows and GTK too, as Control does', (tester) async {
     final value = _tree();
     final tree = await _mount(tester, value);
 
     await _click(tester, 10);
     await _click(tester, 13, LogicalKeyboardKey.metaLeft);
 
-    expect(_selectedIds(value), [13]);
-    expect(tree.selections.last.segments, [13]);
+    expect(_selectedIds(value), [10, 13]);
+    expect(tree.selections.last.segments, [10, 13]);
+    expect(tree.selections.last.stateMask, SWT.COMMAND);
   }, variant: windowsAndLinux);
 
   testWidgets('on macOS Control does not toggle: Control+click is a secondary click', (tester) async {
