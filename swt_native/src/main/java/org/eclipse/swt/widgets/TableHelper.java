@@ -20,34 +20,13 @@ public class TableHelper {
     private static final java.util.Map<DartTable, Integer> SCROLL_OFFSETS =
         java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
-    // The index setTopIndex was last asked for, on the platform whose table reports it even when the rows have
-    // nowhere to scroll to it. Dropped by whatever else moves the rows.
-    private static final java.util.Map<DartTable, Integer> REQUESTED_TOP_INDEXES =
-        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
-    /**
-     * GTK reports the top index it was asked for, whether or not the rows can scroll that far; Cocoa and Win32
-     * clamp it to what the table can scroll to. Each follows the platform the application runs on.
-     */
-    private static boolean keepsRequestedTopIndex() {
-        return "gtk".equals(SWT.getPlatform());
-    }
-
-    /**
-     * Where Cocoa differs from Win32 and GTK: an index past the last row scrolls to the top, since its view has
-     * no frame for a row that does not exist; {@code setSelection(TableItem[])} shows the last item it was given,
-     * not the first row of the selection; and the one cell of a table without columns is as wide as what it holds.
-     */
-    private static boolean isCocoa() {
-        return "cocoa".equals(SWT.getPlatform());
-    }
-
     /**
      * The width of the one cell of a table without columns, which holds {@code content} and has {@code room}
-     * left in the table. Win32 and GTK stretch it across the table; Cocoa makes it as wide as what it holds.
+     * left in the table: stretched across the table, as on Win32 and GTK. Cocoa makes it as wide as what it
+     * holds.
      */
     static int columnlessCellWidth(int content, int room) {
-        return isCocoa() ? content : Math.max(content, room);
+        return Math.max(content, room);
     }
 
     /**
@@ -55,7 +34,6 @@ public class TableHelper {
      * again does not move it back to where the API last put it.
      */
     public static void recordScrollOffset(DartTable table, Event event) {
-        REQUESTED_TOP_INDEXES.remove(table);
         SCROLL_OFFSETS.put(table, Math.max(0, event.y));
     }
 
@@ -76,9 +54,6 @@ public class TableHelper {
 
     /** The rows changed: a scroll past where they now end stops at their end. */
     public static void keepScrollInRows(DartTable table) {
-        Integer requested = REQUESTED_TOP_INDEXES.get(table);
-        if (requested != null && requested >= table.getItemCount())
-            REQUESTED_TOP_INDEXES.remove(table);
         Integer offset = SCROLL_OFFSETS.get(table);
         if (offset != null && offset > scrollOffsetY(table))
             SCROLL_OFFSETS.put(table, scrollOffsetY(table));
@@ -87,30 +62,27 @@ public class TableHelper {
     /** The index of the row at the top; 0 for an empty table. */
     public static int getTopIndex(DartTable table) {
         if (table.getItemCount() == 0) return 0;
-        Integer requested = REQUESTED_TOP_INDEXES.get(table);
-        if (requested != null) return Math.min(requested, table.getItemCount() - 1);
         return Math.min(scrollOffsetY(table) / Math.max(1, table.getItemHeight()), table.getItemCount() - 1);
     }
 
     /**
-     * Scrolls so that row {@code index} is at the top. Cocoa and Win32 stop where the rows below it end, and
-     * Cocoa goes to the top for an index past the last row, see {@link #isCocoa}; GTK keeps the
-     * index it was given, see {@link #keepsRequestedTopIndex}.
+     * Scrolls so that row {@code index} is at the top, or as near as the rows below it allow. An index before
+     * the first row is the first one and an index past the last row is the last one, as on Win32. The
+     * platforms differ there: Cocoa goes to the top for an index past the last row, and GTK reports the index
+     * it was given whether or not the rows can scroll that far.
      */
     public static void setTopIndex(DartTable table, int index) {
         if (table.getItemCount() == 0) return;
-        int row = Math.max(0, Math.min(index, table.getItemCount() - 1));
-        if (index >= table.getItemCount() && isCocoa()) row = 0;
-        scrollToRow(table, row);
-        if (keepsRequestedTopIndex()) REQUESTED_TOP_INDEXES.put(table, row);
+        scrollToRow(table, Math.max(0, Math.min(index, table.getItemCount() - 1)));
     }
 
     /**
      * The row {@code setSelection(TableItem[])} scrolls to, out of {@code count} selected {@code indices}
-     * in the order their items were given.
+     * in the order their items were given: the first row of the selection, as on Win32 and GTK. Cocoa shows
+     * the last item given.
      */
     public static int rowToShowForSelection(int[] indices, int count) {
-        return isCocoa() ? indices[count - 1] : Arrays.stream(indices, 0, count).min().getAsInt();
+        return Arrays.stream(indices, 0, count).min().getAsInt();
     }
 
     /**
@@ -135,7 +107,6 @@ public class TableHelper {
      * it will end at, so what the API reads back right away is where the table will be.
      */
     private static void scrollToRow(DartTable table, int row) {
-        REQUESTED_TOP_INDEXES.remove(table);
         int itemHeight = Math.max(1, table.getItemHeight());
         SCROLL_OFFSETS.put(table, Math.min(row * itemHeight, maxScrollOffset(table, itemHeight)));
         table.getValue().markDirty(VTable.TOP_INDEX);

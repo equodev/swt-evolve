@@ -136,12 +136,8 @@ class TableItemImplementationNativeTest {
         item.setImage(image);
         assertThat(item.getBounds(0).width).isGreaterThan(withoutImage);
 
-        int withImage = item.getBounds(0).width;
         plain.setBounds(0, 0, 400, 300);
-        if ("cocoa".equals(SWT.getPlatform()))
-            assertThat(item.getBounds(0).width).isEqualTo(withImage);
-        else
-            assertThat(item.getBounds(0).width).isGreaterThan(300);
+        assertThat(item.getBounds(0).width).as("stretched across the table, as on Win32 and GTK").isGreaterThan(300);
         assertThat(item.getBounds().width).isLessThan(item.getBounds(0).width);
     }
 }

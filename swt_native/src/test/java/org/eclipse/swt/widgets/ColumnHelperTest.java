@@ -71,14 +71,28 @@ class ColumnHelperTest {
     @Test
     @DisplayName("each column's left edge follows the order it is shown in, and an index outside the columns is skipped")
     void positions() {
-        assertThat(ColumnHelper.positions(new int[] {10, 20, 30}, new int[] {2, 5, 0, -1, 1})).containsExactly(30, 40, 0);
+        assertThat(ColumnHelper.positions(new int[] {10, 20, 30}, new int[] {2, 5, 0})).containsExactly(30, 0, 0);
+        assertThat(ColumnHelper.positions(new int[] {10, 20, 30}, new int[] {1, 0})).as("an order of another length is the creation order")
+                .containsExactly(0, 10, 30);
+        assertThat(ColumnHelper.positions(new int[] {10, 20, 30}, null)).containsExactly(0, 10, 30);
+        assertThat(ColumnHelper.positions(new int[] {10, 20, 30}, new int[] {2, -1, 0})).containsExactly(30, 0, 0);
 
         Tree tree = new Tree(shell, SWT.NONE);
         treeColumns(tree);
         assertThat(ColumnHelper.positions(tree, new int[] {1, 2, 0})).containsExactly(50, 0, 20);
         Table table = new Table(shell, SWT.NONE);
         tableColumns(table);
-        assertThat(ColumnHelper.positions(table, new int[] {2, 0, 1})).containsExactly(30, 40, 0);
+        assertThat(ColumnHelper.positions(table, new int[] {0, 1, 2})).containsExactly(0, 10, 30);
+    }
+
+    @Test
+    @DisplayName("a column dragged to its own place, a column not shown and a column that does not move leave the order")
+    void movedLeavesTheOrder() {
+        int[] order = {0, 1, 2};
+        assertThat(ColumnHelper.moved(order, 1, 1, true)).isNull();
+        assertThat(ColumnHelper.moved(order, 3, 0, true)).isNull();
+        assertThat(ColumnHelper.moved(order, 0, 2, false)).isNull();
+        assertThat(ColumnHelper.moved(order, 0, 2, true)).containsExactly(1, 2, 0);
     }
 
     @Test

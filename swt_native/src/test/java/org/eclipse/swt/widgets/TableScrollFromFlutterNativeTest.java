@@ -170,20 +170,19 @@ class TableScrollFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("a top index the rows cannot scroll to is the one asked for on GTK, and the top on Cocoa and Win32")
-    void aTopIndexWithNowhereToScrollFollowsThePlatform() {
+    @DisplayName("a top index the rows cannot scroll to leaves the table at the top, as on Cocoa and Win32")
+    void aTopIndexWithNowhereToScrollStaysAtTheTop() {
         Table table = table(2);
 
         table.setTopIndex(1);
 
-        boolean keepsTheRequest = "gtk".equals(SWT.getPlatform());
-        assertThat(table.getTopIndex()).isEqualTo(keepsTheRequest ? 1 : 0);
+        assertThat(table.getTopIndex()).isZero();
         assertThat(table.getItem(1).getBounds().y).isEqualTo(table.getItem(0).getBounds().y + table.getItemHeight());
     }
 
     @Test
-    @DisplayName("an index past the last row scrolls to the top on Cocoa, stops at the last page on Win32 and is kept on GTK")
-    void aTopIndexPastTheRowsFollowsThePlatform() {
+    @DisplayName("an index past the last row stops at the last page, as on Win32")
+    void aTopIndexPastTheRowsStopsAtTheLastPage() {
         Table table = table(60);
 
         table.setTopIndex(20);
@@ -196,19 +195,9 @@ class TableScrollFromFlutterNativeTest {
         table.setTopIndex(59);
         int lastRow = table.getTopIndex();
 
-        if ("cocoa".equals(SWT.getPlatform())) {
-            assertThat(pastTheRows).isZero();
-            assertThat(firstWithoutARow).isZero();
-            assertThat(lastRow).isGreaterThan(0).isLessThan(59);
-        } else if ("gtk".equals(SWT.getPlatform())) {
-            assertThat(pastTheRows).isEqualTo(59);
-            assertThat(firstWithoutARow).isEqualTo(59);
-            assertThat(lastRow).isEqualTo(59);
-        } else {
-            assertThat(pastTheRows).isGreaterThan(0).isLessThan(59);
-            assertThat(firstWithoutARow).isEqualTo(pastTheRows);
-            assertThat(lastRow).isEqualTo(pastTheRows);
-        }
+        assertThat(pastTheRows).isGreaterThan(0).isLessThan(59);
+        assertThat(firstWithoutARow).isEqualTo(pastTheRows);
+        assertThat(lastRow).isEqualTo(pastTheRows);
     }
 
     @Test
@@ -223,20 +212,18 @@ class TableScrollFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("setSelection(TableItem[]) shows the last item it was given on Cocoa, the first row of the selection elsewhere")
-    void aSelectionOfItemsShowsTheRowThePlatformShows() {
+    @DisplayName("setSelection(TableItem[]) shows the first row of the selection, as on Win32 and GTK")
+    void aSelectionOfItemsShowsItsFirstRow() {
         Table table = table(100, SWT.MULTI);
         TableItem[] rows = table.getItems();
         int visible = Math.max(1, (table.getClientArea().height - table.getHeaderHeight()) / table.getItemHeight());
-        boolean cocoa = "cocoa".equals(SWT.getPlatform());
 
         table.setSelection(new TableItem[] { rows[80], rows[90] });
         int top = table.getTopIndex();
-        int shown = cocoa ? 90 : 80;
-        assertThat(top).isLessThanOrEqualTo(shown);
-        assertThat(top + visible).isGreaterThan(shown);
+        assertThat(top).isLessThanOrEqualTo(80);
+        assertThat(top + visible).isGreaterThan(80);
 
-        // The last item given, not the highest row: here Cocoa shows the same row as the others.
+        // The first row, not the first item given.
         table.setTopIndex(0);
         table.setSelection(new TableItem[] { rows[90], rows[80] });
         top = table.getTopIndex();
