@@ -618,8 +618,6 @@ class TrackerLoopFlutterTest {
         tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
         listen(tracker);
         Point anchor = shell.toDisplay(20, 10);
-        // Cocoa acts on an arrow's release as well as on its press.
-        int steps = "cocoa".equals(SWT.getPlatform()) ? 2 : 1;
 
         open(tracker, () -> {
             display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
@@ -628,9 +626,8 @@ class TrackerLoopFlutterTest {
             display.asyncExec(() -> release(tracker));
         });
 
-        int x = 10 + 9 * steps;
         assertThat(heard.get(0)).isEqualTo("Move " + (anchor.x + 9) + "," + anchor.y + " " + rects(new Rectangle(19, 10, 20, 20)));
-        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(x, 11, 20, 20));
+        assertThat(tracker.getRectangles()).as("the release steps nothing, as on Win32 and GTK").containsExactly(new Rectangle(19, 11, 20, 20));
     }
 
     @Test
