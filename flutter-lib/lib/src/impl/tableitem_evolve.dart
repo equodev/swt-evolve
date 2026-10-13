@@ -1,4 +1,4 @@
-import 'package:flutter/gestures.dart' show kPrimaryButton;
+import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
@@ -214,6 +214,23 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       }
     }
 
+    // A secondary press is sent from the raw down, as the primary one is, so it is reported ahead
+    // of the Table's focus and where the pointer is; MenuDetect follows it.
+    void secondaryPress(Offset globalPosition) {
+      sendMouseDown(3, 1, globalPosition);
+      if (enabled && _context?.tableImpl != null) {
+        MenuDetectGate.withhold(
+          _context!.parentTableValue.swt,
+          _context!.parentTableValue.id,
+          () => _context!.tableImpl!.openContextMenu(globalPosition),
+        );
+        _context!.parentTable.sendMenuDetectMenuDetect(
+          _context!.parentTableValue,
+          pointedEvent(globalPosition),
+        );
+      }
+    }
+
     // The second press delivers MouseDoubleClick, then the row's DefaultSelection, both ahead of
     // the release, as Win32 and GTK do.
     void sendDoubleClick(int button, [Offset? globalPosition]) {
@@ -239,6 +256,10 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // SWT delivers the press first. The click count is registered here too, because that is
       // the event SWT numbers -- onTap only decides what the completed gesture was.
       onPointerDown: (e) {
+        if (e.buttons == kSecondaryButton) {
+          secondaryPress(e.position);
+          return;
+        }
         if (e.buttons != kPrimaryButton) return;
         _pressSent = true;
         final count = enabled && _context?.tableImpl != null
@@ -262,23 +283,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         if (count == 2) sendDoubleClick(1);
       },
       onTapCancel: () => _pressSent = false,
-      onSecondaryTapDown: (details) {
-        sendMouseDown(3, 1);
-        if (_context?.tableImpl != null) {
-          MenuDetectGate.withhold(
-            _context!.parentTableValue.swt,
-            _context!.parentTableValue.id,
-            () => _context!.tableImpl!.openContextMenu(details.globalPosition),
-          );
-          final e = VEvent();
-          e.x = _computeCellCenterX(columnIndex, theme);
-          e.y = _computeCellCenterY(rowIndex, textStyle, theme);
-          _context!.parentTable.sendMenuDetectMenuDetect(
-            _context!.parentTableValue,
-            e,
-          );
-        }
-      },
       onTertiaryTapDown: (_) => sendMouseDown(2, 1),
       child: SizedBox(
         height: rowHeight,

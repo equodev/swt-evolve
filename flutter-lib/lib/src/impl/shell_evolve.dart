@@ -17,6 +17,7 @@ import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
+import '../impl/key_forwarding.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
 import '../impl/utils/region_clip.dart';
@@ -159,9 +160,13 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   KeyEventResult _handleShellKey(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      widget.sendKeyKeyDown(state, VEvent()
-        ..keyCode = SWT.ESC
-        ..character = SWT.ESC);
+      // The Display already forwards every key in the whole-tree backend; a second KeyDown here
+      // would deliver the Escape to Java twice.
+      if (!displayLevelKeyForwardingActive) {
+        widget.sendKeyKeyDown(state, VEvent()
+          ..keyCode = SWT.ESC
+          ..character = SWT.ESC);
+      }
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;

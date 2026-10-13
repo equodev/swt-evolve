@@ -634,9 +634,11 @@ public class ControlHelper {
      */
     public static void pressed(DartControl control, Event event) {
         sendActivateToAncestors(control, SWT.MouseDown);
-        if (control.isDisposed() || event == null || event.button != 1)
+        if (control.isDisposed() || event == null)
             return;
-        if (!takesFocusOnClick(control) || control.isFocusControl())
+        boolean focuses = event.button == 1 ? takesFocusOnClick(control)
+                : event.button == 3 && takesFocusOnSecondaryClick(control);
+        if (!focuses || control.isFocusControl())
             return;
         if (control.forceFocus() && !control.isDisposed())
             control.getBridge().focusClient(control);
@@ -654,6 +656,15 @@ public class ControlHelper {
         return api instanceof Button || api instanceof Combo || api instanceof DateTime
                 || api instanceof List || api instanceof Scale || api instanceof Spinner
                 || api instanceof TabFolder || api instanceof Table || api instanceof Tree
+                || api instanceof Text;
+    }
+
+    /** The controls a button-3 press focuses natively, as Win32 and GTK do: the fields and the item views. */
+    static boolean takesFocusOnSecondaryClick(DartControl control) {
+        Control api = control.getApi();
+        if ((api.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        return api instanceof Combo || api instanceof Spinner || api instanceof Table || api instanceof Tree
                 || api instanceof Text;
     }
 

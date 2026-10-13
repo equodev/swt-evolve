@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import '../gen/color.dart';
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
@@ -42,16 +43,17 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
     final size = getScaleSize(state, widgetTheme, isVertical: isVertical);
 
     return wrap(Listener(
-      onPointerDown: (_) {
+      onPointerDown: (e) {
         _changedDuringPress = false;
-        _pressed = true;
+        _pressed = e.buttons == kPrimaryButton;
       },
-      // A press that moves nothing still reports a Selection, ahead of its MouseUp, as a native
-      // Scale does for a click on its knob; this Listener is reached before the control's own.
-      // The second press of a double click reports none: Win32 and GTK leave it to the first.
+      // A primary press that moves nothing still reports a Selection, ahead of its MouseUp, as a
+      // native Scale does for a click on its knob; this Listener is reached before the control's
+      // own. The second press of a double click reports none: Win32 and GTK leave it to the first.
       onPointerUp: (_) {
+        final primary = _pressed;
         _pressed = false;
-        if (_changedDuringPress || !enabled || swtClickCount > 1) return;
+        if (!primary || _changedDuringPress || !enabled || swtClickCount > 1) return;
         widget.sendSelectionSelection(state, VEvent()
           ..index = state.selection
           ..stateMask = SWT.BUTTON1);

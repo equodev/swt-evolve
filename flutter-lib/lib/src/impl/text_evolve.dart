@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
@@ -309,9 +310,34 @@ class TextImpl<T extends TextSwt, V extends VText>
           ..x = start
           ..y = end;
       },
-      child: textField,
+      child: Listener(
+        onPointerDown: (e) {
+          if (e.buttons & kSecondaryMouseButton == 0) return;
+          // A field that never held a caret has Java's, which the focus this press brings would
+          // otherwise move to the end.
+          final selection = _controller.selection;
+          _selectionBeforeSecondary = selection.isValid
+              ? selection
+              : TextSelection.collapsed(
+                  offset: (state.caretPosition ?? 0).clamp(0, _controller.text.length));
+        },
+        onPointerUp: (_) {
+          final before = _selectionBeforeSecondary;
+          _selectionBeforeSecondary = null;
+          if (before == null) return;
+          // Flutter's field places the caret on a secondary tap, which the gesture delivers after
+          // this release; a native Text leaves it where it was, as on Win32 and GTK.
+          scheduleMicrotask(() {
+            if (mounted && _controller.selection != before) _controller.selection = before;
+          });
+        },
+        child: textField,
+      ),
     );
   }
+
+  /// The selection when a secondary press began, put back once its click is done.
+  TextSelection? _selectionBeforeSecondary;
 
   Widget _buildTextFieldWrapper(
     Widget textField,

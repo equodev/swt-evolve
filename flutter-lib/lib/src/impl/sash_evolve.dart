@@ -131,14 +131,16 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         child: Listener(
           onPointerDown: enabled
               ? (e) {
-                  if (e.buttons == kPrimaryButton && !continuesClickChain(e)) {
+                  _primaryPress = e.buttons == kPrimaryButton;
+                  if (_primaryPress && !continuesClickChain(e)) {
                     _sendPositionSelection(pressed: true);
                   }
                 }
               : null,
           onPointerUp: enabled
               ? (_) {
-                  if (swtClickCount == 1) _sendPositionSelection(pressed: false);
+                  if (_primaryPress && swtClickCount == 1) _sendPositionSelection(pressed: false);
+                  _primaryPress = false;
                 }
               : null,
           child: GestureDetector(
@@ -201,6 +203,9 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     _localX = null;
     _localY = null;
   }
+
+  /// Whether the press in flight is the primary button's: only that one moves a sash.
+  bool _primaryPress = false;
 
   /// The Selection a press or a release reports: where the sash is now, with the button still
   /// held on the press.
