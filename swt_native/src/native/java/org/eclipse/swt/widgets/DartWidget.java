@@ -182,12 +182,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     String getClipboardText() {
-        org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(display);
-        try {
-            return (String) clipboard.getContents(org.eclipse.swt.dnd.TextTransfer.getInstance());
-        } finally {
-            clipboard.dispose();
-        }
+        return WidgetClipboard.text(display);
     }
 
     /**
@@ -443,14 +438,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void copyToClipboard(char[] buffer) {
-        if (buffer == null || buffer.length == 0)
-            return;
-        org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(display);
-        try {
-            clipboard.setContents(new Object[] { new String(buffer) }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
-        } finally {
-            clipboard.dispose();
-        }
+        WidgetClipboard.copy(display, buffer);
     }
 
     void createHandle() {
