@@ -231,7 +231,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getEnabled()) {
+            if (getApi().getEnabled()) {
                 if ((getApi().style & SWT.SEPARATOR) != 0) {
                     if (control != null)
                         return control.getImpl().computeTabList();
@@ -507,7 +507,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     public boolean isTabGroup() {

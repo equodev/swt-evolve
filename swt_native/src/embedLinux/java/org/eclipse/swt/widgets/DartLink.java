@@ -611,7 +611,7 @@ public class DartLink extends DartControl implements ILink {
         } else if (linkColor == null)
             return;
         linkColor = color;
-        if (getEnabled()) {
+        if (getApi().getEnabled()) {
             styleLinkParts();
             redraw();
         }

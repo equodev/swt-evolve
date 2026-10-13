@@ -280,7 +280,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible();
+        return getApi().getVisible();
     }
 
     void onDispose(Event event) {
