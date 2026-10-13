@@ -554,7 +554,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void checkToolTip(Widget target) {
-        if (isVisible() && ((SwtDisplay) display.getImpl()).tooltipControl == this.getApi() && (target == null || ((SwtDisplay) display.getImpl()).tooltipTarget == target)) {
+        if (getApi().isVisible() && ((SwtDisplay) display.getImpl()).tooltipControl == this.getApi() && (target == null || ((SwtDisplay) display.getImpl()).tooltipTarget == target)) {
             Shell shell = getShell();
             ((SwtShell) shell.getImpl()).sendToolTipEvent(false);
             ((SwtShell) shell.getImpl()).sendToolTipEvent(true);
@@ -641,7 +641,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getVisible() && getEnabled()) {
+            if (getApi().getVisible() && getApi().getEnabled()) {
                 return new Widget[] { this.getApi() };
             }
         }
@@ -811,7 +811,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void enableWidget(boolean enabled) {
-        updateCursorRects(isEnabled());
+        updateCursorRects(getApi().isEnabled());
     }
 
     boolean equals(double[] color1, double[] color2) {
@@ -878,7 +878,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         Decorations shell = menuShell();
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
-        if (!isEnabled() || !isVisible() || !isActive())
+        if (!getApi().isEnabled() || !getApi().isVisible() || !isActive())
             return false;
         if (display.getActiveShell() != shell && !SwtDisplay.isActivateShellOnForceFocus())
             return false;
@@ -1598,11 +1598,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     boolean isEnabledCursor() {
-        return isEnabled();
+        return getApi().isEnabled();
     }
 
     boolean isFocusAncestor(Control control) {
@@ -1661,7 +1661,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
 	*/
-        if (!isVisible())
+        if (!getApi().isVisible())
             return false;
         Control control = this.getApi();
         while (control != null) {
@@ -1722,7 +1722,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible() && parent.isVisible();
+        return getApi().getVisible() && parent.isVisible();
     }
 
     boolean hasKeyboardFocus(long inId) {
@@ -2755,7 +2755,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (cursor != null && cursor.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.cursor = cursor;
-        if (!isEnabled())
+        if (!getApi().isEnabled())
             return;
         //display.setCursor(display.currentControl);
         ;

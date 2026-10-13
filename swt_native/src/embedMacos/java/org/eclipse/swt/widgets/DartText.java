@@ -1376,7 +1376,7 @@ public class DartText extends DartScrollable implements IText {
         if (color == null) {
         } else {
             double alpha = 1;
-            if ((getApi().style & SWT.MULTI) != 0 && !isEnabled())
+            if ((getApi().style & SWT.MULTI) != 0 && !getApi().isEnabled())
                 alpha = 0.5f;
         }
         if ((getApi().style & SWT.SINGLE) != 0) {
@@ -1754,7 +1754,7 @@ public class DartText extends DartScrollable implements IText {
         if ((getApi().style & SWT.MULTI) == 0)
             return;
         if (foreground == null) {
-            if (getEnabled()) {
+            if (getApi().getEnabled()) {
             } else {
             }
         }
