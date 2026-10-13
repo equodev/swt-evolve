@@ -396,6 +396,17 @@ public class DartText extends DartScrollable implements IText {
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
             if (oldSelection.x != oldSelection.y) {
                 oldText = getEditText(oldSelection.x, oldSelection.y - 1);
+                String newText = verifyText("", oldSelection.x, oldSelection.y);
+                if (newText == null)
+                    return;
+                if (newText.length() != 0) {
+                    copyToClipboard(oldText);
+                    if ((getApi().style & SWT.SINGLE) != 0) {
+                        insertEditText(newText);
+                    } else {
+                    }
+                    cut = false;
+                }
             }
         }
         if (cut) {
@@ -1083,6 +1094,20 @@ public class DartText extends DartScrollable implements IText {
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
             oldText = getClipboardText();
             if (oldText != null) {
+                Point selection = getSelection();
+                String newText = verifyText(oldText, selection.x, selection.y);
+                if (newText == null)
+                    return;
+                if (!newText.equals(oldText)) {
+                    if ((getApi().style & SWT.SINGLE) != 0) {
+                        _insertEditText(newText, enableUndo);
+                    } else {
+                        if (textLimit != Text.LIMIT) {
+                        } else {
+                        }
+                    }
+                    paste = false;
+                }
             }
         }
         if (paste) {
@@ -1751,6 +1776,23 @@ public class DartText extends DartScrollable implements IText {
         }
     }
 
+    String verifyText(String string, int start, int end) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        /*
+	 * It is possible (but unlikely), that application
+	 * code could have disposed the widget in the verify
+	 * event.  If this happens, answer null to cancel
+	 * the operation.
+	 */
+        sendEvent(SWT.Verify, event);
+        if (!event.doit || isDisposed())
+            return null;
+        return event.text;
+    }
+
     int caretPosition;
 
     boolean editable;
@@ -1850,23 +1892,6 @@ public class DartText extends DartScrollable implements IText {
 
     void applySegments() {
         TextHelper.sendSegments(this);
-    }
-
-    String verifyText(String string, int start, int end) {
-        Event event = new Event();
-        event.text = string;
-        event.start = start;
-        event.end = end;
-        /*
-                     * It is possible (but unlikely), that application
-                     * code could have disposed the widget in the verify
-                     * event. If this happens, answer null to cancel
-                     * the operation.
-                     */
-        sendEvent(SWT.Verify, event);
-        if (!event.doit || isDisposed())
-            return null;
-        return event.text;
     }
 
     protected void _hookEvents() {

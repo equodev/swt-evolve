@@ -1738,6 +1738,23 @@ public class DartText extends DartScrollable implements IText {
             return;
     }
 
+    String verifyText(String string, int start, int end) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        /*
+	 * It is possible (but unlikely), that application
+	 * code could have disposed the widget in the verify
+	 * event.  If this happens, answer null to cancel
+	 * the operation.
+	 */
+        sendEvent(SWT.Verify, event);
+        if (!event.doit || isDisposed())
+            return null;
+        return event.text;
+    }
+
     int caretPosition;
 
     boolean editable;
@@ -1837,23 +1854,6 @@ public class DartText extends DartScrollable implements IText {
 
     void applySegments() {
         TextHelper.sendSegments(this);
-    }
-
-    String verifyText(String string, int start, int end) {
-        Event event = new Event();
-        event.text = string;
-        event.start = start;
-        event.end = end;
-        /*
-                     * It is possible (but unlikely), that application
-                     * code could have disposed the widget in the verify
-                     * event. If this happens, answer null to cancel
-                     * the operation.
-                     */
-        sendEvent(SWT.Verify, event);
-        if (!event.doit || isDisposed())
-            return null;
-        return event.text;
     }
 
     protected void _hookEvents() {
