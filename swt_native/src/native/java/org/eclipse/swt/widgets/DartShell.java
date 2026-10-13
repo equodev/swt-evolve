@@ -602,8 +602,6 @@ public class DartShell extends DartDecorations implements IShell {
         if (!isVisible())
             return;
         makeKeyAndOrderFront();
-        if (getBridge() instanceof dev.equo.swt.WindowBridge)
-            ((dev.equo.swt.WindowBridge) getBridge()).activateWindow(this);
     }
 
     /**
@@ -922,7 +920,7 @@ public class DartShell extends DartDecorations implements IShell {
         ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         boolean wasActive = display.getActiveShell() == this.getApi();
         _takeFocusHolder(true);
-        if (!isDisposed() && !wasActive && _activates()) {
+        if (!isDisposed() && !wasActive) {
             // The client reports the focus this moves into the shell as an activation of its own.
             _suppressNextFlutterActivate = true;
             sendEvent(SWT.Activate);
@@ -967,13 +965,10 @@ public class DartShell extends DartDecorations implements IShell {
         if (prevActiveShell != null && prevActiveShell != this.getApi() && !prevActiveShell.isDisposed() && prevActiveShell.isVisible()) {
             DartShell prevImpl = (DartShell) prevActiveShell.getImpl();
             prevImpl.setActiveControl(null);
-            if (prevImpl._deactivates()) {
-                prevImpl.sendEvent(SWT.Deactivate);
-                prevImpl._suppressNextFlutterDeactivate = true;
-            }
+            prevImpl.sendEvent(SWT.Deactivate);
+            prevImpl._suppressNextFlutterDeactivate = true;
         }
-        if (_activates())
-            sendEvent(SWT.Activate);
+        sendEvent(SWT.Activate);
         if (isDisposed())
             return;
         if (!restoreFocus() && !traverseGroup(true)) {
@@ -1051,8 +1046,7 @@ public class DartShell extends DartDecorations implements IShell {
         // once, as a window manager does when the active window is destroyed.
         if (returnTo != null && !returnTo.isDisposed() && returnTo.isVisible()) {
             ((DartShell) returnTo.getImpl())._takeFocusHolder(true);
-            if (((DartShell) returnTo.getImpl())._activates())
-                ((DartShell) returnTo.getImpl()).sendEvent(SWT.Activate);
+            ((DartShell) returnTo.getImpl()).sendEvent(SWT.Activate);
         } else if (savedDisplay != null && !savedDisplay.isDisposed()) {
             savedDisplay.asyncExec(() -> {
                 Shell savedParentShell = savedParent instanceof Shell ? (Shell) savedParent : null;
@@ -1063,7 +1057,7 @@ public class DartShell extends DartDecorations implements IShell {
                         if (!s.isDisposed() && s.isVisible())
                             topmost = s;
                     }
-                    if (topmost == toActivate && ((DartShell) toActivate.getImpl())._activates()) {
+                    if (topmost == toActivate) {
                         ((DartShell) toActivate.getImpl()).sendEvent(SWT.Activate);
                     }
                 }
@@ -1965,14 +1959,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     boolean _suppressNextFlutterActivate;
 
-    boolean _activates() {
-        return getBridge().shellActivates(getApi());
-    }
-
-    boolean _deactivates() {
-        return getBridge().shellDeactivates(getApi());
-    }
-
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Shell", "Activate", e -> {
@@ -1987,8 +1973,6 @@ public class DartShell extends DartDecorations implements IShell {
                     _suppressNextFlutterActivate = false;
                     return;
                 }
-                if (!_activates())
-                    return;
                 sendEvent(SWT.Activate, e);
             });
         });
@@ -2008,8 +1992,6 @@ public class DartShell extends DartDecorations implements IShell {
                     _suppressNextFlutterDeactivate = false;
                     return;
                 }
-                if (!_deactivates())
-                    return;
                 sendEvent(SWT.Deactivate, e);
             });
         });
