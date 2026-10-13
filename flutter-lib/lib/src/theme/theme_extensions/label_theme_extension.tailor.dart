@@ -49,6 +49,7 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
   TextDecoration get textDecoration;
   TextDecoration get hoverTextDecoration;
   double get decorationThickness;
+  double get separatorThickness;
 
   @override
   LabelThemeExtension copyWith({
@@ -91,6 +92,7 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
     TextDecoration? textDecoration,
     TextDecoration? hoverTextDecoration,
     double? decorationThickness,
+    double? separatorThickness,
   }) {
     return LabelThemeExtension(
       primaryTextColor: primaryTextColor ?? this.primaryTextColor,
@@ -134,6 +136,7 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       textDecoration: textDecoration ?? this.textDecoration,
       hoverTextDecoration: hoverTextDecoration ?? this.hoverTextDecoration,
       decorationThickness: decorationThickness ?? this.decorationThickness,
+      separatorThickness: separatorThickness ?? this.separatorThickness,
     );
   }
 
@@ -243,6 +246,9 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       decorationThickness: t < 0.5
           ? decorationThickness
           : other.decorationThickness,
+      separatorThickness: t < 0.5
+          ? separatorThickness
+          : other.separatorThickness,
     );
   }
 
@@ -394,6 +400,10 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
             const DeepCollectionEquality().equals(
               decorationThickness,
               other.decorationThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorThickness,
+              other.separatorThickness,
             ));
   }
 
@@ -440,6 +450,7 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       const DeepCollectionEquality().hash(textDecoration),
       const DeepCollectionEquality().hash(hoverTextDecoration),
       const DeepCollectionEquality().hash(decorationThickness),
+      const DeepCollectionEquality().hash(separatorThickness),
     ]);
   }
 }
@@ -491,4 +502,5 @@ extension LabelThemeExtensionBuildContextProps on BuildContext {
   TextDecoration get hoverTextDecoration =>
       labelThemeExtension.hoverTextDecoration;
   double get decorationThickness => labelThemeExtension.decorationThickness;
+  double get separatorThickness => labelThemeExtension.separatorThickness;
 }

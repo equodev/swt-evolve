@@ -1,6 +1,6 @@
-// TextLayout.draw on Cocoa (NSLayoutManager's selection rectangles) highlights a selection that goes on
-// past a wrapped row to the layout's right edge, and the rows it continues on from the layout's left edge.
-// GTK and Windows highlight only the selected glyphs.
+// A selection across the rows of a wrapped line highlights only the selected glyphs, as TextLayout.draw
+// does on GTK and Windows, on every OS. Cocoa's NSLayoutManager also fills to the layout's edges between
+// the rows; Evolve keeps the behaviour two of the three platforms share.
 
 import 'dart:ui' as ui;
 
@@ -39,30 +39,23 @@ Future<void> _paint(TextShape shape) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.macOS);
   tearDown(() => debugDefaultTargetPlatformOverride = null);
 
   const line = 'aaaaaaa bbbbbbb ccccccc ddddddd eeeeeee';
-  for (final (name, props) in [
-    ('', const LineProperties()),
-    (' with a wrap indent', const LineProperties(wrapIndent: 40)),
-  ]) {
-    test('a selection across the rows of a wrapped line fills them to the layout edges$name', () async {
-      final shape = _shape(line, props,
-          selection: SelectionInfo(start: 10, end: 20, selectionForeground: const Color(0xFFFFFFFF)));
-      await _paint(shape);
-      final rects = shape.debugPaintedSelectionRects;
-      final firstRow = rects.where((r) => r.top < 5).toList();
-      final secondRow = rects.where((r) => r.top >= 5 && r.top < 15).toList();
-      expect(firstRow, isNotEmpty);
-      expect(secondRow, isNotEmpty);
-      expect(firstRow.map((r) => r.left).reduce((a, b) => a < b ? a : b), 100, reason: 'from the first selected glyph');
-      expect(firstRow.map((r) => r.right).reduce((a, b) => a > b ? a : b), _canvas.width,
-          reason: 'the row the selection goes on from is highlighted to the right edge: $rects');
-      expect(secondRow.map((r) => r.left).reduce((a, b) => a < b ? a : b), 0,
-          reason: 'the row the selection goes on to is highlighted from the left edge: $rects');
-      expect(rects.where((r) => r.top >= 15), isEmpty, reason: 'the row after the selection is not highlighted');
-    });
+  for (final platform in [TargetPlatform.macOS, TargetPlatform.windows, TargetPlatform.linux]) {
+    for (final (name, props, secondRowStart) in [
+      ('', const LineProperties(), 0.0),
+      (' with a wrap indent', const LineProperties(wrapIndent: 40), 40.0),
+    ]) {
+      test('a selection across the rows of a wrapped line stays on its glyphs$name, ${platform.name}', () async {
+        debugDefaultTargetPlatformOverride = platform;
+        final shape = _shape(line, props,
+            selection: SelectionInfo(start: 10, end: 20, selectionForeground: const Color(0xFFFFFFFF)));
+        await _paint(shape);
+        expect(shape.debugPaintedSelectionRects.map((r) => (r.left, r.right)).toList(),
+            [(100.0, 160.0), (secondRowStart, secondRowStart + 40)]);
+      });
+    }
   }
 
   test('a selection inside one row of a wrapped line stays on its glyphs', () async {
@@ -71,13 +64,5 @@ void main() {
     await _paint(shape);
     final rects = shape.debugPaintedSelectionRects;
     expect(rects.map((r) => (r.left, r.right)).toList(), [(20.0, 50.0)]);
-  });
-
-  test('off macOS a selection across wrapped rows stays on its glyphs', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-    final shape = _shape(line, const LineProperties(),
-        selection: SelectionInfo(start: 10, end: 20, selectionForeground: const Color(0xFFFFFFFF)));
-    await _paint(shape);
-    expect(shape.debugPaintedSelectionRects.map((r) => (r.left, r.right)).toList(), [(100.0, 160.0), (0.0, 40.0)]);
   });
 }
