@@ -20,14 +20,6 @@ public class SashSizes {
     private SashSizes() {
     }
 
-    static class HORIZONTAL {
-        static final double MIN_WIDTH = 5.0;
-        static final double MIN_HEIGHT = 5.0;
-
-        private HORIZONTAL() {
-        }
-    }
-
     static class VERTICAL {
         static final double MIN_WIDTH = 5.0;
         static final double MIN_HEIGHT = 5.0;
@@ -47,13 +39,8 @@ public class SashSizes {
 
         double width, height;
 
-        if (hasFlags(style, SWT.VERTICAL)) {
-            width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
-            height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
-        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, VERTICAL|SMOOTH
-            width = wHint != SWT.DEFAULT ? wHint : HORIZONTAL.MIN_WIDTH;
-            height = hHint != SWT.DEFAULT ? hHint : HORIZONTAL.MIN_HEIGHT;
-        }
+        width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
+        height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;

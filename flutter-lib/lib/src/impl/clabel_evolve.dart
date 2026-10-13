@@ -6,6 +6,7 @@ import '../gen/swt.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/color_utils.dart';
 import './utils/image_utils.dart';
+import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import './utils/font_utils.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
@@ -36,7 +37,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     final isInToolbar = ToolbarAreaMarker.of(context);
     if (isInToolbar && _isChipMode) {
       final rawText = state.text ?? '';
-      final effectiveText = rawText == '<none>' ? '' : rawText;
+      final effectiveText = rawText == '<none>' ? '' : stripAccelerators(rawText);
       return wrap(_buildToolbarChip(context, widgetTheme, enabled, effectiveText, state.image!));
     }
 
@@ -112,7 +113,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
   ) {
     // Treat "<none>" as empty text
     final rawText = state.text ?? '';
-    final text = rawText == '<none>' ? '' : rawText;
+    final text = rawText == '<none>' ? '' : stripAccelerators(rawText);
     final image = state.image;
 
     final textAlign = _getTextAlignFromAlignment(

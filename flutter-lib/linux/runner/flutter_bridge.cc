@@ -701,14 +701,6 @@ Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv *env, jclass cls, jlong context)
   return gtk_window_is_active(GTK_WINDOW(w->top_window)) ? JNI_TRUE : JNI_FALSE;
 }
 
-// Shell.forceActive: raise the window and ask the window manager to give it the keyboard.
-JNIEXPORT void JNICALL
-Java_dev_equo_swt_FlutterNative_Activate(JNIEnv *env, jclass cls, jlong context) {
-  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
-  if (!w || !w->top_window || !GTK_IS_WINDOW(w->top_window)) return;
-  gtk_window_present(GTK_WINDOW(w->top_window));
-}
-
 // Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding the
 // window each time would cost a new engine and lose the window's position.
 JNIEXPORT void JNICALL
