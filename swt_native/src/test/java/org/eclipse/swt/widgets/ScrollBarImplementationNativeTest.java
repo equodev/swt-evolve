@@ -84,20 +84,19 @@ class ScrollBarImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("only Cocoa keeps the bars of a parent that does not scroll a canvas")
-    void whichBarsSetVisibleChanges() {
-        assertThat(ScrollBarHelper.changesVisibility("cocoa", true)).isTrue();
-        assertThat(ScrollBarHelper.changesVisibility("cocoa", false)).isFalse();
-        assertThat(ScrollBarHelper.changesVisibility("gtk", false)).isTrue();
-        assertThat(ScrollBarHelper.changesVisibility("win32", false)).isTrue();
-    }
-
-    @Test
-    @DisplayName("a canvas or composite scrolls a canvas, a table or a tree does not")
-    void whichParentsScrollACanvas() {
+    @DisplayName("setVisible shows and hides the bars of a List, a Text, a Table and a Tree too, as on GTK and Win32")
+    void setVisibleChangesTheBarsOfEveryParent() {
         Shell shell = canvas(200, 150).getShell();
-        assertThat(ScrollBarHelper.scrollsACanvas(new Composite(shell, SWT.V_SCROLL))).isTrue();
-        assertThat(ScrollBarHelper.scrollsACanvas(new Table(shell, SWT.V_SCROLL))).isFalse();
-        assertThat(ScrollBarHelper.scrollsACanvas(new Tree(shell, SWT.V_SCROLL))).isFalse();
+        Scrollable[] owners = {
+                new List(shell, SWT.V_SCROLL), new Text(shell, SWT.MULTI | SWT.V_SCROLL),
+                new Table(shell, SWT.V_SCROLL), new Tree(shell, SWT.V_SCROLL),
+        };
+        for (Scrollable owner : owners) {
+            ScrollBar bar = owner.getVerticalBar();
+            bar.setVisible(false);
+            assertThat(bar.getVisible()).as(owner.getClass().getSimpleName()).isFalse();
+            bar.setVisible(true);
+            assertThat(bar.getVisible()).as(owner.getClass().getSimpleName()).isTrue();
+        }
     }
 }
