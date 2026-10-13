@@ -400,7 +400,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     public String _displayedText() {
-        return getText();
+        return text;
     }
 
     public Image _displayedImage() {
