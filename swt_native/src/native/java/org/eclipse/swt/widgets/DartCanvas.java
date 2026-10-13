@@ -229,7 +229,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
             return;
         if (!isDrawing())
             return;
-        if (!CanvasHelper.scrolls(this.getApi(), SWT.getPlatform()))
+        if (!getApi().isVisible())
             return;
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)

@@ -138,17 +138,14 @@ class CompositeDrawBackgroundTest {
     }
 
     @Test
-    @DisplayName("a control is transparent only while it has no colour of its own and its parent is")
-    void transparencyFollowsTheOwnColourAndTheParent() {
+    @DisplayName("a child of a group that forces its colour finds the group, as on Win32 and GTK")
+    void aChildOfAGroupFindsItsForcedColour() {
         Shell shell = Mocks.shell();
-        Composite composite = new Composite(shell, SWT.NONE);
-        DartControl impl = (DartControl) composite.getImpl();
-        assertThat(impl.isTransparent()).isFalse();
         Group group = new Group(shell, SWT.NONE);
+        group.setBackground(new Color(shell.getDisplay(), RED));
+        group.setBackgroundMode(SWT.INHERIT_FORCE);
         Composite inGroup = new Composite(group, SWT.NONE);
-        assertThat(((DartControl) inGroup.getImpl()).isTransparent()).isTrue();
-        inGroup.setBackground(new Color(shell.getDisplay(), RED));
-        assertThat(((DartControl) inGroup.getImpl()).isTransparent()).isFalse();
+        assertThat(((DartControl) inGroup.getImpl()).findBackgroundControl()).isSameAs(group);
     }
 
     @Test

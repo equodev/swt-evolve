@@ -838,8 +838,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return this.getApi();
         if (parent == null || (getApi().state & PARENT_BACKGROUND) == 0)
             return null;
-        if ("cocoa".equals(SWT.getPlatform()) && isTransparent())
-            return null;
         return parent.getImpl().findBackgroundControl();
     }
 
@@ -1679,8 +1677,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     public boolean isTransparent() {
-        if (_background != null)
-            return false;
         return parent.getImpl().isTransparent();
     }
 
