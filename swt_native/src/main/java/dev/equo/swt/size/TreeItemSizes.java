@@ -50,10 +50,8 @@ public class TreeItemSizes {
         if (hHint != SWT.DEFAULT) {
             height = hHint;
         } else if (wHint != SWT.DEFAULT && m.textStyle != null) {
-            String rawText = widget.getText();
-            String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";
             double availableWidth = Math.max(1.0, wHint - NONE.HORIZONTAL_PADDING);
-            PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);
+            PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
             height = Math.max(wrapped.y() + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
         } else {
             height = Math.max(Math.max(m.text.y(), m.image.y()) + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
@@ -64,12 +62,12 @@ public class TreeItemSizes {
     }
 
     private static PointD computeImage(DartTreeItem widget) {
-        if (widget.getImage() == null) return PointD.zero;
+        if (Drawn.image(widget) == null) return PointD.zero;
         return new PointD(16.0, 16.0);
     }
 
     private static PointD computeText(DartTreeItem widget, Measure m, boolean emptyTextAffectsSizing) {
-        String text = widget.getText();
+        String text = Drawn.text(widget);
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = TreeItemTheme.get().textStyle().withStyleFrom(widget.getFont());
