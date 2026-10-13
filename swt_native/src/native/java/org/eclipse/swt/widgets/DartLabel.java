@@ -290,21 +290,15 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setImage(Image image) {
-        getValue().markDirty(VLabel.IMAGE);
-        getValue().markDirty(VLabel.TEXT);
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (image != null) {
-            this.image = GraphicsUtils.copyImage(display, image);
-            isImage = true;
-        } else {
-            this.image = null;
-            isImage = false;
-        }
+        this.image = image != null ? GraphicsUtils.copyImage(display, image) : null;
+        getValue().markDirty(VLabel.IMAGE);
+        _show(image != null);
     }
 
     /**
@@ -357,11 +351,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     private void _setText() {
-        if (isImage) {
-            getValue().markDirty(VLabel.TEXT);
-            getValue().markDirty(VLabel.IMAGE);
-        }
-        isImage = false;
+        _show(false);
     }
 
     public String _text() {
@@ -374,6 +364,18 @@ public class DartLabel extends DartControl implements ILabel {
 
     public boolean _isImage() {
         return isImage;
+    }
+
+    /**
+     * A label shows its text or its image, whichever was set last, and isImage says which. Flutter
+     * is sent both, the one not on show as empty, so switching between them changes both.
+     */
+    private void _show(boolean image) {
+        if (isImage != image) {
+            getValue().markDirty(VLabel.TEXT);
+            getValue().markDirty(VLabel.IMAGE);
+        }
+        isImage = image;
     }
 
     public String _displayedText() {
