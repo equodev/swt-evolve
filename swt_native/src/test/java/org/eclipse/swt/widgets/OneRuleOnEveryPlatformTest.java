@@ -58,6 +58,13 @@ class OneRuleOnEveryPlatformTest {
     }
 
     @Test
+    @DisplayName("style bits with no alignment read LEFT")
+    void noAlignmentBitReadsLeft() {
+        assertThat(LabelHelper.alignmentOf(SWT.NONE)).isEqualTo(SWT.LEFT);
+        assertThat(LabelHelper.alignmentOf(SWT.WRAP | SWT.BORDER)).isEqualTo(SWT.LEFT);
+    }
+
+    @Test
     @DisplayName("a separator has no alignment, as the javadoc says")
     void aSeparatorHasNoAlignment() {
         for (int style : new int[] {SWT.SEPARATOR | SWT.HORIZONTAL, SWT.SEPARATOR | SWT.VERTICAL | SWT.CENTER}) {
