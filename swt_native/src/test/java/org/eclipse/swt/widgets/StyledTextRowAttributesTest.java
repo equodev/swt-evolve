@@ -14,8 +14,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,8 +104,7 @@ class StyledTextRowAttributesTest {
     }
 
     @Test
-    @EnabledOnOs(OS.MAC)
-    void a_bidi_segment_array_may_start_after_the_start_of_the_line_on_cocoa() {
+    void a_bidi_segment_array_may_start_after_the_start_of_the_line() {
         StyledText st = styledText(SWT.NONE, "abc def");
         st.addBidiSegmentListener(event -> event.segments = new int[] {1, 3});
 
