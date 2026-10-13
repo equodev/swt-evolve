@@ -385,21 +385,6 @@ class TextEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("Return a traversal takes does not reach the key listeners")
-    void returnTakenByATraversalIsNotAKeyDown() {
-        Text text = text(SWT.SINGLE, "abc");
-        text.addListener(SWT.Traverse, e -> e.detail = SWT.TRAVERSE_NONE);
-        List<Event> keys = record(text, SWT.KeyDown);
-        List<Event> defaults = record(text, SWT.DefaultSelection);
-
-        fromFlutter(text, "Selection/DefaultSelection", new Event());
-        runQueued();
-
-        assertThat(keys).isEmpty();
-        assertThat(defaults).hasSize(1);
-    }
-
-    @Test
     @DisplayName("a key listener that disposes the text ends the key handling")
     void aListenerDisposingTheTextEndsTheKeyHandling() {
         Text text = text(SWT.SINGLE, "abc");

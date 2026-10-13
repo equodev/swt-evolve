@@ -85,7 +85,7 @@ public class ButtonSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? CHECK.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Mnemonics.display(widget.getText()), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
             } else {
                 height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
@@ -101,7 +101,7 @@ public class ButtonSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? PUSH.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Mnemonics.display(widget.getText()), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
             } else {
                 height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
@@ -117,7 +117,7 @@ public class ButtonSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? TOGGLE.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Mnemonics.display(widget.getText()), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
             } else {
                 height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
@@ -132,12 +132,12 @@ public class ButtonSizes {
     }
 
     private static PointD computeImage(DartButton widget) {
-        if (widget.getImage() == null) return PointD.zero;
+        if (Drawn.image(widget) == null) return PointD.zero;
         return new PointD(16.8, 16.8);
     }
 
     private static PointD computeText(DartButton widget, Measure m, boolean emptyTextAffectsSizing) {
-        String text = Mnemonics.display(widget.getText());
+        String text = Drawn.text(widget);
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = ButtonTheme.get().textStyle().withStyleFrom(widget.getFont());
