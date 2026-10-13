@@ -15,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-/** The minimum size, alpha and region of a shell answer as every platform's SWT does. The maximum size is in {@link ShellMaximumSizeNativeTest}. */
+/** The minimum size, alpha, region and name of a shell answer as every platform's SWT does. The maximum size is in {@link ShellMaximumSizeNativeTest}. */
 @Tag("native-unit")
 class ShellStateNativeTest {
 
@@ -98,6 +98,13 @@ class ShellStateNativeTest {
         shell.setAlpha(10);
         shell.setActive();
         assertThat(shell.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("a shell names itself by its title")
+    void toStringNamesTheTitle() {
+        shell.setText("Title");
+        assertThat(shell.toString()).startsWith("Shell {Title}");
     }
 
     @Test
