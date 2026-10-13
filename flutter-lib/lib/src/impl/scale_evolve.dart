@@ -12,6 +12,9 @@ import 'utils/widget_utils.dart';
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
+  @override
+  bool get keepsWheel => true;
+
   bool _changedDuringPress = false;
   bool _pressed = false;
 

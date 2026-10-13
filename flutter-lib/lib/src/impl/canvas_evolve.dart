@@ -31,6 +31,9 @@ const double _kBarSize = 17.0;
 
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
+  @override
+  bool get forwardsWheelFromWrap => false;
+
   /// A canvas is whatever the application painted on it -- an icon here has no label, no image and
   /// no item, so its tooltip is the only thing that can name it. Everywhere, not only in the main
   /// toolbar: a canvas in a view has the same problem.
@@ -365,13 +368,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
           if (event is PointerScrollEvent && onWheel != null) {
             onWheel(event);
           } else if (event is PointerScrollEvent) {
-            widget.sendMouseWheelMouseWheel(
-              state,
-              VEvent()
-                ..x = event.localPosition.dx.round()
-                ..y = event.localPosition.dy.round()
-                ..count = event.scrollDelta.dy > 0 ? -3 : 3,
-            );
+            reportWheel(event, event.localPosition);
           }
         },
         child: base,

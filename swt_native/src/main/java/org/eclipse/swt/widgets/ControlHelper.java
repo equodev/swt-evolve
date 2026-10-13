@@ -211,6 +211,9 @@ public class ControlHelper {
         control.sendEvent(SWT.MouseWheel, e);
         if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
             return;
+        // An item view scrolls its rows in the client, which reports the scroll; its bar is not moved here.
+        if (control.getApi() instanceof Table || control.getApi() instanceof Tree || control.getApi() instanceof List)
+            return;
         ScrollBar bar = ((Scrollable) control.getApi()).getVerticalBar();
         if (bar == null || !bar.getEnabled())
             return;

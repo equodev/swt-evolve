@@ -596,6 +596,34 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// otherwise every keystroke reaches SWT KeyDown listeners twice.
   bool get forwardsKeysFromWrap => true;
 
+  /// Whether [wrap] reports the mouse wheel. A control that reports it from its own handler (Canvas,
+  /// StyledText) overrides this to false.
+  bool get forwardsWheelFromWrap => true;
+
+  /// Whether a wheel over this control ends with it: a List, Table, Tree, Scale or Combo keeps it, as
+  /// Win32 and Cocoa agree; any other control passes it on, and its parents report it too.
+  bool get keepsWheel => false;
+
+  /// The wheel event a control below has kept, by its untransformed original: every listener on the
+  /// pointer's path receives its own transformed copy of the same event.
+  static PointerEvent? _keptWheel;
+
+  /// Whether a control below the pointer already kept [event].
+  static bool wheelKeptBelow(PointerEvent event) => identical(event.original ?? event, _keptWheel);
+
+  /// Reports the mouse wheel to Java at [localPosition], one notch as three lines, positive up.
+  void reportWheel(PointerSignalEvent event, Offset localPosition) {
+    if (event is! PointerScrollEvent || event.scrollDelta.dy == 0 || wheelKeptBelow(event)) return;
+    widget.sendMouseWheelMouseWheel(
+      state,
+      VEvent()
+        ..x = localPosition.dx.round()
+        ..y = localPosition.dy.round()
+        ..count = event.scrollDelta.dy > 0 ? -3 : 3,
+    );
+    if (keepsWheel) _keptWheel = event.original ?? event;
+  }
+
   bool get wrapsWholeWidgetForDnd => true;
 
   Widget wrapDnd(Widget content) {
@@ -755,6 +783,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   Widget _pointerListener(Widget child) {
     return Listener(
+      onPointerSignal: (e) {
+        if (forwardsWheelFromWrap) reportWheel(e, e.localPosition);
+      },
       onPointerDown: (e) {
         if (scrollBarPointers.contains(e.pointer)) return;
         registerPointerDown(e);

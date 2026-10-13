@@ -38,6 +38,9 @@ import '../testing/render_facts.dart';
 /// selection and scroll offset are Java's and nothing here edits them.
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> implements RenderFactsSource {
+  @override
+  bool get forwardsWheelFromWrap => false;
+
   // Keys are forwarded from [_onKeyEvent], which also keeps them away from Flutter's shortcuts.
   @override
   bool get forwardsKeysFromWrap => false;

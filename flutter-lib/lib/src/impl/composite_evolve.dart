@@ -104,6 +104,9 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
+      onPointerSignal: (e) {
+        if (forwardsPointer && impl.forwardsWheelFromWrap) impl.reportWheel(e, e.localPosition);
+      },
       onPointerDown: (e) {
         if (_hitsAnyChild(state, e.localPosition, childInset)) return;
         if (!impl.forwardsControlMouseDown) return;

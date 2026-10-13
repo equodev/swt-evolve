@@ -18,6 +18,9 @@ import 'utils/pointer.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes {
+  @override
+  bool get keepsWheel => true;
+
   late TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   final OverlayPortalController _overlayController = OverlayPortalController();

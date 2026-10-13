@@ -18,6 +18,9 @@ import 'utils/widget_utils.dart';
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
   @override
+  bool get keepsWheel => true;
+
+  @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ListThemeExtension>()!;
 

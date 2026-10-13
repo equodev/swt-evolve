@@ -1,7 +1,8 @@
 // The second press of a double click delivers MouseDoubleClick right after its MouseDown, at the
 // same position, and before its MouseUp -- the order Win32, GTK and Cocoa all report. A pointer
-// held without moving reports no MouseMove.
+// held without moving reports no MouseMove, and the wheel is reported to the control under it.
 
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,7 +21,7 @@ class _RecordingButtonSwt extends ButtonSwt<VButton> {
 
   @override
   void sendEvent(VButton val, String ev, VEvent? payload) {
-    if (ev.startsWith('Mouse/') || ev.startsWith('MouseMove/')) calls.add('$ev:${payload?.count}@${payload?.x},${payload?.y}');
+    if (ev.startsWith('Mouse/') || ev.startsWith('MouseMove/') || ev.startsWith('MouseWheel/')) calls.add('$ev:${payload?.count}@${payload?.x},${payload?.y}');
   }
 }
 
@@ -99,5 +100,29 @@ void main() {
     await tester.pump();
 
     expect(calls.where((c) => c.startsWith('MouseMove/')), ['MouseMove/MouseMove:null@85,20']);
+  });
+
+  testWidgets('a wheel over a button is reported to it, where the pointer is, as three lines',
+      (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 160,
+          height: 40,
+          child: _RecordingButtonSwt(value: _button(), calls: calls),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    final at = tester.getTopLeft(find.byType(_RecordingButtonSwt)) + const Offset(80, 20);
+    await tester.sendEventToBinding(PointerScrollEvent(position: at, scrollDelta: const Offset(0, 50)));
+    await tester.pump();
+
+    expect(calls.where((c) => c.startsWith('MouseWheel/')), ['MouseWheel/MouseWheel:-3@80,20']);
+    await tester.pump(const Duration(seconds: 2));
   });
 }
