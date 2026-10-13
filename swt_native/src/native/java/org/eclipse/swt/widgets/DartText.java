@@ -1683,7 +1683,7 @@ public class DartText extends DartScrollable implements IText {
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
         int lines = getLineCount();
-        int lineHeight = getLineHeight();
+        int lineHeight = Math.max(1, getLineHeight());
         int lastTop = Math.max(0, lines * lineHeight - getClientArea().height) / lineHeight;
         this.topIndex = Math.max(0, Math.min(index, Math.min(lines - 1, lastTop)));
     }
