@@ -148,9 +148,12 @@ public class ControlHelper {
                 switch (e.detail) {
                     // A listener that consumed the key clears the detail; Control.traverse counts it as done.
                     case SWT.TRAVERSE_NONE:
+                        traversed = true;
+                        break;
+                    // A Tab with nowhere to go is not a traversal: natively the key is delivered.
                     case SWT.TRAVERSE_TAB_NEXT:
                     case SWT.TRAVERSE_TAB_PREVIOUS:
-                        traversed = true;
+                        traversed = hasTabStop(control.getApi().getShell());
                         break;
                     case SWT.TRAVERSE_MNEMONIC:
                         traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
@@ -180,6 +183,38 @@ public class ControlHelper {
                 return false;
         }
         return true;
+    }
+
+    /** Whether {@code control} or a control inside it takes the focus from Tab, as natively. */
+    static boolean hasTabStop(Control control) {
+        if (control == null || control.isDisposed() || !control.getVisible() || !control.getEnabled())
+            return false;
+        if (isTabStop(control))
+            return true;
+        if (control instanceof Composite) {
+            for (Control child : ((Composite) control).getChildren()) {
+                if (hasTabStop(child))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
+    private static boolean isTabStop(Control control) {
+        if ((control.getStyle() & SWT.NO_FOCUS) != 0 || control instanceof Shell)
+            return false;
+        if (control instanceof Button || control instanceof Combo || control instanceof DateTime
+                || control instanceof List || control instanceof Scale || control instanceof Spinner
+                || control instanceof TabFolder || control instanceof Table || control instanceof Tree
+                || control instanceof Text || control instanceof org.eclipse.swt.custom.CCombo
+                || control instanceof org.eclipse.swt.custom.StyledText)
+            return true;
+        if (control instanceof Link)
+            return ((Link) control).getText().toLowerCase().contains("<a");
+        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget)
+            return ((DartWidget) control.getImpl()).hooks(SWT.KeyDown) || ((DartWidget) control.getImpl()).hooks(SWT.KeyUp);
+        return false;
     }
 
     public static boolean isModifierKey(int keyCode) {

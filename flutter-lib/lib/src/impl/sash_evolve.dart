@@ -117,6 +117,8 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
           ? SystemMouseCursors.resizeRow
           : SystemMouseCursors.resizeColumn,
       child: Focus(
+        // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+        skipTraversal: true,
         onFocusChange: (hasFocus) {
           if (hasFocus) {
             handleFocusIn();

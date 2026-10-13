@@ -123,6 +123,8 @@ class _StyledLinkState extends State<StyledLink> {
         widget.onMouseExit?.call();
       },
       child: Focus(
+        // A tab stop only while it holds a link, as natively.
+        skipTraversal: !widget.text.toLowerCase().contains('<a'),
         onFocusChange: (hasFocus) {
           setState(() => _isFocused = hasFocus);
           if (hasFocus) {
