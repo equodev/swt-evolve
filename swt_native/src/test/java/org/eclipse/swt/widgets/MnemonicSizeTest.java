@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * A label or a button draws its text without the {@code '&'} that marks a mnemonic, so it is sized
- * for the text it draws: "&amp;Save" is as wide as "Save", and "&amp;&amp;Save" as wide as "&amp;Save".
+ * A label, a button, a CLabel and a link draw their text without the {@code '&'} that marks a mnemonic,
+ * so each is sized for the text it draws: "&amp;Save" is as wide as "Save", and "&amp;&amp;Save" as wide as "&amp;Save".
  */
 @Tag("native-unit")
 class MnemonicSizeTest {
@@ -62,6 +62,38 @@ class MnemonicSizeTest {
             assertThat(natural(button)).as("type %d", type).isEqualTo(plain);
             button.setText("&&Save");
             assertThat(natural(button).x).as("type %d", type).isGreaterThan(plain.x);
+        }
+    }
+
+    @Test
+    @DisplayName("a CLabel and a Link are sized for the text they draw, not for its mnemonic marker")
+    void clabelAndLinkIgnoreTheMarker() {
+        Shell shell = DartMocks.dartShell();
+        org.eclipse.swt.custom.CLabel clabel = new org.eclipse.swt.custom.CLabel(shell, SWT.NONE);
+        clabel.setText("Save");
+        Point plainCLabel = natural(clabel);
+        clabel.setText("&Save");
+        assertThat(natural(clabel)).isEqualTo(plainCLabel);
+        clabel.setText("&&Save");
+        assertThat(natural(clabel).x).isGreaterThan(plainCLabel.x);
+
+        Link link = new Link(shell, SWT.NONE);
+        link.setText("<a>Save</a> now");
+        Point plainLink = natural(link);
+        link.setText("<a>&Save</a> now");
+        assertThat(natural(link)).isEqualTo(plainLink);
+    }
+
+    @Test
+    @DisplayName("a GC measures a trailing marker as not drawn, like any other")
+    void gcDropsATrailingMarker() {
+        Shell shell = DartMocks.dartShell();
+        org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(shell);
+        try {
+            assertThat(gc.textExtent("Save&", SWT.DRAW_MNEMONIC)).isEqualTo(gc.textExtent("Save", SWT.DRAW_MNEMONIC));
+            assertThat(gc.textExtent("&File &Edit", SWT.DRAW_MNEMONIC)).isEqualTo(gc.textExtent("File Edit", SWT.DRAW_MNEMONIC));
+        } finally {
+            gc.dispose();
         }
     }
 
