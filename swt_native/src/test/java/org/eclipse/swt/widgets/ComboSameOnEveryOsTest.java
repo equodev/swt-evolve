@@ -23,8 +23,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * A Combo behaves the same on every OS, whatever the native combo of the host does. Where the natives disagree it
- * does what two of them do: removing or deselecting the selected item empties the text, replacing the list
- * deselects, and a text change puts the selection back at the start.
+ * does what two of them do: removing or deselecting the selected item empties the text, so does deselecting all,
+ * replacing the list deselects, a text change puts the selection back at the start, and a read-only combo answers
+ * the visible item count it was given.
  */
 @Tag("native-unit")
 class ComboSameOnEveryOsTest {
@@ -110,6 +111,25 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
+    @DisplayName("deselecting all in an editable combo empties its text, whether or not an item was selected, and says nothing")
+    void deselectAllEmptiesTheText() {
+        for (int selected : new int[] {1, -1}) {
+            Combo combo = abc(SWT.NONE, selected);
+            if (selected == -1)
+                combo.setText("typed");
+            List<Event> modifies = new ArrayList<>();
+            combo.addListener(SWT.Modify, modifies::add);
+
+            combo.deselectAll();
+
+            assertThat(combo.getSelectionIndex()).as("selected %d", selected).isEqualTo(-1);
+            assertThat(combo.getText()).as("selected %d", selected).isEmpty();
+            assertThat(combo.getSelection()).as("selected %d", selected).isEqualTo(new Point(0, 0));
+            assertThat(modifies).as("selected %d", selected).isEmpty();
+        }
+    }
+
+    @Test
     @DisplayName("replacing or emptying the list deselects, and a longer list does not bring the index back")
     void replacingTheListDeselects() {
         for (int style : new int[] {SWT.NONE, SWT.SIMPLE, SWT.READ_ONLY}) {
@@ -143,6 +163,19 @@ class ComboSameOnEveryOsTest {
         combo.setText("hi");
         assertThat(combo.getSelection()).isEqualTo(new Point(0, 0));
         assertThat(combo.getCaretPosition()).isZero();
+    }
+
+    @Test
+    @DisplayName("a read-only combo answers the visible item count it was given, not its item count")
+    void readOnlyComboKeepsItsVisibleItemCount() {
+        Combo combo = new Combo(shell, SWT.READ_ONLY);
+        assertThat(combo.getVisibleItemCount()).isEqualTo(5);
+        combo.setItems("a", "b", "c");
+        assertThat(combo.getVisibleItemCount()).isEqualTo(5);
+        combo.setVisibleItemCount(2);
+        assertThat(combo.getVisibleItemCount()).isEqualTo(2);
+        combo.setVisibleItemCount(-1);
+        assertThat(combo.getVisibleItemCount()).isEqualTo(2);
     }
 
     @Test

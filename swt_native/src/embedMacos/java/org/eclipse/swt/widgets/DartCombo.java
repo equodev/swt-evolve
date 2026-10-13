@@ -791,11 +791,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getVisibleItemCount() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            return getItemCount();
-        } else {
-        }
-        return this.visibleItemCount;
+        return visibleItemCount;
     }
 
     /**

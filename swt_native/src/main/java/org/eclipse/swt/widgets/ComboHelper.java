@@ -72,14 +72,16 @@ public class ComboHelper {
     }
 
     /**
-     * Deselects whatever is selected. A read-only combo shows nothing then and says so, even when nothing was
-     * selected.
+     * Deselects whatever is selected and empties the text that showed it, as GTK and Win32 do. A read-only combo
+     * says so, even when nothing was selected; an editable one does not.
      */
     public static void deselectAll(DartCombo combo) {
         combo.selectedIndex = -1;
         if (readOnly(combo)) {
             syncReadOnlyText(combo);
             combo.sendEvent(SWT.Modify);
+        } else {
+            clearText(combo);
         }
     }
 
