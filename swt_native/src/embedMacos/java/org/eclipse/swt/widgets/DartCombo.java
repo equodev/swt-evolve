@@ -167,11 +167,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
         getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = string;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
+        items = ListItemsHelper.insert(items, index, string);
         ComboHelper.itemInserted(this, index);
         ComboHelper.sendSegments(this, string);
     }
@@ -385,7 +381,7 @@ public class DartCombo extends DartComposite implements ICombo {
     void createWidget() {
         text = "";
         selection = new Point(0, 0);
-        visibleItemCount = ComboHelper.defaultVisibleItemCount(this);
+        visibleItemCount = VISIBLE_COUNT;
         super.createWidget();
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }
@@ -419,7 +415,7 @@ public class DartCombo extends DartComposite implements ICombo {
         String oldText = text.substring(start, end);
         String newText = "";
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            newText = ComboHelper.verifyText(this, newText, start, end);
+            newText = verifyText(newText, start, end);
             if (newText == null)
                 return;
         }
@@ -531,6 +527,10 @@ public class DartCombo extends DartComposite implements ICombo {
     public Point getCaretLocation() {
         checkWidget();
         return new Point(0, 0);
+    }
+
+    int getCharCount() {
+        return ComboHelper.getCharCount(this);
     }
 
     /**
@@ -704,7 +704,10 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getSelectionIndex() {
         checkWidget();
-        return ComboHelper.getSelectionIndex(this);
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        return selectedIndex;
     }
 
     /**
@@ -886,7 +889,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (newText == null)
             return;
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            newText = ComboHelper.verifyText(this, newText, start, end);
+            newText = verifyText(newText, start, end);
             if (newText == null)
                 return;
         }
@@ -1366,7 +1369,14 @@ public class DartCombo extends DartComposite implements ICombo {
     }
 
     void setText(String string, boolean notify) {
-        ComboHelper.setText(this, string, notify, notify);
+        if (notify) {
+            if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+                string = verifyText(string, 0, getCharCount());
+                if (string == null)
+                    return;
+            }
+        }
+        ComboHelper.setText(this, string, notify);
     }
 
     /**
@@ -1429,6 +1439,23 @@ public class DartCombo extends DartComposite implements ICombo {
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
         }
+    }
+
+    String verifyText(String string, int start, int end) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        /*
+	 * It is possible (but unlikely), that application
+	 * code could have disposed the widget in the verify
+	 * event.  If this happens, answer null to cancel
+	 * the operation.
+	 */
+        sendEvent(SWT.Verify, event);
+        if (!event.doit || isDisposed())
+            return null;
+        return event.text;
     }
 
     String[] items = new String[0];

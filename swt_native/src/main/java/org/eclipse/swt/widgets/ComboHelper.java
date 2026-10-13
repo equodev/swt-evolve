@@ -5,38 +5,14 @@ import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 
 public class ComboHelper {
 
     private ComboHelper() {
     }
 
-    private static final int VISIBLE_COUNT = 5;
-    /** The row height the native combos size their drop-down list by, in points. */
-    private static final int LIST_ITEM_HEIGHT = 16;
-
-    private static boolean cocoa() {
-        return "cocoa".equals(SWT.getPlatform());
-    }
-
     private static boolean readOnly(DartCombo combo) {
         return (combo.getApi().style & SWT.READ_ONLY) != 0;
-    }
-
-    /**
-     * The number of items a new combo shows at once: GTK always ten, Win32 and Cocoa a third of the screen
-     * (Win32 keeps five for a simple combo).
-     */
-    public static int defaultVisibleItemCount(DartCombo combo) {
-        String platform = SWT.getPlatform();
-        if ("gtk".equals(platform))
-            return 10;
-        if ("win32".equals(platform) && (combo.getApi().style & SWT.SIMPLE) != 0)
-            return VISIBLE_COUNT;
-        Rectangle screen = combo.getDisplay().getBounds();
-        int height = screen == null ? 0 : screen.height;
-        return Math.max(VISIBLE_COUNT, height / 3 / LIST_ITEM_HEIGHT);
     }
 
     /** The length of the text shown: of the selected item for a read-only combo. */
@@ -45,44 +21,26 @@ public class ComboHelper {
     }
 
     /**
-     * A read-only combo shows its selected item and so selects all of it; an editable one answers a copy of
-     * the selection in its text. Cocoa leaves it unset after the text changes, and then the caret is at the end.
+     * A read-only combo shows its selected item and so selects all of it; an editable one answers a copy of the
+     * selection in its text.
      */
     public static Point getSelection(DartCombo combo) {
-        int length = getCharCount(combo);
         if (readOnly(combo))
-            return new Point(0, length);
-        Point selection = combo.selection;
-        return selection == null ? new Point(length, length) : new Point(selection.x, selection.y);
+            return new Point(0, getCharCount(combo));
+        return new Point(combo.selection.x, combo.selection.y);
     }
 
-    /** Cocoa knows the caret only once a selection was set since the text last changed. */
+    /** The caret is at the start of the selection, as Win32 and Cocoa answer when there is one. */
     public static int getCaretPosition(DartCombo combo) {
-        return cocoa() && combo.selection != null ? combo.selection.x : 0;
-    }
-
-    /** Asks the Verify listeners and the display's Verify filters; null when one of them vetoed. */
-    public static String verifyText(DartCombo combo, String string, int start, int end) {
-        Event event = new Event();
-        event.text = string;
-        event.start = start;
-        event.end = end;
-        combo.sendEvent(SWT.Verify, event);
-        if (!event.doit || combo.isDisposed())
-            return null;
-        return event.text;
+        return combo.selection.x;
     }
 
     /**
-     * Sets the text of an editable combo, or selects the item a read-only combo has under that name. {@code verify}
-     * is false for a text the user typed, which the Verify listeners have already ruled on.
+     * Sets the text of an editable combo, or selects the item a read-only combo has under that name. The Verify
+     * listeners have already ruled on {@code string}: {@code DartCombo.setText(String, boolean)} asks them, and a
+     * text the user typed was asked about by the client.
      */
-    public static void setText(DartCombo combo, String string, boolean notify, boolean verify) {
-        if (verify && (combo.hooks(SWT.Verify) || combo.filters(SWT.Verify))) {
-            string = verifyText(combo, string, 0, getCharCount(combo));
-            if (string == null)
-                return;
-        }
+    public static void setText(DartCombo combo, String string, boolean notify) {
         if (readOnly(combo)) {
             int index = combo.indexOf(string);
             if (index != -1)
@@ -93,9 +51,8 @@ public class ComboHelper {
         if (!java.util.Objects.equals(combo.text, text))
             combo.getValue().markDirty(VCombo.TEXT);
         combo.text = text;
-        // The old selection belonged to the old text. Cocoa leaves it unset, its caret at the end; the other
-        // natives go back to the start.
-        combo.selection = cocoa() ? null : new Point(0, 0);
+        // The old selection belonged to the old text.
+        combo.selection = new Point(0, 0);
         if (notify)
             combo.sendEvent(SWT.Modify);
     }
@@ -104,40 +61,25 @@ public class ComboHelper {
     public static void handleModify(DartCombo combo, Event e) {
         if (e.text == null)
             combo.error(SWT.ERROR_NULL_ARGUMENT);
-        setText(combo, e.text, true, false);
+        setText(combo, e.text, true);
         sendSegments(combo);
     }
 
-    /**
-     * The selected index. Cocoa's combo box keeps the row of its list that was last selected whatever happens to
-     * the items, and answers it as long as the list is long enough: after {@code select(1)} and a {@code setItems}
-     * of three items it still answers 1, and a list that is too short answers -1 until it grows again. A pop-up
-     * button and the other natives answer the index of the item itself.
-     */
-    public static int getSelectionIndex(DartCombo combo) {
-        int row = combo.selectedIndex;
-        return cocoa() && !readOnly(combo) && row >= combo.items.length ? -1 : row;
-    }
-
-    /** All items are gone: only Cocoa's combo box keeps its selected row. */
+    /** All items are gone, and the selection with them. */
     public static void listEmptied(DartCombo combo) {
-        if (!cocoa() || readOnly(combo))
-            combo.selectedIndex = -1;
+        combo.selectedIndex = -1;
         syncReadOnlyText(combo);
     }
 
     /**
      * Deselects whatever is selected. A read-only combo shows nothing then and says so, even when nothing was
-     * selected; Cocoa's combo box deselects the row only while it answers it, so a row the list is too short
-     * for survives.
+     * selected.
      */
     public static void deselectAll(DartCombo combo) {
+        combo.selectedIndex = -1;
         if (readOnly(combo)) {
-            combo.selectedIndex = -1;
             syncReadOnlyText(combo);
             combo.sendEvent(SWT.Modify);
-        } else if (!cocoa() || combo.getSelectionIndex() != -1) {
-            combo.selectedIndex = -1;
         }
     }
 
@@ -154,61 +96,50 @@ public class ComboHelper {
     }
 
     /**
-     * Deselects the selected item. A read-only combo shows nothing then and says so; an editable one keeps its
-     * text on Cocoa and empties it on the other natives.
+     * Deselects the selected item and empties the text that showed it. A read-only combo says so; an editable one
+     * does not.
      */
     public static void deselect(DartCombo combo) {
         combo.selectedIndex = -1;
         if (readOnly(combo)) {
             syncReadOnlyText(combo);
             combo.sendEvent(SWT.Modify);
-        } else if (!cocoa()) {
+        } else {
             clearText(combo);
         }
     }
 
+    /** Empties the text of an editable combo, and so the selection in it. */
     private static void clearText(DartCombo combo) {
         combo.text = "";
+        combo.selection = new Point(0, 0);
         combo.getValue().markDirty(VCombo.TEXT);
     }
 
     /** An item went in at {@code index}: a read-only combo keeps its item selected, wherever it moved to. */
     public static void itemInserted(DartCombo combo, int index) {
-        if (readOnly(combo) && combo.selectedIndex >= 0 && index <= combo.selectedIndex)
-            combo.selectedIndex++;
+        if (readOnly(combo))
+            combo.selectedIndex = ListItemsHelper.indexAfterInsert(combo.selectedIndex, index);
     }
 
     /**
-     * Takes the item at {@code index} out. Cocoa's pop-up button hands the selection of the removed item to
-     * the first item, and its combo box keeps the row it had (see {@link #getSelectionIndex}) and the text;
-     * neither tells the listeners. The other natives deselect the item, empty the text and say so.
+     * Takes the item at {@code index} out. Removing the selected item deselects it, empties the text and says so;
+     * the selection follows an item before which one was removed.
      */
     public static void removeAt(DartCombo combo, int index) {
         combo.getValue().markDirty(VCombo.ITEMS);
-        String[] items = new String[combo.items.length - 1];
-        System.arraycopy(combo.items, 0, items, 0, index);
-        System.arraycopy(combo.items, index + 1, items, index, combo.items.length - index - 1);
-        combo.items = items;
+        combo.items = ListItemsHelper.remove(combo.items, index, index);
         int selected = combo.selectedIndex;
-        if (cocoa()) {
-            if (!readOnly(combo))
-                return;
-            if (index == selected)
-                combo.selectedIndex = items.length > 0 ? 0 : -1;
-            else if (index < selected)
-                combo.selectedIndex--;
-            syncReadOnlyText(combo);
+        combo.selectedIndex = ListItemsHelper.indexAfterRemove(selected, index, index);
+        if (index != selected)
             return;
-        }
-        if (index == selected) {
-            combo.selectedIndex = -1;
-            if (combo.text != null && !combo.text.isEmpty()) {
-                clearText(combo);
-                combo.sendEvent(SWT.Modify);
-            }
-        } else if (index < selected) {
-            combo.selectedIndex--;
-        }
+        String shown = combo.text;
+        if (readOnly(combo))
+            syncReadOnlyText(combo);
+        else
+            clearText(combo);
+        if (!shown.isEmpty())
+            combo.sendEvent(SWT.Modify);
     }
 
     /** Asks the Segments listeners about the text the combo shows, unless a listener has disposed it by now. */
@@ -364,21 +295,12 @@ public class ComboHelper {
 
         combo.getValue().markDirty(VCombo.ITEMS);
 
-        int removeCount = end - start + 1;
-
         boolean wasSelected = (combo.selectedIndex >= start && combo.selectedIndex <= end);
 
-        String[] newItems = new String[combo.items.length - removeCount];
-        System.arraycopy(combo.items, 0, newItems, 0, start);
-        System.arraycopy(combo.items, end + 1, newItems, start, combo.items.length - end - 1);
-        combo.items = newItems;
-
-        if (combo.selectedIndex >= start && combo.selectedIndex <= end) {
-            combo.selectedIndex = -1;
+        combo.items = ListItemsHelper.remove(combo.items, start, end);
+        combo.selectedIndex = ListItemsHelper.indexAfterRemove(combo.selectedIndex, start, end);
+        if (wasSelected)
             combo.text = "";
-        } else if (combo.selectedIndex > end) {
-            combo.selectedIndex -= removeCount;
-        }
 
         int newWidth = 0;
         if ((combo.getApi().style & SWT.H_SCROLL) != 0) {

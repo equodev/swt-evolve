@@ -179,11 +179,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
         getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = string;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
+        items = ListItemsHelper.insert(items, index, string);
         ComboHelper.itemInserted(this, index);
         ComboHelper.sendSegments(this, string);
         getValue().markDirty(VCombo.ITEMS);
