@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
  * as Selection), and Modify is notified whatever the text was; a partial or out-of-range text leaves the
  * selection where it was. Listeners that verify are asked about the characters being replaced first.
  *
- * <p>Whether Selection and Modify are posted or sent depends on the platform (Win32 sends, Cocoa and GTK post),
- * so the tests that go through the bridge collect both kinds and read what the listeners heard in order.
+ * <p>Selection and Modify are posted, so the tests collect the posted events and read what the listeners heard
+ * once the display delivers them.
  */
 @Tag("native-unit")
 class SpinnerTypedEditFromFlutterNativeTest {
@@ -349,58 +349,37 @@ class SpinnerTypedEditFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("Win32 sends Selection and Modify while the edit is handled")
-    void win32SendsBoth() {
+    @DisplayName("Selection, then Modify, are posted, to be delivered after the edit is handled")
+    void postsSelectionThenModify() {
         Spinner spinner = spinner(25);
         List<String> heard = hear(spinner);
 
-        SpinnerHelper.editedInFlutter((DartSpinner) spinner.getImpl(), typedOver(2, "60"), "win32");
+        SpinnerHelper.editedInFlutter((DartSpinner) spinner.getImpl(), typedOver(2, "60"));
 
+        assertThat(heard).as("nothing is heard until the display delivers").isEmpty();
+        assertThat(spinner.getSelection()).isEqualTo(60);
+        assertThat(posted).extracting(e -> e.type).containsExactly(SWT.Selection, SWT.Modify);
+        deliverPosted(spinner);
         assertThat(heard).containsExactly("Selection@60", "Modify@60");
-        assertThat(posted).isEmpty();
     }
 
     @Test
-    @DisplayName("Cocoa and GTK post Selection, then Modify, to be delivered after the edit is handled")
-    void cocoaAndGtkPostBoth() {
-        for (String platform : new String[]{"cocoa", "gtk"}) {
-            Spinner spinner = spinner(25);
-            List<String> heard = hear(spinner);
-
-            SpinnerHelper.editedInFlutter((DartSpinner) spinner.getImpl(), typedOver(2, "60"), platform);
-
-            assertThat(heard).as(platform + ": nothing is heard until the display delivers").isEmpty();
-            assertThat(spinner.getSelection()).as(platform).isEqualTo(60);
-            assertThat(posted).extracting(e -> e.type).as(platform).containsExactly(SWT.Selection, SWT.Modify);
-            deliverPosted(spinner);
-            assertThat(heard).as(platform).containsExactly("Selection@60", "Modify@60");
-        }
-    }
-
-    @Test
-    @DisplayName("what Verify is told it may let through: Cocoa takes digits and a point, the others also the minus and the separator")
+    @DisplayName("what Verify is told it may let through: digits, the minus of a spinner that goes below zero, the separator")
     void defaultVerdictOfVerify() {
-        for (String platform : new String[]{"cocoa", "win32"}) {
-            Spinner spinner = spinner(0);
-            spinner.setMinimum(-100);
-            spinner.setDigits(1);
-            List<String> byText = new ArrayList<>();
-            spinner.addListener(SWT.Verify, e -> byText.add(e.text + "=" + e.doit));
-            DartSpinner impl = (DartSpinner) spinner.getImpl();
-            String separator = SpinnerHelper.decimalSeparator();
+        Spinner spinner = spinner(0);
+        spinner.setMinimum(-100);
+        spinner.setDigits(1);
+        List<String> byText = new ArrayList<>();
+        spinner.addListener(SWT.Verify, e -> byText.add(e.text + "=" + e.doit));
+        DartSpinner impl = (DartSpinner) spinner.getImpl();
+        String separator = SpinnerHelper.decimalSeparator();
 
-            SpinnerHelper.editedInFlutter(impl, edit("5", 0, 0, 1), platform);
-            SpinnerHelper.editedInFlutter(impl, edit("-", 0, 0, 1), platform);
-            SpinnerHelper.editedInFlutter(impl, edit(separator, 0, 0, 1), platform);
-            SpinnerHelper.editedInFlutter(impl, edit("x", 0, 0, 1), platform);
+        SpinnerHelper.editedInFlutter(impl, edit("5", 0, 0, 1));
+        SpinnerHelper.editedInFlutter(impl, edit("-", 0, 0, 1));
+        SpinnerHelper.editedInFlutter(impl, edit(separator, 0, 0, 1));
+        SpinnerHelper.editedInFlutter(impl, edit("x", 0, 0, 1));
 
-            boolean cocoa = platform.equals("cocoa");
-            assertThat(byText).as(platform).containsExactly(
-                    "5=true",
-                    "-=" + !cocoa,
-                    separator + "=" + (!cocoa || ".".equals(separator)),
-                    "x=false");
-        }
+        assertThat(byText).containsExactly("5=true", "-=true", separator + "=true", "x=false");
     }
 
     @Test
@@ -474,45 +453,32 @@ class SpinnerTypedEditFromFlutterNativeTest {
     @Test
     @DisplayName("a Verify listener that disposes the spinner ends the edit")
     void verifyListenerDisposesTheSpinner() {
-        for (String platform : new String[]{"cocoa", "win32"}) {
-            Spinner spinner = spinner(25);
-            spinner.addListener(SWT.Verify, e -> spinner.dispose());
-            List<Event> modifies = new ArrayList<>();
-            spinner.addListener(SWT.Modify, modifies::add);
-
-            SpinnerHelper.editedInFlutter((DartSpinner) spinner.getImpl(), typedOver(2, "60"), platform);
-
-            assertThat(spinner.isDisposed()).as(platform).isTrue();
-            assertThat(modifies).as(platform).isEmpty();
-        }
-    }
-
-    @Test
-    @DisplayName("a Selection listener that disposes the spinner ends an edit that Win32 sent before Modify")
-    void sentSelectionListenerDisposesTheSpinner() {
         Spinner spinner = spinner(25);
-        spinner.addListener(SWT.Selection, e -> spinner.dispose());
+        spinner.addListener(SWT.Verify, e -> spinner.dispose());
         List<Event> modifies = new ArrayList<>();
         spinner.addListener(SWT.Modify, modifies::add);
 
-        SpinnerHelper.editedInFlutter((DartSpinner) spinner.getImpl(), typedOver(2, "60"), "win32");
+        SpinnerHelper.editedInFlutter((DartSpinner) spinner.getImpl(), typedOver(2, "60"));
 
         assertThat(spinner.isDisposed()).isTrue();
         assertThat(modifies).isEmpty();
+        assertThat(posted).isEmpty();
     }
 
     @Test
-    @DisplayName("without digits, Verify on the others takes no separator; a minus needs a minimum below zero")
+    @DisplayName("without digits Verify takes no separator, and without a minimum below zero no minus")
     void verifyDefaultsWithoutDigits() {
         Spinner spinner = spinner(0);
         List<String> byText = new ArrayList<>();
         spinner.addListener(SWT.Verify, e -> byText.add(e.text + "=" + e.doit));
         DartSpinner impl = (DartSpinner) spinner.getImpl();
 
-        SpinnerHelper.editedInFlutter(impl, edit("-", 0, 0, 1), "win32");
-        SpinnerHelper.editedInFlutter(impl, edit("7", 0, 0, 1), "win32");
-        SpinnerHelper.editedInFlutter(impl, edit("7", 0, 0, 1), "cocoa");
+        String separator = SpinnerHelper.decimalSeparator();
 
-        assertThat(byText).containsExactly("-=false", "7=true", "7=true");
+        SpinnerHelper.editedInFlutter(impl, edit("-", 0, 0, 1));
+        SpinnerHelper.editedInFlutter(impl, edit(separator, 0, 0, 1));
+        SpinnerHelper.editedInFlutter(impl, edit("7", 0, 0, 1));
+
+        assertThat(byText).containsExactly("-=false", separator + "=false", "7=true");
     }
 }
