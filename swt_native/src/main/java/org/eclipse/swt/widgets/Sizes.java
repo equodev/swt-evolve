@@ -671,7 +671,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartText c, int wHint, int hHint, boolean changed) {
-        return TextWrapSizes.computeSize(c, wHint, hHint, changed);
+        return TextSizes.computeSize(c, wHint, hHint, changed);
     }
 
     private static final int GROUP_BORDER_WIDTH = 1;

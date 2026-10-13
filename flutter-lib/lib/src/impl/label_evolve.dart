@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import '../gen/label.dart';
 import '../gen/swt.dart';
@@ -11,8 +9,6 @@ import './utils/font_utils.dart';
 import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import '../theme/theme_extensions/label_theme_extension.dart';
-
-const double _separatorThickness = 2;
 
 class LabelImpl<T extends LabelSwt, V extends VLabel>
     extends ControlImpl<T, V> {
@@ -38,9 +34,9 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   ) {
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final separatorColor = widgetTheme.borderColor;
-    // A separator has a thickness of its own: Java sizes it from this, and a zero-height box
-    // counts as no bounds (hasBounds), so the line would never be drawn.
-    final thickness = math.max(widgetTheme.borderWidth, _separatorThickness);
+    // A separator has a thickness of its own: Java sizes it from the same theme value, and a
+    // zero-height box counts as no bounds (hasBounds), so the line would never be drawn.
+    final thickness = widgetTheme.separatorThickness;
 
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = hasValidBounds
