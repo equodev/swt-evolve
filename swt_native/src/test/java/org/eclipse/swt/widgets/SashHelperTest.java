@@ -16,8 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * A Sash is 64 long and a few pixels thick, as on every SWT; only the thickness and the way a negative
- * hint is read depend on the platform, so the helper is tested with the platform passed in.
+ * A Sash is 64 long and as thick as the theme draws it, the same on every platform; a negative hint counts as 0.
  */
 @ExtendWith(Mocks.class)
 class SashHelperTest {
@@ -43,42 +42,29 @@ class SashHelperTest {
     }
 
     @Test
-    @DisplayName("Cocoa: a horizontal sash is 64 x 5 and a vertical one 5 x 64")
-    void cocoaDefaults() {
-        assertThat(SashHelper.computeSize("cocoa", SWT.HORIZONTAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 5));
-        assertThat(SashHelper.computeSize("cocoa", SWT.VERTICAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(5, 64));
+    @DisplayName("a horizontal sash is 64 x 5 and a vertical one 5 x 64")
+    void defaults() {
+        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 5));
+        assertThat(SashHelper.computeSize(SWT.VERTICAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(5, 64));
     }
 
     @Test
-    @DisplayName("GTK and Windows: the sash is 3 thick")
-    void gtkAndWindowsDefaults() {
-        for (String platform : new String[] {"gtk", "win32"}) {
-            assertThat(SashHelper.computeSize(platform, SWT.HORIZONTAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 3));
-            assertThat(SashHelper.computeSize(platform, SWT.VERTICAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(3, 64));
-        }
-    }
-
-    @Test
-    @DisplayName("a hint replaces its dimension, a negative one as it comes on Cocoa and as 0 elsewhere")
+    @DisplayName("a hint replaces its dimension, and a negative one counts as 0")
     void hints() {
-        assertThat(SashHelper.computeSize("cocoa", SWT.HORIZONTAL, 100, 40)).isEqualTo(new Point(100, 40));
-        assertThat(SashHelper.computeSize("cocoa", SWT.HORIZONTAL, 100, SWT.DEFAULT)).isEqualTo(new Point(100, 5));
-        assertThat(SashHelper.computeSize("cocoa", SWT.VERTICAL, SWT.DEFAULT, 90)).isEqualTo(new Point(5, 90));
-        assertThat(SashHelper.computeSize("cocoa", SWT.HORIZONTAL, -7, -9)).isEqualTo(new Point(-7, -9));
-        assertThat(SashHelper.computeSize("gtk", SWT.HORIZONTAL, 100, 40)).isEqualTo(new Point(100, 40));
-        assertThat(SashHelper.computeSize("gtk", SWT.HORIZONTAL, -7, -9)).isEqualTo(new Point(0, 0));
-        assertThat(SashHelper.computeSize("win32", SWT.VERTICAL, -7, SWT.DEFAULT)).isEqualTo(new Point(0, 64));
+        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, 100, 40)).isEqualTo(new Point(100, 40));
+        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, 100, SWT.DEFAULT)).isEqualTo(new Point(100, 5));
+        assertThat(SashHelper.computeSize(SWT.VERTICAL, SWT.DEFAULT, 90)).isEqualTo(new Point(5, 90));
+        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, -7, -9)).isEqualTo(new Point(0, 0));
+        assertThat(SashHelper.computeSize(SWT.VERTICAL, -7, SWT.DEFAULT)).isEqualTo(new Point(0, 64));
     }
 
     @Test
-    @DisplayName("Sash.computeSize is long along the bar on every platform")
+    @DisplayName("Sash.computeSize answers through the helper")
     void aSashIsLongAlongItsBar() {
         Composite parent = new Composite(Mocks.shell(), SWT.NONE);
         Point horizontal = new Sash(parent, SWT.HORIZONTAL).computeSize(SWT.DEFAULT, SWT.DEFAULT);
         Point vertical = new Sash(parent, SWT.VERTICAL).computeSize(SWT.DEFAULT, SWT.DEFAULT);
-        assertThat(horizontal.x).isEqualTo(64);
-        assertThat(horizontal.y).isBetween(3, 5);
-        assertThat(vertical.y).isEqualTo(64);
-        assertThat(vertical.x).isBetween(3, 5);
+        assertThat(horizontal).isEqualTo(new Point(64, 5));
+        assertThat(vertical).isEqualTo(new Point(5, 64));
     }
 }

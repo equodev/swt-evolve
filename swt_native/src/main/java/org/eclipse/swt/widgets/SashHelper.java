@@ -4,34 +4,28 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 
 /**
- * Preferred size of a Dart-backed Sash, as the SWT of each platform computes it: the default length along
- * the bar and a fixed thickness across it. Cocoa is 5 thick and takes a hint as it comes; GTK and Windows
- * are 3 thick and take a negative hint as 0. Neither adds a border width, as a Sash has none.
+ * Preferred size of a Dart-backed Sash: the default length along the bar and a fixed thickness across it, the
+ * one the theme draws. A negative hint other than {@link SWT#DEFAULT} counts as 0, as on GTK and Windows. No
+ * border width is added, as a Sash has none.
  */
 public class SashHelper {
 
-    private static final int COCOA_THICKNESS = 5;
-
-    private static final int THICKNESS = 3;
+    private static final int THICKNESS = 5;
 
     public static Point computeSize(DartSash sash, int wHint, int hHint) {
-        return computeSize(SWT.getPlatform(), sash.getApi().style, wHint, hHint);
+        return computeSize(sash.getApi().style, wHint, hHint);
     }
 
-    public static Point computeSize(String platform, int style, int wHint, int hHint) {
-        boolean cocoa = "cocoa".equals(platform);
-        int thickness = cocoa ? COCOA_THICKNESS : THICKNESS;
-        if (!cocoa) {
-            if (wHint != SWT.DEFAULT && wHint < 0) {
-                wHint = 0;
-            }
-            if (hHint != SWT.DEFAULT && hHint < 0) {
-                hHint = 0;
-            }
+    static Point computeSize(int style, int wHint, int hHint) {
+        if (wHint != SWT.DEFAULT && wHint < 0) {
+            wHint = 0;
+        }
+        if (hHint != SWT.DEFAULT && hHint < 0) {
+            hHint = 0;
         }
         boolean horizontal = (style & SWT.HORIZONTAL) != 0;
-        int width = horizontal ? DartWidget.DEFAULT_WIDTH : thickness;
-        int height = horizontal ? thickness : DartWidget.DEFAULT_HEIGHT;
+        int width = horizontal ? DartWidget.DEFAULT_WIDTH : THICKNESS;
+        int height = horizontal ? THICKNESS : DartWidget.DEFAULT_HEIGHT;
         if (wHint != SWT.DEFAULT) {
             width = wHint;
         }
