@@ -324,6 +324,8 @@ sourceSets {
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
             // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
+            // StyledText.setLineVerticalIndent was added in 3.109.
+            if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
             if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
         }
