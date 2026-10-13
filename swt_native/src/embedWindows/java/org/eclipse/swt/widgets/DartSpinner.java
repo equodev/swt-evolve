@@ -87,7 +87,9 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public DartSpinner(Composite parent, int style, Spinner api) {
         super(parent, checkStyle(style), api);
         this.increment = 1;
+        getValue().markDirty(VSpinner.INCREMENT);
         this.maximum = 100;
+        getValue().markDirty(VSpinner.MAXIMUM);
     }
 
     static int checkStyle(int style) {

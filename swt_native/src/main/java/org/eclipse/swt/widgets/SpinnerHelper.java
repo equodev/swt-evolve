@@ -44,36 +44,29 @@ public class SpinnerHelper {
         return buffer.toString();
     }
 
+    /**
+     * Moves the spinner to {@code value}. With {@code setText} the text follows, as natively: a Verify listener
+     * hears the new text first and may refuse it, which leaves the old text and sends no Modify; the position has
+     * moved already, as the native stepper's has.
+     */
     static void setSelection(DartSpinner c, int value, boolean setPos, boolean setText, boolean notify) {
-        int newValue = value;
-        if (!java.util.Objects.equals(c.selection, newValue)) {
+        if (c.selection != value) {
             c.getValue().markDirty(VSpinner.SELECTION);
         }
-        if (setPos) {
+        if (setText && (c.hooks(SWT.Verify) || c.filters(SWT.Verify))) {
+            Event verify = new Event();
+            verify.text = format(value, c.digits);
+            verify.start = 0;
+            verify.end = format(c.selection, c.digits).length();
+            c.selection = value;
+            c.sendEvent(SWT.Verify, verify);
+            if (!verify.doit || c.isDisposed()) {
+                return;
+            }
         }
+        c.selection = value;
         if (setText) {
-            String string = String.valueOf(value);
-            if (c.digits > 0) {
-                int index = string.length() - c.digits;
-                StringBuilder buffer = new StringBuilder();
-                if (index > 0) {
-                    buffer.append(string.substring(0, index));
-                    buffer.append(string.substring(index));
-                } else {
-                    buffer.append("0");
-                    while (index++ < 0) buffer.append("0");
-                    buffer.append(string);
-                }
-                string = buffer.toString();
-            }
-            if (c.hooks(SWT.Verify) || c.filters(SWT.Verify)) {
-                if (string == null)
-                    return;
-            }
-            c.selection = newValue;
             c.sendEvent(SWT.Modify);
-        } else {
-            c.selection = newValue;
         }
         if (notify)
             c.sendSelectionEvent(SWT.Selection);
@@ -160,18 +153,12 @@ public class SpinnerHelper {
      * characters being replaced when anyone listens, then a text that stands for a value in range moves the
      * selection and notifies Selection, then Modify, whatever the text was. The selection of a partial or
      * out-of-range text stays where it was.
+     *
+     * <p>The event carries the new text, the range of the previous text it replaced ({@code start}, {@code end}) and
+     * the number of characters it put there ({@code count}). Selection and Modify are posted, to be delivered once the
+     * edit is handled, as Cocoa and GTK deliver both and Win32 its Selection.
      */
     static void editedInFlutter(DartSpinner c, Event e) {
-        editedInFlutter(c, e, SWT.getPlatform());
-    }
-
-    /**
-     * The event carries the new text, the range of the previous text it replaced ({@code start}, {@code end}) and
-     * the number of characters it put there ({@code count}). Cocoa and GTK post Selection and Modify, Win32 sends
-     * them; Cocoa's Verify refuses anything but digits (and the point of a decimal spinner), the others also take
-     * the minus of a spinner that can go below zero and the separator of the locale.
-     */
-    static void editedInFlutter(DartSpinner c, Event e, String platform) {
         if (e.text == null) {
             // A notice with no edit in it: there is nothing to ask or to read.
             c.sendEvent(SWT.Modify, e);
@@ -181,7 +168,7 @@ public class SpinnerHelper {
         if (c.hooks(SWT.Verify) || c.filters(SWT.Verify)) {
             int count = Math.max(0, Math.min(e.count, text.length() - e.start));
             String typed = text.substring(e.start, e.start + count);
-            String verified = verifyText(c, typed, e.start, e.end, "cocoa".equals(platform));
+            String verified = verifyText(c, typed, e.start, e.end);
             if (c.isDisposed()) {
                 return;
             }
@@ -196,48 +183,36 @@ public class SpinnerHelper {
                 text = text.substring(0, e.start) + verified + text.substring(e.start + count);
             }
         }
-        boolean post = !"win32".equals(platform);
         Integer value = parseText(text, c.digits, c.minimum, c.maximum, decimalSeparator());
         if (value != null && value != c.selection) {
             c.getValue().markDirty(VSpinner.SELECTION);
             c.selection = value;
-            c.sendSelectionEvent(SWT.Selection, null, !post);
-            if (c.isDisposed()) {
-                return;
-            }
+            c.sendSelectionEvent(SWT.Selection, null, false);
         }
-        if (post) {
-            c.postEvent(SWT.Modify);
-        } else {
-            c.sendEvent(SWT.Modify);
-        }
+        c.postEvent(SWT.Modify);
     }
 
-    /** What a Verify listener answers to characters the user is putting into the field; null vetoes them. */
-    private static String verifyText(DartSpinner c, String string, int start, int end, boolean cocoa) {
+    /**
+     * What a Verify listener answers to characters the user is putting into the field; null vetoes them. By default
+     * it lets through digits, the separator of the host's locale in a spinner with digits, and a leading minus in one
+     * that can go below zero, as Win32 and GTK do (Cocoa takes neither the minus nor another separator than a point).
+     */
+    private static String verifyText(DartSpinner c, String string, int start, int end) {
         Event event = new Event();
         event.text = string;
         event.start = start;
         event.end = end;
         String digitsOnly = string;
         int index = 0;
-        if (cocoa) {
-            if (c.digits > 0) {
-                int point = digitsOnly.indexOf('.');
-                if (point != -1) {
-                    digitsOnly = digitsOnly.substring(0, point) + digitsOnly.substring(point + 1);
-                }
+        if (c.digits > 0) {
+            String separator = decimalSeparator();
+            int point = digitsOnly.indexOf(separator);
+            if (point != -1) {
+                digitsOnly = digitsOnly.substring(0, point) + digitsOnly.substring(point + separator.length());
             }
-        } else {
-            if (c.digits > 0) {
-                int point = digitsOnly.indexOf(decimalSeparator());
-                if (point != -1) {
-                    digitsOnly = digitsOnly.substring(0, point) + digitsOnly.substring(point + decimalSeparator().length());
-                }
-            }
-            if (c.minimum < 0 && digitsOnly.startsWith("-")) {
-                index++;
-            }
+        }
+        if (c.minimum < 0 && digitsOnly.startsWith("-")) {
+            index++;
         }
         while (index < digitsOnly.length()) {
             if (!Character.isDigit(digitsOnly.charAt(index))) {
