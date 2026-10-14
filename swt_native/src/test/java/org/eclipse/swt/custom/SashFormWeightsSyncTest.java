@@ -14,6 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import java.util.ArrayList;
+import java.util.List;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Java half of the SashForm surface (a multi-pane app layout backed by a 3-pane SashForm):
@@ -113,5 +116,38 @@ class SashFormWeightsSyncTest {
 
         assertThat(form.getWeights()).as("invalid payloads must leave the weights untouched")
                 .hasSize(2);
+    }
+
+    @Test
+    @DisplayName("weights Flutter reports for a form disposed before they arrive are dropped")
+    void weightsForADisposedFormAreDropped() {
+        SashForm form = sashForm();
+        List<Runnable> queued = new ArrayList<>();
+        doAnswer(inv -> queued.add(inv.getArgument(0))).when(form.getDisplay()).asyncExec(any(Runnable.class));
+
+        fireWeightsFromFlutter(form, "2,1");
+        form.dispose();
+
+        assertThatCode(() -> queued.forEach(Runnable::run)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("the helper keeps the weights for no form, a disposed one, no payload or a negative weight")
+    void theHelperKeepsTheWeightsForAPayloadItCannotUse() {
+        SashForm form = sashForm();
+        int[] before = form.getWeights();
+        DartSashForm impl = (DartSashForm) form.getImpl();
+        Event noText = new Event();
+        Event negative = new Event();
+        negative.text = "2,-1";
+
+        SashFormHelper.applyWeightsFromFlutter(null, negative);
+        SashFormHelper.applyWeightsFromFlutter(impl, null);
+        SashFormHelper.applyWeightsFromFlutter(impl, noText);
+        SashFormHelper.applyWeightsFromFlutter(impl, negative);
+        assertThat(form.getWeights()).isEqualTo(before);
+
+        form.dispose();
+        assertThatCode(() -> SashFormHelper.applyWeightsFromFlutter(impl, negative)).doesNotThrowAnyException();
     }
 }
