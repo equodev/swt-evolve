@@ -64,6 +64,16 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private Point windowOrigin = new Point(0, 0);
 
+    /** The last real viewport the window reported, or null until it reports one. */
+    private Rectangle windowViewport;
+
+    /**
+     * The shell the window's geometry was last settled with: sized to the viewport, or the one whose
+     * own resize was forwarded to the window. A main shell other than this one has just taken the
+     * window over.
+     */
+    private Shell windowShell;
+
     /**
      * Set while a posted wake is still in the OS event queue. One queued wake is enough to end the
      * idle wait, and every extra one is an OS event the next pump dispatches, each closing an AppKit
@@ -131,7 +141,9 @@ public class DeskDisplayBridge extends DisplayBridge {
         super.onUpdate();
         if (boundShell == null || boundShell.isDisposed())
             bindWindowView();
-        applyWindowOrigin(mainShell(forDisplay), mainWindowOrigin());
+        Shell main = mainShell(forDisplay);
+        fitShellTakingOverWindow(main);
+        applyWindowOrigin(main, mainWindowOrigin());
 
         // The pump drains the queued wake, so a wake after this point has to be posted again.
         wakeQueued.set(false);
@@ -589,18 +601,23 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
 
         Shell main = mainShell(display);
+        boolean realViewport = viewport.width > 1 && viewport.height > 1;
+        if (realViewport) {
+            windowViewport = viewport;
+        }
         if (main != null) {
             Rectangle current = main.getBounds();
             // A window not sized yet reports a 1x1 viewport, and taking it as authoritative collapses
             // the shell to match -- after which nothing reports anything else. Until the window has a
             // real viewport the shell is the source of truth, so push its geometry out.
-            if (viewport.width <= 1 || viewport.height <= 1) {
+            if (!realViewport) {
                 if (current != null && current.width > 1 && current.height > 1) {
                     forwardWindowBounds(current);
                     changed = true;
                 }
                 return changed;
             }
+            windowShell = main;
             // The shell still carries the window's content height here, and the client has just
             // reported the part of it SWT actually gets; the difference is the chrome drawn above.
             // Width has to match, so a genuine resize is never mistaken for chrome.
@@ -618,6 +635,19 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
 
         return changed;
+    }
+
+    /**
+     * Fits a shell that takes the window over from another one -- a workbench replacing its window,
+     * say -- to the window's viewport. The window keeps its size through the hand-over, so it never
+     * reports the resize that would otherwise size the new shell.
+     */
+    private void fitShellTakingOverWindow(Shell main) {
+        if (main == null || main == windowShell || windowViewport == null) {
+            return;
+        }
+        windowShell = main;
+        applyClientBounds(() -> resizeMainShells(forDisplay, windowViewport));
     }
 
     /**
@@ -757,6 +787,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (shell.getMaximized() || shell.getFullScreen()) {
             return;
         }
+        windowShell = shell;
         forwardWindowBounds(bounds);
     }
 
