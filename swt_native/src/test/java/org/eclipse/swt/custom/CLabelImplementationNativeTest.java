@@ -49,6 +49,16 @@ public class CLabelImplementationNativeTest extends SerializeTestBase {
         assertThat(label.shortenText(sevenPixelsPerCharacter(), "abcdefghijklmnop", 21)).isEqualTo("abcdefghijklmnop");
     }
 
+    @Test
+    void shortenText_stopsAtAWidthItFillsExactly() {
+        assertThat(label().shortenText(sevenPixelsPerCharacter(), "abcdefghij", 35)).isEqualTo("a...j");
+    }
+
+    @Test
+    void shortenText_keepsTheTextWhenNoHeadAndTailFitBesideTheEllipsis() {
+        assertThat(label().shortenText(sevenPixelsPerCharacter(), "abcdefghij", 30)).isEqualTo("abcdefghij");
+    }
+
     /** A host that calls from a thread other than the display's still gets its CLabel. */
     @Test
     void aCLabelCanBeBuiltFromAnotherThread() throws InterruptedException {
