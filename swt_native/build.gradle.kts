@@ -328,6 +328,17 @@ sourceSets {
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
             if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
+            // 3.107 added the lambda listener factories (ProgressListener.completedAdapter,
+            // LocationListener.changedAdapter), StyledText.getOffsetAtPoint and
+            // StyledText.setLineSpacingProvider, which these tests call directly.
+            if (swtMinorNative < 107) {
+                exclude("dev/equo/swt/test/BrowserFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFileUrlFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFirstLoadFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserProgressPlaceholderFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
+            }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
