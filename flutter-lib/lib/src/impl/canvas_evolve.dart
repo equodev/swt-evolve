@@ -214,6 +214,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChildren = children != null && children.isNotEmpty;
+    // A Canvas hosting children -- a Shell is one -- is no Tab stop of its own: Tab moves between its
+    // children, and stays on the last one when there is nowhere else to go.
+    _keyboardFocus.skipTraversal = hasActiveChildren;
 
     final content = Listener(
       behavior: HitTestBehavior.translucent,
