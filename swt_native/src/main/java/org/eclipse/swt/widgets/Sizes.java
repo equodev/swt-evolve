@@ -618,9 +618,13 @@ public class Sizes {
                 int textWidth = 0, textHeight = 0;
 
                 if (hasImage) {
-                    Rectangle imageBounds = w.image.getBounds();
-                    imageWidth = imageBounds.width;
-                    imageHeight = imageBounds.height;
+                    if (Config.getConfigFlags().bigger_icon_size) {
+                        imageWidth = imageHeight = (int) Math.round(ToolItemSizes.ICON_SIZE);
+                    } else {
+                        Rectangle imageBounds = w.image.getBounds();
+                        imageWidth = imageBounds.width;
+                        imageHeight = imageBounds.height;
+                    }
                 }
 
                 if (hasText) {
