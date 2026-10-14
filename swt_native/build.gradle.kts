@@ -339,6 +339,14 @@ sourceSets {
                 exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
                 exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
             }
+            // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
+            // CompositeImageDescriptor API ships with the JFace paired with it, and CTabFolder only
+            // highlights the active stack (onActivate/onDeactivate) from that release on.
+            if (swtMinorNative < 106) {
+                exclude("org/eclipse/swt/custom/CTabFolderActiveHighlightFlutterTest.java")
+                exclude("org/eclipse/swt/dnd/DndFlutterTest.java")
+                exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
+            }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
