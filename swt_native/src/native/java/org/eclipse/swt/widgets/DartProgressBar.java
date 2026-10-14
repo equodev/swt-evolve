@@ -76,8 +76,6 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public DartProgressBar(Composite parent, int style, ProgressBar api) {
         super(parent, checkStyle(style), api);
-        maximum = 100;
-        getValue().markDirty(VProgressBar.MAXIMUM);
     }
 
     static int checkStyle(int style) {
@@ -268,7 +266,7 @@ public class DartProgressBar extends DartControl implements IProgressBar {
         super.resetVisibleRegion();
     }
 
-    int maximum;
+    int maximum = 100;
 
     int minimum;
 
