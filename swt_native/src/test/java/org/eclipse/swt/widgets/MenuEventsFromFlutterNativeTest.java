@@ -132,6 +132,21 @@ class MenuEventsFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("a radio group also ends at an item that is not a radio below the picked one")
+    void aRadioGroupEndsAtANonRadioItemBelow() {
+        MenuItem above = new MenuItem(menu, SWT.RADIO);
+        new MenuItem(menu, SWT.SEPARATOR);
+        MenuItem below = new MenuItem(menu, SWT.RADIO);
+        below.setSelection(true);
+
+        fromFlutter(above, "Selection/Selection");
+        runQueued();
+
+        assertThat(above.getSelection()).isTrue();
+        assertThat(below.getSelection()).isTrue();
+    }
+
+    @Test
     @DisplayName("a hover, a help request and a default selection reach the item's listeners")
     void hoverHelpAndDefaultSelectionReachTheListeners() {
         MenuItem item = new MenuItem(menu, SWT.PUSH);
