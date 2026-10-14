@@ -1618,6 +1618,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             StyledTextHelper.markRendererDirty(this);
             StyledTextHelper.updateRendererFontMetrics(this, font, tabs);
         }
+        StyledTextHelper.updateRendererTabWidth(this, tabs);
     }
 
     void setLineAlignment(int startLine, int count, int alignment) {
