@@ -82,6 +82,11 @@ class DeliveryGate {
       return FrameAction.recover;
     }
 
+    // A resource's change: its channel names it and delivers in order, so the change carries no
+    // stamps and extends whatever that channel last described - a GC's state changes within a
+    // paint. It reaches this gate only when replayed from frames held before anything listened.
+    if (seq == 0 && !frame.containsKey(kBase)) return FrameAction.merge;
+
     // A change written no later than the state already held, which is the same rule a whole frame
     // is judged by above and for the same reason: the counter is one, so the held state was written
     // afterwards and already describes the widget more recently. Equal is that frame delivered

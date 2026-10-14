@@ -74,6 +74,8 @@ public class VFontData {
         public static void write(JsonWriter writer, FontData api) {
             if (api == null)
                 writer.writeNull();
+            else if (api.getImpl() instanceof SwtFontData)
+                writer.serializeObject(org.eclipse.swt.graphics.GraphicsUtils.copyFontData(api).getImpl());
             else
                 writer.serializeObject(api.getImpl());
         }

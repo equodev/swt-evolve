@@ -13,6 +13,7 @@
     "Slider": "org.eclipse.swt.widgets.Slider",
     "TableItem": "org.eclipse.swt.widgets.TableItem",
     "Text": "org.eclipse.swt.widgets.Text",
+    "ToolItem": "org.eclipse.swt.widgets.ToolItem",
     "TreeItem": "org.eclipse.swt.widgets.TreeItem"
   },
   "themes": {
@@ -560,6 +561,41 @@
         "fontFamily": "Inter",
         "fontItalic": false,
         "fontSize": 10,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:CHECK": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:DROP_DOWN": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:PUSH": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:RADIO": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:SEPARATOR": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
@@ -1118,6 +1154,41 @@
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
+      "ToolItem:CHECK": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:DROP_DOWN": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:PUSH": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:RADIO": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:SEPARATOR": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
       "TreeItem:NONE": {
         "fontFamily": "Inter",
         "fontItalic": false,
@@ -1670,6 +1741,41 @@
         "fontFamily": "Inter",
         "fontItalic": false,
         "fontSize": 14,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:CHECK": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:DROP_DOWN": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:PUSH": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:RADIO": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
+        "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "ToolItem:SEPARATOR": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 20,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
@@ -7118,8 +7224,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7138,8 +7244,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7170,8 +7276,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7190,8 +7296,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7236,8 +7342,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7269,8 +7375,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7328,8 +7434,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7361,8 +7467,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7420,8 +7526,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7453,8 +7559,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7512,8 +7618,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7545,8 +7651,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7590,8 +7696,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7610,8 +7716,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7642,8 +7748,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7662,8 +7768,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7708,8 +7814,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7741,8 +7847,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7800,8 +7906,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7833,8 +7939,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7892,8 +7998,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7925,8 +8031,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7984,8 +8090,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8017,8 +8123,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8062,8 +8168,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -8082,8 +8188,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -8114,8 +8220,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -8134,8 +8240,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -8180,8 +8286,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -8213,8 +8319,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -8272,8 +8378,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -8305,8 +8411,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -8364,8 +8470,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8397,8 +8503,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8456,8 +8562,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8489,8 +8595,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -9950,8 +10056,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -9970,8 +10076,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10002,8 +10108,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10022,8 +10128,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10068,8 +10174,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10101,8 +10207,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10160,8 +10266,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10193,8 +10299,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10252,8 +10358,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10285,8 +10391,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10344,8 +10450,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10377,8 +10483,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10422,8 +10528,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10442,8 +10548,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10474,8 +10580,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10494,8 +10600,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10540,8 +10646,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10573,8 +10679,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10632,8 +10738,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10665,8 +10771,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10724,8 +10830,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10757,8 +10863,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10816,8 +10922,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10849,8 +10955,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10894,8 +11000,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10914,8 +11020,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10946,8 +11052,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10966,8 +11072,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -11012,8 +11118,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -11045,8 +11151,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -11104,8 +11210,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -11137,8 +11243,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -11196,8 +11302,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -11229,8 +11335,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -11288,8 +11394,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -11321,8 +11427,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -23850,6 +23956,1191 @@
           "width": 246.1923828125
         }
       ]
+    },
+    "org.eclipse.swt.widgets.ToolItem": {
+      "cases": [
+        {
+          "discoveredComponents": {},
+          "expectedComponents": {
+            "image": null,
+            "text": ""
+          },
+          "height": 20.0,
+          "name": "ToolItem_CHECK_empty_noimg",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 24.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_CHECK_empty_16x16",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_CHECK_empty_48x48",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "Yes"
+          },
+          "height": 23.0,
+          "name": "ToolItem_CHECK_small_noimg",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 62.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_CHECK_small_16x16",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_CHECK_small_48x48",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "This is a long widget text"
+          },
+          "height": 23.0,
+          "name": "ToolItem_CHECK_large_noimg",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 261.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_CHECK_large_16x16",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_CHECK_large_48x48",
+          "style": "CHECK",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {},
+          "expectedComponents": {
+            "image": null,
+            "text": ""
+          },
+          "height": 20.0,
+          "name": "ToolItem_PUSH_empty_noimg",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 24.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_PUSH_empty_16x16",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_PUSH_empty_48x48",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "Yes"
+          },
+          "height": 23.0,
+          "name": "ToolItem_PUSH_small_noimg",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 46.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_PUSH_small_16x16",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_PUSH_small_48x48",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "This is a long widget text"
+          },
+          "height": 23.0,
+          "name": "ToolItem_PUSH_large_noimg",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 245.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_PUSH_large_16x16",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_PUSH_large_48x48",
+          "style": "PUSH",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {},
+          "expectedComponents": {
+            "image": null,
+            "text": ""
+          },
+          "height": 20.0,
+          "name": "ToolItem_RADIO_empty_noimg",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 24.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_RADIO_empty_16x16",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_RADIO_empty_48x48",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "Yes"
+          },
+          "height": 23.0,
+          "name": "ToolItem_RADIO_small_noimg",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 62.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_RADIO_small_16x16",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_RADIO_small_48x48",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "This is a long widget text"
+          },
+          "height": 23.0,
+          "name": "ToolItem_RADIO_large_noimg",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 261.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_RADIO_large_16x16",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_RADIO_large_48x48",
+          "style": "RADIO",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {},
+          "expectedComponents": {
+            "image": null,
+            "text": ""
+          },
+          "height": 625.0,
+          "name": "ToolItem_SEPARATOR_empty_noimg",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 20.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_SEPARATOR_empty_16x16",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_SEPARATOR_empty_48x48",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 34.0
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "Yes"
+          },
+          "height": 23.0,
+          "name": "ToolItem_SEPARATOR_small_noimg",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 46.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_SEPARATOR_small_16x16",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_SEPARATOR_small_48x48",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 72.033203125
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "This is a long widget text"
+          },
+          "height": 23.0,
+          "name": "ToolItem_SEPARATOR_large_noimg",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 245.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_SEPARATOR_large_16x16",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_SEPARATOR_large_48x48",
+          "style": "SEPARATOR",
+          "useFontTheme": false,
+          "width": 271.3203125
+        },
+        {
+          "discoveredComponents": {},
+          "expectedComponents": {
+            "image": null,
+            "text": ""
+          },
+          "height": 20.0,
+          "name": "ToolItem_DROP_DOWN_empty_noimg",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 41.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_DROP_DOWN_empty_16x16",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 51.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": ""
+          },
+          "height": 30.0,
+          "name": "ToolItem_DROP_DOWN_empty_48x48",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 51.0
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "Yes"
+          },
+          "height": 23.0,
+          "name": "ToolItem_DROP_DOWN_small_noimg",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 63.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_DROP_DOWN_small_16x16",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 89.033203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "Yes",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 34.033203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "Yes"
+          },
+          "height": 30.0,
+          "name": "ToolItem_DROP_DOWN_small_48x48",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 89.033203125
+        },
+        {
+          "discoveredComponents": {
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": null,
+            "text": "This is a long widget text"
+          },
+          "height": 23.0,
+          "name": "ToolItem_DROP_DOWN_large_noimg",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 262.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_DROP_DOWN_large_16x16",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 288.3203125
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 30.0,
+              "width": 30.0
+            },
+            "text": {
+              "content": "This is a long widget text",
+              "height": 23.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 20.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 233.3203125
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              48,
+              48
+            ],
+            "text": "This is a long widget text"
+          },
+          "height": 30.0,
+          "name": "ToolItem_DROP_DOWN_large_48x48",
+          "style": "DROP_DOWN",
+          "useFontTheme": false,
+          "width": 288.3203125
+        }
+      ],
+      "fontFromParent": true
     },
     "org.eclipse.swt.widgets.Tree": {
       "cases": [

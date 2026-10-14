@@ -982,14 +982,30 @@ public abstract class FlutterBridge {
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     /** A GC's ops, held to one frame per paint. Flutter paints nothing until gcDispose anyway. */
-    private static final Map<DartGC, MessageBatch> opBatches =
+    private static final Map<DartGC, OpBatch> opBatches =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * A batch and the thread writing it. A batch is written without locking, so only its owner may
+     * send it from an event-loop flush: Displays sharing a JVM each flush on their own thread, and
+     * one sending another's batch sends it mid-write and recycles it while it is still being filled.
+     */
+    private static final class OpBatch {
+        final MessageBatch batch = borrowBatch();
+        final Thread owner = Thread.currentThread();
+    }
 
     /** Cap on what one batch holds, so a GC that is never disposed cannot grow it without end. */
     private static final int MAX_BATCH_BYTES = 1 << 20;
 
     private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
-        MessageBatch batch = opBatches.computeIfAbsent(gc, g -> borrowBatch());
+        OpBatch held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+        if (held.owner != Thread.currentThread()) {
+            // The GC changed threads: what the previous one drew goes first, then this one owns it.
+            if (opBatches.remove(gc, held)) sendOpBatch(gc, held.batch);
+            held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+        }
+        MessageBatch batch = held.batch;
         String channel = gcChannel(gc);
         // A control's overlay outlives its GCs; an image GC's drawer starts blank, so it has no target.
         Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
@@ -1032,8 +1048,8 @@ public abstract class FlutterBridge {
         if (DROP_REPEATED_REPAINTS && repeat) {
             // Nothing in this paint reaches the client, so nothing it wrote counts as held.
             opResources.remove(gc);
-            MessageBatch dropped = opBatches.remove(gc);
-            if (dropped != null) releaseBatch(dropped);
+            OpBatch dropped = opBatches.remove(gc);
+            if (dropped != null) releaseBatch(dropped.batch);
             org.eclipse.swt.widgets.PaintPacing.unchanged(target);
             return;
         }
@@ -1281,9 +1297,9 @@ public abstract class FlutterBridge {
     public static boolean flushBufferedOpsWith(GCImageDrawer drawer, String event, byte[] json) {
         DartGC gc = gcBuffering(drawer);
         if (gc == null) return false;
-        MessageBatch batch = opBatches.get(gc);
-        if (batch == null) return false;
-        batch.add(widgetName(gc) + "/" + drawer.channelId() + "/" + event, json);
+        OpBatch held = opBatches.get(gc);
+        if (held == null) return false;
+        held.batch.add(widgetName(gc) + "/" + drawer.channelId() + "/" + event, json);
         flushOpBatch(gc);
         return true;
     }
@@ -1294,8 +1310,8 @@ public abstract class FlutterBridge {
         DartGC gc = gcBuffering(drawer);
         if (gc == null) return;
         opResources.remove(gc);
-        MessageBatch batch = opBatches.remove(gc);
-        if (batch != null) releaseBatch(batch);
+        OpBatch held = opBatches.remove(gc);
+        if (held != null) releaseBatch(held.batch);
         forgetGcNames();
     }
 
@@ -1321,7 +1337,12 @@ public abstract class FlutterBridge {
     }
 
     private static void flushOpBatch(DartGC gc) {
-        MessageBatch batch = opBatches.remove(gc);
+        OpBatch held = opBatches.remove(gc);
+        sendOpBatch(gc, held == null ? null : held.batch);
+    }
+
+    /** Sends a batch already taken out of {@link #opBatches}, so no other thread can reach it. */
+    private static void sendOpBatch(DartGC gc, MessageBatch batch) {
         java.util.List<Object> written = opResources.remove(gc);
         if (batch == null) return;
         if (batch.isEmpty()) {
@@ -1345,14 +1366,22 @@ public abstract class FlutterBridge {
         releaseBatch(batch);
     }
 
-    /** Nothing may stay buffered across an event-loop turn, whatever disposed the GC or didn't. */
+    /** Nothing this thread buffered may outlast its event-loop turn, whatever disposed the GC or didn't. */
     static void flushOpBatches() {
         if (opBatches.isEmpty()) return;
-        List<DartGC> open;
+        Thread current = Thread.currentThread();
+        List<DartGC> gcs = new ArrayList<>();
+        List<MessageBatch> mine = new ArrayList<>();
         synchronized (opBatches) {
-            open = new ArrayList<>(opBatches.keySet());
+            for (java.util.Iterator<Map.Entry<DartGC, OpBatch>> it = opBatches.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<DartGC, OpBatch> entry = it.next();
+                if (entry.getValue().owner != current) continue;
+                gcs.add(entry.getKey());
+                mine.add(entry.getValue().batch);
+                it.remove();
+            }
         }
-        for (DartGC gc : open) flushOpBatch(gc);
+        for (int i = 0; i < gcs.size(); i++) sendOpBatch(gcs.get(i), mine.get(i));
     }
 
     // A send through the "dirty" branch above defers the actual wire send to an arbitrary
