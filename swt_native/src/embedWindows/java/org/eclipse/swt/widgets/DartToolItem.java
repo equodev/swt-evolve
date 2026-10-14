@@ -194,7 +194,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getEnabled()) {
+            if (getApi().getEnabled()) {
                 if ((getApi().style & SWT.SEPARATOR) != 0) {
                     if (control != null)
                         return control.getImpl().computeTabList();
@@ -455,7 +455,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     public boolean isTabGroup() {
@@ -718,7 +718,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(disabledImage, image));
         disabledImage = image;
-        updateImages(getEnabled() && parent.getEnabled());
+        updateImages(getApi().getEnabled() && parent.getEnabled());
     }
 
     /**
@@ -790,7 +790,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(hotImage, image));
         hotImage = image;
-        updateImages(getEnabled() && parent.getEnabled());
+        updateImages(getApi().getEnabled() && parent.getEnabled());
     }
 
     @Override
@@ -804,7 +804,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(super.image, image));
         super.setImage(image);
-        updateImages(getEnabled() && parent.getEnabled());
+        updateImages(getApi().getEnabled() && parent.getEnabled());
     }
 
     boolean isImageSizeChanged(Image oldImage, Image image) {
@@ -864,7 +864,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 	* when the selection changes in a disabled tool item.
 	*/
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0) {
-            if (!getEnabled() || !parent.getEnabled()) {
+            if (!getApi().getEnabled() || !parent.getEnabled()) {
                 updateImages(false);
             }
         }

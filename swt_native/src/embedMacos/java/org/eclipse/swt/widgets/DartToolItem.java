@@ -472,7 +472,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     @Override
@@ -696,7 +696,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     boolean setFocus() {
-        if (!isEnabled())
+        if (!getApi().isEnabled())
             return false;
         return false;
     }

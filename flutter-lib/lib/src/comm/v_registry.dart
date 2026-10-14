@@ -130,6 +130,9 @@ class VRegistry {
     final channel = channelOf(value);
     final node = _nodes[channel];
     if (node != null && !node.awaitingValue) return _takeNewerOf(channel, node, value);
+    // The stand-in an unresolved reference left, handed back by whatever was built from the name:
+    // nothing has described the widget, so it is still awaited and still asked for.
+    if (node != null && identical(node.value, value)) return value;
 
     if (node == null) {
       // Assigned before subscribing: a payload held for this channel is replayed on subscription,
@@ -137,6 +140,11 @@ class VRegistry {
       final fresh = VNode(value);
       _nodes[channel] = fresh;
       fresh.subscription = _subscribe(channel);
+    } else if (isSameWidget(node.value, value) && !value.isReference) {
+      // A stand-in left by a reference: whatever named this widget holds that object (a parent's
+      // child list), so the description is copied into it, as apply() does. Swapping it would
+      // leave the parent laying out a child with no state at all.
+      return _fill(channel, node, value);
     } else {
       // Something asked to hear about this widget before it arrived, and what it has been waiting
       // on is a stand-in of the wrong type to copy a real widget into. The entry is rebuilt around
@@ -390,9 +398,15 @@ class VRegistry {
   VWidget _takeNewerOf(String channel, VNode node, VWidget incoming) {
     final held = node.value;
     if (identical(held, incoming) || incoming.seq <= held.seq) return held;
+    return _fill(channel, node, incoming);
+  }
 
-    held.copyFrom(incoming);
+  /// Copies [incoming] into the object held for [channel] and tells whoever is listening. The
+  /// subtree is adopted before anyone is told, for the reason apply() gives.
+  VWidget _fill(String channel, VNode node, VWidget incoming) {
+    final held = node.value..copyFrom(incoming);
     held.seq = incoming.seq;
+    node.awaitingValue = false;
     deliveryGate.applied(channel, held.seq);
     _adoptSubtreeOf(channel, held);
     _reconcile(channel, node, held.seq);

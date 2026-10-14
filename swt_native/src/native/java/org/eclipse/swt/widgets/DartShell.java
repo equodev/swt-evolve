@@ -599,7 +599,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void forceActive() {
         checkWidget();
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         makeKeyAndOrderFront();
     }
@@ -729,7 +729,7 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public boolean getMinimized() {
         checkWidget();
-        if (!getVisible())
+        if (!getApi().getVisible())
             return super.getMinimized();
         return this.minimized;
     }
@@ -892,7 +892,7 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled();
+        return getApi().getEnabled();
     }
 
     @Override
@@ -913,7 +913,7 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public boolean isVisible() {
         checkWidget();
-        return getVisible();
+        return getApi().getVisible();
     }
 
     void makeKeyAndOrderFront() {
@@ -1117,7 +1117,7 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void sendToolTipEvent(boolean enter) {
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         if (tooltipTag == 0) {
             if (tooltipTag != 0) {
@@ -1150,7 +1150,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setActive() {
         checkWidget();
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         makeKeyAndOrderFront();
     }
@@ -1404,7 +1404,7 @@ public class DartShell extends DartDecorations implements IShell {
         super.setMinimized(minimized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowMinimized(this, minimized);
-        if (!getVisible())
+        if (!getApi().getVisible())
             return;
         if (minimized) {
         } else {
@@ -1663,7 +1663,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     void setZOrder(Control control, boolean above) {
-        if (!getVisible())
+        if (!getApi().getVisible())
             return;
         if (control == null) {
             if (above) {
@@ -1677,7 +1677,7 @@ public class DartShell extends DartDecorations implements IShell {
     boolean traverseEscape() {
         if (parent == null)
             return false;
-        if (!isVisible() || !isEnabled())
+        if (!getApi().isVisible() || !getApi().isEnabled())
             return false;
         close();
         return true;

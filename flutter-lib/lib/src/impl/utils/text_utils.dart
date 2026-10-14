@@ -1,10 +1,11 @@
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../../gen/event.dart';
 import '../../gen/point.dart';
 import 'double_tap_detector.dart';
+
+/// The code unit of '&'.
+const _ampersand = 0x26;
 
 /// The text a widget draws for an SWT string in which '&' marks a mnemonic, by the rule Java measures
 /// it with (`Mnemonics.display`): every single '&' is dropped, the one at the end too, and "&&" draws
@@ -16,15 +17,19 @@ String stripAccelerators(String? text) {
   final drawn = StringBuffer(text.substring(0, first));
   for (var i = first; i < text.length; i++) {
     final c = text.codeUnitAt(i);
-    if (c != 0x26) {
+    if (c != _ampersand) {
       drawn.writeCharCode(c);
-    } else if (i + 1 < text.length && text.codeUnitAt(i + 1) == 0x26) {
+    } else if (i + 1 < text.length && text.codeUnitAt(i + 1) == _ampersand) {
       drawn.write('&');
       i++;
     }
   }
   return drawn.toString();
 }
+
+/// The text a CLabel draws: its text without the mnemonic markers, and nothing for the placeholder
+/// `<none>`.
+String clabelDrawnText(String? text) => text == '<none>' ? '' : stripAccelerators(text);
 
 (int start, int end) getWordBoundaries(String text, int offset) {
   if (text.isEmpty) return (0, 0);

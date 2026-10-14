@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.Mockito.when;
 
 /**
  * {@code computeTrim} on a disposed control throws {@code ERROR_WIDGET_DISPOSED}, as SWT's does: it
@@ -31,10 +32,14 @@ class ComputeTrimChecksWidgetTest {
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
+        // A shell being disposed asks the display for the shells it parents; the mock display answers null.
+        when(DartMocks.dartDisplay().getShells()).thenReturn(new Shell[0]);
     }
 
     @AfterEach
     void tearDown() {
+        // The display mock is shared by the whole suite: hand it back as the other tests expect it.
+        when(DartMocks.dartDisplay().getShells()).thenReturn(null);
         FlutterBridge.set(null);
     }
 
@@ -45,6 +50,7 @@ class ComputeTrimChecksWidgetTest {
                 control("Text MULTI", s -> new Text(s, SWT.MULTI | SWT.V_SCROLL)),
                 control("Spinner", s -> new Spinner(s, SWT.NONE)),
                 control("Group", s -> new Group(s, SWT.NONE)),
+                control("Shell", s -> new Shell(s.getDisplay())),
                 control("TabFolder", s -> new TabFolder(s, SWT.TOP)),
                 control("ToolBar", s -> new ToolBar(s, SWT.HORIZONTAL)),
                 control("List", s -> new List(s, SWT.SINGLE)),
