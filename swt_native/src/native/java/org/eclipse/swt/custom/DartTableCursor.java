@@ -365,7 +365,7 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
     void tableFocusIn(Event event) {
         if (isDisposed())
             return;
-        if (isVisible()) {
+        if (getApi().isVisible()) {
             if (row == null && column == null)
                 return;
             setFocus();
@@ -373,7 +373,7 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
     }
 
     void tableMouseDown(Event event) {
-        if (isDisposed() || !isVisible())
+        if (isDisposed() || !getApi().isVisible())
             return;
         Point pt = new Point(event.x, event.y);
         int lineWidth = table.getLinesVisible() ? table.getGridLineWidth() : 0;

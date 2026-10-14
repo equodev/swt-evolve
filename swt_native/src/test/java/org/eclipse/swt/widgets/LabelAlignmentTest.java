@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,12 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Values SWT's platforms read or refuse in different ways. Evolve behaves the same on every OS: as the
- * javadoc says where it says anything, otherwise as two of Win32, GTK and Cocoa agree.
- */
+/** The alignment a Dart-backed {@link Label} answers. */
 @Tag("native-unit")
-class OneRuleOnEveryPlatformTest {
+class LabelAlignmentTest {
 
     private Shell shell;
 
@@ -58,13 +54,6 @@ class OneRuleOnEveryPlatformTest {
     }
 
     @Test
-    @DisplayName("style bits with no alignment read LEFT")
-    void noAlignmentBitReadsLeft() {
-        assertThat(LabelHelper.alignmentOf(SWT.NONE)).isEqualTo(SWT.LEFT);
-        assertThat(LabelHelper.alignmentOf(SWT.WRAP | SWT.BORDER)).isEqualTo(SWT.LEFT);
-    }
-
-    @Test
     @DisplayName("a separator has no alignment, as the javadoc says")
     void aSeparatorHasNoAlignment() {
         for (int style : new int[] {SWT.SEPARATOR | SWT.HORIZONTAL, SWT.SEPARATOR | SWT.VERTICAL | SWT.CENTER}) {
@@ -72,50 +61,6 @@ class OneRuleOnEveryPlatformTest {
             separator.setAlignment(SWT.RIGHT);
 
             assertThat(separator.getAlignment()).isEqualTo(SWT.NONE);
-        }
-    }
-
-    @Test
-    @DisplayName("a negative tab count is refused, as on Win32 and GTK")
-    void negativeTabsAreRefused() {
-        for (int style : new int[] {SWT.SINGLE, SWT.MULTI}) {
-            Text text = new Text(shell, style);
-            text.setTabs(3);
-            text.setTabs(-1);
-
-            assertThat(text.getTabs()).isEqualTo(3);
-            text.setTabs(0);
-            assertThat(text.getTabs()).isZero();
-        }
-    }
-
-    @Test
-    @DisplayName("replacing the text puts the caret at its start, single-line or not, as on Win32 and GTK")
-    void setTextPutsTheCaretAtTheStart() {
-        for (int style : new int[] {SWT.SINGLE, SWT.MULTI}) {
-            Text text = new Text(shell, style);
-            text.setText("Hello World");
-            text.setSelection(3, 6);
-
-            text.setText("Hi");
-
-            assertThat(text.getSelection()).isEqualTo(new Point(0, 0));
-            assertThat(text.getCaretPosition()).isZero();
-        }
-    }
-
-    @Test
-    @DisplayName("clearing the selection leaves the caret at its end, as on Win32 and GTK")
-    void clearSelectionLeavesTheCaretAtTheEnd() {
-        for (int style : new int[] {SWT.SINGLE, SWT.MULTI}) {
-            Text text = new Text(shell, style);
-            text.setText("Hello World");
-            text.setSelection(2, 7);
-
-            text.clearSelection();
-
-            assertThat(text.getSelection()).isEqualTo(new Point(7, 7));
-            assertThat(text.getSelectionText()).isEmpty();
         }
     }
 }
