@@ -4,6 +4,7 @@ import dev.equo.swt.ConfigFlags;
 import org.eclipse.swt.internal.cocoa.NSApplication;
 import org.eclipse.swt.internal.cocoa.NSEvent;
 import org.eclipse.swt.internal.cocoa.NSThread;
+import org.eclipse.swt.internal.cocoa.NSWindow;
 import org.eclipse.swt.internal.cocoa.OS;
 
 /**
@@ -71,6 +72,17 @@ final class DisplayBridgePlatform {
         if (view == 0 || control == null || control.isDisposed())
             return;
         control.view = new org.eclipse.swt.internal.cocoa.NSView(view);
+    }
+
+    /**
+     * Orders the launcher's splash window out. It belongs to the main thread, which runs no Cocoa
+     * event loop while the Display renders in a browser, so the window would otherwise stay on screen.
+     * It is not closed: the launcher releases it when it takes the splash down.
+     */
+    static void dismissLauncherSplash(long window) {
+        if (window == 0 || "false".equals(System.getProperty("dev.equo.swt.loadLibrary")) || !NSThread.isMainThread())
+            return;
+        new NSWindow(window).orderOut(null);
     }
 
     /**

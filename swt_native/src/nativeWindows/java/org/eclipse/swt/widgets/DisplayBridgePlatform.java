@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.internal.win32.OS;
+
 /**
  * Per-OS native init shared by the two Display surfaces on Windows — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
  * OLE/COM for the Display thread.
@@ -31,5 +33,17 @@ final class DisplayBridgePlatform {
 
     /** Nothing to bind: a Shell here is drawn by Flutter and has no native view of its own. */
     static void bindWindowView(Control control, long view) {
+    }
+
+    /**
+     * Destroys the launcher's splash window. It belongs to the Display thread, which never pumps
+     * window messages while the Display renders in a browser, so Windows would report the window,
+     * and the process with it, as not responding. Only the owning thread can destroy a window.
+     */
+    static void dismissLauncherSplash(long hwnd) {
+        if (hwnd == 0 || "false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+            return;
+        if (OS.GetWindowThreadProcessId(hwnd, new int[1]) == OS.GetCurrentThreadId())
+            OS.DestroyWindow(hwnd);
     }
 }

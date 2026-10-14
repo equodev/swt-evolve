@@ -44,4 +44,8 @@ final class DisplayBridgePlatform {
     /** Nothing to bind: a Shell here is drawn by Flutter and has no native view of its own. */
     static void bindWindowView(Control control, long view) {
     }
+
+    /** Leaves the launcher's splash window to the launcher: not handled on GTK yet. */
+    static void dismissLauncherSplash(long window) {
+    }
 }
