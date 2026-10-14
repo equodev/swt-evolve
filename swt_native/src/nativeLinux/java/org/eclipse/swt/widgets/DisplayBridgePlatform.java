@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.internal.gtk.GTK;
 
 /**
  * Per-OS native init shared by the two Display surfaces on Linux — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
@@ -16,11 +15,11 @@ final class DisplayBridgePlatform {
         // the GTK calls below would throw UnsatisfiedLinkError; pure-web/browser needs no GTK init anyway.
         if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
             return;
-        if (!GTK.GTK4) {
+        if (!GTKWrapper.IS_GTK4) {
             GTKWrapper.setupThreadLocking();
         }
         boolean init;
-        if (GTK.GTK4) {
+        if (GTKWrapper.IS_GTK4) {
             init = GTKWrapper.gtk_init_check();
         } else {
             init = GTKWrapper.gtk_init_check(new long[] { 0 }, null);

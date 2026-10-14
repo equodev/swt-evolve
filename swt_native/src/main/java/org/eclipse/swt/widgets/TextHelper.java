@@ -310,10 +310,16 @@ public class TextHelper {
         if (e.text == null)
             return;
         String proposed = e.text;
+        String before = text.getText();
         text.setText(proposed);
-        boolean applied = proposed.equals(text.getText());
-        if (applied && e.start >= 0) {
-            text.setSelection(e.start);
+        String after = text.getText();
+        boolean applied = proposed.equals(after);
+        // setText puts the caret at the start, and this is typing: the caret goes where the edit leaves
+        // it. When a Verify listener or the limit changed the proposal, that is as far from the end of
+        // the text as the client reported. A vetoed edit left the text and its selection as they were.
+        boolean vetoed = !applied && after.equals(before);
+        if (e.start >= 0 && !vetoed) {
+            text.setSelection(e.start + after.length() - proposed.length());
         }
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
@@ -352,12 +358,8 @@ public class TextHelper {
         text.setEditText(string);
         text.text = string;
         // The old selection belonged to the old text: the caret goes back to the start, as on Win32 and GTK
-        // (Cocoa leaves a single-line text's caret at the end). A change is recorded: an update that did
-        // not name it would leave the client holding the old selection.
-        Point selection = new Point(0, 0);
-        if (!java.util.Objects.equals(text.selection, selection))
-            text.getValue().markDirty(VText.SELECTION);
-        text.selection = selection;
+        // (Cocoa leaves a single-line text's caret at the end).
+        text.setSelection(0, 0);
 
         text.updateAutoTextDirectionIfNeeded();
         // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,
