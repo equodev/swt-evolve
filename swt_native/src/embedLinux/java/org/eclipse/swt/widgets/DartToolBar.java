@@ -173,7 +173,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
                 return super.computeTabList();
         }
         Widget[] result = {};
-        if (!isTabGroup() || !isEnabled() || !isVisible())
+        if (!isTabGroup() || !getApi().isEnabled() || !getApi().isVisible())
             return result;
         ToolItem[] list = tabList != null ? _getTabItemList() : items;
         for (int i = 0; i < list.length; i++) {

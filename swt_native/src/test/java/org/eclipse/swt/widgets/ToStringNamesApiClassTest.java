@@ -54,7 +54,7 @@ class ToStringNamesApiClassTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("org.eclipse.swt.widgets.ComputeSizeChecksWidgetTest#controls")
+    @MethodSource("org.eclipse.swt.widgets.DartControlFactories#withOwnComputeSize")
     void everyControlNamesItsSwtClass(String name, Function<Shell, Control> factory) {
         Control control = factory.apply(DartMocks.dartShell());
 

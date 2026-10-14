@@ -671,7 +671,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             }
             return;
         }
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         ;
         Point comboSize = getSize();
@@ -1747,7 +1747,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     @Override
     public boolean setFocus() {
         checkWidget();
-        if (!isEnabled() || !getVisible())
+        if (!getApi().isEnabled() || !getApi().getVisible())
             return false;
         if (isFocusControl())
             return true;

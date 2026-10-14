@@ -398,7 +398,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     @Override
@@ -422,7 +422,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible() && parent.isVisible();
+        return getApi().getVisible() && parent.isVisible();
     }
 
     /**

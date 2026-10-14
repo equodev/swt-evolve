@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** What {@link DartButton} does when it is driven directly rather than through {@link Button}. */
+/** Drag detection on a Dart-backed {@link Button}. */
 @Tag("native-unit")
-class ButtonImplementationNativeTest {
+class ButtonDragDetectTest {
 
     @BeforeEach
     void setUp() {
@@ -26,15 +26,13 @@ class ButtonImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("an implementation built without its API object creates one, once, bound to itself")
-    void implementationWithoutApiCreatesOne() {
-        DartButton impl = new DartButton(DartMocks.dartShell(), SWT.PUSH, null);
+    @DisplayName("a primary click's drag detection does not fail, as on Win32 and GTK")
+    void dragDetectOnAPrimaryClickDoesNotFail() {
+        Event click = new Event();
+        click.button = 1;
+        click.count = 1;
 
-        Button api = impl.getApi();
-
-        assertThat(api).isNotNull();
-        assertThat(api.getImpl()).isSameAs(impl);
-        assertThat(impl.getApi()).isSameAs(api);
+        assertThat(new Button(DartMocks.dartShell(), SWT.PUSH).dragDetect(click)).isFalse();
     }
 
     @Test

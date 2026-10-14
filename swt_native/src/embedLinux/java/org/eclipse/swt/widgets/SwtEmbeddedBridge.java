@@ -37,16 +37,16 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         long fixedHandle = OS.g_object_new(((SwtDisplay) control.display.getImpl()).gtk_fixed_get_type(), 0);
         if (fixedHandle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
-        if (!GTK.GTK4)
+        if (!GTKWrapper.IS_GTK4)
             GTKWrapper.gtk_widget_set_has_window(fixedHandle, true);
 
         long parentHandle = control.parent.handle;
-        if (GTK.GTK4)
+        if (GTKWrapper.IS_GTK4)
             GTKWrapper.swt_fixed_add(parentHandle, fixedHandle);
         else
             GTKWrapper.gtk_container_add(parentHandle, fixedHandle);
 
-        if (GTK.GTK4)
+        if (GTKWrapper.IS_GTK4)
             GTKWrapper.swt_fixed_add(fixedHandle, view);
         else
             GTKWrapper.gtk_container_add(fixedHandle, view);
@@ -112,7 +112,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
             // Remove from SWT display first
             ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().handle);
             // Destroy the SWT fixed container - GTK will automatically
-            if (GTK.GTK4) {
+            if (GTKWrapper.IS_GTK4) {
                 GTKWrapper.gtk_widget_unparent(control.getApi().handle);
             } else {
                 GTKWrapper.gtk_widget_destroy(control.getApi().handle);
@@ -123,7 +123,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
 
     @Override
     public Point getWindowOrigin(DartControl control) {
-        if (GTK.GTK4) {
+        if (GTKWrapper.IS_GTK4) {
             double[] originX = new double[1], originY = new double[1];
             boolean success = GTKWrapper.gtk_widget_translate_coordinates(control.getApi().handle, ((SwtShell) control.getShell().getImpl()).shellHandle, 0, 0, originX, originY);
             return success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
@@ -138,7 +138,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
 
     @Override
     public void setCursor(DartControl control, long cursor) {
-        if (GTK.GTK4) {
+        if (GTKWrapper.IS_GTK4) {
             long eventHandle = eventWindow(control);
             GTKWrapper.gtk_widget_set_cursor(eventHandle, cursor);
         } else {
@@ -167,7 +167,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         // Remove from current parent
         long oldParent = GTK.gtk_widget_get_parent(controlHandle);
         if (oldParent != 0) {
-            if (GTK.GTK4) {
+            if (GTKWrapper.IS_GTK4) {
                 GTKWrapper.gtk_widget_unparent(controlHandle);
             } else {
                 GTKWrapper.gtk_container_remove(oldParent, controlHandle);
@@ -176,7 +176,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
 
         // Add to new parent
         long newParentHandle = newParent.handle;
-        if (GTK.GTK4) {
+        if (GTKWrapper.IS_GTK4) {
             GTKWrapper.swt_fixed_add(newParentHandle, controlHandle);
         } else {
             GTKWrapper.gtk_container_add(newParentHandle, controlHandle);

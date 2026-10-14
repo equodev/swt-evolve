@@ -300,7 +300,8 @@ public class Sizes {
         int style = c.getApi().style;
         int width, height;
         if ((style & SWT.CALENDAR) != 0) {
-            boolean weekNumbers = (style & SWT.CALENDAR_WEEKNUMBERS) != 0;
+            // SWT.CALENDAR_WEEKNUMBERS by value: not every SWT build declares the constant.
+            boolean weekNumbers = (style & (1 << 14)) != 0;
             width = (weekNumbers ? 8 : 7) * 28 + 8;
             height = 30 + 28 + 6 * 28 + 8;
         } else if ((style & SWT.TIME) != 0) {

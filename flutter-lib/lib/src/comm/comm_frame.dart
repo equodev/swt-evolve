@@ -22,6 +22,10 @@ typedef OnSuccessCallback<T> = FutureOr<void> Function(T response);
 typedef OnErrorCallback = void Function(SDKCommError error);
 typedef Payload = dynamic;
 
+void _logHandlerError(String actionId, Object error, StackTrace stack) {
+  print('[comm] Handler error for "$actionId": $error\n$stack');
+}
+
 class SendArgs {
   bool sequential;
   SendArgs({required this.sequential});
@@ -346,7 +350,7 @@ abstract class EquoCommBase {
           await delivered;
         }
       } catch (e, st) {
-        print('[comm] Handler error for "$name": $e\n$st');
+        _logHandlerError(name, e, st);
       }
     }
   }
@@ -431,11 +435,11 @@ abstract class EquoCommBase {
         final applied = apply();
         if (applied is Future) {
           return applied.catchError((Object e, StackTrace st) {
-            print('[comm] Handler error for "$actionId": $e\n$st');
+            _logHandlerError(actionId, e, st);
           });
         }
       } catch (e, st) {
-        print('[comm] Handler error for "$actionId": $e\n$st');
+        _logHandlerError(actionId, e, st);
       }
       return null;
     });

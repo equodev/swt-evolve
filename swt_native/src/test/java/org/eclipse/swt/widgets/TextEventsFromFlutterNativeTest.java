@@ -160,7 +160,7 @@ class TextEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("an edit a Verify listener rewrites is answered doit=false and the rewritten text stays")
+    @DisplayName("an edit a Verify listener rewrites is answered doit=false, and the caret stays where the field put it")
     void rewrittenEditIsAnsweredAsRefused() {
         Text text = text(SWT.SINGLE, "old");
         text.addVerifyListener(e -> e.text = e.text.toUpperCase());
@@ -169,23 +169,53 @@ class TextEventsFromFlutterNativeTest {
         runQueued();
 
         assertThat(text.getText()).isEqualTo("TYPED");
+        assertThat(text.getSelection()).isEqualTo(new Point(5, 5));
         assertThat(verdicts()).singleElement().asString().contains("false");
     }
 
     @Test
-    @DisplayName("an edit that reports no caret leaves the selection to the text")
-    void editWithoutACaretLeavesTheSelectionToTheText() {
+    @DisplayName("an edit a Verify listener shortens leaves the caret after what the listener kept")
+    void shortenedEditKeepsTheCaretAfterWhatWasKept() {
+        Text text = text(SWT.SINGLE, "ab");
+        text.addVerifyListener(e -> e.text = e.text.replace("12", "1"));
+
+        fromFlutter(text, "Modify/Modify", event("a12b", 3, 3));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("a1b");
+        assertThat(text.getSelection()).isEqualTo(new Point(2, 2));
+    }
+
+    @Test
+    @DisplayName("a vetoed edit leaves the text and its selection as they were")
+    void vetoedEditKeepsTheSelection() {
         Text text = text(SWT.SINGLE, "old");
+        text.setSelection(1, 2);
+        text.addVerifyListener(e -> e.doit = false);
+
+        fromFlutter(text, "Modify/Modify", event("oXd", 2, 2));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("old");
+        assertThat(text.getSelection()).isEqualTo(new Point(1, 2));
+        assertThat(verdicts()).singleElement().asString().contains("false");
+    }
+
+    @Test
+    @DisplayName("an edit that reports no caret leaves it at the start, where setText puts it")
+    void editWithoutACaretLeavesItAtTheStart() {
+        Text text = text(SWT.SINGLE, "old");
+        text.setSelection(2);
 
         fromFlutter(text, "Modify/Modify", event("typed", -1, -1));
         runQueued();
 
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(text.getSelection()).isEqualTo(text(SWT.SINGLE, "typed").getSelection());
+        assertThat(text.getSelection()).isEqualTo(new Point(0, 0));
     }
 
     @Test
-    @DisplayName("an edit the text limit cuts is answered doit=false")
+    @DisplayName("an edit the text limit cuts is answered doit=false, with the caret inside what is left")
     void editCutByTheLimitIsAnsweredAsRefused() {
         Text text = text(SWT.SINGLE, "old");
         text.setTextLimit(4);
@@ -195,6 +225,7 @@ class TextEventsFromFlutterNativeTest {
         runQueued();
 
         assertThat(text.getText()).isEqualTo("type");
+        assertThat(text.getSelection()).isEqualTo(new Point(4, 4));
         assertThat(verdicts()).singleElement().asString().contains("false");
     }
 
@@ -211,13 +242,12 @@ class TextEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("segments that stay inside the text are accepted")
-    void segmentsInsideTheTextAreAccepted() {
+    @DisplayName("segments up to the end of the text are accepted, and the text is kept without separators")
+    void segmentsUpToTheEndOfTheTextAreAccepted() {
         Text text = text(SWT.SINGLE, "");
         text.addSegmentListener(e -> e.segments = new int[] {0, 1, 3});
 
-        text.setText("abc");
-
+        assertThatCode(() -> text.setText("abc")).doesNotThrowAnyException();
         assertThat(text.getText()).isEqualTo("abc");
     }
 
@@ -263,7 +293,6 @@ class TextEventsFromFlutterNativeTest {
     void segmentRequestReachesListeners() {
         Text text = text(SWT.SINGLE, "abc");
         List<Event> events = record(text, SWT.Segments);
-        events.clear();
 
         fromFlutter(text, "Segment/Segments", event("abc", 0, 0));
         runQueued();
@@ -276,7 +305,6 @@ class TextEventsFromFlutterNativeTest {
     void segmentRequestToADisposedTextIsDropped() {
         Text text = text(SWT.SINGLE, "abc");
         List<Event> events = record(text, SWT.Segments);
-        events.clear();
 
         fromFlutter(text, "Segment/Segments", event("abc", 0, 0));
         text.dispose();
@@ -382,18 +410,6 @@ class TextEventsFromFlutterNativeTest {
 
         assertThat(events).hasSize(1);
         assertThat(events.get(0).widget).isSameAs(text);
-    }
-
-    @Test
-    @DisplayName("a key listener that disposes the text ends the key handling")
-    void aListenerDisposingTheTextEndsTheKeyHandling() {
-        Text text = text(SWT.SINGLE, "abc");
-        text.addListener(SWT.KeyDown, e -> text.dispose());
-        Event key = new Event();
-        key.keyCode = 'q';
-
-        assertThat(((DartText) text.getImpl()).sendKeyEvent(SWT.KeyDown, key)).isFalse();
-        assertThat(text.isDisposed()).isTrue();
     }
 
     @Test

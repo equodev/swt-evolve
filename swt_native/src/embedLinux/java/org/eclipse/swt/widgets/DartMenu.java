@@ -725,9 +725,9 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         Menu parentMenu = getParentMenu();
         if (parentMenu == null) {
-            return getEnabled() && parent.isEnabled();
+            return getApi().getEnabled() && parent.isEnabled();
         }
-        return getEnabled() && parentMenu.isEnabled();
+        return getApi().getEnabled() && parentMenu.isEnabled();
     }
 
     /**
@@ -746,7 +746,7 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible();
+        return getApi().getVisible();
     }
 
     @Override
