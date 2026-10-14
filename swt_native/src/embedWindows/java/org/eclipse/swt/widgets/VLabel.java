@@ -27,7 +27,7 @@ public class VLabel extends VControl {
 
     @JsonAttribute(nullable = true)
     public Image getImage() {
-        Image val = ((DartLabel) impl).image;
+        Image val = ((DartLabel) impl)._displayedImage();
         if (val != null && !(val.getImpl() instanceof DartImage))
             return null;
         return val;
@@ -39,7 +39,7 @@ public class VLabel extends VControl {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartLabel) impl).getText();
+        return ((DartLabel) impl)._displayedText();
     }
 
     public void setText(String value) {

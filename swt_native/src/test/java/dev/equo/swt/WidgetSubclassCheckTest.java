@@ -63,7 +63,7 @@ class WidgetSubclassCheckTest {
     void acceptsSubclassesOfOpenWidgets() {
         assertThat(new Composite(shell, SWT.NONE) {}).isNotNull();
         assertThat(new Canvas(shell, SWT.NONE) {}).isNotNull();
-        assertThat(new CLabel(shell, SWT.NONE)).isNotNull();
+        assertThat(new CLabel(shell, SWT.NONE) {}).isNotNull();
     }
 
     @Test

@@ -901,7 +901,7 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
     }
 
     void treeFocusIn(Event event) {
-        if (isVisible()) {
+        if (getApi().isVisible()) {
             if (row == null && column == null)
                 return;
             setFocus();
