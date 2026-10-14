@@ -2,6 +2,7 @@ package dev.equo.swt.size;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.ImageMetricUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
@@ -117,8 +118,7 @@ public class ButtonSizes {
     }
 
     private static PointD computeImage(DartButton widget) {
-        if (widget.getImage() == null) return PointD.zero;
-        return new PointD(16.8, 16.8);
+        return ImageMetricUtil.getImageSize(widget.getImage());
     }
 
     private static PointD computeText(DartButton widget, Measure m, boolean emptyTextAffectsSizing) {

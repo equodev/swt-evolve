@@ -92,11 +92,7 @@ public class LabelSizes {
     }
 
     private static PointD computeImage(DartLabel widget) {
-        Image image = widget.getImage();
-        if (image != null) {
-            return ImageMetricUtil.getImageSize(image.getImageData());
-        }
-        return PointD.zero;
+        return ImageMetricUtil.getImageSize(widget.getImage());
     }
 
     private static PointD computeText(DartLabel widget, Measure m, boolean emptyTextAffectsSizing) {

@@ -1205,15 +1205,19 @@ class WidgetMeasurer {
           'height': imageBox.size.height,
         };
       } else if (expectedComponents['image'] != null) {
-        // Try icon-sized placeholder first (FutureBuilder SizedBox for icon images)
-        final iconBox = _findIconBox(root);
-        if (iconBox != null) {
+        final img = expectedComponents['image'] as (int, int);
+        // An unresolved image still occupies the slot the widget reserved for it. Only when no box
+        // has the image's own size is it drawn at an icon size instead; any square leaf is a weaker
+        // guess, since a check box's indicator is one too.
+        final placeholder =
+            _findBoxOfSize(root, Size(img.$1.toDouble(), img.$2.toDouble())) ??
+                _findIconBox(root);
+        if (placeholder != null) {
           discovered['image'] = {
-            'width': iconBox.size.width,
-            'height': iconBox.size.height,
+            'width': placeholder.size.width,
+            'height': placeholder.size.height,
           };
         } else {
-          final img = expectedComponents['image'] as (int, int);
           discovered['image'] = {
             'width': img.$1.toDouble(),
             'height': img.$2.toDouble(),
@@ -1489,6 +1493,18 @@ class WidgetMeasurer {
       if (found != null) return found;
     }
 
+    return null;
+  }
+
+  RenderBoxInfo? _findBoxOfSize(RenderBoxInfo box, Size size) {
+    if ((box.size.width - size.width).abs() < 0.5 &&
+        (box.size.height - size.height).abs() < 0.5) {
+      return box;
+    }
+    for (var child in box.children) {
+      final found = _findBoxOfSize(child, size);
+      if (found != null) return found;
+    }
     return null;
   }
 
@@ -2639,13 +2655,9 @@ class WidgetMeasurer {
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
-        buffer.writeln('        Image image = widget.getImage();');
-        buffer.writeln('        if (image != null) {');
         buffer.writeln(
-          '            return ImageMetricUtil.getImageSize(image.getImageData());',
+          '        return ImageMetricUtil.getImageSize(widget.getImage());',
         );
-        buffer.writeln('        }');
-        buffer.writeln('        return PointD.zero;');
         buffer.writeln('    }');
       }
       buffer.writeln();

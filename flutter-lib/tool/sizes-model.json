@@ -7118,8 +7118,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7138,8 +7138,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7170,8 +7170,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7190,8 +7190,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7236,8 +7236,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7269,8 +7269,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7328,8 +7328,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7361,8 +7361,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7420,8 +7420,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7453,8 +7453,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7512,8 +7512,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7545,8 +7545,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7590,8 +7590,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7610,8 +7610,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7642,8 +7642,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -7662,8 +7662,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -7708,8 +7708,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7741,8 +7741,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7800,8 +7800,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -7833,8 +7833,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -7892,8 +7892,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7925,8 +7925,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -7984,8 +7984,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8017,8 +8017,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8062,8 +8062,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -8082,8 +8082,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -8114,8 +8114,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -8134,8 +8134,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -8180,8 +8180,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -8213,8 +8213,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -8272,8 +8272,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -8305,8 +8305,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -8364,8 +8364,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8397,8 +8397,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8456,8 +8456,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -8489,8 +8489,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -9950,8 +9950,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -9970,8 +9970,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10002,8 +10002,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10022,8 +10022,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10068,8 +10068,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10101,8 +10101,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10160,8 +10160,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10193,8 +10193,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10252,8 +10252,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10285,8 +10285,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10344,8 +10344,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10377,8 +10377,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10422,8 +10422,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10442,8 +10442,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10474,8 +10474,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10494,8 +10494,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10540,8 +10540,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10573,8 +10573,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10632,8 +10632,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -10665,8 +10665,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -10724,8 +10724,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10757,8 +10757,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10816,8 +10816,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10849,8 +10849,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -10894,8 +10894,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10914,8 +10914,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -10946,8 +10946,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             }
           },
           "expectedComponents": {
@@ -10966,8 +10966,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             }
           },
           "expectedComponents": {
@@ -11012,8 +11012,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -11045,8 +11045,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -11104,8 +11104,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "Yes",
@@ -11137,8 +11137,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "Yes",
@@ -11196,8 +11196,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -11229,8 +11229,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -11288,8 +11288,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 16.0,
+              "width": 16.0
             },
             "text": {
               "content": "This is a long widget text",
@@ -11321,8 +11321,8 @@
         {
           "discoveredComponents": {
             "image": {
-              "height": 16.8,
-              "width": 16.8
+              "height": 48.0,
+              "width": 48.0
             },
             "text": {
               "content": "This is a long widget text",
