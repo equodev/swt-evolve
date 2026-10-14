@@ -118,6 +118,10 @@ public class DPIUtil {
         String autoScaleProperty = System.getProperty(SWT_AUTOSCALE);
         autoScaleValue = AutoScaleCalculation.parseFrom(autoScaleProperty);
         if (DPIUtil.isMonitorSpecificScalingActive() && !DPIUtil.isSetupCompatibleToMonitorSpecificScaling()) {
+            if (System.getProperty(SWT_AUTOSCALE_UPDATE_ON_RUNTIME) == null) {
+                System.setProperty(SWT_AUTOSCALE_UPDATE_ON_RUNTIME, "false");
+                return;
+            }
             throw new SWTError(SWT.ERROR_NOT_IMPLEMENTED, "monitor-specific scaling is only implemented for auto-scale values \"quarter\", \"exact\", but \"" + autoScaleProperty + "\" has been specified");
         }
     }
