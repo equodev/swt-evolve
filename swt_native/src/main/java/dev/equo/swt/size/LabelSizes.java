@@ -19,9 +19,6 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class LabelSizes {
 
-    private LabelSizes() {
-    }
-
     static class NONE {
         static final double MIN_WIDTH = 8.0;
         static final double MIN_HEIGHT = 4.0;
@@ -29,37 +26,16 @@ public class LabelSizes {
         static final double VERTICAL_PADDING = 4.0;
         static final double IMAGE_SPACING = 8.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
-
-        private NONE() {
-        }
     }
 
     static class HORIZONTAL_SEPARATOR {
         static final double MIN_WIDTH = 7.0;
         static final double MIN_HEIGHT = 2.0;
-
-        private HORIZONTAL_SEPARATOR() {
-        }
     }
 
     static class VERTICAL_SEPARATOR {
         static final double MIN_WIDTH = 2.0;
         static final double MIN_HEIGHT = 7.0;
-
-        private VERTICAL_SEPARATOR() {
-        }
-    }
-
-    static class WRAP {
-        static final double MIN_WIDTH = 8.0;
-        static final double MIN_HEIGHT = 4.0;
-        static final double HORIZONTAL_PADDING = 8.0;
-        static final double VERTICAL_PADDING = 4.0;
-        static final double IMAGE_SPACING = 8.0;
-        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
-
-        private WRAP() {
-        }
     }
 
     public static Point computeSize(DartLabel widget, int wHint, int hHint, boolean changed) {
@@ -79,27 +55,22 @@ public class LabelSizes {
         } else if (hasFlags(style, (SWT.VERTICAL | SWT.SEPARATOR))) {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL_SEPARATOR.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL_SEPARATOR.MIN_HEIGHT;
-        } else if (hasFlags(style, SWT.WRAP)) {
-            m.text = computeText(widget, m, WRAP.EMPTY_TEXT_AFFECTS_SIZING);
+        } else { // NONE, WRAP
+            m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
-            width = wHint != SWT.DEFAULT ? wHint : ((m.text.x() > 0 || m.image.x() > 0) ? Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? WRAP.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? WRAP.HORIZONTAL_PADDING : 0), WRAP.MIN_WIDTH) : 0.0);
+            width = wHint != SWT.DEFAULT ? wHint : ((m.text.x() > 0 || m.image.x() > 0) ? Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? NONE.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH) : 0.0);
             boolean wraps = hasFlags(style, SWT.WRAP);
             if (hHint != SWT.DEFAULT) {
                 height = hHint;
             } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
                 double imageWidth = m.image.x();
-                double imageSpacing = imageWidth > 0 ? WRAP.IMAGE_SPACING : 0;
-                double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? WRAP.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
+                double imageSpacing = imageWidth > 0 ? NONE.IMAGE_SPACING : 0;
+                double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? NONE.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
                 PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
-                height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? WRAP.VERTICAL_PADDING : 0), WRAP.MIN_HEIGHT);
+                height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? NONE.VERTICAL_PADDING : 0), NONE.MIN_HEIGHT);
             } else {
-                height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? WRAP.VERTICAL_PADDING : 0), WRAP.MIN_HEIGHT);
+                height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? NONE.VERTICAL_PADDING : 0), NONE.MIN_HEIGHT);
             }
-        } else { // NONE
-            m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
-            m.image = computeImage(widget);
-            width = wHint != SWT.DEFAULT ? wHint : ((m.text.x() > 0 || m.image.x() > 0) ? Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? NONE.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH) : 0.0);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? NONE.VERTICAL_PADDING : 0), NONE.MIN_HEIGHT);
         }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
