@@ -323,7 +323,7 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        setSelection(selection.y);
+        setSelection((getApi().style & SWT.MULTI) != 0 ? selection.x : selection.y);
     }
 
     @Override
@@ -366,6 +366,8 @@ public class DartText extends DartScrollable implements IText {
     @Override
     void createWidget() {
         super.createWidget();
+        if ((getApi().style & SWT.PASSWORD) != 0)
+            echoCharacter = PASSWORD;
         if ((getApi().style & SWT.PASSWORD) != 0) {
         }
         doubleClick = true;
@@ -1372,7 +1374,7 @@ public class DartText extends DartScrollable implements IText {
         if (color == null) {
         } else {
             double alpha = 1;
-            if ((getApi().style & SWT.MULTI) != 0 && !isEnabled())
+            if ((getApi().style & SWT.MULTI) != 0 && !getApi().isEnabled())
                 alpha = 0.5f;
         }
         if ((getApi().style & SWT.SINGLE) != 0) {
@@ -1670,7 +1672,7 @@ public class DartText extends DartScrollable implements IText {
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         if (limit < 0)
-            return;
+            limit = Text.LIMIT;
         textLimit = limit;
     }
 
@@ -1744,7 +1746,7 @@ public class DartText extends DartScrollable implements IText {
         if ((getApi().style & SWT.MULTI) == 0)
             return;
         if (foreground == null) {
-            if (getEnabled()) {
+            if (getApi().getEnabled()) {
             } else {
             }
         }
