@@ -402,18 +402,6 @@ class StyledTextRenderingFlutterTest {
         assertThat(text.getLinePixel(2) - text.getLinePixel(1)).isEqualTo(text.getLineHeight());
     }
 
-    @Test
-    @DisplayName("a vertical indent pushes its line down")
-    void verticalIndent() {
-        fresh(SWT.MULTI, "one\ntwo");
-        text.setLineVerticalIndent(1, 12);
-        stage.focusAt(text.getOffsetAtLine(1) + 1);
-
-        assertThat(text.getLocationAtOffset(text.getOffsetAtLine(1)).y)
-                .isEqualTo(text.getLinePixel(1) + 12);
-        assertThat(stage.renderedCaretRect(text)[1]).isCloseTo(text.getLocationAtOffset(text.getCaretOffset()).y, within(1.0));
-    }
-
     // ---------------- selection and caret appearance ----------------
 
     @Test

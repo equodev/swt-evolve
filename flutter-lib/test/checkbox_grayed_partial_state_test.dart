@@ -1,5 +1,6 @@
 // A grayed check must read differently from a full check — that difference is how a check tree
-// says "some but not all of my children are checked".
+// says "some but not all of my children are checked". Grayed only shows on a checked box: every
+// native platform draws grayed-but-unchecked as an empty box.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,8 +11,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
-VButton _checkBox({required bool selection, required bool grayed}) => VButton()
-  ..id = 42
+VButton _checkBox({required bool selection, required bool grayed, int id = 42}) => VButton()
+  ..id = id
   ..style = SWT.CHECK
   ..enabled = true
   ..selection = selection
@@ -37,6 +38,19 @@ VTree _checkTree() => VTree()
       ..grayed = false,
   ];
 
+/// A check tree whose only item is left grayed but unchecked.
+VTree _uncheckedGrayedTree() => VTree()
+  ..id = 1
+  ..style = SWT.CHECK
+  ..enabled = true
+  ..items = [
+    VTreeItem()
+      ..id = 10
+      ..text = 'Datasets'
+      ..checked = false
+      ..grayed = true,
+  ];
+
 Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
@@ -56,6 +70,11 @@ bool _hasPartialMark(WidgetTester tester) => tester
     .whereType<BoxDecoration>()
     .any((d) =>
         d.color != null && d.border == null && d.shape == BoxShape.rectangle);
+
+/// The checkbox box itself, as opposed to the marks drawn inside it.
+BoxDecoration _boxDecoration(WidgetTester tester) => tester
+    .widget<AnimatedContainer>(find.byType(AnimatedContainer).first)
+    .decoration as BoxDecoration;
 
 void main() {
   testWidgets('a grayed checkbox renders the partial mark, not a full checkmark',
@@ -97,5 +116,46 @@ void main() {
       reason: 'only the fully-checked item may show a checkmark; the grayed one '
           'must be distinguishable from it',
     );
+  });
+
+  testWidgets('a grayed but unchecked checkbox renders as an empty box',
+      (WidgetTester tester) async {
+    await _pump(
+      tester,
+      ButtonSwt<VButton>(value: _checkBox(selection: false, grayed: true)),
+    );
+
+    expect(find.byIcon(Icons.check), findsNothing);
+    expect(
+      _hasPartialMark(tester),
+      isFalse,
+      reason: 'grayed only marks a checked box; unchecked it draws empty',
+    );
+  });
+
+  testWidgets('a grayed but unchecked checkbox has the unchecked fill and border',
+      (WidgetTester tester) async {
+    await _pump(
+      tester,
+      ButtonSwt<VButton>(value: _checkBox(selection: false, grayed: false)),
+    );
+    final unchecked = _boxDecoration(tester);
+
+    await _pump(
+      tester,
+      ButtonSwt<VButton>(
+          value: _checkBox(selection: false, grayed: true, id: 43)),
+    );
+
+    expect(_boxDecoration(tester).color, unchecked.color);
+    expect(_boxDecoration(tester).border, unchecked.border);
+  });
+
+  testWidgets('a check tree item left grayed but unchecked renders an empty box',
+      (WidgetTester tester) async {
+    await _pump(tester, TreeSwt<VTree>(value: _uncheckedGrayedTree()));
+
+    expect(find.byIcon(Icons.check), findsNothing);
+    expect(_hasPartialMark(tester), isFalse);
   });
 }

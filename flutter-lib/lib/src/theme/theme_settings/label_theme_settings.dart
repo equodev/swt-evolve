@@ -3,10 +3,6 @@ import '../theme_extensions/label_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
-/// How thick a separator label is drawn, in every theme. Java sizes a separator from the same number:
-/// the size emitter (`tool/measure.dart`) reads it from here.
-const double labelSeparatorThickness = 2.0;
-
 LabelThemeExtension getLabelLightTheme({
   required ColorScheme colorScheme,
   required TextTheme textTheme,
@@ -102,6 +98,6 @@ LabelThemeExtension _getLabelTheme({
     decorationThickness: 1.0,
 
     // Separator properties
-    separatorThickness: labelSeparatorThickness,
+    separatorThickness: 2.0,
   );
 }

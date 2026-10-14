@@ -323,7 +323,7 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        setSelection(selection.y);
+        setSelection((getApi().style & SWT.MULTI) != 0 ? selection.x : selection.y);
     }
 
     @Override
@@ -366,6 +366,8 @@ public class DartText extends DartScrollable implements IText {
     @Override
     void createWidget() {
         super.createWidget();
+        if ((getApi().style & SWT.PASSWORD) != 0)
+            echoCharacter = PASSWORD;
         if ((getApi().style & SWT.PASSWORD) != 0) {
         }
         doubleClick = true;
@@ -393,14 +395,8 @@ public class DartText extends DartScrollable implements IText {
         Point oldSelection = getSelection();
         if (oldSelection.x == oldSelection.y)
             return;
-        String replacement = "";
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            replacement = verifyText(replacement, oldSelection.x, oldSelection.y);
-            if (replacement == null)
-                return;
-        }
         copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
-        insertEditText(replacement);
+        insertEditText("");
         if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
     }
@@ -1079,12 +1075,6 @@ public class DartText extends DartScrollable implements IText {
         String newText = getClipboardText();
         if (newText == null)
             return;
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            Point selection = getSelection();
-            newText = verifyText(newText, selection.x, selection.y);
-            if (newText == null)
-                return;
-        }
         if (textLimit != Text.LIMIT) {
             Point sel = getSelection();
             int charCount = getCharCount();
@@ -1364,7 +1354,7 @@ public class DartText extends DartScrollable implements IText {
         if (color == null) {
         } else {
             double alpha = 1;
-            if ((getApi().style & SWT.MULTI) != 0 && !isEnabled())
+            if ((getApi().style & SWT.MULTI) != 0 && !getApi().isEnabled())
                 alpha = 0.5f;
         }
         if ((getApi().style & SWT.SINGLE) != 0) {
@@ -1662,7 +1652,7 @@ public class DartText extends DartScrollable implements IText {
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         if (limit < 0)
-            return;
+            limit = Text.LIMIT;
         textLimit = limit;
     }
 
@@ -1683,7 +1673,7 @@ public class DartText extends DartScrollable implements IText {
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
         int lines = getLineCount();
-        int lineHeight = Math.max(1, getLineHeight());
+        int lineHeight = getLineHeight();
         int lastTop = Math.max(0, lines * lineHeight - getClientArea().height) / lineHeight;
         this.topIndex = Math.max(0, Math.min(index, Math.min(lines - 1, lastTop)));
     }

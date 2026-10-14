@@ -326,16 +326,24 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final rawW = (b?.width ?? 400).toDouble();
     final rawH = (b?.height ?? 300).toDouble();
+    // A trimmed shell is drawn at the size the application set, as a native one is; a floor is the
+    // application's to set (setMinimumSize). Only a dimension Java has not set yet (0, or -1 before
+    // the shell is sized) gets one here, since drawn at that size the shell would not be there.
+    double bodySize(double raw, double fallback, int? minimum, double viewportMax) {
+      final wanted = math.max(raw > 0 ? raw : fallback, (minimum ?? 0).toDouble());
+      return math.min(wanted, math.max(fallback, viewportMax * 0.9));
+    }
+
     final bodyW = _size != null
         ? _size!.width
         : (!_showTitleBar && !_showBorder
             ? rawW
-            : rawW.clamp(200.0, math.max(200.0, viewport.maxWidth * 0.9)).toDouble());
+            : bodySize(rawW, 200, state.minimumSize?.x, viewport.maxWidth));
     final bodyH = _size != null
         ? _size!.height
         : (!_showTitleBar && !_showBorder
             ? rawH
-            : rawH.clamp(150.0, math.max(150.0, viewport.maxHeight * 0.9)).toDouble());
+            : bodySize(rawH, 150, state.minimumSize?.y, viewport.maxHeight));
 
     final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
     final headerH = _showTitleBar ? titleBarH : 0.0;
