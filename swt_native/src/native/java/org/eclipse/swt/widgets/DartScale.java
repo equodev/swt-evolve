@@ -393,6 +393,7 @@ public class DartScale extends DartControl implements IScale {
                 if (isDisposed())
                     return;
                 setSelection(e.index);
+                sendEvent(SWT.Selection, e);
             });
         });
     }

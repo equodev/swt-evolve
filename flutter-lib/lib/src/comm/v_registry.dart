@@ -216,8 +216,12 @@ class VRegistry {
         _notify(channel, node, const VChange());
       case FrameAction.merge:
         node.value.mergeJson(frame);
-        node.value.seq = DeliveryGate.seqOf(frame);
-        deliveryGate.applied(channel, node.value.seq);
+        // An unstamped change leaves the stamp held, which is what an older replay is refused by.
+        final seq = DeliveryGate.seqOf(frame);
+        if (seq != 0) {
+          node.value.seq = seq;
+          deliveryGate.applied(channel, seq);
+        }
         _adoptSubtreeOf(channel, node.value);
         _reconcile(channel, node, node.value.seq);
         _notify(channel, node, VChange(changed: _namesIn(frame)));
