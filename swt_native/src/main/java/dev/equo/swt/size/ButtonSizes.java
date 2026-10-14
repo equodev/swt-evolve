@@ -18,15 +18,9 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class ButtonSizes {
 
-    private ButtonSizes() {
-    }
-
     static class ARROW {
         static final double MIN_WIDTH = 26.0;
         static final double MIN_HEIGHT = 26.0;
-
-        private ARROW() {
-        }
     }
 
     static class CHECK {
@@ -36,9 +30,6 @@ public class ButtonSizes {
         static final double VERTICAL_PADDING = 2.4000000000000004;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
         static final double TEXT_SLACK = 1.0;
-
-        private CHECK() {
-        }
     }
 
     static class PUSH {
@@ -47,9 +38,6 @@ public class ButtonSizes {
         static final double HORIZONTAL_PADDING = 18.0;
         static final double VERTICAL_PADDING = 10.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
-
-        private PUSH() {
-        }
     }
 
     static class TOGGLE {
@@ -58,9 +46,6 @@ public class ButtonSizes {
         static final double HORIZONTAL_PADDING = 2.0;
         static final double VERTICAL_PADDING = 2.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
-
-        private TOGGLE() {
-        }
     }
 
     public static Point computeSize(DartButton widget, int wHint, int hHint, boolean changed) {

@@ -324,7 +324,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     String? text,
   ) {
     final isChecked = state.selection ?? false;
-    final isGrayed = state.grayed ?? false;
+    // As on every native platform, grayed only shows on a checked box; grayed but unchecked
+    // draws as an empty box.
+    final isGrayed = isChecked && (state.grayed ?? false);
     final checkboxBackgroundColor = getButtonBackgroundColor(
       state,
       widgetTheme,
@@ -354,16 +356,16 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final checkboxWidget = _HoverableCheckboxRadio(
       size: checkboxSize,
       enabled: enabled,
-      isSelected: isChecked || isGrayed,
+      isSelected: isChecked,
       isGrayed: isGrayed,
       baseColor: enabled
-          ? (isChecked || isGrayed
+          ? (isChecked
                 ? widgetTheme.checkboxSelectedColor
                 : checkboxBackgroundColor)
           : widgetTheme.disabledBackgroundColor,
       hoverColor: widgetTheme.checkboxHoverColor,
       borderColor: enabled
-          ? (isChecked || isGrayed
+          ? (isChecked
                 ? widgetTheme.checkboxSelectedColor
                 : widgetTheme.checkboxBorderColor)
           : widgetTheme.disabledForegroundColor,
