@@ -517,7 +517,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getVisible() && getEnabled()) {
+            if (getApi().getVisible() && getApi().getEnabled()) {
                 return new Widget[] { this.getApi() };
             }
         }
@@ -891,7 +891,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (move && !sameOrigin) {
             Control control = findBackgroundControl();
             if (control != null && control.getImpl()._backgroundImage() != null) {
-                if (isVisible())
+                if (getApi().isVisible())
                     redrawWidget(0, 0, 0, 0, true, true, true);
             }
             if (sendMove)
@@ -2320,7 +2320,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         Shell shell = getShell();
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
-        if (!isEnabled() || !isVisible())
+        if (!getApi().isEnabled() || !getApi().isVisible())
             return false;
         if (display.getActiveShell() != shell && !SwtDisplay.isActivateShellOnForceFocus())
             return false;
@@ -2785,7 +2785,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
 	*/
-        if (!isVisible())
+        if (!getApi().isVisible())
             return false;
         Control control = this.getApi();
         while (control != null) {
@@ -2842,7 +2842,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     boolean isFocusAncestor(Control control) {
@@ -2888,7 +2888,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible() && parent.isVisible();
+        return getApi().getVisible() && parent.isVisible();
     }
 
     public Decorations menuShell() {
@@ -4438,7 +4438,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean translateMnemonic(Event event, Control control) {
         if (control == this.getApi())
             return false;
-        if (!isVisible() || !isEnabled())
+        if (!getApi().isVisible() || !getApi().isEnabled())
             return false;
         event.doit = this.getApi() == ((SwtDisplay) display.getImpl()).mnemonicControl || mnemonicMatch(event.character);
         return traverse(event);

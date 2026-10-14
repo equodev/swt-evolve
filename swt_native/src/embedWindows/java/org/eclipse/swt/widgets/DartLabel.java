@@ -250,7 +250,7 @@ public class DartLabel extends DartControl implements ILabel {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        updateStyleBits(getEnabled());
+        updateStyleBits(getApi().getEnabled());
     }
 
     @Override
@@ -294,7 +294,7 @@ public class DartLabel extends DartControl implements ILabel {
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.image = image;
         isImageMode = (image != null);
-        updateStyleBits(getEnabled());
+        updateStyleBits(getApi().getEnabled());
     }
 
     /**
@@ -338,7 +338,7 @@ public class DartLabel extends DartControl implements ILabel {
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         isImageMode = false;
-        updateStyleBits(getEnabled());
+        updateStyleBits(getApi().getEnabled());
         /*
 	* Feature in Windows.  For some reason, SetWindowText() for
 	* static controls redraws the control, even when the text has
@@ -400,7 +400,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     public String _displayedText() {
-        return getText();
+        return text;
     }
 
     public Image _displayedImage() {

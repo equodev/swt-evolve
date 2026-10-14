@@ -447,7 +447,7 @@ public class DartLink extends DartControl implements ILink {
 
     @Override
     void setForeground(double[] color) {
-        if (!getEnabled())
+        if (!getApi().getEnabled())
             return;
     }
 
@@ -487,7 +487,7 @@ public class DartLink extends DartControl implements ILink {
         //if (equals(linkForeground, this.linkForeground))    return;
         ;
         this.linkForeground = linkForeground;
-        if (getEnabled()) {
+        if (getApi().getEnabled()) {
             setLinkColor(true);
         }
         this._linkForeground = newValue;

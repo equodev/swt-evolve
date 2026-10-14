@@ -384,7 +384,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     int keyChar(int key) {
