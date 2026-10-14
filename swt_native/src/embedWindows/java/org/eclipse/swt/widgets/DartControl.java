@@ -678,7 +678,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getVisible() && getEnabled()) {
+            if (getApi().getVisible() && getApi().getEnabled()) {
                 return new Widget[] { this.getApi() };
             }
         }
@@ -927,7 +927,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         Decorations shell = menuShell();
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
-        if (!isEnabled() || !isVisible() || !isActive())
+        if (!getApi().isEnabled() || !getApi().isVisible() || !isActive())
             return false;
         if (display.getActiveShell() != shell && !SwtDisplay.isActivateShellOnForceFocus())
             return false;
@@ -1691,7 +1691,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     /**
@@ -1742,7 +1742,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 	* This is not complete.  Need to check if the
 	* widget is obscured by a parent or sibling.
 	*/
-        if (!isVisible())
+        if (!getApi().isVisible())
             return false;
         Control control = this.getApi();
         while (control != null) {
@@ -1802,7 +1802,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible() && parent.isVisible();
+        return getApi().getVisible() && parent.isVisible();
     }
 
     /**
@@ -3666,7 +3666,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean translateMnemonic(Event event, Control control) {
         if (control == this.getApi())
             return false;
-        if (!isVisible() || !isEnabled())
+        if (!getApi().isVisible() || !getApi().isEnabled())
             return false;
         event.doit = mnemonicMatch(event.character);
         return traverse(event);

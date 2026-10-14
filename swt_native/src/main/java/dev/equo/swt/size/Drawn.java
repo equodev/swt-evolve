@@ -1,5 +1,8 @@
 package dev.equo.swt.size;
 
+import java.util.regex.Pattern;
+
+import dev.equo.swt.Java8;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
@@ -15,78 +18,82 @@ import org.eclipse.swt.widgets.DartTreeItem;
 import static dev.equo.swt.Styles.hasFlags;
 
 /**
- * The text and the image a widget draws, which is what its size is measured from. The generated
- * {@code *Sizes} classes all ask here, so what each widget draws is decided in one place.
+ * The text and the image a widget draws, which is what its size is measured from: the size tables
+ * {@code measure.dart} emits ask here.
  */
-public final class Drawn {
+final class Drawn {
+
+    private static final Pattern LINK_MARKUP = Pattern.compile("<[^>]+>");
 
     private Drawn() {
     }
 
     /** Without the mnemonic marker. */
-    public static String text(DartButton widget) {
+    static String text(DartButton widget) {
         return Mnemonics.display(widget.getText());
     }
 
     /** Without the mnemonic marker, and only while the label shows its text rather than its image. */
-    public static String text(DartLabel widget) {
+    static String text(DartLabel widget) {
         return Mnemonics.display(widget._displayedText());
     }
 
     /** Without the mnemonic marker; a CLabel never given a text draws none. */
-    public static String text(DartCLabel widget) {
+    static String text(DartCLabel widget) {
         String text = widget.getText();
         return text == null ? "" : Mnemonics.display(text);
     }
 
     /** Without its markup and without the mnemonic marker. */
-    public static String text(DartLink widget) {
+    static String text(DartLink widget) {
         String text = widget.getText();
-        return text == null ? null : Mnemonics.display(text.replaceAll("<[^>]+>", ""));
+        return text == null ? null : Mnemonics.display(LINK_MARKUP.matcher(text).replaceAll(""));
     }
 
-    /** As typed, or one '*' per character when it is a password. */
-    public static String text(DartText widget) {
+    /** As typed, or its echo character once per character when it hides what is typed. */
+    static String text(DartText widget) {
         String text = widget.getText();
-        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD))
-            return dev.equo.swt.Java8.repeat("*", text.length());
-        return text;
+        char echo = widget.getEchoChar();
+        // The embedded GTK and Win32 implementations report no echo character for a password.
+        if (echo == '\0' && hasFlags(widget.getStyle(), SWT.PASSWORD))
+            echo = '*';
+        return text == null || echo == '\0' ? text : Java8.repeat(String.valueOf(echo), text.length());
     }
 
-    public static String text(DartCombo widget) {
+    static String text(DartCombo widget) {
         return widget.getText();
     }
 
-    public static String text(DartCCombo widget) {
+    static String text(DartCCombo widget) {
         return widget.getText();
     }
 
-    public static String text(DartTableItem widget) {
+    static String text(DartTableItem widget) {
         return widget.getText();
     }
 
-    public static String text(DartTreeItem widget) {
+    static String text(DartTreeItem widget) {
         return widget.getText();
     }
 
-    public static Image image(DartButton widget) {
+    static Image image(DartButton widget) {
         return widget.getImage();
     }
 
     /** Only while the label shows its image rather than its text. */
-    public static Image image(DartLabel widget) {
+    static Image image(DartLabel widget) {
         return widget._displayedImage();
     }
 
-    public static Image image(DartCLabel widget) {
+    static Image image(DartCLabel widget) {
         return widget.getImage();
     }
 
-    public static Image image(DartTableItem widget) {
+    static Image image(DartTableItem widget) {
         return widget.getImage();
     }
 
-    public static Image image(DartTreeItem widget) {
+    static Image image(DartTreeItem widget) {
         return widget.getImage();
     }
 }
