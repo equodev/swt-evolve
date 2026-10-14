@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.DartLabel;
@@ -22,10 +23,15 @@ import org.junit.jupiter.api.Test;
 class ThemeTextZoomSizeTest {
 
     private int savedZoom;
+    private String savedMode;
 
+    // A native window: in a browser tab without swt.autoScale the UI zoom follows the client's, and
+    // there is no rounding to make up for.
     @BeforeEach
     void captureState() {
         savedZoom = DPIUtil.getDeviceZoom();
+        savedMode = ConfigFlags.mode();
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
         DPIUtil.setDeviceZoom(100);
         Config.setClientDeviceZoom(100);
     }
@@ -34,12 +40,17 @@ class ThemeTextZoomSizeTest {
     void restoreState() {
         Config.setClientDeviceZoom(100);
         DPIUtil.setDeviceZoom(savedZoom);
+        if (savedMode == null)
+            System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        else
+            ConfigFlags.setMode(savedMode);
     }
 
     @Test
     void label_text_grows_with_the_text_scaler_on_a_monitor_autoscale_rounds_down() {
         DartLabel label = label("Always run in background");
         PointD atMonitorZoom = LabelSizes.computeSizes(label, SWT.DEFAULT, SWT.DEFAULT, true).text;
+        assertThat(atMonitorZoom.x()).isPositive();
 
         // A 125% monitor under the default autoScale: SWT lays out at 100, so the tree is drawn at
         // 0.8 and the render side paints text 1.25 times larger in layout units.
@@ -55,6 +66,7 @@ class ThemeTextZoomSizeTest {
         DartLabel label = mock(DartLabel.class);
         when(label.getStyle()).thenReturn(SWT.HORIZONTAL);
         when(label.getText()).thenReturn(text);
+        when(label._displayedText()).thenReturn(text);
         return label;
     }
 }
