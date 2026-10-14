@@ -87,10 +87,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public DartSpinner(Composite parent, int style, Spinner api) {
         super(parent, checkStyle(style), api);
-        this.increment = 1;
-        getValue().markDirty(VSpinner.INCREMENT);
-        this.maximum = 100;
-        getValue().markDirty(VSpinner.MAXIMUM);
     }
 
     /**
@@ -769,9 +765,9 @@ public class DartSpinner extends DartComposite implements ISpinner {
         super.updateCursorRects(enabled);
     }
 
-    int increment;
+    int increment = 1;
 
-    int maximum;
+    int maximum = 100;
 
     int minimum;
 

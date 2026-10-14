@@ -76,8 +76,6 @@ public class DartScale extends DartControl implements IScale {
      */
     public DartScale(Composite parent, int style, Scale api) {
         super(parent, checkStyle(style), api);
-        this.maximum = 100;
-        getValue().markDirty(VScale.MAXIMUM);
     }
 
     /**
@@ -344,7 +342,7 @@ public class DartScale extends DartControl implements IScale {
 
     int increment;
 
-    int maximum;
+    int maximum = 100;
 
     int minimum;
 
