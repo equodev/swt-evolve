@@ -588,7 +588,7 @@ public class DartTable extends DartComposite implements ITable {
 	 * new column is queried, GTK returns an incorrect value. The fix is to
 	 * ensure that the columns are resized before any queries.
 	 */
-        if (!isVisible()) {
+        if (!getApi().isVisible()) {
             forceResize();
         }
     }

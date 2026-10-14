@@ -176,9 +176,12 @@ class TextImpl<T extends TextSwt, V extends VText>
               .setActive(this, hoverDepth, true),
           onExit: (_) => HoverExclusivityArbiter.instance
               .setActive(this, hoverDepth, false),
-          child: displayLevelKeyForwardingActive
-              ? fieldWrapper
-              : _forwardShortcutKeys(fieldWrapper),
+          child: Listener(
+            onPointerDown: _reportFocusOnPress,
+            child: displayLevelKeyForwardingActive
+                ? fieldWrapper
+                : _forwardShortcutKeys(fieldWrapper),
+          ),
         ),
       ),
     );
@@ -374,6 +377,13 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   void _handleSubmitted(String value) {
     widget.sendSelectionDefaultSelection(state, null);
+  }
+
+  /// A press focuses the field natively even when it already holds the client focus, which Java may
+  /// have moved elsewhere in between (a part activation focusing its own control); the focus node
+  /// only reports changes.
+  void _reportFocusOnPress(PointerDownEvent event) {
+    if (_focusNode.hasFocus) widget.sendFocusFocusIn(state, null);
   }
 
   void _handleFocusChange() {
