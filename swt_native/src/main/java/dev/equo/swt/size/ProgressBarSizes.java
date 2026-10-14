@@ -17,23 +17,14 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class ProgressBarSizes {
 
-    private ProgressBarSizes() {
-    }
-
     static class HORIZONTAL {
         static final double MIN_WIDTH = 200.0;
         static final double MIN_HEIGHT = 20.0;
-
-        private HORIZONTAL() {
-        }
     }
 
     static class VERTICAL {
         static final double MIN_WIDTH = 20.0;
         static final double MIN_HEIGHT = 200.0;
-
-        private VERTICAL() {
-        }
     }
 
     public static Point computeSize(DartProgressBar widget, int wHint, int hHint, boolean changed) {

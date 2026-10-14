@@ -443,7 +443,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     @Override
@@ -621,7 +621,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     void addShortcut(int accelerator) {
-        if (accelerator == 0 || !getEnabled())
+        if (accelerator == 0 || !getApi().getEnabled())
             return;
         if ((accelerator & SWT.COMMAND) != 0)
             return;
@@ -925,7 +925,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     void updateAccelerator(long accelGroup, boolean add) {
-        if (accelerator == 0 || !getEnabled())
+        if (accelerator == 0 || !getApi().getEnabled())
             return;
         if ((accelerator & SWT.COMMAND) != 0)
             return;
