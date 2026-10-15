@@ -18,22 +18,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Java-side half: a Selection event arriving from Flutter must move the sash.
+ * A Selection event arriving from Flutter moves the sash.
  *
- * {@code DartSash.checkStyle} forces {@code SWT.SMOOTH}, i.e. it claims the macOS smooth-sash
- * contract — and in native SWT that contract includes the sash applying its own move:
- * {@code SwtSash.mouseDragged}/{@code mouseUp} call {@code setBounds(event.x, event.y, ...)}
- * whenever the app's listeners leave {@code event.doit} true. Apps therefore do NOT have to
- * reposition a smooth sash themselves, and some apps' custom recorder/overlay views don't. {@code DartSash}'s
- * Selection hook only forwards the event to listeners and never applies the move, so the sash
- * (and everything laid out around it) stays put until a window resize forces a fresh layout —
- * exactly the reported symptom.
+ * {@code DartSash} is always {@code SWT.SMOOTH}, and a smooth sash applies its own move when the
+ * listeners leave {@code event.doit} true, as native SWT does in {@code mouseDragged} and
+ * {@code mouseUp}: an application does not have to reposition it.
  *
- * Uses a {@link RecordingBridge} whose {@code RecordingComm} captures the {@code comm().on(...)}
- * handler DartSash registers, so the Dart→Java Selection can be fired directly (same seam as
- * {@code DisplayWakeFlutterTest}). The mocked Display's {@code sendEvent} is stubbed to deliver
- * to the widget's EventTable and {@code asyncExec} to run inline, so the hook's dispatch hop
- * completes synchronously.
+ * A {@link RecordingBridge} captures the handler {@code DartSash} registers, so the Selection is
+ * fired directly. The mocked Display delivers {@code sendEvent} to the widget's EventTable and runs
+ * {@code asyncExec} inline, so the dispatch completes synchronously.
  */
 @ExtendWith(Mocks.class)
 class SashSelectionMovesSashTest {
