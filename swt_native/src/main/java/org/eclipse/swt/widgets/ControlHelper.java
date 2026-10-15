@@ -5,7 +5,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -272,12 +274,26 @@ public class ControlHelper {
         }
     }
 
-    private static Control walkToSwtAncestor(Control control, int[] offset) {
+    /** One parent-ward step of the walk: a point p of the child lands at (x, y) + p * scale. */
+    private static final class Step {
+        final double x, y, scaleX, scaleY;
+
+        Step(double x, double y, double scaleX, double scaleY) {
+            this.x = x;
+            this.y = y;
+            this.scaleX = scaleX;
+            this.scaleY = scaleY;
+        }
+    }
+
+    // CompositeThemeExtension.panelChildGap: the margin a main composite leaves around each panel.
+    private static final int PANEL_CHILD_GAP = 5;
+
+    private static Control walkToSwtAncestor(Control control, List<Step> steps) {
         Control current = control;
         while (current != null && (current.getImpl() instanceof DartControl)) {
             Rectangle bounds = current.getBounds();
-            offset[0] += bounds.x;
-            offset[1] += bounds.y;
+            double x = bounds.x, y = bounds.y, scaleX = 1, scaleY = 1;
             // Plain cast, not a pattern: this source set is also compiled at -source 8 and -source 11
             // for the older SWT versions, where a binding instanceof is a compile error.
             if (current instanceof Shell) {
@@ -293,13 +309,14 @@ public class ControlHelper {
                 boolean showsTitleBar = (st & SWT.NO_TRIM) == 0
                     && ((st & SWT.TITLE) != 0 || (st & SWT.CLOSE) != 0);
                 if (showsTitleBar && !main) {
-                    offset[1] += (st & SWT.TOOL) != 0 ? 22 : 30;
+                    y += (st & SWT.TOOL) != 0 ? 22 : 30;
                 }
                 if (bridge != null) {
                     Point origin = bridge.getWindowOrigin(impl);
-                    offset[0] += origin.x;
-                    offset[1] += origin.y;
+                    x += origin.x;
+                    y += origin.y;
                 }
+                steps.add(new Step(x, y, 1, 1));
                 return null;
             }
             Composite parent = current.getParent();
@@ -315,11 +332,42 @@ public class ControlHelper {
             // this there adds the strip a second time, once per folder in the chain, and everything
             // mapped through it lands that much too low.
             if (parent instanceof Group) {
-                offset[1] -= parent.computeTrim(0, 0, 0, 0).y;
+                y -= parent.computeTrim(0, 0, 0, 0).y;
             }
+            // A main composite paints each child as a panel: inset by the gap on every side, with the
+            // child's content scaled into what is left (NoLayout._wrapAsPanel). Its bounds alone put
+            // every point inside it up to a gap off from where it is painted.
+            if (parent != null && laysOutChildrenAsPanels(parent)) {
+                x += PANEL_CHILD_GAP;
+                y += PANEL_CHILD_GAP;
+                scaleX = panelScale(bounds.width);
+                scaleY = panelScale(bounds.height);
+            }
+            steps.add(new Step(x, y, scaleX, scaleY));
             current = parent;
         }
         return current;
+    }
+
+    private static double panelScale(int size) {
+        return size > 2 * PANEL_CHILD_GAP ? (size - 2.0 * PANEL_CHILD_GAP) / size : 1;
+    }
+
+    /** MainCompositeImpl.laysOutChildrenAsPanels: a main composite that is not inside a panel itself. */
+    private static boolean laysOutChildrenAsPanels(Composite composite) {
+        return "MainComposite".equals(FlutterBridge.widgetName(composite.getImpl()))
+            && !insidePanel(composite);
+    }
+
+    /** SashPanelMarker.of() as the client resolves it for this control's build. */
+    private static boolean insidePanel(Control control) {
+        Composite parent = control.getParent();
+        if (parent == null || !(parent.getImpl() instanceof DartControl)) return false;
+        String name = FlutterBridge.widgetName(parent.getImpl());
+        if ("MainComposite".equals(name)) return laysOutChildrenAsPanels(parent);
+        // A plain Composite hands its children a cleared marker.
+        if ("Composite".equals(name)) return false;
+        return insidePanel(parent);
     }
 
     private static boolean isMainShell(Shell shell) {
@@ -367,22 +415,32 @@ public class ControlHelper {
     }
 
     static Point toDisplay(DartControl dartControl, int x, int y) {
-        int[] offset = new int[2];
-        Control ancestor = walkToSwtAncestor(dartControl.getApi(), offset);
-        if (ancestor != null) {
-            return ancestor.toDisplay(x + offset[0], y + offset[1]);
+        List<Step> steps = new ArrayList<>();
+        Control ancestor = walkToSwtAncestor(dartControl.getApi(), steps);
+        double px = x, py = y;
+        for (Step step : steps) {
+            px = step.x + px * step.scaleX;
+            py = step.y + py * step.scaleY;
         }
-        return new Point(x + offset[0], y + offset[1]);
+        int rx = (int) Math.round(px), ry = (int) Math.round(py);
+        return ancestor != null ? ancestor.toDisplay(rx, ry) : new Point(rx, ry);
     }
 
     static Point toControl(DartControl dartControl, int x, int y) {
-        int[] offset = new int[2];
-        Control ancestor = walkToSwtAncestor(dartControl.getApi(), offset);
+        List<Step> steps = new ArrayList<>();
+        Control ancestor = walkToSwtAncestor(dartControl.getApi(), steps);
+        double px = x, py = y;
         if (ancestor != null) {
-            Point result = ancestor.toControl(x, y);
-            return new Point(result.x - offset[0], result.y - offset[1]);
+            Point inAncestor = ancestor.toControl(x, y);
+            px = inAncestor.x;
+            py = inAncestor.y;
         }
-        return dartControl.display.map(null, dartControl.getApi(), x, y);
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Step step = steps.get(i);
+            px = (px - step.x) / step.scaleX;
+            py = (py - step.y) / step.scaleY;
+        }
+        return new Point((int) Math.round(px), (int) Math.round(py));
     }
 
     // Its own latch, not drawCount: that is SWT's setRedraw counter, so a queued paint that moved it
@@ -390,11 +448,21 @@ public class ControlHelper {
     private static final Set<DartControl> paintQueued =
         Collections.newSetFromMap(new WeakHashMap<>());
 
+    // Controls whose client still shows a frame a Paint listener drew. Native SWT repaints a control
+    // on redraw() whether anyone listens or not, which is what erases an overlay whose listener was
+    // removed; here only a Paint cycle replaces that frame.
+    private static final Set<DartControl> showsPaintedFrame =
+        Collections.newSetFromMap(new WeakHashMap<>());
+
+    private static boolean paints(DartControl c) {
+        return c.hooks(SWT.Paint) || showsPaintedFrame.contains(c);
+    }
+
     static void paint(DartControl c, Event e) {
         // The client asks for this paint from every Control it mounts, having no way to know which
         // ones paint themselves. Answering one that listens for nothing still builds a GC and
         // disposes it -- a whole VGC push per control, for no drawing.
-        if (!c.hooks(SWT.Paint)) return;
+        if (!paints(c)) return;
         // The client only asks when its view is stale, so the bridge's record of it is out of date.
         dev.equo.swt.FlutterBridge.forgetWhatIsShown(c.getApi());
         if (c.drawCount > 0 || paintQueued.contains(c)) return;
@@ -407,7 +475,7 @@ public class ControlHelper {
      * package, unlike Widget.hooks(int).
      */
     public static void markDamaged(DartControl c) {
-        if (c.hooks(SWT.Paint)) {
+        if (paints(c)) {
             paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
@@ -417,6 +485,9 @@ public class ControlHelper {
     public static void markDamaged(DartControl c, int x, int y, int width, int height) {
         if (c.hooks(SWT.Paint)) {
             paint(c, x, y, width, height);
+        } else if (showsPaintedFrame.contains(c)) {
+            // Only a full-area cycle drops every layer the listener left.
+            paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
     }
@@ -588,6 +659,11 @@ public class ControlHelper {
             if (scoped) event.gc.setClipping(damage);
             c.sendEvent(SWT.Paint, event);
             event.gc.dispose();
+            if (c.hooks(SWT.Paint)) {
+                showsPaintedFrame.add(c);
+            } else if (!scoped) {
+                showsPaintedFrame.remove(c);
+            }
         } finally {
             paintDamage = outer;
         }
