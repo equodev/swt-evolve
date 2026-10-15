@@ -823,6 +823,8 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
+        if (item != null && ((DartMenuItem) item.getImpl()).parent != this.getApi())
+            return;
         defaultItem = item;
     }
 
@@ -948,6 +950,13 @@ public class DartMenu extends DartWidget implements IMenu {
         }
         this.orientation = newValue;
         checkWidget();
+        if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) == 0) {
+            int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
+            if ((orientation & flags) != 0 && (orientation & flags) != flags) {
+                getApi().style &= ~flags;
+                getApi().style |= orientation & flags;
+            }
+        }
     }
 
     /**
