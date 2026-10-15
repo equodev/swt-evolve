@@ -26,7 +26,31 @@ void setCurrentColorSchemeExtension(ColorSchemeExtension? extension) {
 }
 
 ConfigFlags configFlags = ConfigFlags();
+
+/// The factor the app is drawn at: how many of the view's logical pixels one SWT unit takes. The
+/// one scale every conversion between Flutter and SWT space reads -- see `swt_zoom_scale.dart`.
+/// Set through [refreshAppScale] and [setAppScaleOverride], which keep it in step with its inputs.
 final ValueNotifier<double> appScaleNotifier = ValueNotifier<double>(1.0);
+
+/// The factor the scale control pinned, or null while the app follows SWT's zoom.
+double? _appScaleOverride;
+
+/// Pins the app's scale to [scale], or with null goes back to following SWT's zoom.
+void setAppScaleOverride(double? scale) {
+  _appScaleOverride = scale;
+  refreshAppScale();
+}
+
+/// Brings [appScaleNotifier] in step with its inputs: the scale control's override, else the UI
+/// zoom Java sent over the monitor zoom the view reports now. Called on every change of either --
+/// the UI zoom stays put when the window moves to a monitor at another zoom, so Java sends nothing
+/// then and only the view's own metrics tell. Answers whether the scale moved.
+bool refreshAppScale() {
+  final scale = _appScaleOverride ?? swtUiScale();
+  if (scale == appScaleNotifier.value) return false;
+  appScaleNotifier.value = scale;
+  return true;
+}
 
 /// Bumped when the flags change; the root [MaterialApp] listens to it and rebuilds with the new theme.
 final ValueNotifier<int> configFlagsVersion = ValueNotifier<int>(0);
@@ -42,7 +66,7 @@ void applyConfigFlags(ConfigFlags? flags) {
   if (mapEquals(json, _lastAppliedConfig)) return;
   _lastAppliedConfig = json;
   setConfigFlags(flags);
-  appScaleNotifier.value = swtUiScale();
+  refreshAppScale();
   configFlagsVersion.value++;
 }
 
@@ -98,6 +122,8 @@ void resetConfigFlags() {
   configFlags = ConfigFlags();
   _lastAppliedConfig = null;
   configFlagsVersion.value = 0;
+  _appScaleOverride = null;
+  appScaleNotifier.value = 1.0;
 }
 
 bool getCurrentTheme() {

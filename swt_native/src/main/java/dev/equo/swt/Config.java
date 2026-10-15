@@ -1008,6 +1008,21 @@ public class Config {
     }
 
     /**
+     * An SWT coordinate in the render side's logical pixels, the units a native window is placed and
+     * sized in. Every coordinate crossing between the two spaces goes through this pair, so the
+     * scale is read in one place rather than at each site, where a missed one goes unnoticed until
+     * the monitor is above 100 %.
+     */
+    public static int swtToLogical(int swt) {
+        return (int) Math.round(swt * uiScale());
+    }
+
+    /** A coordinate in the render side's logical pixels, in SWT units: the inverse of {@link #swtToLogical}. */
+    public static int logicalToSwt(int logical) {
+        return (int) Math.round(logical / uiScale());
+    }
+
+    /**
      * Device pixels per SWT coordinate — how many pixels an off-screen buffer needs per unit the
      * application draws in.
      *

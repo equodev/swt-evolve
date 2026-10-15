@@ -257,6 +257,8 @@ class _WindowMetricsReporter {
     // Config flags land after the first frame, so the first report is made before
     // csd_placement is known. Re-report when they arrive, or the inset above is missed.
     configFlagsVersion.addListener(_sendCurrentSize);
+    // The area SWT lays out in is the view over the scale, so a new scale is a new area.
+    appScaleNotifier.addListener(_sendCurrentSize);
   }
 
   final String widgetName;
@@ -287,7 +289,10 @@ class _WindowMetricsReporter {
   }
 
   void _sendCurrentSize() {
-    final rounded = _currentLogicalViewSize();
+    // A metrics change can be a move to a monitor at another zoom. When the scale moves, its
+    // listener above has already reported the area it leaves.
+    if (refreshAppScale()) return;
+    final rounded = currentSwtViewSize();
     if (rounded == null) return;
     _sendWindowSizedClientReady(widgetName, widgetId, sizeOverride: rounded);
   }
@@ -310,15 +315,15 @@ Size _withoutCsdChrome(double width, double height) {
   return Size(width.roundToDouble(), (h > 0 ? h : height).roundToDouble());
 }
 
-/// The area the app lays out in, which is what SWT is told. [swtUiScale] is applied first, so the
-/// result is in the units the app draws in rather than the view's own: SWT measures at the zoom
-/// `swt.autoScale` picked, and the whole tree is scaled by that over the monitor's zoom.
-Size? _currentLogicalViewSize() {
-  final scale = swtUiScale();
+/// The area the app lays out in, which is what SWT is told. In SWT units rather than the view's
+/// own: the whole tree is drawn at [appScaleNotifier]'s factor, so it lays out in the view over it.
+@visibleForTesting
+Size? currentSwtViewSize() {
   final viewportSize = getViewportSize();
   if (viewportSize != null &&
       _isFinitePositiveSize(viewportSize.width, viewportSize.height)) {
-    return _withoutCsdChrome(viewportSize.width / scale, viewportSize.height / scale);
+    final size = logicalToSwtSize(viewportSize);
+    return _withoutCsdChrome(size.width, size.height);
   }
   final dispatcher = WidgetsBinding.instance.platformDispatcher;
   if (dispatcher.views.isEmpty) {
@@ -328,7 +333,7 @@ Size? _currentLogicalViewSize() {
   if (view.devicePixelRatio <= 0) {
     return null;
   }
-  final size = view.physicalSize / view.devicePixelRatio / scale;
+  final size = logicalToSwtSize(view.physicalSize / view.devicePixelRatio);
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
@@ -350,7 +355,7 @@ Size? _currentLogicalMonitorSize() {
   if (display.devicePixelRatio <= 0) {
     return null;
   }
-  final size = display.size / display.devicePixelRatio / swtUiScale();
+  final size = logicalToSwtSize(display.size / display.devicePixelRatio);
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
@@ -360,7 +365,7 @@ Size? _currentLogicalMonitorSize() {
 bool _displayClientReadySent = false;
 
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
-  final size = sizeOverride ?? _currentLogicalViewSize();
+  final size = sizeOverride ?? currentSwtViewSize();
   final bool isFirst = !_displayClientReadySent;
   _displayClientReadySent = true;
   final int w = size?.width.toInt() ?? 1280;
