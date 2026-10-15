@@ -65,6 +65,8 @@ public class VFont extends VResource {
         public static void write(JsonWriter writer, Font api) {
             if (api == null)
                 writer.writeNull();
+            else if (api.getImpl() instanceof SwtFont)
+                writer.serializeObject(org.eclipse.swt.graphics.GraphicsUtils.copyFont(api).getImpl());
             else
                 writer.serializeObject(api.getImpl());
         }

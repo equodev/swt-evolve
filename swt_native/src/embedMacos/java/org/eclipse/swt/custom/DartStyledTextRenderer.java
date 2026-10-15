@@ -2425,6 +2425,16 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return StyledTextHelper.wireLines(this);
     }
 
+    public void _growLineSizes(int count) {
+        if (lineSizes == null || lineSizes.length < count) {
+            LineSizeInfo[] newLineSizes = new LineSizeInfo[count];
+            if (lineSizes != null) {
+                System.arraycopy(lineSizes, 0, newLineSizes, 0, lineCount);
+            }
+            lineSizes = newLineSizes;
+        }
+    }
+
     public StyledTextRenderer getApi() {
         if (api == null)
             api = StyledTextRenderer.createApi(this);

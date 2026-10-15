@@ -7,7 +7,6 @@ import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 
 import java.util.concurrent.Executors;
@@ -542,41 +541,11 @@ public class WebDisplayBridge extends DisplayBridge {
      * A refreshed browser client has reconnected and re-sent ClientReady within the grace window: it was
      * a refresh, not a close, so cancel the deferred tab-close armed by {@link #scheduleDeferredClose}.
      */
+    // A refreshed client paints nothing it is not asked for: each control's GC overlay asks for its
+    // first paint once it is listening, so a paint fired here, before that, would only be repeated.
     @Override
     protected void onDisplayClientReady(boolean first) {
         cancelDeferredClose();
-        // On refresh, a fresh client reconnects with the widget-tree state but not the one-shot GC
-        // paints Java already fired — re-fire them so custom-drawn content isn't blank.
-        if (!first) {
-            refirePaintsForFreshClient();
-        }
-    }
-
-    /** Re-fire SWT.Paint for every custom-painted control in the tree, on the Display thread. */
-    private void refirePaintsForFreshClient() {
-        DartDisplay display = forDisplay;
-        if (display == null) return;
-        Display api = display.getApi();
-        if (api == null || api.isDisposed()) return;
-        api.asyncExec(() -> {
-            if (api.isDisposed()) return;
-            for (Shell shell : api.getShells()) {
-                refirePaints(shell);
-            }
-        });
-    }
-
-    private void refirePaints(Control c) {
-        if (c == null || c.isDisposed()) return;
-        // Only paint-listening controls emit GC ops; skip the rest to avoid needless GC churn.
-        if (c.isListening(SWT.Paint) && c.getImpl() instanceof DartControl) {
-            ControlHelper.paint((DartControl) c.getImpl());
-        }
-        if (c instanceof Composite) {
-            for (Control child : ((Composite) c).getChildren()) {
-                refirePaints(child);
-            }
-        }
     }
 
     private void onClientWindowClosed() {

@@ -13,6 +13,7 @@ import org.eclipse.swt.widgets.DartLabel;
 import org.eclipse.swt.widgets.DartLink;
 import org.eclipse.swt.widgets.DartTableItem;
 import org.eclipse.swt.widgets.DartText;
+import org.eclipse.swt.widgets.DartToolItem;
 import org.eclipse.swt.widgets.DartTreeItem;
 
 import static dev.equo.swt.Styles.hasFlags;
@@ -72,6 +73,10 @@ final class Drawn {
         return widget.getText();
     }
 
+    static String text(DartToolItem widget) {
+        return widget.getText();
+    }
+
     static String text(DartTreeItem widget) {
         return widget.getText();
     }
@@ -90,6 +95,10 @@ final class Drawn {
     }
 
     static Image image(DartTableItem widget) {
+        return widget.getImage();
+    }
+
+    static Image image(DartToolItem widget) {
         return widget.getImage();
     }
 

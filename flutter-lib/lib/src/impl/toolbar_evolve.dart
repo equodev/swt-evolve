@@ -476,6 +476,16 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
       );
     }
 
+    // Shrunk into its own measured width: the bar's FittedBox factor is shared with hosted controls,
+    // which already paint at their Java size, so alone it draws icons larger in a bar hosting one.
+    final measuredWidth = toolItem.width;
+    if (measuredWidth != null && measuredWidth > 0) {
+      result = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: measuredWidth.toDouble()),
+        child: FittedBox(fit: BoxFit.scaleDown, child: result),
+      );
+    }
+
     return result;
   }
 }

@@ -4,6 +4,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.DartImage;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 
 import dev.equo.swt.FlutterBridge;
@@ -798,7 +799,7 @@ public class TreeHelper {
                     if (drawn != null)
                         text.append(drawn);
                 };
-                dartGc.imageCapture = drawn -> image[0] = drawn;
+                dartGc.imageCapture = drawn -> image[0] = GraphicsUtils.copyImage(item.getDisplay(), drawn);
                 Event event = new Event();
                 event.item = item.getApi();
                 event.index = i;
