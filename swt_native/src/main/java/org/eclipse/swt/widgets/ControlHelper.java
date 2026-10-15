@@ -448,11 +448,21 @@ public class ControlHelper {
     private static final Set<DartControl> paintQueued =
         Collections.newSetFromMap(new WeakHashMap<>());
 
+    // Controls whose client still shows a frame a Paint listener drew. Native SWT repaints a control
+    // on redraw() whether anyone listens or not, which is what erases an overlay whose listener was
+    // removed; here only a Paint cycle replaces that frame.
+    private static final Set<DartControl> showsPaintedFrame =
+        Collections.newSetFromMap(new WeakHashMap<>());
+
+    private static boolean paints(DartControl c) {
+        return c.hooks(SWT.Paint) || showsPaintedFrame.contains(c);
+    }
+
     static void paint(DartControl c, Event e) {
         // The client asks for this paint from every Control it mounts, having no way to know which
         // ones paint themselves. Answering one that listens for nothing still builds a GC and
         // disposes it -- a whole VGC push per control, for no drawing.
-        if (!c.hooks(SWT.Paint)) return;
+        if (!paints(c)) return;
         // The client only asks when its view is stale, so the bridge's record of it is out of date.
         dev.equo.swt.FlutterBridge.forgetWhatIsShown(c.getApi());
         if (c.drawCount > 0 || paintQueued.contains(c)) return;
@@ -465,7 +475,7 @@ public class ControlHelper {
      * package, unlike Widget.hooks(int).
      */
     public static void markDamaged(DartControl c) {
-        if (c.hooks(SWT.Paint)) {
+        if (paints(c)) {
             paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
@@ -475,6 +485,9 @@ public class ControlHelper {
     public static void markDamaged(DartControl c, int x, int y, int width, int height) {
         if (c.hooks(SWT.Paint)) {
             paint(c, x, y, width, height);
+        } else if (showsPaintedFrame.contains(c)) {
+            // Only a full-area cycle drops every layer the listener left.
+            paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
     }
@@ -646,6 +659,11 @@ public class ControlHelper {
             if (scoped) event.gc.setClipping(damage);
             c.sendEvent(SWT.Paint, event);
             event.gc.dispose();
+            if (c.hooks(SWT.Paint)) {
+                showsPaintedFrame.add(c);
+            } else if (!scoped) {
+                showsPaintedFrame.remove(c);
+            }
         } finally {
             paintDamage = outer;
         }
