@@ -63,11 +63,7 @@ public class CLabelSizes {
     }
 
     private static PointD computeImage(DartCLabel widget) {
-        Image image = Drawn.image(widget);
-        if (image != null) {
-            return ImageMetricUtil.getImageSize(image.getImageData());
-        }
-        return PointD.zero;
+        return ImageMetricUtil.getImageSize(Drawn.image(widget));
     }
 
     private static PointD computeText(DartCLabel widget, Measure m, boolean emptyTextAffectsSizing) {

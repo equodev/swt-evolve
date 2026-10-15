@@ -425,7 +425,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
       focusNode: focusNode,
       controller: controller,
       menuController: menuController,
-      width: width,
+      expandedInsets: EdgeInsets.zero,
       initialSelection: state.text,
       requestFocusOnTap: !isReadOnly,
       enableSearch: !isReadOnly,
@@ -488,7 +488,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     final arrowAreaWidth = widgetTheme.iconSize + 24.0;
     return Stack(
       children: [
-        dropdown,
+        SizedBox(width: width, child: dropdown),
         Positioned.fill(
           child: Row(
             children: [
