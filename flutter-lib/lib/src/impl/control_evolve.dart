@@ -562,6 +562,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   Widget wrapDnd(Widget content) {
     if (state.dragSource != true && state.dropTargetId == null) return content;
+    // A DragSource drags from anywhere inside the control. What a self-drawn control renders under
+    // the Draggable (a Canvas's empty box; its GC paint sits outside) does not hit-test, so without
+    // this the press never reaches the Draggable.
+    if (state.dragSource == true) {
+      content = MetaData(behavior: HitTestBehavior.opaque, child: content);
+    }
     content = wrapDropTarget<DndDragPayload>(
       child: content,
       state: state,
@@ -578,6 +584,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       data: DndDragPayload(sourceControlId: state.id),
       widget: widget,
       state: state,
+      // Native SWT gives a plain control's drag no image, only the cursor.
+      feedbackBuilder: (_) => const SizedBox.shrink(),
       dragDetectEvent: dragDetectPayload,
       dragDetectGate: _dragDetectGate,
     );
