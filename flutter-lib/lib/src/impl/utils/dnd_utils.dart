@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import '../../gen/control.dart';
 import '../../gen/droptarget.dart';
@@ -37,6 +38,173 @@ class Dnd {
   static const feedbackInsertAfter = 4;
   static const feedbackScroll = 8;
   static const feedbackExpand = 16;
+}
+
+/// The operation the drop target under an SWT drag last answered, which is what the drag cursor
+/// shows: native SWT draws copy/move/link from the target's `event.detail`, and "not allowed"
+/// over a target that answered DROP_NONE or over anything that is not a drop target.
+class DndDropAnswer {
+  DndDropAnswer._();
+
+  static final ValueNotifier<int> operation = ValueNotifier<int>(Dnd.dropNone);
+  static Object? _owner;
+
+  /// Flutter enters every DragTarget on the hit path, innermost first; the innermost one keeps
+  /// the answer, as only the deepest drop target receives the drag natively.
+  static void enter(Object target, int op) {
+    if (_owner != null) return;
+    _owner = target;
+    operation.value = op;
+  }
+
+  static void update(Object target, int op) {
+    if (identical(_owner, target)) operation.value = op;
+  }
+
+  static void leave(Object target) {
+    if (!identical(_owner, target)) return;
+    _owner = null;
+    operation.value = Dnd.dropNone;
+  }
+
+  @visibleForTesting
+  static void reset() {
+    _owner = null;
+    operation.value = Dnd.dropNone;
+  }
+
+  /// The Windows embedder only maps the standard IDC_* cursors, so copy and link would show as the
+  /// plain arrow and move as the window-move cross. There the cursor stays the arrow and a badge
+  /// next to it shows the operation, as the OLE drag cursor does.
+  static bool get drawsOperationBadge => !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+
+  static bool _isDrop(int op) => op & (Dnd.dropCopy | Dnd.dropMove | Dnd.dropLink | Dnd.dropDefault) != 0;
+
+  static MouseCursor cursorFor(int op) {
+    if (drawsOperationBadge) return _isDrop(op) ? SystemMouseCursors.basic : SystemMouseCursors.noDrop;
+    if (op & Dnd.dropCopy != 0) return SystemMouseCursors.copy;
+    if (op & Dnd.dropLink != 0) return SystemMouseCursors.alias;
+    if (op & (Dnd.dropMove | Dnd.dropDefault) != 0) return SystemMouseCursors.move;
+    return SystemMouseCursors.noDrop;
+  }
+}
+
+/// The DND.FEEDBACK_* a drop target draws over one of its items.
+class DropFeedbackBox extends StatelessWidget {
+  const DropFeedbackBox({super.key, required this.decoration, required this.child});
+
+  final BoxDecoration decoration;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: decoration,
+        child: child,
+      );
+}
+
+/// Draws the feedback a drop target's listener asked for over one of its items, as SWT's
+/// Tree/TableDropTargetEffect does: an insertion line before or after it, or it highlighted.
+Widget decorateDropFeedback({
+  required int feedback,
+  required Color color,
+  required double lineWidth,
+  required int highlightAlpha,
+  required Widget child,
+}) {
+  final BoxDecoration decoration;
+  if (feedback & Dnd.feedbackInsertBefore != 0) {
+    decoration = BoxDecoration(border: Border(top: BorderSide(color: color, width: lineWidth)));
+  } else if (feedback & Dnd.feedbackInsertAfter != 0) {
+    decoration = BoxDecoration(border: Border(bottom: BorderSide(color: color, width: lineWidth)));
+  } else if (feedback & Dnd.feedbackSelect != 0) {
+    decoration = BoxDecoration(color: color.withAlpha(highlightAlpha), border: Border.all(color: color));
+  } else {
+    return child;
+  }
+  return DropFeedbackBox(decoration: decoration, child: child);
+}
+
+/// The operation glyph drawn next to the arrow while dragging on Windows: a plus for copy, an
+/// arrow for link, an empty box for move.
+class DropOperationBadge extends StatelessWidget {
+  const DropOperationBadge({super.key, required this.operation});
+
+  static const double size = 12.0;
+
+  final int operation;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final IconData? glyph = operation & Dnd.dropCopy != 0
+        ? Icons.add
+        : operation & Dnd.dropLink != 0
+            ? Icons.north_east
+            : null;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.onSurface),
+      ),
+      child: glyph == null ? null : Icon(glyph, size: size - 2, color: colors.onSurface),
+    );
+  }
+}
+
+/// Where the pointer sits inside the drag feedback: the cursor region is centred on it, and the
+/// dragged image keeps its top-left corner at the pointer.
+const double _cursorSlop = 8.0;
+
+Offset _feedbackAnchor(Draggable<Object> draggable, BuildContext context, Offset position) =>
+    const Offset(_cursorSlop, _cursorSlop);
+
+/// The drag image with a region on top that carries the drag cursor. The region lets hit testing
+/// through, so the drop targets underneath are still found.
+Widget _withDropCursor(Widget visual) {
+  return ConstrainedBox(
+    constraints: const BoxConstraints(minWidth: 2 * _cursorSlop, minHeight: 2 * _cursorSlop),
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: _cursorSlop, top: _cursorSlop),
+          child: IgnorePointer(child: visual),
+        ),
+        Positioned(
+          left: 0,
+          top: 0,
+          width: 2 * _cursorSlop,
+          height: 2 * _cursorSlop,
+          child: ValueListenableBuilder<int>(
+            valueListenable: DndDropAnswer.operation,
+            builder: (_, op, __) => MouseRegion(
+              opaque: false,
+              cursor: DndDropAnswer.cursorFor(op),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+        if (DndDropAnswer.drawsOperationBadge)
+          // Below and right of the arrow's tip, clear of the arrow itself.
+          Positioned(
+            left: _cursorSlop + 10,
+            top: _cursorSlop + 16,
+            child: IgnorePointer(
+              child: ValueListenableBuilder<int>(
+                valueListenable: DndDropAnswer.operation,
+                builder: (_, op, __) => DndDropAnswer._isDrop(op)
+                    ? DropOperationBadge(operation: op)
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 class DragDetectGate {
@@ -103,12 +271,16 @@ Widget wrapDraggable<T extends Object>({
     onDragStarted?.call();
   }
 
-  final feedback = feedbackBuilder != null
+  final visual = feedbackBuilder != null
       ? feedbackBuilder(child)
       : Opacity(
           opacity: 0.85,
           child: Material(type: MaterialType.transparency, child: child),
         );
+  // A drag with no SWT DragSource behind it (a CTabFolder reordering its own tabs, a workbench
+  // moving a view) is not an SWT DnD operation and has no drop answer to show.
+  final feedback = hasDragSource ? _withDropCursor(visual) : visual;
+  final anchor = hasDragSource ? _feedbackAnchor : pointerDragAnchorStrategy;
   final childWhenDragging = childWhenDraggingBuilder != null
       ? childWhenDraggingBuilder(child)
       : Opacity(opacity: 0.3, child: child);
@@ -116,7 +288,8 @@ Widget wrapDraggable<T extends Object>({
   return useLongPress
       ? LongPressDraggable<T>(
           data: data,
-          dragAnchorStrategy: pointerDragAnchorStrategy,
+          dragAnchorStrategy: anchor,
+          ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
           onDragStarted: fireDragDetect,
@@ -125,7 +298,8 @@ Widget wrapDraggable<T extends Object>({
         )
       : Draggable<T>(
           data: data,
-          dragAnchorStrategy: pointerDragAnchorStrategy,
+          dragAnchorStrategy: anchor,
+          ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
           onDragStarted: fireDragDetect,
@@ -231,7 +405,14 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
   }
 
   void _onNegotiationUpdate(DndNegotiationState state) {
+    DndDropAnswer.update(this, state.detail);
     if (mounted) setState(() {});
+  }
+
+  @override
+  void deactivate() {
+    DndDropAnswer.leave(this);
+    super.deactivate();
   }
 
   Offset _resolvePosition(DragTargetDetails<T> details) =>
@@ -264,16 +445,26 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
   Widget build(BuildContext context) {
     return DragTarget<T>(
       onWillAcceptWithDetails: (details) {
-        if (widget.dropTargetId == null) return widget.alwaysAccepts;
+        final id = widget.dropTargetId;
+        if (id == null) {
+          // Accepted for the widget's own use, but not an SWT drop target: "not allowed".
+          if (widget.alwaysAccepts) DndDropAnswer.enter(this, Dnd.dropNone);
+          return widget.alwaysAccepts;
+        }
+        // A previous drag's answer would otherwise show until Java answers this one.
+        DndSession.clear(id);
+        DndDropAnswer.enter(this, Dnd.dropDefault);
         _sendNegotiation("dragEnter", details);
         return true;
       },
       onMove: (details) => _sendNegotiation("dragOver", details),
       onLeave: (_) {
+        DndDropAnswer.leave(this);
         if (widget.dropTargetId == null) return;
         _sendNegotiation("dragLeave", null);
       },
       onAcceptWithDetails: (details) {
+        DndDropAnswer.leave(this);
         if (widget.dropTargetId == null && !widget.alwaysAccepts) return;
         if (DragStartVeto.isVetoed) return;
         final index = widget.resolveIndex != null ? widget.resolveIndex!(details) : null;

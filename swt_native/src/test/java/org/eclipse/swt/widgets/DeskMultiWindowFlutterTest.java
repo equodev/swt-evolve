@@ -126,6 +126,9 @@ class DeskMultiWindowFlutterTest {
 
     private static final long MAIN_WINDOW_VIEW = 0x4708B6L;
 
+    /** The Display's own window is never opened here, so its context stays 0. */
+    private static final long MAIN_WINDOW_CONTEXT = 0L;
+
     @Test
     @DisplayName("the main shell is drawn into the Display's window")
     void mainShellIsInTheDisplayWindow() {
@@ -400,7 +403,153 @@ class DeskMultiWindowFlutterTest {
                 .contains(firstHandle, secondHandle);
     }
 
+    // ---- hiding the shell that holds the Display's window ---------------------------------------------
+
+    /** The flags an application runs with when every shell but its modals gets a window. */
+    private void everyShellButModalsInItsOwnWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+    }
+
+    @Test
+    @DisplayName("hiding the main shell hands the Display's window to the visible top-level")
+    void hidingTheMainShellHandsItsWindowOver() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        long workbenchWindow = handleOf(desk, workbench);
+
+        welcome.setVisible(false);
+
+        assertThat(desk.hostsAsMainShell(workbench))
+                .as("a hidden shell must not keep the window: it would stay on screen with nothing "
+                        + "of its own in it, and everything drawn inline would land there")
+                .isTrue();
+        assertThat(desk.disposed)
+                .as("the shell is now drawn in the Display's window, so the one it had goes")
+                .contains(workbenchWindow);
+        assertThat(desk.nativeWindowHandle(workbench)).isEqualTo(MAIN_WINDOW_VIEW);
+        assertThat(desk.titles.get(MAIN_WINDOW_CONTEXT))
+                .as("the window now shows Workbench, so it carries Workbench's title")
+                .isEqualTo("Workbench");
+        assertThat(desk.mainWindowBounds).last().isEqualTo(workbench.getBounds());
+        assertThat(desk.mainWindowVisibility())
+                .as("the window still has a shell to show")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("hiding the only shell in the Display's window hides the window, and showing it back shows it")
+    void hidingTheMainShellHidesItsWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell child = new Shell(welcome, SWT.SHELL_TRIM);
+        child.setVisible(true);
+        assertThat(desk.windowedShells()).contains(child);
+
+        welcome.setVisible(false);
+        assertThat(desk.mainWindowVisibility())
+                .as("nothing is drawn in it any more; left up, it shows a stale frame")
+                .containsExactly(false);
+
+        welcome.setVisible(true);
+        assertThat(desk.mainWindowVisibility()).containsExactly(false, true);
+    }
+
+    @Test
+    @DisplayName("a main shell that has not been shown yet does not hide the Display's window")
+    void startupDoesNotHideTheWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell splash = new Shell(display, SWT.NO_TRIM);
+        splash.setVisible(true);
+        Shell workbench = new Shell(display, SWT.SHELL_TRIM);
+        splash.dispose();
+        workbench.setVisible(true);
+
+        assertThat(desk.mainWindowVisibility())
+                .as("a splash disposed before the real shell opens is no reason to flash the window")
+                .isEmpty();
+        assertThat(desk.hostsAsMainShell(workbench)).isTrue();
+    }
+
+    @Test
+    @DisplayName("taking the window over keeps the shell's size, growing the window by its chrome")
+    void takeoverKeepsTheShellSize() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        workbench.setBounds(120, 120, 900, 568);
+        welcome.setVisible(false);
+        desk.mainWindowBounds.clear();
+
+        // The window was given the shell's own size, so the client reports that less the strip it
+        // draws above the shell.
+        DartDisplay dd = (DartDisplay) display.getImpl();
+        desk.applyClientViewport(dd, new Rectangle(0, 0, 900, 536), null, false);
+
+        assertThat(desk.mainWindowBounds)
+                .as("the window grows by the chrome instead of the shell shrinking by it")
+                .containsExactly(new Rectangle(120, 120, 900, 600));
+        assertThat(workbench.getSize().y).isEqualTo(568);
+    }
+
+    @Test
+    @DisplayName("an inline modal is drawn in the window of the shell it belongs to")
+    void inlineModalFollowsItsParentsWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        welcome.setVisible(false);
+
+        Shell modal = new Shell(workbench, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        modal.setSize(400, 200);
+        modal.setVisible(true);
+
+        assertThat(desk.windowedShells())
+                .as("a modal is drawn inline under these flags")
+                .doesNotContain(modal);
+        assertThat(windowedShellIdsSent(desk))
+                .as("the client draws the modal itself, so it must not be told the modal is windowed")
+                .doesNotContain(String.valueOf(modal.hashCode()));
+        assertThat(desk.nativeWindowHandle(workbench))
+                .as("the Display's client draws the inline modal, so its parent has to be the shell "
+                        + "that client fills its window with")
+                .isEqualTo(MAIN_WINDOW_VIEW);
+    }
+
+    @Test
+    @DisplayName("a top-level opened after the main shell was hidden gets a window of its own")
+    void laterTopLevelGetsItsOwnWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        openShell("Workbench");
+        welcome.setVisible(false);
+
+        Shell late = openShell("Late top-level");
+
+        assertThat(desk.hostsAsMainShell(late)).isFalse();
+        assertThat(desk.windowedShells()).contains(late);
+    }
+
     // ---- harness ---------------------------------------------------------------------------------------
+
+    /** The windowed shell ids the last Display frame told the client, as sent. */
+    private String windowedShellIdsSent(TestDeskBridge desk) {
+        String channel = "Display/" + display.hashCode();
+        List<RecordingComm.Frame> frames =
+                desk.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
+        assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
+        java.util.regex.Matcher ids = java.util.regex.Pattern
+                .compile("\"windowedShellIds\":\\[([^\\]]*)\\]")
+                .matcher(frames.get(frames.size() - 1).json);
+        return ids.find() ? ids.group(1) : "";
+    }
 
     private long handleOf(TestDeskBridge desk, Shell shell) {
         return desk.opened.stream()
@@ -486,6 +635,7 @@ class DeskMultiWindowFlutterTest {
         final Map<Shell, Long> boundViews = new LinkedHashMap<>();
         final List<Long> disposed = new ArrayList<>();
         final List<Integer> mainWindowStates = new ArrayList<>();
+        final List<Rectangle> mainWindowBounds = new ArrayList<>();
         final Deque<Integer> mainPumpStatus = new ArrayDeque<>();
 
         private final Map<Long, Deque<Integer>> scriptedStatus = new LinkedHashMap<>();
@@ -540,6 +690,12 @@ class DeskMultiWindowFlutterTest {
 
         @Override
         protected void forwardWindowBounds(Rectangle bounds) {
+            mainWindowBounds.add(new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height));
+        }
+
+        /** Shows and hides of the Display's own window, recorded under its context. */
+        List<Boolean> mainWindowVisibility() {
+            return visibility.getOrDefault(MAIN_WINDOW_CONTEXT, List.of());
         }
 
         // The Display's own window has no handle here, so every operation on it is recorded rather

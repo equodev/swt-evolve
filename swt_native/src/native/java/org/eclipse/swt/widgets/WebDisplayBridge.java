@@ -285,9 +285,9 @@ public class WebDisplayBridge extends DisplayBridge {
     }
 
     @Override
-    protected boolean ownsWindow(Shell shell) {
+    protected boolean windowEligible(Shell shell) {
         if (shell != null && rejectedShellWindows.contains((long) shell.hashCode())) return false;
-        return super.ownsWindow(shell);
+        return super.windowEligible(shell);
     }
 
     @Override

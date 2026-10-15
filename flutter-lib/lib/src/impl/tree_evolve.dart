@@ -1430,6 +1430,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   final HoverTracker<int> dragHover = HoverTracker<int>();
 
+  /// The DND.FEEDBACK_* bits the drop target's listener answered for [dragHover]'s item.
+  final ValueNotifier<int> dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+
   Widget wrapTreeForDrop(Widget content) {
     Offset? localOffset(DragTargetDetails<DndDragPayload> details) {
       final box = context.findRenderObject();
@@ -1457,7 +1460,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       resolvePosition: resolvePosition,
       onDrop: (_, __, targetItemId, position) => sendItemDrop(targetItemId, position),
       builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) dragHover.update(null);
+        if (!isHovering) {
+          dragHover.update(null);
+        } else {
+          dropFeedback.value = negotiation.feedback;
+        }
         return child;
       },
     );
@@ -1917,6 +1924,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _horizontalController?.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();
+    dropFeedback.dispose();
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }
