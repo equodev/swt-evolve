@@ -21,6 +21,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   Color get rowHoverBackgroundColor;
   Color get rowSelectedBorderColor;
   double get rowSelectedBorderWidth;
+  double get dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha;
+  double get dragImageOpacity;
   Color get headerBackgroundColor;
   Color get headerTextColor;
   Color get headerBorderColor;
@@ -78,6 +81,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     Color? rowHoverBackgroundColor,
     Color? rowSelectedBorderColor,
     double? rowSelectedBorderWidth,
+    double? dropFeedbackLineWidth,
+    int? dropFeedbackHighlightAlpha,
+    double? dragImageOpacity,
     Color? headerBackgroundColor,
     Color? headerTextColor,
     Color? headerBorderColor,
@@ -140,6 +146,11 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
           rowSelectedBorderColor ?? this.rowSelectedBorderColor,
       rowSelectedBorderWidth:
           rowSelectedBorderWidth ?? this.rowSelectedBorderWidth,
+      dropFeedbackLineWidth:
+          dropFeedbackLineWidth ?? this.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha:
+          dropFeedbackHighlightAlpha ?? this.dropFeedbackHighlightAlpha,
+      dragImageOpacity: dragImageOpacity ?? this.dragImageOpacity,
       headerBackgroundColor:
           headerBackgroundColor ?? this.headerBackgroundColor,
       headerTextColor: headerTextColor ?? this.headerTextColor,
@@ -249,6 +260,13 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       rowSelectedBorderWidth: t < 0.5
           ? rowSelectedBorderWidth
           : other.rowSelectedBorderWidth,
+      dropFeedbackLineWidth: t < 0.5
+          ? dropFeedbackLineWidth
+          : other.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha: t < 0.5
+          ? dropFeedbackHighlightAlpha
+          : other.dropFeedbackHighlightAlpha,
+      dragImageOpacity: t < 0.5 ? dragImageOpacity : other.dragImageOpacity,
       headerBackgroundColor: Color.lerp(
         headerBackgroundColor,
         other.headerBackgroundColor,
@@ -405,6 +423,18 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
             const DeepCollectionEquality().equals(
               rowSelectedBorderWidth,
               other.rowSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackLineWidth,
+              other.dropFeedbackLineWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackHighlightAlpha,
+              other.dropFeedbackHighlightAlpha,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dragImageOpacity,
+              other.dragImageOpacity,
             ) &&
             const DeepCollectionEquality().equals(
               headerBackgroundColor,
@@ -592,6 +622,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(rowHoverBackgroundColor),
       const DeepCollectionEquality().hash(rowSelectedBorderColor),
       const DeepCollectionEquality().hash(rowSelectedBorderWidth),
+      const DeepCollectionEquality().hash(dropFeedbackLineWidth),
+      const DeepCollectionEquality().hash(dropFeedbackHighlightAlpha),
+      const DeepCollectionEquality().hash(dragImageOpacity),
       const DeepCollectionEquality().hash(headerBackgroundColor),
       const DeepCollectionEquality().hash(headerTextColor),
       const DeepCollectionEquality().hash(headerBorderColor),
@@ -659,6 +692,10 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
       tableThemeExtension.rowSelectedBorderColor;
   double get rowSelectedBorderWidth =>
       tableThemeExtension.rowSelectedBorderWidth;
+  double get dropFeedbackLineWidth => tableThemeExtension.dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha =>
+      tableThemeExtension.dropFeedbackHighlightAlpha;
+  double get dragImageOpacity => tableThemeExtension.dragImageOpacity;
   Color get headerBackgroundColor => tableThemeExtension.headerBackgroundColor;
   Color get headerTextColor => tableThemeExtension.headerTextColor;
   Color get headerBorderColor => tableThemeExtension.headerBorderColor;

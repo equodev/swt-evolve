@@ -171,6 +171,46 @@ class MultiWindowNativeTest {
                 .doesNotContain("\"windowedShellIds\":[" + detached.hashCode());
     }
 
+    // ---- hiding the shell that holds the Display's window -------------------------------------------
+
+    @Test
+    @DisplayName("hiding the main shell hands the Display's window to a windowed top-level")
+    void hiddenMainShellHandsItsWindowOver() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        TestBridge bridge = install();
+        Shell welcome = openShell();
+        Shell workbench = openShell();
+        RecordingWindow workbenchWindow = bridge.created.get(0);
+
+        welcome.setVisible(false);
+
+        assertThat(bridge.mainShell((DartDisplay) display.getImpl())).isEqualTo(workbench);
+        assertThat(workbenchWindow.closed)
+                .as("drawn in the Display's window now, its own window would show it twice")
+                .isTrue();
+        assertThat(bridge.windowedShells()).isEmpty();
+        assertThat(latestDisplayState(bridge)).contains("\"mainShellId\":" + workbench.hashCode());
+    }
+
+    @Test
+    @DisplayName("the shell that took the Display's window keeps it when the old holder is shown again")
+    void takeoverSticksWhenTheHolderIsReshown() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        TestBridge bridge = install();
+        Shell welcome = openShell();
+        Shell workbench = openShell();
+        welcome.setVisible(false);
+        int windowsBefore = bridge.created.size();
+
+        welcome.setVisible(true);
+
+        assertThat(bridge.mainShell((DartDisplay) display.getImpl()))
+                .as("handing it back would open a new window for the shell that took it over")
+                .isEqualTo(workbench);
+        assertThat(bridge.windowedShells()).containsExactly(welcome).doesNotContain(workbench);
+        assertThat(bridge.created).hasSize(windowsBefore + 1);
+    }
+
     // ---- closing ------------------------------------------------------------------------------------
 
     @Test

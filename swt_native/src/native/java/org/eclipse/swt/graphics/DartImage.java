@@ -958,6 +958,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         int storedZoom = logicalWidth > 0 && this.imageData.width != logicalWidth ? Math.round(100f * this.imageData.width / logicalWidth) : 100;
         if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
+        if (storedZoom != 100 && org.eclipse.swt.internal.DPIUtil.isSmoothScalingEnabled() && this.imageData.getTransparencyType() != SWT.TRANSPARENCY_MASK)
+            return GraphicsUtils.scaleRasterBuffer(device, this.imageData, logicalWidth, logicalHeight, zoom);
         // Scale to the requested zoom (matches upstream, which falls back to
         // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
         // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.

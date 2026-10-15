@@ -49,6 +49,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   int _lastNavSeq = 0;
   bool _opNavigated = false;
   bool _loadedLocalFile = false;
+  // Web: the /local-file/ URL the current file: document is served from (see _unproxyUrl).
+  String? _localFileServedUrl;
   // Whether the document being loaded is served from this origin (the
   // /local-file/ endpoint or the /proxy one), and so must end up readable.
   bool _expectSameOrigin = false;
@@ -201,7 +203,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
           } else if (kIsWeb && localFilePath != null && localFilePath.isNotEmpty) {
             _loadedLocalFile = true;
             _expectSameOrigin = true;
-            _load(Uri.parse(localFileRewrite(localFilePath)));
+            _localFileServedUrl = localFileRewrite(localFilePath);
+            _load(Uri.parse(_localFileServedUrl!));
           } else {
             _loadedLocalFile = false;
             final headers = _parseHeaders(m["headers"]);
@@ -543,17 +546,35 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// Reverses [_resolveLoadUri]: if [url] is one of our `/proxy?url=<orig>`
   /// URLs, returns the original target so Location events report the real URL
   /// rather than the proxy wrapper. A `setText` document is reported as
-  /// `about:blank`, as native SWT does, not as the blob: URL it is served from.
+  /// `about:blank`, as native SWT does, not as the blob: URL it is served from,
+  /// and a `file:` document as its `file:` URL, not its `/local-file/` path —
+  /// a LocationListener that opens http(s) locations externally would otherwise
+  /// cancel the local page and launch it in a new browser tab.
   /// Pass-through otherwise.
   String? _unproxyUrl(String? url) {
     if (url == null) return null;
     if (url == _inlineDocumentUrl) return 'about:blank';
+    final local = _localFileUrl(url);
+    if (local != null) return local;
     final uri = Uri.tryParse(url);
     final orig = uri?.queryParameters['url'];
     if (uri != null && uri.path.endsWith('/proxy') && orig != null && orig.isNotEmpty) {
       return orig;
     }
     return url;
+  }
+
+  /// The `file:` URL a `/local-file/` [url] serves, resolved against the `file:` document Java
+  /// navigated to; null when [url] is not under that document's served directory.
+  String? _localFileUrl(String url) {
+    final served = _localFileServedUrl;
+    final file = _loadedUrl;
+    if (!_loadedLocalFile || served == null || file == null) return null;
+    if (url == served) return file;
+    final servedDir = served.substring(0, served.lastIndexOf('/') + 1);
+    if (!url.startsWith(servedDir)) return null;
+    final filePath = file.split(RegExp('[?#]')).first;
+    return filePath.substring(0, filePath.lastIndexOf('/') + 1) + url.substring(servedDir.length);
   }
 
   /// Installs the JS shim for a registered BrowserFunction into the iframe's

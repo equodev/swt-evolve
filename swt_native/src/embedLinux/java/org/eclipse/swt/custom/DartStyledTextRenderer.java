@@ -1507,7 +1507,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     int getWidth() {
         {
             if (styledText != null && styledText.getImpl() instanceof DartStyledText) {
-                Integer measured = StyledTextHelper.measuredContentWidth((DartStyledText) styledText.getImpl());
+                Integer measured = StyledTextHelper.measuredContentWidth(this, (DartStyledText) styledText.getImpl());
                 if (measured != null)
                     return measured;
             }
