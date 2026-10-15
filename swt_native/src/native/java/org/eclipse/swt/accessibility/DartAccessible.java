@@ -1323,6 +1323,7 @@ public class DartAccessible implements IAccessible {
 
     /* checkWidget was copied from Widget, and rewritten to work in this package */
     void checkWidget() {
+        ;
         if (control.isDisposed())
             SWT.error(SWT.ERROR_WIDGET_DISPOSED);
     }

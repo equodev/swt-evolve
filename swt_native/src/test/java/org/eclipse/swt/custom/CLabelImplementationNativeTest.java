@@ -18,7 +18,7 @@ import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-/** What a CLabel does around the pieces Flutter draws: the shortening hook and the thread it may be built on. */
+/** What a CLabel does around the pieces Flutter draws: the shortening hook, its size and the thread it may be built on. */
 @Tag("native-unit")
 public class CLabelImplementationNativeTest extends SerializeTestBase {
 
@@ -57,6 +57,18 @@ public class CLabelImplementationNativeTest extends SerializeTestBase {
     @Test
     void shortenText_keepsTheTextWhenNoHeadAndTailFitBesideTheEllipsis() {
         assertThat(label().shortenText(sevenPixelsPerCharacter(), "abcdefghij", 30)).isEqualTo("abcdefghij");
+    }
+
+    /** The size table is measured with the default margin on each side; the label's own margins take its place. */
+    @Test
+    void computeSize_putsTheLabelsOwnMarginsInPlaceOfTheDefaultOnes() {
+        CLabel label = new CLabel(Mocks.shell(), SWT.NONE);
+        Point measured = label.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+
+        label.setMargins(10, 1, 20, 5);
+
+        assertThat(label.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(measured.x + 10 + 20 - 6, measured.y + 1 + 5 - 6));
+        assertThat(label.computeSize(50, 40)).isEqualTo(new Point(50, 40));
     }
 
     /** A host that calls from a thread other than the display's still gets its CLabel. */

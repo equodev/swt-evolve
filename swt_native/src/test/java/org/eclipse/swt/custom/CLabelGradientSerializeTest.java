@@ -63,7 +63,8 @@ public class CLabelGradientSerializeTest extends SerializeTestBase {
         CLabel label = sentLabel();
         label.setBackground(new Color[] { RED, BLUE }, new int[] { 60 }, true);
 
-        assertThat(value(label).changedKeys()).contains(GRADIENT_COLORS, GRADIENT_PERCENTS, GRADIENT_VERTICAL);
+        assertThat(value(label).changedKeys()).contains(GRADIENT_COLORS, GRADIENT_PERCENTS, GRADIENT_VERTICAL)
+                .as("a label with no image has none to clear").doesNotContain(VCLabel.BACKGROUND_IMAGE);
 
         assertThatJson(serialize(label)).isObject()
                 .node("gradientColors").isArray().hasSize(2);

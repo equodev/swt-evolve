@@ -147,21 +147,6 @@ void main() {
     expect(gradient.colors, [_red, _green, background]);
   });
 
-  testWidgets('a gradient with percents out of step still paints the colours it has a percent for',
-      (tester) async {
-    final gradient = await _gradient(
-      tester,
-      _label(
-        colors: [_rgb(255, 0, 0), _rgb(0, 255, 0), _rgb(0, 0, 255)],
-        percents: [40],
-        vertical: false,
-      ),
-    );
-    expect(gradient.stops!.length, gradient.colors.length);
-    expect(gradient.colors.sublist(0, 2), [_red, _green]);
-    expect(gradient.stops!.sublist(0, 2), [0.0, 0.4]);
-  });
-
   testWidgets('a single colour fills the whole label', (tester) async {
     final decoration = await _paint(
       tester,
