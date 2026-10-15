@@ -112,14 +112,9 @@ public class StyledTextHelper {
         boolean everyLine = !styledText.isFixedLineHeight();
         double widest = 0;
         for (VisualLine row : g.lines) {
-            if (everyLine || isWidthCalculated(renderer, row.logicalLine)) widest = Math.max(widest, row.x + row.w);
+            if (everyLine || renderer._isWidthCalculated(row.logicalLine)) widest = Math.max(widest, row.x + row.w);
         }
         return (int) Math.ceil(widest);
-    }
-
-    private static boolean isWidthCalculated(DartStyledTextRenderer renderer, int line) {
-        DartStyledTextRenderer.LineSizeInfo[] sizes = renderer.lineSizes;
-        return sizes != null && line < sizes.length && sizes[line] != null && !sizes[line].needsRecalculateWidth();
     }
 
     /** The height the render side gave {@code lineIndex}, below its vertical indent, or null. */

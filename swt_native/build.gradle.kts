@@ -346,6 +346,10 @@ sourceSets {
                 exclude("org/eclipse/swt/custom/CTabFolderActiveHighlightFlutterTest.java")
                 exclude("org/eclipse/swt/dnd/DndFlutterTest.java")
                 exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
+                // Image.getImageData(int zoom) is package-private in 3.105 and public from 3.106 on,
+                // so the API class the generator writes only carries it from there; this test reads
+                // one image back at three zooms.
+                exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
             }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
