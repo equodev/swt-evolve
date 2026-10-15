@@ -17,6 +17,7 @@ import './measure_table.dart' as table;
 import './measure_tableitem.dart' as tableitem;
 import './measure_text.dart' as text;
 import './measure_theme_scales.dart' as theme_scales;
+import './measure_toolitem.dart' as toolitem;
 import './measure_tree.dart' as tree;
 import './measure_treeitem.dart' as treeitem;
 
@@ -45,6 +46,7 @@ void main() {
   table.setupCases(measurer);
   tableitem.setupCases(measurer);
   text.setupCases(measurer);
+  toolitem.setupCases(measurer);
   tree.setupCases(measurer);
   treeitem.setupCases(measurer);
 
