@@ -821,10 +821,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VMenuItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = newValue;
@@ -1065,8 +1065,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
-        if (parent == null)
-            return null;
         Composite p = parent.getParent();
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
         return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;

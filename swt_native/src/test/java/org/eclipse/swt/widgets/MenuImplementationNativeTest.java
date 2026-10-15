@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.AfterEach;
@@ -50,6 +51,43 @@ class MenuImplementationNativeTest {
 
         assertThat(bar.getVisible()).isFalse();
         assertThat(other.getVisible()).isTrue();
+    }
+
+    @Test
+    @DisplayName("a pop-up takes the orientation it is given and sends it; a bar or a drop-down keeps its own and sends nothing")
+    void onlyAPopUpTakesTheOrientationItIsGiven() {
+        Menu bar = new Menu(shell, SWT.BAR);
+        Menu dropDown = new Menu(shell, SWT.DROP_DOWN);
+        Menu popUp = new Menu(shell, SWT.POP_UP);
+
+        assertThat(changesAfter(bar, () -> bar.setOrientation(SWT.RIGHT_TO_LEFT))).isEmpty();
+        assertThat(changesAfter(dropDown, () -> dropDown.setOrientation(SWT.RIGHT_TO_LEFT))).isEmpty();
+        assertThat(changesAfter(popUp, () -> popUp.setOrientation(SWT.RIGHT_TO_LEFT)))
+                .containsExactly(VMenu.STYLE, VMenu.ORIENTATION);
+        assertThat(changesAfter(popUp, () -> popUp.setOrientation(SWT.RIGHT_TO_LEFT))).isEmpty();
+
+        assertThat(bar.getOrientation()).isEqualTo(SWT.LEFT_TO_RIGHT);
+        assertThat(dropDown.getOrientation()).isEqualTo(SWT.LEFT_TO_RIGHT);
+        assertThat(popUp.getOrientation()).isEqualTo(SWT.RIGHT_TO_LEFT);
+    }
+
+    @Test
+    @DisplayName("an orientation with neither direction or with both changes nothing and sends nothing")
+    void anOrientationWithNeitherOrBothDirectionsChangesNothing() {
+        Menu popUp = new Menu(shell, SWT.POP_UP);
+
+        assertThat(changesAfter(popUp, () -> popUp.setOrientation(SWT.NONE))).isEmpty();
+        assertThat(changesAfter(popUp, () -> popUp.setOrientation(SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT))).isEmpty();
+
+        assertThat(popUp.getOrientation()).isEqualTo(SWT.LEFT_TO_RIGHT);
+    }
+
+    /** The properties {@code change} marks to be sent, in the order it marks them. */
+    private static List<String> changesAfter(Menu menu, Runnable change) {
+        VMenu value = ((DartMenu) menu.getImpl()).getValue();
+        value.clearDirty();
+        change.run();
+        return List.copyOf(value.changedKeys());
     }
 
     @Test

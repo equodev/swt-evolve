@@ -522,10 +522,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
+        checkWidget();
         if (!java.util.Objects.equals(this.resizable, newValue)) {
             getValue().markDirty(VTableColumn.RESIZABLE);
         }
-        checkWidget();
         this.resizable = newValue;
     }
 

@@ -843,10 +843,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VMenu.ENABLED);
         }
-        checkWidget();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -920,10 +920,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setLocation(Point location) {
         Point newValue = location;
+        checkWidget();
         if (!java.util.Objects.equals(this.location, newValue)) {
             getValue().markDirty(VMenu.LOCATION);
         }
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.location = newValue;
@@ -944,19 +944,8 @@ public class DartMenu extends DartWidget implements IMenu {
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        int newValue = orientation;
-        if (!java.util.Objects.equals(this.orientation, newValue)) {
-            getValue().markDirty(VMenu.ORIENTATION);
-        }
-        this.orientation = newValue;
         checkWidget();
-        if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) == 0) {
-            int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
-            if ((orientation & flags) != 0 && (orientation & flags) != flags) {
-                getApi().style &= ~flags;
-                getApi().style |= orientation & flags;
-            }
-        }
+        MenuHelper.applyOrientation(this, orientation);
     }
 
     /**
@@ -977,10 +966,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(this.visible, newValue)) {
             getValue().markDirty(VMenu.VISIBLE);
         }
-        checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         this.visible = newValue;

@@ -638,10 +638,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VMenuItem.ENABLED);
         }
-        checkWidget();
         /*
 	* Feature in Windows.  For some reason, when the menu item
 	* is a separator, GetMenuItemInfo() always indicates that
@@ -865,10 +865,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VMenuItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = newValue;
@@ -1103,8 +1103,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
-        if (parent == null)
-            return null;
         Composite p = parent.getParent();
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
         return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;

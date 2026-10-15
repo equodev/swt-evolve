@@ -541,10 +541,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VScrollBar.ENABLED);
         }
-        checkWidget();
         this.enabled = newValue;
         if (enabled) {
             getApi().state &= ~DISABLED;
@@ -591,10 +591,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setMaximum(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.maximum, newValue)) {
             getValue().markDirty(VScrollBar.MAXIMUM);
         }
-        checkWidget();
         if (value < 0)
             return;
         this.maximum = newValue;
@@ -615,10 +615,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setMinimum(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.minimum, newValue)) {
             getValue().markDirty(VScrollBar.MINIMUM);
         }
-        checkWidget();
         if (value < 0)
             return;
         this.minimum = newValue;
@@ -683,10 +683,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setThumb(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.thumb, newValue)) {
             getValue().markDirty(VScrollBar.THUMB);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.thumb = newValue;
@@ -750,10 +750,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(this.visible, newValue)) {
             getValue().markDirty(VScrollBar.VISIBLE);
         }
-        checkWidget();
         if (visible == getApi().getVisible())
             return;
         /*
@@ -836,8 +836,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
-        if (parent == null)
-            return null;
         Composite p = parent.getParent();
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
         return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;

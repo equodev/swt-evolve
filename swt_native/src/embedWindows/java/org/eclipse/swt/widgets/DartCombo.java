@@ -752,10 +752,10 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setListVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(this.listVisible, newValue)) {
             getValue().markDirty(VCombo.LIST_VISIBLE);
         }
-        checkWidget();
         this.listVisible = newValue;
     }
 
@@ -1595,9 +1595,9 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setText(String string) {
         //String newValue = string;
         ;
+        checkWidget();
         //if (!java.util.Objects.equals(this.text, newValue)) {    getValue().markDirty(VCombo.TEXT);}
         ;
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) != 0) {

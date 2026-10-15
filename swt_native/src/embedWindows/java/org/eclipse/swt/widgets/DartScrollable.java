@@ -267,8 +267,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      */
     public void setScrollbarsMode(int mode) {
         int newValue = mode;
-        this.scrollbarsMode = newValue;
         checkWidget();
+        this.scrollbarsMode = newValue;
     }
 
     /**

@@ -587,10 +587,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setIncrement(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.increment, newValue)) {
             getValue().markDirty(VSpinner.INCREMENT);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.increment = newValue;
@@ -652,10 +652,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setPageIncrement(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
             getValue().markDirty(VSpinner.PAGE_INCREMENT);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.pageIncrement = newValue;
@@ -676,10 +676,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setSelection(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VSpinner.SELECTION);
         }
-        checkWidget();
         this.selection = newValue;
     }
 
@@ -707,10 +707,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setTextLimit(int limit) {
         int newValue = limit;
+        checkWidget();
         if (!java.util.Objects.equals(this.textLimit, newValue)) {
             getValue().markDirty(VSpinner.TEXT_LIMIT);
         }
-        checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         this.textLimit = newValue;
@@ -738,10 +738,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setDigits(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.digits, newValue)) {
             getValue().markDirty(VSpinner.DIGITS);
         }
-        checkWidget();
         if (value < 0)
             error(SWT.ERROR_INVALID_ARGUMENT);
         int factor = 1;

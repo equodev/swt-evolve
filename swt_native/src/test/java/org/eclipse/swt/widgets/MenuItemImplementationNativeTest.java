@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.junit.jupiter.api.AfterEach;
@@ -17,11 +18,13 @@ import org.junit.jupiter.api.Test;
 @Tag("native-unit")
 class MenuItemImplementationNativeTest {
 
+    private RecordingBridge bridge;
     private Menu menu;
 
     @BeforeEach
     void setUp() {
-        FlutterBridge.set(new RecordingBridge());
+        bridge = new RecordingBridge();
+        FlutterBridge.set(bridge);
         menu = new Menu(DartMocks.dartShell(), SWT.POP_UP);
     }
 
@@ -44,14 +47,20 @@ class MenuItemImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("changing the selection of a disposed item reports it disposed rather than failing on its missing menu")
-    void disposedItemRefusesASelectionChange() {
+    @DisplayName("a disposed item refuses a selection or an enabled change before scheduling it to be sent")
+    void disposedItemRefusesAChangeBeforeSchedulingIt() {
         MenuItem item = new MenuItem(menu, SWT.CHECK);
-        DartMenuItem impl = (DartMenuItem) item.getImpl();
         item.dispose();
-        impl.bridge = null;
+        bridge.dirtied.clear();
 
-        assertThatThrownBy(() -> item.setSelection(true))
+        assertDisposed(() -> item.setSelection(true));
+        assertDisposed(() -> item.setEnabled(false));
+
+        assertThat(bridge.dirtied).doesNotContain(item.getImpl());
+    }
+
+    private static void assertDisposed(ThrowingCallable call) {
+        assertThatThrownBy(call)
                 .isInstanceOf(SWTException.class)
                 .satisfies(e -> assertThat(((SWTException) e).code).isEqualTo(SWT.ERROR_WIDGET_DISPOSED));
     }

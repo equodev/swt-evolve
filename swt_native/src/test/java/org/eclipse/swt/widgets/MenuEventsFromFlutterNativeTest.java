@@ -1,17 +1,11 @@
 package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doNothing;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
-import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.harness.RecordingBridge;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.swt.SWT;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -19,49 +13,16 @@ import org.junit.jupiter.api.Test;
 
 /**
  * What a pick, a hover, a help request and the opening and closing of a menu arriving from Flutter does to a
- * Menu and its items. Every one hops through {@code asyncExec}, so by the time it runs the widget may be gone.
+ * Menu and its items.
  */
 @Tag("native-unit")
-class MenuEventsFromFlutterNativeTest {
+class MenuEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
-    private RecordingBridge bridge;
-    private Display display;
     private Menu menu;
-    private final List<Runnable> queued = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
-        bridge = new RecordingBridge();
-        FlutterBridge.set(bridge);
-        display = DartMocks.dartDisplay();
-        doAnswer(invocation -> queued.add(invocation.getArgument(0))).when(display).asyncExec(any(Runnable.class));
-        DartDisplay impl = (DartDisplay) display.getImpl();
-        doCallRealMethod().when(impl).sendEvent(any(EventTable.class), any(Event.class));
         menu = new Menu(DartMocks.dartShell(display), SWT.POP_UP);
-    }
-
-    @AfterEach
-    void tearDown() {
-        doNothing().when(display).asyncExec(any(Runnable.class));
-        DartDisplay impl = (DartDisplay) display.getImpl();
-        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
-        FlutterBridge.set(null);
-    }
-
-    private void fromFlutter(Widget widget, String channel) {
-        bridge.comm.fireContaining(widget.getClass().getSimpleName() + "/" + widget.hashCode() + "/" + channel, new Event());
-    }
-
-    private void runQueued() {
-        List<Runnable> now = new ArrayList<>(queued);
-        queued.clear();
-        now.forEach(Runnable::run);
-    }
-
-    private static List<Event> record(Widget widget, int type) {
-        List<Event> events = new ArrayList<>();
-        widget.addListener(type, events::add);
-        return events;
     }
 
     @Test
@@ -236,7 +197,7 @@ class MenuEventsFromFlutterNativeTest {
         fromFlutter(menu, "Help/Help");
         menu.dispose();
 
-        org.assertj.core.api.Assertions.assertThatCode(this::runQueued).doesNotThrowAnyException();
+        assertThatCode(this::runQueued).doesNotThrowAnyException();
         assertThat(events).isEmpty();
     }
 }

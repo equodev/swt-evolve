@@ -714,10 +714,10 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VButton.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if ((getApi().style & SWT.CHECK) != 0) {

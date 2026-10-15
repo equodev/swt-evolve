@@ -2072,10 +2072,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 
@@ -2166,10 +2166,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
-        checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();

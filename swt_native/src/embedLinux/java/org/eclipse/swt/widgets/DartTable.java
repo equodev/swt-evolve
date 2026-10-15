@@ -1959,10 +1959,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void select(int[] indices) {
         int[] newValue = indices;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
-        checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
@@ -2258,10 +2258,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 

@@ -1219,10 +1219,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setAlpha(int alpha) {
         int newValue = alpha;
+        checkWidget();
         if (!java.util.Objects.equals(this.alpha, newValue)) {
             getValue().markDirty(VShell.ALPHA);
         }
-        checkWidget();
         alpha &= 0xFF;
         this.alpha = newValue;
     }
@@ -1328,8 +1328,8 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setImeInputMode(int mode) {
         int newValue = mode;
-        this.imeInputMode = newValue;
         checkWidget();
+        this.imeInputMode = newValue;
     }
 
     @Override
@@ -1470,10 +1470,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setModified(boolean modified) {
         boolean newValue = modified;
+        checkWidget();
         if (!java.util.Objects.equals(this.modified, newValue)) {
             getValue().markDirty(VShell.MODIFIED);
         }
-        checkWidget();
         this.modified = newValue;
     }
 

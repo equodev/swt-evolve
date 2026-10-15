@@ -1324,10 +1324,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
+        checkWidget();
         if (!java.util.Objects.equals(this.editable, newValue)) {
             getValue().markDirty(VText.EDITABLE);
         }
-        checkWidget();
         if (editable) {
             getApi().style &= ~SWT.READ_ONLY;
         } else {
@@ -1577,11 +1577,11 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setText(String string) {
+        checkWidget();
         String newValue = string;
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VText.TEXT);
         }
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         TextHelper.setText(this, string);

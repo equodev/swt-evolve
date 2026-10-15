@@ -614,10 +614,10 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -868,10 +868,10 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }

@@ -408,10 +408,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setDay(int day) {
         int newValue = day;
+        checkWidget();
         if (!java.util.Objects.equals(this.day, newValue)) {
             getValue().markDirty(VDateTime.DAY);
         }
-        checkWidget();
         this.day = newValue;
     }
 
@@ -430,10 +430,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setHours(int hours) {
         int newValue = hours;
+        checkWidget();
         if (!java.util.Objects.equals(this.hours, newValue)) {
             getValue().markDirty(VDateTime.HOURS);
         }
-        checkWidget();
         if (hours < 0 || hours > 23)
             return;
         this.hours = newValue;
@@ -454,10 +454,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setMinutes(int minutes) {
         int newValue = minutes;
+        checkWidget();
         if (!java.util.Objects.equals(this.minutes, newValue)) {
             getValue().markDirty(VDateTime.MINUTES);
         }
-        checkWidget();
         if (minutes < 0 || minutes > 59)
             return;
         this.minutes = newValue;
@@ -481,10 +481,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setMonth(int month) {
         int newValue = month;
+        checkWidget();
         if (!java.util.Objects.equals(this.month, newValue)) {
             getValue().markDirty(VDateTime.MONTH);
         }
-        checkWidget();
         this.month = newValue;
     }
 
@@ -510,10 +510,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setSeconds(int seconds) {
         int newValue = seconds;
+        checkWidget();
         if (!java.util.Objects.equals(this.seconds, newValue)) {
             getValue().markDirty(VDateTime.SECONDS);
         }
-        checkWidget();
         if (seconds < 0 || seconds > 59)
             return;
         this.seconds = newValue;
@@ -559,10 +559,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setYear(int year) {
         int newValue = year;
+        checkWidget();
         if (!java.util.Objects.equals(this.year, newValue)) {
             getValue().markDirty(VDateTime.YEAR);
         }
-        checkWidget();
         if (year < MIN_YEAR || year > MAX_YEAR)
             return;
         this.year = newValue;
