@@ -2435,6 +2435,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
     }
 
+    public boolean _isWidthCalculated(int line) {
+        return lineSizes != null && line >= 0 && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth();
+    }
+
     public StyledTextRenderer getApi() {
         if (api == null)
             api = StyledTextRenderer.createApi(this);
