@@ -41,7 +41,7 @@ public class SashSizes {
         if (hasFlags(style, SWT.VERTICAL)) {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
-        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, VERTICAL|SMOOTH
+        } else { // HORIZONTAL, HORIZONTAL|SMOOTH
             width = wHint != SWT.DEFAULT ? wHint : HORIZONTAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : HORIZONTAL.MIN_HEIGHT;
         }

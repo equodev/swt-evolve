@@ -23,8 +23,8 @@ public class ProgressBarSizes {
     }
 
     static class VERTICAL {
-        static final double MIN_WIDTH = 200.0;
-        static final double MIN_HEIGHT = 20.0;
+        static final double MIN_WIDTH = 20.0;
+        static final double MIN_HEIGHT = 200.0;
     }
 
     public static Point computeSize(DartProgressBar widget, int wHint, int hHint, boolean changed) {
@@ -41,7 +41,7 @@ public class ProgressBarSizes {
         if (hasFlags(style, SWT.VERTICAL)) {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
-        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, HORIZONTAL|INDETERMINATE, VERTICAL|SMOOTH, VERTICAL|INDETERMINATE
+        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, HORIZONTAL|INDETERMINATE
             width = wHint != SWT.DEFAULT ? wHint : HORIZONTAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : HORIZONTAL.MIN_HEIGHT;
         }

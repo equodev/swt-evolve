@@ -447,9 +447,13 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [Flexible(child: mainContentButton), separator, dropdownArrow],
+          // The separator has no height of its own: sized to the item's content, not to whatever
+          // height the item is offered.
+          child: IntrinsicHeight(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Flexible(child: mainContentButton), separator, dropdownArrow],
+            ),
           ),
         ),
       );

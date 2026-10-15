@@ -198,7 +198,7 @@ public final class DartFormLayout extends DartLayout implements IFormLayout {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;

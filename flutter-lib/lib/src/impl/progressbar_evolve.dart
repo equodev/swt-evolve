@@ -28,16 +28,17 @@ class ProgressBarImpl<T extends ProgressBarSwt, V extends VProgressBar>
     final range = (state.maximum! - state.minimum!).toDouble();
     final progress = range > 0 ? (currentValue - state.minimum!) / range : 0.0;
 
+    final styleBits = StyleBits(state.style);
+    final isVertical = styleBits.has(SWT.VERTICAL);
+
     final hasConstraints = hasBounds(state.bounds);
     final width = hasConstraints
         ? state.bounds!.width.toDouble()
-        : widgetTheme.defaultWidth;
+        : (isVertical ? widgetTheme.defaultHeight : widgetTheme.defaultWidth);
     final height = hasConstraints
         ? state.bounds!.height.toDouble()
-        : widgetTheme.defaultHeight;
+        : (isVertical ? widgetTheme.defaultWidth : widgetTheme.defaultHeight);
 
-    final styleBits = StyleBits(state.style);
-    final isVertical = styleBits.has(SWT.VERTICAL);
     final isIndeterminate = styleBits.has(SWT.INDETERMINATE);
     final isEnabled = state.enabled ?? true;
 

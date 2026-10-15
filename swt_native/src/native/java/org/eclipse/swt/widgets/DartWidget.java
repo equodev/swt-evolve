@@ -678,7 +678,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;
@@ -778,7 +778,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return DartDisplay.isValidClass(getClass());
+        return DartDisplay.isValidClass(getApi().getClass());
     }
 
     boolean isValidThread() {

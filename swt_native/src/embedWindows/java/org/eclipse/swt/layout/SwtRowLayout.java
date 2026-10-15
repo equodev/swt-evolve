@@ -111,7 +111,7 @@ public final class SwtRowLayout extends SwtLayout implements IRowLayout {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;

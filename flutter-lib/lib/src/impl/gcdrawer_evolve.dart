@@ -11,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../comm/comm.dart';
 import 'utils/perf_marks.dart';
+import 'utils/text_utils.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/gc.dart';
@@ -1039,9 +1040,8 @@ class GCDrawer extends GCDrawerBase {
 
   // Tabs and mnemonics as GCHelper.textExtent measures them, so text is drawn as wide as it measures.
   String _processTextFlags(String text, int flags) {
-    final mnemonic = (flags & SWT.DRAW_MNEMONIC) != 0
-        ? text.replaceAllMapped(RegExp(r'&([\s\S])'), (m) => m.group(1)!)
-        : text;
+    final mnemonic =
+        (flags & SWT.DRAW_MNEMONIC) != 0 ? stripAccelerators(text) : text;
     return mnemonic
         .replaceAll('\r\n', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
         .replaceAll('\r', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')

@@ -96,5 +96,8 @@ LabelThemeExtension _getLabelTheme({
     textDecoration: TextDecoration.none,
     hoverTextDecoration: TextDecoration.none,
     decorationThickness: 1.0,
+
+    // Separator properties
+    separatorThickness: 2.0,
   );
 }

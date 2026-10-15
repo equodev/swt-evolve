@@ -49,14 +49,15 @@ BoxConstraints? getConstraintsFromBounds(VRectangle? bounds) {
   return null;
 }
 
-/// Determines TextAlign based on SWT style flags
+/// The alignment a style draws with. A style that carries several alignment bits is read LEFT
+/// first, then CENTER, then RIGHT, which is what getAlignment() answers for it in Java.
 TextAlign getTextAlignFromStyle(int style, TextAlign defaultAlign) {
-  if (hasStyle(style, SWT.CENTER)) {
+  if (hasStyle(style, SWT.LEFT)) {
+    return TextAlign.left;
+  } else if (hasStyle(style, SWT.CENTER)) {
     return TextAlign.center;
   } else if (hasStyle(style, SWT.RIGHT)) {
     return TextAlign.right;
-  } else if (hasStyle(style, SWT.LEFT)) {
-    return TextAlign.left;
   }
   return defaultAlign;
 }

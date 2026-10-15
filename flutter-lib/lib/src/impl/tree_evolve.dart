@@ -19,6 +19,7 @@ import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../testing/tree_test_registry.dart';
@@ -571,6 +572,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                     ),
             ),
             textDirection: TextDirection.ltr,
+            textScaler: FontUtils.textWidgetScaler,
             maxLines: 1,
           );
           painter.layout();
@@ -649,6 +651,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           ),
         ),
         textDirection: TextDirection.ltr,
+        textScaler: FontUtils.textWidgetScaler,
         maxLines: 1,
       );
       painter.layout();
@@ -686,6 +689,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return List.filled(n, widthPerColumn);
     }
     double sum = preferred.reduce((a, b) => a + b);
+    if (sum > available && hasExplicitWidths) {
+      // Growing columns to their content only works while it fits. Past that, SWT keeps every
+      // column at the width the application gave it and clips the cell, so a long value never
+      // takes width away from the other columns.
+      final dividerGap = theme.columnDividerGap;
+      preferred = [
+        for (int i = 0; i < columns.length; i++)
+          columns[i].width == null
+              ? preferred[i]
+              : columns[i].width! + (i < columns.length - 1 ? dividerGap : 0.0),
+      ];
+      sum = preferred.reduce((a, b) => a + b);
+    }
     if (sum <= available) {
       final result = List<double>.from(preferred);
       result[result.length - 1] += available - sum;
