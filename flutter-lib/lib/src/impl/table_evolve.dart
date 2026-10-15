@@ -1452,13 +1452,7 @@ class TableItemSwtWrapper {
 
 double measureTableText(String text, TextStyle style) {
   if (text.isEmpty) return 0.0;
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: style),
-    textDirection: TextDirection.ltr,
-    textScaler: FontUtils.textWidgetScaler,
-    maxLines: 1,
-  )..layout();
-  return painter.width;
+  return FontUtils.measureTextWidget(text, style).width;
 }
 
 EdgeInsets fitTableCellPadding(

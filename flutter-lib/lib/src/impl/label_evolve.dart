@@ -109,16 +109,12 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         !hasLineDelimiter(text) &&
         text.isNotEmpty &&
         state.image == null) {
-      final painter = TextPainter(
-        text: TextSpan(text: text, style: textStyle),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final textWidth = FontUtils.measureTextWidget(text, textStyle).width;
       final boundsWidth = state.bounds!.width.toDouble();
-      if (painter.width > boundsWidth - padding.horizontal) {
+      if (textWidth > boundsWidth - padding.horizontal) {
         padding = EdgeInsets.only(top: padding.top, bottom: padding.bottom);
-        if (painter.width > boundsWidth &&
-            painter.width <= boundsWidth * 1.4) {
+        if (textWidth > boundsWidth &&
+            textWidth <= boundsWidth * 1.4) {
           fitTextToBounds = true;
         }
       }
