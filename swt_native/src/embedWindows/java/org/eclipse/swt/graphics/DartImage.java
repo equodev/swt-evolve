@@ -905,6 +905,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
+        org.eclipse.swt.internal.StrictChecks.runWithStrictChecksDisabled(() -> {
+            Image imageToDraw = new Image(gc.getDevice(), (ImageDataProvider) zoom -> imageData);
+            Rectangle source = imageToDraw.getBounds();
+            gc.drawImage(imageToDraw, 0, 0, source.width, source.height, 0, 0, width, height);
+            imageToDraw.dispose();
+        });
     }
 
     void addOnDisposeListener(Consumer<Image> onDisposeListener) {

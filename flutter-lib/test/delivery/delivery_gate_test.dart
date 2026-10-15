@@ -153,4 +153,24 @@ void main() {
       expect(gate.recoveries, 1);
     });
   });
+
+  // A resource's channel names it and delivers in order, so a change to a GC's state carries no
+  // stamps at all. Replayed from frames held before the drawer listened, it reaches this gate.
+  group("a resource's unstamped change", () {
+    const String gcChannel = 'GC/7';
+    Map<String, dynamic> leanChange() => {'_d': 0, 'background': 0xFF0000FF};
+
+    test('merges into the description its channel holds', () {
+      gate.applied(gcChannel, 17);
+
+      expect(gate.decide(gcChannel, leanChange()), FrameAction.merge,
+          reason: 'it extends the whole description just before it on the same ordered channel');
+      expect(gate.recoveries, 0);
+    });
+
+    test('is still asked for again when nothing was ever held', () {
+      expect(gate.decide(gcChannel, leanChange()), FrameAction.recover);
+      expect(gate.recoveries, 1);
+    });
+  });
 }
