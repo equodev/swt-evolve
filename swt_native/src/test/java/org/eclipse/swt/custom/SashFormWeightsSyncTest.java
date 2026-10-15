@@ -127,8 +127,10 @@ class SashFormWeightsSyncTest {
 
         fireWeightsFromFlutter(form, "2,1");
         form.dispose();
+        bridge.dirtied.clear();
 
         assertThatCode(() -> queued.forEach(Runnable::run)).doesNotThrowAnyException();
+        assertThat(bridge.dirtied).as("no weights update is scheduled for the disposed form").doesNotContain(form.getImpl());
     }
 
     @Test

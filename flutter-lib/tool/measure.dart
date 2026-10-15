@@ -257,6 +257,16 @@ const Map<String, (int, int)> rowWidgetFallbackWidth = {
   'Table': (70, 70),
 };
 
+/// Length along the bar of a widget that fills the length it is given, when no hint gives one.
+///
+/// Like [rowWidgetFallbackWidth] this is SWT layout policy, not a measurement: an unbounded Sash
+/// measures its thickness only. 64 is SWT's default size of a widget with nothing to measure.
+const Map<String, int> barWidgetDefaultLength = {'Sash': 64};
+
+/// Widgets whose `computeSize` reads a negative hint other than `SWT.DEFAULT` as 0, as Win32 and
+/// GTK do.
+const Set<String> negativeHintIsZero = {'Sash'};
+
 /// Width of the frame a row widget draws inside its own bounds for `SWT.BORDER`, read from the
 /// theme that draws it. A widget absent here draws no frame — Tree's only border is the line
 /// between columns, which is not an inset — and gets no `getFrameBorder` at all.
@@ -1666,6 +1676,10 @@ class WidgetMeasurer {
 
     constants['minWidth'] = minWidth;
     constants['minHeight'] = minHeight;
+    final defaultLength = barWidgetDefaultLength[widgetType]?.toDouble();
+    if (defaultLength != null) {
+      constants[style.split('|').contains('VERTICAL') ? 'minHeight' : 'minWidth'] = defaultLength;
+    }
 
     // Extract TextStyle from cases that have useFontTheme=true
     // Only consider results where useFontTheme is true
@@ -2315,6 +2329,11 @@ class WidgetMeasurer {
     buffer.writeln();
     buffer.writeln('        double width, height;');
     buffer.writeln();
+    if (negativeHintIsZero.contains(widgetType)) {
+      buffer.writeln('        if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;');
+      buffer.writeln('        if (hHint != SWT.DEFAULT && hHint < 0) hHint = 0;');
+      buffer.writeln();
+    }
 
     void generateSizeCalculation(
       String styleName,

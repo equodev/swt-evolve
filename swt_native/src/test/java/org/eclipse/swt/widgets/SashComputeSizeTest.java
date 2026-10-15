@@ -19,7 +19,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * A Sash is 64 long and as thick as the theme draws it, the same on every platform; a negative hint counts as 0.
  */
 @ExtendWith(Mocks.class)
-class SashHelperTest {
+class SashComputeSizeTest {
+
+    private Composite parent;
 
     @BeforeAll
     static void useEquo() {
@@ -34,6 +36,7 @@ class SashHelperTest {
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
+        parent = new Composite(Mocks.shell(), SWT.NONE);
     }
 
     @AfterEach
@@ -41,30 +44,24 @@ class SashHelperTest {
         FlutterBridge.set(null);
     }
 
+    private Point size(int style, int wHint, int hHint) {
+        return new Sash(parent, style).computeSize(wHint, hHint);
+    }
+
     @Test
     @DisplayName("a horizontal sash is 64 x 5 and a vertical one 5 x 64")
     void defaults() {
-        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 5));
-        assertThat(SashHelper.computeSize(SWT.VERTICAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(5, 64));
+        assertThat(size(SWT.HORIZONTAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 5));
+        assertThat(size(SWT.VERTICAL, SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(5, 64));
     }
 
     @Test
     @DisplayName("a hint replaces its dimension, and a negative one counts as 0")
     void hints() {
-        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, 100, 40)).isEqualTo(new Point(100, 40));
-        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, 100, SWT.DEFAULT)).isEqualTo(new Point(100, 5));
-        assertThat(SashHelper.computeSize(SWT.VERTICAL, SWT.DEFAULT, 90)).isEqualTo(new Point(5, 90));
-        assertThat(SashHelper.computeSize(SWT.HORIZONTAL, -7, -9)).isEqualTo(new Point(0, 0));
-        assertThat(SashHelper.computeSize(SWT.VERTICAL, -7, SWT.DEFAULT)).isEqualTo(new Point(0, 64));
-    }
-
-    @Test
-    @DisplayName("Sash.computeSize answers through the helper")
-    void aSashIsLongAlongItsBar() {
-        Composite parent = new Composite(Mocks.shell(), SWT.NONE);
-        Point horizontal = new Sash(parent, SWT.HORIZONTAL).computeSize(SWT.DEFAULT, SWT.DEFAULT);
-        Point vertical = new Sash(parent, SWT.VERTICAL).computeSize(SWT.DEFAULT, SWT.DEFAULT);
-        assertThat(horizontal).isEqualTo(new Point(64, 5));
-        assertThat(vertical).isEqualTo(new Point(5, 64));
+        assertThat(size(SWT.HORIZONTAL, 100, 40)).isEqualTo(new Point(100, 40));
+        assertThat(size(SWT.HORIZONTAL, 100, SWT.DEFAULT)).isEqualTo(new Point(100, 5));
+        assertThat(size(SWT.VERTICAL, SWT.DEFAULT, 90)).isEqualTo(new Point(5, 90));
+        assertThat(size(SWT.HORIZONTAL, -7, -9)).isEqualTo(new Point(0, 0));
+        assertThat(size(SWT.VERTICAL, -7, SWT.DEFAULT)).isEqualTo(new Point(0, 64));
     }
 }

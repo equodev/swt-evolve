@@ -1268,6 +1268,10 @@ public class DartComposite extends DartScrollable implements IComposite {
         return getBridge().container(this);
     }
 
+    public Control[] _displayedChildren() {
+        return _getChildren();
+    }
+
     public void updateChildren() {
         if (children == null)
             return;

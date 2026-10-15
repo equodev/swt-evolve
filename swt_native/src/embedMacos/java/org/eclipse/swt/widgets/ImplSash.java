@@ -7,8 +7,6 @@ import org.eclipse.swt.graphics.*;
 
 public interface ImplSash extends ImplControl {
 
-    Cursor _sizeCursor();
-
     boolean _dragging();
 
     int _lastX();

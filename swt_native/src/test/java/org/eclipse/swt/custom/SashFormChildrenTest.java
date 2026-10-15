@@ -55,7 +55,7 @@ class SashFormChildrenTest {
     }
 
     @Test
-    @DisplayName("getChildren lists the panes and the sash between them")
+    @DisplayName("getChildren lists the panes and the sash between them, and so does the form's own walk over its children")
     void getChildrenListsTheSashes() {
         SashForm form = laidOutForm();
 
@@ -64,6 +64,7 @@ class SashFormChildrenTest {
         assertThat(children).hasSize(3);
         assertThat(children).filteredOn(c -> c instanceof Sash).hasSize(1);
         assertThat(children).filteredOn(c -> !(c instanceof Sash)).hasSize(2);
+        assertThat(((DartSashForm) form.getImpl())._getChildren()).containsExactly(children);
     }
 
     @Test

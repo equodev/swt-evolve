@@ -419,7 +419,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartSash w, int wHint, int hHint, boolean changed) {
-        return SashHelper.computeSize(w, wHint, hHint);
+        return SashSizes.computeSize(w, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartScale c, int wHint, int hHint, boolean changed) {

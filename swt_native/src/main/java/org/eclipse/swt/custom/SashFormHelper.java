@@ -10,7 +10,10 @@ import org.eclipse.swt.widgets.Event;
  * recomputes the panels from the stale weights and discards the user's drag (some real-world
  * resizable-panel UIs snapped back on resize).
  */
-public class SashFormHelper {
+public final class SashFormHelper {
+
+    private SashFormHelper() {
+    }
 
     public static void applyWeightsFromFlutter(DartSashForm form, Event e) {
         if (form == null || form.isDisposed() || e == null || e.text == null) {
