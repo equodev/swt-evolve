@@ -3,6 +3,10 @@ import '../theme_extensions/toolitem_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+/// The size a ToolItem icon is drawn at. Java measures every ToolItem image at it under
+/// `bigger_icon_size`, through `ToolItemSizes.java`, which `tool/measure_toolitem.dart` generates.
+const double toolItemIconSize = 30.0;
+
 ToolItemThemeExtension getToolItemLightTheme({
   required ColorScheme colorScheme,
   required TextTheme textTheme,
@@ -48,7 +52,7 @@ ToolItemThemeExtension _getToolItemTheme({
     separatorWidth: 20.0,
     separatorThickness: 1.0,
     separatorIndent: 8.0,
-    defaultIconSize: 30.0,
+    defaultIconSize: toolItemIconSize,
     hoverZoomEnabled: hoverZoom,
     hoverZoomScale: 1.5,
     hoverZoomDuration: const Duration(milliseconds: 120),

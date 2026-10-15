@@ -901,6 +901,7 @@ public class Config {
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
             configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
+            configFlags.bigger_icon_size = Boolean.getBoolean("swt.evolve.bigger_icon_size");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.

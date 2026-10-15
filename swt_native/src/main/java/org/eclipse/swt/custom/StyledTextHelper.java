@@ -1211,15 +1211,7 @@ public class StyledTextHelper {
 
         int contentLineCount = renderer.content.getLineCount();
         if (contentLineCount > renderer.lineCount) {
-            // Resize lineSizes array if needed
-            if (renderer.lineSizes == null || renderer.lineSizes.length < contentLineCount) {
-                DartStyledTextRenderer.LineSizeInfo[] newLineSizes =
-                    new DartStyledTextRenderer.LineSizeInfo[contentLineCount];
-                if (renderer.lineSizes != null) {
-                    System.arraycopy(renderer.lineSizes, 0, newLineSizes, 0, renderer.lineCount);
-                }
-                renderer.lineSizes = newLineSizes;
-            }
+            renderer._growLineSizes(contentLineCount);
             // Resize lines array if it exists and is too small
             if (renderer.lines != null && renderer.lines.length < contentLineCount) {
                 DartStyledTextRenderer.LineInfo[] newLines =
