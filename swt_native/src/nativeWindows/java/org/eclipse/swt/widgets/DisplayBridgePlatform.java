@@ -7,13 +7,16 @@ import org.eclipse.swt.internal.win32.OS;
  * OLE/COM for the Display thread.
  */
 final class DisplayBridgePlatform {
+
+    static final String LOAD_LIBRARY = "dev.equo.swt.loadLibrary";
+
     private DisplayBridgePlatform() {
     }
 
     static void init() {
         // When the native SWT library isn't loaded (headless web/test, e.g. -Ddev.equo.swt.loadLibrary=false)
         // the native call below would throw UnsatisfiedLinkError; pure-web/browser needs no OLE init anyway.
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return;
         org.eclipse.swt.internal.win32.OS.OleInitialize(0);
     }
@@ -39,11 +42,18 @@ final class DisplayBridgePlatform {
      * Destroys the launcher's splash window. It belongs to the Display thread, which never pumps
      * window messages while the Display renders in a browser, so Windows would report the window,
      * and the process with it, as not responding. Only the owning thread can destroy a window.
+     *
+     * @return whether the window was destroyed
      */
-    static void dismissLauncherSplash(long hwnd) {
-        if (hwnd == 0 || "false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
-            return;
-        if (OS.GetWindowThreadProcessId(hwnd, new int[1]) == OS.GetCurrentThreadId())
-            OS.DestroyWindow(hwnd);
+    static boolean dismissLauncherSplash() {
+        long hwnd = Long.getLong("org.eclipse.equinox.launcher.splash.handle", 0);
+        if (hwnd == 0 || nativeLibraryOff() || OS.GetWindowThreadProcessId(hwnd, new int[1]) != OS.GetCurrentThreadId())
+            return false;
+        return OS.DestroyWindow(hwnd);
+    }
+
+    /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
+    private static boolean nativeLibraryOff() {
+        return "false".equals(System.getProperty(LOAD_LIBRARY));
     }
 }

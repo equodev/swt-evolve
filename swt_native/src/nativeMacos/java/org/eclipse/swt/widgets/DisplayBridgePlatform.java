@@ -16,6 +16,10 @@ import org.eclipse.swt.internal.cocoa.OS;
  */
 final class DisplayBridgePlatform {
 
+    static final String LOAD_LIBRARY = "dev.equo.swt.loadLibrary";
+
+    private static final long NSWindowAnimationBehaviorNone = 2;
+
     private static boolean launched;
 
     private DisplayBridgePlatform() {
@@ -24,7 +28,7 @@ final class DisplayBridgePlatform {
     static void init() {
         // When the native SWT library isn't loaded (headless web/test, e.g. -Ddev.equo.swt.loadLibrary=false)
         // the Cocoa calls below would throw UnsatisfiedLinkError, and a headless run has no menu bar anyway.
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return;
         MacApplicationMenu.install();
         // The desktop window and a Chromium window bring their own native application loop.
@@ -34,14 +38,14 @@ final class DisplayBridgePlatform {
 
     /** The application menu as SWT widgets, for the menu bar Evolve draws inside the window. */
     static Menu systemMenu(Display display) {
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return null;
         return MacApplicationMenu.systemMenu(display);
     }
 
     /** Publishes a Shell's menu bar to the system menu bar — see {@link MacMenuBar}. */
     static void setMenuBar(Menu menu) {
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return;
         MacMenuBar.set(menu);
     }
@@ -52,7 +56,7 @@ final class DisplayBridgePlatform {
      * started.
      */
     static void syncMenuBar() {
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return;
         MacMenuBar.sync();
         pumpEvents();
@@ -77,12 +81,25 @@ final class DisplayBridgePlatform {
     /**
      * Orders the launcher's splash window out. It belongs to the main thread, which runs no Cocoa
      * event loop while the Display renders in a browser, so the window would otherwise stay on screen.
-     * It is not closed: the launcher releases it when it takes the splash down.
+     * With no loop to commit it, the window server only drops the window when the order-out is not
+     * animated and its transaction is flushed. It is not closed: the launcher releases it when it
+     * takes the splash down.
+     *
+     * @return whether the window was ordered out
      */
-    static void dismissLauncherSplash(long window) {
-        if (window == 0 || "false".equals(System.getProperty("dev.equo.swt.loadLibrary")) || !NSThread.isMainThread())
-            return;
+    static boolean dismissLauncherSplash() {
+        long window = Long.getLong("org.eclipse.equinox.launcher.splash.handle", 0);
+        if (window == 0 || nativeLibraryOff() || !NSThread.isMainThread())
+            return false;
+        OS.objc_msgSend(window, OS.sel_registerName("setAnimationBehavior:"), NSWindowAnimationBehaviorNone);
         new NSWindow(window).orderOut(null);
+        OS.objc_msgSend(OS.objc_getClass("CATransaction"), OS.sel_registerName("flush"));
+        return true;
+    }
+
+    /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
+    private static boolean nativeLibraryOff() {
+        return "false".equals(System.getProperty(LOAD_LIBRARY));
     }
 
     /**

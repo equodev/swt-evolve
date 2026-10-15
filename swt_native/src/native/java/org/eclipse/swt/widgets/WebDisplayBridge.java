@@ -56,22 +56,7 @@ public class WebDisplayBridge extends DisplayBridge {
         DisplayBridgePlatform.init();
         // In a browser the splash is drawn like any other shell; the launcher's own window is left
         // on the desktop with no event loop behind it.
-        DisplayBridgePlatform.dismissLauncherSplash(launcherSplash());
-    }
-
-    /**
-     * The window the Equinox launcher shows its splash in, 0 when there is none. The launcher clears
-     * the property when it takes the splash down.
-     */
-    private static long launcherSplash() {
-        String handle = System.getProperty("org.eclipse.equinox.launcher.splash.handle");
-        if (handle == null)
-            return 0;
-        try {
-            return Long.parseLong(handle.trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+        DisplayBridgePlatform.dismissLauncherSplash();
     }
 
     /** How long a paste waits for the browser to hand over its clipboard. */

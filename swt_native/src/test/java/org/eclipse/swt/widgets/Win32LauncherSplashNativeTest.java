@@ -2,6 +2,8 @@ package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.internal.win32.TCHAR;
 import org.junit.jupiter.api.AfterEach;
@@ -22,8 +24,6 @@ public class Win32LauncherSplashNativeTest {
 
     private static final String SPLASH_HANDLE = "org.eclipse.equinox.launcher.splash.handle";
 
-    private static final String LOAD_LIBRARY = "dev.equo.swt.loadLibrary";
-
     private String loadLibrary;
 
     private long splash;
@@ -31,8 +31,8 @@ public class Win32LauncherSplashNativeTest {
     @BeforeEach
     void showASplash() {
         // The suite runs with the native library switched off; the launcher's window is native.
-        loadLibrary = System.getProperty(LOAD_LIBRARY);
-        System.clearProperty(LOAD_LIBRARY);
+        loadLibrary = System.getProperty(DisplayBridgePlatform.LOAD_LIBRARY);
+        System.clearProperty(DisplayBridgePlatform.LOAD_LIBRARY);
         splash = OS.CreateWindowEx(0, new TCHAR(0, "STATIC", true), null, OS.WS_POPUP | OS.WS_VISIBLE,
                 0, 0, 120, 80, 0, 0, 0, null);
         assertThat(splash).as("a splash window to close").isNotZero();
@@ -42,24 +42,36 @@ public class Win32LauncherSplashNativeTest {
     void restore() {
         System.clearProperty(SPLASH_HANDLE);
         if (loadLibrary != null)
-            System.setProperty(LOAD_LIBRARY, loadLibrary);
+            System.setProperty(DisplayBridgePlatform.LOAD_LIBRARY, loadLibrary);
         if (exists(splash))
             OS.DestroyWindow(splash);
     }
 
     @Test
-    void theBrowserSurfaceClosesTheLaunchersSplash() {
+    void destroysTheLaunchersSplashFromItsThread() {
         System.setProperty(SPLASH_HANDLE, Long.toString(splash));
 
-        new WebDisplayBridge(null);
-
+        assertThat(DisplayBridgePlatform.dismissLauncherSplash()).as("dismissed").isTrue();
         assertThat(exists(splash)).as("the launcher's splash window").isFalse();
     }
 
+    /** Only the owning thread can destroy a window. */
     @Test
-    void aWindowTheLauncherDoesNotNameIsLeftAlone() {
-        new WebDisplayBridge(null);
+    void leavesTheSplashOfAnotherThreadAlone() throws InterruptedException {
+        System.setProperty(SPLASH_HANDLE, Long.toString(splash));
+        AtomicBoolean dismissed = new AtomicBoolean(true);
 
+        Thread other = new Thread(() -> dismissed.set(DisplayBridgePlatform.dismissLauncherSplash()));
+        other.start();
+        other.join();
+
+        assertThat(dismissed.get()).as("dismissed from another thread").isFalse();
+        assertThat(OS.IsWindowVisible(splash)).as("the launcher's splash window").isTrue();
+    }
+
+    @Test
+    void leavesAWindowTheLauncherDoesNotNameAlone() {
+        assertThat(DisplayBridgePlatform.dismissLauncherSplash()).as("dismissed").isFalse();
         assertThat(OS.IsWindowVisible(splash)).as("a window that is not the launcher's splash").isTrue();
     }
 

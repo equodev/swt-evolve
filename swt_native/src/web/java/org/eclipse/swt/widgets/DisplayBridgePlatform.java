@@ -30,7 +30,12 @@ final class DisplayBridgePlatform {
     static void bindWindowView(Control control, long view) {
     }
 
-    /** The pure-web build has no native library to reach the launcher's window with. */
-    static void dismissLauncherSplash(long window) {
+    /**
+     * The pure-web build has no native library to reach the launcher's window with.
+     *
+     * @return false, nothing is dismissed
+     */
+    static boolean dismissLauncherSplash() {
+        return false;
     }
 }

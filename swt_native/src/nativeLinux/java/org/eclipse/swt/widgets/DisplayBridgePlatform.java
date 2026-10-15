@@ -7,13 +7,16 @@ import org.eclipse.swt.SWT;
  * GTK (and its SWT lock functions) once for the Display thread.
  */
 final class DisplayBridgePlatform {
+
+    static final String LOAD_LIBRARY = "dev.equo.swt.loadLibrary";
+
     private DisplayBridgePlatform() {
     }
 
     static void init() {
         // When the native SWT library isn't loaded (headless web/test, e.g. -Ddev.equo.swt.loadLibrary=false)
         // the GTK calls below would throw UnsatisfiedLinkError; pure-web/browser needs no GTK init anyway.
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return;
         if (!GTKWrapper.IS_GTK4) {
             GTKWrapper.setupThreadLocking();
@@ -45,7 +48,17 @@ final class DisplayBridgePlatform {
     static void bindWindowView(Control control, long view) {
     }
 
-    /** Leaves the launcher's splash window to the launcher: not handled on GTK yet. */
-    static void dismissLauncherSplash(long window) {
+    /**
+     * Leaves the launcher's splash window to the launcher: not handled on GTK yet.
+     *
+     * @return false, nothing is dismissed
+     */
+    static boolean dismissLauncherSplash() {
+        return false;
+    }
+
+    /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
+    private static boolean nativeLibraryOff() {
+        return "false".equals(System.getProperty(LOAD_LIBRARY));
     }
 }
