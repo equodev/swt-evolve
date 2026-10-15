@@ -160,9 +160,6 @@ class DropOperationBadge extends StatelessWidget {
 /// dragged image keeps its top-left corner at the pointer.
 const double _cursorSlop = 8.0;
 
-Offset _feedbackAnchor(Draggable<Object> draggable, BuildContext context, Offset position) =>
-    const Offset(_cursorSlop, _cursorSlop);
-
 /// The drag image with a region on top that carries the drag cursor. The region lets hit testing
 /// through, so the drop targets underneath are still found.
 Widget _withDropCursor(Widget visual) {
@@ -280,8 +277,14 @@ Widget wrapDraggable<T extends Object>({
         );
   // A drag with no SWT DragSource behind it (a CTabFolder reordering its own tabs, a workbench
   // moving a view) is not an SWT DnD operation and has no drop answer to show.
-  final feedback = hasDragSource ? _withDropCursor(visual) : visual;
-  final anchor = hasDragSource ? _feedbackAnchor : pointerDragAnchorStrategy;
+  // Drawn shifted back by the slop rather than anchored away from the pointer: a drag target reads
+  // the feedback's offset as where the drop happens, so its origin has to stay at the pointer.
+  final feedback = hasDragSource
+      ? Transform.translate(
+          offset: const Offset(-_cursorSlop, -_cursorSlop),
+          child: _withDropCursor(visual),
+        )
+      : visual;
   final childWhenDragging = childWhenDraggingBuilder != null
       ? childWhenDraggingBuilder(child)
       : Opacity(opacity: 0.3, child: child);
@@ -289,7 +292,7 @@ Widget wrapDraggable<T extends Object>({
   return useLongPress
       ? LongPressDraggable<T>(
           data: data,
-          dragAnchorStrategy: anchor,
+          dragAnchorStrategy: pointerDragAnchorStrategy,
           ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
@@ -299,7 +302,7 @@ Widget wrapDraggable<T extends Object>({
         )
       : Draggable<T>(
           data: data,
-          dragAnchorStrategy: anchor,
+          dragAnchorStrategy: pointerDragAnchorStrategy,
           ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
