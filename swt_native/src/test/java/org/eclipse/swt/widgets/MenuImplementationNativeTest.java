@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -102,8 +103,28 @@ class MenuImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("the application menu bar and the system menu belong to no shell and are enabled by their own flag")
-    void theApplicationMenusBelongToNoShell() {
+    @DisplayName("the application menu bar belongs to no shell and is enabled by its own flag")
+    void theApplicationMenuBarBelongsToNoShell() {
+        Display display = shell.getDisplay();
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        Menu bar = new Menu(display);
+        impl.appMenuBar = bar;
+        try {
+            assertThat(bar.getShell()).isNull();
+            assertThat(bar.getVisible()).isFalse();
+            bar.setEnabled(false);
+            assertThat(bar.isEnabled()).isFalse();
+        } finally {
+            impl.appMenuBar = null;
+        }
+    }
+
+    // Menu.isEnabled() checks the system menu from SWT 3.110 (build 4924) on; earlier versions ask the
+    // parent it does not have, natively too.
+    @Test
+    @DisplayName("the system menu is enabled by its own flag, not by the application menu bar's")
+    void theSystemMenuIsEnabledByItsOwnFlag() {
+        assumeTrue(SWT.getVersion() >= 4924);
         Display display = shell.getDisplay();
         DartDisplay impl = (DartDisplay) display.getImpl();
         Menu bar = new Menu(display);
@@ -111,10 +132,7 @@ class MenuImplementationNativeTest {
         impl.appMenuBar = bar;
         impl.appMenu = systemMenu;
         try {
-            assertThat(bar.getShell()).isNull();
-            assertThat(bar.getVisible()).isFalse();
             bar.setEnabled(false);
-            assertThat(bar.isEnabled()).isFalse();
             assertThat(systemMenu.isEnabled()).isTrue();
         } finally {
             impl.appMenuBar = null;
