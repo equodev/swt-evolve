@@ -42,40 +42,6 @@ public class Sizes {
         return new Point(trim.width, trim.height);
     }
 
-    public static Point compute(DartMenu c) {
-        int style = c.getApi().style;
-        boolean isBar = (style & org.eclipse.swt.SWT.BAR) != 0;
-        boolean isDropDown = (style & org.eclipse.swt.SWT.DROP_DOWN) != 0;
-        boolean isPopUp = (style & org.eclipse.swt.SWT.POP_UP) != 0;
-
-        if (isBar) {
-            return new Point(300, 28);
-        } else if (isDropDown || isPopUp) {
-            MenuItem[] items = c._items();
-            int itemCount = items != null ? items.length : 1;
-
-            int maxWidth = 150;
-            if (items != null) {
-                for (MenuItem item : items) {
-                    if (item != null) {
-                        String text = item.getText();
-                        if (text != null && !text.isEmpty()) {
-                            int textWidth = (int)(text.length() * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
-                            maxWidth = Math.max(maxWidth, textWidth + 40);
-                        }
-                    }
-                }
-            }
-
-            int itemHeight = 24;
-            int height = Math.max(50, itemCount * itemHeight + 16);
-
-            return new Point(maxWidth, height);
-        }
-
-        return new Point(150, 50);
-    }
-
     public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
         Point size = ButtonSizes.computeSize(c, wHint, hHint, changed);
         if (wHint == SWT.DEFAULT)
