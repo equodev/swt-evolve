@@ -92,6 +92,9 @@ class MeasurementCase {
   final bool useFontTheme;
   final String? itemsAccessor;
 
+  /// The widget letters in its parent's font, having none of its own (a ToolItem in its ToolBar's).
+  final bool fontFromParent;
+
   MeasurementCase({
     required String descr,
     required this.fqn,
@@ -100,6 +103,7 @@ class MeasurementCase {
     required this.widgetBuilder,
     this.useFontTheme = false,
     this.itemsAccessor,
+    this.fontFromParent = false,
   }) : name = "${widgetName(fqn)}_${style}_$descr";
 
   Widget buildWidget(GlobalKey key) {
@@ -376,6 +380,10 @@ class WidgetMeasurer {
   /// the measurement cases, so it has to be carried for a re-emit that has none.
   final Map<String, String> itemsAccessorByFqn = {};
 
+  /// Fqn of every widget that letters in its parent's font. Declared on the measurement cases, so
+  /// it has to be carried for a re-emit that has none.
+  final Set<String> fontFromParentFqns = {};
+
   /// Fqn of every widget that has a theme-sampling case, by simple name. A widget whose cases draw
   /// no text still gets a theme file, derived from this.
   final Map<String, String> themeCaseFqnByWidget = {};
@@ -404,6 +412,7 @@ class WidgetMeasurer {
     if (testCase.itemsAccessor != null) {
       itemsAccessorByFqn[testCase.fqn] = testCase.itemsAccessor!;
     }
+    if (testCase.fontFromParent) fontFromParentFqns.add(testCase.fqn);
   }
 
   void addThemeCase(MeasurementCase testCase) {
@@ -455,6 +464,34 @@ class WidgetMeasurer {
     return themesToMeasure[currentThemeIndex].name;
   }
 
+  /// A widget that decodes its image asynchronously shows a progress indicator until it resolves;
+  /// measured before then, the case reads the placeholder's size instead of the image's.
+  Future<void> _waitForPendingImages(GlobalKey key) async {
+    for (var i = 0; i < 100; i++) {
+      final element = key.currentContext as Element?;
+      if (element == null || !_hasProgressIndicator(element)) return;
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      WidgetsBinding.instance.scheduleFrame();
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    print('WARNING: an image was still loading when the case was measured');
+  }
+
+  bool _hasProgressIndicator(Element root) {
+    var found = false;
+    void visit(Element e) {
+      if (found) return;
+      if (e.widget is ProgressIndicator) {
+        found = true;
+        return;
+      }
+      e.visitChildren(visit);
+    }
+
+    root.visitChildren(visit);
+    return found;
+  }
+
   Future<void> measureCurrentCase(GlobalKey key) async {
     final testCasesList = currentPhase == 1 ? testCases : themeSamplingCases;
 
@@ -465,6 +502,10 @@ class WidgetMeasurer {
         _finishPhase2();
       }
       return;
+    }
+
+    if (testCasesList[currentCaseIndex].expectedComponents['image'] != null) {
+      await _waitForPendingImages(key);
     }
 
     final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
@@ -802,6 +843,7 @@ class WidgetMeasurer {
                 return <String, dynamic>{
                   if (itemsAccessorByFqn.containsKey(m.fqn))
                     'itemsAccessor': itemsAccessorByFqn[m.fqn],
+                  if (fontFromParentFqns.contains(m.fqn)) 'fontFromParent': true,
                   'cases': <dynamic>[],
                 };
               })
@@ -839,6 +881,7 @@ class WidgetMeasurer {
       final entry = widget.value as Map;
       final itemsAccessor = entry['itemsAccessor'];
       if (itemsAccessor is String) itemsAccessorByFqn[fqn] = itemsAccessor;
+      if (entry['fontFromParent'] == true) fontFromParentFqns.add(fqn);
       for (final c in (entry['cases'] as List).cast<Map>()) {
         final name = c['name'] as String;
         resultsMap[name] = MeasurementResult(
@@ -1211,15 +1254,19 @@ class WidgetMeasurer {
           'height': imageBox.size.height,
         };
       } else if (expectedComponents['image'] != null) {
-        // Try icon-sized placeholder first (FutureBuilder SizedBox for icon images)
-        final iconBox = _findIconBox(root);
-        if (iconBox != null) {
+        final img = expectedComponents['image'] as (int, int);
+        // An unresolved image still occupies the slot the widget reserved for it. Only when no box
+        // has the image's own size is it drawn at an icon size instead; any square leaf is a weaker
+        // guess, since a check box's indicator is one too.
+        final placeholder =
+            _findBoxOfSize(root, Size(img.$1.toDouble(), img.$2.toDouble())) ??
+                _findIconBox(root);
+        if (placeholder != null) {
           discovered['image'] = {
-            'width': iconBox.size.width,
-            'height': iconBox.size.height,
+            'width': placeholder.size.width,
+            'height': placeholder.size.height,
           };
         } else {
-          final img = expectedComponents['image'] as (int, int);
           discovered['image'] = {
             'width': img.$1.toDouble(),
             'height': img.$2.toDouble(),
@@ -1495,6 +1542,18 @@ class WidgetMeasurer {
       if (found != null) return found;
     }
 
+    return null;
+  }
+
+  RenderBoxInfo? _findBoxOfSize(RenderBoxInfo box, Size size) {
+    if ((box.size.width - size.width).abs() < 0.5 &&
+        (box.size.height - size.height).abs() < 0.5) {
+      return box;
+    }
+    for (var child in box.children) {
+      final found = _findBoxOfSize(child, size);
+      if (found != null) return found;
+    }
     return null;
   }
 
@@ -1901,6 +1960,24 @@ class WidgetMeasurer {
           }
         }
       }
+      // The size this style draws its image at whatever the image it was given, or null when it
+      // follows the image: the rendered size holds across images of different sizes, and fonts.
+      // A widget's image is a fixed icon only when every style showing one agrees (see
+      // _fixedIconByImage); one style's glyph alone (a check box) says nothing about its image.
+      if (!isIconImage) {
+        final rendered = <double>[];
+        final requested = <double>{};
+        for (final r in styleResults) {
+          final image = r.discoveredComponents['image'];
+          final nominal = _nominalImageWidth(r.expectedComponents['image']);
+          if (image is! Map || nominal == null) continue;
+          rendered.add((image['width'] as num).toDouble());
+          requested.add(nominal);
+        }
+        if (requested.length > 1 && rendered.reduce(max) - rendered.reduce(min) < 2.0) {
+          constants['fixedIconByImage'] = _median(rendered);
+        }
+      }
       constants['isIconImage'] = isIconImage;
       constants['isFixedIconSize'] = isFixedIconSize;
       constants['fixedIconWidth'] = fixedIconWidth;
@@ -2065,17 +2142,21 @@ class WidgetMeasurer {
     buffer.writeln();
     buffer.writeln('import dev.equo.swt.Config;');
     buffer.writeln('import dev.equo.swt.FontMetricsUtil;');
+    final fixedIconByImage = _fixedIconByImage(analyses);
     final isIconImageWidget =
         hasAnyImageSupport &&
-        analyses.any((a) => a.derivedConstants['isIconImage'] == true);
+        (fixedIconByImage != null ||
+            analyses.any((a) => a.derivedConstants['isIconImage'] == true));
     final isFixedIconSizeWidget =
         isIconImageWidget &&
-        analyses.any((a) => a.derivedConstants['isFixedIconSize'] == true);
-    final fixedIconWidthValue = isFixedIconSizeWidget
-        ? analyses
-            .firstWhere((a) => a.derivedConstants['isFixedIconSize'] == true)
-            .derivedConstants['fixedIconWidth']
-        : null;
+        (fixedIconByImage != null ||
+            analyses.any((a) => a.derivedConstants['isFixedIconSize'] == true));
+    final fixedIconWidthValue = !isFixedIconSizeWidget
+        ? null
+        : fixedIconByImage ??
+            analyses
+                .firstWhere((a) => a.derivedConstants['isFixedIconSize'] == true)
+                .derivedConstants['fixedIconWidth'];
     if (hasAnyImageSupport && !isIconImageWidget) {
       buffer.writeln('import dev.equo.swt.ImageMetricUtil;');
     }
@@ -2085,6 +2166,9 @@ class WidgetMeasurer {
       buffer.writeln('import org.eclipse.swt.graphics.Image;');
     }
     buffer.writeln('import org.eclipse.swt.graphics.Point;');
+    if (fontFromParentFqns.contains(fqn)) {
+      buffer.writeln('import org.eclipse.swt.widgets.DartControl;');
+    }
     buffer.writeln('import $dartFqn;');
     buffer.writeln();
     buffer.writeln('import static dev.equo.swt.Styles.hasFlags;');
@@ -2665,12 +2749,17 @@ class WidgetMeasurer {
       if (isFixedIconSizeWidget) {
         // Image renders as an icon at a fixed theme size, independent of the widget's font.
         buffer.writeln(
+          '    /** The size the icon is drawn at, whatever the size of the image. */',
+        );
+        buffer.writeln(
+          '    public static final double ICON_SIZE = $fixedIconWidthValue;',
+        );
+        buffer.writeln();
+        buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
         buffer.writeln('        if ($drawnImage == null) return PointD.zero;');
-        buffer.writeln(
-          '        return new PointD($fixedIconWidthValue, $fixedIconWidthValue);',
-        );
+        buffer.writeln('        return new PointD(ICON_SIZE, ICON_SIZE);');
         buffer.writeln('    }');
       } else if (isIconImageWidget) {
         // Image renders as icon at fontSize — use textStyle.size() instead of pixel dimensions.
@@ -2685,13 +2774,9 @@ class WidgetMeasurer {
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
-        buffer.writeln('        Image image = $drawnImage;');
-        buffer.writeln('        if (image != null) {');
         buffer.writeln(
-          '            return ImageMetricUtil.getImageSize(image.getImageData());',
+          '        return ImageMetricUtil.getImageSize($drawnImage);',
         );
-        buffer.writeln('        }');
-        buffer.writeln('        return PointD.zero;');
         buffer.writeln('    }');
       }
       buffer.writeln();
@@ -2710,18 +2795,22 @@ class WidgetMeasurer {
       );
 
       // A table row is measured in the application's font when its table was given one too, which
-      // only the table knows; every other widget answers from its own font.
+      // only the table knows; every other widget answers from its own font, or from its parent's when
+      // it has none of its own.
+      final fontOwner = fontFromParentFqns.contains(fqn)
+          ? '((DartControl) widget.getParent().getImpl())'
+          : 'widget';
       buffer.writeln(
         widgetType == 'TableItem'
             ? '            if (!$_tableUsesApplicationFont(widget)) {'
-            : '            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {',
+            : '            if (!Config.getConfigFlags().use_swt_fonts || $fontOwner.getExplicitFont() == null) {',
       );
       buffer.writeln(
-        '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom(widget.getFont());',
+        '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom($fontOwner.getFont());',
       );
       buffer.writeln('            } else {');
       buffer.writeln(
-        '                m.textStyle = TextStyle.from(widget.getFont());',
+        '                m.textStyle = TextStyle.from($fontOwner.getFont());',
       );
       buffer.writeln('            }');
       final itemsExpr = itemsAccessorByFqn[fqn];
@@ -2770,6 +2859,29 @@ class WidgetMeasurer {
         ? sorted[mid]
         : (sorted[mid - 1] + sorted[mid]) / 2;
   }
+
+  /// The size every style that shows an image draws it at, when they all draw it at one size
+  /// whatever the image; null when any style follows the image.
+  double? _fixedIconByImage(List<WidgetAnalysis> analyses) {
+    final withImage = analyses.where(
+      (a) =>
+          a.derivedConstants['imageAffectsWidth'] == true ||
+          a.derivedConstants['imageAffectsHeight'] == true,
+    );
+    if (withImage.isEmpty) return null;
+    final sizes = withImage.map((a) => a.derivedConstants['fixedIconByImage'] as double?);
+    if (sizes.any((s) => s == null)) return null;
+    final values = sizes.cast<double>().toList();
+    return values.reduce(max) - values.reduce(min) < 2.0 ? _median(values) : null;
+  }
+
+  /// The width a case asked its image to be: a record live, a two-element list once read back
+  /// from the model.
+  double? _nominalImageWidth(Object? image) => switch (image) {
+        (int w, int _) => w.toDouble(),
+        [num w, num _] => w.toDouble(),
+        _ => null,
+      };
 
   /// Number formatted as a Java `double` literal, with float noise from the layout rounded off.
   String _d(double v) {
@@ -3423,9 +3535,7 @@ public class CoolBarSizes {
       );
       buffer.writeln('        int cellWidth = getTextWidth(item);');
       buffer.writeln('        if (item.getImage() != null) {');
-      buffer.writeln(
-        '            cellWidth += cellTextStyle(item).size() + CELL_PADDING_LEFT;',
-      );
+      buffer.writeln('            cellWidth += getIconSpace(item);');
       buffer.writeln('        }');
       buffer.writeln('        return cellWidth;');
       buffer.writeln('    }');
@@ -3437,6 +3547,26 @@ public class CoolBarSizes {
       buffer.writeln(
         '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());',
       );
+      buffer.writeln('    }');
+      buffer.writeln();
+      // The icon is drawn in a square of the cell's font size whatever the image's own size, and
+      // {Widget}Item.getImageBounds()/getTextBounds() have to agree with computeSize on it.
+      buffer.writeln(
+        '    /** The square an item\'s image is rendered in: the cell\'s font size, whatever the image\'s own size. */',
+      );
+      buffer.writeln(
+        '    public static int getIconSize($itemType item) {',
+      );
+      buffer.writeln('        return cellTextStyle(item).size();');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width an image takes before the text, its spacing included. */',
+      );
+      buffer.writeln(
+        '    public static int getIconSpace($itemType item) {',
+      );
+      buffer.writeln('        return getIconSize(item) + CELL_PADDING_LEFT;');
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln('    private static TextStyle cellTextStyle($itemType item) {');

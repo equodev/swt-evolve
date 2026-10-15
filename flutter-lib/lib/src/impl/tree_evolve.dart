@@ -25,6 +25,7 @@ import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/font_utils.dart';
 import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
@@ -543,6 +544,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           ),
         ),
         textDirection: TextDirection.ltr,
+        textScaler: FontUtils.textWidgetScaler,
         maxLines: 1,
       );
       painter.layout();

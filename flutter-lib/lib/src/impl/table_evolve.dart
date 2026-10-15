@@ -1094,6 +1094,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
@@ -1161,6 +1162,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
@@ -1369,6 +1371,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerPainter = TextPainter(
       text: TextSpan(text: headerText, style: headerTextStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
     );
     headerPainter.layout();
     return headerPainter.width + theme.headerPadding.horizontal;
@@ -1403,6 +1406,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final cellPainter = TextPainter(
         text: TextSpan(text: cellText, style: cellTextStyle),
         textDirection: TextDirection.ltr,
+        textScaler: FontUtils.textWidgetScaler,
       );
       cellPainter.layout();
       cellWidth += cellPainter.width;
@@ -1536,6 +1540,7 @@ double measureTableText(String text, TextStyle style) {
   final painter = TextPainter(
     text: TextSpan(text: text, style: style),
     textDirection: TextDirection.ltr,
+    textScaler: FontUtils.textWidgetScaler,
     maxLines: 1,
   )..layout();
   return painter.width;

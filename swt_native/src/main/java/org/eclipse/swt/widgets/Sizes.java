@@ -573,9 +573,13 @@ public class Sizes {
                 int textWidth = 0, textHeight = 0;
 
                 if (hasImage) {
-                    Rectangle imageBounds = w.image.getBounds();
-                    imageWidth = imageBounds.width;
-                    imageHeight = imageBounds.height;
+                    if (Config.getConfigFlags().bigger_icon_size) {
+                        imageWidth = imageHeight = (int) Math.round(ToolItemSizes.ICON_SIZE);
+                    } else {
+                        Rectangle imageBounds = w.image.getBounds();
+                        imageWidth = imageBounds.width;
+                        imageHeight = imageBounds.height;
+                    }
                 }
 
                 if (hasText) {
@@ -711,17 +715,15 @@ public class Sizes {
         return ColumnHelper.positions(widths, table.getColumnOrder())[index];
     }
 
-    /** Where a cell's image is drawn: at the start of the cell, on the item's row, as wide as the image. */
+    /** Where a cell's image is drawn: at the start of the cell, on the item's row, in the icon's square. */
     public static Rectangle getImageBounds(DartTableItem item, int index) {
-        Table parent = item._parent();
-        DartTable dartTable = (DartTable) parent.getImpl();
-        if (!(0 <= index && index < Math.max(1, dartTable.columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        Rectangle cellBounds = getBounds(item, index);
+        Rectangle cell = getBounds(item, index);
+        if (cell.width == 0 && cell.height == 0)
+            return cell;
         Image[] images = item._images();
         Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
-        int width = image != null ? image.getBounds().width : 0;
-        return new Rectangle(cellBounds.x, cellBounds.y, width, cellBounds.height);
+        int width = image != null ? dev.equo.swt.size.TableSizes.getIconSize(item.getApi()) : 0;
+        return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
     public static Rectangle getTextBounds(DartTableItem item, int index) {
@@ -735,12 +737,8 @@ public class Sizes {
             return new Rectangle(0, 0, 0, 0);
         Image[] images = item._images();
         Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
-        int imageWidth = 0;
-        if (image != null) {
-            Rectangle imageBounds = image.getBounds();
-            imageWidth = imageBounds.width + 4;
-        }
-        return new Rectangle(cellBounds.x + imageWidth, cellBounds.y, Math.max(0, cellBounds.width - imageWidth), cellBounds.height);
+        int shift = image != null ? dev.equo.swt.size.TableSizes.getIconSpace(item.getApi()) : 0;
+        return new Rectangle(cellBounds.x + shift, cellBounds.y, Math.max(0, cellBounds.width - shift), cellBounds.height);
     }
 
     public static List<TreeItem> flattenVisibleTreeItems(DartTree tree) {

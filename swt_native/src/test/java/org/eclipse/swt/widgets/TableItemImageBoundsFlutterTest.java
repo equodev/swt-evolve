@@ -10,9 +10,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@code TableItem.getImageBounds(int)} to where the cell's icon actually is. Owner-draw label
- * providers paint the icon at these bounds, so a rectangle at the origin stacks every row's icon on
- * the first row.
+ * Pins {@code TableItem.getImageBounds(int)} to where the row's icon actually is. Owner-draw label
+ * providers (JFace's {@code StyledCellLabelProvider}, content assist's {@code TableOwnerDrawSupport})
+ * paint the icon at these bounds, so a rectangle at the origin stacks every row's icon on the first
+ * row.
  */
 @Tag("flutter-it")
 @ExtendWith(MockFlutterBridge.Extension.class)
@@ -37,47 +38,78 @@ class TableItemImageBoundsFlutterTest {
             display.dispose();
     }
 
+    private TableItem[] fillRows(Table table) {
+        TableItem[] items = new TableItem[4];
+        for (int i = 0; i < items.length; i++) {
+            items[i] = new TableItem(table, SWT.NONE);
+            items[i].setText("row " + i);
+            items[i].setImage(image);
+        }
+        return items;
+    }
+
     @Test
     void imageBoundsSitInTheItemsRowJustBeforeItsText() {
         Table table = new Table(shell, SWT.BORDER);
         table.setSize(300, 200);
-        TableItem first = null;
-        TableItem fourth = null;
-        for (int i = 0; i < 4; i++) {
-            TableItem item = new TableItem(table, SWT.NONE);
-            item.setText("row " + i);
-            item.setImage(image);
-            if (i == 0) first = item;
-            fourth = item;
-        }
+        TableItem[] items = fillRows(table);
 
-        Rectangle firstImage = first.getImageBounds(0);
-        Rectangle bounds = fourth.getImageBounds(0);
-        Rectangle cell = fourth.getBounds(0);
-        Rectangle text = fourth.getTextBounds(0);
+        Rectangle firstImage = items[0].getImageBounds(0);
+        Rectangle thirdCell = items[3].getBounds(0);
+        Rectangle thirdImage = items[3].getImageBounds(0);
+        Rectangle thirdText = items[3].getTextBounds(0);
 
-        assertThat(bounds.width).as("image width").isEqualTo(16);
-        assertThat(bounds.y).as("image row").isEqualTo(cell.y).isGreaterThan(firstImage.y);
-        assertThat(bounds.height).as("image height").isEqualTo(cell.height);
-        assertThat(bounds.x).as("image starts in its cell").isEqualTo(cell.x);
-        assertThat(bounds.x + bounds.width).as("image ends before its text").isLessThanOrEqualTo(text.x);
+        assertThat(thirdImage.width).as("image width").isPositive();
+        assertThat(thirdImage.height).as("image height").isPositive();
+        assertThat(thirdImage.y).as("image row").isEqualTo(thirdCell.y).isEqualTo(thirdText.y).isNotEqualTo(firstImage.y);
+        assertThat(thirdImage.x).as("image starts at the cell's content").isEqualTo(thirdCell.x);
+        assertThat(thirdImage.x + thirdImage.width).as("image ends before its text").isLessThanOrEqualTo(thirdText.x);
     }
 
     @Test
-    void imageBoundsFollowTheColumn() {
+    void imageBoundsStartAfterTheCheckBox() {
+        Table plain = new Table(shell, SWT.BORDER);
+        plain.setSize(300, 200);
+        Table checked = new Table(shell, SWT.BORDER | SWT.CHECK);
+        checked.setSize(300, 200);
+        TableItem plainItem = fillRows(plain)[1];
+        TableItem checkedItem = fillRows(checked)[1];
+
+        assertThat(checkedItem.getImageBounds(0).x).as("image is pushed past the check box")
+                .isGreaterThan(plainItem.getImageBounds(0).x);
+        assertThat(checkedItem.getImageBounds(0).y).as("same row either way")
+                .isEqualTo(plainItem.getImageBounds(0).y);
+    }
+
+    @Test
+    void columnsWithoutAnImageReportAnEmptyWidthOnTheirRow() {
+        Table table = new Table(shell, SWT.BORDER);
+        table.setSize(300, 200);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        TableItem item = fillRows(table)[2];
+
+        Rectangle secondCell = item.getBounds(1);
+        Rectangle secondImage = item.getImageBounds(1);
+
+        assertThat(secondImage.width).as("no image in column 1").isZero();
+        assertThat(secondImage.x).isEqualTo(secondCell.x);
+        assertThat(secondImage.y).isEqualTo(secondCell.y);
+        assertThat(item.getImageBounds(5)).as("out of range").isEqualTo(new Rectangle(0, 0, 0, 0));
+    }
+
+    @Test
+    void anImageInAnotherColumnStartsAtThatColumnsCell() {
         Table table = new Table(shell, SWT.BORDER);
         table.setSize(300, 200);
         new TableColumn(table, SWT.NONE).setWidth(100);
         new TableColumn(table, SWT.NONE).setWidth(100);
         TableItem item = new TableItem(table, SWT.NONE);
         item.setText(new String[] {"a", "b"});
-
-        assertThat(item.getImageBounds(1).width).as("no image, no width").isZero();
         item.setImage(1, image);
-        Rectangle bounds = item.getImageBounds(1);
 
+        Rectangle bounds = item.getImageBounds(1);
         assertThat(bounds.x).as("the second column's image").isEqualTo(item.getBounds(1).x);
-        assertThat(bounds.width).isEqualTo(16);
-        assertThat(item.getImageBounds(2)).as("a column that does not exist").isEqualTo(new Rectangle(0, 0, 0, 0));
+        assertThat(bounds.width).as("an image takes room").isPositive();
     }
 }

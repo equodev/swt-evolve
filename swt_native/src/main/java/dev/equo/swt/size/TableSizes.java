@@ -77,7 +77,7 @@ public class TableSizes {
     public static int getCellContentWidth(TableItem item) {
         int cellWidth = getTextWidth(item);
         if (item.getImage() != null) {
-            cellWidth += cellTextStyle(item).size() + CELL_PADDING_LEFT;
+            cellWidth += getIconSpace(item);
         }
         return cellWidth;
     }
@@ -87,6 +87,16 @@ public class TableSizes {
         String text = item.getText();
         if (text == null || text.isEmpty()) return 0;
         return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());
+    }
+
+    /** The square an item's image is rendered in: the cell's font size, whatever the image's own size. */
+    public static int getIconSize(TableItem item) {
+        return cellTextStyle(item).size();
+    }
+
+    /** The width an image takes before the text, its spacing included. */
+    public static int getIconSpace(TableItem item) {
+        return getIconSize(item) + CELL_PADDING_LEFT;
     }
 
     private static TextStyle cellTextStyle(TableItem item) {
