@@ -20,6 +20,7 @@ import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
 import '../impl/utils/region_clip.dart';
+import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/tracker_session.dart';
 import '../impl/utils/window_origin.dart';
 import '../impl/utils/widget_utils.dart';
@@ -112,15 +113,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   /// Where a window-global pointer position falls in the coordinate space Java works in: measured
   /// from this Shell's own top-left, then shifted by where this Shell sits. Read from the render
-  /// tree rather than derived from the frame's parts, so maximized state is already accounted for.
+  /// tree rather than derived from the frame's parts, so maximized state is already accounted for,
+  /// and through the Shell's own transform, so the result is in SWT units at any zoom.
   ///
   /// The top-left is the frame's, title bar included: Java's bounds for a shell start there too, and
   /// its toDisplay adds the title bar to reach the client area.
   Offset _toDisplay(Offset windowPosition) {
-    if (!mounted) return windowPosition;
+    if (!mounted) return logicalToSwt(windowPosition);
     final box = context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return windowPosition;
-    final local = windowPosition - box.localToGlobal(Offset.zero);
+    if (box == null || !box.hasSize) return logicalToSwt(windowPosition);
+    final local = box.globalToLocal(windowPosition);
     final b = state.bounds;
     if (b == null) return local;
     return Offset(local.dx + b.x.toDouble(), local.dy + b.y.toDouble());

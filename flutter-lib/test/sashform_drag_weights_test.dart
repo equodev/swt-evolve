@@ -22,6 +22,7 @@ import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sashform.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 /// Same as the generated SashFormSwt, except sendEvent captures outgoing
 /// events instead of handing them to EquoCommService (which needs a live
@@ -110,5 +111,48 @@ void main() {
     expect(weights[0], greaterThan(weights[1]),
         reason: 'the divider moved right, so the left panel must now weigh '
             'more than the right one');
+  });
+
+  testWidgets('a zoomed SashForm divider moves as far as the pointer, in SWT units',
+      (WidgetTester tester) async {
+    // The panels are laid out in SWT units and the drag is read off the pointer in the view's
+    // pixels. At 1.0 they coincide; at any other scale a missed conversion gives the left panel a
+    // different share than the pointer moved it to.
+    Future<int> leftWeightAt(double scale) async {
+      appScaleNotifier.value = scale;
+      addTearDown(() => appScaleNotifier.value = 1.0);
+      final selections = <VEvent?>[];
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: SizedBox(
+          width: 400,
+          height: 300,
+          child: _CapturingSashFormSwt(
+            // A widget of its own per run: the previous one keeps the divider where its drag left it.
+            value: _sashForm()..id = 42 + (scale * 10).round(),
+            onEvent: (ev, payload) {
+              if (ev == 'Selection/Selection') selections.add(payload);
+            },
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final gesture =
+          await tester.startGesture(tester.getCenter(find.byType(_CapturingSashFormSwt)));
+      await gesture.moveBy(const Offset(30, 0));
+      await tester.pump();
+      await gesture.moveBy(const Offset(30, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
+      return int.parse(selections.last!.text!.split(',').first);
+    }
+
+    // Weights are normalized to 1000, so 500 is the divider where it started.
+    final plain = await leftWeightAt(1.0) - 500;
+    final zoomed = await leftWeightAt(1.5) - 500;
+
+    expect(zoomed, closeTo(plain / 1.5, 3));
   });
 }

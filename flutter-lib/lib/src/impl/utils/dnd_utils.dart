@@ -5,6 +5,7 @@ import '../../gen/droptarget.dart';
 import '../../gen/event.dart';
 import '../../gen/widget.dart';
 import 'dnd_session.dart';
+import 'swt_zoom_scale.dart';
 
 class DndDragPayload {
   final int sourceControlId;
@@ -415,8 +416,9 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     super.deactivate();
   }
 
-  Offset _resolvePosition(DragTargetDetails<T> details) =>
-      widget.resolvePosition != null ? widget.resolvePosition!(details) : details.offset;
+  Offset _resolvePosition(DragTargetDetails<T> details) => widget.resolvePosition != null
+      ? widget.resolvePosition!(details)
+      : logicalToSwt(details.offset);
 
   void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;

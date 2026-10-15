@@ -10,6 +10,7 @@ import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'color_utils.dart';
+import 'utils/swt_zoom_scale.dart';
 
 class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     extends CompositeImpl<T, V> {
@@ -438,9 +439,9 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     if (availableSpace <= 0) return;
 
     final totalWeight = _panelSizes.reduce((a, b) => a + b);
-    final currentGlobalPosition = isVertical
-        ? details.globalPosition.dy
-        : details.globalPosition.dx;
+    // The pointer is read against the view and the panels are laid out in SWT units.
+    final pointer = logicalToSwt(details.globalPosition);
+    final currentGlobalPosition = isVertical ? pointer.dy : pointer.dx;
 
     double currentPixelPosition = 0;
     for (int i = 0; i < sashIndex; i++) {
@@ -486,9 +487,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
 
     final totalWeight = _panelSizes.reduce((a, b) => a + b);
 
-    final currentGlobalPosition = isVertical
-        ? details.globalPosition.dy
-        : details.globalPosition.dx;
+    final pointer = logicalToSwt(details.globalPosition);
+    final currentGlobalPosition = isVertical ? pointer.dy : pointer.dx;
     final targetPixelPosition =
         currentGlobalPosition - _dragStartGlobalPosition;
 

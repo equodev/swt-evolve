@@ -614,8 +614,9 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
   Rect? _viewportRect(RenderBox cell) {
     final box = _scrollable?.context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return null;
-    return (box.localToGlobal(Offset.zero) & box.size)
-        .shift(-cell.localToGlobal(Offset.zero));
+    // Back through the cell's transform rather than subtracting view positions, which at any zoom
+    // are in other pixels than the size they are combined with.
+    return cell.globalToLocal(box.localToGlobal(Offset.zero)) & box.size;
   }
 
   void _hide() {
