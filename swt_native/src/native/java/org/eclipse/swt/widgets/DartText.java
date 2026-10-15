@@ -323,18 +323,18 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        if (selection != null) {
-            setSelection(selection.y);
-        }
+        setSelection((getApi().style & SWT.MULTI) != 0 ? selection.x : selection.y);
     }
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
@@ -366,6 +366,8 @@ public class DartText extends DartScrollable implements IText {
     @Override
     void createWidget() {
         super.createWidget();
+        if ((getApi().style & SWT.PASSWORD) != 0)
+            echoCharacter = PASSWORD;
         if ((getApi().style & SWT.PASSWORD) != 0) {
         }
         doubleClick = true;
@@ -762,7 +764,7 @@ public class DartText extends DartScrollable implements IText {
         if (selection == null) {
             return new Point(caretPosition, caretPosition);
         }
-        return this.selection;
+        return new Point(selection.x, selection.y);
     }
 
     /**
@@ -897,11 +899,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public char[] getTextChars() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            return getEditText();
-        } else {
-        }
-        return this.textChars;
+        return getEditText();
     }
 
     /**
@@ -1551,6 +1549,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTabs(int tabs) {
         checkWidget();
+        if (tabs < 0)
+            return;
         if (this.tabs == tabs)
             return;
         this.tabs = tabs;
@@ -1614,18 +1614,10 @@ public class DartText extends DartScrollable implements IText {
      * @since 3.7
      */
     public void setTextChars(char[] text) {
-        char[] newValue = text;
         checkWidget();
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-        }
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            setEditText(text);
-        } else {
-        }
-        this.textChars = newValue;
-        sendEvent(SWT.Modify);
+        TextHelper.setText(this, new String(text));
     }
 
     /**
@@ -1660,7 +1652,7 @@ public class DartText extends DartScrollable implements IText {
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         if (limit < 0)
-            return;
+            limit = Text.LIMIT;
         textLimit = limit;
     }
 
@@ -1680,8 +1672,10 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        int newValue = Math.max(0, Math.min(index, Math.max(0, getLineCount() - 1)));
-        this.topIndex = newValue;
+        int lines = getLineCount();
+        int lineHeight = getLineHeight();
+        int lastTop = Math.max(0, lines * lineHeight - getClientArea().height) / lineHeight;
+        this.topIndex = Math.max(0, Math.min(index, Math.min(lines - 1, lastTop)));
     }
 
     /**

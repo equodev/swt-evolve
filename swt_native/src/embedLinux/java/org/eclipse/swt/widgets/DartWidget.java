@@ -867,7 +867,7 @@ public abstract class DartWidget implements IWidget {
         //	String string = getClass ().getName ();
         //	int index = string.lastIndexOf ('.');
         //	if (index == -1) return string;
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.length();
         while ((--index > 0) && (string.charAt(index) != '.')) {
         }
@@ -1027,7 +1027,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     void hookEvents() {

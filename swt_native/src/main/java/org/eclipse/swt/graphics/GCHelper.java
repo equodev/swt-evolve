@@ -1,6 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.size.Mnemonics;
 import dev.equo.swt.size.PointD;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -118,22 +119,8 @@ public class GCHelper {
 
         String text = string;
 
-        // Process DRAW_MNEMONIC: remove '&' characters (mnemonic markers)
         if ((flags & SWT.DRAW_MNEMONIC) != 0) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                if (c == '&' && i + 1 < text.length()) {
-                    char next = text.charAt(i + 1);
-                    if (next == '&') {
-                        sb.append('&');
-                        i++;
-                    }
-                    continue;
-                }
-                sb.append(c);
-            }
-            text = sb.toString();
+            text = Mnemonics.display(text);
         }
 
         // Process DRAW_TAB: replace tabs with spaces (8 spaces per tab)

@@ -859,7 +859,7 @@ public class DartText extends DartScrollable implements IText {
         if (selection == null) {
             return new Point(caretPosition, caretPosition);
         }
-        return this.selection;
+        return new Point(selection.x, selection.y);
     }
 
     /**

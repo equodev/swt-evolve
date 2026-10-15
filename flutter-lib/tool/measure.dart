@@ -2000,11 +2000,16 @@ class WidgetMeasurer {
     final softWrapCount = styleResults
         .where((r) => r.discoveredComponents['text']?['softWrap'] == true)
         .length;
-    constants['wrapsMode'] = softWrapCount == 0
-        ? 'none'
-        : softWrapCount == styleResults.length
-            ? 'always'
-            : 'whenWrapStyle';
+    // A style that declares WRAP wraps at the width it is given, even where the probe finds no
+    // soft-wrapping Text: a Text draws an EditableText, whose wrapping it does not see.
+    final declaresWrap = style.toUpperCase().split('|').contains('WRAP');
+    constants['wrapsMode'] = declaresWrap
+        ? 'whenWrapStyle'
+        : softWrapCount == 0
+            ? 'none'
+            : softWrapCount == styleResults.length
+                ? 'always'
+                : 'whenWrapStyle';
 
     final algorithm = _deriveAlgorithm(widgetType, style, constants);
 
@@ -2170,24 +2175,38 @@ class WidgetMeasurer {
     buffer.writeln(' */');
     buffer.writeln('public class ${widgetType}Sizes {');
     buffer.writeln();
-
-    // Group analyses by their constants to avoid duplicating identical sizing logic
-    // IMPORTANT: VERTICAL styles must never be grouped with HORIZONTAL styles due to dimension swap
-    String getConstantsKey(Map<String, dynamic> constants) {
-      final isConstantSize = constants['isConstantSize'] == true;
+    // Group analyses by their constants to avoid duplicating identical sizing logic: styles of
+    // equal values share one class and one branch.
+    // IMPORTANT: VERTICAL styles must never be grouped with HORIZONTAL styles due to dimension swap.
+    // A constant-size style uses none of the padding or wrapping values, so only its size and the
+    // orientation its style declares tell it from another. A style that wraps only with the WRAP
+    // bit shares its branch with the ones that never wrap: the branch tests the bit.
+    String getConstantsKey(WidgetAnalysis analysis) {
+      final constants = analysis.derivedConstants;
+      final size = '${constants['minWidth']}_${constants['minHeight']}';
+      if (constants['isConstantSize'] == true) {
+        final vertical = analysis.widgetType.split('-')[1].split('|').contains('VERTICAL');
+        return '${size}_constant_vertical:$vertical';
+      }
       final useHorizontalPadding = constants['useHorizontalPadding'] as bool;
       final useVerticalPadding = constants['useVerticalPadding'] as bool;
-      final isVerticalStyle = constants['isVerticalStyle'] == true;
-      return '${constants['minWidth']}_${constants['minHeight']}_'
-          '${isConstantSize}_${useHorizontalPadding}_${useVerticalPadding}_'
+      final wrap = constants['wrapsMode'] == 'always' ? 'always' : 'byStyle';
+      return '${size}_${useHorizontalPadding}_${useVerticalPadding}_'
           '${constants['horizontalPadding']}_${constants['verticalPadding']}_'
-          'vertical:${isVerticalStyle}_wrap:${constants['wrapsMode'] ?? 'none'}';
+          'vertical:${constants['isVerticalStyle'] == true}_wrap:$wrap';
     }
 
     final Map<String, List<WidgetAnalysis>> groupsByConstants = {};
     for (var analysis in analyses) {
-      final key = getConstantsKey(analysis.derivedConstants);
+      final key = getConstantsKey(analysis);
       groupsByConstants.putIfAbsent(key, () => []).add(analysis);
+    }
+    for (final group in groupsByConstants.values) {
+      if (group.any((a) => a.derivedConstants['wrapsMode'] == 'whenWrapStyle')) {
+        for (final a in group) {
+          a.derivedConstants['wrapsMode'] = 'whenWrapStyle';
+        }
+      }
     }
 
     // Map from style to class name (for merged groups)
@@ -2270,6 +2289,12 @@ class WidgetMeasurer {
       (a) => a.widgetType.split('-')[1] == 'VERTICAL',
     );
 
+    // What a widget draws is what it is measured from, and Drawn (hand-written, next to these classes)
+    // says what that is for each widget: without the mnemonic marker, without a Link's markup, a
+    // password as stars, a Label's text or image, whichever it shows.
+    const drawnText = 'Drawn.text(widget)';
+    const drawnImage = 'Drawn.image(widget)';
+
     // Generate computeSize method (public API)
     buffer.writeln(
       '    public static Point computeSize(Dart$widgetType widget, int wHint, int hHint, boolean changed) {',
@@ -2344,7 +2369,7 @@ class WidgetMeasurer {
               "$indent// so empty text reserves a line only when there's no image to take that branch instead.",
             );
             buffer.writeln(
-              '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING && widget.getImage() == null);',
+              '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING && $drawnImage == null);',
             );
           } else {
             buffer.writeln(
@@ -2445,10 +2470,6 @@ class WidgetMeasurer {
           buffer.writeln('${indent}    height = hHint;');
           buffer.writeln('${indent}} else if ($wrapCondition) {');
           if (wrapsMode == 'always') {
-            buffer.writeln('${indent}    String rawText = widget.getText();');
-            buffer.writeln(
-              '${indent}    String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";',
-            );
             final aw = useHorizontalPadding
                 ? 'wHint - $styleName.HORIZONTAL_PADDING'
                 : '(double) wHint';
@@ -2456,7 +2477,7 @@ class WidgetMeasurer {
               '${indent}    double availableWidth = Math.max(1.0, $aw);',
             );
             buffer.writeln(
-              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);',
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped($drawnText, m.textStyle, availableWidth);',
             );
             final hExpr = useVerticalPadding
                 ? 'wrapped.y() + $styleName.VERTICAL_PADDING'
@@ -2486,8 +2507,14 @@ class WidgetMeasurer {
               );
             }
             buffer.writeln(
-              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);',
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped($drawnText, m.textStyle, availableWidth);',
             );
+            // A widget whose empty text still takes a line keeps that line when it wraps.
+            if (emptyTextAffectsSizing) {
+              buffer.writeln(
+                '${indent}    wrapped = new PointD(wrapped.x(), Math.max(wrapped.y(), $textY));',
+              );
+            }
             if (imageAffectsHeight && useVerticalPadding) {
               buffer.writeln(
                 '${indent}    height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
@@ -2608,7 +2635,20 @@ class WidgetMeasurer {
             styles[i],
       ];
 
-      final conditions = minimalStyles.map((style) {
+      // The flags every style of the group shares say it alone when no style outside it holds them
+      // all: a Text wraps whatever its other bits, so its WRAP branch tests WRAP, not each style.
+      final common = styleFlags.reduce((a, b) => a.intersection(b));
+      final groupStyles = styles.toSet();
+      final sharedSaysIt = common.isNotEmpty &&
+          analyses
+              .map((a) => a.widgetType.split('-')[1])
+              .where((s) => !groupStyles.contains(s))
+              .every((s) => !s.split('|').toSet().containsAll(common));
+      final testedStyles = sharedSaysIt && minimalStyles.length > 1
+          ? [(common.toList()..sort()).join('|')]
+          : minimalStyles;
+
+      final conditions = testedStyles.map((style) {
         final styleCheck = style.contains('|')
             ? '(${style.split('|').map((s) => 'SWT.$s').join(' | ')})'
             : 'SWT.$style';
@@ -2712,7 +2752,7 @@ class WidgetMeasurer {
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
-        buffer.writeln('        if (widget.getImage() == null) return PointD.zero;');
+        buffer.writeln('        if ($drawnImage == null) return PointD.zero;');
         buffer.writeln('        return new PointD(ICON_SIZE, ICON_SIZE);');
         buffer.writeln('    }');
       } else if (isIconImageWidget) {
@@ -2720,7 +2760,7 @@ class WidgetMeasurer {
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget, TextStyle ts) {',
         );
-        buffer.writeln('        if (widget.getImage() == null) return PointD.zero;');
+        buffer.writeln('        if ($drawnImage == null) return PointD.zero;');
         buffer.writeln('        double iconSize = ts != null ? (double) ts.size() : 16.0;');
         buffer.writeln('        return new PointD(iconSize, iconSize);');
         buffer.writeln('    }');
@@ -2729,7 +2769,7 @@ class WidgetMeasurer {
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
         buffer.writeln(
-          '        return ImageMetricUtil.getImageSize(widget.getImage());',
+          '        return ImageMetricUtil.getImageSize($drawnImage);',
         );
         buffer.writeln('    }');
       }
@@ -2741,40 +2781,11 @@ class WidgetMeasurer {
       buffer.writeln(
         '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing) {',
       );
-      if (widgetType == 'CLabel') {
-        buffer.writeln(
-          "        // Dart treats a null text field the same as \"\" (state.text ?? ''); match that here so an",
-        );
-        buffer.writeln(
-          "        // untouched (never setText()) CLabel sizes the same as one explicitly set to \"\".",
-        );
-      }
-      buffer.writeln('        String text = widget.getText();');
-      if (widgetType == 'CLabel') {
-        buffer.writeln('        if (text == null) text = "";');
-      }
-      if (widgetType == 'Link') {
-        buffer.writeln('        if (text != null) {');
-        buffer.writeln('            text = text.replaceAll("<[^>]+>", "");');
-        buffer.writeln('        }');
-      }
-      // PASSWORD style only applies to Text widget
-      if (widgetType == 'Text') {
-        buffer.writeln(
-          '        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {',
-        );
-        // String.repeat is Java 11; src/main compiles at the oldest release's level.
-        buffer.writeln(
-          '            text = dev.equo.swt.Java8.repeat("*", text.length());',
-        );
-        buffer.writeln('        }');
-      }
+      buffer.writeln('        String text = $drawnText;');
 
       // Use parameter to decide whether empty text should be measured
       buffer.writeln(
-        widgetType == 'CLabel'
-            ? '        if (emptyTextAffectsSizing || !text.isEmpty()) {'
-            : '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
+        '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
       );
 
       // A widget with no font of its own letters in its parent's.

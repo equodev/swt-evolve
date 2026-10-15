@@ -625,6 +625,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -790,7 +791,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     boolean dragDetect(int button, int count, int stateMask, int x, int y) {
         if (button != 1 || count != 1)
             return false;
-        if (!dragDetect(x, y, false, null))
+        if (!dragDetect(x, y, false, new boolean[1]))
             return false;
         return sendDragEvent(button, stateMask, x, y);
     }

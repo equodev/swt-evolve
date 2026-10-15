@@ -73,7 +73,7 @@ public class ToolItemSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? PUSH.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(wrapped.y() + PUSH.VERTICAL_PADDING, PUSH.MIN_HEIGHT);
             } else {
                 height = Math.max(m.text.y() + (m.text.y() > 0 ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
@@ -89,7 +89,7 @@ public class ToolItemSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? SEPARATOR.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(wrapped.y() + SEPARATOR.VERTICAL_PADDING, SEPARATOR.MIN_HEIGHT);
             } else {
                 height = Math.max(m.text.y() + (m.text.y() > 0 ? SEPARATOR.VERTICAL_PADDING : 0), SEPARATOR.MIN_HEIGHT);
@@ -105,7 +105,7 @@ public class ToolItemSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? DROP_DOWN.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(wrapped.y() + DROP_DOWN.VERTICAL_PADDING, DROP_DOWN.MIN_HEIGHT);
             } else {
                 height = Math.max(m.text.y() + (m.text.y() > 0 ? DROP_DOWN.VERTICAL_PADDING : 0), DROP_DOWN.MIN_HEIGHT);
@@ -121,7 +121,7 @@ public class ToolItemSizes {
                 double imageWidth = m.image.x();
                 double imageSpacing = 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? CHECK.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
-                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
                 height = Math.max(wrapped.y() + CHECK.VERTICAL_PADDING, CHECK.MIN_HEIGHT);
             } else {
                 height = Math.max(m.text.y() + (m.text.y() > 0 ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
@@ -136,12 +136,12 @@ public class ToolItemSizes {
     public static final double ICON_SIZE = 30.0;
 
     private static PointD computeImage(DartToolItem widget) {
-        if (widget.getImage() == null) return PointD.zero;
+        if (Drawn.image(widget) == null) return PointD.zero;
         return new PointD(ICON_SIZE, ICON_SIZE);
     }
 
     private static PointD computeText(DartToolItem widget, Measure m, boolean emptyTextAffectsSizing) {
-        String text = widget.getText();
+        String text = Drawn.text(widget);
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts || ((DartControl) widget.getParent().getImpl()).getExplicitFont() == null) {
                 m.textStyle = ToolItemTheme.get().textStyle().withStyleFrom(((DartControl) widget.getParent().getImpl()).getFont());

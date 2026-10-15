@@ -34,7 +34,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   ) {
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final separatorColor = widgetTheme.borderColor;
-    final thickness = widgetTheme.borderWidth;
+    final thickness = widgetTheme.separatorThickness;
 
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = hasValidBounds

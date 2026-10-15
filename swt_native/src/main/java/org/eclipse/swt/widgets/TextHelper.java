@@ -8,6 +8,9 @@ import org.eclipse.swt.graphics.Point;
 
 public class TextHelper {
 
+    private TextHelper() {
+    }
+
     public static void insertEditText(DartText text, String string) {
         int length = string.length();
         Point selection = text.getSelection();
@@ -307,10 +310,16 @@ public class TextHelper {
         if (e.text == null)
             return;
         String proposed = e.text;
+        String before = text.getText();
         text.setText(proposed);
-        boolean applied = proposed.equals(text.getText());
-        if (applied && e.start >= 0) {
-            text.setSelection(e.start);
+        String after = text.getText();
+        boolean applied = proposed.equals(after);
+        // setText puts the caret at the start, and this is typing: the caret goes where the edit leaves
+        // it. When a Verify listener or the limit changed the proposal, that is as far from the end of
+        // the text as the client reported. A vetoed edit left the text and its selection as they were.
+        boolean vetoed = !applied && after.equals(before);
+        if (e.start >= 0 && !vetoed) {
+            text.setSelection(e.start + after.length() - proposed.length());
         }
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
@@ -348,7 +357,9 @@ public class TextHelper {
 
         text.setEditText(string);
         text.text = string;
-        text.selection = null;
+        // The old selection belonged to the old text: the caret goes back to the start, as on Win32 and GTK
+        // (Cocoa leaves a single-line text's caret at the end).
+        text.setSelection(0, 0);
 
         text.updateAutoTextDirectionIfNeeded();
         // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,

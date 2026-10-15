@@ -97,6 +97,58 @@ class TextSelectionUpdateTest {
                 .isFalse();
     }
 
+    @Test
+    @DisplayName("replacing the text names the selection it leaves behind")
+    void setTextNamesTheSelectionItLeaves() {
+        Text field = openedDialogField();
+        DartText impl = (DartText) field.getImpl();
+
+        field.setText("Hi");
+
+        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
+                .as("the client holds the select-all of the old text and would apply it to the new one")
+                .contains("\"selection\"");
+    }
+
+    @Test
+    @DisplayName("a single-line text goes back to the start of the text that replaces it")
+    void setTextGoesBackToTheStart() {
+        Text field = fieldWithACaretPastTheNewText();
+
+        field.setText("Hi");
+
+        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+        assertThat(field.getCaretPosition()).isZero();
+    }
+
+    @Test
+    @DisplayName("replacing the text with the selection it already has is not an update of the selection")
+    void setTextKeepingTheSelectionDoesNotNameIt() {
+        Text field = new Text(Mocks.shell(), SWT.MULTI);
+        sendWhole(field);
+        DartText impl = (DartText) field.getImpl();
+
+        field.setText("Hi");
+
+        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8)).doesNotContain("\"selection\"");
+    }
+
+    @Test
+    @DisplayName("a multi-line text goes back to the start when its text is replaced")
+    void setTextOnAMultiLineTextNamesTheStart() {
+        Shell shell = Mocks.shell();
+        Text field = new Text(shell, SWT.MULTI);
+        field.setText("Hello World");
+        field.setSelection(3, 8);
+        sendWhole(field);
+        DartText impl = (DartText) field.getImpl();
+
+        field.setText("Hi");
+
+        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8)).contains("\"selection\"");
+        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+    }
+
     /** A field as a JFace input dialog leaves it: a name in it, all of it selected, client told. */
     private Text openedDialogField() {
         Shell shell = Mocks.shell();
@@ -104,6 +156,15 @@ class TextSelectionUpdateTest {
         Text field = new Text(parent, SWT.SINGLE | SWT.BORDER);
         field.setText("Chicken");
         field.selectAll();
+        sendWhole(field);
+        return field;
+    }
+
+    /** A single-line field whose caret sits past the end of the two-character text that will replace it. */
+    private Text fieldWithACaretPastTheNewText() {
+        Text field = new Text(Mocks.shell(), SWT.SINGLE);
+        field.setText("Hello World");
+        field.setSelection(9);
         sendWhole(field);
         return field;
     }

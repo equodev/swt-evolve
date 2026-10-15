@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../gen/toolitem.dart';
+import '../impl/utils/text_utils.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'main_toolbar_scope.dart';
@@ -111,22 +112,7 @@ class RichToolTipData {
     );
   }
 
-  /// SWT marks the mnemonic with `&`; `&&` is a literal ampersand.
-  static String _stripMnemonics(String? raw) {
-    if (raw == null || raw.isEmpty) return '';
-    final out = StringBuffer();
-    for (var i = 0; i < raw.length; i++) {
-      if (raw[i] == '&') {
-        if (i + 1 < raw.length && raw[i + 1] == '&') {
-          out.write('&');
-          i++;
-        }
-        continue;
-      }
-      out.write(raw[i]);
-    }
-    return out.toString().trim();
-  }
+  static String _stripMnemonics(String? raw) => stripAccelerators(raw).trim();
 
   @override
   bool operator ==(Object other) =>
