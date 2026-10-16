@@ -591,6 +591,7 @@ public class DartTable extends DartComposite implements ITable {
         if (!getApi().isVisible()) {
             forceResize();
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -661,6 +662,7 @@ public class DartTable extends DartComposite implements ITable {
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
         // reset to default font to get the usual behavior
         setFontDescription(defaultFont().handle);
+        getValue().markDirty(VTable.COLUMNS);
         getValue().markDirty(VTable.ITEMS);
     }
 
@@ -814,6 +816,7 @@ public class DartTable extends DartComposite implements ITable {
         if (!searchEnabled()) {
         } else {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {

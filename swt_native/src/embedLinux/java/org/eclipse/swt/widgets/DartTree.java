@@ -623,6 +623,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         updateHeaderCSS();
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -679,6 +680,7 @@ public class DartTree extends DartComposite implements ITree {
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
         // reset to default font to get the usual behavior
         setFontDescription(defaultFont().handle);
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -779,6 +781,7 @@ public class DartTree extends DartComposite implements ITree {
         if (!searchEnabled()) {
         } else {
         }
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item) {

@@ -473,6 +473,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -498,6 +499,7 @@ public class DartTable extends DartComposite implements ITable {
         super.createWidget();
         items = new TableItem[4];
         columns = new TableColumn[4];
+        getValue().markDirty(VTable.COLUMNS);
         getValue().markDirty(VTable.ITEMS);
     }
 
@@ -678,6 +680,7 @@ public class DartTable extends DartComposite implements ITable {
             setScrollWidth();
         } else {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {

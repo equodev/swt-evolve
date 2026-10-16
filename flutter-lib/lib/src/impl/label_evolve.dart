@@ -87,8 +87,15 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
     // state.background already resolves inheritance (DartControl.getExplicitBackground(), Java
     // side); ParentBackgroundScope would unconditionally shadow it with a stale ancestor value.
-    final backgroundColor = getBackgroundColor(
-        background: state.background, defaultColor: null, context: context);
+    // An ancestor's background image is already painted behind this label; an inherited colour
+    // would cover it, so only a colour the label set itself is painted over it.
+    final stayTransparentForImage = state.backgroundImage == null &&
+        !(state.hasOwnBackground ?? false) &&
+        ParentBackgroundScope.backgroundImageOf(context) != null;
+    final backgroundColor = stayTransparentForImage
+        ? null
+        : getBackgroundColor(
+            background: state.background, defaultColor: null, context: context);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -109,7 +116,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         !hasLineDelimiter(text) &&
         text.isNotEmpty &&
         state.image == null) {
-      final textWidth = FontUtils.measureTextWidget(text, textStyle).width;
+      final textSize = FontUtils.measureTextWidget(text, textStyle);
+      final textWidth = textSize.width;
       final boundsWidth = state.bounds!.width.toDouble();
       if (textWidth > boundsWidth - padding.horizontal) {
         padding = EdgeInsets.only(top: padding.top, bottom: padding.bottom);
@@ -117,6 +125,12 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
             textWidth <= boundsWidth * 1.4) {
           fitTextToBounds = true;
         }
+      }
+      // A label laid out at its font's line height (a common GridData.heightHint, taken from
+      // GC.getFontMetrics()) has no room for the theme's vertical padding; native SWT draws the
+      // line in exactly that height, so give up the padding rather than clip the glyphs.
+      if (textSize.height > state.bounds!.height - padding.vertical) {
+        padding = EdgeInsets.only(left: padding.left, right: padding.right);
       }
     }
 

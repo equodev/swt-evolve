@@ -104,15 +104,15 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
 
             @Override
             public void controlMoved(ControlEvent e) {
-                layout();
+                getApi().layout();
             }
 
             @Override
             public void controlResized(ControlEvent e) {
-                layout();
+                getApi().layout();
             }
         };
-        timer = this::layout;
+        timer = getApi()::layout;
         treeListener = new TreeListener() {
 
             final Runnable runnable = () -> {
@@ -120,7 +120,7 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
                     return;
                 if (DartTreeEditor.this.tree.isDisposed())
                     return;
-                layout();
+                getApi().layout();
                 editor.setVisible(true);
             };
 
@@ -236,7 +236,7 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
     }
 
     void resize() {
-        layout();
+        getApi().layout();
         /*
 	 * On some platforms, the table scrolls when an item that
 	 * is partially visible at the bottom of the table is
@@ -303,10 +303,10 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
      */
     public void setEditor(Control editor, TreeItem item, int column) {
         Control newValue = editor;
-        setItem(item);
-        setColumn(column);
+        getApi().setItem(item);
+        getApi().setColumn(column);
         this.editor = newValue;
-        setEditor(editor);
+        getApi().setEditor(editor);
     }
 
     @Override
@@ -328,9 +328,9 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
      */
     public void setEditor(Control editor, TreeItem item) {
         Control newValue = editor;
-        setItem(item);
+        getApi().setItem(item);
         this.editor = newValue;
-        setEditor(editor);
+        getApi().setEditor(editor);
     }
 
     @Override

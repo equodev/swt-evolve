@@ -529,7 +529,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
     }
 
     @Override
-    public Control[] _getChildren() {
+    public Control[] _displayedChildren() {
         return getControls(false);
     }
 

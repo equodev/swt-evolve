@@ -604,6 +604,7 @@ public class DartTree extends DartComposite implements ITree {
         setScrollWidth();
         updateImageList();
         updateScrollBar();
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -669,6 +670,7 @@ public class DartTree extends DartComposite implements ITree {
         items = new TreeItem[4];
         columns = new TreeColumn[4];
         cachedItemCount = -1;
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -866,6 +868,7 @@ public class DartTree extends DartComposite implements ITree {
             dirty();
         }
         ;
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item, long hItem) {

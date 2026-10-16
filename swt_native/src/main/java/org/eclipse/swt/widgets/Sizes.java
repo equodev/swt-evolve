@@ -106,6 +106,32 @@ public class Sizes {
         return width;
     }
 
+    /**
+     * The width that shows a Tree column's header and every visible cell whole, measured the way
+     * Flutter lays the row out: the first column also holds the indent, the expander and the image.
+     * Never 0, which Flutter would read as a hidden column.
+     */
+    public static int packWidth(DartTreeColumn column) {
+        DartTree tree = (DartTree) column.parent.getImpl();
+        int index = tree.indexOf(column.getApi());
+        if (index < 0)
+            return 0;
+        int width = dev.equo.swt.size.TreeSizes.getPackedHeaderWidth(column.getApi());
+        Image headerImage = column.getImage();
+        if (headerImage != null) {
+            width += headerImage.getBounds().width;
+        }
+        int cellsLeft = dev.equo.swt.size.TreeSizes.getCellsLeft(tree);
+        for (TreeItem item : flattenVisibleTreeItems(tree)) {
+            int cellWidth = dev.equo.swt.size.TreeSizes.getPackedCellWidth(item, index);
+            Image image = index == 0 ? item.getImage() : item.getImage(index);
+            if (image != null) cellWidth += dev.equo.swt.size.TreeSizes.getIconSpace();
+            if (index == 0) cellWidth += dev.equo.swt.size.TreeSizes.getContentLeft(tree, item) - cellsLeft;
+            width = Math.max(width, cellWidth);
+        }
+        return width;
+    }
+
     private static int measureCellText(String text, Font font) {
         TextStyle style = Config.getConfigFlags().use_swt_fonts
             ? TextStyle.from(font)
@@ -117,8 +143,17 @@ public class Sizes {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    /**
+     * CLabelSizes is measured with the default margin on each side; the label's own margins take its place.
+     * A hint stands as given.
+     */
     public static Point computeSize(DartCLabel c, int wHint, int hHint, boolean changed) {
-        return CLabelSizes.computeSize(c, wHint, hHint, changed);
+        Point size = CLabelSizes.computeSize(c, wHint, hHint, changed);
+        int width = wHint != SWT.DEFAULT ? size.x
+                : Math.max(0, size.x + c.getLeftMargin() + c.getRightMargin() - 2 * DartCLabel.DEFAULT_MARGIN);
+        int height = hHint != SWT.DEFAULT ? size.y
+                : Math.max(0, size.y + c.getTopMargin() + c.getBottomMargin() - 2 * DartCLabel.DEFAULT_MARGIN);
+        return new Point(width, height);
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {
@@ -787,10 +822,11 @@ public class Sizes {
                     + dev.equo.swt.size.TreeSizes.getTextWidth(item.getApi(), 0);
             return new Rectangle(left, row.y, width, row.height);
         }
-        int x = 0;
+        // Flutter starts a row's cells after the tree's edge gap and the row's padding.
+        int x = dev.equo.swt.size.TreeSizes.getCellsLeft(dartTree);
         for (int i = 0; i < index && i < columns.length; i++) x += columns[i].getWidth();
         int width = index < columns.length ? columns[index].getWidth() : 0;
-        if (index == 0) return new Rectangle(x + left, row.y, Math.max(0, width - left), row.height);
+        if (index == 0) return new Rectangle(left, row.y, Math.max(0, x + width - left), row.height);
         return new Rectangle(x, row.y, width, row.height);
     }
 
@@ -800,7 +836,7 @@ public class Sizes {
 
     /** The first cell's text, as SWT reports an item's bounds. */
     public static Rectangle getBounds(DartTreeItem item) {
-        return getTextBounds(item, 0);
+        return textCell(item, 0);
     }
 
     public static Rectangle getBounds(DartTreeItem item, int index) {
@@ -817,7 +853,19 @@ public class Sizes {
         return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
+    /**
+     * The line a cell's text occupies: Flutter centres it vertically in the row, and an owner-drawing
+     * listener that draws its text at these bounds expects to land on it, as on Cocoa.
+     */
     public static Rectangle getTextBounds(DartTreeItem item, int index) {
+        Rectangle cell = textCell(item, index);
+        if (cell.height == 0) return cell;
+        int line = Math.min(cell.height, dev.equo.swt.size.TreeSizes.getTextHeight(item.getApi(), index));
+        return new Rectangle(cell.x, cell.y + (cell.height - line) / 2, cell.width, line);
+    }
+
+    /** A cell's text area: the cell after its image, the full height of the row. */
+    private static Rectangle textCell(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
         Rectangle cell = treeCell(item, index, row);

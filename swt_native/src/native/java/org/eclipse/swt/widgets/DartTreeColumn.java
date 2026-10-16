@@ -334,12 +334,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void pack() {
         checkWidget();
-        int width = 0;
-        if (image != null) {
-        }
-        if (((DartTree) parent.getImpl()).sortColumn == this.getApi() && ((DartTree) parent.getImpl()).sortDirection != SWT.NONE) {
-        }
-        setWidth(width);
+        setWidth(Sizes.packWidth(this));
     }
 
     @Override

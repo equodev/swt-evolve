@@ -218,10 +218,39 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        Control control = findBackgroundControl();
-        if (control != null) {
-        } else {
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        org.eclipse.swt.graphics.Image image = getApi().getBackgroundImage();
+        org.eclipse.swt.graphics.Pattern previous = gc.getBackgroundPattern();
+        if (image == null) {
+            // setBackground clears the GC's background pattern, so both are put back.
+            org.eclipse.swt.graphics.Color previousColor = gc.getBackground();
+            gc.setBackground(getApi().getBackground());
+            gc.fillRectangle(x, y, width, height);
+            gc.setBackground(previousColor);
+            gc.setBackgroundPattern(previous);
+            return;
         }
+        org.eclipse.swt.graphics.Pattern pattern = new org.eclipse.swt.graphics.Pattern(gc.getDevice(), image);
+        org.eclipse.swt.graphics.Transform transform = null;
+        org.eclipse.swt.graphics.Transform previousTransform = null;
+        if (offsetX != 0 || offsetY != 0) {
+            previousTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+            gc.getTransform(previousTransform);
+            transform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+            gc.getTransform(transform);
+            transform.translate(-offsetX, -offsetY);
+            gc.setTransform(transform);
+        }
+        gc.setBackgroundPattern(pattern);
+        gc.fillRectangle(x + offsetX, y + offsetY, width, height);
+        gc.setBackgroundPattern(previous);
+        if (transform != null) {
+            gc.setTransform(previousTransform);
+            transform.dispose();
+            previousTransform.dispose();
+        }
+        pattern.dispose();
     }
 
     public Composite findDeferredControl() {
@@ -1122,6 +1151,10 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     Object contentView() {
         return getBridge().container(this);
+    }
+
+    public Control[] _displayedChildren() {
+        return _getChildren();
     }
 
     protected void _hookEvents() {
