@@ -98,7 +98,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
      */
     public SwtPrintDialog(Shell parent, int style, PrintDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     static int checkStyle(Shell parent, int style) {

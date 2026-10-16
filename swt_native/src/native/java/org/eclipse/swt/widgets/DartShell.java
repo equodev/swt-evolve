@@ -278,7 +278,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     DartShell(Display display, Shell parent, int style, long handle, boolean embedded, Shell api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null)
             display = DartDisplay.getCurrent();
         if (display == null)

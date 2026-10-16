@@ -95,7 +95,7 @@ public class DartPrintDialog extends DartDialog implements IPrintDialog {
      */
     public DartPrintDialog(Shell parent, int style, PrintDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     static int checkStyle(Shell parent, int style) {

@@ -95,7 +95,7 @@ public class DartColorDialog extends DartDialog implements IColorDialog {
      */
     public DartColorDialog(Shell parent, int style, ColorDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     /**

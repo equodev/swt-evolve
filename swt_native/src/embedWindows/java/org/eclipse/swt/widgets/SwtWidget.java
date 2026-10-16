@@ -182,7 +182,7 @@ public abstract class SwtWidget implements IWidget {
      */
     public SwtWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
