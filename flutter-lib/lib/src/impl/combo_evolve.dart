@@ -10,6 +10,7 @@ import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/combo_theme_extension.dart';
 import '../theme/theme_settings/combo_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
@@ -48,14 +49,10 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     double maxTextHeight = 0;
 
     for (var s in allStrings) {
-      final painter = TextPainter(
-        text: TextSpan(text: s, style: style),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-      )..layout();
+      final size = FontUtils.measureTextWidget(s, style);
 
-      if (painter.width > maxTextWidth) maxTextWidth = painter.width + 2;
-      if (painter.height > maxTextHeight) maxTextHeight = painter.height + 2;
+      if (size.width > maxTextWidth) maxTextWidth = size.width + 2;
+      if (size.height > maxTextHeight) maxTextHeight = size.height + 2;
     }
 
     return Size(maxTextWidth, maxTextHeight);
@@ -72,14 +69,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       isSimple ? 0 : theme.iconSize;
 
   /// The width of the value on display, with the slack [_maxTextSize] leaves.
-  double _selectedTextWidth(TextStyle style) {
-    final painter = TextPainter(
-      text: TextSpan(text: state.text ?? "", style: style),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    )..layout();
-    return painter.width + 2;
-  }
+  double _selectedTextWidth(TextStyle style) =>
+      FontUtils.measureTextWidget(state.text ?? "", style).width + 2;
 
   Size _calculatePreferredSize(
     Size textSize,

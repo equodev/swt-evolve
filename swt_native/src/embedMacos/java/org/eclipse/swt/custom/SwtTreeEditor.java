@@ -102,15 +102,15 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
 
             @Override
             public void controlMoved(ControlEvent e) {
-                layout();
+                getApi().layout();
             }
 
             @Override
             public void controlResized(ControlEvent e) {
-                layout();
+                getApi().layout();
             }
         };
-        timer = this::layout;
+        timer = getApi()::layout;
         treeListener = new TreeListener() {
 
             final Runnable runnable = () -> {
@@ -118,7 +118,7 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
                     return;
                 if (SwtTreeEditor.this.tree.isDisposed())
                     return;
-                layout();
+                getApi().layout();
                 editor.setVisible(true);
             };
 
@@ -234,7 +234,7 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
     }
 
     void resize() {
-        layout();
+        getApi().layout();
         /*
 	 * On some platforms, the table scrolls when an item that
 	 * is partially visible at the bottom of the table is
@@ -300,9 +300,9 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
      * @since 3.1
      */
     public void setEditor(Control editor, TreeItem item, int column) {
-        setItem(item);
-        setColumn(column);
-        setEditor(editor);
+        getApi().setItem(item);
+        getApi().setColumn(column);
+        getApi().setEditor(editor);
     }
 
     @Override
@@ -321,8 +321,8 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
      * @param item the TreeItem for the row of the cell being tracked by this editor
      */
     public void setEditor(Control editor, TreeItem item) {
-        setItem(item);
-        setEditor(editor);
+        getApi().setItem(item);
+        getApi().setEditor(editor);
     }
 
     @Override

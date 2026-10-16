@@ -352,7 +352,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
-      child: !canvasUsesThemeColors && hostsAppColoredContent
+      child: !gcUsesThemeColors(gcOverlay?.themedCanvas) && hostsAppColoredContent
           ? SwtColorScope(child: NoLayout(children: children, composite: state))
           : NoLayout(children: children, composite: state),
     );

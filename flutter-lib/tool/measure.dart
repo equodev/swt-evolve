@@ -3894,6 +3894,15 @@ public class CoolBarSizes {
         buffer.writeln(
           '    private static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
         );
+        // A multi-column cell and header add their insets, the alignment inset the row and header
+        // builders apply to left-aligned text, and the gap before the next column.
+        const alignmentInset = 4.0;
+        buffer.writeln(
+          '    private static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
+        );
+        buffer.writeln(
+          '    private static final int HEADER_PADDING = ${(row.columnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
+        );
       }
     }
     buffer.writeln();
@@ -3937,6 +3946,17 @@ public class CoolBarSizes {
 
     final param = widgetType.toLowerCase();
     final itemType = '${widgetType}Item';
+    buffer.writeln();
+    buffer.writeln(
+      '    /** Where a row\'s box starts: after the edge gap. An owner-drawn row\'s overlay starts here. */',
+    );
+    buffer.writeln('    public static double getRowLeft(Dart$widgetType $param) {');
+    buffer.writeln(
+      '        double gapFraction = $param.getColumnCount() > 1 ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;',
+    );
+    buffer.writeln('        Rectangle bounds = $param.getBounds();');
+    buffer.writeln('        return (bounds != null ? bounds.width : 0) * gapFraction;');
+    buffer.writeln('    }');
     // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
     buffer.writeln();
     buffer.writeln(
@@ -3944,20 +3964,13 @@ public class CoolBarSizes {
     );
     buffer.writeln('        boolean withCols = $param.getColumnCount() > 1;');
     buffer.writeln(
-      '        double gapFraction = withCols ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;',
-    );
-    buffer.writeln(
       '        double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;',
     );
     buffer.writeln(
       '        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
     );
-    buffer.writeln('        Rectangle bounds = $param.getBounds();');
     buffer.writeln(
-      '        double widgetWidth = bounds != null ? bounds.width : 0;',
-    );
-    buffer.writeln(
-      '        return widgetWidth * gapFraction + paddingLeft + indent * level;',
+      '        return getRowLeft($param) + paddingLeft + indent * level;',
     );
     buffer.writeln('    }');
     // Where an item's own content begins, and what its parts are reported to take. These answer
@@ -3965,6 +3978,13 @@ public class CoolBarSizes {
     // geometry they are derived from instead of being hand-written into the file afterwards.
     final row = sizingTheme.extension<TreeThemeExtension>();
     if (row != null) {
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where the first column starts in a row: the expander\'s left edge at level 0, after the edge gap and the row\'s padding. */',
+      );
+      buffer.writeln('    public static int getCellsLeft(Dart$widgetType $param) {');
+      buffer.writeln('        return (int) Math.round(getExpanderLeft($param, 0));');
+      buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
         '    /** Where an item\'s first cell content starts: after its indent, the expander and any checkbox. */',
@@ -4007,6 +4027,58 @@ public class CoolBarSizes {
         '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
       );
       buffer.writeln('        return width + TEXT_PADDING;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The height of one line of a cell\'s text. */');
+      buffer.writeln(
+        '    public static int getTextHeight($itemType item, int index) {',
+      );
+      buffer.writeln(
+        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(item.getFont(index));',
+      );
+      buffer.writeln(
+        '        return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y());',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width a multi-column cell needs to show its text whole. */',
+      );
+      buffer.writeln(
+        '    public static int getPackedCellWidth($itemType item, int index) {',
+      );
+      buffer.writeln(
+        '        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width a column\'s header needs to show its title whole: a multi-column header shows it in capitals. */',
+      );
+      buffer.writeln(
+        '    public static int getPackedHeaderWidth(${widgetType}Column column) {',
+      );
+      buffer.writeln('        String text = column.getText();');
+      buffer.writeln(
+        '        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);',
+      );
+      buffer.writeln(
+        '        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    private static int measure(String text, org.eclipse.swt.graphics.Font font) {',
+      );
+      buffer.writeln(
+        '        if (text == null || text.isEmpty()) return 0;',
+      );
+      buffer.writeln(
+        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(font);',
+      );
+      buffer.writeln(
+        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
+      );
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln('    static int levelOf($itemType item) {');
