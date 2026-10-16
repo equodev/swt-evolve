@@ -41,7 +41,8 @@ void main() {
         srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1,
       )..image = _image(e.value, e.key);
 
-      final shape = await ImageShape.fromVImageDetailed(opArgs.image!, opArgs, null);
+      final shape = await ImageShape.fromVImageDetailed(opArgs.image!, opArgs, null,
+          useThemeColors: false);
       expect(shape.image, isNotNull,
           reason: 'depth ${e.key}: drawImage produced a shape with nothing in it');
       expect(shape.srcRect, isNotNull, reason: 'depth ${e.key}: no source rectangle');
