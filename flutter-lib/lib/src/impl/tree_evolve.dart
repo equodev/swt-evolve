@@ -745,8 +745,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
     _hScrollContentWidth = columns.isEmpty ? totalWidth : null;
 
+    final scrollsHorizontally = hasHScroll && totalWidth != null;
     Widget scrollableContent;
-    if (hasHScroll && totalWidth != null) {
+    if (scrollsHorizontally) {
       scrollableContent = Scrollbar(
         controller: _horizontalController,
         thumbVisibility: true,
@@ -775,6 +776,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               ? Scrollbar(
                   controller: _verticalController,
                   thumbVisibility: true,
+                  // The horizontal viewport, when there is one, sits between this bar and the list.
+                  notificationPredicate: (notification) =>
+                      notification.metrics.axis == Axis.vertical &&
+                      notification.depth == (scrollsHorizontally ? 1 : 0),
                   child: ScrollConfiguration(
                     behavior: ScrollConfiguration.of(
                       context,
