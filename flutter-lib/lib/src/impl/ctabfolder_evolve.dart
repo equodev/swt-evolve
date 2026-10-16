@@ -6,6 +6,7 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show BoxHitTestResult, RenderMetaData;
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
@@ -1233,16 +1234,20 @@ class _CTabBarState extends State<_CTabBar> {
                   cursor: enabled
                       ? SystemMouseCursors.click
                       : SystemMouseCursors.basic,
-                  child: GestureDetector(
-                    onTap: onClose,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        bottom: widgetTheme.tabCloseIconBottomPadding,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: widgetTheme.tabCloseIconSize,
-                        color: getCTabCloseButtonColor(widgetTheme, isSelected),
+                  child: MetaData(
+                    metaData: _tabCloseButton,
+                    behavior: HitTestBehavior.opaque,
+                    child: GestureDetector(
+                      onTap: onClose,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom: widgetTheme.tabCloseIconBottomPadding,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: widgetTheme.tabCloseIconSize,
+                          color: getCTabCloseButtonColor(widgetTheme, isSelected),
+                        ),
                       ),
                     ),
                   ),
@@ -1734,6 +1739,9 @@ class _CTabInsertionMarkerPainter extends CustomPainter {
 /// A folder that has an application `DropTarget` hands the drop to it and does not reorder
 /// itself: native CTabFolder has no built-in reordering, so running both would move the tab
 /// twice and diverge from the native backend.
+/// Marks a tab's close button for hit tests.
+const _tabCloseButton = #ctabCloseButton;
+
 class TabDragRow extends StatefulWidget {
   final List<Widget> children;
   final List<CTabItem> tabs;
@@ -1823,6 +1831,21 @@ class _TabDragRowState extends State<TabDragRow> {
 
   RenderBox? get _row => _rowKey.currentContext?.findRenderObject() as RenderBox?;
 
+  /// Where the last press on the strip went down.
+  Offset? _pressAt;
+
+  bool _pressedOnCloseButton(int index) {
+    final box = _itemBox(index);
+    final at = _pressAt;
+    if (box == null || at == null) return false;
+    final result = BoxHitTestResult();
+    box.hitTest(result, position: box.globalToLocal(at));
+    return result.path.any((entry) {
+      final target = entry.target;
+      return target is RenderMetaData && target.metaData == _tabCloseButton;
+    });
+  }
+
   RenderBox? _itemBox(int index) => index < _itemKeys.length
       ? _itemKeys[index].currentContext?.findRenderObject() as RenderBox?
       : null;
@@ -1897,7 +1920,9 @@ class _TabDragRowState extends State<TabDragRow> {
       // the cursor into before asking. Not the row's: the row is the strip's scrolling content, so
       // once the strip has been scrolled its coordinates are the tab's unscrolled position, and the
       // workbench finds no tab there and drags the whole stack instead.
+      // None for a drag that starts on the close button, as native SWT does.
       dragDetectEvent: () {
+        if (_pressedOnCloseButton(index)) return null;
         final box = _itemBox(index);
         final centre = box == null
             ? Offset.zero
@@ -1966,12 +1991,15 @@ class _TabDragRowState extends State<TabDragRow> {
 
     // mainAxisSize.min so the row takes its natural width and the scroll view overflows when
     // tabs don't fit; the default (max) fills and clips instead.
-    final row = Row(
-      key: _rowKey,
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-        count,
-        (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+    final row = Listener(
+      onPointerDown: (e) => _pressAt = e.position,
+      child: Row(
+        key: _rowKey,
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(
+          count,
+          (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+        ),
       ),
     );
 

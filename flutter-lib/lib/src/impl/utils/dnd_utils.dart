@@ -235,7 +235,8 @@ Widget wrapDraggable<T extends Object>({
   Widget Function(Widget child)? childWhenDraggingBuilder,
   bool useLongPress = false,
   bool alwaysDraggable = false,
-  VEvent Function()? dragDetectEvent,
+  /// The DragDetect to raise for this drag, or null to raise none.
+  VEvent? Function()? dragDetectEvent,
   DragDetectGate? dragDetectGate,
 }) {
   // alwaysDraggable: a CTabFolder tab is draggable for the folder's own tab reordering even when
@@ -244,7 +245,8 @@ Widget wrapDraggable<T extends Object>({
   if (!hasDragSource && !alwaysDraggable) return child;
 
   void sendDragDetect() {
-    widget.sendDragDetectDragDetect(state, dragDetectEvent?.call() ?? VEvent());
+    final event = dragDetectEvent == null ? VEvent() : dragDetectEvent();
+    if (event != null) widget.sendDragDetectDragDetect(state, event);
   }
 
   void onUpdate(DragUpdateDetails d) {

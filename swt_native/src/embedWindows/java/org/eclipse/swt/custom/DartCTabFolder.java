@@ -1779,16 +1779,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void onDragDetect(Event event) {
-        boolean consume = false;
-        for (CTabItem item : items) {
-            if (((DartCTabItem) item.getImpl()).closeRect.contains(event.x, event.y)) {
-                consume = true;
-                break;
-            }
-        }
-        if (consume) {
-            event.type = SWT.None;
-        }
     }
 
     void onFocus(Event event) {
