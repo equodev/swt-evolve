@@ -64,15 +64,18 @@ final class AwtDropBridge {
 
     private static final int SWT_OPERATIONS = DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK;
 
-    /** Bridges whose canvas currently carries an SWT drop target. */
-    private static final Set<AwtDropBridge> ACTIVE = ConcurrentHashMap.newKeySet();
-    private static final String DRAG_FILTER_KEY = AwtDropBridge.class.getName() + ".dragFilter";
-    /** The transfers and operations of the drag in progress, captured when it is detected. */
-    private static volatile Transfer[] dragTransfers = new Transfer[0];
-    private static volatile int dragOperations = SWT_OPERATIONS;
+    private static final String DRAG_STATE_KEY = AwtDropBridge.class.getName() + ".dragState";
+
+    /** One per {@link Display}: what the drag in progress offers, and the bridges that can take it. */
+    private static final class DragState {
+        final Set<AwtDropBridge> active = ConcurrentHashMap.newKeySet();
+        volatile Transfer[] transfers = new Transfer[0];
+        volatile int operations = SWT_OPERATIONS;
+    }
 
     private final Canvas canvas;
     private final Display display;
+    private final DragState drag;
     private final Set<java.awt.dnd.DropTarget> registered = ConcurrentHashMap.newKeySet();
     private final DropSession session = new DropSession();
     private volatile Container root;
@@ -81,7 +84,7 @@ final class AwtDropBridge {
     AwtDropBridge(Canvas canvas) {
         this.canvas = canvas;
         this.display = canvas.getDisplay();
-        installDragFilter(display);
+        this.drag = dragState(display);
     }
 
     void bind(Container root) {
@@ -97,7 +100,7 @@ final class AwtDropBridge {
     }
 
     void dispose() {
-        ACTIVE.remove(this);
+        drag.active.remove(this);
     }
 
     /**
@@ -105,18 +108,21 @@ final class AwtDropBridge {
      * the source is known to a party other than the source itself, and it is raised before the drag
      * reaches any drop target.
      */
-    private static void installDragFilter(Display display) {
-        if (display.getData(DRAG_FILTER_KEY) != null) return;
-        display.setData(DRAG_FILTER_KEY, Boolean.TRUE);
+    private static DragState dragState(Display display) {
+        Object existing = display.getData(DRAG_STATE_KEY);
+        if (existing instanceof DragState) return (DragState) existing;
+        DragState state = new DragState();
+        display.setData(DRAG_STATE_KEY, state);
         display.addFilter(SWT.DragDetect, e -> {
             Object source = e.widget == null ? null : e.widget.getData(DND.DRAG_SOURCE_KEY);
             if (!(source instanceof DragSource) || ((DragSource) source).isDisposed()) return;
             DragSource dragSource = (DragSource) source;
             Transfer[] transfers = dragSource.getTransfer();
-            dragTransfers = transfers == null ? new Transfer[0] : transfers;
-            dragOperations = dragSource.getStyle() & SWT_OPERATIONS;
-            for (AwtDropBridge bridge : ACTIVE) bridge.offerDragTransfers();
+            state.transfers = transfers == null ? new Transfer[0] : transfers;
+            state.operations = dragSource.getStyle() & SWT_OPERATIONS;
+            for (AwtDropBridge bridge : state.active) bridge.offerDragTransfers();
         });
+        return state;
     }
 
     private void syncSoon() {
@@ -132,10 +138,10 @@ final class AwtDropBridge {
         if (!registered.isEmpty() && swtTarget == null) {
             swtTarget = new DropTarget(canvas, SWT_OPERATIONS);
             swtTarget.addDropListener(new Listener());
-            ACTIVE.add(this);
+            drag.active.add(this);
             offerDragTransfers();
         } else if (registered.isEmpty() && swtTarget != null) {
-            ACTIVE.remove(this);
+            drag.active.remove(this);
             swtTarget.dispose();
             swtTarget = null;
         }
@@ -144,7 +150,7 @@ final class AwtDropBridge {
     private void offerDragTransfers() {
         if (swtTarget == null || swtTarget.isDisposed()) return;
         List<Transfer> mappable = new ArrayList<>();
-        for (Transfer transfer : dragTransfers) {
+        for (Transfer transfer : drag.transfers) {
             if (transfer != null && flavorsFor(transfer).length > 0) mappable.add(transfer);
         }
         swtTarget.setTransfer(mappable.toArray(new Transfer[0]));
@@ -217,7 +223,7 @@ final class AwtDropBridge {
         return new Point(local.x, local.y);
     }
 
-    private static TransferData firstMappable(TransferData[] types) {
+    private TransferData firstMappable(TransferData[] types) {
         if (types == null) return null;
         for (TransferData type : types) {
             if (transferFor(type) != null) return type;
@@ -225,16 +231,16 @@ final class AwtDropBridge {
         return null;
     }
 
-    private static Transfer transferFor(TransferData type) {
+    private Transfer transferFor(TransferData type) {
         if (type == null) return null;
-        for (Transfer transfer : dragTransfers) {
+        for (Transfer transfer : drag.transfers) {
             if (transfer != null && transfer.isSupportedType(type) && flavorsFor(transfer).length > 0) return transfer;
         }
         return null;
     }
 
     /** The action a drag with no modifier keys asks for, as the native peer derives it. */
-    private static int userAction() {
+    private int userAction() {
         int ops = sourceActions();
         if ((ops & DnDConstants.ACTION_MOVE) != 0) return DnDConstants.ACTION_MOVE;
         if ((ops & DnDConstants.ACTION_COPY) != 0) return DnDConstants.ACTION_COPY;
@@ -242,8 +248,8 @@ final class AwtDropBridge {
         return DnDConstants.ACTION_NONE;
     }
 
-    private static int sourceActions() {
-        return toAwt(dragOperations);
+    private int sourceActions() {
+        return toAwt(drag.operations);
     }
 
     static int toAwt(int swtOperations) {
@@ -263,11 +269,9 @@ final class AwtDropBridge {
         }
     }
 
-    private static final DataFlavor URL_FLAVOR = flavor("application/x-java-url;class=java.net.URL");
-
-    private static DataFlavor flavor(String mimeType) {
+    private static DataFlavor urlFlavor() {
         try {
-            return new DataFlavor(mimeType);
+            return new DataFlavor("application/x-java-url;class=java.net.URL");
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(e);
         }
@@ -277,7 +281,7 @@ final class AwtDropBridge {
     static DataFlavor[] flavorsFor(Transfer transfer) {
         if (transfer instanceof TextTransfer) return new DataFlavor[] {DataFlavor.stringFlavor};
         if (transfer instanceof FileTransfer) return new DataFlavor[] {DataFlavor.javaFileListFlavor};
-        if (transfer instanceof URLTransfer) return new DataFlavor[] {URL_FLAVOR, DataFlavor.stringFlavor};
+        if (transfer instanceof URLTransfer) return new DataFlavor[] {urlFlavor(), DataFlavor.stringFlavor};
         if (transfer instanceof HTMLTransfer) return new DataFlavor[] {DataFlavor.allHtmlFlavor};
         Set<DataFlavor> flavors = new LinkedHashSet<>();
         SystemFlavorMap map = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
@@ -290,24 +294,13 @@ final class AwtDropBridge {
         return flavors.toArray(new DataFlavor[0]);
     }
 
-    private static final Method TYPE_NAMES = typeNamesMethod();
-
-    private static Method typeNamesMethod() {
-        try {
-            Method m = Transfer.class.getDeclaredMethod("getTypeNames");
-            m.setAccessible(true);
-            return m;
-        } catch (ReflectiveOperationException | RuntimeException unavailable) {
-            return null;
-        }
-    }
-
     /** {@code Transfer.getTypeNames()} is protected: only subclasses are meant to call it. */
     private static String[] typeNames(Transfer transfer) {
-        if (TYPE_NAMES == null) return null;
         try {
-            return (String[]) TYPE_NAMES.invoke(transfer);
-        } catch (ReflectiveOperationException | RuntimeException e) {
+            Method typeNames = Transfer.class.getDeclaredMethod("getTypeNames");
+            typeNames.setAccessible(true);
+            return (String[]) typeNames.invoke(transfer);
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
             return null;
         }
     }
@@ -344,7 +337,7 @@ final class AwtDropBridge {
                 for (String path : (String[]) data) files.add(new File(path));
                 return files;
             }
-            if (URL_FLAVOR.equals(flavor) && data instanceof String) return new URL((String) data);
+            if (urlFlavor().equals(flavor) && data instanceof String) return new URL((String) data);
             Class<?> representation = flavor.getRepresentationClass();
             if (representation.isInstance(data)) return data;
             if (representation == InputStream.class && data instanceof byte[]) {

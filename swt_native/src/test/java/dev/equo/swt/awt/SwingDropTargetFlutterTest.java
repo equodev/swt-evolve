@@ -10,6 +10,7 @@ import org.eclipse.swt.dnd.DragSourceAdapter;
 import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -88,7 +89,7 @@ class SwingDropTargetFlutterTest {
         item.setText("Item A");
         tree.setSelection(item);
         DragSource dragSource = new DragSource(tree, DND.DROP_COPY | DND.DROP_MOVE);
-        dragSource.setTransfer(TextTransfer.getInstance());
+        dragSource.setTransfer(new Transfer[] {TextTransfer.getInstance()});
         dragSource.addDragListener(new DragSourceAdapter() {
             @Override
             public void dragSetData(DragSourceEvent event) {

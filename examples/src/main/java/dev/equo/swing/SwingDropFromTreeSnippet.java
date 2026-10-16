@@ -54,7 +54,7 @@ public class SwingDropFromTreeSnippet {
             new TreeItem(tree, SWT.NONE).setText(name);
         }
         DragSource source = new DragSource(tree, DND.DROP_COPY | DND.DROP_MOVE);
-        source.setTransfer(TextTransfer.getInstance());
+        source.setTransfer(new Transfer[] {TextTransfer.getInstance()});
         source.addDragListener(new DragSourceAdapter() {
             @Override
             public void dragSetData(DragSourceEvent e) {
