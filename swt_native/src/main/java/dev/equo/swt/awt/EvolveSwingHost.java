@@ -4,14 +4,18 @@ import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.PaintEvent;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
@@ -296,6 +300,7 @@ public final class EvolveSwingHost {
         installEvolveDispatcher();
         installHeavyweightRepaintListener();
         installDispatcherReinstateListener();
+        installStalledFocusRepair();
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -369,6 +374,24 @@ public final class EvolveSwingHost {
                 ensureDispatcherInstalled();
             }
         }, AWTEvent.WINDOW_EVENT_MASK);
+    }
+
+    /** Redelivers WINDOW_GAINED_FOCUS to a modal dialog left active but unfocused by a modal loop run from WINDOW_ACTIVATED. */
+    private static void installStalledFocusRepair() {
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        kfm.addPropertyChangeListener("activeWindow", ev -> {
+            if (ev.getNewValue() instanceof Window) {
+                Window active = (Window) ev.getNewValue();
+                EventQueue.invokeLater(() -> completeStalledFocus(kfm, active));
+            }
+        });
+    }
+
+    static void completeStalledFocus(KeyboardFocusManager kfm, Window active) {
+        if (!(active instanceof Dialog) || !((Dialog) active).isModal()) return;
+        if (kfm.getActiveWindow() != active || kfm.getFocusedWindow() != null) return;
+        if (!active.isShowing() || !active.isFocusableWindow()) return;
+        active.dispatchEvent(new WindowEvent(active, WindowEvent.WINDOW_GAINED_FOCUS));
     }
 
     /**
