@@ -181,18 +181,27 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
         shellWindowsToPump.add(window);
-        // A detached shell opens where the application put it; the window is created at a size only,
-        // so the position has to be pushed once or every window would stack at the OS default spot.
-        // A shell still at the origin was never placed — the window is then cascaded instead, the way
-        // a window manager places one, because the alternative is every unplaced window landing in
-        // exactly the same centred spot, which looks like opening one did nothing at all.
-        Rectangle placed = (bounds.x != 0 || bounds.y != 0) ? bounds : cascade(bounds);
+        // The window gets the bounds the shell restores to; a shell never placed is cascaded.
+        Rectangle normal = restoredBounds(shell, bounds);
+        Rectangle placed = (normal.x != 0 || normal.y != 0) ? normal : cascade(normal);
         window.setBounds(placed);
-        shell.setLocation(placed.x, placed.y);
+        if (!shell.getMaximized() && !shell.getFullScreen()) shell.setLocation(placed.x, placed.y);
         String title = shell.getText();
         if (title != null && !title.isEmpty()) window.setTitle(title);
         bindShellWindowView(shell, context);
         return window;
+    }
+
+    /**
+     * Where a maximized shell goes back to when it is restored: the bounds it had before it was
+     * maximized, as native SWT keeps them, not the screen it fills now.
+     */
+    private static Rectangle restoredBounds(Shell shell, Rectangle bounds) {
+        if (!shell.getMaximized()) return bounds;
+        Rectangle normal = ((ImplShell) shell.getImpl())._normalBounds();
+        if (normal == null) normal = new Rectangle(0, 0, 0, 0);
+        return new Rectangle(normal.x, normal.y,
+                normal.width > 0 ? normal.width : 640, normal.height > 0 ? normal.height : 480);
     }
 
     // Every native call a detached window makes goes through one of these, so a test can stand a
@@ -722,10 +731,10 @@ public class DeskDisplayBridge extends DisplayBridge {
     /** Moves and sizes the window to where {@code shell}'s own window was. */
     private void takeOverWindowGeometry(Shell shell) {
         windowShell = shell;
-        if (shell.getFullScreen()) {
-            setShellWindowState(windowContext, ShellWindow.STATE_FULLSCREEN);
-        } else if (shell.getMaximized()) {
-            setShellWindowState(windowContext, ShellWindow.STATE_MAXIMIZED);
+        int state = windowStateOf(shell);
+        // A minimized shell taking the window over is shown restored: it is the one left to see.
+        if (state == ShellWindow.STATE_FULLSCREEN || state == ShellWindow.STATE_MAXIMIZED) {
+            setShellWindowState(windowContext, state);
         } else {
             setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
             // The shell measures the client area of the window it leaves. Until the chrome above it

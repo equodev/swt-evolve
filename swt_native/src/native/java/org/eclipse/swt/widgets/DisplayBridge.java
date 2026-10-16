@@ -711,6 +711,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             ShellWindow window = createShellWindow(shell);
             if (window == null) continue;
             shellWindows.put(shell, window);
+            // setMaximized and friends only reach a window that exists, so a state set before open()
+            // is applied here.
+            int state = windowStateOf(shell);
+            if (state != ShellWindow.STATE_NORMAL) window.setState(state);
             registerShellClientReady(shell);
         }
         return leftOwnWindow;
@@ -1391,6 +1395,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
         setShellWindowState(control, fullScreen, ShellWindow.STATE_FULLSCREEN);
+    }
+
+    /** The window state {@code shell} asks for. */
+    static int windowStateOf(Shell shell) {
+        if (shell.getMinimized()) return ShellWindow.STATE_MINIMIZED;
+        if (shell.getFullScreen()) return ShellWindow.STATE_FULLSCREEN;
+        if (shell.getMaximized()) return ShellWindow.STATE_MAXIMIZED;
+        return ShellWindow.STATE_NORMAL;
     }
 
     private void setShellWindowState(DartControl control, boolean on, int state) {

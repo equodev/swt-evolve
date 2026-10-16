@@ -89,6 +89,20 @@ class MultiWindowNativeTest {
     }
 
     @Test
+    @DisplayName("a state set before a shell opens reaches its window on every surface")
+    void stateSetBeforeOpenReachesTheWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "top-level");
+        TestBridge bridge = install();
+        openShell();
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setMaximized(true);
+        detached.setVisible(true);
+
+        assertThat(bridge.created).hasSize(1);
+        assertThat(bridge.created.get(0).states).containsExactly(ShellWindow.STATE_MAXIMIZED);
+    }
+
+    @Test
     @DisplayName("the client is told which shells it must not draw")
     void namesTheDetachedShellsToTheClient() {
         System.setProperty(WindowPolicy.MODE_PROPERTY, "top-level");

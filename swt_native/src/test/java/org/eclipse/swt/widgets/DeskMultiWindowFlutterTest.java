@@ -258,6 +258,74 @@ class DeskMultiWindowFlutterTest {
         assertThat(main.getMaximized()).isFalse();
     }
 
+    @Test
+    @DisplayName("a shell maximized before it opens gets a maximized window, not a screen-sized one")
+    void maximizedBeforeOpenOpensMaximized() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setMaximized(true);
+        detached.setVisible(true);
+        long handle = handleOf(desk, detached);
+
+        assertThat(desk.states.get(handle)).containsExactly(ShellWindow.STATE_MAXIMIZED);
+        assertThat(detached.getLocation())
+                .as("a maximized shell sits at the screen origin; it is not cascaded like an unplaced one")
+                .isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+    }
+
+    @Test
+    @DisplayName("a shell maximized before it opens restores to the bounds it had, not to the screen")
+    void maximizedBeforeOpenRestoresToItsBounds() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setBounds(100, 120, 800, 500);
+        detached.setMaximized(true);
+        detached.setVisible(true);
+        long handle = handleOf(desk, detached);
+
+        assertThat(desk.bounds.get(handle)).isEqualTo(new Rectangle(100, 120, 800, 500));
+        assertThat(desk.states.get(handle)).containsExactly(ShellWindow.STATE_MAXIMIZED);
+    }
+
+    @Test
+    @DisplayName("a shell made full-screen before it opens gets a full-screen window")
+    void fullScreenBeforeOpenOpensFullScreen() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setFullScreen(true);
+        detached.setVisible(true);
+
+        assertThat(desk.states.get(handleOf(desk, detached))).containsExactly(ShellWindow.STATE_FULLSCREEN);
+        assertThat(detached.getLocation())
+                .as("a full-screen shell is not moved to a cascaded spot")
+                .isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+    }
+
+    @Test
+    @DisplayName("a shell minimized before it opens gets a minimized window")
+    void minimizedBeforeOpenOpensMinimized() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setMinimized(true);
+        detached.setVisible(true);
+
+        assertThat(desk.states.get(handleOf(desk, detached))).containsExactly(ShellWindow.STATE_MINIMIZED);
+    }
+
+    @Test
+    @DisplayName("a shell opened in the normal state is not told a state at all")
+    void normalShellGetsNoState() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+
+        assertThat(desk.states.get(handleOf(desk, detached))).isNull();
+    }
+
     // ---- closing --------------------------------------------------------------------------------------
 
     @Test

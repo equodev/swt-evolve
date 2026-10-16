@@ -1335,6 +1335,8 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public void setMaximized(boolean maximized) {
         checkWidget();
+        if (maximized && !getMaximized())
+            normalBounds = getBounds();
         super.setMaximized(maximized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowMaximized(this, maximized);
