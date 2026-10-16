@@ -25,6 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.MenuSelectionManager;
+import javax.swing.PopupFactory;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.WindowBridge;
@@ -43,6 +47,7 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import sun.awt.AWTAccessor;
 import sun.awt.NullComponentPeer;
 import sun.swing.JLightweightFrame;
@@ -168,6 +173,11 @@ public final class EvolveSwingHost {
 
     private static final AtomicBoolean OUTSIDE_CLICK_FILTER_INSTALLED = new AtomicBoolean(false);
 
+    private static final AtomicBoolean MENU_CLOSE_FILTER_INSTALLED = new AtomicBoolean(false);
+
+    /** The host of each active embedding, by its frame. */
+    private static final Map<Window, Host> EMBEDDINGS = new ConcurrentHashMap<>();
+
     /**
      * Evolve reimplementation of {@code SWT_AWT.new_Frame}. Returns a Swing
      * {@link Frame} whose content is rendered off-screen and presented on the
@@ -183,6 +193,7 @@ public final class EvolveSwingHost {
         openSwingInternals();
         startToolkit();
         installOutsideClickRepaintFilter(parent.getDisplay());
+        installMenuCloseFilter(parent.getDisplay());
 
         // A single full-bleed Canvas child is the paint surface (Evolve pipes its
         // PaintListener + GC.drawImage to Flutter). FillLayout keeps it sized to
@@ -200,6 +211,7 @@ public final class EvolveSwingHost {
         // happens on the EDT (Java2D, no main thread needed).
         final JLightweightFrame frame = new JLightweightFrame();
         frame.setContent(host.content);
+        EMBEDDINGS.put(frame, host);
         host.bind(frame);
 
         // Initial size + realize so the first frame renders. Pre-open the canvas may
@@ -270,6 +282,29 @@ public final class EvolveSwingHost {
     }
 
     /**
+     * Closes an open Swing menu on a click on SWT outside every embedding, installed once per
+     * process. Swing closes it on a click anywhere in AWT, but a click on SWT never reaches AWT,
+     * and a menu in a shell of its own has no native window whose loss of focus would close it.
+     */
+    private static void installMenuCloseFilter(Display display) {
+        if (!MENU_CLOSE_FILTER_INSTALLED.compareAndSet(false, true)) return;
+        display.addFilter(SWT.MouseDown, ev -> {
+            if (ConfigFlags.isDesktopMode() || isEmbeddingCanvas(ev.widget)) return;
+            EventQueue.invokeLater(() -> {
+                MenuSelectionManager menus = MenuSelectionManager.defaultManager();
+                if (menus.getSelectedPath().length > 0) menus.clearSelectedPath();
+            });
+        });
+    }
+
+    private static boolean isEmbeddingCanvas(Object widget) {
+        for (Host host : EMBEDDINGS.values()) {
+            if (host.canvas == widget) return true;
+        }
+        return false;
+    }
+
+    /**
      * Fires {@code forceRepaint} a few times, staggered, instead of once immediately after some
      * change (an initial paint, a resize, an input-driven update). A hosted app's own rendering
      * is often asynchronous — it updates its model synchronously but recomputes what it actually
@@ -292,15 +327,62 @@ public final class EvolveSwingHost {
         // no Dock icon / app menu, so bringing up AppKit alongside Flutter is quiet.
         setIfAbsent("java.awt.headless", "false");
         setIfAbsent("apple.awt.UIElement", "true");
-        // Keep menus/tooltips/popups inside the off-screen frame (lightweight) rather
-        // than spawning real OS windows over the Flutter surface.
-        javax.swing.JPopupMenu.setDefaultLightWeightPopupEnabled(true);
+        installPopupFactory();
         shareFrameBuffer();
         Toolkit.getDefaultToolkit();
         installEvolveDispatcher();
         installHeavyweightRepaintListener();
         installDispatcherReinstateListener();
         installStalledFocusRepair();
+    }
+
+    /**
+     * Puts {@link ShellPopupFactory} in front of whatever popup factory Swing would use. A look and
+     * feel may install its own factory when it initializes (Aqua does), replacing ours, so the
+     * current one is initialized first and every later look-and-feel change is wrapped again.
+     */
+    private static void installPopupFactory() {
+        UIManager.getLookAndFeel();
+        wrapSharedPopupFactory();
+        UIManager.addPropertyChangeListener(e -> {
+            if ("lookAndFeel".equals(e.getPropertyName())) wrapSharedPopupFactory();
+        });
+    }
+
+    static void wrapSharedPopupFactory() {
+        PopupFactory current = PopupFactory.getSharedInstance();
+        if (current instanceof ShellPopupFactory) return;
+        PopupFactory.setSharedInstance(
+                new ShellPopupFactory(current, EvolveSwingHost::popupEmbeddingOf, EvolveSwingHost::hostInShell));
+    }
+
+    /**
+     * The canvas of the embedding {@code owner} is shown in, when its popups belong in an SWT
+     * shell; {@code null} otherwise. Under the desktop surface a native popup window lands where a
+     * native {@code SWT_AWT} one does, so it is left to Swing there.
+     */
+    static Canvas popupEmbeddingOf(Component owner) {
+        if (ConfigFlags.isDesktopMode()) return null;
+        Window window = owner instanceof Window ? (Window) owner : SwingUtilities.getWindowAncestor(owner);
+        Host host = window == null ? null : EMBEDDINGS.get(window);
+        return host == null ? null : host.canvas;
+    }
+
+    /**
+     * Hosts {@code contents} in {@code shell} through an embedding of its own, added straight to
+     * the content root: a popup can be hidden before the move {@code frame.add} defers would run.
+     */
+    static void hostInShell(Shell shell, Component contents) {
+        Frame frame = newFrame(shell);
+        Host host = EMBEDDINGS.get(frame);
+        if (host == null) {
+            frame.add(contents);
+            return;
+        }
+        hostAsLightweight(contents);
+        host.contentRoot.add(contents);
+        host.contentRoot.revalidate();
+        host.contentRoot.repaint();
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -315,7 +397,8 @@ public final class EvolveSwingHost {
      * component that repaints itself while painting — feeds itself without bound.
      */
     /** Drops every reference this class holds to a disposed embedding's component tree. */
-    private static void forgetEmbed(Container root) {
+    private static void forgetEmbed(Container root, Window frame) {
+        EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
         REPAINT_PENDING.remove(root);
         LAST_REPAINT.remove(root);
@@ -744,7 +827,7 @@ public final class EvolveSwingHost {
             shell.addListener(SWT.Move, shellMoved);
             canvas.addListener(SWT.Dispose, e -> {
                 if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
-                forgetEmbed(contentRoot);
+                forgetEmbed(contentRoot, frame);
                 disposeFrame(frame);
             });
             scheduleStaggeredRepaints(forceRepaint, 300, 900, 2000);
