@@ -102,8 +102,9 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = (b != null && b.width > 0 && b.width <= 2560) ? b.width : 1280;
         int height = (b != null && b.height > 0 && b.height <= 1600) ? b.height : 800;
 
-        windowContext = openNativeWindow(0, displayId, "Display",
-                Config.swtToLogical(width), Config.swtToLogical(height));
+        // Logical pixels, not converted: the client has not reported its monitor yet, so the UI
+        // scale is unknown here, and the shell is fitted to whatever viewport the window reports.
+        windowContext = openNativeWindow(0, displayId, "Display", width, height);
     }
 
     /** Opens one native top-level window hosting a Flutter client rooted at {@code widgetName/id}.
