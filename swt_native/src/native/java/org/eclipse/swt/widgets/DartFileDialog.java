@@ -121,7 +121,7 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     long _completionHandler(long result) {

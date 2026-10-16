@@ -124,7 +124,7 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public DartMenu(Decorations parent, int style, Menu api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = checkStyle(style);
         if (parent != null) {

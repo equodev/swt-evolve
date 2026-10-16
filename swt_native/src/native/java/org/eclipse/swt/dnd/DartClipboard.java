@@ -52,7 +52,7 @@ public class DartClipboard implements IClipboard {
      */
     public DartClipboard(Display display, Clipboard api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null) {
             display = DartDisplay.getCurrent();
             if (display == null) {
