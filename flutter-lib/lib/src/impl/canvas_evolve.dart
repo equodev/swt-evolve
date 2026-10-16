@@ -24,6 +24,7 @@ import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'widget_config.dart';
+import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 
@@ -152,6 +153,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // shared composite interaction chrome must not also forward it.
   @override
   bool get forwardsCompositeDoubleClick => false;
+
+  /// [wrapWithScrollbars] reports the wheel.
+  @override
+  bool get forwardsWheel => false;
 
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
@@ -347,7 +352,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
-      child: !canvasUsesThemeColors && hostsAppColoredContent
+      child: !gcUsesThemeColors(gcOverlay?.themedCanvas) && hostsAppColoredContent
           ? SwtColorScope(child: NoLayout(children: children, composite: state))
           : NoLayout(children: children, composite: state),
     );
@@ -401,20 +406,23 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final showVBar = vBar != null && vBar.visible != false && _isScrollable(vBar);
     
     if (!showVBar && !showHBar) {
+      void onSignal(PointerSignalEvent event) {
+        if (event is PointerScrollEvent && onWheel != null) {
+          onWheel(event);
+        } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+          widget.sendMouseWheelMouseWheel(
+            state,
+            VEvent()
+              ..x = event.localPosition.dx.round()
+              ..y = event.localPosition.dy.round()
+              ..count = -wheelLines(event.scrollDelta.dy),
+          );
+        }
+      }
+
       return Listener(
-        onPointerSignal: (event) {
-          if (event is PointerScrollEvent && onWheel != null) {
-            onWheel(event);
-          } else if (event is PointerScrollEvent) {
-            widget.sendMouseWheelMouseWheel(
-              state,
-              VEvent()
-                ..x = event.localPosition.dx.round()
-                ..y = event.localPosition.dy.round()
-                ..count = event.scrollDelta.dy > 0 ? -3 : 3,
-            );
-          }
-        },
+        onPointerSignal: onSignal,
+        onPointerPanZoomUpdate: (event) => panAsScroll(event, onSignal),
         child: base,
       );
     }
@@ -437,17 +445,20 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChild = state.children != null && state.children!.isNotEmpty;
-    return Listener(
-      onPointerSignal: (event) {
-        if (event is PointerScrollEvent && onWheel != null) {
-          onWheel(event);
-        } else if (event is PointerScrollEvent) {
-          final now = DateTime.now().millisecondsSinceEpoch;
-          if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
-            _handleMouseWheel(event);
-          }
+    void onSignal(PointerSignalEvent event) {
+      if (event is PointerScrollEvent && onWheel != null) {
+        onWheel(event);
+      } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
+          _handleMouseWheel(event);
         }
-      },
+      }
+    }
+
+    return Listener(
+      onPointerSignal: onSignal,
+      onPointerPanZoomUpdate: (event) => panAsScroll(event, onSignal),
       child: Stack(
         children: [
           base,

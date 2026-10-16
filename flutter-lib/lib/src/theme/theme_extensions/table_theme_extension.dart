@@ -28,6 +28,11 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   final Color rowHoverBackgroundColor;
   final Color rowSelectedBorderColor;
   final double rowSelectedBorderWidth;
+
+  // Drag and drop
+  final double dropFeedbackLineWidth;
+  final int dropFeedbackHighlightAlpha;
+  final double dragImageOpacity;
   
   // Header colors
   final Color headerBackgroundColor;
@@ -108,6 +113,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.rowHoverBackgroundColor,
     required this.rowSelectedBorderColor,
     required this.rowSelectedBorderWidth,
+    required this.dropFeedbackLineWidth,
+    required this.dropFeedbackHighlightAlpha,
+    required this.dragImageOpacity,
     required this.headerBackgroundColor,
     required this.headerTextColor,
     required this.headerBorderColor,

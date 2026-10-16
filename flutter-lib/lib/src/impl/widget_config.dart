@@ -161,9 +161,14 @@ bool get gcIconsReplacement => getConfigFlags().gc_icons_replacement ?? false;
 
 /// True when a Canvas is drawn in the theme's colors instead of the ones the application painted
 /// with. `use_swt_colors` asks for the application's colors everywhere, so it wins.
-bool get canvasUsesThemeColors {
+bool get canvasUsesThemeColors => gcUsesThemeColors(null);
+
+/// [canvasUsesThemeColors] for one GC. `VGC.themedCanvas` carries a
+/// `disable_swt_canvas_colors_<class>` override that covers the control the GC draws on, in either
+/// direction; null leaves the global flag to decide.
+bool gcUsesThemeColors(bool? themedCanvas) {
   final flags = getConfigFlags();
-  return (flags.disable_swt_canvas_colors ?? false) &&
+  return (themedCanvas ?? flags.disable_swt_canvas_colors ?? false) &&
       !(flags.use_swt_colors ?? false);
 }
 

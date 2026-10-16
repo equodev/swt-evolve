@@ -571,6 +571,7 @@ public class DartTable extends DartComposite implements ITable {
         /* Add the tool tip item for the header */
         if (headerToolTipHandle != 0) {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -594,6 +595,7 @@ public class DartTable extends DartComposite implements ITable {
         itemHeight = hotIndex = -1;
         _initItems();
         columns = new TableColumn[4];
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     private boolean customHeaderDrawing() {
@@ -844,6 +846,7 @@ public class DartTable extends DartComposite implements ITable {
         /* Remove the tool tip item for the header */
         if (headerToolTipHandle != 0) {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {

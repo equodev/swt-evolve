@@ -16,6 +16,10 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
+import 'package:swtflutter/src/impl/utils/dnd_utils.dart';
+
+import 'delivery/support/deliver.dart';
+
 /// Starts a drag on [source] and moves incrementally to [target]'s center, pumping between
 /// steps — Draggable needs to cross its touch-slop threshold and DragTarget needs a frame to
 /// update its hover state before either behaves like a real drag. Returns the still-active
@@ -37,18 +41,11 @@ Future<TestGesture> _dragTo(
   return gesture;
 }
 
-/// The blue top-border decoration every DND drop target wraps its hovered row/item in (see
-/// TableImpl#wrapCellForRowDrag, TreeItemImpl#_wrapItemForDrag) — the public, already-rendered
-/// signal for "which row/item does the position math currently resolve to", used here instead
-/// of reading any private hover field.
-bool _isHoverDecoration(Widget widget) {
-  if (widget is! DecoratedBox) return false;
-  final decoration = widget.decoration;
-  return decoration is BoxDecoration && decoration.border?.top.color == Colors.blue;
-}
-
-Finder _hoverDecorationOver(Finder content) =>
-    find.ancestor(of: content, matching: find.byWidgetPredicate(_isHoverDecoration));
+/// A Table or Tree drop target draws on its hovered row/item whatever DND.FEEDBACK_* the drop
+/// listener answered — the rendered signal for which row/item the position math resolved to.
+Finder _dropFeedbackOver(Finder content) => find.ancestor(
+    of: content,
+    matching: find.byType(DropFeedbackBox));
 
 VTableColumn _col(int id, {int? width}) => VTableColumn()
   ..id = id
@@ -100,6 +97,8 @@ Widget _wrap(Widget child) => EvolveApp(
     );
 
 void main() {
+  setUp(freshClient);
+
   testWidgets(
     'dragging a Table row onto another row highlights that row, not the one it started on',
     (tester) async {
@@ -112,12 +111,14 @@ void main() {
       await tester.pump();
 
       final gesture = await _dragTo(tester, find.text('Row 0'), find.text('Row 2'));
+      await deliverFrame('DropTarget/1/Drop/negotiationResult',
+          {'detail': Dnd.dropMove, 'feedback': Dnd.feedbackSelect});
       await tester.pump();
 
-      expect(_hoverDecorationOver(find.text('Row 2')), findsOneWidget,
+      expect(_dropFeedbackOver(find.text('Row 2')), findsOneWidget,
           reason: 'the row under the pointer must be highlighted');
-      expect(_hoverDecorationOver(find.text('Row 0')), findsNothing);
-      expect(_hoverDecorationOver(find.text('Row 1')), findsNothing);
+      expect(_dropFeedbackOver(find.text('Row 0')), findsNothing);
+      expect(_dropFeedbackOver(find.text('Row 1')), findsNothing);
 
       await gesture.up();
       await tester.pumpAndSettle();
@@ -140,13 +141,15 @@ void main() {
       await tester.pump();
 
       final gesture = await _dragTo(tester, find.text('Other leaf'), find.text('Child B'));
+      await deliverFrame('DropTarget/1/Drop/negotiationResult',
+          {'detail': Dnd.dropMove, 'feedback': Dnd.feedbackSelect});
       await tester.pump();
 
-      expect(_hoverDecorationOver(find.text('Child B')), findsOneWidget,
+      expect(_dropFeedbackOver(find.text('Child B')), findsOneWidget,
           reason: 'the nested item under the pointer must be highlighted, not its parent');
-      expect(_hoverDecorationOver(find.text('Parent')), findsNothing);
-      expect(_hoverDecorationOver(find.text('Child A')), findsNothing);
-      expect(_hoverDecorationOver(find.text('Other leaf')), findsNothing);
+      expect(_dropFeedbackOver(find.text('Parent')), findsNothing);
+      expect(_dropFeedbackOver(find.text('Child A')), findsNothing);
+      expect(_dropFeedbackOver(find.text('Other leaf')), findsNothing);
 
       await gesture.up();
       await tester.pumpAndSettle();

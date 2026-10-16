@@ -54,6 +54,9 @@ public class WebDisplayBridge extends DisplayBridge {
     WebDisplayBridge(DartDisplay display) {
         super(display);
         DisplayBridgePlatform.init();
+        // In a browser the splash is drawn like any other shell; the launcher's own window is left
+        // on the desktop with no event loop behind it.
+        DisplayBridgePlatform.dismissLauncherSplash();
     }
 
     /** How long a paste waits for the browser to hand over its clipboard. */
@@ -282,9 +285,9 @@ public class WebDisplayBridge extends DisplayBridge {
     }
 
     @Override
-    protected boolean ownsWindow(Shell shell) {
+    protected boolean windowEligible(Shell shell) {
         if (shell != null && rejectedShellWindows.contains((long) shell.hashCode())) return false;
-        return super.ownsWindow(shell);
+        return super.windowEligible(shell);
     }
 
     @Override

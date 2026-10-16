@@ -82,7 +82,8 @@ void main() {
           srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1,
         ),
         null,
-        alpha: 0);
+        alpha: 0,
+        useThemeColors: false);
 
     expect(shape.alpha, 0,
         reason: 'the decode is async, so the alpha has to be captured at op time');
