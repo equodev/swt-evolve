@@ -33,6 +33,7 @@ import 'color_utils.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
+import 'utils/wheel_input.dart';
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
@@ -976,7 +977,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         VEvent()
           ..x = event.localPosition.dx.round()
           ..y = event.localPosition.dy.round()
-          ..count = -_wheelLines(dy)
+          ..count = -wheelLines(dy)
           ..detail = pixels
           ..stateMask = stateMask,
       );
@@ -988,7 +989,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       final thumb = hBar.thumb ?? 0;
       final next = _hScroll.next(
         reported: hBar.selection ?? minimum,
-        lines: _wheelLines(dx),
+        lines: wheelLines(dx),
         increment: hBar.increment ?? 1,
         minimum: minimum,
         maximum: maximum,
@@ -1001,12 +1002,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   final HorizontalWheelScroll _hScroll = HorizontalWheelScroll();
-
-  /// Lines per wheel event: three per 120-unit notch, as a desktop scrolls by default.
-  static int _wheelLines(double delta) {
-    final lines = (delta / 40).round();
-    return lines != 0 ? lines : (delta > 0 ? 1 : -1);
-  }
 
   Size _computeContentSize() {
     final text = state.text ?? '';

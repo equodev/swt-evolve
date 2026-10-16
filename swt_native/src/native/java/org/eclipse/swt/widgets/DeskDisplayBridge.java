@@ -181,18 +181,27 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
         shellWindowsToPump.add(window);
-        // A detached shell opens where the application put it; the window is created at a size only,
-        // so the position has to be pushed once or every window would stack at the OS default spot.
-        // A shell still at the origin was never placed — the window is then cascaded instead, the way
-        // a window manager places one, because the alternative is every unplaced window landing in
-        // exactly the same centred spot, which looks like opening one did nothing at all.
-        Rectangle placed = (bounds.x != 0 || bounds.y != 0) ? bounds : cascade(bounds);
+        // The window gets the bounds the shell restores to; a shell never placed is cascaded.
+        Rectangle normal = restoredBounds(shell, bounds);
+        Rectangle placed = (normal.x != 0 || normal.y != 0) ? normal : cascade(normal);
         window.setBounds(placed);
-        shell.setLocation(placed.x, placed.y);
+        if (!shell.getMaximized() && !shell.getFullScreen()) shell.setLocation(placed.x, placed.y);
         String title = shell.getText();
         if (title != null && !title.isEmpty()) window.setTitle(title);
         bindShellWindowView(shell, context);
         return window;
+    }
+
+    /**
+     * Where a maximized shell goes back to when it is restored: the bounds it had before it was
+     * maximized, as native SWT keeps them, not the screen it fills now.
+     */
+    private static Rectangle restoredBounds(Shell shell, Rectangle bounds) {
+        if (!shell.getMaximized()) return bounds;
+        Rectangle normal = ((ImplShell) shell.getImpl())._normalBounds();
+        if (normal == null) normal = new Rectangle(0, 0, 0, 0);
+        return new Rectangle(normal.x, normal.y,
+                normal.width > 0 ? normal.width : 640, normal.height > 0 ? normal.height : 480);
     }
 
     // Every native call a detached window makes goes through one of these, so a test can stand a
@@ -624,6 +633,13 @@ public class DeskDisplayBridge extends DisplayBridge {
             if (current != null && current.width == viewport.width && current.height > viewport.height) {
                 clientTopInset = current.height - viewport.height;
             }
+            Rectangle takenOver = takeoverBounds;
+            takeoverBounds = null;
+            if (takenOver != null && clientTopInset > 0 && current != null
+                    && current.width == viewport.width && current.height == takenOver.height) {
+                forwardWindowBounds(withChrome(takenOver));
+                return true;
+            }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
             boolean shellMatches = current != null
@@ -663,6 +679,81 @@ public class DeskDisplayBridge extends DisplayBridge {
             }
             sendDisplayUpdate(forDisplay);
         }
+    }
+
+    /** The shell last shown in the Display's window, or null before one has been or once it is
+     *  disposed. */
+    private Shell shownShell;
+
+    /** Whether any shell has been shown in the Display's window yet. */
+    private boolean shownAShell;
+
+    private boolean windowHidden;
+
+    /** The window follows its main shell's title, and a shell arriving from a window of its own
+     *  brings that window's geometry. A disposed holder never hides it. */
+    @Override
+    protected void syncDisplayWindow(DartDisplay display, java.util.Set<Shell> leftOwnWindow) {
+        if (shownShell != null && shownShell.isDisposed()) shownShell = null;
+        if (!hasNativeWindow()) return;
+        Shell main = mainShell(display);
+        if (main != null && !main.isDisposed() && main.getVisible() && main != shownShell) {
+            if (shownAShell) {
+                setMainWindowTitle(main.getText());
+                if (leftOwnWindow.contains(main)) takeOverWindowGeometry(main);
+            }
+            shownShell = main;
+            shownAShell = true;
+        }
+        boolean drawsAShell = drawsAnyShell(display);
+        boolean holderHidden = shownShell != null && !shownShell.getVisible();
+        boolean hide = !drawsAShell && holderHidden;
+        // Only an actual change crosses JNI. With nothing drawn and no hidden holder (its shell was
+        // disposed), the window keeps whatever it shows: the next shell is about to fill it.
+        boolean decided = hide || drawsAShell;
+        if (decided && hide != windowHidden) {
+            windowHidden = hide;
+            setShellWindowVisible(windowContext, !hide);
+        }
+    }
+
+    private boolean drawsAnyShell(DartDisplay display) {
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed() && shell.getVisible() && !isShellWindowed(shell))
+                return true;
+        }
+        return false;
+    }
+
+    /** Where a shell taking the window over was, while the chrome height is still unknown. */
+    private Rectangle takeoverBounds;
+
+    /** Moves and sizes the window to where {@code shell}'s own window was. */
+    private void takeOverWindowGeometry(Shell shell) {
+        windowShell = shell;
+        int state = windowStateOf(shell);
+        // A minimized shell taking the window over is shown restored: it is the one left to see.
+        if (state == ShellWindow.STATE_FULLSCREEN || state == ShellWindow.STATE_MAXIMIZED) {
+            setShellWindowState(windowContext, state);
+        } else {
+            setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
+            // The shell measures the client area of the window it leaves. Until the chrome above it
+            // is measured, the window is grown by it once the first viewport reports it, instead of
+            // the shell being shrunk to fit.
+            Rectangle b = shell.getBounds();
+            takeoverBounds = clientTopInset > 0 ? null : b;
+            forwardWindowBounds(withChrome(b));
+        }
+        bindWindowView();
+    }
+
+    /** {@code shell} bounds grown by the chrome the window draws above the shell. */
+    private Rectangle withChrome(Rectangle shell) {
+        return new Rectangle(shell.x, shell.y, shell.width, shell.height + clientTopInset);
+    }
+
+    private void setMainWindowTitle(String title) {
+        setShellWindowTitle(windowContext, title == null ? "" : title);
     }
 
     /** Whether a live native top-level window backs this Display (false in headless tests, and once
@@ -762,7 +853,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setWindowTitle(DartControl control, String title) {
         if (isMainWindow(control)) {
-            FlutterNative.setTitle(windowContext, title == null ? "" : title);
+            setMainWindowTitle(title);
             return;
         }
         super.setWindowTitle(control, title);
@@ -794,7 +885,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setWindowMaximized(DartControl control, boolean maximized) {
         if (isMainWindow(control)) {
-            FlutterNative.setState(windowContext, maximized ? 1 : 0);
+            setShellWindowState(windowContext, maximized ? ShellWindow.STATE_MAXIMIZED : ShellWindow.STATE_NORMAL);
             return;
         }
         super.setWindowMaximized(control, maximized);
@@ -803,7 +894,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setWindowMinimized(DartControl control, boolean minimized) {
         if (isMainWindow(control)) {
-            FlutterNative.setState(windowContext, minimized ? 2 : 0);
+            setShellWindowState(windowContext, minimized ? ShellWindow.STATE_MINIMIZED : ShellWindow.STATE_NORMAL);
             return;
         }
         super.setWindowMinimized(control, minimized);
@@ -812,7 +903,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
         if (isMainWindow(control)) {
-            FlutterNative.setState(windowContext, fullScreen ? 3 : 0);
+            setShellWindowState(windowContext, fullScreen ? ShellWindow.STATE_FULLSCREEN : ShellWindow.STATE_NORMAL);
             return;
         }
         super.setWindowFullScreen(control, fullScreen);

@@ -47,7 +47,6 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).bottomMargin = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Color[] getGradientColors() {
         Color[] values = ((DartCLabel) impl).gradientColors;
         if (values == null)
@@ -62,7 +61,6 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientColors = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getGradientPercents() {
         return ((DartCLabel) impl).gradientPercents;
     }
@@ -71,7 +69,6 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientPercents = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getGradientVertical() {
         return ((DartCLabel) impl).gradientVertical;
     }
@@ -130,6 +127,12 @@ public class VCLabel extends VCanvas {
 
     public static final String BOTTOM_MARGIN = "bottomMargin";
 
+    public static final String GRADIENT_COLORS = "gradientColors";
+
+    public static final String GRADIENT_PERCENTS = "gradientPercents";
+
+    public static final String GRADIENT_VERTICAL = "gradientVertical";
+
     public static final String IMAGE = "image";
 
     public static final String LEFT_MARGIN = "leftMargin";
@@ -151,6 +154,15 @@ public class VCLabel extends VCanvas {
                 return;
             case "bottomMargin":
                 Serializer.writeKeyValue(writer, "bottomMargin", getBottomMargin());
+                return;
+            case "gradientColors":
+                Serializer.writeKeyValue(writer, "gradientColors", getGradientColors());
+                return;
+            case "gradientPercents":
+                Serializer.writeKeyValue(writer, "gradientPercents", getGradientPercents());
+                return;
+            case "gradientVertical":
+                Serializer.writeKeyValue(writer, "gradientVertical", getGradientVertical());
                 return;
             case "image":
                 Serializer.writeKeyValue(writer, "image", getImage());

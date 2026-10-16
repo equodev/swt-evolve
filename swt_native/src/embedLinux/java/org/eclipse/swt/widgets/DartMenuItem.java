@@ -821,10 +821,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VMenuItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = newValue;

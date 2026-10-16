@@ -3455,6 +3455,10 @@ public final class DartGC extends DartResource implements IGC {
         return bufferScale;
     }
 
+    Boolean wireThemedCanvas() {
+        return dev.equo.swt.Config.canvasColorsOverride(drawable);
+    }
+
     /**
      * Confines a clipping region to the area the in-flight Paint may touch. The platforms
      * enforce this below SWT — a paint context carries the damaged region as its system

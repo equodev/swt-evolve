@@ -19,6 +19,7 @@ import 'utils/double_tap_detector.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
 
@@ -51,6 +52,21 @@ bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
     if (rect.contains(pos)) return true;
   }
   return false;
+}
+
+/// A vertical wheel or trackpad swipe over the composite's own area, not a child's, as SWT.MouseWheel:
+/// an application that draws its own rows and scrolls them from a Slider beside them listens there.
+void _forwardWheel(CompositeImpl impl, PointerScrollEvent e) {
+  final dy = e.scrollDelta.dy;
+  if (!impl.forwardsWheel || dy == 0 || _hitsAnyChild(impl.state, e.localPosition)) return;
+  impl.widget.sendMouseWheelMouseWheel(
+    impl.state,
+    VEvent()
+      ..x = e.localPosition.dx.round()
+      ..y = e.localPosition.dy.round()
+      ..count = -wheelLines(dy)
+      ..stateMask = impl.moveStateMask(0),
+  );
 }
 
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
@@ -181,6 +197,10 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           ..y = e.localPosition.dy.round();
         impl.sendThrottledDragMove(state, event, e.buttons);
       },
+      onPointerSignal: (e) {
+        if (e is PointerScrollEvent) _forwardWheel(impl, e);
+      },
+      onPointerPanZoomUpdate: (e) => panAsScroll(e, (wheel) => _forwardWheel(impl, wheel)),
       child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),
   );
@@ -292,6 +312,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   /// chrome. CanvasImpl overrides this to false because it forwards its own
   /// double-click in build(); forwarding here too would double-fire.
   bool get forwardsCompositeDoubleClick => true;
+
+  /// Whether [wrapCompositeInteractionChrome] reports the wheel to Java. A subclass that scrolls on
+  /// its own, or reports the wheel itself, turns it off.
+  bool get forwardsWheel => true;
 
   @override
   Widget build(BuildContext context) {

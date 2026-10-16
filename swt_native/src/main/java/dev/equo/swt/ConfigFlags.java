@@ -1,6 +1,7 @@
 package dev.equo.swt;
 
 import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.JsonAttribute;
 
 import java.util.Map;
 import dev.equo.swt.DecorationsAlign;
@@ -72,6 +73,16 @@ public class ConfigFlags {
     public boolean use_swt_colors;
 
     public boolean disable_swt_canvas_colors;
+
+    /**
+     * {@link #disable_swt_canvas_colors} per control class
+     * ({@code -Dswt.evolve.disable_swt_canvas_colors_<fully.qualified.Class>=true|false}), keyed by
+     * the class name as written. It covers the controls of that class or a subclass of it, and every
+     * control they contain; the nearest listed control wins, and a control under none follows the
+     * global flag. Java-only: the client gets the outcome per GC as {@code VGC.themedCanvas}.
+     */
+    @JsonAttribute(ignore = true)
+    public Map<String, Boolean> disable_swt_canvas_colors_by_class;
 
     /** Drops what an application paints through a Control's own GC, leaving the control's own
      *  rendering alone. A control that draws itself and is then painted over -- a check box whose
@@ -202,6 +213,7 @@ public class ConfigFlags {
                 ", disable_evolve_icons=" + disable_evolve_icons +
                 ", use_swt_colors=" + use_swt_colors +
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
+                ", disable_swt_canvas_colors_by_class=" + disable_swt_canvas_colors_by_class +
                 ", disable_control_gc_overlay=" + disable_control_gc_overlay +
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +

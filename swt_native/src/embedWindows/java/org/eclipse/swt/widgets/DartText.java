@@ -1226,10 +1226,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         char newValue = echo;
+        checkWidget();
         if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
-        checkWidget();
         if ((getApi().style & SWT.MULTI) != 0)
             return;
         allowPasswordChar = true;
@@ -1249,10 +1249,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
+        checkWidget();
         if (!java.util.Objects.equals(this.editable, newValue)) {
             getValue().markDirty(VText.EDITABLE);
         }
-        checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
         if (!editable)
             getApi().style |= SWT.READ_ONLY;
@@ -1514,11 +1514,11 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setText(String string) {
+        checkWidget();
         String newValue = string;
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VText.TEXT);
         }
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         string = SwtDisplay.withCrLf(string);
@@ -1593,10 +1593,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         int newValue = limit;
+        checkWidget();
         if (!java.util.Objects.equals(this.textLimit, newValue)) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
-        checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         this.textLimit = newValue;

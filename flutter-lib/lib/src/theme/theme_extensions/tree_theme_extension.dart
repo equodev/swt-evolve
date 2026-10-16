@@ -27,6 +27,11 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final Color itemHoverBackgroundColor;
   final Color itemSelectedBorderColor;
   final double itemSelectedBorderWidth;
+
+  // Drag and drop
+  final double dropFeedbackLineWidth;
+  final int dropFeedbackHighlightAlpha;
+  final double dragImageOpacity;
   
   // Header colors
   final Color headerBackgroundColor;
@@ -155,6 +160,9 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.itemHoverBackgroundColor,
     required this.itemSelectedBorderColor,
     required this.itemSelectedBorderWidth,
+    required this.dropFeedbackLineWidth,
+    required this.dropFeedbackHighlightAlpha,
+    required this.dragImageOpacity,
     required this.headerBackgroundColor,
     required this.headerTextColor,
     required this.headerBorderColor,
