@@ -61,7 +61,7 @@ public final class OwnerDrawOverlay {
     /**
      * Runs the erase and paint listeners of every cell of {@code row} on a GC addressed to the row,
      * with the events native SWT sends: each cell's bounds, in the parent's coordinates. The GC is
-     * translated so the row's top edge is its origin, which is where the row's overlay starts.
+     * translated so the row's top-left corner is its origin, which is where the row's overlay starts.
      */
     static void paint(Control parent, Item row, int columnCount) {
         DartWidget owner = (DartWidget) parent.getImpl();
@@ -70,7 +70,7 @@ public final class OwnerDrawOverlay {
         ((DartGC) gc.getImpl()).paintOwnerDrawnItem(row);
         Transform toRow = new Transform(parent.getDisplay());
         try {
-            toRow.translate(0, -first.y);
+            toRow.translate(-rowLeft(parent, row), -first.y);
             gc.setTransform(toRow);
             for (int i = 0; i < columnCount; i++) {
                 Rectangle cell = bounds(row, i);
@@ -104,6 +104,12 @@ public final class OwnerDrawOverlay {
         event.width = cell.width;
         event.height = cell.height;
         return event;
+    }
+
+    /** Where the row's overlay starts: a Tree row after the tree's edge gap, a Table row at the table's edge. */
+    private static float rowLeft(Control parent, Item row) {
+        if (row instanceof TableItem) return 0;
+        return (float) dev.equo.swt.size.TreeSizes.getRowLeft((DartTree) parent.getImpl());
     }
 
     private static Rectangle bounds(Item row, int index) {
