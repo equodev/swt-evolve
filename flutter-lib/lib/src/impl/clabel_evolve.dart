@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../gen/clabel.dart';
+import '../gen/color.dart';
 import '../gen/widget.dart';
 import '../gen/image.dart';
 import '../gen/swt.dart';
@@ -10,6 +11,7 @@ import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import './utils/font_utils.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
+import '../theme/theme_settings/clabel_theme_settings.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../custom/toolbar_composite.dart';
@@ -117,17 +119,12 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       state.alignment,
       widgetTheme.textAlign,
     );
-    final parentBg = ParentBackgroundScope.backgroundOf(context);
-    // Gate on backgroundImage (not background, which Java always resolves non-null):
-    // stay transparent so an inherited image, already painted by the ancestor, shows through.
-    final stayTransparentForImage = state.backgroundImage == null &&
-        ParentBackgroundScope.backgroundImageOf(context) != null;
-    final backgroundColor = stayTransparentForImage
-        ? null
-        : getBackgroundColor(
-            background: state.background,
-            defaultColor: parentBg ?? widgetTheme.backgroundColor,
-          );
+    final decoration = getCLabelDecoration(
+      widgetTheme,
+      state,
+      parentBackground: ParentBackgroundScope.backgroundOf(context),
+      overParentImage: ParentBackgroundScope.backgroundImageOf(context) != null,
+    );
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -156,9 +153,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           child: Container(
             constraints: constraints,
             padding: padding,
-            decoration: backgroundColor != null
-                ? BoxDecoration(color: backgroundColor)
-                : null,
+            decoration: decoration,
             alignment: hasValidBounds
                 ? getAlignmentFromTextAlign(textAlign)
                 : null,

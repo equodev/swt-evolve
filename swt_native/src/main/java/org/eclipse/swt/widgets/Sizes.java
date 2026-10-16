@@ -177,8 +177,17 @@ public class Sizes {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    /**
+     * CLabelSizes is measured with the default margin on each side; the label's own margins take its place.
+     * A hint stands as given.
+     */
     public static Point computeSize(DartCLabel c, int wHint, int hHint, boolean changed) {
-        return CLabelSizes.computeSize(c, wHint, hHint, changed);
+        Point size = CLabelSizes.computeSize(c, wHint, hHint, changed);
+        int width = wHint != SWT.DEFAULT ? size.x
+                : Math.max(0, size.x + c.getLeftMargin() + c.getRightMargin() - 2 * DartCLabel.DEFAULT_MARGIN);
+        int height = hHint != SWT.DEFAULT ? size.y
+                : Math.max(0, size.y + c.getTopMargin() + c.getBottomMargin() - 2 * DartCLabel.DEFAULT_MARGIN);
+        return new Point(width, height);
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {
