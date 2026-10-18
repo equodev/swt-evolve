@@ -110,6 +110,8 @@ class VRegistry {
   /// The channel a value is addressed by, and the key everything here is stored under.
   static String channelOf(VWidget value) => '${value.swt}/${value.id}';
 
+  static String _idOf(String channel) => channel.substring(channel.indexOf('/') + 1);
+
   /// Whether two values are about the same widget. Identity is the pair that addresses it, which is
   /// all a value named rather than described carries.
   static bool isSameWidget(VWidget a, VWidget b) => a.id == b.id && a.swt == b.swt;
@@ -226,15 +228,19 @@ class VRegistry {
         _reconcile(channel, node, node.value.seq);
         _notify(channel, node, VChange(changed: _namesIn(frame)));
       case FrameAction.recover:
-        // An update that does not fit what is held. Asking for the widget again is the safe answer,
-        // but never the expected one: it means an update was lost, reordered, or computed from a
-        // state this side never had.
-        EquoCommService.sendPayload(widgetRefreshChannel, '${node.value.id}');
-        // The frame cannot be applied; what it carries still has to be. A widget described inside
-        // it is the only description that widget will ever get - the sender counts it delivered and
-        // names it from then on - and one dropped here is subscribed to by nobody, so not even the
-        // request above can repair it. Judged on its own stamp, as in the branch below.
-        _adoptSubtreeOf(channel, mapWidgetValue(frame));
+        // An update that does not fit what is held: lost, reordered, or computed from a state this
+        // side never had. Never expected, so it is logged. The id comes from the channel, because
+        // a node only watched holds a stand-in.
+        print('[delivery] recover $channel: _s=${frame[kSeq]} _b=${frame[kBase]} '
+            'held=${deliveryGate.heldSeq(channel)} keys=${frame.keys.toList()}');
+        EquoCommService.sendPayload(widgetRefreshChannel, _idOf(channel));
+        // A widget described inside the frame gets no other description, so it is still adopted,
+        // judged on its own stamp. A resource's change describes no widget, only images.
+        if (DeliveryGate.isResourceChange(frame)) {
+          keepImagesIn(frame);
+        } else {
+          _adoptSubtreeOf(channel, mapWidgetValue(frame));
+        }
       case FrameAction.ignore:
         // Nothing here changes - the frame describes this widget as it used to be. But a whole
         // frame carries every widget beneath it, and one of those can be a widget nothing else has

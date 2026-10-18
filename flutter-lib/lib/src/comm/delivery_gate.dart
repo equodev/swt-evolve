@@ -82,10 +82,9 @@ class DeliveryGate {
       return FrameAction.recover;
     }
 
-    // A resource's change: its channel names it and delivers in order, so the change carries no
-    // stamps and extends whatever that channel last described - a GC's state changes within a
-    // paint. It reaches this gate only when replayed from frames held before anything listened.
-    if (seq == 0 && !frame.containsKey(kBase)) return FrameAction.merge;
+    // It extends whatever its channel last described - a GC's state changes within a paint. It
+    // reaches this gate only when replayed from frames held before anything listened.
+    if (isResourceChange(frame)) return FrameAction.merge;
 
     // A change written no later than the state already held, which is the same rule a whole frame
     // is judged by above and for the same reason: the counter is one, so the held state was written
@@ -126,6 +125,11 @@ class DeliveryGate {
   /// properties it names and nothing else, so the widget's own stamp is still the one from before
   /// it. Recording that would tell the next update to fit a state that has already moved on.
   static int seqOf(Map<String, dynamic> frame) => _intOf(frame[kSeq]) ?? 0;
+
+  /// Whether [frame] is a resource's change rather than a widget's. A resource's channel names it
+  /// and delivers in order, so its change carries no widget, no stamps and no base.
+  static bool isResourceChange(Map<String, dynamic> frame) =>
+      frame.containsKey(kChangedKeys) && seqOf(frame) == 0 && !frame.containsKey(kBase);
 
   void reset() {
     _held.clear();
