@@ -1857,7 +1857,7 @@ class TextShape extends Shape {
   bool get _uniformRows =>
       fixedLineHeight && wordWrap != true && lineHeight > 0 && lineSpacing == 0 && lineSpacings == null;
 
-  /// The tallest line measured by this shape and the ones it took over from. Native SWT makes every
+  /// The tallest line measured by this shape and the shapes it replaced. Native SWT makes every
   /// line as tall as the tallest one it has laid out (a fallback glyph's font can be taller than the
   /// editor's), and so does [_rowHeight].
   double _tallestLine = 0;
@@ -2082,7 +2082,7 @@ class TextShape extends Shape {
     return layout;
   }
 
-  /// The layout of [lineIndex] if it was measured already, by this shape or one it took over from.
+  /// The layout of [lineIndex] if this shape, or one it replaced, already measured it.
   _LineLayout? _peekLine(int lineIndex, String lineText) {
     final memo = _measuredLineCache;
     if (memo != null && lineIndex >= 0 && lineIndex < memo.length && memo[lineIndex] != null) {
