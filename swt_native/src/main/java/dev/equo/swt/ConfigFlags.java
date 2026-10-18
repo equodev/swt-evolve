@@ -179,6 +179,12 @@ public class ConfigFlags {
      *  Set with {@code -Dswt.evolve.push_button_margin=<px>}. */
     public int push_button_margin;
 
+    /** Measures every {@code ToolItem} image as an icon of the theme's size, whatever the size of the
+     *  image, so every ToolBar draws its icons at that one size and none is shrunk to fit its bar.
+     *  Off by default: an item is measured from its image, as the platform does.
+     *  Set with {@code -Dswt.evolve.bigger_icon_size=true}. */
+    public boolean bigger_icon_size;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -219,6 +225,7 @@ public class ConfigFlags {
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
                 ", font_point_scale=" + font_point_scale +
                 ", push_button_margin=" + push_button_margin +
+                ", bigger_icon_size=" + bigger_icon_size +
                 ", system_menu_bar=" + system_menu_bar +
                 '}';
     }
