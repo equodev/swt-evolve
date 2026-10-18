@@ -7,7 +7,9 @@ package dev.equo.swt;
  * fallback typeface — under the "System Web" key, see {@code all_fonts_web.dart} — for "System"
  * (SWT's "use the system default font"). {@code org.eclipse.swt.graphics.DartFontData#getName()}
  * substitutes the same way before a font name reaches Flutter, so this is the single source of
- * truth for the mapping — Dart carries no copy of its own.
+ * truth for the mapping — Dart carries no copy of its own. Dart does list the target faces that
+ * lack the Mac key symbols, to name a fallback behind them ({@code FontUtils._withoutSymbols}): a
+ * new target without those glyphs has to be added there.
  */
 public final class WebFontSubstitutions {
     private WebFontSubstitutions() {}
