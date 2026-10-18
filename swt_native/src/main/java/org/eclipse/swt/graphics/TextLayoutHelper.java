@@ -217,10 +217,10 @@ public final class TextLayoutHelper {
     /**
      * The next tab stop strictly after {@code x}, in pixels from the layout's left edge. The stops set are honoured in
      * order, and past them the last interval repeats (a single stop repeats as a fixed interval). With none set, there
-     * is one every {@code defaultTabWidth}, or every 8 spaces, as on GTK and Win32 (on Cocoa a tab then takes no space).
+     * is one every {@code defaultTabWidth}; without that either, a tab takes no space, as on Cocoa and GTK.
      * The epsilon keeps a run measured a hair under an exact stop from advancing to that same stop.
      */
-    public static double nextTabStop(double x, int[] tabs, double defaultTabWidth, java.util.function.DoubleSupplier spaceWidth) {
+    public static double nextTabStop(double x, int[] tabs, double defaultTabWidth) {
         if (tabs != null && tabs.length > 0) {
             for (int tab : tabs) {
                 if (tab > x + 0.01) return tab;
@@ -232,8 +232,7 @@ public final class TextLayoutHelper {
             while (stop <= x + 0.01) stop += interval;
             return stop;
         }
-        double width = defaultTabWidth > 0 ? defaultTabWidth : spaceWidth.getAsDouble() * 8;
-        if (width <= 0) return x;
-        return (Math.floor((x + 0.01) / width) + 1) * width;
+        if (defaultTabWidth <= 0) return x;
+        return (Math.floor((x + 0.01) / defaultTabWidth) + 1) * defaultTabWidth;
     }
 }

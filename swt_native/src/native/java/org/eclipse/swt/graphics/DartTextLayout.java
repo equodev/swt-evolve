@@ -2299,10 +2299,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     double _nextTabStop(double x) {
-        return TextLayoutHelper.nextTabStop(x, tabs, defaultTabWidth, () -> {
-            org.eclipse.swt.graphics.Font f = _fontFor(0);
-            return f != null ? dev.equo.swt.FontMetricsUtil.getFontSize(" ", f).x() * dev.equo.swt.FontMetricsUtil.dpiScale() : 0;
-        });
+        return TextLayoutHelper.nextTabStop(x, tabs, defaultTabWidth);
     }
 
     byte[] _bidiLevels(String s, int paraLevel) {

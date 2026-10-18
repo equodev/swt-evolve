@@ -159,13 +159,12 @@ class TextLayoutHelperTest {
     @Test
     void tabStops() {
         int[] single = {40}, pair = {30, 50};
-        assertThat(TextLayoutHelper.nextTabStop(10, single, 0, () -> 5)).isEqualTo(40);
-        assertThat(TextLayoutHelper.nextTabStop(40, single, 0, () -> 5)).isEqualTo(80);
-        assertThat(TextLayoutHelper.nextTabStop(39.995, single, 0, () -> 5)).isEqualTo(80);
-        assertThat(TextLayoutHelper.nextTabStop(35, pair, 0, () -> 5)).isEqualTo(50);
-        assertThat(TextLayoutHelper.nextTabStop(75, pair, 0, () -> 5)).isEqualTo(90);
-        assertThat(TextLayoutHelper.nextTabStop(10, null, 0, () -> 5)).as("with no stops set, one every 8 spaces").isEqualTo(40);
-        assertThat(TextLayoutHelper.nextTabStop(10, new int[0], 25, () -> 5)).isEqualTo(25);
-        assertThat(TextLayoutHelper.nextTabStop(10, null, 0, () -> 0)).isEqualTo(10);
+        assertThat(TextLayoutHelper.nextTabStop(10, single, 0)).isEqualTo(40);
+        assertThat(TextLayoutHelper.nextTabStop(40, single, 0)).isEqualTo(80);
+        assertThat(TextLayoutHelper.nextTabStop(39.995, single, 0)).isEqualTo(80);
+        assertThat(TextLayoutHelper.nextTabStop(35, pair, 0)).isEqualTo(50);
+        assertThat(TextLayoutHelper.nextTabStop(75, pair, 0)).isEqualTo(90);
+        assertThat(TextLayoutHelper.nextTabStop(10, null, 0)).as("with no stops and no default width, a tab takes no space").isEqualTo(10);
+        assertThat(TextLayoutHelper.nextTabStop(10, new int[0], 25)).isEqualTo(25);
     }
 }
