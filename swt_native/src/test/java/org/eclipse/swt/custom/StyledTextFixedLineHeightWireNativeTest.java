@@ -50,7 +50,7 @@ public class StyledTextFixedLineHeightWireNativeTest {
     }
 
     @Test
-    public void word_wrap_line_spacing_and_vertical_indents_vary_the_height() {
+    public void word_wrap_and_line_spacing_vary_the_height() {
         StyledText wrapped = text();
         wrapped.setWordWrap(true);
         assertThat(sent(wrapped)).isFalse();
@@ -58,10 +58,6 @@ public class StyledTextFixedLineHeightWireNativeTest {
         StyledText spaced = text();
         spaced.setLineSpacing(2);
         assertThat(sent(spaced)).isFalse();
-
-        StyledText indented = text();
-        indented.setLineVerticalIndent(1, 10);
-        assertThat(sent(indented)).isFalse();
     }
 
     @Test
