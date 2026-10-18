@@ -126,6 +126,7 @@ public abstract class FlutterBridge {
 
     /** Flutter sets properties the user changed (the theme picker); Java echoes them on {@link #PROPERTIES_CHANNEL}. */
     static final String PROPERTY_SET_CHANNEL = "swt.evolve.property.set";
+    /** Java pushes the properties on it whenever a client needs them: when it connects, and after a property set. */
     static final String PROPERTIES_CHANNEL = "swt.evolve.properties";
 
     /** Widgets/resources by {@link #id}, so a refresh request can find its target. */

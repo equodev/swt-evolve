@@ -22,7 +22,7 @@ public class ConfigTest {
 
     private static Config.Impl initialDefault;
     private static boolean initialForceEclipse;
-    /** The dev.equo.swt.* properties this JVM started with: the test task sets some for every test. */
+    /** The dev.equo.swt.* properties as this class found them: the test task sets some for every test. */
     private static Map<String, String> initialProperties;
 
     @BeforeAll
@@ -43,12 +43,12 @@ public class ConfigTest {
     }
 
     @BeforeEach
-    void defaults_swt() {
+    void restore_config_before() {
         restoreConfig();
     }
 
     @AfterEach
-    void reset() {
+    void restore_config_after() {
         restoreConfig();
     }
 

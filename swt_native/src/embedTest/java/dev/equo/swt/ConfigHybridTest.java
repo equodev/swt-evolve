@@ -33,13 +33,16 @@ class ConfigHybridTest {
     }
 
     @BeforeEach
-    void defaults_swt() {
-        Config.defaultImpl = Config.Impl.eclipse;
-        Config.reset();
+    void restore_config_before() {
+        restoreConfig();
     }
 
     @AfterEach
-    void reset() {
+    void restore_config_after() {
+        restoreConfig();
+    }
+
+    private static void restoreConfig() {
         Config.defaultImpl = Config.Impl.eclipse;
         Config.reset();
     }

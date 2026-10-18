@@ -20,9 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class ThemePickFromFlutterTest {
 
-    /** The properties a pick is written to, which the flags are rebuilt from. */
-    private static final String[] PICKED_PROPERTIES = {
-            "swt.evolve.force_theme", "swt.evolve.theme_name", "swt.evolve.theme_color"};
+    /** A pick is written to a swt.evolve.* property, which the flags are rebuilt from. */
+    private static final String PICKED_PREFIX = "swt.evolve.";
 
     private final RecordingComm comm = new RecordingComm();
     private final Map<String, String> savedProperties = new HashMap<>();
@@ -31,40 +30,47 @@ class ThemePickFromFlutterTest {
     @BeforeEach
     void startFromTheDefaults() {
         savedFlags = Config.getConfigFlags();
-        for (String key : PICKED_PROPERTIES) {
-            savedProperties.put(key, System.getProperty(key));
-            System.clearProperty(key);
-        }
+        System.getProperties().forEach((k, v) -> {
+            if (k.toString().startsWith(PICKED_PREFIX)) savedProperties.put(k.toString(), v.toString());
+        });
+        clearPicked();
         Config.setConfigFlags(null);
     }
 
     @AfterEach
     void restore() {
-        savedProperties.forEach((key, value) -> {
-            if (value == null) System.clearProperty(key);
-            else System.setProperty(key, value);
-        });
+        clearPicked();
+        savedProperties.forEach(System::setProperty);
         Config.setConfigFlags(savedFlags);
+    }
+
+    private static void clearPicked() {
+        for (Object key : System.getProperties().keySet().toArray())
+            if (key.toString().startsWith(PICKED_PREFIX)) System.clearProperty(key.toString());
     }
 
     @Test
     void a_pick_is_kept_and_echoed_back() throws Exception {
         pick(flags -> {
-            flags.theme_name = "cursor";
+            flags.theme_name = "hb";
             flags.force_theme = "light";
         });
 
         List<ConfigFlags> echoes = echoes();
         assertThat(echoes).hasSize(1);
-        assertThat(echoes.get(0).theme_name).isEqualTo("cursor");
+        assertThat(echoes.get(0).theme_name).isEqualTo("hb");
         assertThat(echoes.get(0).force_theme).isEqualTo("light");
-        assertThat(Config.getConfigFlags().theme_name).isEqualTo("cursor");
+        assertThat(Config.getConfigFlags().theme_name).isEqualTo("hb");
     }
 
     @Test
     void picking_the_same_theme_again_is_not_echoed() throws Exception {
-        pick(flags -> flags.theme_name = "cursor");
-        pick(flags -> flags.theme_name = "cursor");
+        Consumer<ConfigFlags> cursorDark = flags -> {
+            flags.theme_name = "cursor";
+            flags.force_theme = "dark";
+        };
+        pick(cursorDark);
+        pick(cursorDark);
 
         assertThat(echoes()).hasSize(1);
     }
