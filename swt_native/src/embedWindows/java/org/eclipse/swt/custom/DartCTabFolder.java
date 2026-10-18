@@ -3417,10 +3417,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         color = GraphicsUtils.copyColor(color);
         if (inDispose)
             return;
+        checkWidget();
         if (!java.util.Objects.equals(this.selectionBackground, color)) {
             getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         }
-        checkWidget();
         if (selectionBackground == color)
             return;
         if (color == null)
@@ -3662,8 +3662,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     @Deprecated(forRemoval = true, since = "2026-06")
     public void setSimple(boolean simple) {
         boolean newValue = simple;
-        this.simple = newValue;
         checkWidget();
+        this.simple = newValue;
     }
 
     /**
@@ -3741,10 +3741,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     public void setTabPosition(int position) {
         getValue().markDirty(VWidget.STYLE);
         int newValue = position;
+        checkWidget();
         if (!java.util.Objects.equals(this.tabPosition, newValue)) {
             getValue().markDirty(VCTabFolder.TAB_POSITION);
         }
-        checkWidget();
         if (position != SWT.TOP && position != SWT.BOTTOM) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }

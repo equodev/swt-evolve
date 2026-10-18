@@ -277,7 +277,7 @@ class StyledTextRenderingFlutterTest {
         text.setLineBackground(1, 1, green);
         show();
 
-        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 1.0, "color", shadeOfGround(green.getRGB())));
+        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 1.0, "color", hex(green.getRGB())));
     }
 
     @Test
@@ -291,21 +291,7 @@ class StyledTextRenderingFlutterTest {
         text.redraw();
         show();
 
-        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 0.0, "color", shadeOfGround(yellow.getRGB())));
-    }
-
-    /**
-     * {@code line} as the client paints it: the same shade of the ground it paints as {@code line} is of
-     * the widget's background, which the theme's ground replaces unless the application's colours are used.
-     */
-    private String shadeOfGround(RGB line) {
-        String painted = (String) stage.facts(text).get("background");
-        int ground = Integer.parseUnsignedInt(painted.substring(3), 16);
-        RGB own = text.getBackground().getRGB();
-        int r = Math.max(0, Math.min(255, ((ground >> 16) & 0xff) + line.red - own.red));
-        int g = Math.max(0, Math.min(255, ((ground >> 8) & 0xff) + line.green - own.green));
-        int b = Math.max(0, Math.min(255, (ground & 0xff) + line.blue - own.blue));
-        return hex(new RGB(r, g, b));
+        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 0.0, "color", hex(yellow.getRGB())));
     }
 
     @SuppressWarnings("unchecked")
@@ -451,19 +437,6 @@ class StyledTextRenderingFlutterTest {
         Map<String, Object> facts = stage.facts(text);
         assertThat(facts.get("selectionBackground")).isEqualTo(hex(background.getRGB()));
         assertThat(facts.get("selectionForeground")).isEqualTo(hex(foreground.getRGB()));
-    }
-
-    @Test
-    @DisplayName("with no selection colours set, the selection is painted in the ones StyledText answers")
-    void defaultSelectionColours() {
-        fresh(SWT.MULTI, "alpha beta gamma");
-        stage.focusAt(0);
-        text.setSelection(6, 10);
-        show();
-
-        Map<String, Object> facts = stage.facts(text);
-        assertThat(facts.get("selectionBackground")).isEqualTo(hex(text.getSelectionBackground().getRGB()));
-        assertThat(facts.get("selectionForeground")).isEqualTo(hex(text.getSelectionForeground().getRGB()));
     }
 
     @Test

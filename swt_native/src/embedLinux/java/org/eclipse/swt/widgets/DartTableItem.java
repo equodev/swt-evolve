@@ -516,38 +516,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        long column = 0;
-        if (index >= 0 && index < ((DartTable) parent.getImpl()).columnCount) {
-            column = ((DartTable) parent.getImpl()).columns[index].handle;
-        } else {
-        }
-        if (column == 0)
-            return new Rectangle(0, 0, 0, 0);
-        long pixbufRenderer = ((DartTable) parent.getImpl()).getPixbufRenderer(column);
-        if (pixbufRenderer == 0)
-            return new Rectangle(0, 0, 0, 0);
-        int[] x = new int[1];
-        /*
-	 * Feature in GTK. When a pixbufRenderer has size of 0x0, gtk_tree_view_column_cell_get_position
-	 * returns a position of 0 as well. This causes offset issues meaning that images/widgets/etc.
-	 * can be placed over the text. We need to account for the base case of a pixbufRenderer that has
-	 * yet to be sized, as per Bug 469277 & 476419. NOTE: this change has been ported to Tables since Tables/Trees both
-	 * use the same underlying GTK structure.
-	 */
-        if (((DartTable) parent.getImpl()).pixbufSizeSet) {
-            if (x[0] > 0) {
-            }
-        } else {
-            /*
-		 * If the size of the pixbufRenderer hasn't been set, we need to take into account the
-		 * position of the textRenderer, to ensure images/widgets/etc. aren't placed over the TableItem's
-		 * text.
-		 */
-            long textRenderer = ((DartTable) parent.getImpl()).getTextRenderer(column);
-            if (textRenderer == 0)
-                return new Rectangle(0, 0, 0, 0);
-        }
-        return null;
+        return Sizes.getImageBounds(this, index);
     }
 
     /**
@@ -719,10 +688,10 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this.background, newValue)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -798,10 +767,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setChecked(boolean checked) {
         boolean newValue = checked;
+        checkWidget();
         if (!java.util.Objects.equals(this.checked, newValue)) {
             getValue().markDirty(VTableItem.CHECKED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (_getChecked() == checked)
@@ -929,10 +898,10 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }

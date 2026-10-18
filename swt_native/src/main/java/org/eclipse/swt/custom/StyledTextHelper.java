@@ -42,9 +42,8 @@ public class StyledTextHelper {
     // channel — so by the time the SWT.Paint listeners run, the geometry they align
     // against is at least as fresh as the frame they draw over. The position API
     // answers from this table when it is fresh (same character count as the current
-    // content), from the stale table for the lines an edit has not moved until the
-    // next one arrives, and falls back to the glyph-table estimate otherwise, e.g.
-    // before the first frame.
+    // content) and falls back to the glyph-table estimate otherwise, e.g. before the
+    // first frame.
 
     /** One visual line, after wrapping. Coordinates are relative to the text origin. */
     static final class VisualLine {
@@ -57,12 +56,6 @@ public class StyledTextHelper {
 
     static final class TextGeometry {
         int charCount;
-        /** The lowest offset edited since the render side measured this table: a line starting at or before it has not moved. */
-        int editedFrom = Integer.MAX_VALUE;
-        /** Lines those edits added (negative: removed). */
-        int lineDelta;
-        /** Characters those edits added (negative: removed); a content that differs by more changed some other way. */
-        int charDelta;
         /** The client's name for this table; a change names the one it was computed from. */
         int version;
         double contentWidth, contentHeight;
@@ -99,84 +92,27 @@ public class StyledTextHelper {
     /** The height of the whole document as the render side laid it out, or null. */
     static Integer measuredContentHeight(DartStyledText styledText) {
         TextGeometry g = freshGeometry(styledText);
-        if (g != null) return (int) Math.round(g.contentHeight);
-        // Stale, the table less what the edits added: the estimate would shrink the scroll range under the view.
-        g = textGeometries.get(styledText);
-        int edited = editedLine(styledText, g);
-        if (edited < 0) return null;
-        Double rowHeight = editedRowHeight(g, edited);
-        return rowHeight == null ? null : (int) Math.round(g.contentHeight + g.lineDelta * rowHeight);
+        return g == null ? null : (int) Math.round(g.contentHeight);
     }
 
     /** Where the render side put the top of {@code lineIndex}, in the document's own pixels, or null. */
     static Integer measuredLineTop(DartStyledText styledText, int lineIndex) {
         VisualLine[] rows = rowsOfLine(styledText, lineIndex);
-        if (rows != null) return (int) Math.round(rows[0].y);
-        Double top = staleLineTop(styledText, lineIndex);
-        return top == null ? null : (int) Math.round(top);
-    }
-
-    /** The line holding the first offset edited since the held table was measured, or -1 when that table cannot answer. */
-    private static int editedLine(DartStyledText styledText, TextGeometry g) {
-        if (g == null || g.lines.length == 0 || g.editedFrom < 0 || styledText.content == null
-                || g.charCount + g.charDelta != styledText.getCharCount()
-                // Mid-change (a replace that removed the top line): the scroll state is not settled yet.
-                || styledText.topIndex >= styledText.content.getLineCount()) return -1;
-        return styledText.content.getLineAtOffset(Math.min(g.editedFrom, styledText.content.getCharCount()));
+        return rows == null ? null : (int) Math.round(rows[0].y);
     }
 
     /**
-     * The top of {@code lineIndex} while the held table is stale. An edit moves no line that starts at or before it,
-     * and moves the lines below the edited one by the rows it added or removed, each as tall as the edited line's.
+     * The width of the widest row the render side laid out, or null. As upstream, with fixed line
+     * heights only the lines {@code renderer} has calculated count, so a long line not yet shown does
+     * not widen the range; with variable ones every line counts, as upstream's idle pass measures them.
      */
-    private static Double staleLineTop(DartStyledText styledText, int lineIndex) {
-        TextGeometry g = textGeometries.get(styledText);
-        int edited = editedLine(styledText, g);
-        if (edited < 0 || lineIndex < 0 || lineIndex >= styledText.content.getLineCount()) return null;
-        int first = g.firstRow(Math.min(lineIndex, edited));
-        if (first < 0) return null;
-        if (lineIndex <= edited) {
-            return g.lines[first].start == styledText.content.getOffsetAtLine(lineIndex) ? g.lines[first].y : null;
-        }
-        double rowHeight = editedRowHeight(g, edited);
-        int before = lineIndex - g.lineDelta;
-        if (before <= edited) return g.lines[first].y + (lineIndex - edited) * rowHeight;
-        int row = g.firstRow(before);
-        return row < 0 ? null : g.lines[row].y + g.lineDelta * rowHeight;
-    }
-
-    /** The height of the edited line's last row in the held table, below its vertical indent; null when absent. */
-    private static Double editedRowHeight(TextGeometry g, int edited) {
-        int first = g.firstRow(edited);
-        if (first < 0) return null;
-        int last = first;
-        while (last + 1 < g.lines.length && g.lines[last + 1].logicalLine == edited) last++;
-        return g.lines[last].h - (last == first ? g.lines[first].vi : 0);
-    }
-
-    /** The logical line at a document y while the held table is stale; the counterpart of {@link #staleLineTop}. */
-    private static Integer staleLineIndex(DartStyledText styledText, double contentY) {
-        TextGeometry g = textGeometries.get(styledText);
-        if (editedLine(styledText, g) < 0) return null;
-        if (contentY < 0) return 0;
-        int lineCount = styledText.content.getLineCount();
-        int low = 0, high = lineCount - 1;
-        while (low < high) {
-            int mid = (low + high + 1) >>> 1;
-            Double top = staleLineTop(styledText, mid);
-            if (top == null) return null;
-            if (top <= contentY) low = mid; else high = mid - 1;
-        }
-        return low;
-    }
-
-    /** The width of the widest row the render side laid out among the lines {@code counted} accepts, or null. */
-    static Integer measuredContentWidth(DartStyledText styledText, java.util.function.IntPredicate counted) {
+    static Integer measuredContentWidth(DartStyledTextRenderer renderer, DartStyledText styledText) {
         TextGeometry g = freshGeometry(styledText);
         if (g == null) return null;
+        boolean everyLine = !styledText.isFixedLineHeight();
         double widest = 0;
         for (VisualLine row : g.lines) {
-            if (counted.test(row.logicalLine)) widest = Math.max(widest, row.x + row.w);
+            if (everyLine || renderer._isWidthCalculated(row.logicalLine)) widest = Math.max(widest, row.x + row.w);
         }
         return (int) Math.ceil(widest);
     }
@@ -213,17 +149,8 @@ public class StyledTextHelper {
         change.put("start", event.start);
         change.put("replaced", event.replaceCharCount);
         change.put("text", text);
-        int charCount = styledText.content.getCharCount() - event.replaceCharCount + text.length();
-        change.put("charCount", charCount);
+        change.put("charCount", styledText.content.getCharCount() - event.replaceCharCount + text.length());
         carriedAcross(styledText, event.start, event.replaceCharCount, text.length());
-        int lineDelta = event.newLineCount - event.replaceLineCount;
-        TextGeometry g = textGeometries.get(styledText);
-        if (g != null) {
-            g.editedFrom = Math.min(g.editedFrom, event.start);
-            g.lineDelta += lineDelta;
-            g.charDelta += text.length() - event.replaceCharCount;
-        }
-        pendingEdits(styledText).add(new int[] { charCount, event.start, lineDelta });
         FlutterBridge.sendNow(styledText, "TextChange", change);
     }
 
@@ -380,9 +307,7 @@ public class StyledTextHelper {
             if (spliced == null) return;
             g.lines = spliced;
         }
-        TextGeometry previous = textGeometries.get(styledText);
-        accountForLaterEdits(styledText, g);
-        textGeometries.put(styledText, g);
+        TextGeometry previous = textGeometries.put(styledText, g);
         // A layout change reaches the render side first and only lands here afterwards: the
         // painters that answer from this table (JFace's ruler columns) have already drawn
         // against the previous one and nothing would ask again. A wrap toggle is the visible
@@ -406,38 +331,6 @@ public class StyledTextHelper {
                 styledText.setScrollBars(true);
             }
             repaintRulerSiblings(styledText);
-        }
-    }
-
-    private static final Map<DartStyledText, java.util.ArrayDeque<int[]>> pendingEdits =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
-    /** The edits sent since the last table that measured the current content: {char count after, start, lines added}. */
-    private static java.util.ArrayDeque<int[]> pendingEdits(DartStyledText styledText) {
-        java.util.ArrayDeque<int[]> edits = pendingEdits.computeIfAbsent(styledText, k -> new java.util.ArrayDeque<>());
-        if (edits.size() > 256) edits.removeFirst();
-        return edits;
-    }
-
-    /** Records in {@code g} the edits made after the content it measured; with none, it measured the current content. */
-    private static void accountForLaterEdits(DartStyledText styledText, TextGeometry g) {
-        java.util.ArrayDeque<int[]> edits = pendingEdits(styledText);
-        if (styledText.content != null && g.charCount == styledText.getCharCount()) {
-            edits.clear();
-            return;
-        }
-        g.editedFrom = -1;
-        int from = Integer.MAX_VALUE, lines = 0;
-        for (java.util.Iterator<int[]> it = edits.descendingIterator(); it.hasNext(); ) {
-            int[] edit = it.next();
-            if (edit[0] == g.charCount) {
-                g.editedFrom = from;
-                g.lineDelta = lines;
-                g.charDelta = edits.peekLast()[0] - g.charCount;
-                return;
-            }
-            from = Math.min(from, edit[1]);
-            lines += edit[2];
         }
     }
 
@@ -552,10 +445,7 @@ public class StyledTextHelper {
     /** Widget-space top pixel of a logical line; line == lineCount answers the content bottom. */
     public static Integer geometryLinePixel(DartStyledText styledText, int lineIndex) {
         TextGeometry g = freshGeometry(styledText);
-        if (g == null) {
-            Double top = staleLineTop(styledText, lineIndex);
-            return top == null ? null : (int) Math.round(top) - styledText.getVerticalScrollOffset() + styledText.topMargin;
-        }
+        if (g == null) return null;
         double y = -1;
         if (lineIndex > g.lines[g.lines.length - 1].logicalLine) {
             y = g.contentHeight;
@@ -572,10 +462,7 @@ public class StyledTextHelper {
     /** Logical line at a widget-space y, clamped to the content like the estimate path. */
     public static Integer geometryLineIndex(DartStyledText styledText, int y) {
         TextGeometry g = freshGeometry(styledText);
-        if (g == null) {
-            if (editedLine(styledText, textGeometries.get(styledText)) < 0) return null;
-            return staleLineIndex(styledText, y - styledText.topMargin + styledText.getVerticalScrollOffset());
-        }
+        if (g == null) return null;
         double contentY = y - styledText.topMargin + styledText.getVerticalScrollOffset();
         if (contentY < 0) return 0;
         for (VisualLine v : g.lines) {
@@ -1227,13 +1114,9 @@ public class StyledTextHelper {
                 DartStyledTextRenderer.LineInfo resolved = new DartStyledTextRenderer.LineInfo(info);
                 resolved.background = background;
                 // A bullet reserves its glyph width before the text, the way the renderer adds it
-                // to the layout's indent (the line's own, else the widget's) when it draws the line itself.
-                if (bulletIndent != 0) {
-                    if ((info.flags & DartStyledTextRenderer.INDENT) == 0)
-                        resolved.indent = styledText == null ? 0 : styledText.indent;
-                    resolved.indent += bulletIndent;
-                    resolved.flags |= DartStyledTextRenderer.INDENT;
-                }
+                // to the layout's indent when it draws the line itself.
+                resolved.indent += bulletIndent;
+                if (bulletIndent != 0) resolved.flags |= DartStyledTextRenderer.INDENT;
                 info = resolved;
             }
             result[i] = new VStyledTextRenderer.VLineInfo(info);
@@ -1264,23 +1147,6 @@ public class StyledTextHelper {
     /** The width a bullet reserves before its line's text, from its style's glyph metrics. */
     private static int bulletWidth(Bullet bullet) {
         return bullet.style == null || bullet.style.metrics == null ? 0 : bullet.style.metrics.width;
-    }
-
-    /**
-     * The width each line's bullet reserves at the start of the line (0 for a line without one), or
-     * null when no line has one. The client draws the bullet inside it, whatever indent the text has.
-     */
-    public static int[] wireBulletWidths(DartStyledTextRenderer renderer) {
-        if (renderer.bullets == null || renderer.content == null) return null;
-        int[] widths = null;
-        int count = renderer.content.getLineCount();
-        for (int i = 0; i < count; i++) {
-            Object[] found = bulletOf(renderer, i);
-            if (found == null) continue;
-            if (widths == null) widths = new int[count];
-            widths[i] = bulletWidth((Bullet) found[0]);
-        }
-        return widths;
     }
 
     /**
@@ -1360,15 +1226,7 @@ public class StyledTextHelper {
 
         int contentLineCount = renderer.content.getLineCount();
         if (contentLineCount > renderer.lineCount) {
-            // Resize lineSizes array if needed
-            if (renderer.lineSizes == null || renderer.lineSizes.length < contentLineCount) {
-                DartStyledTextRenderer.LineSizeInfo[] newLineSizes =
-                    new DartStyledTextRenderer.LineSizeInfo[contentLineCount];
-                if (renderer.lineSizes != null) {
-                    System.arraycopy(renderer.lineSizes, 0, newLineSizes, 0, renderer.lineCount);
-                }
-                renderer.lineSizes = newLineSizes;
-            }
+            renderer._growLineSizes(contentLineCount);
             // Resize lines array if it exists and is too small
             if (renderer.lines != null && renderer.lines.length < contentLineCount) {
                 DartStyledTextRenderer.LineInfo[] newLines =
@@ -1500,23 +1358,8 @@ public class StyledTextHelper {
         renderer.ascent = metrics.ascent;
         renderer.descent = metrics.descent;
         renderer.averageCharWidth = metrics.averageCharWidth;
-        renderer.tabWidth = spacesWidth(renderer.device, font, tabLength, metrics.tabWidth);
+        renderer.tabWidth = metrics.tabWidth;
         renderer.fixedPitch = isFixedPitch(font);
-    }
-
-    /** StyledTextRenderer.setFont's tab width: the width of a layout holding {@code count} spaces. */
-    private static int spacesWidth(org.eclipse.swt.graphics.Device device, Font font, int count, int fallback) {
-        if (device == null || device.isDisposed() || font == null || font.isDisposed()) return fallback;
-        org.eclipse.swt.graphics.TextLayout layout = new org.eclipse.swt.graphics.TextLayout(device);
-        try {
-            layout.setFont(font);
-            char[] spaces = new char[Math.max(0, count)];
-            java.util.Arrays.fill(spaces, ' ');
-            layout.setText(new String(spaces));
-            return layout.getBounds().width;
-        } finally {
-            layout.dispose();
-        }
     }
 
     /** Whether "l" and "W" are as wide as each other in the font, which is how SWT tells a fixed pitch font. */

@@ -465,6 +465,9 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         if (controlListener != null)
             control.removeListener(SWT.Dispose, controlListener);
         control.setData(DND.DROP_TARGET_KEY, null);
+        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartWidget) {
+            this.bridge.dirty((DartWidget) control.getImpl());
+        }
         control = null;
         controlListener = null;
     }
@@ -689,7 +692,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         event.dataTypes = computeMutualDataTypes(matchingDragSource());
         event.dataType = selectedDataType != null ? selectedDataType : (event.dataTypes.length > 0 ? event.dataTypes[0] : null);
         event.detail = eventType == DND.DragEnter ? DND.DROP_DEFAULT : (selectedOperation != DND.DROP_NONE ? selectedOperation : DND.DROP_DEFAULT);
-        event.feedback = dndFeedback;
+        event.feedback = DND.FEEDBACK_SELECT;
         return event;
     }
 

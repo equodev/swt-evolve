@@ -79,6 +79,8 @@ class DndSession {
     });
   }
 
+  static void clear(int dropTargetId) => _state.remove(dropTargetId);
+
   static void unlisten(int dropTargetId, void Function(DndNegotiationState) onUpdate) {
     _listeners[dropTargetId]?.remove(onUpdate);
   }

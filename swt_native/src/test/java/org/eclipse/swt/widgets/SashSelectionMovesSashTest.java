@@ -10,24 +10,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import java.util.ArrayList;
+import java.util.List;
+import org.eclipse.swt.graphics.Cursor;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
- * Java-side half: a Selection event arriving from Flutter must move the sash.
+ * A Selection event arriving from Flutter moves the sash.
  *
- * {@code DartSash.checkStyle} forces {@code SWT.SMOOTH}, i.e. it claims the macOS smooth-sash
- * contract — and in native SWT that contract includes the sash applying its own move:
- * {@code SwtSash.mouseDragged}/{@code mouseUp} call {@code setBounds(event.x, event.y, ...)}
- * whenever the app's listeners leave {@code event.doit} true. Apps therefore do NOT have to
- * reposition a smooth sash themselves, and some apps' custom recorder/overlay views don't. {@code DartSash}'s
- * Selection hook only forwards the event to listeners and never applies the move, so the sash
- * (and everything laid out around it) stays put until a window resize forces a fresh layout —
- * exactly the reported symptom.
+ * {@code DartSash} is always {@code SWT.SMOOTH}, and a smooth sash applies its own move when the
+ * listeners leave {@code event.doit} true, as native SWT does in {@code mouseDragged} and
+ * {@code mouseUp}: an application does not have to reposition it.
  *
- * Uses a {@link RecordingBridge} whose {@code RecordingComm} captures the {@code comm().on(...)}
- * handler DartSash registers, so the Dart→Java Selection can be fired directly (same seam as
- * {@code DisplayWakeFlutterTest}). The mocked Display's {@code sendEvent} is stubbed to deliver
- * to the widget's EventTable and {@code asyncExec} to run inline, so the hook's dispatch hop
- * completes synchronously.
+ * A {@link RecordingBridge} captures the handler {@code DartSash} registers, so the Selection is
+ * fired directly. The mocked Display delivers {@code sendEvent} to the widget's EventTable and runs
+ * {@code asyncExec} inline, so the dispatch completes synchronously.
  */
 @ExtendWith(Mocks.class)
 class SashSelectionMovesSashTest {
@@ -114,5 +113,67 @@ class SashSelectionMovesSashTest {
         assertThat(sash.getBounds().x)
                 .as("event.doit=false must veto the move, like native SWT")
                 .isEqualTo(195);
+    }
+
+    @Test
+    @DisplayName("a DefaultSelection from Flutter reaches an active sash, and not one under a modal shell")
+    void defaultSelectionReachesAnActiveSash() {
+        Sash sash = sash();
+        List<Event> heard = new ArrayList<>();
+        sash.addListener(SWT.DefaultSelection, heard::add);
+
+        bridge.comm.fireContaining("/Selection/DefaultSelection", new Event());
+        assertThat(heard).hasSize(1);
+
+        Shell modal = Mocks.shell();
+        when(((DartShell) sash.getShell().getImpl()).getModalShell()).thenReturn(modal);
+        bridge.comm.fireContaining("/Selection/DefaultSelection", new Event());
+        assertThat(heard).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("what Flutter sends for a sash disposed before it arrives is dropped")
+    void eventsForADisposedSashAreDropped() {
+        Sash sash = sash();
+        List<Runnable> queued = new ArrayList<>();
+        doAnswer(inv -> queued.add(inv.getArgument(0))).when(sash.getDisplay()).asyncExec(any(Runnable.class));
+        List<Event> heard = new ArrayList<>();
+        sash.addListener(SWT.Selection, heard::add);
+        sash.addListener(SWT.DefaultSelection, heard::add);
+
+        fireSelectionFromFlutter(255, 0, 10, 260);
+        bridge.comm.fireContaining("/Selection/DefaultSelection", new Event());
+        sash.dispose();
+        queued.forEach(Runnable::run);
+
+        assertThat(heard).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a sash its Selection listener disposes is not moved")
+    void aSashItsListenerDisposesIsNotMoved() {
+        Sash sash = sash();
+        sash.addListener(SWT.Selection, e -> sash.dispose());
+
+        assertThatCode(() -> fireSelectionFromFlutter(255, 0, 10, 260)).doesNotThrowAnyException();
+        assertThat(sash.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("a sash with no cursor of its own shows the resize cursor of its orientation")
+    void aSashShowsTheResizeCursorOfItsOrientation() {
+        Sash vertical = sash();
+        Display display = vertical.getDisplay();
+        Cursor sizeWE = mock(Cursor.class);
+        Cursor sizeNS = mock(Cursor.class);
+        Cursor own = mock(Cursor.class);
+        when(display.getSystemCursor(SWT.CURSOR_SIZEWE)).thenReturn(sizeWE);
+        when(display.getSystemCursor(SWT.CURSOR_SIZENS)).thenReturn(sizeNS);
+        Sash horizontal = new Sash(vertical.getParent(), SWT.HORIZONTAL);
+
+        assertThat(((DartSash) vertical.getImpl()).findCursor()).isSameAs(sizeWE);
+        assertThat(((DartSash) horizontal.getImpl()).findCursor()).isSameAs(sizeNS);
+        vertical.setCursor(own);
+        assertThat(((DartSash) vertical.getImpl()).findCursor()).isSameAs(own);
     }
 }

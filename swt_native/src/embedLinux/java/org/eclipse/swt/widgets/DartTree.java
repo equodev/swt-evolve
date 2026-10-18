@@ -623,6 +623,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         updateHeaderCSS();
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -679,6 +680,7 @@ public class DartTree extends DartComposite implements ITree {
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
         // reset to default font to get the usual behavior
         setFontDescription(defaultFont().handle);
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -779,6 +781,7 @@ public class DartTree extends DartComposite implements ITree {
         if (!searchEnabled()) {
         } else {
         }
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item) {
@@ -2072,10 +2075,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 
@@ -2166,10 +2169,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
-        checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();

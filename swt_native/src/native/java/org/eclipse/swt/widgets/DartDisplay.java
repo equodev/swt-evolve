@@ -2433,13 +2433,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (to != null && to.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        Rectangle rectangle = new Rectangle(x, y, width, height);
         if (from == to)
-            return rectangle;
-        Point origin = DisplayHelper.mapOrigin(from, to, x, y);
-        rectangle.x = origin.x;
-        rectangle.y = origin.y;
-        return rectangle;
+            return new Rectangle(x, y, width, height);
+        return DisplayHelper.mapRectangle(from, to, x, y, width, height);
     }
 
     long observerProc(long observer, long activity, long info) {

@@ -168,7 +168,8 @@ final class MacApplicationMenu {
     private static void action(Menu menu, String text, int id, Runnable onSelection) {
         MenuItem item = new MenuItem(menu, SWT.PUSH);
         item.setText(text);
-        item.setID(id);
+        // The ids are negative, which MenuItem#setID refuses; native SWT puts them in the item's tag.
+        ((DartMenuItem) item.getImpl()).ID = id;
         if (onSelection != null)
             item.addListener(SWT.Selection, event -> onSelection.run());
     }

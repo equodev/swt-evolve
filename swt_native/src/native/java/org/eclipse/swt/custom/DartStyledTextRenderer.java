@@ -1512,8 +1512,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     int getWidth() {
         {
             if (styledText != null && styledText.getImpl() instanceof DartStyledText) {
-                DartStyledText dartText = (DartStyledText) styledText.getImpl();
-                Integer measured = StyledTextHelper.measuredContentWidth(dartText, !dartText.isFixedLineHeight() ? line -> true : line -> lineSizes != null && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth());
+                Integer measured = StyledTextHelper.measuredContentWidth(this, (DartStyledText) styledText.getImpl());
                 if (measured != null)
                     return measured;
             }
@@ -1621,9 +1620,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             boldFont = italicFont = boldItalicFont = null;
             regularFont = font;
             StyledTextHelper.markRendererDirty(this);
-        }
-        if (regularFont != null) {
-            StyledTextHelper.updateRendererFontMetrics(this, regularFont, tabs);
+            StyledTextHelper.updateRendererFontMetrics(this, font, tabs);
         }
     }
 
@@ -2437,6 +2434,20 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     VStyledTextRenderer.VLineInfo[] wireLines() {
         return StyledTextHelper.wireLines(this);
+    }
+
+    public void _growLineSizes(int count) {
+        if (lineSizes == null || lineSizes.length < count) {
+            LineSizeInfo[] newLineSizes = new LineSizeInfo[count];
+            if (lineSizes != null) {
+                System.arraycopy(lineSizes, 0, newLineSizes, 0, lineCount);
+            }
+            lineSizes = newLineSizes;
+        }
+    }
+
+    public boolean _isWidthCalculated(int line) {
+        return lineSizes != null && line >= 0 && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth();
     }
 
     public StyledTextRenderer getApi() {

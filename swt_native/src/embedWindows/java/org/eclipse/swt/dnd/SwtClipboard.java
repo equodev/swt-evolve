@@ -68,7 +68,7 @@ public class SwtClipboard implements IClipboard {
      */
     public SwtClipboard(Display display, Clipboard api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null) {
             display = SwtDisplay.getCurrent();
             if (display == null) {

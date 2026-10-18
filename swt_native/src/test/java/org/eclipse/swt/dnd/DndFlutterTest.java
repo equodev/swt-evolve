@@ -368,6 +368,87 @@ class DndFlutterTest {
     }
 
     @Test
+    @DisplayName("Each drag event starts from FEEDBACK_SELECT, not the previous event's answer")
+    void dragEventsStartFromSelectFeedback() {
+        Tree tree = new Tree(shell, SWT.BORDER);
+        new TreeItem(tree, SWT.NONE).setText("node");
+        DragSource source = new DragSource(tree, DND.DROP_MOVE);
+        source.setTransfer(TextTransfer.getInstance());
+        DropTarget target = new DropTarget(tree, DND.DROP_MOVE);
+        target.setTransfer(TextTransfer.getInstance());
+        List<Integer> seen = new ArrayList<>();
+        target.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                seen.add(event.feedback);
+                event.feedback = DND.FEEDBACK_INSERT_AFTER;
+            }
+
+            @Override
+            public void dragOver(DropTargetEvent event) {
+                seen.add(event.feedback);
+            }
+        });
+        shell.open();
+        flutter.show(shell);
+
+        ((DartDragSource) source.getImpl()).startDrag(new Event());
+        DartDropTarget impl = (DartDropTarget) target.getImpl();
+        impl.sendEvent(DND.DragEnter, new Event());
+        impl.sendEvent(DND.DragOver, new Event());
+
+        assertThat(seen).containsExactly(DND.FEEDBACK_SELECT, DND.FEEDBACK_SELECT);
+    }
+
+    @Test
+    @DisplayName("A DragSource attached after the control is rendered reaches Flutter")
+    void dragSourceAttachedAfterRenderReachesFlutter() {
+        Tree tree = new Tree(shell, SWT.BORDER);
+        new TreeItem(tree, SWT.NONE).setText("node");
+        shell.open();
+        flutter.show(shell);
+
+        new DragSource(tree, DND.DROP_COPY).setTransfer(TextTransfer.getInstance());
+        flutter.flush();
+
+        assertThat(renderedField(tree, "dragSource")).isEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("Disposing a rendered control's DragSource reaches Flutter")
+    void dragSourceDisposedAfterRenderReachesFlutter() {
+        Tree tree = new Tree(shell, SWT.BORDER);
+        new TreeItem(tree, SWT.NONE).setText("node");
+        DragSource dragSource = new DragSource(tree, DND.DROP_COPY);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        shell.open();
+        flutter.show(shell);
+        assertThat(renderedField(tree, "dragSource")).isEqualTo(true);
+
+        dragSource.dispose();
+        flutter.flush();
+
+        assertThat(renderedField(tree, "dragSource")).isNotEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("Disposing a rendered control's DropTarget reaches Flutter")
+    void dropTargetDisposedAfterRenderReachesFlutter() {
+        Tree tree = new Tree(shell, SWT.BORDER);
+        new TreeItem(tree, SWT.NONE).setText("node");
+        DropTarget dropTarget = new DropTarget(tree, DND.DROP_COPY);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        shell.open();
+        flutter.show(shell);
+        assertThat(renderedField(tree, "dropTargetId")).isNotNull();
+
+        dropTarget.dispose();
+        flutter.flush();
+
+        assertThat(renderedField(tree, "dropTargetId")).isNull();
+    }
+
+    @Test
     @DisplayName("Label to Label drop updates the rendered target text (upstream Snippet78)")
     void labelToLabelDropUpdatesRenderedText() {
         Label source = new Label(shell, SWT.BORDER);

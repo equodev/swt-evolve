@@ -72,13 +72,8 @@ final class StyledTextFlutterStage {
         twin.setText(text);
         subjectLog.attach(subject);
         twinLog.attach(twin);
-        // Two editors laying out a large wrapped document is more than ten seconds of work on a loaded runner.
-        if (text.length() > LARGE_DOCUMENT) flutter.flush(LARGE_DOCUMENT_TIMEOUT_MS);
         settle();
     }
-
-    private static final int LARGE_DOCUMENT = 20_000;
-    private static final long LARGE_DOCUMENT_TIMEOUT_MS = 40_000;
 
     private static void ignoringLeftovers(Runnable step) {
         for (int attempt = 0; attempt < 3; attempt++) {

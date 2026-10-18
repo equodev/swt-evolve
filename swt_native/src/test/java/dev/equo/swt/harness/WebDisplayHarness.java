@@ -51,14 +51,6 @@ public final class WebDisplayHarness {
     /** Upcoming browser launches that load a page which never connects, to exercise the relaunch. */
     private int bootFailuresToInject = Integer.getInteger("harness.web.failBoots", 0);
 
-    /** The scale the browser renders at, as a high-density screen does. Takes effect at boot. */
-    private double deviceScale = 1;
-
-    public WebDisplayHarness deviceScale(double scale) {
-        deviceScale = scale;
-        return this;
-    }
-
     void injectBootFailures(int count) {
         bootFailuresToInject = count;
     }
@@ -104,15 +96,9 @@ public final class WebDisplayHarness {
             openUrl = "data:text/html,harness-forced-boot-failure";
         }
         try {
-            java.util.List<String> switches = new java.util.ArrayList<>(java.util.List.of(
-                    "--remote-debugging-port=0", "--disable-frame-rate-limit", "--disable-gpu-vsync"));
-            if (deviceScale != 1) {
-                switches.add("--force-device-scale-factor=" + deviceScale);
-                // The default window would leave the page fewer CSS pixels than a test lays out.
-                switches.add("--window-size=1280,960");
-            }
             chrome = HeadlessChrome.launch(binary, openUrl, headless, console,
-                    console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, switches.toArray(new String[0]));
+                    console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, "--remote-debugging-port=0",
+                    "--disable-frame-rate-limit", "--disable-gpu-vsync");
         } catch (IOException e) {
             throw new IllegalStateException("could not launch Chrome", e);
         }
@@ -154,14 +140,9 @@ public final class WebDisplayHarness {
 
     /** Pushes Java's pending state and waits until the client has painted a frame with it. */
     public void flush() {
-        flush(TIMEOUT_MS);
-    }
-
-    /** {@link #flush()} for a step that gives the client far more than one frame of layout to do. */
-    public void flush(long timeoutMs) {
         FlutterBridge.update();
-        if (!syncFrame(timeoutMs))
-            throw new IllegalStateException("the client painted no frame within " + timeoutMs + "ms" + lastStall
+        if (!syncFrame(TIMEOUT_MS))
+            throw new IllegalStateException("the client painted no frame within " + TIMEOUT_MS + "ms" + lastStall
                     + " (" + input.pageState() + ")");
     }
 

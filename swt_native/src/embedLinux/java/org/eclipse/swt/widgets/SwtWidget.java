@@ -414,7 +414,7 @@ public abstract class SwtWidget implements IWidget {
      */
     public SwtWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();

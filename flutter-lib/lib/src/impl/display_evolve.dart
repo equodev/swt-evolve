@@ -98,7 +98,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final int id = widget.value.id ?? 0;
     if (openListClaimsKey(event)) return false;
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
-      if (compositionTakesKey(event)) return false;
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
       if (compositionOwnsKey(event.character ?? '')) return false;
       final v = mapNewKeyEventToSwt(event);

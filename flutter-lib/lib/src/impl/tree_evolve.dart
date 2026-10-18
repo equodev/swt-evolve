@@ -19,6 +19,7 @@ import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../testing/tree_test_registry.dart';
@@ -47,6 +48,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   // laid out at the content width, not at the viewport width, or they clip their own text
   // again inside the scrollable.
   double? _hScrollContentWidth;
+  // A row's width when its columns keep the widths Java set: their sum and the row's padding.
+  double? _columnsContentWidth;
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
   List<VTreeItem>? _pendingSelection;
@@ -571,6 +574,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                     ),
             ),
             textDirection: TextDirection.ltr,
+            textScaler: FontUtils.textWidgetScaler,
             maxLines: 1,
           );
           painter.layout();
@@ -649,6 +653,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           ),
         ),
         textDirection: TextDirection.ltr,
+        textScaler: FontUtils.textWidgetScaler,
         maxLines: 1,
       );
       painter.layout();
@@ -679,6 +684,24 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return List.from(preferred);
     }
     final available = availableWidth - prefix;
+    _columnsContentWidth = null;
+    // Java places cells (getBounds, owner-draw events) at the widths it set, so they are kept as
+    // given, as in SWT. A width of 0 is not sent: a column without one is a hidden column.
+    if (columns.any((c) => (c.width ?? 0) > 0)) {
+      final hasMultiColumn = columns.length > 1;
+      final gapFraction = hasMultiColumn
+          ? theme.itemEdgeGapFractionWithCols
+          : theme.itemEdgeGapFraction;
+      final rowPadding =
+          (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).horizontal;
+      final inner = availableWidth * (1 - 2 * gapFraction) - rowPadding;
+      final result = columns.map((c) => (c.width ?? 0).toDouble()).toList();
+      final sum = result.reduce((a, b) => a + b);
+      if (sum <= inner || StyleBits(state.style).has(SWT.H_SCROLL)) {
+        _columnsContentWidth = rowPadding + (sum > inner ? sum : inner);
+        return result;
+      }
+    }
     final hasExplicitWidths = columns.any((c) => c.width != null);
     if (columns.length > 1 && !hasExplicitWidths && available > 0) {
       final n = columns.length;
@@ -686,6 +709,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return List.filled(n, widthPerColumn);
     }
     double sum = preferred.reduce((a, b) => a + b);
+    if (sum > available && hasExplicitWidths) {
+      // Growing columns to their content only works while it fits. Past that, SWT keeps every
+      // column at the width the application gave it and clips the cell, so a long value never
+      // takes width away from the other columns.
+      final dividerGap = theme.columnDividerGap;
+      preferred = [
+        for (int i = 0; i < columns.length; i++)
+          columns[i].width == null
+              ? preferred[i]
+              : columns[i].width! + (i < columns.length - 1 ? dividerGap : 0.0),
+      ];
+      sum = preferred.reduce((a, b) => a + b);
+    }
     if (sum <= available) {
       final result = List<double>.from(preferred);
       result[result.length - 1] += available - sum;
@@ -727,10 +763,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       effectiveWidths,
       maxWidth - leftGap - rightGap,
     );
-    _hScrollContentWidth = columns.isEmpty ? totalWidth : null;
+    _hScrollContentWidth = columns.isEmpty ? totalWidth : _columnsContentWidth;
 
+    final scrollsHorizontally = hasHScroll && totalWidth != null;
     Widget scrollableContent;
-    if (hasHScroll && totalWidth != null) {
+    if (scrollsHorizontally) {
       scrollableContent = Scrollbar(
         controller: _horizontalController,
         thumbVisibility: true,
@@ -759,6 +796,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               ? Scrollbar(
                   controller: _verticalController,
                   thumbVisibility: true,
+                  // The horizontal viewport, when there is one, sits between this bar and the list.
+                  notificationPredicate: (notification) =>
+                      notification.metrics.axis == Axis.vertical &&
+                      notification.depth == (scrollsHorizontally ? 1 : 0),
                   child: ScrollConfiguration(
                     behavior: ScrollConfiguration.of(
                       context,
@@ -791,6 +832,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (contentWidth == null || contentWidth <= viewportWidth) return null;
       return contentWidth;
     }
+    if (_columnsContentWidth != null) return _columnsContentWidth;
     final boundsW = state.bounds?.width?.toDouble();
     if (boundsW != null && boundsW > 0) return boundsW;
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
@@ -977,6 +1019,40 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           ),
       ],
     );
+
+    final contentWidth = _columnsContentWidth;
+    if (contentWidth != null) {
+      // Columns at Java's widths can be wider than the tree: the header then scrolls with the
+      // rows, and is inset by the rows' padding so each title sits over its own column.
+      final rowPadding =
+          hasMultiColumn ? widgetTheme.itemPaddingWithCols : widgetTheme.itemPadding;
+      final columnsHeader = headerContent;
+      final controller = _horizontalController!;
+      headerContent = SizedBox(
+        height: headerHeight,
+        child: ClipRect(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) => Transform.translate(
+            offset: Offset(controller.hasClients ? -controller.offset : 0, 0),
+            child: child,
+          ),
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            minWidth: contentWidth,
+            maxWidth: contentWidth,
+            minHeight: headerHeight,
+            maxHeight: headerHeight,
+            child: Container(
+              color: headerBgColor,
+              padding: EdgeInsets.only(left: rowPadding.left, right: rowPadding.right),
+              child: columnsHeader,
+            ),
+          ),
+        ),
+        ),
+      );
+    }
 
     if (hasMultiColumn) {
       final gapFraction = widgetTheme.itemEdgeGapFractionWithCols;
@@ -1414,6 +1490,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   final HoverTracker<int> dragHover = HoverTracker<int>();
 
+  /// The DND.FEEDBACK_* bits the drop target's listener answered for [dragHover]'s item.
+  final ValueNotifier<int> dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+
   Widget wrapTreeForDrop(Widget content) {
     Offset? localOffset(DragTargetDetails<DndDragPayload> details) {
       final box = context.findRenderObject();
@@ -1441,7 +1520,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       resolvePosition: resolvePosition,
       onDrop: (_, __, targetItemId, position) => sendItemDrop(targetItemId, position),
       builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) dragHover.update(null);
+        if (!isHovering) {
+          dragHover.update(null);
+        } else {
+          dropFeedback.value = negotiation.feedback;
+        }
         return child;
       },
     );
@@ -1901,6 +1984,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _horizontalController?.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();
+    dropFeedback.dispose();
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }

@@ -118,7 +118,7 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
      */
     public SwtFileDialog(Shell parent, int style, FileDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     String computeResultChooserDialog(long file) {
