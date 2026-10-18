@@ -67,7 +67,7 @@ public abstract class FlutterBridge {
     protected static CommService newComm() {
         String impl = System.getProperty("comm.impl", "java-websocket");
         CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
-        comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
+        comm.on(PROPERTY_SET_CHANNEL, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
         // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
@@ -123,6 +123,10 @@ public abstract class FlutterBridge {
      * for the live state, which is authoritative either way.
      */
     public static final String WIDGET_REFRESH_CHANNEL = "swt.evolve.widget.refresh";
+
+    /** Flutter sets properties the user changed (the theme picker); Java echoes them on {@link #PROPERTIES_CHANNEL}. */
+    static final String PROPERTY_SET_CHANNEL = "swt.evolve.property.set";
+    static final String PROPERTIES_CHANNEL = "swt.evolve.properties";
 
     /** Widgets/resources by {@link #id}, so a refresh request can find its target. */
     private static final java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.WeakReference<Object>> widgetsById =
@@ -238,7 +242,7 @@ public abstract class FlutterBridge {
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
-    private static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
+    static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
         if (parsed == null) return;
         boolean changed = false;
         ConfigFlags current = getConfigFlags();
@@ -248,7 +252,7 @@ public abstract class FlutterBridge {
         if (changed) {
             // Echo the updated properties back on the comm they arrived on.
             try {
-                serializeAndSend(comm, "swt.evolve.properties", getConfigFlags());
+                serializeAndSend(comm, PROPERTIES_CHANNEL, getConfigFlags());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1703,7 +1707,7 @@ public abstract class FlutterBridge {
 
     protected void broadcastSwtEvolveProperties() {
         try {
-            serializeAndSend("swt.evolve.properties", getConfigFlags());
+            serializeAndSend(PROPERTIES_CHANNEL, getConfigFlags());
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -26,9 +26,9 @@ public class ConfigTest {
     private static Map<String, String> initialProperties;
 
     @BeforeAll
-    static void keep_the_process_default() {
-        // Config.defaultImpl is process-wide state, and the per-test hooks below pin it to `eclipse`.
-        // Restoring it after the class keeps later test classes on the default they were written for.
+    static void keep_the_process_state() {
+        // Config's state is process-wide, and the per-test hooks below pin it. Restoring it after the
+        // class keeps later test classes on the state they were written for.
         initialDefault = Config.defaultImpl;
         initialForceEclipse = Config.forceEclipse;
         initialProperties = new HashMap<>();
@@ -44,22 +44,20 @@ public class ConfigTest {
 
     @BeforeEach
     void defaults_swt() {
-        // Reset the global default too (not just the per-widget map): its static initial value is
-        // `equo`, so a default-reliant test that runs first (order varies by JVM/OS) would otherwise
-        // see `equo` instead of `eclipse` and fail. Symmetric with @AfterEach.
-        Config.defaultImpl = Config.Impl.eclipse;
-        resetProperties();
+        restoreConfig();
     }
 
     @AfterEach
     void reset() {
-        Config.defaultImpl = Config.Impl.eclipse;
-        Config.forceEclipse = initialForceEclipse;
-        resetProperties();
+        restoreConfig();
     }
 
-    /** Config.reset() clears every dev.equo.swt.* property, the test task's included: put those back. */
-    private static void resetProperties() {
+    private static void restoreConfig() {
+        // The global default's static initial value is `equo`: a default-reliant test that runs first
+        // would see it instead of `eclipse`.
+        Config.defaultImpl = Config.Impl.eclipse;
+        Config.forceEclipse = initialForceEclipse;
+        // Config.reset() clears every dev.equo.swt.* property, the test task's included: put those back.
         Config.reset();
         initialProperties.forEach(System::setProperty);
     }
@@ -199,12 +197,12 @@ public class ConfigTest {
         }
     }
 
-    /** How the classes that pick their implementation by parent (Browser, SWT_AWT) are answered. */
+    /** How a class that picks its implementation by its parent is answered under a Dart one. */
     @Nested
     class UnderADartParent {
 
         @Test
-        void a_child_is_dart_whatever_the_default() {
+        void a_child_is_dart_even_when_the_default_is_eclipse() {
             assertThat(Config.isEquo(Button.class, Mocks.shell())).isTrue();
         }
 
@@ -220,6 +218,17 @@ public class ConfigTest {
             System.setProperty(Config.PROPERTY_PREFIX + Config.getId(Button.class, shell), "eclipse");
             assertThat(Config.isEquo(Button.class, shell)).isFalse();
             assertThat(Config.isEquo(Label.class, shell)).isTrue();
+        }
+
+        @Test
+        void file_dialogs_stay_native_once_a_display_bridge_runs() {
+            // DisplayBridge sets dev.equo.swt.desktop=false for the backend that ships.
+            System.setProperty("dev.equo.swt.desktop", "false");
+            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isFalse();
+            assertThat(Config.isEquo(DirectoryDialog.class, Mocks.shell())).isFalse();
+
+            System.setProperty("dev.equo.swt.desktop", "true");
+            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isTrue();
         }
 
         @Test
@@ -325,7 +334,6 @@ public class ConfigTest {
 
         // Explicit disable should override group activation
         @Test
-        @Disabled
         void explicit_disable_should_override_group_activation() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "equo");
@@ -336,7 +344,6 @@ public class ConfigTest {
         }
 
         @Test
-        @Disabled
         void explicit_disable_of_parent_should_not_affect_child_group_activation() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "eclipse");
