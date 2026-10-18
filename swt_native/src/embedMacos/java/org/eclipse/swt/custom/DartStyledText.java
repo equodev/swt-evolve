@@ -11451,7 +11451,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTabStops(int[] tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabs, tabs)) {
+        if (!java.util.Arrays.equals(this.tabs, tabs)) {
             getValue().markDirty(VStyledText.TAB_STOPS);
         }
         if (tabs != null) {
