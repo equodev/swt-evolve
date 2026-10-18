@@ -131,6 +131,19 @@ public class TextLayoutRowsNativeTest {
     }
 
     @Test
+    public void a_style_over_the_whole_text_makes_every_row_taller() {
+        Display display = DartMocks.dartDisplay();
+        TextLayout layout = layout(display, "abc\ndef");
+        int plain = layout.getLineBounds(0).height;
+        Font big = new DartFont(display, "System", 40, SWT.NORMAL, null).getApi();
+
+        layout.setStyle(new TextStyle(big, null, null), 0, 6);
+
+        assertThat(layout.getLineBounds(0).height).isGreaterThan(plain);
+        assertThat(layout.getLineBounds(1).height).isGreaterThan(plain);
+    }
+
+    @Test
     public void the_metrics_of_a_row_are_those_of_its_tallest_font() {
         Display display = DartMocks.dartDisplay();
         TextLayout layout = layout(display, "abc\ndef\nghi");
