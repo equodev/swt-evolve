@@ -328,6 +328,29 @@ sourceSets {
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
             if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
+            // 3.107 added the lambda listener factories (ProgressListener.completedAdapter,
+            // LocationListener.changedAdapter), StyledText.getOffsetAtPoint and
+            // StyledText.setLineSpacingProvider, which these tests call directly.
+            if (swtMinorNative < 107) {
+                exclude("dev/equo/swt/test/BrowserFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFileUrlFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFirstLoadFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserProgressPlaceholderFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
+            }
+            // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
+            // CompositeImageDescriptor API ships with the JFace paired with it, and CTabFolder only
+            // highlights the active stack (onActivate/onDeactivate) from that release on.
+            if (swtMinorNative < 106) {
+                exclude("org/eclipse/swt/custom/CTabFolderActiveHighlightFlutterTest.java")
+                exclude("org/eclipse/swt/dnd/DndFlutterTest.java")
+                exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
+                // Image.getImageData(int zoom) is package-private in 3.105 and public from 3.106 on,
+                // so the API class the generator writes only carries it from there; this test reads
+                // one image back at three zooms.
+                exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
+            }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
@@ -356,20 +379,12 @@ run {
     val jfaceVersion: String by project
     val coreCommandsVersion: String by project
     val equinoxCommonVersion: String by project
-    val jfaceTextVersion: String by project
-    val eclipseTextVersion: String by project
     dependencies {
         "testImplementation"("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
             exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
         }
         "testImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
         "testImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
-        // A text editor's own ruler columns (CompositeRuler, LineNumberRulerColumn), so the gutter
-        // is tested as the code that draws it, not an imitation.
-        "testImplementation"("org.eclipse.platform:org.eclipse.jface.text:$jfaceTextVersion") {
-            exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-        }
-        "testImplementation"("org.eclipse.platform:org.eclipse.text:$eclipseTextVersion")
 
         // FXCanvasSwtThreadDispatchNativeTest drives the FXCanvas SWT-thread dispatch against a
         // live JavaFX toolkit. It needs JavaFX + headless Monocle on the test classpath (unnamed

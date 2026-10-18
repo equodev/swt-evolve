@@ -118,4 +118,13 @@ class StyledTextHorizontalRangeTest {
 
         assertThat(width(text)).isEqualTo((int) LONG_WIDTH);
     }
+
+    @Test
+    void with_variable_line_heights_every_line_counts() {
+        StyledText text = styledText();
+
+        text.setLineSpacing(2);
+
+        assertThat(width(text)).isEqualTo((int) LONG_WIDTH);
+    }
 }

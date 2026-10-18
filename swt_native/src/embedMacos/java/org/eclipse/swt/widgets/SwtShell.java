@@ -290,7 +290,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     SwtShell(Display display, Shell parent, int style, long handle, boolean embedded, Shell api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null)
             display = SwtDisplay.getCurrent();
         if (display == null)

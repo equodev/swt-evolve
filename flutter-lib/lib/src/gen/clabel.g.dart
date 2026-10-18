@@ -58,6 +58,13 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
       ? null
       : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
+  ..gradientColors = (json['gradientColors'] as List<dynamic>?)
+      ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
+      .toList()
+  ..gradientPercents = (json['gradientPercents'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
+  ..gradientVertical = json['gradientVertical'] as bool?
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
@@ -93,6 +100,9 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
   'alignment': ?instance.alignment,
   'backgroundImage': ?instance.backgroundImage,
   'bottomMargin': ?instance.bottomMargin,
+  'gradientColors': ?instance.gradientColors,
+  'gradientPercents': ?instance.gradientPercents,
+  'gradientVertical': ?instance.gradientVertical,
   'image': ?instance.image,
   'leftMargin': ?instance.leftMargin,
   'rightMargin': ?instance.rightMargin,

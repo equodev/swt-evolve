@@ -2683,8 +2683,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         boolean newValue = capture;
-        this.capture = newValue;
         checkWidget();
+        this.capture = newValue;
     }
 
     /**
@@ -2742,10 +2742,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        checkWidget();
         if (!java.util.Objects.equals(this.dragDetect, newValue)) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         this.dragDetect = newValue;
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
@@ -2841,11 +2841,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3214,7 +3214,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         int newValue = textDirection;
-        this.textDirection = newValue;
         checkWidget();
         textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
         updateTextDirection(textDirection);
@@ -3223,6 +3222,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             getApi().state &= ~HAS_AUTO_DIRECTION;
         }
+        this.textDirection = newValue;
     }
 
     /**
@@ -3301,12 +3301,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
             if (parent != null && parent.getImpl() instanceof DartTable)
                 ((DartTable) parent.getImpl()).dirty();
         }
-        checkWidget();
         if (visible) {
             if ((getApi().state & HIDDEN) == 0)
                 return;

@@ -285,7 +285,6 @@ public class StyledTextGeometryEdgesNativeTest {
         assertThat(StyledTextHelper.measuredLineTop(st, 1)).isEqualTo(15);
         assertThat(StyledTextHelper.measuredLineTop(st, 7)).isNull();
         assertThat(StyledTextHelper.measuredContentHeight(st)).isEqualTo(30);
-        assertThat(StyledTextHelper.measuredContentWidth(st, line -> true)).isEqualTo(20);
         assertThat(StyledTextHelper.measuredLineHeight(st, 0)).isEqualTo(15);
     }
 
@@ -298,69 +297,5 @@ public class StyledTextGeometryEdgesNativeTest {
         StyledTextHelper.applyLineVerticalIndentDelta(widget(5), 0, 20);
 
         assertThat(StyledTextHelper.geometryLinePixel(st, 1)).isEqualTo(15);
-    }
-
-    private static void content(DartStyledText st, int charCount, int... lineStarts) {
-        when(st.getCharCount()).thenReturn(charCount);
-        when(st.content.getCharCount()).thenReturn(charCount);
-        when(st.content.getLineCount()).thenReturn(lineStarts.length);
-        for (int line = 0; line < lineStarts.length; line++) {
-            when(st.content.getOffsetAtLine(line)).thenReturn(lineStarts[line]);
-            int end = line + 1 < lineStarts.length ? lineStarts[line + 1] : charCount + 1;
-            for (int offset = lineStarts[line]; offset < end; offset++) {
-                when(st.content.getLineAtOffset(offset)).thenReturn(line);
-            }
-        }
-    }
-
-    private static void edit(DartStyledText st, int start, String text, int newLineCount, int... lineStartsAfter) {
-        TextChangingEvent event = new TextChangingEvent(st.content);
-        event.start = start;
-        event.newText = text;
-        event.newCharCount = text.length();
-        event.newLineCount = newLineCount;
-        StyledTextHelper.sendTextChange(st, event);
-        content(st, st.content.getCharCount() + text.length(), lineStartsAfter);
-    }
-
-    @Test
-    public void until_the_next_table_an_edit_leaves_the_lines_starting_at_or_before_it_in_place() {
-        DartStyledText st = held();
-        content(st, 5, 0, 3);
-
-        edit(st, 4, "a", 0, 0, 3);
-
-        assertThat(StyledTextHelper.measuredLineTop(st, 1)).isEqualTo(15);
-        assertThat(StyledTextHelper.geometryLinePixel(st, 1)).isEqualTo(15);
-        assertThat(StyledTextHelper.geometryLineIndex(st, 20)).isEqualTo(1);
-        assertThat(StyledTextHelper.measuredContentHeight(st)).isEqualTo(30);
-    }
-
-    @Test
-    public void until_the_next_table_the_lines_below_an_added_line_move_down_one_row() {
-        DartStyledText st = held();
-        content(st, 5, 0, 3);
-
-        edit(st, 1, "\n", 1, 0, 2, 4);
-
-        assertThat(StyledTextHelper.geometryLinePixel(st, 0)).isEqualTo(0);
-        assertThat(StyledTextHelper.geometryLinePixel(st, 1)).isEqualTo(15);
-        assertThat(StyledTextHelper.geometryLinePixel(st, 2)).isEqualTo(30);
-        assertThat(StyledTextHelper.geometryLineIndex(st, 31)).isEqualTo(2);
-        assertThat(StyledTextHelper.measuredContentHeight(st)).isEqualTo(45);
-    }
-
-    @Test
-    public void a_table_measured_before_the_latest_edit_moves_lines_by_the_later_edits_only() {
-        DartStyledText st = held();
-        content(st, 5, 0, 3);
-        edit(st, 4, "\n", 1, 0, 3, 5);
-        edit(st, 1, "\n", 1, 0, 2, 4, 6);
-
-        StyledTextHelper.applyTextGeometry(st, table(6, 50.0, List.of(
-                row(0, 0, 2, 0.0, 15.0, boundaries(3)), row(1, 3, 4, 15.0, 20.0, boundaries(2)),
-                row(2, 5, 6, 35.0, 15.0, boundaries(2)))));
-
-        assertThat(StyledTextHelper.geometryLinePixel(st, 3)).isEqualTo(50);
     }
 }

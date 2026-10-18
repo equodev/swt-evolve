@@ -902,8 +902,8 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setDefaultItem(MenuItem item) {
         MenuItem newValue = item;
-        this.defaultItem = newValue;
         checkWidget();
+        this.defaultItem = newValue;
     }
 
     /**
@@ -921,10 +921,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VMenu.ENABLED);
         }
-        checkWidget();
         this.enabled = newValue;
     }
 
@@ -985,10 +985,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setLocation(Point location) {
         Point newValue = location;
+        checkWidget();
         if (!java.util.Objects.equals(this.location, newValue)) {
             getValue().markDirty(VMenu.LOCATION);
         }
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.location = newValue;
@@ -1086,10 +1086,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(this.visible, newValue)) {
             getValue().markDirty(VMenu.VISIBLE);
         }
-        checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         this.visible = newValue;

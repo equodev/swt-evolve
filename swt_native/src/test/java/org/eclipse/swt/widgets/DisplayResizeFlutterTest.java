@@ -174,6 +174,66 @@ class DisplayResizeFlutterTest {
                 .containsExactly(new Rectangle(0, 0, 1000, 700));
     }
 
+    @Test
+    void desk_replacementShell_takesOverWindow_fillsCurrentViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell previous = newMainShell();
+        previous.open();
+        clientReady(desk.comm, 1920, 1040, true); // the user maximized the window
+        desk.forwarded.clear();
+
+        // A workbench that replaces its window opens the new one at its persisted geometry while
+        // the old one is still the main shell, then disposes the old one.
+        Shell replacement = newMainShell();
+        replacement.setBounds(200, 100, 1280, 800);
+        replacement.open();
+        previous.dispose();
+        drainEventLoop();
+
+        assertThat(replacement.getBounds())
+                .as("the shell that takes the window over fills it; no resize of the window, which "
+                        + "keeps its size, would ever arrive to correct it")
+                .isEqualTo(new Rectangle(200, 100, 1920, 1040));
+        assertThat(desk.forwarded)
+                .as("fitting the shell to the window must not command the window")
+                .isEmpty();
+    }
+
+    @Test
+    void desk_shellShownAfterHandshake_fillsCurrentViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell previous = newMainShell();
+        previous.open();
+        clientReady(desk.comm, 1920, 1040, true);
+        previous.setVisible(false);
+        Shell replacement = newMainShell();
+        replacement.setBounds(200, 100, 1280, 800); // not the main shell yet: the window is not told
+        desk.forwarded.clear();
+
+        replacement.open();
+        drainEventLoop();
+
+        assertThat(replacement.getBounds())
+                .as("a shell shown into an already-sized window fills it")
+                .isEqualTo(new Rectangle(200, 100, 1920, 1040));
+        assertThat(desk.forwarded).isEmpty();
+    }
+
+    @Test
+    void desk_appResizeOfMainShell_isNotUndoneByTheStaleViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell shell = newMainShell();
+        shell.open();
+        clientReady(desk.comm, 1280, 800, true);
+
+        shell.setBounds(0, 0, 1000, 700); // forwarded; the window's own resize report is still on its way
+        drainEventLoop();
+
+        assertThat(shell.getBounds())
+                .as("the shell already drives the window, so the last reported viewport is not applied")
+                .isEqualTo(new Rectangle(0, 0, 1000, 700));
+    }
+
     // ---- web --------------------------------------------------------------------------------------
 
     @Test
@@ -546,6 +606,18 @@ class DisplayResizeFlutterTest {
 
         @Override
         protected void disposeNativeWindow() {
+        }
+
+        @Override
+        protected void setShellWindowTitle(long context, String title) {
+        }
+
+        @Override
+        protected void setShellWindowState(long context, int state) {
+        }
+
+        @Override
+        protected void setShellWindowVisible(long context, boolean visible) {
         }
 
         @Override

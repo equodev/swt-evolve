@@ -54,7 +54,8 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
       ? null
       : VPath.fromJson(json['clippingText'] as Map<String, dynamic>)
   ..lineDashOffset = (json['lineDashOffset'] as num?)?.toDouble()
-  ..bufferScale = (json['bufferScale'] as num?)?.toDouble();
+  ..bufferScale = (json['bufferScale'] as num?)?.toDouble()
+  ..themedCanvas = json['themedCanvas'] as bool?;
 
 Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -82,6 +83,7 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'clippingText': ?instance.clippingText,
   'lineDashOffset': ?instance.lineDashOffset,
   'bufferScale': ?instance.bufferScale,
+  'themedCanvas': ?instance.themedCanvas,
 };
 
 VGCCopyAreaImageintint _$VGCCopyAreaImageintintFromJson(

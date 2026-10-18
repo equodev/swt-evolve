@@ -75,9 +75,6 @@ VStyledTextRenderer _$VStyledTextRendererFromJson(Map<String, dynamic> json) =>
           .toList()
       ..bulletTexts = (json['bulletTexts'] as List<dynamic>?)
           ?.map((e) => e as String?)
-          .toList()
-      ..bulletWidths = (json['bulletWidths'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
           .toList();
 
 Map<String, dynamic> _$VStyledTextRendererToJson(
@@ -114,7 +111,6 @@ Map<String, dynamic> _$VStyledTextRendererToJson(
   'topIndex': ?instance.topIndex,
   'lineSpacings': ?instance.lineSpacings,
   'bulletTexts': ?instance.bulletTexts,
-  'bulletWidths': ?instance.bulletWidths,
 };
 
 VLineSizeInfo _$VLineSizeInfoFromJson(Map<String, dynamic> json) =>

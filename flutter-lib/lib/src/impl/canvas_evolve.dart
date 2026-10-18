@@ -21,10 +21,10 @@ import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
-import 'utils/trackpad_momentum.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'widget_config.dart';
+import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 
@@ -139,7 +139,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   @override
   void dispose() {
-    _momentum.dispose();
     _keyboardFocus.removeListener(_handleKeyboardFocusChange);
     _keyboardFocus.dispose();
     super.dispose();
@@ -154,6 +153,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // shared composite interaction chrome must not also forward it.
   @override
   bool get forwardsCompositeDoubleClick => false;
+
+  /// [wrapWithScrollbars] reports the wheel.
+  @override
+  bool get forwardsWheel => false;
 
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
@@ -349,7 +352,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
-      child: !canvasUsesThemeColors && hostsAppColoredContent
+      child: !gcUsesThemeColors(gcOverlay?.themedCanvas) && hostsAppColoredContent
           ? SwtColorScope(child: NoLayout(children: children, composite: state))
           : NoLayout(children: children, composite: state),
     );
@@ -406,18 +409,22 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       void onSignal(PointerSignalEvent event) {
         if (event is PointerScrollEvent && onWheel != null) {
           onWheel(event);
-        } else if (event is PointerScrollEvent) {
+        } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
           widget.sendMouseWheelMouseWheel(
             state,
             VEvent()
               ..x = event.localPosition.dx.round()
               ..y = event.localPosition.dy.round()
-              ..count = event.scrollDelta.dy > 0 ? -3 : 3,
+              ..count = -wheelLines(event.scrollDelta.dy),
           );
         }
       }
 
-      return _readsWheelAndTrackpad(base, onSignal);
+      return Listener(
+        onPointerSignal: onSignal,
+        onPointerPanZoomUpdate: (event) => panAsScroll(event, onSignal),
+        child: base,
+      );
     }
 
     void onDragStateChanged(bool dragging) {
@@ -441,7 +448,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     void onSignal(PointerSignalEvent event) {
       if (event is PointerScrollEvent && onWheel != null) {
         onWheel(event);
-      } else if (event is PointerScrollEvent) {
+      } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
         final now = DateTime.now().millisecondsSinceEpoch;
         if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
           _handleMouseWheel(event);
@@ -449,7 +456,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       }
     }
 
-    return _readsWheelAndTrackpad(Stack(
+    return Listener(
+      onPointerSignal: onSignal,
+      onPointerPanZoomUpdate: (event) => panAsScroll(event, onSignal),
+      child: Stack(
         children: [
           base,
           if (showVBar)
@@ -501,52 +511,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
             ),
         ],
       ),
-      onSignal,
     );
-  }
-
-  /// The last pan update, which the glide after it is delivered as if from.
-  PointerPanZoomUpdateEvent? _lastPan;
-  void Function(PointerSignalEvent)? _wheelSink;
-  late final TrackpadMomentum _momentum = TrackpadMomentum(_glideAsWheel);
-
-  Widget _readsWheelAndTrackpad(Widget child, void Function(PointerSignalEvent) onSignal) {
-    _wheelSink = onSignal;
-    return Listener(
-      onPointerSignal: (event) {
-        // A wheel turned, or fingers back on the trackpad, end the glide.
-        _momentum.stop();
-        onSignal(event);
-      },
-      onPointerDown: (_) => _momentum.stop(),
-      onPointerPanZoomStart: _momentum.panStart,
-      onPointerPanZoomUpdate: (event) {
-        _lastPan = event;
-        _momentum.panUpdate(event);
-        _panAsWheel(event, onSignal);
-      },
-      onPointerPanZoomEnd: (_) => _momentum.panEnd(
-          ScrollConfiguration.of(context).getScrollPhysics(context),
-          MediaQuery.devicePixelRatioOf(context)),
-      child: child,
-    );
-  }
-
-  void _glideAsWheel(Offset wheelDelta) {
-    final last = _lastPan;
-    final sink = _wheelSink;
-    if (!mounted || last == null || sink == null) {
-      _momentum.stop();
-      return;
-    }
-    sink(PointerScrollEvent(
-      timeStamp: last.timeStamp,
-      kind: last.kind,
-      device: last.device,
-      position: last.position,
-      scrollDelta: wheelDelta,
-      embedderId: last.embedderId,
-    ).transformed(last.transform));
   }
 
   void _tickSnap() {
@@ -587,21 +552,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       "ScrollBar/${bar.id}/Selection/Selection",
       (VEvent()..index = newValue..detail = detail).toJson(),
     );
-  }
-
-  /// Desktop embedders report a two-finger trackpad swipe as pan/zoom updates, not scroll signals.
-  /// The fingers drag the content, so the equivalent wheel delta is the pan reversed.
-  void _panAsWheel(PointerPanZoomUpdateEvent event, void Function(PointerSignalEvent) onSignal) {
-    final delta = -event.panDelta;
-    if (delta == Offset.zero) return;
-    onSignal(PointerScrollEvent(
-      timeStamp: event.timeStamp,
-      kind: event.kind,
-      device: event.device,
-      position: event.position,
-      scrollDelta: delta,
-      embedderId: event.embedderId,
-    ).transformed(event.transform));
   }
 
   void _handleMouseWheel(PointerScrollEvent event) {
@@ -682,10 +632,6 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   double? _dragStartPointerOffset;
   int? _dragStartSelection;
   int? _currentDragSelection;
-  /// What a press or drag asked for, so an echo of one is told apart from a move made elsewhere.
-  final Set<int> _sentSelections = {};
-  /// The bar is changed in place, so the old widget's bar is this one: changes are told by this value.
-  int? _seenSelection;
   bool _hovered = false;
   double _opacity = 0.0;
   Timer? _hideTimer;
@@ -694,7 +640,6 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   @override
   void initState() {
     super.initState();
-    _seenSelection = widget.bar.selection;
     _showBar();
     _scheduleHide();
   }
@@ -702,24 +647,14 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   @override
   void didUpdateWidget(_CanvasScrollBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final selection = widget.bar.selection;
-    if (selection != _seenSelection) {
-      _seenSelection = selection;
+    if (oldWidget.bar.selection != widget.bar.selection) {
       _showBar();
       _scheduleHide();
 
-      // The value a press or drag asked for holds until the application reports it, or reports
-      // a move of its own (the wheel, the keyboard), which is not one of the values asked for.
       if (_dragStartPointerOffset == null) {
-        if (_currentDragSelection == null ||
-            selection == _currentDragSelection ||
-            !_sentSelections.contains(selection)) {
+        if (_currentDragSelection == null || widget.bar.selection == _currentDragSelection) {
           _currentDragSelection = null;
-          _sentSelections.clear();
-          // The owner is mid-build here; its drag preview is reset once the frame is done.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) widget.onDragPixelDelta?.call(0.0);
-          });
+          widget.onDragPixelDelta?.call(0.0);
         }
       }
     }
@@ -797,13 +732,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragThrottleTimer ??= Timer(const Duration(milliseconds: 50), () {
       _dragThrottleTimer = null;
       final sel = _currentDragSelection;
-      if (sel != null) _send(sel);
+      if (sel != null) widget.onSelection(widget.bar, sel, 0);
     });
-  }
-
-  void _send(int selection) {
-    _sentSelections.add(selection);
-    widget.onSelection(widget.bar, selection, 0);
   }
 
   /// Centres the thumb under a track press, so a drag that follows carries on from there.
@@ -823,7 +753,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     if (target == null || target == _displaySelection) return;
     setState(() => _currentDragSelection = target);
     _showBar();
-    _send(target);
+    widget.onSelection(widget.bar, target, 0);
   }
 
   void _onDragEnd(DragEndDetails details) {
@@ -833,7 +763,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragStartPointerOffset = null;
     _dragStartSelection = null;
     widget.onDragStateChanged?.call(false);
-    _send(finalSel);
+    widget.onSelection(widget.bar, finalSel, 0);
     _scheduleHide();
   }
 
@@ -843,7 +773,6 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragStartPointerOffset = null;
     _dragStartSelection = null;
     _currentDragSelection = null;
-    _sentSelections.clear();
     widget.onDragStateChanged?.call(false);
     widget.onDragPixelDelta?.call(0.0);
     _scheduleHide();

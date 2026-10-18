@@ -106,7 +106,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
      */
     public SwtMessageBox(Shell parent, int style, MessageBox api) {
         super(parent, checkStyle(parent, checkStyle(style)), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     long CBTProc(long nCode, long wParam, long lParam) {

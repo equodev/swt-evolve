@@ -1173,10 +1173,10 @@ public class DartBrowser extends DartComposite implements IBrowser {
      */
     public void setJavascriptEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.javascriptEnabled, newValue)) {
             getValue().markDirty(VBrowser.JAVASCRIPT_ENABLED);
         }
-        checkWidget();
         this.javascriptEnabled = newValue;
         webBrowser.jsEnabledOnNextPage = enabled;
     }
@@ -1210,11 +1210,11 @@ public class DartBrowser extends DartComposite implements IBrowser {
      */
     public boolean setText(String html) {
         String newValue = html;
+        checkWidget();
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VBrowser.TEXT);
         }
         this.text = newValue;
-        checkWidget();
         return setText(html, true);
     }
 
@@ -1256,10 +1256,10 @@ public class DartBrowser extends DartComposite implements IBrowser {
      */
     public boolean setText(String html, boolean trusted) {
         String newValue = html;
+        checkWidget();
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VBrowser.TEXT);
         }
-        checkWidget();
         this.text = newValue;
         if (html == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -1289,11 +1289,11 @@ public class DartBrowser extends DartComposite implements IBrowser {
      */
     public boolean setUrl(String url) {
         String newValue = url;
+        checkWidget();
         if (!java.util.Objects.equals(this.url, newValue)) {
             getValue().markDirty(VBrowser.URL);
         }
         this.url = newValue;
-        checkWidget();
         return setUrl(url, null, null);
     }
 
@@ -1325,10 +1325,10 @@ public class DartBrowser extends DartComposite implements IBrowser {
      */
     public boolean setUrl(String url, String postData, String[] headers) {
         String newValue = url;
+        checkWidget();
         if (!java.util.Objects.equals(this.url, newValue)) {
             getValue().markDirty(VBrowser.URL);
         }
-        checkWidget();
         this.url = newValue;
         if (url == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);

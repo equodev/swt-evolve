@@ -40,6 +40,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
   }
 
+  Widget _decorateDropFeedback(BuildContext context, int feedback, Widget row) {
+    final theme = Theme.of(context).extension<TreeThemeExtension>();
+    return decorateDropFeedback(
+      feedback: feedback,
+      color: theme?.selectedBackgroundColor ?? Theme.of(context).colorScheme.primary,
+      lineWidth: theme?.dropFeedbackLineWidth ?? 2.0,
+      highlightAlpha: theme?.dropFeedbackHighlightAlpha ?? 90,
+      child: row,
+    );
+  }
+
   Widget _wrapItemForDrag(Widget row) {
     final ctx = _context;
     if (ctx == null) return row;
@@ -49,15 +60,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final treeImpl = ctx.treeImpl;
     final content = treeImpl == null
         ? row
-        : ValueListenableBuilder<int?>(
-            valueListenable: treeImpl.dragHover.notifier,
-            builder: (context, hoveredId, child) => hoveredId == state.id
-                ? DecoratedBox(
-                    decoration: const BoxDecoration(
-                      border: Border(top: BorderSide(color: Colors.blue, width: 2)),
-                    ),
-                    child: child,
-                  )
+        : ListenableBuilder(
+            listenable: Listenable.merge(
+                [treeImpl.dragHover.notifier, treeImpl.dropFeedback]),
+            builder: (context, child) => treeImpl.dragHover.value == state.id
+                ? _decorateDropFeedback(context, treeImpl.dropFeedback.value, child!)
                 : child!,
             child: row,
           );
@@ -67,6 +74,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       data: DndDragPayload(sourceControlId: parentTreeValue.id, itemId: state.id),
       widget: parentTree,
       state: parentTreeValue,
+      // The plain row: the drag image lives in the Overlay, outside the Tree whose drop feedback
+      // [content] follows.
+      feedbackBuilder: (_) => Opacity(
+        opacity: Theme.of(context).extension<TreeThemeExtension>()?.dragImageOpacity ?? 0.85,
+        child: Material(type: MaterialType.transparency, child: row),
+      ),
       dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
       onDragStarted: () {
         ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);

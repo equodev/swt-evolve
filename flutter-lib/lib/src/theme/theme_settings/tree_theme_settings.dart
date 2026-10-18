@@ -68,6 +68,11 @@ TreeThemeExtension _getTreeTheme({
     itemSelectedBorderWidth: 0.0,
     itemFocusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
     itemFocusRingWidth: 2.0,
+
+    // Drag and drop
+    dropFeedbackLineWidth: 2.0,
+    dropFeedbackHighlightAlpha: 90,
+    dragImageOpacity: 0.85,
     
     headerBackgroundColor: colorScheme.surfaceContainerLow,
     headerTextColor: colorScheme.onSurface,

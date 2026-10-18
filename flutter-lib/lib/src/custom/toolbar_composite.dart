@@ -22,7 +22,6 @@ import 'csd/window_controls.dart';
 import 'main_toolbar_scope.dart';
 import 'toast.dart';
 import '../nolayout.dart';
-import '../theme/theme_extensions/clabel_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'controls_item.dart';
@@ -356,33 +355,6 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       fit: StackFit.passthrough,
       children: kIsWeb ? [drag, content] : [content, drag],
     );
-  }
-
-  bool _isVCLabelChip(VCLabel vcl) =>
-      vcl.cursor?.cursorStyle == SWT.CURSOR_HAND &&
-      vcl.image != null &&
-      ((vcl.text?.isNotEmpty == true && vcl.text != '<none>') ||
-          vcl.toolTipText?.isNotEmpty == true);
-
-  double _measureChipW(VCLabel vcl) {
-    final text = (vcl.text == null || vcl.text == '<none>') ? '' : vcl.text!;
-    final clabelTheme = Theme.of(context).extension<CLabelThemeExtension>()!;
-    final margins = (vcl.leftMargin ?? 0) + (vcl.rightMargin ?? 0);
-    double textW = 0;
-    if (text.isNotEmpty && clabelTheme.primaryTextStyle != null) {
-      textW = (TextPainter(text: TextSpan(text: text, style: clabelTheme.primaryTextStyle), textDirection: TextDirection.ltr)..layout()).width;
-    }
-    return math.max(
-      margins + clabelTheme.iconSize + (text.isNotEmpty ? clabelTheme.iconTextSpacing + textW : 0.0),
-      (vcl.bounds?.width ?? 0).toDouble(),
-    );
-  }
-
-  double _getVCLabelCompositeW(VComposite composite) {
-    final vcLabels = (composite.children ?? []).whereType<VCLabel>().toList();
-    if (vcLabels.isEmpty) return (composite.bounds?.width ?? 0).toDouble();
-    return vcLabels.fold(0.0, (total, vcl) =>
-        total + (_isVCLabelChip(vcl) ? _measureChipW(vcl) : (vcl.bounds?.width ?? 0).toDouble()));
   }
 
   static bool _containsKeyword(VControl child, String keywordTextLower) {
