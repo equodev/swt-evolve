@@ -4729,10 +4729,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "CTabFolder", "itemClosed", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
         FlutterBridge.on(this, "CTabFolder", "reorderItems", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

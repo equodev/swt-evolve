@@ -11505,7 +11505,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTabStops(int[] tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabs, tabs)) {
+        if (!java.util.Arrays.equals(this.tabs, tabs)) {
             getValue().markDirty(VStyledText.TAB_STOPS);
         }
         if (tabs != null) {
@@ -12411,54 +12411,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "BidiSegment", "lineGetSegments", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "Caret", "caretMoved", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "ExtendedModify", "modifyText", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "LineBackground", "lineGetBackground", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "LineStyle", "lineGetStyle", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "PaintObject", "paintObject", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "Verify", "Verify", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "VerifyKey", "verifyKey", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "WordMovement", "getNextOffset", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "WordMovement", "getPreviousOffset", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
         StyledTextHelper.registerTextGeometryHandler(this);
         StyledTextHelper.registerResendTextHandler(this);
     }

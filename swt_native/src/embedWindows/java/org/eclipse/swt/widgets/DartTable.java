@@ -1806,8 +1806,9 @@ public class DartTable extends DartComposite implements ITable {
         //int[] newValue = indices;
         ;
         checkWidget();
-        //if (!java.util.Objects.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
-        ;
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
+            getValue().markDirty(VTable.SELECTION);
+        }
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
@@ -2561,8 +2562,9 @@ public class DartTable extends DartComposite implements ITable {
         //int[] newValue = indices;
         ;
         checkWidget();
-        //if (!java.util.Objects.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
-        ;
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
+            getValue().markDirty(VTable.SELECTION);
+        }
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();

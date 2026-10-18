@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The positions a StyledText answers before the render side has laid the text out follow the
- * attributes that move text: the width of a tab, the indent of a line and a bullet; and a bidi segment
- * array that does not start at the start of the line is taken on Cocoa and refused elsewhere.
+ * attributes that move text: the indent of a line and a bullet; and a bidi segment array that does not
+ * start at the start of the line is taken, on every OS.
  */
 @ExtendWith(Mocks.class)
 class StyledTextRowAttributesTest {

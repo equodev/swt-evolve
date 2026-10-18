@@ -2170,7 +2170,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
         if (items == null)
@@ -2646,10 +2646,6 @@ public class DartTree extends DartComposite implements ITree {
                 if (isDisposed())
                     return;
                 TreeHelper.sendSelection(this, e, SWT.Selection);
-            });
-        });
-        FlutterBridge.on(this, "SetData", "SetData", e -> {
-            getDisplay().asyncExec(() -> {
             });
         });
         FlutterBridge.on(this, "Tree", "Collapse", e -> {
