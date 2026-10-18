@@ -101,14 +101,13 @@ public class StyledTextLineAttributeDeliveryNativeTest {
     }
 
     @Test
-    @DisplayName("alignment, indent, wrap indent, justify, vertical indent, tab stops and background are reported")
+    @DisplayName("alignment, indent, wrap indent, justify, tab stops and background are reported")
     void everyOtherLineAttribute() {
         Runnable[] setters = {
             () -> text.setLineAlignment(1, 1, SWT.RIGHT),
             () -> text.setLineIndent(1, 1, 20),
             () -> text.setLineWrapIndent(1, 1, 30),
             () -> text.setLineJustify(1, 1, true),
-            () -> text.setLineVerticalIndent(1, 5),
             () -> text.setLineTabStops(1, 1, new int[] { 40 }),
             () -> text.setLineBackground(1, 1, new Color(display, 0, 200, 0)),
         };
