@@ -1266,9 +1266,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
                 if (lineIndex < lineCount && -delta + lineHeight <= clientAreaHeight - topMargin - bottomMargin) {
                     topIndex = lineIndex;
-                    getValue().markDirty(VStyledText.TOP_PIXEL);
-                    getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-                    getValue().markDirty(VStyledText.SELECTION_RANGES);
                     topIndexY = -delta;
                     getValue().markDirty(VStyledText.TOP_PIXEL);
                     getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
@@ -1310,6 +1307,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 if (lineIndex == 0 || -delta + lineHeight <= clientAreaHeight - topMargin - bottomMargin) {
                     topIndex = lineIndex;
                     topIndexY = -delta;
+                    getValue().markDirty(VStyledText.TOP_PIXEL);
+                    getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
+                    getValue().markDirty(VStyledText.SELECTION_RANGES);
                 } else {
                     topIndex = lineIndex - 1;
                     topIndexY = -((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex) - delta;
@@ -1392,8 +1392,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (reset)
             resetSelection();
         blockXAnchor = blockYAnchor = -1;
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         blockXLocation = blockYLocation = -1;
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
@@ -2184,18 +2182,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     void doBlockSelection(boolean sendEvent) {
         if (caretOffsets[0] > selectionAnchors[0]) {
             selection[0].x = selectionAnchors[0];
-            getValue().markDirty(VStyledText.SELECTION);
-            getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-            getValue().markDirty(VStyledText.SELECTION_RANGES);
             selection[0].y = caretOffsets[0];
             getValue().markDirty(VStyledText.SELECTION);
             getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
             getValue().markDirty(VStyledText.SELECTION_RANGES);
         } else {
             selection[0].x = caretOffsets[0];
-            getValue().markDirty(VStyledText.SELECTION);
-            getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-            getValue().markDirty(VStyledText.SELECTION_RANGES);
             selection[0].y = selectionAnchors[0];
             getValue().markDirty(VStyledText.SELECTION);
             getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
@@ -5870,7 +5862,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         };
         content = new DefaultContent();
-        getValue().markDirty(VStyledText.TEXT);
         content.addTextChangeListener(textChangeListener);
         getValue().markDirty(VStyledText.TEXT);
     }
@@ -6115,7 +6106,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         if (content != null) {
             content.removeTextChangeListener(textChangeListener);
-            getValue().markDirty(VStyledText.TEXT);
             content = null;
             getValue().markDirty(VStyledText.TEXT);
         }
@@ -6479,11 +6469,11 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 ((DartStyledTextRenderer) renderer.getImpl()).reset(0, content.getLineCount());
                 getValue().markDirty(VStyledText.TOP_PIXEL);
                 getValue().markDirty(VStyledText.TAB_STOPS);
+                getValue().markDirty(VStyledText.SELECTION_RANGES);
                 getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
                 getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
                 getValue().markDirty(VStyledText.STYLE_INDEX);
                 getValue().markDirty(VStyledText.STYLES);
-                getValue().markDirty(VStyledText.SELECTION_RANGES);
                 verticalScrollOffset = -1;
                 getValue().markDirty(VStyledText.TOP_PIXEL);
                 getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
@@ -8428,17 +8418,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         ScrollBar horizontalBar = getHorizontalBar();
         setCaretOffsets(new int[] { 0 }, SWT.DEFAULT);
         topIndex = 0;
-        getValue().markDirty(VStyledText.TOP_PIXEL);
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         topIndexY = 0;
-        getValue().markDirty(VStyledText.TOP_PIXEL);
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         verticalScrollOffset = 0;
         getValue().markDirty(VStyledText.TOP_PIXEL);
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         horizontalScrollOffset = 0;
         getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
@@ -8854,9 +8836,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         if (alignmentMargin != newAlignmentMargin) {
             leftMargin -= alignmentMargin;
-            getValue().markDirty(VStyledText.LEFT_MARGIN);
             leftMargin += newAlignmentMargin;
-            getValue().markDirty(VStyledText.LEFT_MARGIN);
             alignmentMargin = newAlignmentMargin;
             getValue().markDirty(VStyledText.LEFT_MARGIN);
             resetCache(0, 1);
@@ -9070,8 +9050,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     void setBlockSelectionLocation(int x, int y, boolean sendEvent) {
         int verticalScrollOffset = getVerticalScrollOffset();
         blockXLocation = x + horizontalScrollOffset;
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         blockYLocation = y + verticalScrollOffset;
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
@@ -9080,8 +9058,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         setCaretOffsets(new int[] { offset }, alignment[0]);
         if (blockXAnchor == -1) {
             blockXAnchor = blockXLocation;
-            getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-            getValue().markDirty(VStyledText.SELECTION_RANGES);
             blockYAnchor = blockYLocation;
             getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
             getValue().markDirty(VStyledText.SELECTION_RANGES);
@@ -9093,8 +9069,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     void setBlockSelectionLocation(int anchorX, int anchorY, int x, int y, boolean sendEvent) {
         int verticalScrollOffset = getVerticalScrollOffset();
         blockXAnchor = anchorX + horizontalScrollOffset;
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         blockYAnchor = anchorY + verticalScrollOffset;
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
@@ -9106,16 +9080,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         Point point = getPointAtOffset(offset);
         int verticalScrollOffset = getVerticalScrollOffset();
         blockXLocation = point.x + horizontalScrollOffset;
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         blockYLocation = point.y + verticalScrollOffset;
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
         setCaretOffsets(new int[] { offset }, SWT.DEFAULT);
         if (blockXAnchor == -1) {
             blockXAnchor = blockXLocation;
-            getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-            getValue().markDirty(VStyledText.SELECTION_RANGES);
             blockYAnchor = blockYLocation;
             getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
             getValue().markDirty(VStyledText.SELECTION_RANGES);
@@ -9128,8 +9098,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int verticalScrollOffset = getVerticalScrollOffset();
         Point anchorPoint = getPointAtOffset(anchorOffset);
         blockXAnchor = anchorPoint.x + horizontalScrollOffset;
-        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-        getValue().markDirty(VStyledText.SELECTION_RANGES);
         blockYAnchor = anchorPoint.y + verticalScrollOffset;
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
@@ -9444,7 +9412,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             getValue().markDirty(VStyledText.TEXT);
         }
         content = newContent;
-        getValue().markDirty(VStyledText.TEXT);
         content.addTextChangeListener(textChangeListener);
         getValue().markDirty(VStyledText.TEXT);
         reset();
@@ -10884,9 +10851,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     int redrawY = Math.min(selection[0].y, charCount);
                     if (length < 0) {
                         selectionAnchors[0] = selectionAnchor = selection[0].y = end;
-                        getValue().markDirty(VStyledText.SELECTION);
-                        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-                        getValue().markDirty(VStyledText.SELECTION_RANGES);
                         selection[0].x = start;
                         getValue().markDirty(VStyledText.SELECTION);
                         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
@@ -10894,9 +10858,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                         setCaretOffsets(new int[] { start }, PREVIOUS_OFFSET_TRAILING);
                     } else {
                         selectionAnchors[0] = selectionAnchor = selection[0].x = start;
-                        getValue().markDirty(VStyledText.SELECTION);
-                        getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
-                        getValue().markDirty(VStyledText.SELECTION_RANGES);
                         selection[0].y = end;
                         getValue().markDirty(VStyledText.SELECTION);
                         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
