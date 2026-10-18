@@ -2082,7 +2082,7 @@ class TextShape extends Shape {
     return layout;
   }
 
-  /// The layout of [lineIndex] if it was measured already, by this shape or one it took after.
+  /// The layout of [lineIndex] if it was measured already, by this shape or one it took over from.
   _LineLayout? _peekLine(int lineIndex, String lineText) {
     final memo = _measuredLineCache;
     if (memo != null && lineIndex >= 0 && lineIndex < memo.length && memo[lineIndex] != null) {
