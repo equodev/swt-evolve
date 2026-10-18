@@ -410,7 +410,7 @@ public abstract class DartWidget implements IWidget {
      */
     public DartWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();

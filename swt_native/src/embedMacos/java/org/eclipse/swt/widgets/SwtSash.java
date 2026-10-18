@@ -527,10 +527,6 @@ public class SwtSash extends SwtControl implements ISash {
         return 0;
     }
 
-    public Cursor _sizeCursor() {
-        return sizeCursor;
-    }
-
     public boolean _dragging() {
         return dragging;
     }

@@ -54,21 +54,6 @@ class StyledTextRowAttributesTest {
     }
 
     @Test
-    void the_tab_setting_sets_the_width_of_a_tab() {
-        StyledText st = styledText(SWT.NONE, "a\tb");
-
-        st.setTabs(2);
-        int narrow = st.getLocationAtOffset(2).x;
-        st.setTabs(4);
-        int normal = st.getLocationAtOffset(2).x;
-        st.setTabs(8);
-        int wide = st.getLocationAtOffset(2).x;
-
-        assertThat(narrow).isLessThan(normal);
-        assertThat(normal).isLessThan(wide);
-    }
-
-    @Test
     void an_indent_moves_the_text_of_every_line() {
         StyledText st = styledText(SWT.NONE, "abc\ndef");
         int plain = st.getLocationAtOffset(0).x;

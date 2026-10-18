@@ -6,12 +6,15 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.equo.swt.harness.BrowserFlutterHarness;
 import dev.equo.swt.harness.BrowserKit;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -171,6 +174,42 @@ class BrowserFileUrlFlutterTest {
         } finally {
             page.delete();
         }
+    }
+
+    /**
+     * {@code LocationListener.changing} must report the {@code file:} URL the application asked for,
+     * not the {@code /local-file/} path it is served from. A listener that hands every http(s)
+     * location to {@code Program.launch} and cancels it — the usual way to send links to the system
+     * browser — otherwise opens the local page in a new browser tab and leaves the Browser blank.
+     */
+    @Test
+    @Tag("flutter-it")
+    void locationChanging_withFileScheme_reportsTheFileUrl() {
+        String fileUrl = fixtureFile.toURI().toString();
+        List<String> changing = new CopyOnWriteArrayList<>();
+        CountDownLatch completed = new CountDownLatch(1);
+        browser.addLocationListener(LocationListener.changingAdapter(e -> {
+            changing.add(e.location);
+            if (e.location.startsWith("http://") || e.location.startsWith("https://")) e.doit = false;
+        }));
+        browser.addProgressListener(ProgressListener.completedAdapter(e -> completed.countDown()));
+        browser.setUrl(fileUrl);
+        flutter.flush();
+
+        long end = System.currentTimeMillis() + IFRAME_LOAD_TIMEOUT;
+        while (completed.getCount() > 0 && System.currentTimeMillis() < end) {
+            flutter.pumpClient();
+            if (!display.readAndDispatch()) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        assertThat(changing).as("locations reported to LocationListener.changing").containsExactly(fileUrl);
+        assertThat(completed.getCount()).as("the local page loaded despite the external-link listener").isZero();
     }
 
     /** Reports which of load/error the image ended on, so a red run says why rather than timing out. */

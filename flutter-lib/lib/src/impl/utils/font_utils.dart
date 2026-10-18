@@ -49,6 +49,20 @@ class FontUtils {
     return scale != 1.0 ? TextScaler.linear(1 / scale) : TextScaler.noScaling;
   }
 
+  /// The size [text] takes when a Text widget paints it in [style], measured through
+  /// [textWidgetScaler].
+  static Size measureTextWidget(String text, TextStyle? style, {int? maxLines = 1}) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: textWidgetScaler,
+      maxLines: maxLines,
+    )..layout();
+    final size = painter.size;
+    painter.dispose();
+    return size;
+  }
+
   /// Convert SWT font style to Flutter FontWeight and FontStyle
   static (FontWeight, FontStyle) convertSwtFontStyle(int swtFontStyle) {
     FontWeight weight = FontWeight.normal;

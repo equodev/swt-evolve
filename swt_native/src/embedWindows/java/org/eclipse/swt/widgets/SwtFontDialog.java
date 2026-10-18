@@ -87,7 +87,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      */
     public SwtFontDialog(Shell parent, int style, FontDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     /**

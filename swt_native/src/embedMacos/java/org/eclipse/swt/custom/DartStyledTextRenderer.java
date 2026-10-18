@@ -434,9 +434,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             LineInfo info = lines[i];
             if (info != null) {
                 info.flags &= ~BACKGROUND;
-                StyledTextHelper.markRendererDirty(this);
                 info.background = null;
-                StyledTextHelper.markRendererDirty(this);
                 if (info.flags == 0)
                     lines[i] = null;
             }
@@ -450,7 +448,6 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             LineInfo info = lines[i];
             if (info != null) {
                 info.flags &= ~(ALIGNMENT | INDENT | VERTICAL_INDENT | WRAP_INDENT | JUSTIFY | TABSTOPS);
-                StyledTextHelper.markRendererDirty(this);
                 if (info.flags == 0)
                     lines[i] = null;
             }
@@ -1510,8 +1507,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     int getWidth() {
         {
             if (styledText != null && styledText.getImpl() instanceof DartStyledText) {
-                DartStyledText dartText = (DartStyledText) styledText.getImpl();
-                Integer measured = StyledTextHelper.measuredContentWidth(dartText, !dartText.isFixedLineHeight() ? line -> true : line -> lineSizes != null && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth());
+                Integer measured = StyledTextHelper.measuredContentWidth(this, (DartStyledText) styledText.getImpl());
                 if (measured != null)
                     return measured;
             }
@@ -1619,9 +1615,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             boldFont = italicFont = boldItalicFont = null;
             regularFont = font;
             StyledTextHelper.markRendererDirty(this);
-        }
-        if (regularFont != null) {
-            StyledTextHelper.updateRendererFontMetrics(this, regularFont, tabs);
+            StyledTextHelper.updateRendererFontMetrics(this, font, tabs);
         }
     }
 
@@ -1685,7 +1679,6 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 StyledTextHelper.markRendererDirty(this);
             }
             bullet.addIndices(startLine, count);
-            StyledTextHelper.markRendererDirty(this);
         } else {
             updateBullets(startLine, count, 0, false);
             ((DartStyledText) styledText.getImpl()).redrawLinesBullet(redrawLines);
@@ -2114,7 +2107,6 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             return;
         for (Bullet bullet : bullets) {
             int[] lines = bullet.removeIndices(startLine, replaceLineCount, newLineCount, update);
-            StyledTextHelper.markRendererDirty(this);
             if (lines != null) {
                 if (redrawLines == null) {
                     redrawLines = lines;
@@ -2441,6 +2433,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             }
             lineSizes = newLineSizes;
         }
+    }
+
+    public boolean _isWidthCalculated(int line) {
+        return lineSizes != null && line >= 0 && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth();
     }
 
     public StyledTextRenderer getApi() {

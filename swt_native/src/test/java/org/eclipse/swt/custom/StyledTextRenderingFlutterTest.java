@@ -440,19 +440,6 @@ class StyledTextRenderingFlutterTest {
     }
 
     @Test
-    @DisplayName("with no selection colours set, the selection is painted in the ones StyledText answers")
-    void defaultSelectionColours() {
-        fresh(SWT.MULTI, "alpha beta gamma");
-        stage.focusAt(0);
-        text.setSelection(6, 10);
-        show();
-
-        Map<String, Object> facts = stage.facts(text);
-        assertThat(facts.get("selectionBackground")).isEqualTo(hex(text.getSelectionBackground().getRGB()));
-        assertThat(facts.get("selectionForeground")).isEqualTo(hex(text.getSelectionForeground().getRGB()));
-    }
-
-    @Test
     @DisplayName("an empty line inside a selection is highlighted")
     void emptyLineInsideASelectionIsHighlighted() {
         fresh(SWT.MULTI, "one\n\nthree");

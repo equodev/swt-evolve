@@ -154,6 +154,9 @@ public class DartDragSource extends DartWidget implements IDragSource {
         super(control, checkStyle(style), api);
         this.control = control;
         this.bridge = ((DartWidget) control.getImpl()).getBridge();
+        if (this.bridge != null) {
+            this.bridge.dirty((DartWidget) control.getImpl());
+        }
         _hookEvents();
     }
 
@@ -432,6 +435,9 @@ public class DartDragSource extends DartWidget implements IDragSource {
         }
         controlListener = null;
         control.setData(DND.DRAG_SOURCE_KEY, null);
+        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartWidget) {
+            this.bridge.dirty((DartWidget) control.getImpl());
+        }
         control = null;
         transferAgents = null;
     }

@@ -56,6 +56,7 @@ class VGC extends VWidget {
   VPath? clippingText;
   double? lineDashOffset;
   double? bufferScale;
+  bool? themedCanvas;
 
   @override
   void copyFrom(VWidget other) {
@@ -83,6 +84,7 @@ class VGC extends VWidget {
       clippingText = other.clippingText;
       lineDashOffset = other.lineDashOffset;
       bufferScale = other.bufferScale;
+      themedCanvas = other.themedCanvas;
     }
   }
 
@@ -155,6 +157,8 @@ class VGC extends VWidget {
         lineDashOffset = (json['lineDashOffset'] as num?)?.toDouble();
       case 'bufferScale':
         bufferScale = (json['bufferScale'] as num?)?.toDouble();
+      case 'themedCanvas':
+        themedCanvas = json['themedCanvas'] as bool?;
       default:
         super.readProperty(key, json);
     }

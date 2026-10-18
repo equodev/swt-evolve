@@ -514,10 +514,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setMoveable(boolean moveable) {
         boolean newValue = moveable;
+        checkWidget();
         if (!java.util.Objects.equals(this.moveable, newValue)) {
             getValue().markDirty(VTreeColumn.MOVEABLE);
         }
-        checkWidget();
         this.moveable = newValue;
     }
 
