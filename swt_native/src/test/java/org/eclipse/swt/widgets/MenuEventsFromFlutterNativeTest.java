@@ -78,6 +78,23 @@ class MenuEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
+    @DisplayName("a pick on a radio item tells the deselected item first and the picked one last, as natively")
+    void aPickTellsTheDeselectedRadioBeforeThePickedOne() {
+        MenuItem first = new MenuItem(menu, SWT.RADIO);
+        MenuItem second = new MenuItem(menu, SWT.RADIO);
+        first.setSelection(true);
+        List<String> heard = new ArrayList<>();
+        first.addListener(SWT.Selection, e -> heard.add("first selected=" + first.getSelection()));
+        second.addListener(SWT.Selection, e -> heard.add("second selected=" + second.getSelection()));
+
+        fromFlutter(second, "Selection/Selection");
+        runQueued();
+
+        // A listener that applies the item it hears about (a command per item) must hear the picked one last.
+        assertThat(heard).containsExactly("first selected=false", "second selected=true");
+    }
+
+    @Test
     @DisplayName("a radio group ends at an item that is not a radio")
     void aRadioGroupEndsAtANonRadioItem() {
         MenuItem above = new MenuItem(menu, SWT.RADIO);
