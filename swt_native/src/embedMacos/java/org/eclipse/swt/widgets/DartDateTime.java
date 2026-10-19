@@ -718,6 +718,16 @@ public class DartDateTime extends DartComposite implements IDateTime {
         return year;
     }
 
+    {
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        year = now.get(java.util.Calendar.YEAR);
+        month = now.get(java.util.Calendar.MONTH);
+        day = now.get(java.util.Calendar.DAY_OF_MONTH);
+        hours = now.get(java.util.Calendar.HOUR_OF_DAY);
+        minutes = now.get(java.util.Calendar.MINUTE);
+        seconds = now.get(java.util.Calendar.SECOND);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
