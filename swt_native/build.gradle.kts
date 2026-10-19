@@ -326,6 +326,8 @@ sourceSets {
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
             // StyledText.setLineVerticalIndent was added in 3.109.
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
+            // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
+            if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextLineProvidersWireNativeTest.java")
             // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
             if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
             // 3.107 added the lambda listener factories (ProgressListener.completedAdapter,
