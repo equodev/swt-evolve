@@ -745,6 +745,7 @@ public final class EvolveSwingHost {
         private volatile JLightweightFrame frame;
         private volatile Runnable forceRepaint;
         private volatile EmbedCursor cursor;
+        private final AwtDropBridge drops;
         // Guards the container-listener reentrancy while we relocate app-added children.
         private boolean relocating;
 
@@ -761,6 +762,7 @@ public final class EvolveSwingHost {
         Host(Canvas canvas) {
             this.canvas = canvas;
             this.display = canvas.getDisplay();
+            this.drops = new AwtDropBridge(canvas);
         }
 
         /**
@@ -780,6 +782,7 @@ public final class EvolveSwingHost {
          */
         void bind(JLightweightFrame frame) {
             this.frame = frame;
+            drops.bind(frame);
             interceptAdds(frame);
             canvas.addPaintListener(this::paint);
             Runnable forceRepaint = () -> content.imageUpdated(0, 0, 0, 0);
@@ -828,6 +831,7 @@ public final class EvolveSwingHost {
             canvas.addListener(SWT.Dispose, e -> {
                 if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
                 forgetEmbed(contentRoot, frame);
+                drops.dispose();
                 disposeFrame(frame);
             });
             scheduleStaggeredRepaints(forceRepaint, 300, 900, 2000);
@@ -1104,6 +1108,16 @@ public final class EvolveSwingHost {
             public void setCursor(java.awt.Cursor ignored) {
                 EmbedCursor c = cursor;
                 if (c != null) c.refresh();
+            }
+
+            @Override
+            public void addDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.register(dt);
+            }
+
+            @Override
+            public void removeDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.unregister(dt);
             }
 
             @Override public void focusGrabbed() {}
