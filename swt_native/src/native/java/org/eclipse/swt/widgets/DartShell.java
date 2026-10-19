@@ -919,12 +919,16 @@ public class DartShell extends DartDecorations implements IShell {
     void makeKeyAndOrderFront() {
         ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         boolean wasActive = display.getActiveShell() == this.getApi();
-        _takeFocusHolder(true);
-        if (!isDisposed() && !wasActive) {
-            // The client reports the focus this moves into the shell as an activation of its own.
-            _suppressNextFlutterActivate = true;
-            sendEvent(SWT.Activate);
+        if (wasActive) {
+            _takeFocusHolder(true);
+            return;
         }
+        // The client reports the focus this moves into the shell as an activation of its own.
+        _suppressNextFlutterActivate = true;
+        // Activate first, then the focus: a listener that focuses a control of its own keeps it.
+        sendEvent(SWT.Activate);
+        if (!isDisposed())
+            _takeFocusHolder(false);
     }
 
     /**
@@ -1970,12 +1974,14 @@ public class DartShell extends DartDecorations implements IShell {
                 _suppressNextFlutterDeactivate = false;
                 if (getBridge() instanceof DisplayBridge)
                     ((DisplayBridge) getBridge()).noteClientActivated(this);
-                _takeFocusHolder(false);
                 if (_suppressNextFlutterActivate) {
                     _suppressNextFlutterActivate = false;
+                    _takeFocusHolder(false);
                     return;
                 }
                 sendEvent(SWT.Activate, e);
+                if (!isDisposed())
+                    _takeFocusHolder(false);
             });
         });
         FlutterBridge.on(this, "Shell", "Close", e -> {
@@ -1990,6 +1996,11 @@ public class DartShell extends DartDecorations implements IShell {
                 if (isDisposed())
                     return;
                 _suppressNextFlutterActivate = false;
+                Control _focus = display.getFocusControl();
+                if (_focus != null && _focus != getApi() && _focus.getShell() == getApi())
+                    setSavedFocus(_focus);
+                if (getBridge() instanceof DisplayBridge)
+                    ((DisplayBridge) getBridge()).noteClientDeactivated(this);
                 if (_suppressNextFlutterDeactivate) {
                     _suppressNextFlutterDeactivate = false;
                     return;

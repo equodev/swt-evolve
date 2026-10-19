@@ -471,8 +471,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         closed = true
     }
 
-    // The macOS traffic lights grey out when the window is not key; the Dart controls mirror that
-    // through csdWindowActive (see equo_window_stub.installWindowStateListeners).
+    // Key state drives two things in Dart: the traffic lights, which grey out when the window is not
+    // key (csdWindowActive, see equo_window_stub.installWindowStateListeners), and the engine's app
+    // lifecycle, see deliverActive.
     func windowDidBecomeKey(_ notification: Notification) {
         notifyActive(true)
     }
@@ -492,12 +493,29 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     /// lost outright rather than merely early: the first window's own state change is what ends up
     /// reported, and the new window's controls stay greyed out. Held and sent from `pump()` instead.
     private func notifyActive(_ active: Bool) {
-        guard let channel = windowChannel, hasPumped else {
+        guard windowChannel != nil, hasPumped else {
             pendingActive = active
             return
         }
         pendingActive = nil
-        channel.invokeMethod("active", arguments: active)
+        deliverActive(active)
+    }
+
+    /// The engine learns the app lifecycle only from an `NSApp.delegate` that is a
+    /// `FlutterAppLifecycleProvider`, and nothing installs one here: this process bootstraps NSApp
+    /// itself, and an embedding host (AWT) may own the delegate. Without it the lifecycle stays
+    /// `resumed`, the FocusManager never parks the focus, and the shell never sends Deactivate.
+    /// Each window has its own engine, so its key state is forwarded to that engine directly.
+    private func deliverActive(_ active: Bool) {
+        windowChannel?.invokeMethod("active", arguments: active)
+        guard let engine = flutterViewController?.engine as FlutterAppLifecycleDelegate? else { return }
+        let notification = Notification(name: active ? NSApplication.willBecomeActiveNotification
+                                                      : NSApplication.willResignActiveNotification)
+        if active {
+            engine.handleWillBecomeActive?(notification)
+        } else {
+            engine.handleWillResignActive?(notification)
+        }
     }
 
     /// Whether this window's engine has had a turn of the run loop, which is when it starts. There
@@ -506,9 +524,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
 
     /// Sends whatever `notifyActive` had to hold back, once the engine is up.
     private func flushPendingActive() {
-        guard let active = pendingActive, let channel = windowChannel else { return }
+        guard let active = pendingActive, windowChannel != nil else { return }
         pendingActive = nil
-        channel.invokeMethod("active", arguments: active)
+        deliverActive(active)
     }
 
     private func setupMainMenuIfNeeded(_ app: NSApplication) {

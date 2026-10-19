@@ -1309,6 +1309,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         clientActivated = shell;
     }
 
+    /** Forget the shell the client just deactivated, unless another one has been activated since. */
+    public void noteClientDeactivated(DartShell shell) {
+        if (clientActivated == shell)
+            clientActivated = null;
+    }
+
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
     public void clearFocus(DartControl widget) {
         // A shown popup menu takes the keyboard without moving the focus control, as natively.
