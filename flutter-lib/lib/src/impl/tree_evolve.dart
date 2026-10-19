@@ -294,6 +294,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         final availableWidth = (boundsWidth != null && boundsWidth > 0)
             ? boundsWidth
             : layoutWidth;
+        _columnsContentWidth = null;
         final effectiveWidths = columns.isEmpty
             ? null
             : _computeEffectiveColumnWidths(
@@ -684,9 +685,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return List.from(preferred);
     }
     final available = availableWidth - prefix;
-    _columnsContentWidth = null;
     // Java places cells (getBounds, owner-draw events) at the widths it set, so they are kept as
-    // given, as in SWT. A width of 0 is not sent: a column without one is a hidden column.
+    // given, as in SWT: past the tree's width they scroll, or are clipped on a NO_SCROLL tree.
+    // A width of 0 is not sent: a column without one is a hidden column.
     if (columns.any((c) => (c.width ?? 0) > 0)) {
       final hasMultiColumn = columns.length > 1;
       final gapFraction = hasMultiColumn
@@ -697,31 +698,15 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       final inner = availableWidth * (1 - 2 * gapFraction) - rowPadding;
       final result = columns.map((c) => (c.width ?? 0).toDouble()).toList();
       final sum = result.reduce((a, b) => a + b);
-      if (sum <= inner || StyleBits(state.style).has(SWT.H_SCROLL)) {
-        _columnsContentWidth = rowPadding + (sum > inner ? sum : inner);
-        return result;
-      }
+      _columnsContentWidth = rowPadding + (sum > inner ? sum : inner);
+      return result;
     }
-    final hasExplicitWidths = columns.any((c) => c.width != null);
-    if (columns.length > 1 && !hasExplicitWidths && available > 0) {
+    if (columns.length > 1 && available > 0) {
       final n = columns.length;
       final widthPerColumn = available / n;
       return List.filled(n, widthPerColumn);
     }
-    double sum = preferred.reduce((a, b) => a + b);
-    if (sum > available && hasExplicitWidths) {
-      // Growing columns to their content only works while it fits. Past that, SWT keeps every
-      // column at the width the application gave it and clips the cell, so a long value never
-      // takes width away from the other columns.
-      final dividerGap = theme.columnDividerGap;
-      preferred = [
-        for (int i = 0; i < columns.length; i++)
-          columns[i].width == null
-              ? preferred[i]
-              : columns[i].width! + (i < columns.length - 1 ? dividerGap : 0.0),
-      ];
-      sum = preferred.reduce((a, b) => a + b);
-    }
+    final sum = preferred.reduce((a, b) => a + b);
     if (sum <= available) {
       final result = List<double>.from(preferred);
       result[result.length - 1] += available - sum;
@@ -781,6 +766,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         ),
       );
     } else {
+      final contentWidth = _columnsContentWidth;
+      if (contentWidth != null && contentWidth > maxWidth - leftGap - rightGap) {
+        listViewWithLines = ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: contentWidth,
+            maxWidth: contentWidth,
+            child: listViewWithLines,
+          ),
+        );
+      }
       scrollableContent = ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: listViewWithLines,

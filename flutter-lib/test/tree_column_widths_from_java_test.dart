@@ -16,9 +16,9 @@ const double _treeHeight = 200;
 
 const List<int> _widths = [150, 120, 110];
 
-VTree _tree({List<int?> widths = _widths}) => VTree()
+VTree _tree({List<int?> widths = _widths, int style = SWT.H_SCROLL | SWT.V_SCROLL}) => VTree()
   ..id = 1
-  ..style = SWT.H_SCROLL | SWT.V_SCROLL
+  ..style = style
   ..enabled = true
   ..headerVisible = true
   ..linesVisible = false
@@ -127,5 +127,45 @@ void main() {
     expect(_horizontalScrollExtent(tester), 0);
     // The last header's title area: its 50 minus the 8 left and 4 right insets.
     expect(tester.getSize(find.text('COLUMN 2')).width, closeTo(38, 1.0));
+  });
+
+  // Tree.checkStyle adds H_SCROLL | V_SCROLL to every tree unless it is created with NO_SCROLL.
+  group('with NO_SCROLL', () {
+    VTree clipped() => _tree(style: SWT.NO_SCROLL | SWT.FULL_SELECTION);
+
+    testWidgets('columns that overflow the tree keep the widths Java set', (tester) async {
+      await tester.pumpWidget(_wrap(clipped()));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final treeLeft = tester.getTopLeft(find.byType(TreeSwt<VTree>)).dx;
+      expect(tester.getTopLeft(find.text('beta')).dx - treeLeft, closeTo(171.5, 1.0));
+      expect(tester.getTopLeft(find.text('gamma')).dx - tester.getTopLeft(find.text('beta')).dx,
+          _widths[1]);
+    });
+
+    testWidgets('the overflow is clipped, not scrolled', (tester) async {
+      await tester.pumpWidget(_wrap(clipped()));
+      await tester.pumpAndSettle();
+
+      expect(_horizontalScrollExtent(tester), 0);
+      final treeRight = tester.getTopRight(find.byType(TreeSwt<VTree>)).dx;
+      expect(tester.takeException(), isNull);
+      expect(tester.getRect(find.text('gamma')).right, greaterThan(treeRight),
+          reason: 'the third column runs past the tree and is not pulled back into view');
+      final clips = find.ancestor(of: find.text('gamma'), matching: find.byType(ClipRect));
+      expect(
+          clips.evaluate().any((e) => tester.getRect(find.byWidget(e.widget)).right <= treeRight),
+          isTrue,
+          reason: 'the part of the row past the tree is clipped');
+    });
+
+    testWidgets('each header title sits over its own column', (tester) async {
+      await tester.pumpWidget(_wrap(clipped()));
+      await tester.pumpAndSettle();
+
+      final title = tester.getTopLeft(find.textContaining(RegExp('column 1', caseSensitive: false)));
+      expect(tester.getTopLeft(find.text('beta')).dx, closeTo(title.dx, 0.5));
+    });
   });
 }
