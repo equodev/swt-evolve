@@ -860,7 +860,7 @@ public class DartList extends DartScrollable implements IList {
     public void select(int[] indices) {
         int[] newValue = indices;
         checkWidget();
-        if (!java.util.Arrays.equals(this.selection, newValue)) {
+        if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VList.SELECTION);
         }
         if (indices == null)

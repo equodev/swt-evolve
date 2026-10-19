@@ -4261,7 +4261,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineDash(int[] dashes) {
         int[] newValue = dashes;
-        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
+        if (!java.util.Objects.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         checkNonDisposed();

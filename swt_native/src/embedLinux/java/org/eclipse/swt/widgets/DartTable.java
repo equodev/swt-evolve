@@ -1963,7 +1963,7 @@ public class DartTable extends DartComposite implements ITable {
     public void select(int[] indices) {
         int[] newValue = indices;
         checkWidget();
-        if (!java.util.Arrays.equals(this.selection, newValue)) {
+        if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
         if (indices == null)
