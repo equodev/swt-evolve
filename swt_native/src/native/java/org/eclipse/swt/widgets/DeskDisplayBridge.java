@@ -180,7 +180,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = bounds.width > 0 ? bounds.width : 640;
         int height = bounds.height > 0 ? bounds.height : 480;
         long owner = ownerWindowContext(shell);
-        long context = openNativeWindow(owner, shell.hashCode(), "Shell", width, height);
+        long context = openNativeWindow(owner, shell.hashCode(), "Shell", Config.swtToLogical(width),
+                Config.swtToLogical(height));
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
         window.owner = owner;
