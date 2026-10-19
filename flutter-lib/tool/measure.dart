@@ -3577,6 +3577,13 @@ public class CoolBarSizes {
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
+        '    /** Where a cell\'s content starts, from its column\'s left edge. */',
+      );
+      buffer.writeln('    public static int getCellInset() {');
+      buffer.writeln('        return CELL_PADDING_LEFT;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
         '    private static TextStyle getTextStyle($itemType item) {',
       );
       buffer.writeln(
@@ -3903,6 +3910,12 @@ public class CoolBarSizes {
         buffer.writeln(
           '    private static final int HEADER_PADDING = ${(row.columnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
         );
+        buffer.writeln(
+          '    private static final int CELL_INSET = ${row.cellMultiColumnPadding.left.round()};',
+        );
+        buffer.writeln(
+          '    private static final int ALIGNMENT_INSET = ${alignmentInset.round()};',
+        );
       }
     }
     buffer.writeln();
@@ -4014,6 +4027,15 @@ public class CoolBarSizes {
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
+        '    /** Where a multi-column cell\'s content starts, from its column\'s left edge. */',
+      );
+      buffer.writeln('    public static int getCellInset(int alignment) {');
+      buffer.writeln(
+        '        return (alignment & (SWT.CENTER | SWT.RIGHT)) == 0 ? CELL_INSET + ALIGNMENT_INSET : CELL_INSET;',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
         '    /** The width a cell\'s text is shown in: the text and its padding. */',
       );
       buffer.writeln(
@@ -4027,18 +4049,6 @@ public class CoolBarSizes {
         '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
       );
       buffer.writeln('        return width + TEXT_PADDING;');
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln('    /** The height of one line of a cell\'s text. */');
-      buffer.writeln(
-        '    public static int getTextHeight($itemType item, int index) {',
-      );
-      buffer.writeln(
-        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(item.getFont(index));',
-      );
-      buffer.writeln(
-        '        return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y());',
-      );
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(

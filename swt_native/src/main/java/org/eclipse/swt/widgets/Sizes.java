@@ -757,7 +757,7 @@ public class Sizes {
     }
 
     public static Rectangle getImageBounds(DartTableItem item, int index) {
-        Rectangle cell = getBounds(item, index);
+        Rectangle cell = tableContentCell(item, index, getBounds(item, index));
         if (cell.width == 0 && cell.height == 0)
             return cell;
         Image[] images = item._images();
@@ -772,13 +772,32 @@ public class Sizes {
         int columnCount = dartTable.columnCount;
         if (!(0 <= index && index < Math.max(1, columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        Rectangle cellBounds = getBounds(item, index);
-        if (cellBounds == null)
-            return new Rectangle(0, 0, 0, 0);
+        Rectangle cellBounds = tableContentCell(item, index, getBounds(item, index));
         Image[] images = item._images();
         Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
         int shift = image != null ? dev.equo.swt.size.TableSizes.getIconSpace(item.getApi()) : 0;
-        return new Rectangle(cellBounds.x + shift, cellBounds.y, Math.max(0, cellBounds.width - shift), cellBounds.height);
+        Rectangle text = new Rectangle(cellBounds.x + shift, cellBounds.y, Math.max(0, cellBounds.width - shift), cellBounds.height);
+        return centredTextLine(text, item.getFont(index));
+    }
+
+    /** A column's cell past the padding Flutter starts its content at; the first cell's bounds include it already. */
+    private static Rectangle tableContentCell(DartTableItem item, int index, Rectangle cell) {
+        if (index == 0 || ((DartTable) item._parent().getImpl()).columnCount == 0) return cell;
+        return insetCell(cell, dev.equo.swt.size.TableSizes.getCellInset());
+    }
+
+    private static Rectangle insetCell(Rectangle cell, int inset) {
+        int shift = Math.min(cell.width, inset);
+        return new Rectangle(cell.x + shift, cell.y, cell.width - shift, cell.height);
+    }
+
+    /**
+     * A line of {@code font} as the GC draws it, centred in {@code cell} as Flutter centres a cell's
+     * text: where an owner-drawing listener draws its text through a GC in that font.
+     */
+    private static Rectangle centredTextLine(Rectangle cell, Font font) {
+        int line = Math.min(cell.height, GCHelper.textExtent("Ag", 0, font).y);
+        return new Rectangle(cell.x, cell.y + (cell.height - line) / 2, cell.width, line);
     }
 
     public static List<TreeItem> flattenVisibleTreeItems(DartTree tree) {
@@ -847,28 +866,31 @@ public class Sizes {
     public static Rectangle getImageBounds(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = treeCell(item, index, row);
+        Rectangle cell = contentCell(item, index, treeCell(item, index, row));
         Image image = index == 0 ? item.getImage() : item.getImage(index);
         int width = image != null ? dev.equo.swt.size.TreeSizes.getIconSize() : 0;
         return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
-    /**
-     * The line a cell's text occupies: Flutter centres it vertically in the row, and an owner-drawing
-     * listener that draws its text at these bounds expects to land on it, as on Cocoa.
-     */
+    /** A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already. */
+    private static Rectangle contentCell(DartTreeItem item, int index, Rectangle cell) {
+        DartTree tree = (DartTree) item._parent().getImpl();
+        if (index == 0 || index >= tree.columnCount) return cell;
+        return insetCell(cell, dev.equo.swt.size.TreeSizes.getCellInset(tree.columns[index].getAlignment()));
+    }
+
+    /** A line of the item's font, centred in the row as Flutter centres its own text. */
     public static Rectangle getTextBounds(DartTreeItem item, int index) {
         Rectangle cell = textCell(item, index);
         if (cell.height == 0) return cell;
-        int line = Math.min(cell.height, dev.equo.swt.size.TreeSizes.getTextHeight(item.getApi(), index));
-        return new Rectangle(cell.x, cell.y + (cell.height - line) / 2, cell.width, line);
+        return centredTextLine(cell, item.getFont(index));
     }
 
     /** A cell's text area: the cell after its image, the full height of the row. */
     private static Rectangle textCell(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = treeCell(item, index, row);
+        Rectangle cell = contentCell(item, index, treeCell(item, index, row));
         Image image = index == 0 ? item.getImage() : item.getImage(index);
         int shift = image != null ? dev.equo.swt.size.TreeSizes.getIconSpace() : 0;
         int width = ((DartTree) item._parent().getImpl()).columnCount > 0

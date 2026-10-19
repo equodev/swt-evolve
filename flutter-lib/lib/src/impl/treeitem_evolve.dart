@@ -1176,6 +1176,43 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       overflow: TextOverflow.ellipsis,
     );
 
+    // The tree column's icon belongs to the row prefix; any other column draws its own, and Java
+    // lays the cell's text out after it.
+    final icon = columnIndex > 0
+        ? _buildItemIcon(
+            theme,
+            _context?.parentTreeValue.enabled ?? true,
+            _context?.treeImpl?.isItemSelected(state.id) ?? false,
+            /* hasChildren */ false,
+            /* expanded */ false,
+            cellValue(state.images, columnIndex),
+          )
+        : null;
+    if (icon != null) {
+      final text = textWidget;
+      final paddedIcon = Padding(
+        padding: EdgeInsets.only(right: theme.itemIconSpacing),
+        child: icon,
+      );
+      final iconSpace = theme.itemIconSize + theme.itemIconSpacing;
+      // A column narrower than the icon clips it rather than overflowing the row.
+      textWidget = LayoutBuilder(
+        builder: (context, constraints) => constraints.maxWidth < iconSpace
+            ? SizedBox(
+                width: constraints.maxWidth,
+                height: theme.itemIconSize,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.centerLeft,
+                    maxWidth: iconSpace,
+                    child: paddedIcon,
+                  ),
+                ),
+              )
+            : Row(children: [paddedIcon, Expanded(child: text)]),
+      );
+    }
+
     EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: cellPadding,
       alignment: columnAlignment,

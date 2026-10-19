@@ -19,6 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockFlutterBridge.Extension.class)
 class TableItemImageBoundsFlutterTest {
 
+    // The cell padding Flutter starts a column's content at, and the gap it leaves after an icon.
+    private static final int CELL_PADDING = 8;
+
     private Display display;
     private Shell shell;
     private Image image;
@@ -61,7 +64,9 @@ class TableItemImageBoundsFlutterTest {
 
         assertThat(thirdImage.width).as("image width").isPositive();
         assertThat(thirdImage.height).as("image height").isPositive();
-        assertThat(thirdImage.y).as("image row").isEqualTo(thirdCell.y).isEqualTo(thirdText.y).isNotEqualTo(firstImage.y);
+        assertThat(thirdImage.y).as("image row").isEqualTo(thirdCell.y).isNotEqualTo(firstImage.y);
+        assertThat(thirdText.y).as("text line within the row").isGreaterThan(thirdCell.y);
+        assertThat(thirdText.y + thirdText.height).isLessThan(thirdCell.y + thirdCell.height);
         assertThat(thirdImage.x).as("image starts at the cell's content").isEqualTo(thirdCell.x);
         assertThat(thirdImage.x + thirdImage.width).as("image ends before its text").isLessThanOrEqualTo(thirdText.x);
     }
@@ -93,8 +98,42 @@ class TableItemImageBoundsFlutterTest {
         Rectangle secondImage = item.getImageBounds(1);
 
         assertThat(secondImage.width).as("no image in column 1").isZero();
-        assertThat(secondImage.x).isEqualTo(secondCell.x);
+        assertThat(secondImage.x).as("past the cell padding").isEqualTo(secondCell.x + CELL_PADDING);
         assertThat(secondImage.y).isEqualTo(secondCell.y);
         assertThat(item.getImageBounds(5)).as("out of range").isEqualTo(new Rectangle(0, 0, 0, 0));
+    }
+
+    @Test
+    void aSecondColumnImageAndTextStartPastTheCellPadding() {
+        Table table = new Table(shell, SWT.BORDER);
+        table.setSize(300, 200);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        TableItem item = fillRows(table)[0];
+        item.setImage(1, image);
+
+        Rectangle cell = item.getBounds(1);
+        Rectangle icon = item.getImageBounds(1);
+        Rectangle text = item.getTextBounds(1);
+
+        assertThat(icon.x).isEqualTo(cell.x + CELL_PADDING);
+        assertThat(text.x).as("the icon and its spacing come first").isEqualTo(icon.x + icon.width + CELL_PADDING);
+    }
+
+    @Test
+    void textBoundsAreALineOfTheItemsFontCentredInTheRow() {
+        Table table = new Table(shell, SWT.BORDER);
+        table.setSize(300, 200);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        TableItem item = fillRows(table)[0];
+
+        Rectangle cell = item.getBounds(1);
+        Rectangle text = item.getTextBounds(1);
+        int above = text.y - cell.y;
+        int below = cell.y + cell.height - (text.y + text.height);
+
+        assertThat(text.height).as("one line, not the row").isPositive().isLessThan(cell.height);
+        assertThat(above).as("centred").isPositive().isBetween(below - 1, below);
     }
 }
