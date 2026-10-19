@@ -1014,10 +1014,9 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     inputs.dir("../flutter-lib/web")
     inputs.dir("../flutter-lib/assets")
     outputs.dir("../flutter-lib/build/web")
-    // Both builds in one bundle: the loader runs the wasm one (Skwasm, which rasterises off the
-    // main thread when the page is cross-origin isolated) where the browser supports WasmGC, and
-    // the JavaScript one (CanvasKit) everywhere else.
-    commandLine = flutterCmd() + listOf("build", "web", "--wasm")
+    // JavaScript build only, so every browser runs CanvasKit. Under Skwasm (--wasm) a GC-painted
+    // Canvas that repaints while scrolling makes the whole window flicker; CanvasKit does not.
+    commandLine = flutterCmd() + listOf("build", "web")
 }
 
 val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {
