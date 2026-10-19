@@ -90,8 +90,30 @@ class MenuEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
         fromFlutter(second, "Selection/Selection");
         runQueued();
 
-        // A listener that applies the item it hears about (a command per item) must hear the picked one last.
         assertThat(heard).containsExactly("first selected=false", "second selected=true");
+    }
+
+    @Test
+    @DisplayName("in a menu without radio groups a pick toggles only the picked radio item")
+    void aPickInANoRadioGroupMenuTogglesOnlyThePickedItem() {
+        Menu ungrouped = new Menu(DartMocks.dartShell(display), SWT.POP_UP | SWT.NO_RADIO_GROUP);
+        MenuItem first = new MenuItem(ungrouped, SWT.RADIO);
+        MenuItem second = new MenuItem(ungrouped, SWT.RADIO);
+        first.setSelection(true);
+        List<Event> secondHears = record(second, SWT.Selection);
+
+        fromFlutter(second, "Selection/Selection");
+        runQueued();
+
+        assertThat(first.getSelection()).isTrue();
+        assertThat(second.getSelection()).isTrue();
+        assertThat(secondHears).hasSize(1);
+
+        fromFlutter(second, "Selection/Selection");
+        runQueued();
+
+        assertThat(second.getSelection()).isFalse();
+        assertThat(secondHears).hasSize(2);
     }
 
     @Test
