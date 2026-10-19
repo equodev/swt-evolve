@@ -503,6 +503,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/WidgetSpy.java",
     "**/MacApplicationMenu.java",
     "**/MacMenuBar.java",
+    "**/AppKitValues.java",
     "**/TextLayoutMeasurement.java",
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
