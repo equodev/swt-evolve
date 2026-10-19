@@ -40,12 +40,12 @@ public class StyledTextFixedLineHeightWireNativeTest {
         return text;
     }
 
-    private static VStyledText value(StyledText text) {
+    static VStyledText value(StyledText text) {
         return (VStyledText) ((DartStyledText) text.getImpl()).getValue();
     }
 
     /** Makes the change on a value with nothing pending and checks the flag went out, cleared. */
-    private static void assertSentVaryingAfter(StyledText text, Runnable change) {
+    static void assertSentVaryingAfter(StyledText text, Runnable change) {
         value(text).clearDirty();
         change.run();
         assertThat(value(text).changedKeys()).as("queued for the client").contains(VStyledText.FIXED_LINE_HEIGHT);

@@ -74,4 +74,20 @@ class StyledTextImplementationNativeTest {
         mono.dispose();
         assertThat(StyledTextHelper.isFixedPitch(mono)).isFalse();
     }
+
+    @Test
+    @DisplayName("a line laid out after the editor's font is disposed takes the system font")
+    void aDisposedEditorFontFallsBackToTheSystemFont() {
+        StyledText text = new StyledText(DartMocks.dartShell(display), SWT.MULTI);
+        text.setText("abc");
+        DartStyledTextRenderer renderer = (DartStyledTextRenderer) ((DartStyledText) text.getImpl()).renderer.getImpl();
+        org.eclipse.swt.graphics.Font font = new org.eclipse.swt.graphics.Font(display, "Arial", 14, SWT.NORMAL);
+        text.setFont(font);
+        font.dispose();
+
+        org.eclipse.swt.graphics.TextLayout layout = renderer.getTextLayout(0);
+
+        assertThat(layout.getFont()).isSameAs(display.getSystemFont());
+        renderer.disposeTextLayout(layout);
+    }
 }
