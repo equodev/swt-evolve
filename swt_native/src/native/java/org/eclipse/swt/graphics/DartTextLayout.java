@@ -260,18 +260,15 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         boolean lastLineSelection = (flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0;
         if (hasSelection || lastLineSelection) {
             gc.setBackground(selectionBackground != null ? selectionBackground : getDevice().getSystemColor(SWT.COLOR_LIST_SELECTION));
-            if (hasSelection) {
-                for (int line = 0; line < count; line++) {
-                    Rectangle part = _rangeOnLine(line, selectionStart, selectionEnd);
-                    if (part != null)
-                        gc.fillRectangle(x + part.x, y + part.y, part.width, part.height);
+            for (int line = 0; line < count; line++) {
+                Rectangle part = hasSelection ? _rangeOnLine(line, selectionStart, selectionEnd) : null;
+                if (part != null)
+                    gc.fillRectangle(x + part.x, y + part.y, part.width, part.height);
+                if (TextLayoutHelper.selectionExtends(text, _lines[line], _lines[line + 1], line == count - 1, flags, selectionStart, selectionEnd)) {
+                    int height = _lineHeight[line] + getSpacing();
+                    int width = (flags & SWT.FULL_SELECTION) != 0 ? 0x3FFFFFFF : height / 3;
+                    gc.fillRectangle(x + _lineX[line] + (int) Math.ceil(_lineWidth[line]), y + _lineTop[line], width, height);
                 }
-            }
-            if (lastLineSelection) {
-                int last = count - 1;
-                int height = _lineHeight[last] + getSpacing();
-                int width = (flags & SWT.FULL_SELECTION) != 0 ? 0x3FFFFFFF : height / 3;
-                gc.fillRectangle(x + _lineX[last] + (int) Math.ceil(_lineWidth[last]), y + _lineTop[last], width, height);
             }
             gc.setBackground(gcBackground);
         }
@@ -410,7 +407,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (_measured() != null)
             return measured.bounds(wrapWidth);
         double widest = 0;
-        for (double width : _lineWidth) widest = Math.max(widest, width);
+        for (int line = 0; line < _lineWidth.length; line++) widest = Math.max(widest, _lineX[line] + _lineWidth[line]);
         int last = _lines.length - 2;
         int width = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(widest);
         return new Rectangle(0, 0, width, _lineTop[last] + _lineHeight[last] + getSpacing() + getVerticalIndent());
@@ -589,7 +586,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         computeRuns();
         int length = text.length();
         if (!(0 <= offset && offset <= length))
-            SWT.error(SWT.ERROR_INVALID_RANGE);
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         return _lineAt(offset);
     }
 
@@ -663,7 +660,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             }
         } finally {
         }
-        return TextLayoutHelper.lineMetrics(_lineAscent[lineIndex], _lineHeight[lineIndex] - _lineAscent[lineIndex], org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(font, 1).averageCharWidth);
+        return TextLayoutHelper.lineMetrics(_lineAscent[lineIndex], _lineHeight[lineIndex] - _lineAscent[lineIndex], 0);
     }
 
     /**
@@ -691,7 +688,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (_measured() != null)
             return measured.location(offset, trailing);
         if (length == 0)
-            return new Point(0, getVerticalIndent());
+            return new Point(0, 0);
         int line = _lineAt(offset);
         int ls = _lines[line];
         int le = TextLayoutHelper.contentEnd(text, ls, _lines[line + 1]);
@@ -710,7 +707,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         // A location at the line's right edge equals getLineBounds' right edge exactly: that one ceils
         // the line's width, while the caret positions inside the line round.
         int xi = Math.abs(x - right) < 0.75 ? _lineX[line] + (int) Math.ceil(_lineWidth[line]) : (int) Math.round(x);
-        return new Point(xi, _lineTop[line] + getVerticalIndent());
+        return new Point(xi, _lineTop[line] + (offset == length ? 0 : getVerticalIndent()));
     }
 
     /**
@@ -832,7 +829,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             return ls;
         double[][] boxes = _boxes(line);
         double[] left = boxes[0], right = boxes[1], rtl = boxes[2];
-        double maxRight = Double.NEGATIVE_INFINITY, minLeft = Double.POSITIVE_INFINITY;
+        double maxRight = Double.NEGATIVE_INFINITY;
         for (int c = 0; c < le - ls; c++) {
             if (right[c] <= left[c])
                 continue;
@@ -843,7 +840,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 return ls + c;
             }
             maxRight = Math.max(maxRight, right[c]);
-            minLeft = Math.min(minLeft, left[c]);
         }
         // Beyond every glyph: past the right edge is the rightmost character trailing (the last
         // one on a left-to-right line, the first on a right-to-left one), left of the text the
@@ -2080,8 +2076,9 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                     i = j;
                 }
                 if (minAscent >= 0 && minDescent >= 0 && minAscent + minDescent > ascent + descent) {
-                    ascent = minAscent;
-                    descent = minDescent;
+                    int height = minAscent + minDescent;
+                    ascent = Math.max(ascent, minAscent);
+                    descent = height - ascent;
                 }
             }
             _lineTop[line] = top;
@@ -2095,11 +2092,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             int x = lineIndent;
             if (wrapWidth != -1) {
                 int extra = wrapWidth - lineIndent - (int) Math.ceil(width);
-                if (getJustify()) {
+                if (getJustify() && !paragraphEnd) {
                     int spaces = 0;
                     for (int i = ls; i < visibleEnd; i++) if (text.charAt(i) == ' ')
                         spaces++;
-                    if (!paragraphEnd && extra > 0 && spaces > 0 && _isLeftToRight(ls, le)) {
+                    if (extra > 0 && spaces > 0 && _isLeftToRight(ls, le)) {
                         _lineSpaceExtra[line] = extra / (double) spaces;
                         width += extra;
                     }
@@ -2290,6 +2287,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             org.eclipse.swt.graphics.Font f = _fontFor(i);
             int j = i + 1;
             while (j < end && text.charAt(j) != '\t' && _styleFor(j) == st) j++;
+            if (i < start && j > start)
+                j = start;
             if (f != null) {
                 x += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x() * px;
             }

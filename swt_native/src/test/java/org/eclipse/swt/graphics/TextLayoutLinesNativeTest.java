@@ -19,8 +19,7 @@ import static org.assertj.core.api.Assertions.within;
 /**
  * How the web TextLayout engine places its lines: each line as high as its tallest glyphs, the spacing below
  * every line, the indent before a paragraph's first line and the wrap indent before the others, the alignment
- * and the justification inside the wrap width. What every platform's SWT agrees on; the platform-specific
- * choices are in {@link TextLayoutHelperTest}.
+ * and the justification inside the wrap width.
  */
 @Tag("native-unit")
 class TextLayoutLinesNativeTest {
@@ -146,7 +145,8 @@ class TextLayoutLinesNativeTest {
         assertThat(indented.getLocation(4, false).x).isEqualTo(20);
         assertThat(indented.getLineBounds(1).x).isEqualTo(20);
         assertThat(indented.getLineBounds(1).width).isEqualTo(plain.getLineBounds(1).width);
-        assertThat(indented.getBounds()).as("the bounds leave the indent out").isEqualTo(plain.getBounds());
+        Rectangle bounds = plain.getBounds();
+        assertThat(indented.getBounds()).as("the bounds count the indent").isEqualTo(new Rectangle(0, 0, bounds.width + 20, bounds.height));
         assertThat(indented.getOffset(21, 1, null)).isZero();
         assertThat(indented.getBounds(0, 2).x).isEqualTo(20);
     }
@@ -199,7 +199,7 @@ class TextLayoutLinesNativeTest {
     }
 
     @Test
-    void justifyStretchesEveryLineButAParagraphsLast() {
+    void justifyStretchesEveryLineButAParagraphsLastWhichTakesTheAlignment() {
         String text = "aa bb cc dd ee ff gg hh ii";
         TextLayout plain = layout(text);
         TextLayout justified = layout(text);
@@ -215,7 +215,9 @@ class TextLayoutLinesNativeTest {
                 .isGreaterThan(plain.getLocation(lastOfFirstLine, true).x);
         assertThat(justified.getLineBounds(0).width).isCloseTo(wrap, within(1));
         int last = plain.getLineCount() - 1;
-        assertThat(justified.getLineBounds(last)).as("a paragraph's last line is left as it is").isEqualTo(plain.getLineBounds(last));
+        Rectangle natural = plain.getLineBounds(last);
+        assertThat(justified.getLineBounds(last)).as("a paragraph's last line is right aligned, not stretched")
+                .isEqualTo(new Rectangle(wrap - natural.width, natural.y, natural.width, natural.height));
         int space = text.indexOf(' ');
         int hit = justified.getLocation(space + 1, false).x;
         assertThat(justified.getOffset(hit + 1, 1, null)).isEqualTo(space + 1);

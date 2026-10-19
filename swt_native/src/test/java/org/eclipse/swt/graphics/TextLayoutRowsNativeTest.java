@@ -40,7 +40,7 @@ public class TextLayoutRowsNativeTest {
 
         assertThat(layout.getLocation(0, false).x).isEqualTo(10);
         assertThat(layout.getLocation(4, false).x).isEqualTo(10);
-        assertThat(layout.getBounds().width).as("as on Cocoa, the bounds leave the indent out").isEqualTo(plainWidth);
+        assertThat(layout.getBounds().width).isEqualTo(plainWidth + 10);
         assertThat(layout.getLineBounds(1).x).isEqualTo(10);
     }
 

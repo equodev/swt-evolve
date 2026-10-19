@@ -5,6 +5,8 @@ import org.eclipse.swt.custom.StyledTextHelper;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
@@ -148,6 +150,26 @@ class TextLayoutDrawRunsNativeTest extends TextLayoutDrawTestBase {
         empty.draw(gc(), 0, 0, -1, -1, null, null, SWT.FULL_SELECTION | SWT.LAST_LINE_SELECTION);
         assertThat(fills).hasSize(1);
         assertThat(fills.get(0).x()).isZero();
+    }
+
+    @Test
+    void aSelectedDelimiterReachesPastItsLine() {
+        TextLayout layout = layout("abc\ndef\nghi");
+        layout.draw(gc(), 0, 0, 1, 5, null, null, SWT.DELIMITER_SELECTION);
+        Rectangle first = layout.getLineBounds(0);
+        assertThat(fills).contains(new Fill(first.width, first.y, first.height / 3, first.height,
+                display.getSystemColor(SWT.COLOR_LIST_SELECTION)));
+        assertThat(fills).as("the second line's delimiter is not selected").noneMatch(f -> f.x() == layout.getLineBounds(1).width);
+    }
+
+    @Test
+    void aFullSelectionReachesPastEveryWrappedLineItCovers() {
+        TextLayout layout = layout("aaa bbb ccc");
+        layout.setWidth(layout.getBounds(0, 3).width + 5);
+        assertThat(layout.getLineCount()).isEqualTo(3);
+        layout.draw(gc(), 0, 0, 0, 10, null, null, SWT.FULL_SELECTION);
+        List<Integer> extended = fills.stream().filter(f -> f.width() > 10_000).map(Fill::y).toList();
+        assertThat(extended).containsExactly(layout.getLineBounds(0).y, layout.getLineBounds(1).y);
     }
 
     @Test

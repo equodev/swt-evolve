@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 /**
  * The web TextLayout engine at its edges: right-to-left text and orientation, surrogate pairs at the end of a line,
  * segments, a measurement the render side handed over, resources disposed under it, and the selection arguments
- * a draw ignores. Every platform's SWT agrees on what is asserted here.
+ * a draw ignores.
  */
 @Tag("native-unit")
 class TextLayoutEdgesNativeTest {
@@ -331,7 +331,7 @@ class TextLayoutEdgesNativeTest {
         layout.setTabs(new int[] {40, 90});
         assertThat(layout.getLocation(2, false).x).isEqualTo(x);
         layout.setTabs(new int[0]);
-        assertThat(layout.getLocation(2, false).x).isGreaterThanOrEqualTo(layout.getLocation(1, false).x);
+        assertThat(layout.getLocation(2, false).x).isEqualTo(layout.getLocation(1, false).x);
         Font a = font(12, SWT.NORMAL), b = font(20, SWT.NORMAL);
         layout.setFont(a);
         layout.setFont(b);

@@ -45,6 +45,21 @@ public final class TextLayoutHelper {
         return end;
     }
 
+    /**
+     * Whether a draw with {@code flags} extends the selection past the end of the line {@code [start, next)}, as GTK
+     * and Win32 do: the last line with {@code SWT.LAST_LINE_SELECTION}, a line whose delimiter is selected, and with
+     * {@code SWT.FULL_SELECTION} a wrapped line whose end is selected.
+     */
+    public static boolean selectionExtends(String text, int start, int next, boolean last, int flags, int selectionStart,
+            int selectionEnd) {
+        if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) == 0) return false;
+        if (last) return (flags & SWT.LAST_LINE_SELECTION) != 0;
+        if (selectionStart == -1 || selectionEnd == -1 || selectionStart > selectionEnd) return false;
+        int end = contentEnd(text, start, next);
+        if (end < next) return selectionStart <= end && end <= selectionEnd;
+        return (flags & SWT.FULL_SELECTION) != 0 && selectionStart < next && next - 1 < selectionEnd;
+    }
+
     /** Whether a line starting at {@code offset} is the first line of its paragraph. */
     public static boolean startsParagraph(String text, int offset) {
         return offset == 0 || isDelimiter(text.charAt(offset - 1));
@@ -140,9 +155,9 @@ public final class TextLayoutHelper {
     /**
      * The next word boundary from {@code offset} for {@code SWT.MOVEMENT_WORD}, {@code MOVEMENT_WORD_START} or
      * {@code MOVEMENT_WORD_END} ({@code offset} is neither the end when moving forward nor 0 when moving backward).
-     * A word is a run of letters, digits and underscores, and a line delimiter is a stop, as on GTK and Win32 (Cocoa's
-     * {@code NSAttributedString.nextWordFromIndex} keeps an apostrophe or a period inside a word and stops at no
-     * delimiter).
+     * A word is a run of letters and digits, and a line delimiter is a stop, as on GTK and Win32 (Cocoa's
+     * {@code NSAttributedString.nextWordFromIndex} keeps an underscore, an apostrophe or a period inside a word and
+     * stops at no delimiter).
      */
     public static int wordOffset(String text, int offset, int movement, boolean forward) {
         switch (movement) {
@@ -158,7 +173,7 @@ public final class TextLayoutHelper {
     }
 
     private static boolean isWordChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_';
+        return Character.isLetterOrDigit(c);
     }
 
     /** The end of the word at or after {@code offset}. */
