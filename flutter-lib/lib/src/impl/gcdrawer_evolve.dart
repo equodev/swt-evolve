@@ -2330,10 +2330,7 @@ class _TextLayouts {
   static bool _watchingFonts = false;
 
   static TextPainter of(String text, TextStyle style) {
-    if (!_watchingFonts) {
-      _watchingFonts = true;
-      PaintingBinding.instance.systemFonts.addListener(_clear);
-    }
+    if (!_watchingFonts) _watchingFonts = FontUtils.listenToSystemFonts(_clear);
     final key = (text, style);
     final held = _layouts.remove(key);
     if (held != null) {
