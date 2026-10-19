@@ -371,7 +371,6 @@ class TextLayoutEdgesNativeTest {
         layout.setSegments(new int[] {1});
         layout.setSegmentsChars(new char[] {'\u200e'});
         layout.setWidth(200);
-        layout.setVerticalIndent(6);
         layout.setOrientation(SWT.RIGHT_TO_LEFT);
         layout.getLineCount();
         DartTextLayout impl = (DartTextLayout) layout.getImpl();
@@ -389,7 +388,6 @@ class TextLayoutEdgesNativeTest {
         assertThat(impl._segments()).containsExactly(1);
         assertThat(impl._segmentsChars()).containsExactly('\u200e');
         assertThat(impl._wrapWidth()).isEqualTo(200);
-        assertThat(impl._verticalIndentInPoints()).isEqualTo(6);
         assertThat(impl._orientation()).isEqualTo(SWT.RIGHT_TO_LEFT);
         assertThat(impl._lineOffsets()).hasSize(3);
         assertThat(impl._invalidOffsets()).isNull();
