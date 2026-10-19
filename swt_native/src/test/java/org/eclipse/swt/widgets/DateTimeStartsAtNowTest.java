@@ -9,8 +9,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
 
@@ -44,12 +45,19 @@ class DateTimeStartsAtNowTest extends SerializeTestBase {
     }
 
     @Test
-    void theClientIsSentTheJavaDate() {
+    void theClientIsSentToday() {
+        LocalDate before = LocalDate.now();
         DateTime w = new DateTime(shell(), SWT.DATE | SWT.DROP_DOWN | SWT.MEDIUM);
+        LocalDate after = LocalDate.now();
 
-        assertThatJson(serialize(w)).isObject()
-                .containsEntry("year", w.getYear())
-                .containsEntry("month", w.getMonth())
-                .containsEntry("day", w.getDay());
+        String json = serialize(w);
+        LocalDate sent = LocalDate.of(field(json, "year"), field(json, "month") + 1, field(json, "day"));
+        assertThat(sent).isBetween(before, after);
+    }
+
+    private static int field(String json, String name) {
+        Matcher m = Pattern.compile("\"" + name + "\":(\\d+)").matcher(json);
+        assertThat(m.find()).as("%s in %s", name, json).isTrue();
+        return Integer.parseInt(m.group(1));
     }
 }

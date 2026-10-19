@@ -29,4 +29,16 @@ public final class DateTimeHelper {
     public static boolean isValidDate(int year, int month, int day) {
         return month >= 0 && month <= 11 && day >= 1 && day <= daysInMonth(year, month);
     }
+
+    /**
+     * Sets the moment a native DateTime holds when the application has set none. Gregorian whatever
+     * the locale, as the native controls and {@link #isValidDate} are.
+     */
+    public static void startAtNow(IDateTime dateTime) {
+        java.util.Calendar now = new java.util.GregorianCalendar();
+        dateTime.setDate(now.get(java.util.Calendar.YEAR), now.get(java.util.Calendar.MONTH),
+                now.get(java.util.Calendar.DAY_OF_MONTH));
+        dateTime.setTime(now.get(java.util.Calendar.HOUR_OF_DAY), now.get(java.util.Calendar.MINUTE),
+                now.get(java.util.Calendar.SECOND));
+    }
 }
