@@ -155,11 +155,13 @@ class TextLayoutDrawRunsNativeTest extends TextLayoutDrawTestBase {
     @Test
     void aSelectedDelimiterReachesPastItsLine() {
         TextLayout layout = layout("abc\ndef\nghi");
-        layout.draw(gc(), 0, 0, 1, 5, null, null, SWT.DELIMITER_SELECTION);
+        assertThat(extendedLines(layout, 1, 5, SWT.DELIMITER_SELECTION)).containsExactly(0);
         Rectangle first = layout.getLineBounds(0);
         assertThat(fills).contains(new Fill(first.width, first.y, first.height / 3, first.height,
                 display.getSystemColor(SWT.COLOR_LIST_SELECTION)));
-        assertThat(fills).as("the second line's delimiter is not selected").noneMatch(f -> f.x() == layout.getLineBounds(1).width);
+        assertThat(extendedLines(layout, 5, 6, SWT.DELIMITER_SELECTION)).as("from after the first delimiter").isEmpty();
+        assertThat(extendedLines(layout("abc\ndef"), -1, -1, SWT.FULL_SELECTION | SWT.LAST_LINE_SELECTION))
+                .as("without a selection, only the last line").containsExactly(1);
     }
 
     @Test
@@ -167,9 +169,20 @@ class TextLayoutDrawRunsNativeTest extends TextLayoutDrawTestBase {
         TextLayout layout = layout("aaa bbb ccc");
         layout.setWidth(layout.getBounds(0, 3).width + 5);
         assertThat(layout.getLineCount()).isEqualTo(3);
-        layout.draw(gc(), 0, 0, 0, 10, null, null, SWT.FULL_SELECTION);
-        List<Integer> extended = fills.stream().filter(f -> f.width() > 10_000).map(Fill::y).toList();
-        assertThat(extended).containsExactly(layout.getLineBounds(0).y, layout.getLineBounds(1).y);
+        assertThat(extendedLines(layout, 0, 10, SWT.FULL_SELECTION)).containsExactly(0, 1);
+        assertThat(extendedLines(layout, 8, 10, SWT.FULL_SELECTION)).as("from the last line").isEmpty();
+        assertThat(extendedLines(layout, 0, 2, SWT.FULL_SELECTION)).as("inside the first line").isEmpty();
+        assertThat(extendedLines(layout, 0, 10, SWT.DELIMITER_SELECTION)).as("no delimiter is selected").isEmpty();
+    }
+
+    /** The lines a draw of the selection from start to end extends the selection past. */
+    private List<Integer> extendedLines(TextLayout layout, int start, int end, int flags) {
+        fills.clear();
+        layout.draw(gc(), 0, 0, start, end, null, null, flags);
+        return java.util.stream.IntStream.range(0, layout.getLineCount()).filter(line -> {
+            Rectangle bounds = layout.getLineBounds(line);
+            return fills.stream().anyMatch(f -> f.x() == bounds.x + bounds.width && f.y() == bounds.y);
+        }).boxed().toList();
     }
 
     @Test

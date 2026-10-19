@@ -264,7 +264,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 Rectangle part = hasSelection ? _rangeOnLine(line, selectionStart, selectionEnd) : null;
                 if (part != null)
                     gc.fillRectangle(x + part.x, y + part.y, part.width, part.height);
-                if (TextLayoutHelper.selectionExtends(text, _lines[line], _lines[line + 1], line == count - 1, flags, selectionStart, selectionEnd)) {
+                if (TextLayoutHelper.selectionExtends(text, _lines[line], _lines[line + 1], line == count - 1, flags, hasSelection, selectionStart, selectionEnd)) {
                     int height = _lineHeight[line] + getSpacing();
                     int width = (flags & SWT.FULL_SELECTION) != 0 ? 0x3FFFFFFF : height / 3;
                     gc.fillRectangle(x + _lineX[line] + (int) Math.ceil(_lineWidth[line]), y + _lineTop[line], width, height);
@@ -2075,11 +2075,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                     }
                     i = j;
                 }
-                if (minAscent >= 0 && minDescent >= 0 && minAscent + minDescent > ascent + descent) {
-                    int height = minAscent + minDescent;
-                    ascent = Math.max(ascent, minAscent);
-                    descent = height - ascent;
-                }
+                ascent = Math.max(ascent, minAscent);
+                descent = Math.max(descent, minDescent);
             }
             _lineTop[line] = top;
             _lineHeight[line] = ascent + descent;
@@ -2287,8 +2284,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             org.eclipse.swt.graphics.Font f = _fontFor(i);
             int j = i + 1;
             while (j < end && text.charAt(j) != '\t' && _styleFor(j) == st) j++;
-            if (i < start && j > start)
-                j = start;
             if (f != null) {
                 x += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x() * px;
             }

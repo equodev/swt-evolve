@@ -15,7 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * The text rules the web TextLayout keeps where the platforms' SWT differ: a final delimiter starts an empty line,
  * a cluster keeps its combining marks, a word is letters and digits with a line delimiter as a stop, the text
- * direction is a setting of its own, and with no tab stops a tab takes no space.
+ * direction is a setting of its own, setAscent and setDescent each raise their own side of the line, and with no
+ * tab stops a tab takes no space.
  */
 @Tag("native-unit")
 class TextLayoutRulesNativeTest {
@@ -47,10 +48,10 @@ class TextLayoutRulesNativeTest {
 
     @Test
     void aClusterKeepsACharacterWithItsCombiningMarks() {
-        TextLayout layout = layout("éx");
+        TextLayout layout = layout("e\u0301x");
         assertThat(layout.getNextOffset(0, SWT.MOVEMENT_CLUSTER)).isEqualTo(2);
         assertThat(layout.getPreviousOffset(2, SWT.MOVEMENT_CLUSTER)).isZero();
-        assertThat(layout("a😀b").getNextOffset(1, SWT.MOVEMENT_CLUSTER)).isEqualTo(3);
+        assertThat(layout("a\ud83d\ude00b").getNextOffset(1, SWT.MOVEMENT_CLUSTER)).isEqualTo(3);
     }
 
     @Test
@@ -76,9 +77,22 @@ class TextLayoutRulesNativeTest {
         layout.setOrientation(SWT.RIGHT_TO_LEFT);
         layout.setTextDirection(SWT.LEFT_TO_RIGHT);
         assertThat(layout.getTextDirection()).isEqualTo(SWT.LEFT_TO_RIGHT);
-        TextLayout hebrew = layout("אבג abc");
+        TextLayout hebrew = layout("\u05d0\u05d1\u05d2 abc");
         hebrew.setTextDirection(SWT.AUTO_TEXT_DIRECTION);
         assertThat(hebrew.getTextDirection()).isEqualTo(SWT.RIGHT_TO_LEFT);
+    }
+
+    @Test
+    void theAscentAndTheDescentEachRaiseTheirSideOfTheLine() {
+        FontMetrics glyphs = layout("abc").getLineMetrics(0);
+        TextLayout layout = layout("abc");
+        layout.setAscent(1);
+        layout.setDescent(40);
+        assertThat(layout.getLineMetrics(0).getAscent()).isEqualTo(glyphs.getAscent());
+        assertThat(layout.getLineBounds(0).height).isEqualTo(glyphs.getAscent() + 40);
+        TextLayout raised = layout("abc");
+        raised.setAscent(40);
+        assertThat(raised.getLineBounds(0).height).as("the ascent alone").isEqualTo(40 + glyphs.getDescent());
     }
 
     @Test

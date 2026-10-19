@@ -50,11 +50,11 @@ public final class TextLayoutHelper {
      * and Win32 do: the last line with {@code SWT.LAST_LINE_SELECTION}, a line whose delimiter is selected, and with
      * {@code SWT.FULL_SELECTION} a wrapped line whose end is selected.
      */
-    public static boolean selectionExtends(String text, int start, int next, boolean last, int flags, int selectionStart,
-            int selectionEnd) {
+    public static boolean selectionExtends(String text, int start, int next, boolean last, int flags, boolean hasSelection,
+            int selectionStart, int selectionEnd) {
         if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) == 0) return false;
         if (last) return (flags & SWT.LAST_LINE_SELECTION) != 0;
-        if (selectionStart == -1 || selectionEnd == -1 || selectionStart > selectionEnd) return false;
+        if (!hasSelection) return false;
         int end = contentEnd(text, start, next);
         if (end < next) return selectionStart <= end && end <= selectionEnd;
         return (flags & SWT.FULL_SELECTION) != 0 && selectionStart < next && next - 1 < selectionEnd;
