@@ -462,6 +462,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       state.fixedLineHeight ?? false,
     );
     if (previousShape != null) shape.inheritMeasurementsFrom(previousShape);
+    shape.onRowsOutgrown = () => WidgetsBinding.instance.addPostFrameCallback((_) => _refitRows());
     _shape = shape;
     debugRebuildMicros += rebuildWatch.elapsedMicroseconds;
     debugRebuildCalls++;
@@ -804,9 +805,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Widget build(BuildContext context) {
     if (_shapeStale) _rebuildShape();
     _oweGeometry();
-    if (_shape?._uniformRows ?? false) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _refitRows());
-    }
     final bounds = getBounds();
     final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
     final hasVScroll = hasStyle(state.style, SWT.V_SCROLL);
@@ -1600,7 +1598,8 @@ void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
     layout.caretX ??= replaced.caretX;
   }
   _lineLayoutCache[key] = layout;
-  layout.charged = layout.cost;
+  // The key's text stays in memory too, at about a quarter of a caret position per character.
+  layout.charged = layout.cost + key.lineText.length ~/ 4;
   _lineLayoutCacheChars += layout.charged;
   while (_lineLayoutCacheChars > _lineLayoutCacheCharBudget &&
       _lineLayoutCache.length > 1) {
@@ -1886,6 +1885,9 @@ class TextShape extends Shape {
   /// builds the shape again, with rows that fit it.
   bool rowsOutgrown = false;
 
+  /// Told once, when [rowsOutgrown] is set.
+  VoidCallback? onRowsOutgrown;
+
   double get _rowHeight =>
       _rowHeightValue ??= math.max(lineHeight, math.max(_tallestLine, _plainLineHeight));
 
@@ -1913,7 +1915,10 @@ class TextShape extends Shape {
     if (height <= _tallestLine) return;
     _tallestLine = height;
     final rows = _rowHeightValue;
-    if (rows != null && height > rows + 0.5) rowsOutgrown = true;
+    if (!rowsOutgrown && rows != null && height > rows + 0.5) {
+      rowsOutgrown = true;
+      onRowsOutgrown?.call();
+    }
   }
 
   /// What the rows of [other] were placed with, for a shape that shares its line tops.
@@ -2110,21 +2115,24 @@ class TextShape extends Shape {
     final donated = _donatedLine(lineIndex, lineText, false);
     if (donated != null) return donated;
     final props = _linePropsFor(lineIndex);
-    return _lineLayoutCache[_LineLayoutKey(
-      lineText,
-      styleToken,
-      _rangesTokenFor(lineIndex, lineText.length),
-      props.align,
-      _lineMaxWidth(props.layoutIndent),
-      tabs,
-      _tabStopsFor(lineIndex),
-    )];
+    return _lineLayoutCache[_layoutKeyFor(lineIndex, lineText, props.align, _lineMaxWidth(props.layoutIndent))];
   }
+
+  /// What [lineIndex]'s layout is cached under.
+  _LineLayoutKey _layoutKeyFor(int lineIndex, String lineText, TextAlign align, double maxWidth) => _LineLayoutKey(
+        lineText,
+        styleToken,
+        _rangesTokenFor(lineIndex, lineText.length),
+        align,
+        maxWidth,
+        tabs,
+        _tabStopsFor(lineIndex),
+      );
 
   double? _columnAdvance;
 
-  /// A line's width from its column count, tabs expanded to their stops: exact in a fixed-pitch font,
-  /// an estimate otherwise, until the line is laid out.
+  /// A line's width from its column count, tabs expanded to the default stops: exact in a fixed-pitch
+  /// font without pixel tab stops, an estimate otherwise, until the line is laid out.
   double _estimatedWidth(String lineText) {
     final advance = _columnAdvance ??= _measureRun('0' * 10, style) / 10;
     final tabColumns = tabs > 0 ? tabs : 4;
@@ -2909,15 +2917,7 @@ class TextShape extends Shape {
     required double maxWidth,
     required bool wantCaretX,
   }) {
-    final key = _LineLayoutKey(
-      lineText,
-      styleToken,
-      _rangesTokenFor(lineIndex, lineText.length),
-      align,
-      maxWidth,
-      tabs,
-      _tabStopsFor(lineIndex),
-    );
+    final key = _layoutKeyFor(lineIndex, lineText, align, maxWidth);
 
     var layout = _lineLayoutCache[key];
     if (layout != null && (!wantCaretX || layout.caretX != null)) {
@@ -2986,15 +2986,7 @@ class TextShape extends Shape {
     required double maxWidth,
   }) {
     final key = _PaintedLineKey(
-      _LineLayoutKey(
-        lineText,
-        styleToken,
-        _rangesTokenFor(lineIndex, lineText.length),
-        align,
-        maxWidth,
-        tabs,
-        _tabStopsFor(lineIndex),
-      ),
+      _layoutKeyFor(lineIndex, lineText, align, maxWidth),
       _paintTokenFor(lineIndex, lineText.length),
     );
     final cached = _paintedLineCache[key];
