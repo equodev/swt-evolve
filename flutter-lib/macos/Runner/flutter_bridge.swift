@@ -55,6 +55,7 @@ class FlutterSurface: NSObject {
     func setTitle(_ title: String) {}
     func setState(_ state: Int32) {}
     func setVisible(_ visible: Bool) {}
+    func setOwner(_ owner: FlutterSurface?) {}
     func origin() -> (Int32, Int32)? { return nil }
     func isActive() -> Bool { return false }
     func dispose() {}
@@ -180,7 +181,11 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     /// The CSD window channel; held so it outlives initialize() and can push focus changes.
     private var windowChannel: FlutterMethodChannel?
 
-    func initialize(port: Int32, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32, csdEnabled: Bool) {
+    /// The window this one is a child of, as native SWT makes a child shell's window a child window
+    /// of its parent's: it moves with it, stays above it and is miniaturized with it.
+    private weak var ownerWindow: NSWindow?
+
+    func initialize(port: Int32, owner: NSWindow?, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32, csdEnabled: Bool) {
         print("FlutterDisplayWindowController.initialize port:\(port) id:\(displayId) name:\(widgetName) \(width)x\(height)")
 
         let app = NSApplication.shared
@@ -252,6 +257,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         win.center()
         win.isReleasedWhenClosed = false
         self.window = win
+        self.ownerWindow = owner
 
         RegisterGeneratedPlugins(registry: fvc)
         setupWindowChannel(fvc)
@@ -269,6 +275,36 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         } else {
             win.makeKeyAndOrderFront(nil)
         }
+        attachToOwner()
+    }
+
+    /// Cocoa only keeps a child window while both are on screen, so, as native SWT's
+    /// Shell.updateParent does, it is attached when either one is shown and detached when either one
+    /// is hidden; a hidden owner leaves the window unattached.
+    private func attachToOwner() {
+        guard let win = window, win.isVisible, let owner = ownerWindow, owner.isVisible else { return }
+        owner.addChildWindow(win, ordered: .above)
+    }
+
+    private func detachFromOwner() {
+        guard let win = window, let owner = win.parent else { return }
+        owner.removeChildWindow(win)
+    }
+
+    /// The windows this one owns, found through their delegate rather than `childWindows`, which
+    /// leaves out the ones not attached while this one was hidden.
+    private func ownedControllers() -> [FlutterDisplayWindowController] {
+        guard let win = window else { return [] }
+        return NSApp.windows.compactMap { $0.delegate as? FlutterDisplayWindowController }
+            .filter { $0.ownerWindow === win }
+    }
+
+    override func setOwner(_ owner: FlutterSurface?) {
+        let ownerWin = owner?.getView()?.window
+        if ownerWin === ownerWindow { return }
+        detachFromOwner()
+        ownerWindow = ownerWin
+        attachToOwner()
     }
 
     /// Drains all pending native events, then spins the run loop briefly. Returns -2 once per user
@@ -389,7 +425,11 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // ordering call rather than a rebuild.
         if visible {
             win.makeKeyAndOrderFront(nil)
+            attachToOwner()
+            ownedControllers().forEach { $0.attachToOwner() }
         } else {
+            ownedControllers().forEach { $0.detachFromOwner() }
+            detachFromOwner()
             win.orderOut(nil)
         }
     }
@@ -450,6 +490,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // is what it reports as 'FlutterEngineOnVsync'/'FlutterEngineSendPointerEvent' returning
         // kInvalidArguments. Detaching first closes that window entirely.
         window?.delegate = nil
+        detachFromOwner()
         window?.orderOut(nil)
         window?.contentViewController = nil
 
@@ -469,6 +510,11 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         closed = true
+    }
+
+    /// A window shown while this one was miniaturized could not be attached then.
+    func windowDidDeminiaturize(_ notification: Notification) {
+        ownedControllers().forEach { $0.attachToOwner() }
     }
 
     // Key state drives two things in Dart: the traffic lights, which grey out when the window is not
@@ -567,7 +613,9 @@ public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jc
     let surface: FlutterSurface
     if width > 0 && height > 0 {
         let c = FlutterDisplayWindowController()
-        c.initialize(port: port, displayId: Int64(widget_id), widgetName: name, theme: themeString, backgroundColor: background_color, width: width, height: height, csdEnabled: csd_enabled == 1)
+        // For a window, |parent| is the surface of the window that owns this one, or 0 for none.
+        let owner = surfaceFrom(parent)?.getView()?.window
+        c.initialize(port: port, owner: owner, displayId: Int64(widget_id), widgetName: name, theme: themeString, backgroundColor: background_color, width: width, height: height, csdEnabled: csd_enabled == 1)
         surface = c
     } else {
         let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil
@@ -652,6 +700,11 @@ public func FlutterNative_isActive(env: UnsafeMutablePointer<JNIEnv?>, cls: jcla
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetVisible")
 public func FlutterNative_setVisible(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, visible: jboolean) {
     surfaceFrom(context)?.setVisible(visible != 0)
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetOwner")
+public func FlutterNative_setOwner(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, owner: jlong) {
+    surfaceFrom(context)?.setOwner(surfaceFrom(owner))
 }
 
 // Stores the external bundle base so bundleBase() points the engine at it.

@@ -643,6 +643,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return null;
     }
 
+    /** Keeps the owner of {@code shell}'s window in line with where its parent is drawn now. */
+    protected void refreshShellWindowOwner(Shell shell, ShellWindow window) {
+    }
+
     /** Whether {@code shell} is one {@link WindowPolicy} puts in a window of its own. */
     protected boolean ownsWindow(Shell shell) {
         return windowEligible(shell) && !isMainShell(forDisplay, shell);
@@ -701,6 +705,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // rebuilds the window on the next pass, since a window closed here is not recorded as
             // lost. That is an endless create/destroy cycle, one new engine per turn.
             window.setVisible(shell.getVisible());
+            refreshShellWindowOwner(shell, window);
             return false;
         });
 

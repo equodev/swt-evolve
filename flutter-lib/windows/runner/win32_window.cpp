@@ -165,7 +165,7 @@ bool Win32Window::Create(const std::wstring& title,
       window_class, title.c_str(), style,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
       Scale(size.width, scale_factor), Scale(size.height, scale_factor),
-      parentWnd, nullptr, GetModuleHandle(nullptr), this);
+      parentWnd ? parentWnd : owner_, nullptr, GetModuleHandle(nullptr), this);
 
   std::cout << "Win32Window::Create - Created window=" << window << " headless=" << (parentWnd ? "false" : "true") << std::endl;
 
@@ -379,11 +379,30 @@ bool Win32Window::TakeCloseRequest() {
   return requested;
 }
 
+void Win32Window::SetOwner(HWND owner) {
+  owner_ = owner;
+  if (window_handle_ && !(GetWindowLong(window_handle_, GWL_STYLE) & WS_CHILD)) {
+    SetWindowLongPtr(window_handle_, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
+  }
+}
+
+// Windows destroys a window's owned windows along with it, which would free the Win32Window of a
+// detached shell that is still alive. They are handed to this window's own owner first; Java
+// re-owns them properly on its next sync.
+static BOOL CALLBACK ReownToGrandOwner(HWND hwnd, LPARAM lParam) {
+  HWND dying = reinterpret_cast<HWND>(lParam);
+  if (GetWindow(hwnd, GW_OWNER) == dying) {
+    SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(GetWindow(dying, GW_OWNER)));
+  }
+  return TRUE;
+}
+
 void Win32Window::Destroy() {
   if (window_handle_) {
     HWND hwnd = window_handle_;
     window_handle_ = nullptr;
 
+    EnumThreadWindows(GetCurrentThreadId(), ReownToGrandOwner, reinterpret_cast<LPARAM>(hwnd));
     ShowWindow(hwnd, SW_HIDE);
     SetParent(hwnd, HWND_MESSAGE);
     DestroyWindow(hwnd);

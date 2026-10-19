@@ -102,18 +102,18 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = (b != null && b.width > 0 && b.width <= 2560) ? b.width : 1280;
         int height = (b != null && b.height > 0 && b.height <= 1600) ? b.height : 800;
 
-        windowContext = openNativeWindow(displayId, "Display", width, height);
+        windowContext = openNativeWindow(0, displayId, "Display", width, height);
     }
 
     /** Opens one native top-level window hosting a Flutter client rooted at {@code widgetName/id}.
      *  Seam: tests stand a window in without JNI. */
-    protected long openNativeWindow(long widgetId, String widgetName, int width, int height) {
+    protected long openNativeWindow(long owner, long widgetId, String widgetName, int width, int height) {
         // Paint the window with the real widget background (matching the embedded path); passing 0
         // here would make the Flutter theme render a pure-black background.
         Color bg = forDisplay.getApi().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
         int backgroundColor = (bg.getRed() << 16) | (bg.getGreen() << 8) | bg.getBlue();
         String theme = Config.systemDarkTheme() ? "dark" : "light";
-        return FlutterNative.initialize(comm().getPort(), 0, widgetId, widgetName, theme,
+        return FlutterNative.initialize(comm().getPort(), owner, widgetId, widgetName, theme,
                 backgroundColor, backgroundColor, width, height);
     }
 
@@ -177,9 +177,11 @@ public class DeskDisplayBridge extends DisplayBridge {
         Rectangle bounds = shell.getBounds();
         int width = bounds.width > 0 ? bounds.width : 640;
         int height = bounds.height > 0 ? bounds.height : 480;
-        long context = openNativeWindow(shell.hashCode(), "Shell", width, height);
+        long owner = ownerWindowContext(shell);
+        long context = openNativeWindow(owner, shell.hashCode(), "Shell", width, height);
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
+        window.owner = owner;
         shellWindowsToPump.add(window);
         // The window gets the bounds the shell restores to; a shell never placed is cascaded.
         Rectangle normal = restoredBounds(shell, bounds);
@@ -218,17 +220,49 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public long nativeWindowHandle(Object shell) {
-        Composite current = shell instanceof Shell ? (Shell) shell : null;
+        NativeShellWindow window = nearestWindow(shell instanceof Shell ? (Shell) shell : null);
+        if (window != null) return window.view();
+        return hasNativeWindow() ? mainWindowView() : 0;
+    }
+
+    /**
+     * The window a detached shell's window is owned by, the way a native child shell is owned by its
+     * parent's: the one its parent is drawn into. 0 for a parentless shell.
+     */
+    private long ownerWindowContext(Shell shell) {
+        Composite parent = shell.getParent();
+        if (parent == null) return 0;
+        NativeShellWindow window = nearestWindow(parent);
+        return window != null ? window.context : mainWindowContext();
+    }
+
+    /** The live window of {@code start} or of its nearest ancestor shell that has one, else null. */
+    private NativeShellWindow nearestWindow(Composite start) {
+        Composite current = start;
         while (current instanceof Shell && !current.isDisposed()) {
             if (current.getImpl() instanceof DartShell) {
                 ShellWindow window = shellWindowFor((DartShell) current.getImpl());
                 if (window instanceof NativeShellWindow && window.isAlive()) {
-                    return ((NativeShellWindow) window).view();
+                    return (NativeShellWindow) window;
                 }
             }
             current = current.getParent();
         }
-        return hasNativeWindow() ? mainWindowView() : 0;
+        return null;
+    }
+
+    /**
+     * Re-owns a detached shell's window when the window its parent is drawn into changed since it
+     * opened: the parent got a window of its own later, or lost the one it had.
+     */
+    @Override
+    protected void refreshShellWindowOwner(Shell shell, ShellWindow window) {
+        if (!(window instanceof NativeShellWindow) || !window.isAlive()) return;
+        NativeShellWindow nativeWindow = (NativeShellWindow) window;
+        long owner = ownerWindowContext(shell);
+        if (owner == nativeWindow.owner) return;
+        nativeWindow.owner = owner;
+        setShellWindowOwner(nativeWindow.context, owner);
     }
 
     protected long shellWindowView(long context) {
@@ -237,6 +271,10 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     protected long mainWindowView() {
         return FlutterNative.getView(windowContext);
+    }
+
+    protected long mainWindowContext() {
+        return windowContext;
     }
 
     protected int pumpShellWindow(long context) {
@@ -264,6 +302,10 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     protected void setShellWindowState(long context, int state) {
         FlutterNative.setState(context, state);
+    }
+
+    protected void setShellWindowOwner(long context, long owner) {
+        FlutterNative.setOwner(context, owner);
     }
 
     /** Test seam: shows or hides a detached window without taking it down. */
@@ -379,6 +421,8 @@ public class DeskDisplayBridge extends DisplayBridge {
     protected class NativeShellWindow implements ShellWindow {
         final Shell shell;
         private long context;
+        /** The context of the window that owns this one, 0 for none. */
+        private long owner;
         private boolean gone;
         /** A window is created showing, and is only told when that changes. */
         private boolean shown = true;

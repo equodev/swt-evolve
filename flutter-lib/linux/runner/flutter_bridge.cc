@@ -714,6 +714,10 @@ Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong contex
   }
 }
 
+// GTK windows are not given an owner yet: Initialize ignores it as well.
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv *env, jclass cls, jlong context, jlong owner) {}
+
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen.
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetState(JNIEnv *env, jclass cls, jlong context, jint state) {

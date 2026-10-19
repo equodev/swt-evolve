@@ -33,7 +33,9 @@ public final class FlutterNative {
      * Creates a Flutter surface and returns its native handle.
      * <ul>
      *   <li>{@code width > 0 && height > 0} → a top-level <b>window</b> hosting the whole Display
-     *       (desktop-native). {@code parent} is ignored; {@code widgetId} is the Display id.</li>
+     *       (desktop-native). {@code parent} is the surface of the window that owns this one, or 0
+     *       for an unowned window (the Win32 and Cocoa runners honour it); {@code widgetId} is the id of
+     *       the Display or Shell the window is rooted at.</li>
      *   <li>otherwise → an <b>embedded</b> view inside {@code parent} (or an offscreen view if
      *       {@code parent == 0}, the limbo case).</li>
      * </ul>
@@ -126,6 +128,14 @@ public final class FlutterNative {
         SetVisible(context, visible);
     }
 
+    /**
+     * Re-owns a window surface: {@code owner} is the surface of the window that now owns it, as in
+     * {@link #initialize}, or 0 for none. No-op for an embedded surface.
+     */
+    public static void setOwner(long context, long owner) {
+        SetOwner(context, owner);
+    }
+
     /** No window, or one whose position cannot be told. */
     /**
      * Whether this surface's window currently has keyboard focus from the OS, i.e. is the key or
@@ -173,6 +183,8 @@ public final class FlutterNative {
     }
 
     private static native void SetVisible(long context, boolean visible);
+
+    private static native void SetOwner(long context, long owner);
 
     private static native long GetOrigin(long context);
 
