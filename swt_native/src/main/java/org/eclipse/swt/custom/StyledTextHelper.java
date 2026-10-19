@@ -1649,17 +1649,16 @@ public class StyledTextHelper {
         int lineLength = lineText.length();
 
         int singleLineHeight = getLineHeightAtOffset(renderer, content, lineOffset);
-        int breaks = segmentLineBreaks(renderer, lineOffset, lineText);
 
         if (wrapWidth <= 0 || lineLength == 0) {
-            return singleLineHeight * (1 + breaks);
+            return singleLineHeight * (1 + segmentLineBreaks(renderer, lineOffset, lineText));
         }
 
         // The rows the renderer's own layout breaks the line into: word wrap in the width the indent,
         // the bullet and the wrap indent leave, and the breaks among the segment characters.
         org.eclipse.swt.graphics.TextLayout layout = renderer.getTextLayout(lineIndex);
         try {
-            return singleLineHeight * Math.max(1 + breaks, layout.getLineCount());
+            return singleLineHeight * layout.getLineCount();
         } finally {
             renderer.disposeTextLayout(layout);
         }

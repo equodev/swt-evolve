@@ -2476,7 +2476,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
         checkWidget();
-        if (!java.util.Arrays.equals(this.selection, newValue)) {
+        if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
         if (items == null)

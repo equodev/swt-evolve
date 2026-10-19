@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** What a composition the client's input method reports does to a StyledText, through its IME. */
 @Tag("native-unit")
@@ -50,6 +51,8 @@ class StyledTextImeFromFlutterNativeTest extends EventsFromFlutterNativeTestBase
 
     @Test
     void a_read_only_text_takes_no_composition() {
+        // StyledText refuses a composition while read-only from SWT 3.111 (build 4926) on.
+        assumeTrue(SWT.getVersion() >= 4926);
         StyledText st = styledText("ab", 1);
         st.setEditable(false);
 

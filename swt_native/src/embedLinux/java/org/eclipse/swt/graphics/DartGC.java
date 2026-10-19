@@ -3137,7 +3137,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int[] newValue = dashes;
-        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
+        if (!java.util.Objects.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         if (getApi().handle == 0)

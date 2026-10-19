@@ -40,33 +40,42 @@ public class StyledTextFixedLineHeightWireNativeTest {
         return text;
     }
 
-    private static boolean sent(StyledText text) {
-        return ((VStyledText) ((DartStyledText) text.getImpl()).getValue()).getFixedLineHeight();
+    private static VStyledText value(StyledText text) {
+        return (VStyledText) ((DartStyledText) text.getImpl()).getValue();
+    }
+
+    /** Makes the change on a value with nothing pending and checks the flag went out, cleared. */
+    private static void assertSentVaryingAfter(StyledText text, Runnable change) {
+        value(text).clearDirty();
+        change.run();
+        assertThat(value(text).changedKeys()).as("queued for the client").contains(VStyledText.FIXED_LINE_HEIGHT);
+        assertThat(value(text).getFixedLineHeight()).isFalse();
     }
 
     @Test
     public void a_plain_editor_has_a_fixed_line_height() {
-        assertThat(sent(text())).isTrue();
+        assertThat(value(text()).getFixedLineHeight()).isTrue();
     }
 
     @Test
     public void word_wrap_and_line_spacing_vary_the_height() {
         StyledText wrapped = text();
-        wrapped.setWordWrap(true);
-        assertThat(sent(wrapped)).isFalse();
+        assertSentVaryingAfter(wrapped, () -> wrapped.setWordWrap(true));
 
         StyledText spaced = text();
-        spaced.setLineSpacing(2);
-        assertThat(sent(spaced)).isFalse();
+        assertSentVaryingAfter(spaced, () -> spaced.setLineSpacing(2));
     }
 
     @Test
     public void a_style_with_its_own_font_varies_the_height() {
         StyledText text = text();
-        StyleRange big = new StyleRange(0, 3, null, null);
-        big.font = new Font(display, "Arial", 30, SWT.NORMAL);
-        text.setStyleRange(big);
-
-        assertThat(sent(text)).isFalse();
+        Font big = new Font(display, "Arial", 30, SWT.NORMAL);
+        try {
+            StyleRange style = new StyleRange(0, 3, null, null);
+            style.font = big;
+            assertSentVaryingAfter(text, () -> text.setStyleRange(style));
+        } finally {
+            big.dispose();
+        }
     }
 }
