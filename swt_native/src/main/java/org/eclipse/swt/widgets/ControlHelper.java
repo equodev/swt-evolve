@@ -438,7 +438,7 @@ public class ControlHelper {
         return new Point((int) Math.round(px), (int) Math.round(py));
     }
 
-    private static PaintState paintState(DartControl c) {
+    static PaintState paintState(DartControl c) {
         if (c.paintState == null) c.paintState = new PaintState();
         return c.paintState;
     }
