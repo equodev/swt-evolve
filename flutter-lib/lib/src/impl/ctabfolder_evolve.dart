@@ -1304,8 +1304,18 @@ class _CTabBarState extends State<_CTabBar> {
     widget.onChevronShowList?.call(buttonContext, widgetTheme);
   }
 
+  /// The controls row gives its children unbounded width, and the toolbar's own row fills whatever
+  /// it gets: unbounded, it cannot be laid out, and neither can the strip or the page below it.
+  /// The width Java gave the control bounds it, and arrives on the control's own channel.
   Widget _buildTopRightComposite(VComposite composite, {Color? backgroundColor}) {
-    return ToolbarComposite(value: composite, backgroundColor: backgroundColor);
+    return ListenableBuilder(
+      listenable: VRegistry.instance.boundsChangesOn([VRegistry.channelOf(composite)]),
+      builder: (context, toolbar) {
+        final bounds = composite.bounds;
+        return SizedBox(width: hasBounds(bounds) ? bounds!.width.toDouble() : 0, child: toolbar);
+      },
+      child: ToolbarComposite(value: composite, backgroundColor: backgroundColor),
+    );
   }
 
   Widget _buildControlButton({
