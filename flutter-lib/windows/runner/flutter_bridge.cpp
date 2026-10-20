@@ -357,8 +357,7 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, j
     if (!hwnd) return LLONG_MIN;
     POINT origin = {0, 0};
     if (!::ClientToScreen(hwnd, &origin)) return LLONG_MIN;
-    const UINT dpi = ::GetDpiForWindow(hwnd);
-    const double scale = dpi > 0 ? dpi / 96.0 : 1.0;
+    const double scale = s->window->scale_factor();
     const LONG x = static_cast<LONG>(std::lround(origin.x / scale));
     const LONG y = static_cast<LONG>(std::lround(origin.y / scale));
     return (static_cast<jlong>(x) << 32)
