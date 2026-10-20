@@ -30,7 +30,7 @@ a quick way to explore available widgets and see how they look in practice.
 
 ## 🚀 Getting Started: 2-Minute Modernization
 
-You can try our examples or modernize your existing application in just a few minutes. Requirements: JDK 17+.
+You can try our examples or modernize your existing application in just a few minutes. Requirements: JDK 17+. Unless it runs with `-Ddev.equo.swt.mode=desktop` (`equo modernize --desktop`), SWT Evolve also needs the `jdk.httpserver` module, which trimmed runtimes such as JustJ's minimal and base JREs leave out.
 
 ### Run the Examples
 
@@ -147,11 +147,11 @@ unzip equo-linux-arm64.zip -d equo
 ### Usage
 
 ```bash
-# Modernize an SWT application (desktop)
+# Modernize an SWT application: it runs in a browser (web mode, the default)
 equo modernize path/to/your/app
 
-# Modernize for web — run your SWT application directly in a browser
-equo modernize --web path/to/your/app
+# Modernize for desktop: a native window
+equo modernize --desktop path/to/your/app
 ```
 
 You can pass a folder, a ZIP file, or a DMG. Run `equo modernize --help` to see all available options and examples.
