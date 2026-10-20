@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import java.util.ArrayDeque;
+
 import org.eclipse.swt.graphics.Rectangle;
 
 /** What a control's Paint scheduling remembers between a redraw() and the Paint that answers it. */
@@ -13,6 +15,15 @@ final class PaintState {
      * listener or not; here only a Paint cycle replaces that frame.
      */
     boolean showsPaintedFrame;
+
+    /** When each Paint the client has yet to show was sent, oldest first. See {@link PaintPacing}. */
+    final ArrayDeque<Long> inFlight = new ArrayDeque<>();
+
+    /** The last Paint repeated what the client shows, so it was not sent. */
+    boolean unchanged;
+
+    /** The pacing of this control's Display, once it has painted for a connected client. */
+    PaintPacing.Pacer pacer;
 
     private boolean damaged;
     /** The area owed while {@link #damaged}; null is the whole client area. */

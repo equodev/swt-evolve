@@ -26,6 +26,7 @@ public abstract class AbstractBinaryCommService implements CommService {
 
     protected final Serializer serializer = new Serializer();
     private final Map<String, TypedHandler<?>> typedHandlers = new ConcurrentHashMap<>();
+    private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
 
@@ -106,6 +107,12 @@ public abstract class AbstractBinaryCommService implements CommService {
     @Override
     public void remove(String eventName) {
         typedHandlers.remove(eventName);
+    }
+
+    /** State kept for as long as this connection lives, under [key]; [create] makes it on first use. */
+    @SuppressWarnings("unchecked")
+    public <T> T attachment(Object key, java.util.function.Supplier<T> create) {
+        return (T) attachments.computeIfAbsent(key, k -> create.get());
     }
 
     /**

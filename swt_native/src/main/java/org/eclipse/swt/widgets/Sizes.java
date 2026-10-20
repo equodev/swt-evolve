@@ -708,7 +708,68 @@ public class Sizes {
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
         // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
         if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
-        return new Rectangle(x, y, width, height);
+        int menuBar = menuStripOutsideClientArea(widget);
+        return new Rectangle(x, y - menuBar, width, height + menuBar);
+    }
+
+    /** A Decorations that draws its own menu strip has it outside its client area, as a native one does. */
+    private static int menuStripOutsideClientArea(DartScrollable widget) {
+        Scrollable api = widget.getApi();
+        return api instanceof Decorations ? ownMenuStripHeight((Decorations) api) : 0;
+    }
+
+    /**
+     * Height of the menu strip a Decorations draws above its client area, as a native menu bar is
+     * drawn: only when its menu bar has something in it and no visible main toolbar hosts it. The
+     * client draws the strip on this answer, which it receives as {@code ownMenuStrip}.
+     */
+    public static int ownMenuStripHeight(Decorations decorations) {
+        if (!DartMainToolbar.hasMenuBarItems(decorations)) return 0;
+        Menu bar = decorations.getMenuBar();
+        if (bar == null || bar.isDisposed()) return 0;
+        for (Control child : decorations.getChildren()) {
+            if (child.getImpl() instanceof DartMainToolbar && child.getVisible()) return 0;
+        }
+        return menuStripHeight();
+    }
+
+    /**
+     * The menu strip's height in layout units, wherever it is drawn. The zoom leaves its text at its
+     * true size, so the strip is sized at the monitor's scale, as a native menu bar is: it grows by
+     * what the zoom takes off. The client draws it at this height, received as {@code menuStripHeight}.
+     */
+    public static int menuStripHeight() {
+        return (int) Math.round(MenuSizes.MENU_BAR_HEIGHT / Config.uiScale());
+    }
+
+    /**
+     * Follows a change that may have given a Dart-backed Decorations its own menu strip or taken it
+     * away, given its {@link #ownMenuStripHeight} from before the change. The strip is re-sent, and
+     * the client area it comes out of is resized and laid out again, as a native menu bar's
+     * appearing does.
+     */
+    static void menuStripChanged(Decorations decorations, int before) {
+        if (decorations == null || decorations.isDisposed()) return;
+        if (!(decorations.getImpl() instanceof DartComposite)) return;
+        if (ownMenuStripHeight(decorations) == before) return;
+        DartComposite impl = (DartComposite) decorations.getImpl();
+        impl.getValue().markDirty("ownMenuStrip");
+        impl.sendEvent(SWT.Resize);
+        if (decorations.isDisposed()) return;
+        if (impl.layout != null) {
+            impl.markLayout(false, false);
+            impl.updateLayout(false);
+        }
+    }
+
+    /**
+     * Re-sends whether a Dart-backed Decorations draws its own menu strip; an unchanged answer is not
+     * sent. Without menu items there is no strip for a main toolbar's coming or going to move.
+     */
+    static void resendMenuStrip(Decorations decorations) {
+        if (!DartMainToolbar.hasMenuBarItems(decorations)) return;
+        if (decorations.getImpl() instanceof DartWidget)
+            ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
     }
 
     public static Rectangle getBounds(DartTableItem item) {
@@ -1024,7 +1085,8 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
-        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight));
+        int menuBar = menuStripOutsideClientArea(widget);
+        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
     }
 
     public static Point getSize(DartScrollBar scrollBar) {

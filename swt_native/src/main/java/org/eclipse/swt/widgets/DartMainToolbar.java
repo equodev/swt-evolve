@@ -24,8 +24,14 @@ public class DartMainToolbar extends DartComposite {
      */
     private static final int UNCONSTRAINED_WIDTH = 1 << 14;
 
+    /**
+     * The new bar takes the menu over from its Decorations. That is only re-sent, not laid out: the
+     * API object has no impl until this returns, so a layout run from here would meet a child it
+     * cannot read. The application lays its trim out right after.
+     */
     public DartMainToolbar(Composite parent, int style, Composite composite) {
         super(parent, style, composite);
+        Sizes.resendMenuStrip(menuHost());
     }
 
     /**
@@ -100,7 +106,7 @@ public class DartMainToolbar extends DartComposite {
 
     /** Vertical space above the first row: the menu strip sits there when there is one. */
     private int rowsTopOffset() {
-        return hasMenuStrip() ? MenuSizes.MENU_BAR_HEIGHT : 0;
+        return hasMenuStrip() ? Sizes.menuStripHeight() : 0;
     }
 
     @Override
@@ -210,7 +216,9 @@ public class DartMainToolbar extends DartComposite {
     }
 
     private int getMainToolbarHeight() {
-        return hasMenuStrip() ? MenuSizes.HEIGHT_HORIZONTAL_MENU : MenuSizes.HEIGHT_VERTICAL_MENU;
+        return hasMenuStrip()
+                ? MenuSizes.HEIGHT_HORIZONTAL_MENU - MenuSizes.MENU_BAR_HEIGHT + Sizes.menuStripHeight()
+                : MenuSizes.HEIGHT_VERTICAL_MENU;
     }
 
     /**
@@ -231,21 +239,50 @@ public class DartMainToolbar extends DartComposite {
      * an itemful one costs nothing here.
      */
     private boolean hasMenuBarItems() {
+        return hasMenuBarItems(getApi().getShell());
+    }
+
+    static boolean hasMenuBarItems(Decorations decorations) {
         ConfigFlags flags = Config.getConfigFlags();
         if (flags != null && flags.system_menu_bar) return false;
-        Shell shell = getApi().getShell();
-        if (shell == null || shell.isDisposed()) return false;
-        if (hasApplicationMenu(shell)) return true;
-        Menu bar = shell.getMenuBar();
+        if (decorations == null || decorations.isDisposed()) return false;
+        if (hasApplicationMenu(decorations)) return true;
+        Menu bar = decorations.getMenuBar();
         return bar != null && !bar.isDisposed() && bar.getItemCount() > 0;
+    }
+
+    /**
+     * The Decorations whose menu this bar hosts while it is visible. When the bar comes, goes, shows
+     * or hides, the menu moves between the two: see {@link Sizes#menuStripChanged}.
+     */
+    private Decorations menuHost() {
+        return parent instanceof Decorations ? (Decorations) parent : null;
+    }
+
+    private int hostMenuStripHeight() {
+        Decorations host = menuHost();
+        return host != null ? Sizes.ownMenuStripHeight(host) : 0;
+    }
+
+    @Override
+    void releaseParent() {
+        super.releaseParent();
+        Sizes.resendMenuStrip(menuHost());
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        int before = hostMenuStripHeight();
+        super.setVisible(visible);
+        Sizes.menuStripChanged(menuHost(), before);
     }
 
     /**
      * Only a Dart-backed application menu is drawn by the client. The embedded backend has one too
      * — the real Cocoa menu — but that one lives in the system menu bar and reserves nothing here.
      */
-    private static boolean hasApplicationMenu(Shell shell) {
-        Display display = shell.getDisplay();
+    private static boolean hasApplicationMenu(Decorations decorations) {
+        Display display = decorations.getDisplay();
         if (display == null || display.isDisposed()) return false;
         Menu appMenu = display.getSystemMenu();
         return appMenu != null && !appMenu.isDisposed()

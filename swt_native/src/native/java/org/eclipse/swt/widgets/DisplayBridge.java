@@ -201,6 +201,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     if (api.isDisposed()) return;
                     for (Shell shell : api.getShells()) {
                         if (shell.isDisposed()) continue;
+                        // The menu strip is sized at the monitor's scale (Sizes.menuStripHeight).
+                        if (shell.getImpl() instanceof DartDecorations)
+                            ((DartDecorations) shell.getImpl()).getValue().markDirty(VDecorations.MENU_STRIP_HEIGHT);
                         shell.layout(true, true);
                         shell.redraw();
                     }
