@@ -39,6 +39,31 @@ void main() {
     expect(currentSwtViewSize(), const Size(1500, 750));
   });
 
+  testWidgets('a scale change reaches Java as one report of the view over the scale', (tester) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(2400, 1200);
+    addTearDown(tester.view.reset);
+    final sent = <Map<String, Object>>[];
+    final realSender = clientReadySender;
+    clientReadySender = (channel, payload) async => sent.add(payload as Map<String, Object>);
+    addTearDown(() {
+      clientReadySender = realSender;
+      resetClientReadyState();
+    });
+    resetClientReadyState();
+    sendWindowSizedClientReady('Display', 1);
+    sent.clear();
+
+    setAppScaleOverride(1.6);
+    // The scale listener and the config listener both re-report the same area.
+    sendWindowSizedClientReady('Display', 1);
+    sendWindowSizedClientReady('Display', 1);
+
+    expect(sent, hasLength(1));
+    expect(sent.single['width'], 1500);
+    expect(sent.single['height'], 750);
+  });
+
   test('a refresh reports whether the scale moved, so a caller can tell who already re-reported',
       () {
     expect(refreshAppScale(), isFalse);

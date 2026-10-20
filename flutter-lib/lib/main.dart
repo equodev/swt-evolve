@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
@@ -364,6 +365,21 @@ Size? _currentLogicalMonitorSize() {
 
 bool _displayClientReadySent = false;
 
+final Map<String, Map<String, Object>> _lastClientReady = {};
+
+@visibleForTesting
+Future Function(String channel, Object payload) clientReadySender = EquoCommService.sendPayload;
+
+@visibleForTesting
+void resetClientReadyState() {
+  _displayClientReadySent = false;
+  _lastClientReady.clear();
+}
+
+@visibleForTesting
+void sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) =>
+    _sendWindowSizedClientReady(widgetName, widgetId, sizeOverride: sizeOverride);
+
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
   final size = sizeOverride ?? currentSwtViewSize();
   final bool isFirst = !_displayClientReadySent;
@@ -375,15 +391,20 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
   final int mw = monitor?.width.toInt() ?? 0;
   final int mh = monitor?.height.toInt() ?? 0;
   final int zoom = monitorZoomPercent();
-  print('[ClientReady] $widgetName/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
-  EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
+  final channel = "$widgetName/$widgetId/ClientReady";
+  final Map<String, Object> payload = {
     'width': w,
     'height': h,
     'isFirst': isFirst,
     'displayWidth': mw,
     'displayHeight': mh,
     'zoom': zoom,
-  });
+  };
+  // A config change that moves the scale reaches here from both the scale and the config listener.
+  if (!isFirst && mapEquals(payload, _lastClientReady[channel])) return;
+  _lastClientReady[channel] = payload;
+  print('[ClientReady] $widgetName/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
+  clientReadySender(channel, payload);
 }
 
 Future<void> initSwtEvolveProperties() async {
