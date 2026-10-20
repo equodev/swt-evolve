@@ -387,79 +387,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         return getApi().getEnabled() && parent.isEnabled();
     }
 
-    int keyChar(int key) {
-        //TODO - use the NS key constants
-        switch(key) {
-            case SWT.BS:
-            case SWT.CR:
-            case SWT.DEL:
-            case SWT.ESC:
-                return SWT.ESC;
-            case SWT.LF:
-            case SWT.TAB:
-            //		case ' ': return OS.kMenuBlankGlyph;
-            //		case ' ': return OS.kMenuSpaceGlyph;
-            case SWT.ALT:
-                return 0x2325;
-            case SWT.SHIFT:
-                return 0x21E7;
-            case SWT.CONTROL:
-                return 0xF2303;
-            case SWT.COMMAND:
-                return 0x2318;
-            case SWT.ARROW_UP:
-                return 0x2191;
-            case SWT.ARROW_DOWN:
-                return 0x2193;
-            case SWT.ARROW_LEFT:
-                return 0x2190;
-            case SWT.ARROW_RIGHT:
-                return 0x2192;
-            case SWT.PAGE_UP:
-                return 0x21DE;
-            case SWT.PAGE_DOWN:
-                return 0x21DF;
-            case SWT.KEYPAD_CR:
-            case SWT.HELP:
-            case SWT.HOME:
-                return 0xF729;
-            case SWT.END:
-                return 0xF72B;
-            //		case SWT.CAPS_LOCK: return ??;
-            case SWT.F1:
-                return 0xF704;
-            case SWT.F2:
-                return 0xF705;
-            case SWT.F3:
-                return 0xF706;
-            case SWT.F4:
-                return 0xF707;
-            case SWT.F5:
-                return 0xF708;
-            case SWT.F6:
-                return 0xF709;
-            case SWT.F7:
-                return 0xF70A;
-            case SWT.F8:
-                return 0xF70B;
-            case SWT.F9:
-                return 0xF70C;
-            case SWT.F10:
-                return 0xF70D;
-            case SWT.F11:
-                return 0xF70E;
-            case SWT.F12:
-                return 0xF70F;
-            case SWT.F13:
-                return 0xF710;
-            case SWT.F14:
-                return 0xF711;
-            case SWT.F15:
-                return 0xF712;
-        }
-        return 0;
-    }
-
     @Override
     void register() {
         super.register();
@@ -655,10 +582,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VMenuItem.ENABLED);
         }
-        checkWidget();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -683,6 +610,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setID(int id) {
         int newValue = id;
         checkWidget();
+        if (id < 0)
+            error(SWT.ERROR_INVALID_ARGUMENT);
         this.ID = newValue;
     }
 
@@ -800,10 +729,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VMenuItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = newValue;
@@ -924,117 +853,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
                 j--;
             }
         }
-    }
-
-    boolean updateAccelerator(boolean show) {
-        if (accelerator != 0)
-            return false;
-        int key = 0;
-        if (show) {
-            char[] buffer = new char[text.length()];
-            text.getChars(0, buffer.length, buffer, 0);
-            int i = 0, j = 0;
-            while (i < buffer.length) {
-                if (buffer[i] == '\t')
-                    break;
-                if ((buffer[j++] = buffer[i++]) == '&') {
-                    if (i == buffer.length) {
-                        continue;
-                    }
-                    if (buffer[i] == '&') {
-                        i++;
-                        continue;
-                    }
-                    j--;
-                }
-            }
-            if (i < buffer.length && buffer[i] == '\t') {
-                for (j = i + 1; j < buffer.length; j++) {
-                    switch(buffer[j]) {
-                        case '\u2303':
-                            i++;
-                            break;
-                        case '\u2325':
-                            i++;
-                            break;
-                        case '\u21E7':
-                            i++;
-                            break;
-                        case '\u2318':
-                            i++;
-                            break;
-                        default:
-                            j = buffer.length;
-                            break;
-                    }
-                }
-                switch(buffer.length - i - 1) {
-                    case 1:
-                        key = buffer[i + 1];
-                        if (key == 0x2423)
-                            key = ' ';
-                        break;
-                    case 2:
-                        if (buffer[i + 1] == 'F') {
-                            switch(buffer[i + 2]) {
-                                case '1':
-                                    key = 0xF704;
-                                    break;
-                                case '2':
-                                    key = 0xF705;
-                                    break;
-                                case '3':
-                                    key = 0xF706;
-                                    break;
-                                case '4':
-                                    key = 0xF707;
-                                    break;
-                                case '5':
-                                    key = 0xF708;
-                                    break;
-                                case '6':
-                                    key = 0xF709;
-                                    break;
-                                case '7':
-                                    key = 0xF70A;
-                                    break;
-                                case '8':
-                                    key = 0xF70B;
-                                    break;
-                                case '9':
-                                    key = 0xF70C;
-                                    break;
-                            }
-                        }
-                        break;
-                    case 3:
-                        if (buffer[i + 1] == 'F' && buffer[i + 2] == '1') {
-                            switch(buffer[i + 3]) {
-                                case '0':
-                                    key = 0xF70D;
-                                    break;
-                                case '1':
-                                    key = 0xF70E;
-                                    break;
-                                case '2':
-                                    key = 0xF70F;
-                                    break;
-                                case '3':
-                                    key = 0xF710;
-                                    break;
-                                case '4':
-                                    key = 0xF711;
-                                    break;
-                                case '5':
-                                    key = 0xF712;
-                                    break;
-                            }
-                        }
-                        break;
-                }
-            }
-        }
-        return key != 0;
     }
 
     int ID;

@@ -856,7 +856,7 @@ public class DartText extends DartScrollable implements IText {
         if (selection == null) {
             return new Point(caretPosition, caretPosition);
         }
-        return this.selection;
+        return new Point(selection.x, selection.y);
     }
 
     /**
@@ -1360,10 +1360,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         char newValue = echo;
+        checkWidget();
         if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
-        checkWidget();
         this.echoCharacter = newValue;
         if ((getApi().style & SWT.SINGLE) != 0) {
         }
@@ -1381,10 +1381,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
+        checkWidget();
         if (!java.util.Objects.equals(this.editable, newValue)) {
             getValue().markDirty(VText.EDITABLE);
         }
-        checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
         if (!editable)
             getApi().style |= SWT.READ_ONLY;
@@ -1716,10 +1716,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         int newValue = limit;
+        checkWidget();
         if (!java.util.Objects.equals(this.textLimit, newValue)) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
-        checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         this.textLimit = newValue;

@@ -479,9 +479,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     );
 
     final minBodyH = (state.minimumSize?.y ?? 80).toDouble();
-    final maxBodyH = state.maximumSize?.y.toDouble() ?? viewport.maxHeight * 0.95;
+    final maxBodyH =
+        math.max(minBodyH, state.maximumSize?.y.toDouble() ?? viewport.maxHeight * 0.95);
     final minBodyW = (state.minimumSize?.x ?? 100).toDouble();
-    final maxBodyW = state.maximumSize?.x.toDouble() ?? viewport.maxWidth * 0.95;
+    final maxBodyW =
+        math.max(minBodyW, state.maximumSize?.x.toDouble() ?? viewport.maxWidth * 0.95);
     final minFH = minBodyH + headerH;
     final maxFH = maxBodyH + headerH;
 
@@ -496,40 +498,42 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         onResize: (delta, edge) => setState(() {
           final curW  = _size?.width ?? bodyW;
           final curFH = (_size?.height ?? bodyH) + headerH;
+          final loW  = math.min(minBodyW, curW);
+          final loFH = math.min(minFH, curFH);
 
           double newW  = curW,  newFH = curFH;
           double odx   = 0,     ody   = 0;
 
           switch (edge) {
             case _ResizeEdge.right:
-              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
+              newW  = (curW + delta.dx).clamp(loW, maxBodyW);
             case _ResizeEdge.left:
-              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
+              newW  = (curW - delta.dx).clamp(loW, maxBodyW);
               odx   = -(newW - curW);
             case _ResizeEdge.bottom:
-              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              newFH = (curFH + delta.dy).clamp(loFH, maxFH);
             case _ResizeEdge.top:
-              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              newFH = (curFH - delta.dy).clamp(loFH, maxFH);
               ody   = -(newFH - curFH);
             case _ResizeEdge.se:
-              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              newW  = (curW + delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH + delta.dy).clamp(loFH, maxFH);
             case _ResizeEdge.sw:
-              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              newW  = (curW - delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH + delta.dy).clamp(loFH, maxFH);
               odx   = -(newW - curW);
             case _ResizeEdge.ne:
-              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              newW  = (curW + delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH - delta.dy).clamp(loFH, maxFH);
               ody   = -(newFH - curFH);
             case _ResizeEdge.nw:
-              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              newW  = (curW - delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH - delta.dy).clamp(loFH, maxFH);
               odx   = -(newW - curW);
               ody   = -(newFH - curFH);
           }
           _offset = (_offset ?? offset) + Offset(odx, ody);
-          _size   = Size(newW, (newFH - headerH).clamp(minBodyH, maxBodyH));
+          _size   = Size(newW, (newFH - headerH).clamp(loFH - headerH, maxBodyH));
         }),
         onResizeEnd: () {
           setState(() => _interacting = false);

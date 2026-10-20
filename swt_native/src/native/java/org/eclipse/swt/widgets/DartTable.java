@@ -399,6 +399,7 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -472,6 +473,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -497,6 +499,7 @@ public class DartTable extends DartComposite implements ITable {
         super.createWidget();
         items = new TableItem[4];
         columns = new TableColumn[4];
+        getValue().markDirty(VTable.COLUMNS);
         getValue().markDirty(VTable.ITEMS);
     }
 
@@ -677,6 +680,7 @@ public class DartTable extends DartComposite implements ITable {
             setScrollWidth();
         } else {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {
@@ -1775,10 +1779,10 @@ public class DartTable extends DartComposite implements ITable {
     public void setHeaderBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1810,10 +1814,10 @@ public class DartTable extends DartComposite implements ITable {
     public void setHeaderForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerForeground, newValue)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1841,10 +1845,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.headerVisible, newValue)) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
-        checkWidget();
         this.headerVisible = newValue;
     }
 
@@ -1941,10 +1945,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 

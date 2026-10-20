@@ -18,13 +18,13 @@ import static dev.equo.swt.Styles.hasFlags;
 public class SashSizes {
 
     static class HORIZONTAL {
-        static final double MIN_WIDTH = 5.0;
+        static final double MIN_WIDTH = 64.0;
         static final double MIN_HEIGHT = 5.0;
     }
 
     static class VERTICAL {
         static final double MIN_WIDTH = 5.0;
-        static final double MIN_HEIGHT = 5.0;
+        static final double MIN_HEIGHT = 64.0;
     }
 
     public static Point computeSize(DartSash widget, int wHint, int hHint, boolean changed) {
@@ -38,10 +38,13 @@ public class SashSizes {
 
         double width, height;
 
+        if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;
+        if (hHint != SWT.DEFAULT && hHint < 0) hHint = 0;
+
         if (hasFlags(style, SWT.VERTICAL)) {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
-        } else { // HORIZONTAL, HORIZONTAL|SMOOTH, VERTICAL|SMOOTH
+        } else { // HORIZONTAL, HORIZONTAL|SMOOTH
             width = wHint != SWT.DEFAULT ? wHint : HORIZONTAL.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : HORIZONTAL.MIN_HEIGHT;
         }

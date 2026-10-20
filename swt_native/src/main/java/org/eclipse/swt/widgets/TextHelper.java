@@ -9,6 +9,9 @@ import org.eclipse.swt.graphics.Point;
 
 public class TextHelper {
 
+    private TextHelper() {
+    }
+
     public static void insertEditText(DartText text, String string) {
         int length = string.length();
         Point selection = text.getSelection();
@@ -449,9 +452,14 @@ public class TextHelper {
     private static void commit(DartText text, String string, int caret) {
         text.clearSegments(false);
         text.setEditText(string);
-        text.selection = null;
-        if (caret >= 0)
+        if (caret >= 0) {
+            text.selection = null;
             text.caretPosition = caret;
+        } else {
+            // The old selection belonged to the old text: the caret goes back to the start, as on Win32
+            // and GTK (Cocoa leaves a single-line text's caret at the end).
+            text.setSelection(0, 0);
+        }
         text.updateAutoTextDirectionIfNeeded();
         // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,
         // but for a single-line Text the Modify it reports is not that one: writing the text is what

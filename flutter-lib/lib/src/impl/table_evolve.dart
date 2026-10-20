@@ -312,6 +312,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   void dispose() {
     _verticalScrollController.dispose();
+    _dropFeedback.dispose();
     // Remove Flutter event listeners
     for (final eventName in _eventNames) {
       EquoCommService.remove(eventName);
@@ -768,6 +769,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   final HoverTracker<int> _dragHover = HoverTracker<int>();
 
+  /// The DND.FEEDBACK_* bits the drop target's listener answered for [_dragHover]'s row.
+  final ValueNotifier<int> _dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+
   int _rowIndexForLocalY(double y, int itemCount) {
     final rowHeight = _cachedRowHeight;
     if (rowHeight == null || rowHeight <= 0) return itemCount;
@@ -793,23 +797,30 @@ class TableImpl<T extends TableSwt, V extends VTable>
       resolveIndex: resolveIndex,
       onDrop: (_, targetIndex, __, position) => sendRowDrop(targetIndex ?? itemCount, position),
       builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) _dragHover.update(null);
+        if (!isHovering) {
+          _dragHover.update(null);
+        } else {
+          _dropFeedback.value = negotiation.feedback;
+        }
         return child;
       },
     );
   }
 
   Widget wrapCellForRowDrag(Widget cell, int rowIndex, VTableItem item) {
-    final row = ValueListenableBuilder<int?>(
-      valueListenable: _dragHover.notifier,
-      builder: (context, hoveredIndex, child) => hoveredIndex == rowIndex
-          ? DecoratedBox(
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.blue, width: 2)),
-              ),
-              child: child,
-            )
-          : child!,
+    final row = ListenableBuilder(
+      listenable: Listenable.merge([_dragHover.notifier, _dropFeedback]),
+      builder: (context, child) {
+        if (_dragHover.value != rowIndex) return child!;
+        final theme = Theme.of(context).extension<TableThemeExtension>();
+        return decorateDropFeedback(
+          feedback: _dropFeedback.value,
+          color: theme?.selectedBackgroundColor ?? Theme.of(context).colorScheme.primary,
+          lineWidth: theme?.dropFeedbackLineWidth ?? 2.0,
+          highlightAlpha: theme?.dropFeedbackHighlightAlpha ?? 90,
+          child: child!,
+        );
+      },
       child: cell,
     );
     return wrapDraggable<DndDragPayload>(
@@ -827,7 +838,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
         width: state.bounds?.width?.toDouble() ?? 200,
         child: Material(
           elevation: 2,
-          child: Opacity(opacity: 0.85, child: cell),
+          child: Opacity(
+            opacity: Theme.of(context).extension<TableThemeExtension>()?.dragImageOpacity ?? 0.85,
+            child: cell,
+          ),
         ),
       ),
       childWhenDraggingBuilder: (c) => Opacity(opacity: 0.3, child: cell),
@@ -1036,6 +1050,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
@@ -1103,6 +1118,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
@@ -1311,6 +1327,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerPainter = TextPainter(
       text: TextSpan(text: headerText, style: headerTextStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
     );
     headerPainter.layout();
     return headerPainter.width + theme.headerPadding.horizontal;
@@ -1345,6 +1362,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final cellPainter = TextPainter(
         text: TextSpan(text: cellText, style: cellTextStyle),
         textDirection: TextDirection.ltr,
+        textScaler: FontUtils.textWidgetScaler,
       );
       cellPainter.layout();
       cellWidth += cellPainter.width;
@@ -1440,12 +1458,7 @@ class TableItemSwtWrapper {
 
 double measureTableText(String text, TextStyle style) {
   if (text.isEmpty) return 0.0;
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: style),
-    textDirection: TextDirection.ltr,
-    maxLines: 1,
-  )..layout();
-  return painter.width;
+  return FontUtils.measureTextWidget(text, style).width;
 }
 
 EdgeInsets fitTableCellPadding(

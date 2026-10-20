@@ -328,6 +328,29 @@ sourceSets {
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
             if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
+            // 3.107 added the lambda listener factories (ProgressListener.completedAdapter,
+            // LocationListener.changedAdapter), StyledText.getOffsetAtPoint and
+            // StyledText.setLineSpacingProvider, which these tests call directly.
+            if (swtMinorNative < 107) {
+                exclude("dev/equo/swt/test/BrowserFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFileUrlFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFirstLoadFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserProgressPlaceholderFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
+            }
+            // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
+            // CompositeImageDescriptor API ships with the JFace paired with it, and CTabFolder only
+            // highlights the active stack (onActivate/onDeactivate) from that release on.
+            if (swtMinorNative < 106) {
+                exclude("org/eclipse/swt/custom/CTabFolderActiveHighlightFlutterTest.java")
+                exclude("org/eclipse/swt/dnd/DndFlutterTest.java")
+                exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
+                // Image.getImageData(int zoom) is package-private in 3.105 and public from 3.106 on,
+                // so the API class the generator writes only carries it from there; this test reads
+                // one image back at three zooms.
+                exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
+            }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
@@ -991,10 +1014,9 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     inputs.dir("../flutter-lib/web")
     inputs.dir("../flutter-lib/assets")
     outputs.dir("../flutter-lib/build/web")
-    // Both builds in one bundle: the loader runs the wasm one (Skwasm, which rasterises off the
-    // main thread when the page is cross-origin isolated) where the browser supports WasmGC, and
-    // the JavaScript one (CanvasKit) everywhere else.
-    commandLine = flutterCmd() + listOf("build", "web", "--wasm")
+    // JavaScript build only, so every browser runs CanvasKit. Under Skwasm (--wasm) a GC-painted
+    // Canvas that repaints while scrolling makes the whole window flicker; CanvasKit does not.
+    commandLine = flutterCmd() + listOf("build", "web")
 }
 
 val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {

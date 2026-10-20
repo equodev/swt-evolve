@@ -34,6 +34,7 @@ import 'color_utils.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
+import 'utils/wheel_input.dart';
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
@@ -646,6 +647,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       ? null
       : colorFromVColor(state.selectionForeground);
 
+  @visibleForTesting
+  TextStyle debugRangeStyle(VStyleRange vRange) => _convertVStyleRangeToTextStyle(vRange);
+
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
     final defaultTextColor = applyAlpha(_textColor);
     final baseStyle = _getDefaultTextStyle();
@@ -705,6 +709,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return TextStyle(
       fontSize: fontSize,
       fontFamily: fontFamily,
+      fontFamilyFallback: FontUtils.fallbackFor(fontFamily),
       fontWeight: rangeWeight,
       fontStyle: rangeSlant,
       color: foreground ?? defaultTextColor,
@@ -968,7 +973,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         VEvent()
           ..x = event.localPosition.dx.round()
           ..y = event.localPosition.dy.round()
-          ..count = -_wheelLines(dy)
+          ..count = -wheelLines(dy)
           ..detail = pixels
           ..stateMask = stateMask,
       );
@@ -980,7 +985,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       final thumb = hBar.thumb ?? 0;
       final next = _hScroll.next(
         reported: hBar.selection ?? minimum,
-        lines: _wheelLines(dx),
+        lines: wheelLines(dx),
         increment: hBar.increment ?? 1,
         minimum: minimum,
         maximum: maximum,
@@ -994,12 +999,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   final HorizontalWheelScroll _hScroll = HorizontalWheelScroll();
 
-  /// Lines per wheel event: three per 120-unit notch, as a desktop scrolls by default.
-  static int _wheelLines(double delta) {
-    final lines = (delta / 40).round();
-    return lines != 0 ? lines : (delta > 0 ? 1 : -1);
-  }
-
   Size _computeContentSize() {
     final text = state.text ?? '';
     if (text.isEmpty) return getBounds();
@@ -1011,8 +1010,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ? (javaAscent + javaDescent).toDouble()
         : fontSize * 1.4;
     _ensureTextMetrics(text);
-    final totalHeight =
-        math.max(getBounds().height, _metricsLineCount * lineHeight);
+    // The measured layout counts wrapped rows; the logical line count does not, and a content
+    // box sized from it clips the text and the wheel short of the bottom of the view.
+    final shape = _shape;
+    final textHeight = shape != null
+        ? shape.off.dy + shape.textHeight + (state.bottomMargin ?? 0)
+        : _metricsLineCount * lineHeight;
+    final totalHeight = math.max(getBounds().height, textHeight);
 
     double totalWidth = getBounds().width;
     if (state.wordWrap != true) {
@@ -1568,6 +1572,7 @@ int _lineLayoutCacheChars = 0;
 const int _lineLayoutCacheCharBudget = 200000;
 
 void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
+  _watchSystemFonts();
   // The replaced entry stops counting, so a re-inserted line is charged to the budget once.
   final replaced = _lineLayoutCache.remove(key);
   if (replaced != null) {
@@ -1652,6 +1657,7 @@ class _PaintedLineKey {
 }
 
 void _cachePaintedLine(_PaintedLineKey key, TextPainter painter) {
+  _watchSystemFonts();
   _paintedLineCache[key] = painter;
   while (_paintedLineCache.length > _paintedLineCacheEntries) {
     final oldest = _paintedLineCache.keys.first;
@@ -1741,13 +1747,26 @@ int debugLineCaretMisses = 0;
 
 @visibleForTesting
 void debugResetLineLayoutCache() {
-  _lineLayoutCache.clear();
-  _lineLayoutCacheChars = 0;
   for (final painter in _paintedLineCache.values) {
     painter.dispose();
   }
-  _paintedLineCache.clear();
+  _dropLineCaches();
   debugLineLayoutHits = 0;
+}
+
+/// Dropped, not disposed: a picture already recorded with a painted line may be rasterised again,
+/// and on the web a disposed paragraph draws as garbage there. The engine frees it once nothing
+/// references it.
+void _dropLineCaches() {
+  _lineLayoutCache.clear();
+  _lineLayoutCacheChars = 0;
+  _paintedLineCache.clear();
+}
+
+bool _watchingSystemFonts = false;
+
+void _watchSystemFonts() {
+  if (!_watchingSystemFonts) _watchingSystemFonts = FontUtils.listenToSystemFonts(_dropLineCaches);
 }
 
 class TextShape extends Shape {
@@ -2077,6 +2096,9 @@ class TextShape extends Shape {
 
   List<double> _lineTops(List<String> lines) =>
       _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+
+  /// Height of the laid-out text, wrapped rows included, from the top of its first line.
+  double get textHeight => _lineTops(_lines).last;
 
   /// The first line whose band reaches [y], by bisection over the running totals.
   int _lineAtTop(List<double> tops, double y) {

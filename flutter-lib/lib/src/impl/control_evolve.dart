@@ -33,6 +33,7 @@ import 'utils/dnd_session.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/region_clip.dart';
+import 'utils/wheel_input.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
@@ -628,19 +629,24 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// report it again.
   static void markWheelKept(PointerEvent event) => _keptWheel = event.original ?? event;
 
-  /// The lines one wheel event reports, whatever its delta: SWT's count for one notch on Win32 and
-  /// GTK by default. StyledText scales with the delta instead, since it scrolls by that delta.
+  /// The lines one mouse wheel event reports, whatever its delta: SWT's count for one notch on Win32
+  /// and GTK by default. A trackpad's swipe (see [panAsScroll]) and StyledText scale with the delta
+  /// instead.
   static const int wheelLinesPerEvent = 3;
 
-  /// Reports the mouse wheel to Java at [localPosition], [wheelLinesPerEvent] lines, positive up.
+  /// Reports the mouse wheel to Java at [localPosition], positive up.
   void reportWheel(PointerSignalEvent event, Offset localPosition) {
     if (event is! PointerScrollEvent || event.scrollDelta.dy == 0 || wheelKeptBelow(event)) return;
+    final dy = event.scrollDelta.dy;
     widget.sendMouseWheelMouseWheel(
       state,
       VEvent()
         ..x = localPosition.dx.round()
         ..y = localPosition.dy.round()
-        ..count = event.scrollDelta.dy > 0 ? -wheelLinesPerEvent : wheelLinesPerEvent,
+        ..count = event.kind == PointerDeviceKind.trackpad
+            ? -wheelLines(dy)
+            : (dy > 0 ? -wheelLinesPerEvent : wheelLinesPerEvent)
+        ..stateMask = moveStateMask(0),
     );
     if (keepsWheel) markWheelKept(event);
   }
@@ -649,6 +655,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   Widget wrapDnd(Widget content) {
     if (state.dragSource != true && state.dropTargetId == null) return content;
+    // A DragSource drags from anywhere inside the control. What a self-drawn control renders under
+    // the Draggable (a Canvas's empty box; its GC paint sits outside) does not hit-test, so without
+    // this the press never reaches the Draggable.
+    if (state.dragSource == true) {
+      content = MetaData(behavior: HitTestBehavior.opaque, child: content);
+    }
     content = wrapDropTarget<DndDragPayload>(
       child: content,
       state: state,
@@ -665,6 +677,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       data: DndDragPayload(sourceControlId: state.id),
       widget: widget,
       state: state,
+      // Native SWT gives a plain control's drag no image, only the cursor.
+      feedbackBuilder: (_) => const SizedBox.shrink(),
       dragDetectEvent: dragDetectPayload,
       dragDetectGate: _dragDetectGate,
     );

@@ -35,6 +35,10 @@ public class TreeSizes {
     private static final int ICON_SIZE = 16;
     private static final int ICON_SPACE = ICON_SIZE + 8;
     private static final int TEXT_PADDING = 8;
+    private static final int CELL_PADDING = 20;
+    private static final int HEADER_PADDING = 20;
+    private static final int CELL_INSET = 4;
+    private static final int ALIGNMENT_INSET = 4;
 
     public static Point computeSize(DartTree tree, int wHint, int hHint, boolean changed) {
         int columnCount = tree.getColumnCount();
@@ -98,14 +102,23 @@ public class TreeSizes {
         return (int) Math.ceil(minHeight);
     }
 
+    /** Where a row's box starts: after the edge gap. An owner-drawn row's overlay starts here. */
+    public static double getRowLeft(DartTree tree) {
+        double gapFraction = tree.getColumnCount() > 1 ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;
+        Rectangle bounds = tree.getBounds();
+        return (bounds != null ? bounds.width : 0) * gapFraction;
+    }
+
     public static double getExpanderLeft(DartTree tree, int level) {
         boolean withCols = tree.getColumnCount() > 1;
-        double gapFraction = withCols ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;
         double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;
         double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
-        Rectangle bounds = tree.getBounds();
-        double widgetWidth = bounds != null ? bounds.width : 0;
-        return widgetWidth * gapFraction + paddingLeft + indent * level;
+        return getRowLeft(tree) + paddingLeft + indent * level;
+    }
+
+    /** Where the first column starts in a row: the expander's left edge at level 0, after the edge gap and the row's padding. */
+    public static int getCellsLeft(DartTree tree) {
+        return (int) Math.round(getExpanderLeft(tree, 0));
     }
 
     /** Where an item's first cell content starts: after its indent, the expander and any checkbox. */
@@ -125,12 +138,35 @@ public class TreeSizes {
         return ICON_SPACE;
     }
 
+    /** Where a multi-column cell's content starts, from its column's left edge. */
+    public static int getCellInset(int alignment) {
+        return (alignment & (SWT.CENTER | SWT.RIGHT)) == 0 ? CELL_INSET + ALIGNMENT_INSET : CELL_INSET;
+    }
+
     /** The width a cell's text is shown in: the text and its padding. */
     public static int getTextWidth(TreeItem item, int index) {
         String text = item.getText(index);
         TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
         int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
         return width + TEXT_PADDING;
+    }
+
+    /** The width a multi-column cell needs to show its text whole. */
+    public static int getPackedCellWidth(TreeItem item, int index) {
+        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;
+    }
+
+    /** The width a column's header needs to show its title whole: a multi-column header shows it in capitals. */
+    public static int getPackedHeaderWidth(TreeColumn column) {
+        String text = column.getText();
+        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);
+        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;
+    }
+
+    private static int measure(String text, org.eclipse.swt.graphics.Font font) {
+        if (text == null || text.isEmpty()) return 0;
+        TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(font);
+        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
     }
 
     static int levelOf(TreeItem item) {

@@ -184,11 +184,13 @@ public class DartSpinner extends DartComposite implements ISpinner {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
@@ -575,10 +577,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setIncrement(int value) {
         int newValue = value;
+        checkWidget();
         if (!java.util.Objects.equals(this.increment, newValue)) {
             getValue().markDirty(VSpinner.INCREMENT);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.increment = newValue;
@@ -819,6 +821,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
                 if (isDisposed())
                     return;
                 setSelection(e.index);
+                sendEvent(SWT.Selection, e);
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/coolitem.dart';
+import '../gen/control.dart';
 import '../gen/coolbar.dart';
 import '../gen/swt.dart';
+import '../nolayout.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/coolbar_theme_extension.dart';
 import 'utils/widget_utils.dart';
@@ -42,6 +44,11 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
     bool isVertical,
     bool hasValidBounds,
   ) {
+    if (hasValidBounds) {
+      final placed = _getPlacedItems();
+      if (placed.isNotEmpty) return _PlacedCoolBarContent(bar: state, items: placed);
+    }
+
     final coolItems = _getCoolItems(theme);
     final wrapIndices = state.wrapIndices ?? [];
 
@@ -58,6 +65,18 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
       isVertical: isVertical,
       hasValidBounds: hasValidBounds,
     );
+  }
+
+  /// The items whose control Java has already placed, keyed by that control. Java's layout
+  /// (DartCoolBar.layoutItems) owns the rows, the item widths and the vertical orientation, so once
+  /// it has run the render only has to put each control where it was told.
+  Map<VControl, VCoolItem> _getPlacedItems() {
+    final placed = <VControl, VCoolItem>{};
+    for (final item in state.items ?? const <VCoolItem>[]) {
+      final control = item.control;
+      if (control != null && hasBounds(control.bounds)) placed[control] = item;
+    }
+    return placed;
   }
 
   List<Widget> _getCoolItems(CoolBarThemeExtension theme) {
@@ -151,6 +170,27 @@ class _CoolBarContainer extends StatelessWidget {
       ),
       padding: theme.padding,
       child: child,
+    );
+  }
+}
+
+/// Each item's control at the bounds Java gave it. Those bounds start at the bar's client area,
+/// which is inside the frame [_CoolBarContainer] draws, so this sits within that frame's padding.
+class _PlacedCoolBarContent extends StatelessWidget {
+  final VCoolBar bar;
+  final Map<VControl, VCoolItem> items;
+
+  const _PlacedCoolBarContent({required this.bar, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return SashPanelMarker(
+      active: false,
+      child: NoLayout(
+        children: items.keys.toList(),
+        composite: bar,
+        childBuilder: (control) => CoolItemSwt(value: items[control]!),
+      ),
     );
   }
 }

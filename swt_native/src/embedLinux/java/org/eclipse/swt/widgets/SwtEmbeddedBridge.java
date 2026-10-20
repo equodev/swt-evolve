@@ -4,8 +4,6 @@ import dev.equo.swt.FlutterBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.gtk.GDK;
-import org.eclipse.swt.internal.gtk.GTK;
 import org.eclipse.swt.internal.gtk.OS;
 
 public class SwtEmbeddedBridge extends EmbeddedBridge {
@@ -70,7 +68,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
             super.setBounds(dartControl, bounds);
         if (dartControl.getApi().handle != 0 && bounds != null) {
             // Resize the fixed handle within its parent using SWT's method
-            long parent = GTK.gtk_widget_get_parent(dartControl.getApi().handle);
+            long parent = GTKWrapper.gtk_widget_get_parent(dartControl.getApi().handle);
             OS.swt_fixed_move(parent, dartControl.getApi().handle, bounds.x, bounds.y);
             OS.swt_fixed_resize(parent, dartControl.getApi().handle, bounds.width, bounds.height);
         }
@@ -82,12 +80,12 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
     public boolean setFocus(DartControl dartControl) {
         long focusHandle = dev.equo.swt.FlutterNative.getView(context);
 //        long focusHandle = dartControl.getApi().handle;
-        if (GTK.gtk_widget_has_focus(focusHandle))
+        if (GTKWrapper.gtk_widget_has_focus(focusHandle))
             return true;
         /* When the control is zero sized it must be realized */
-        GTK.gtk_widget_realize(focusHandle);
-        GTK.gtk_widget_grab_focus(focusHandle);
-        return GTK.gtk_widget_has_focus(focusHandle);
+        GTKWrapper.gtk_widget_realize(focusHandle);
+        GTKWrapper.gtk_widget_grab_focus(focusHandle);
+        return GTKWrapper.gtk_widget_has_focus(focusHandle);
     }
 
     @Override
@@ -131,7 +129,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
             int[] x = new int[1];
             int[] y = new int[1];
             long window = eventWindow(control);
-            GDK.gdk_window_get_origin(window, x, y);
+            GTKWrapper.gdk_window_get_origin(window, x, y);
             return new Point(x[0], y[0]);
         }
     }
@@ -144,7 +142,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         } else {
             long window = eventWindow(control);
             if (window != 0) {
-                GDK.gdk_window_set_cursor(window, cursor);
+                GTKWrapper.gdk_window_set_cursor(window, cursor);
                 control.update(false, true);
             }
         }
@@ -152,7 +150,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
 
     long eventWindow(DartControl control) {
         long eventHandle = control.getApi().handle;
-        GTK.gtk_widget_realize(eventHandle);
+        GTKWrapper.gtk_widget_realize(eventHandle);
         return GTKWrapper.gtk_widget_get_window(eventHandle);
     }
 
@@ -165,7 +163,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         }
 
         // Remove from current parent
-        long oldParent = GTK.gtk_widget_get_parent(controlHandle);
+        long oldParent = GTKWrapper.gtk_widget_get_parent(controlHandle);
         if (oldParent != 0) {
             if (GTKWrapper.IS_GTK4) {
                 GTKWrapper.gtk_widget_unparent(controlHandle);

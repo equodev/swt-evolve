@@ -1,27 +1,35 @@
-/// Strips accelerator characters (&) from text while preserving escaped ampersands (&&)
-///
-/// SWT uses & as accelerator characters for keyboard navigation, but in Flutter
-/// we want to display the text without these special characters.
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../../gen/event.dart';
 import '../../gen/point.dart';
 import 'double_tap_detector.dart';
 
+/// The code unit of '&'.
+const _ampersand = 0x26;
+
+/// The text a widget draws for an SWT string in which '&' marks a mnemonic, by the rule Java measures
+/// it with (`Mnemonics.display`): every single '&' is dropped, the one at the end too, and "&&" draws
+/// one '&'. This is the only copy of that rule on this side.
 String stripAccelerators(String? text) {
-  if (text == null || text.isEmpty) {
-    return text ?? '';
+  if (text == null) return '';
+  final first = text.indexOf('&');
+  if (first < 0) return text;
+  final drawn = StringBuffer(text.substring(0, first));
+  for (var i = first; i < text.length; i++) {
+    final c = text.codeUnitAt(i);
+    if (c != _ampersand) {
+      drawn.writeCharCode(c);
+    } else if (i + 1 < text.length && text.codeUnitAt(i + 1) == _ampersand) {
+      drawn.write('&');
+      i++;
+    }
   }
-  // Replace escaped ampersands (&& -> temporary placeholder)
-  String result = text.replaceAll('&&', '\u0001ESCAPED_AMP\u0001');
-  // Remove single accelerator ampersands
-  result = result.replaceAll('&', '');
-  // Restore escaped ampersands
-  result = result.replaceAll('\u0001ESCAPED_AMP\u0001', '&');
-  return result;
+  return drawn.toString();
 }
+
+/// The text a CLabel draws: its text without the mnemonic markers, and nothing for the placeholder
+/// `<none>`.
+String clabelDrawnText(String? text) => text == '<none>' ? '' : stripAccelerators(text);
 
 (int start, int end) getWordBoundaries(String text, int offset) {
   if (text.isEmpty) return (0, 0);

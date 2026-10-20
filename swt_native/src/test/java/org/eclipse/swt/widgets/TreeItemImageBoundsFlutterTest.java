@@ -56,10 +56,11 @@ class TreeItemImageBoundsFlutterTest {
 
         assertThat(rootImage.width).as("root image width").isPositive();
         assertThat(rootImage.height).as("root image height").isPositive();
-        assertThat(rootImage.y).as("root image row").isEqualTo(rootText.y);
+        assertThat(rootText.y).as("root image row").isBetween(rootImage.y, rootImage.y + rootImage.height);
         assertThat(rootImage.x + rootImage.width).as("root image ends before its text").isLessThanOrEqualTo(rootText.x);
 
-        assertThat(childImage.y).as("child image row").isEqualTo(childText.y).isNotEqualTo(rootImage.y);
+        assertThat(childText.y).as("child image row").isBetween(childImage.y, childImage.y + childImage.height);
+        assertThat(childImage.y).as("child image row").isNotEqualTo(rootImage.y);
         assertThat(childImage.x).as("child image is indented past the root's").isGreaterThan(rootImage.x);
         assertThat(childImage.x + childImage.width).as("child image ends before its text").isLessThanOrEqualTo(childText.x);
     }

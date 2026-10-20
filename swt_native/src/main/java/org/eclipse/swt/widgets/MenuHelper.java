@@ -8,6 +8,8 @@ public class MenuHelper {
     static void hookEvents(DartMenu menu) {
         FlutterBridge.on(menu, "Help", "Help", e -> {
             menu.getDisplay().asyncExec(() -> {
+                if (menu.isDisposed())
+                    return;
                 menu.sendEvent(SWT.Help, e);
             });
         });
@@ -16,6 +18,8 @@ public class MenuHelper {
         });
         FlutterBridge.on(menu, "Menu", "Show", e -> {
             menu.getDisplay().asyncExec(() -> {
+                if (menu.isDisposed())
+                    return;
                 try {
                     menu.sendEvent(SWT.Show, e);
                 } catch (RuntimeException ex) {
@@ -33,9 +37,25 @@ public class MenuHelper {
      * state. Without it the menu keeps reporting itself visible and gets shown straight back.
      */
     static void onClientHid(DartMenu menu, Event e) {
-        if (!menu.getApi().isDisposed())
-            menu.getApi().setVisible(false);
+        if (menu.isDisposed())
+            return;
+        menu.getApi().setVisible(false);
         menu.sendEvent(SWT.Hide, e);
+    }
+
+    /**
+     * A pop-up takes the orientation it is given; a bar or a drop-down keeps its own, as on Win32 and GTK.
+     * The orientation is a style bit, so the style is what changes and what is sent.
+     */
+    static void applyOrientation(DartMenu menu, int orientation) {
+        Menu api = menu.getApi();
+        int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
+        int wanted = orientation & flags;
+        if ((api.style & (SWT.BAR | SWT.DROP_DOWN)) != 0 || wanted == 0 || wanted == flags || (api.style & flags) == wanted)
+            return;
+        api.style = (api.style & ~flags) | wanted;
+        menu.getValue().markDirty(VMenu.STYLE);
+        menu.getValue().markDirty(VMenu.ORIENTATION);
     }
 
     static MenuItem[] removeItem(MenuItem[] items, MenuItem item) {

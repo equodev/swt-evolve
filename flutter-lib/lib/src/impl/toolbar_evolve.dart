@@ -13,6 +13,7 @@ import '../styles.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/tab_only_focus_node.dart';
 
@@ -480,6 +481,16 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
       );
     }
 
+    // Shrunk into its own measured width: the bar's FittedBox factor is shared with hosted controls,
+    // which already paint at their Java size, so alone it draws icons larger in a bar hosting one.
+    final measuredWidth = toolItem.width;
+    if (measuredWidth != null && measuredWidth > 0) {
+      result = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: measuredWidth.toDouble()),
+        child: FittedBox(fit: BoxFit.scaleDown, child: result),
+      );
+    }
+
     return result;
   }
 }
@@ -539,24 +550,19 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
       baseTextStyle: widgetTheme.fontStyle,
     );
 
-    final keywordTextPainter = TextPainter(
-      text: TextSpan(text: widgetTheme.segmentKeywordText, style: textStyle),
-      textDirection: TextDirection.ltr,
-    );
-    keywordTextPainter.layout();
-
-    final debugTextPainter = TextPainter(
-      text: TextSpan(text: widgetTheme.segmentDebugText, style: textStyle),
-      textDirection: TextDirection.ltr,
-    );
-    debugTextPainter.layout();
+    final keywordTextSize = FontUtils.measureTextWidget(
+        widgetTheme.segmentKeywordText, textStyle,
+        maxLines: null);
+    final debugTextSize = FontUtils.measureTextWidget(
+        widgetTheme.segmentDebugText, textStyle,
+        maxLines: null);
 
     final keywordWidth =
-        keywordTextPainter.width + widgetTheme.segmentPadding.horizontal;
+        keywordTextSize.width + widgetTheme.segmentPadding.horizontal;
     final debugWidth =
-        debugTextPainter.width + widgetTheme.segmentPadding.horizontal;
+        debugTextSize.width + widgetTheme.segmentPadding.horizontal;
     final backgroundHeight =
-        keywordTextPainter.height + widgetTheme.segmentPadding.vertical;
+        keywordTextSize.height + widgetTheme.segmentPadding.vertical;
 
     final selectedWidth = keywordSelected ? keywordWidth : debugWidth;
     final leftPosition = keywordSelected ? 0.0 : keywordWidth;

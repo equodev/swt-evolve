@@ -25,6 +25,7 @@ import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'widget_config.dart';
+import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 
@@ -313,7 +314,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
-      child: !canvasUsesThemeColors && hostsAppColoredContent
+      child: !gcUsesThemeColors(gcOverlay?.themedCanvas) && hostsAppColoredContent
           ? SwtColorScope(child: NoLayout(children: children, composite: state))
           : NoLayout(children: children, composite: state),
     );
@@ -367,14 +368,17 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final showVBar = vBar != null && vBar.visible != false && _isScrollable(vBar);
     
     if (!showVBar && !showHBar) {
+      void onSignal(PointerSignalEvent event) {
+        if (event is PointerScrollEvent && onWheel != null) {
+          onWheel(event);
+        } else {
+          reportWheel(event, event.localPosition);
+        }
+      }
+
       return Listener(
-        onPointerSignal: (event) {
-          if (event is PointerScrollEvent && onWheel != null) {
-            onWheel(event);
-          } else if (event is PointerScrollEvent) {
-            reportWheel(event, event.localPosition);
-          }
-        },
+        onPointerSignal: onSignal,
+        onPointerPanZoomUpdate: (event) => panAsScroll(event, onSignal),
         child: base,
       );
     }
@@ -397,17 +401,20 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChild = state.children != null && state.children!.isNotEmpty;
-    return Listener(
-      onPointerSignal: (event) {
-        if (event is PointerScrollEvent && onWheel != null) {
-          onWheel(event);
-        } else if (event is PointerScrollEvent) {
-          final now = DateTime.now().millisecondsSinceEpoch;
-          if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
-            _handleMouseWheel(event);
-          }
+    void onSignal(PointerSignalEvent event) {
+      if (event is PointerScrollEvent && onWheel != null) {
+        onWheel(event);
+      } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
+          _handleMouseWheel(event);
         }
-      },
+      }
+    }
+
+    return Listener(
+      onPointerSignal: onSignal,
+      onPointerPanZoomUpdate: (event) => panAsScroll(event, onSignal),
       child: Stack(
         children: [
           base,

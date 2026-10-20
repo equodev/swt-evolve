@@ -525,10 +525,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VScrollBar.ENABLED);
         }
-        checkWidget();
         if (enabled) {
             if ((getApi().state & DISABLED) == 0)
                 return;
@@ -747,10 +747,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(this.visible, newValue)) {
             getValue().markDirty(VScrollBar.VISIBLE);
         }
-        checkWidget();
         this.visible = newValue;
         ((DartScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
     }

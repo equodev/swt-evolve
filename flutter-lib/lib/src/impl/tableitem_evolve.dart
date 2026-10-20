@@ -16,6 +16,7 @@ import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
 import 'utils/menu_detect_gate.dart';
+import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
@@ -465,6 +466,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();

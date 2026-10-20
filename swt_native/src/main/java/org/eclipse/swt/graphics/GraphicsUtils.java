@@ -19,6 +19,32 @@ public class GraphicsUtils {
     }
 
     /**
+     * Scales a buffer held at the raster scale to {@code zoom}, as DPIUtil's smooth scaling does: drawn
+     * with antialiasing into another Image. That Image is built from ImageData, so it is stored at 100 %
+     * and reading it back needs no further scaling. Its pixels are not sent with the draw: the render
+     * side draws onto an empty, transparent canvas.
+     */
+    public static ImageData scaleRasterBuffer(Device device, ImageData buffer, int logicalWidth, int logicalHeight, int zoom) {
+        int width = Math.max(1, Math.round(logicalWidth * zoom / 100f));
+        int height = Math.max(1, Math.round(logicalHeight * zoom / 100f));
+        Image source = new Image(device, buffer);
+        Image target = new Image(device, new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF)));
+        try {
+            GC gc = new GC(target);
+            try {
+                gc.setAntialias(SWT.ON);
+                gc.drawImage(source, 0, 0, buffer.width, buffer.height, 0, 0, width, height);
+            } finally {
+                gc.dispose();
+            }
+            return target.getImageData();
+        } finally {
+            source.dispose();
+            target.dispose();
+        }
+    }
+
+    /**
      * Creates a copy of an ImageData.
      * This is used internally by DartImage constructors to make defensive copies
      * of ImageData passed from external sources.

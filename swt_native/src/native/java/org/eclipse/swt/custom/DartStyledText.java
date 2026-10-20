@@ -1428,6 +1428,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -11519,10 +11520,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setText(String text) {
         String newValue = text;
+        checkWidget();
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VStyledText.TEXT);
         }
-        checkWidget();
         if (text == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -11692,10 +11693,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTopPixel(int pixel) {
         int newValue = pixel;
+        checkWidget();
         if (!java.util.Objects.equals(this.topPixel, newValue)) {
             getValue().markDirty(VStyledText.TOP_PIXEL);
         }
-        checkWidget();
         if (getCharCount() == 0) {
             return;
         }

@@ -125,7 +125,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public SwtMenu(Decorations parent, int style, Menu api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = checkStyle(style);
         if (parent != null) {

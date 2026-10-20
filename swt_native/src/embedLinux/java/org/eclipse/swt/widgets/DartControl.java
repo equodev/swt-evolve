@@ -648,6 +648,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return computeSizeInPixels(wHint, hHint, changed);
     }
 
@@ -3459,8 +3460,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         boolean newValue = capture;
-        this.capture = newValue;
         checkWidget();
+        this.capture = newValue;
         /* FIXME !!!!! */
         /*
 	if (capture) {
@@ -3521,10 +3522,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        checkWidget();
         if (!java.util.Objects.equals(this.dragDetect, newValue)) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         this.dragDetect = newValue;
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
@@ -3927,7 +3928,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         int newValue = textDirection;
-        this.textDirection = newValue;
         checkWidget();
         textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
         updateTextDirection(textDirection);
@@ -3936,6 +3936,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             getApi().state &= ~HAS_AUTO_DIRECTION;
         }
+        this.textDirection = newValue;
     }
 
     /**
@@ -4012,8 +4013,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTouchEnabled(boolean enabled) {
         boolean newValue = enabled;
-        this.touchEnabled = newValue;
         checkWidget();
+        this.touchEnabled = newValue;
     }
 
     /**
@@ -4034,10 +4035,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
         }
-        checkWidget();
         if (((getApi().state & HIDDEN) == 0) == visible)
             return;
         if (visible) {
@@ -4843,6 +4844,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean _touchEnabled() {
         return touchEnabled;
     }
+
+    PaintState paintState;
 
     int resolveTextDirection() {
         /*

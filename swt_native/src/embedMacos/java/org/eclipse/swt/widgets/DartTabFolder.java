@@ -141,11 +141,13 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
@@ -511,10 +513,10 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
      */
     public void setSelection(TabItem[] items) {
         TabItem[] newValue = items;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTabFolder.SELECTION);
         }
-        checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.selection = newValue;

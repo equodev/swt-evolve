@@ -642,6 +642,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return computeSizeInPixels(new Point(wHint, hHint), computeBoundsZoom(), changed);
     }
 
@@ -2765,10 +2766,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(Rectangle rect) {
         Rectangle newValue = rect;
+        checkWidget();
         if (!java.util.Objects.equals(this.bounds, newValue)) {
             getValue().markDirty(VControl.BOUNDS);
         }
-        checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.bounds = newValue;
@@ -2912,10 +2913,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        checkWidget();
         if (!java.util.Objects.equals(this.dragDetect, newValue)) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
         } else {
@@ -3021,11 +3022,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -3476,10 +3477,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
         }
-        checkWidget();
         if (!getDrawing()) {
             if (((getApi().state & HIDDEN) == 0) == visible)
                 return;
@@ -4336,6 +4337,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean _touchEnabled() {
         return touchEnabled;
     }
+
+    PaintState paintState;
 
     public boolean getDragSource() {
         Widget w = getApi();

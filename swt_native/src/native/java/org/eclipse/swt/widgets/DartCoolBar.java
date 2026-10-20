@@ -166,6 +166,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -1149,10 +1150,10 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
      */
     public void setWrapIndices(int[] indices) {
         int[] newValue = indices;
+        checkWidget();
         if (!java.util.Objects.equals(this.wrapIndices, newValue)) {
             getValue().markDirty(VCoolBar.WRAP_INDICES);
         }
-        checkWidget();
         if (indices == null)
             indices = new int[0];
         int count = originalItems.length;

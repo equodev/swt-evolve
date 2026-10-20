@@ -29,4 +29,13 @@ final class DisplayBridgePlatform {
     /** Nothing to bind: a Shell here is drawn by Flutter and has no native view of its own. */
     static void bindWindowView(Control control, long view) {
     }
+
+    /**
+     * The pure-web build has no native library to reach the launcher's window with.
+     *
+     * @return false, nothing is dismissed
+     */
+    static boolean dismissLauncherSplash() {
+        return false;
+    }
 }

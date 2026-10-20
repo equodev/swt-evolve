@@ -958,6 +958,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         int storedZoom = logicalWidth > 0 && this.imageData.width != logicalWidth ? Math.round(100f * this.imageData.width / logicalWidth) : 100;
         if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
+        if (storedZoom != 100 && org.eclipse.swt.internal.DPIUtil.isSmoothScalingEnabled() && this.imageData.getTransparencyType() != SWT.TRANSPARENCY_MASK)
+            return GraphicsUtils.scaleRasterBuffer(device, this.imageData, logicalWidth, logicalHeight, zoom);
         // Scale to the requested zoom (matches upstream, which falls back to
         // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
         // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
@@ -1185,6 +1187,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
+        org.eclipse.swt.internal.StrictChecks.runWithStrictChecksDisabled(() -> {
+            Image imageToDraw = new Image(gc.getDevice(), (ImageDataProvider) zoom -> imageData);
+            Rectangle source = imageToDraw.getBounds();
+            gc.drawImage(imageToDraw, 0, 0, source.width, source.height, 0, 0, width, height);
+            imageToDraw.dispose();
+        });
     }
 
     void executeOnImageAtSizeBestFittingSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {

@@ -725,7 +725,7 @@ public class TableHelper {
                     if (drawn != null)
                         text.append(drawn);
                 };
-                dartGc.imageCapture = drawn -> image[0] = drawn;
+                dartGc.imageCapture = drawn -> image[0] = GraphicsUtils.copyImage(item.getDisplay(), drawn);
                 Event event = new Event();
                 event.item = item.getApi();
                 event.index = i;

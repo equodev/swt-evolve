@@ -12,6 +12,7 @@ import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/ccombo_theme_extension.dart';
 import '../theme/theme_settings/ccombo_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
@@ -350,27 +351,17 @@ class _StyledDropdownCCombo extends StatelessWidget {
   });
 
   /// The width of the value on display, with a pixel of slack either side.
-  double _selectedTextWidth() {
-    final painter = TextPainter(
-      text: TextSpan(text: state.text ?? '', style: textStyle),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    )..layout();
-    return painter.width + 2;
-  }
+  double _selectedTextWidth() =>
+      FontUtils.measureTextWidget(state.text ?? '', textStyle).width + 2;
 
   double _calculateMinWidth() {
     double maxTextWidth = 0;
     final textToMeasure = [state.text ?? '', ...items];
 
     for (final text in textToMeasure) {
-      final textPainter = TextPainter(
-        text: TextSpan(text: text, style: textStyle),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
-      if (textPainter.width > maxTextWidth) {
-        maxTextWidth = textPainter.width;
+      final width = FontUtils.measureTextWidget(text, textStyle).width;
+      if (width > maxTextWidth) {
+        maxTextWidth = width;
       }
     }
 
@@ -425,7 +416,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
       focusNode: focusNode,
       controller: controller,
       menuController: menuController,
-      width: width,
+      expandedInsets: EdgeInsets.zero,
       initialSelection: state.text,
       requestFocusOnTap: !isReadOnly,
       enableSearch: !isReadOnly,
@@ -488,7 +479,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     final arrowAreaWidth = widgetTheme.iconSize + 24.0;
     return Stack(
       children: [
-        dropdown,
+        SizedBox(width: width, child: dropdown),
         Positioned.fill(
           child: Row(
             children: [

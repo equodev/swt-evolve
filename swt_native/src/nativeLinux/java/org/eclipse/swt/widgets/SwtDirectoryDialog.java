@@ -90,7 +90,7 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
      */
     public SwtDirectoryDialog(Shell parent, int style, DirectoryDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     /**

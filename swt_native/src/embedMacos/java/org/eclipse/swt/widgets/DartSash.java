@@ -44,8 +44,6 @@ import dev.equo.swt.*;
  */
 public class DartSash extends DartControl implements ISash {
 
-    Cursor sizeCursor;
-
     boolean dragging;
 
     int lastX, lastY, startX, startY;
@@ -86,8 +84,6 @@ public class DartSash extends DartControl implements ISash {
      */
     public DartSash(Composite parent, int style, Sash api) {
         super(parent, checkStyle(style), api);
-        int cursorStyle = (style & SWT.VERTICAL) != 0 ? SWT.CURSOR_SIZEWE : SWT.CURSOR_SIZENS;
-        sizeCursor = new Cursor(display, cursorStyle);
     }
 
     /**
@@ -129,6 +125,7 @@ public class DartSash extends DartControl implements ISash {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -154,9 +151,6 @@ public class DartSash extends DartControl implements ISash {
     @Override
     void releaseWidget() {
         super.releaseWidget();
-        if (sizeCursor != null)
-            sizeCursor.dispose();
-        sizeCursor = null;
     }
 
     /**
@@ -189,10 +183,6 @@ public class DartSash extends DartControl implements ISash {
     @Override
     int traversalCode(int key, Object theEvent) {
         return 0;
-    }
-
-    public Cursor _sizeCursor() {
-        return sizeCursor;
     }
 
     public boolean _dragging() {

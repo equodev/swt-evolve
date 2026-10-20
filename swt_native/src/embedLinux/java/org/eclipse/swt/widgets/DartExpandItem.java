@@ -340,10 +340,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setExpanded(boolean expanded) {
         boolean newValue = expanded;
+        checkWidget();
         if (!java.util.Objects.equals(this.expanded, newValue)) {
             getValue().markDirty(VExpandItem.EXPANDED);
         }
-        checkWidget();
         this.expanded = newValue;
         ((DartExpandBar) parent.getImpl()).layoutItems();
     }

@@ -19,6 +19,7 @@ import 'utils/double_tap_detector.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
 
@@ -174,6 +175,9 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           ..y = e.localPosition.dy.round();
         impl.sendThrottledDragMove(state, event, e.buttons);
       },
+      onPointerPanZoomUpdate: (e) => panAsScroll(e, (wheel) {
+        if (forwardsPointer && impl.forwardsWheelFromWrap) impl.reportWheel(wheel, wheel.localPosition);
+      }),
       child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),
   );

@@ -10,6 +10,7 @@ import '../impl/composite_evolve.dart';
 import '../impl/control_evolve.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
@@ -267,20 +268,15 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       width += imageData.width?.toDouble() ?? 0;
     }
     if (text != null && text.isNotEmpty) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: getTextStyle(
-            context: context,
-            font: state.font,
-            textColor: textColor,
-            baseTextStyle: baseTextStyle,
-          ),
+      width += FontUtils.measureTextWidget(
+        text,
+        getTextStyle(
+          context: context,
+          font: state.font,
+          textColor: textColor,
+          baseTextStyle: baseTextStyle,
         ),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
-      width += painter.width;
+      ).width;
     }
     return width;
   }

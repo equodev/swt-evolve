@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
@@ -500,6 +501,26 @@ void main() {
       expect(deliveryGate.recoveries, 1,
           reason: 'a new widget under a recycled id holds none of the old state, so an update '
               'computed against that state does not fit it');
+    });
+  });
+
+  // A resource's change names neither the resource nor its type: its channel says which. One that
+  // reaches a GC whose description has not arrived cannot be applied, and is not a widget either.
+  group("a resource's change before its description", () {
+    test('asks for the resource again without decoding the change as a widget', () {
+      EquoCommBase.recordSentFrames = true;
+      addTearDown(() => EquoCommBase.recordSentFrames = false);
+      EquoCommService.commForTesting.clearSentFrames();
+      registry.watch('GC/7', (_) {});
+
+      expect(() => registry.apply('GC/7', {'_d': 0, 'background': 0xFF0000FF}), returnsNormally);
+      expect(deliveryGate.recoveries, 1);
+      final asked = EquoCommService.commForTesting.sentFrames
+          .map(EquoCommBase.decodeFrame)
+          .where((frame) => frame.$1 == widgetRefreshChannel)
+          .map((frame) => frame.$2)
+          .toList();
+      expect(asked, ['"7"'], reason: 'the request names the resource, not the stand-in watch() holds');
     });
   });
 }

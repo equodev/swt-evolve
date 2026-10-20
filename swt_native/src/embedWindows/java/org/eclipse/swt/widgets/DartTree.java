@@ -604,6 +604,7 @@ public class DartTree extends DartComposite implements ITree {
         setScrollWidth();
         updateImageList();
         updateScrollBar();
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -669,6 +670,7 @@ public class DartTree extends DartComposite implements ITree {
         items = new TreeItem[4];
         columns = new TreeColumn[4];
         cachedItemCount = -1;
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -866,6 +868,7 @@ public class DartTree extends DartComposite implements ITree {
             dirty();
         }
         ;
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item, long hItem) {
@@ -2274,10 +2277,10 @@ public class DartTree extends DartComposite implements ITree {
     public void setHeaderBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -2349,10 +2352,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.headerVisible, newValue)) {
             getValue().markDirty(VTree.HEADER_VISIBLE);
         }
-        checkWidget();
         if (show) {
         } else {
         }
@@ -2472,10 +2475,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
-        checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = items.length;

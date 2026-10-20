@@ -591,6 +591,7 @@ public class DartTable extends DartComposite implements ITable {
         if (!getApi().isVisible()) {
             forceResize();
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -661,6 +662,7 @@ public class DartTable extends DartComposite implements ITable {
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
         // reset to default font to get the usual behavior
         setFontDescription(defaultFont().handle);
+        getValue().markDirty(VTable.COLUMNS);
         getValue().markDirty(VTable.ITEMS);
     }
 
@@ -814,6 +816,7 @@ public class DartTable extends DartComposite implements ITable {
         if (!searchEnabled()) {
         } else {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {
@@ -1959,10 +1962,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void select(int[] indices) {
         int[] newValue = indices;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
-        checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
@@ -2258,10 +2261,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 

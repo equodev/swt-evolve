@@ -444,17 +444,25 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // gives Flutter content the moment it connects (which also keeps its runloop live).
         try {
             // Before the value is built: what it names as windowed has to be the windows that exist.
-            syncShellWindows();
+            java.util.Set<Shell> leftOwnWindow = syncShellWindows();
             VDisplay vd = VDisplay.of(display);
             vd.activeShellId = publishedActiveShell = activeShellId();
             vd.mainShellId = publishedMainShell = mainShellId(display);
             vd.windowedShellIds = windowedShellIds();
             serializeAndSend("Display/" + vd.id, vd);
             syncShellPopups();
+            syncDisplayWindow(display, leftOwnWindow);
             FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /** Brings the Display's own window in line with the shell now drawn in it. Nothing to do on a
+     *  surface whose Display window is not one the bridge controls.
+     *
+     *  @param leftOwnWindow the live shells whose own window this pass closed */
+    protected void syncDisplayWindow(DartDisplay display, java.util.Set<Shell> leftOwnWindow) {
     }
 
     /** Slave the main shell to {@code viewport} (wrapped by the caller in {@link #applyClientBounds}
@@ -486,14 +494,47 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** The top-level, display-tracking shell that drives (and is slaved to) the viewport, or null.
      *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT}, then the first visible trackable
      *  shell, then the first trackable one. Visibility outranks construction order because a pre-e4
-     *  workbench creates a top-level shell it never shows ahead of its window. */
+     *  workbench creates a top-level shell it never shows ahead of its window.
+     *
+     *  <p>A hidden holder yields the window to a visible window-eligible top-level, which keeps it
+     *  until it is hidden itself. */
     protected Shell mainShell(DartDisplay display) {
+        if (displayWindowTaker != null) {
+            if (!displayWindowTaker.isDisposed() && displayWindowTaker.getVisible()) {
+                return displayWindowTaker;
+            }
+            displayWindowTaker = null;
+        }
+        Shell holder = shellHoldingDisplayWindow(display);
+        if (holder != null && holder.getVisible()) {
+            return holder;
+        }
+        for (Shell shell : trackableShells(display)) {
+            if (shell.getVisible() && windowEligible(shell)) {
+                displayWindowTaker = shell;
+                return shell;
+            }
+        }
+        return holder;
+    }
+
+    /** The shell that took the Display's window from a hidden holder, while it is still visible. */
+    private Shell displayWindowTaker;
+
+    private java.util.List<Shell> trackableShells(DartDisplay display) {
+        java.util.List<Shell> trackable = new java.util.ArrayList<>();
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed() && shouldTrackDisplayBounds(shell)) {
+                trackable.add(shell);
+            }
+        }
+        return trackable;
+    }
+
+    private Shell shellHoldingDisplayWindow(DartDisplay display) {
         Shell firstVisible = null;
         Shell firstTrackable = null;
-        for (Shell shell : display._shells()) {
-            if (shell == null || shell.isDisposed() || !shouldTrackDisplayBounds(shell)) {
-                continue;
-            }
+        for (Shell shell : trackableShells(display)) {
             // A shell already hosted in a window of its own drives that window, never this one.
             // Asked as a fact rather than through the policy, which would ask back who is main.
             if (shellWindows.containsKey(shell)) {
@@ -608,9 +649,19 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return null;
     }
 
+    /** Keeps the owner of {@code shell}'s window in line with where its parent is drawn now. */
+    protected void refreshShellWindowOwner(Shell shell, ShellWindow window) {
+    }
+
     /** Whether {@code shell} is one {@link WindowPolicy} puts in a window of its own. */
     protected boolean ownsWindow(Shell shell) {
-        return WindowPolicy.ownsWindow(shell, isMainShell(forDisplay, shell));
+        return windowEligible(shell) && !isMainShell(forDisplay, shell);
+    }
+
+    /** Whether {@code shell} may have a window of its own, whichever shell is the main one. Asks
+     *  nothing of {@link #mainShell}, which calls it. */
+    protected boolean windowEligible(Shell shell) {
+        return !lostWindows.contains(shell) && WindowPolicy.ownsWindow(shell, false);
     }
 
     /** The window hosting {@code control}'s shell, or null when it is drawn inside the Display's. */
@@ -631,11 +682,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <p>Driven from {@link #pushDisplayState}, so the ids the client is told about are the windows
      * that actually exist: a shell the client leaves out of its own stack must have a window to be
      * drawn in, or it would be rendered nowhere at all.
+     *
+     * @return the live shells whose window was closed because they no longer own one
      */
-    private void syncShellWindows() {
-        if (forDisplay == null) return;
+    private java.util.Set<Shell> syncShellWindows() {
+        if (forDisplay == null) return java.util.Collections.emptySet();
         // Nothing can be eligible and nothing is open: the overwhelmingly common case, skipped whole.
-        if (shellWindows.isEmpty() && (!supportsShellWindows() || WindowPolicy.isSingleWindow())) return;
+        if (shellWindows.isEmpty() && (!supportsShellWindows() || WindowPolicy.isSingleWindow())) {
+            return java.util.Collections.emptySet();
+        }
+        java.util.Set<Shell> leftOwnWindow =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
         shellWindows.entrySet().removeIf(entry -> {
             Shell shell = entry.getKey();
@@ -646,6 +703,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             }
             if (shell.isDisposed() || !ownsWindow(shell)) {
                 closeShellWindow(shell, window);
+                if (!shell.isDisposed()) leftOwnWindow.add(shell);
                 return true;
             }
             // Hidden is not gone. A toolkit hides and re-shows a shell while it lays out -- the
@@ -653,19 +711,24 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // rebuilds the window on the next pass, since a window closed here is not recorded as
             // lost. That is an endless create/destroy cycle, one new engine per turn.
             window.setVisible(shell.getVisible());
+            refreshShellWindowOwner(shell, window);
             return false;
         });
 
-        if (!supportsShellWindows()) return;
+        if (!supportsShellWindows()) return leftOwnWindow;
         for (Shell shell : forDisplay._shells()) {
             if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
-            if (shellWindows.containsKey(shell) || lostWindows.contains(shell)) continue;
-            if (!ownsWindow(shell)) continue;
+            if (shellWindows.containsKey(shell) || !ownsWindow(shell)) continue;
             ShellWindow window = createShellWindow(shell);
             if (window == null) continue;
             shellWindows.put(shell, window);
+            // setMaximized and friends only reach a window that exists, so a state set before open()
+            // is applied here.
+            int state = windowStateOf(shell);
+            if (state != ShellWindow.STATE_NORMAL) window.setState(state);
             registerShellClientReady(shell);
         }
+        return leftOwnWindow;
     }
 
     /**
@@ -1305,6 +1368,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         clientActivated = shell;
     }
 
+    /** Forget the shell the client just deactivated, unless another one has been activated since. */
+    public void noteClientDeactivated(DartShell shell) {
+        if (clientActivated == shell)
+            clientActivated = null;
+    }
+
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
     public void clearFocus(DartControl widget) {
         // A shown popup menu takes the keyboard without moving the focus control, as natively.
@@ -1391,6 +1460,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
         setShellWindowState(control, fullScreen, ShellWindow.STATE_FULLSCREEN);
+    }
+
+    /** The window state {@code shell} asks for. */
+    static int windowStateOf(Shell shell) {
+        if (shell.getMinimized()) return ShellWindow.STATE_MINIMIZED;
+        if (shell.getFullScreen()) return ShellWindow.STATE_FULLSCREEN;
+        if (shell.getMaximized()) return ShellWindow.STATE_MAXIMIZED;
+        return ShellWindow.STATE_NORMAL;
     }
 
     private void setShellWindowState(DartControl control, boolean on, int state) {

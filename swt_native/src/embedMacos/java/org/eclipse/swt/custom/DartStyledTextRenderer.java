@@ -1507,7 +1507,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     int getWidth() {
         {
             if (styledText != null && styledText.getImpl() instanceof DartStyledText) {
-                Integer measured = StyledTextHelper.measuredContentWidth((DartStyledText) styledText.getImpl());
+                Integer measured = StyledTextHelper.measuredContentWidth(this, (DartStyledText) styledText.getImpl());
                 if (measured != null)
                     return measured;
             }
@@ -2423,6 +2423,20 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     VStyledTextRenderer.VLineInfo[] wireLines() {
         return StyledTextHelper.wireLines(this);
+    }
+
+    public void _growLineSizes(int count) {
+        if (lineSizes == null || lineSizes.length < count) {
+            LineSizeInfo[] newLineSizes = new LineSizeInfo[count];
+            if (lineSizes != null) {
+                System.arraycopy(lineSizes, 0, newLineSizes, 0, lineCount);
+            }
+            lineSizes = newLineSizes;
+        }
+    }
+
+    public boolean _isWidthCalculated(int line) {
+        return lineSizes != null && line >= 0 && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth();
     }
 
     public StyledTextRenderer getApi() {

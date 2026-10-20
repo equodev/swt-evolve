@@ -859,6 +859,7 @@ public class Config {
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
+            configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
             // Drops what an application paints over a control through its GC, keeping only what the
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
@@ -910,6 +911,7 @@ public class Config {
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
             configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
+            configFlags.bigger_icon_size = Boolean.getBoolean("swt.evolve.bigger_icon_size");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
@@ -1078,6 +1080,41 @@ public class Config {
 
     static final String USE_SWT_FONT_COLORS = "swt.use_swt_font_colors";
     static final String USE_SWT_FONT_COLORS_BY_WIDGET = "swt.evolve.use_swt_font_colors_";
+
+    static final String DISABLE_SWT_CANVAS_COLORS_BY_CLASS = "swt.evolve.disable_swt_canvas_colors_";
+
+    /**
+     * {@code -Dswt.evolve.disable_swt_canvas_colors_<fully.qualified.Class>=true|false}, keyed by the
+     * class name as written: unlike the per-widget flags, the key is the application's own class.
+     */
+    static Map<String, Boolean> canvasColorsByClassFromProperties() {
+        TreeMap<String, Boolean> byClass = new TreeMap<>();
+        for (String key : System.getProperties().stringPropertyNames()) {
+            if (!key.startsWith(DISABLE_SWT_CANVAS_COLORS_BY_CLASS)) continue;
+            String className = key.substring(DISABLE_SWT_CANVAS_COLORS_BY_CLASS.length()).trim();
+            Boolean value = optionalBoolean(System.getProperty(key));
+            if (!className.isEmpty() && value != null) byClass.put(className, value);
+        }
+        return byClass.isEmpty() ? null : byClass;
+    }
+
+    /**
+     * {@code disable_swt_canvas_colors} for what a GC draws on: as set for the control's class or a
+     * superclass of it or, failing that, for the nearest control containing it that is listed; null
+     * when none is, which leaves the global flag to decide. Containers are matched so that a bare
+     * Composite inside a listed control follows it. A GC on an Image has no control and gets null.
+     */
+    public static Boolean canvasColorsOverride(Drawable drawable) {
+        Map<String, Boolean> byClass = getConfigFlags().disable_swt_canvas_colors_by_class;
+        if (byClass == null || byClass.isEmpty() || !(drawable instanceof Control)) return null;
+        for (Control c = (Control) drawable; c != null && !c.isDisposed(); c = c.getParent()) {
+            for (Class<?> type = c.getClass(); type != null; type = type.getSuperclass()) {
+                Boolean value = byClass.get(type.getName());
+                if (value != null) return value;
+            }
+        }
+        return null;
+    }
 
     /** Null when unset or blank, so the flag can tell "not configured" from "false". */
     static Boolean optionalBoolean(String value) {

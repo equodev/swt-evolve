@@ -11,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../comm/comm.dart';
 import 'utils/perf_marks.dart';
+import 'utils/text_utils.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/gc.dart';
@@ -329,7 +330,7 @@ class GCDrawer extends GCDrawerBase {
   // Drawing keeps the colors the application painted with. disable_swt_canvas_colors drops them
   // for the Canvas theme's, the rule getBackgroundColor applies to widgets; use_swt_colors, which
   // asks for the application's colors everywhere, wins over it.
-  bool get _useThemeColors => canvasUsesThemeColors;
+  bool get _useThemeColors => gcUsesThemeColors(state.themedCanvas);
 
   Color _themed(VColor? swtColor, Color? themeColor, Color fallback) {
     if (_useThemeColors) return themeColor ?? fallback;
@@ -1039,9 +1040,8 @@ class GCDrawer extends GCDrawerBase {
 
   // Tabs and mnemonics as GCHelper.textExtent measures them, so text is drawn as wide as it measures.
   String _processTextFlags(String text, int flags) {
-    final mnemonic = (flags & SWT.DRAW_MNEMONIC) != 0
-        ? text.replaceAllMapped(RegExp(r'&([\s\S])'), (m) => m.group(1)!)
-        : text;
+    final mnemonic =
+        (flags & SWT.DRAW_MNEMONIC) != 0 ? stripAccelerators(text) : text;
     return mnemonic
         .replaceAll('\r\n', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
         .replaceAll('\r', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
@@ -1423,7 +1423,7 @@ class GCDrawer extends GCDrawerBase {
       VImage vImage, VGCDrawImageImageintintintintintintintint opArgs) {
     _stageAsync(ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
         tint: imageTintColor, glyphLimits: glyphTintLimits,
-        alpha: state.alpha ?? 255));
+        alpha: state.alpha ?? 255, useThemeColors: _useThemeColors));
   }
 
   /// Stages a shape that resolves after its op, in that op's slot.
@@ -2330,10 +2330,7 @@ class _TextLayouts {
   static bool _watchingFonts = false;
 
   static TextPainter of(String text, TextStyle style) {
-    if (!_watchingFonts) {
-      _watchingFonts = true;
-      PaintingBinding.instance.systemFonts.addListener(_clear);
-    }
+    if (!_watchingFonts) _watchingFonts = FontUtils.listenToSystemFonts(_clear);
     final key = (text, style);
     final held = _layouts.remove(key);
     if (held != null) {
@@ -3139,7 +3136,8 @@ class ImageShape extends Shape {
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
-      {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255}) async {
+      {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255,
+      required bool useThemeColors}) async {
     final preserveColors = preserveIconColors;
     final colorFilter = preserveColors
         ? null
@@ -3179,7 +3177,7 @@ class ImageShape extends Shape {
 
       // Plain blits only: a tint, an alpha or a bundled-icon replacement needs a real image.
       final remoteRef = vImage.remoteRef;
-      if (replacement == null && remoteRef != null && !canvasUsesThemeColors) {
+      if (replacement == null && remoteRef != null && !useThemeColors) {
         final render = ImageUtils.remoteRender(remoteRef);
         // Once rasterised, blit the texture: replaying the list re-runs every op on every frame.
         final asPicture = render != null && !render.hasPixels ? render.picture : null;
@@ -3238,7 +3236,7 @@ class ImageShape extends Shape {
 
       // A resolved icon is tinted; an already-rendered bitmap keeps its colors, unless the Canvas
       // itself is themed and the bitmap is a monochrome glyph.
-      final glyphTone = replacement == null && canvasUsesThemeColors
+      final glyphTone = replacement == null && useThemeColors
           ? await _monochromeGlyphTone(uiImage, vImage, glyphLimits ?? GlyphTintLimits.fallback)
           : null;
       final rasterFilter = replacement != null

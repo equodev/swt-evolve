@@ -26,7 +26,7 @@ public class VComposite extends VScrollable {
     }
 
     public Control[] getChildren() {
-        return ((DartComposite) impl)._getChildren();
+        return ((DartComposite) impl)._displayedChildren();
     }
 
     public void setChildren(Control[] value) {

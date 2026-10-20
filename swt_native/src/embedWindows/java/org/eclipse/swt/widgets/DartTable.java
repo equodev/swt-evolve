@@ -571,6 +571,7 @@ public class DartTable extends DartComposite implements ITable {
         /* Add the tool tip item for the header */
         if (headerToolTipHandle != 0) {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -594,6 +595,7 @@ public class DartTable extends DartComposite implements ITable {
         itemHeight = hotIndex = -1;
         _initItems();
         columns = new TableColumn[4];
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     private boolean customHeaderDrawing() {
@@ -844,6 +846,7 @@ public class DartTable extends DartComposite implements ITable {
         /* Remove the tool tip item for the header */
         if (headerToolTipHandle != 0) {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {
@@ -1802,9 +1805,9 @@ public class DartTable extends DartComposite implements ITable {
     public void select(int[] indices) {
         //int[] newValue = indices;
         ;
+        checkWidget();
         //if (!java.util.Objects.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
         ;
-        checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
@@ -2174,10 +2177,10 @@ public class DartTable extends DartComposite implements ITable {
     public void setHeaderBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -2214,10 +2217,10 @@ public class DartTable extends DartComposite implements ITable {
     public void setHeaderForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerForeground, newValue)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -2250,10 +2253,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.headerVisible, newValue)) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
-        checkWidget();
         /*
 	* Feature in Windows.  Setting or clearing LVS_NOCOLUMNHEADER
 	* causes the table to scroll to the beginning.  The fix is to
@@ -2410,10 +2413,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 
@@ -2557,9 +2560,9 @@ public class DartTable extends DartComposite implements ITable {
         getValue().markDirty(VTable.SELECTION);
         //int[] newValue = indices;
         ;
+        checkWidget();
         //if (!java.util.Objects.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
         ;
-        checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();

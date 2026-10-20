@@ -104,15 +104,15 @@ public class DartTableEditor extends DartControlEditor implements ITableEditor {
 
             @Override
             public void controlMoved(ControlEvent e) {
-                layout();
+                getApi().layout();
             }
 
             @Override
             public void controlResized(ControlEvent e) {
-                layout();
+                getApi().layout();
             }
         };
-        timer = this::layout;
+        timer = getApi()::layout;
         // To be consistent with older versions of SWT, grabVertical defaults to true
         getApi().grabVertical = true;
     }
@@ -202,7 +202,7 @@ public class DartTableEditor extends DartControlEditor implements ITableEditor {
     }
 
     void resize() {
-        layout();
+        getApi().layout();
         /*
 	 * On some platforms, the table scrolls when an item that
 	 * is partially visible at the bottom of the table is
@@ -271,9 +271,9 @@ public class DartTableEditor extends DartControlEditor implements ITableEditor {
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
     public void setEditor(Control editor, TableItem item, int column) {
-        setItem(item);
-        setColumn(column);
-        setEditor(editor);
+        getApi().setItem(item);
+        getApi().setColumn(column);
+        getApi().setEditor(editor);
     }
 
     @Override
