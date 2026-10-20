@@ -6,6 +6,7 @@ import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowPolicy;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -791,28 +792,6 @@ class DeskMultiWindowFlutterTest {
             this.widgetName = widgetName;
             this.width = width;
             this.height = height;
-        }
-    }
-
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
         }
     }
 

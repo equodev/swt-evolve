@@ -1135,16 +1135,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if ((getApi().style & SWT.CHECK) != 0) {
-                    setSelection(!getSelection());
-                } else if ((getApi().style & SWT.RADIO) != 0) {
-                    if ((parent.getStyle() & SWT.NO_RADIO_GROUP) != 0) {
-                        setSelection(!getSelection());
-                    } else {
-                        selectRadio();
-                    }
-                }
-                sendSelectionEvent(SWT.Selection, e, false);
+                MenuItemHelper.pick(this, e);
             });
         });
     }

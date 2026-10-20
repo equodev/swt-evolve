@@ -29,6 +29,8 @@ public class ControlHelper {
     }
 
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
+        if (widget instanceof DartControl && AcceleratorHelper.translate(((DartControl) widget).getApi(), event))
+            return;
         widget.sendEvent(SWT.KeyDown, event);
         translateTraversal(widget, event);
     }
@@ -117,11 +119,14 @@ public class ControlHelper {
     }
 
     /**
-     * Offers a traversal key as {@link SWT#Traverse} before the KeyDown, as every platform's
-     * {@code translateTraversal} does. The client performs a Tab traversal itself.
+     * Offers a key to the menu accelerators, then a traversal key as {@link SWT#Traverse}, before
+     * the KeyDown, in the order every platform's key dispatch does. The client performs a Tab
+     * traversal itself.
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        if (AcceleratorHelper.translate(control.getApi(), key))
+            return new RoutedKey(false, false, false);
         int detail = traverseDetail(key.keyCode, key.stateMask);
         boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(key);
         if (mnemonic)
