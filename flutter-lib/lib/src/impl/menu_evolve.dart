@@ -10,6 +10,7 @@ import '../gen/widget.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 import 'decorations_align.dart';
+import 'decorations_evolve.dart';
 import 'widget_config.dart';
 import 'utils/hosted_context_menu.dart';
 import 'utils/text_utils.dart';
@@ -309,9 +310,13 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         widgetTheme.textStyle?.copyWith(color: textColor) ??
             TextStyle(color: textColor);
 
+    final stripHeight = DecorationsMenuData.of(context)?.stripHeight;
     Widget menuBar = AnimatedContainer(
       duration: widgetTheme.animationDuration,
-      height: widgetTheme.menuBarHeight,
+      // The height Java laid the strip out at, which follows the monitor's scale.
+      height: stripHeight != null && stripHeight > 0
+          ? stripHeight.toDouble()
+          : widgetTheme.menuBarHeight,
       decoration: BoxDecoration(
         color: backgroundColor,
         border: Border(

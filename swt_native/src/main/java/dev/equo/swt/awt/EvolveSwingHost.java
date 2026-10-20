@@ -214,14 +214,23 @@ public final class EvolveSwingHost {
         EMBEDDINGS.put(frame, host);
         host.bind(frame);
 
-        // Initial size + realize so the first frame renders. Pre-open the canvas may
-        // report 0×0; the Resize listener re-sizes the frame once it's laid out.
-        Rectangle area = canvas.getClientArea();
-        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+        // Pre-open the canvas reports 0x0; the Resize listener sizes the frame once it is laid out.
+        sizeFrame(frame, canvas.getClientArea());
         syncFrameLocation(canvas, frame);
         frame.setVisible(true);
         host.syncOwner();
         return frame;
+    }
+
+    /**
+     * Sizes an embedding's frame to its host control's client area, 0x0 included, as native
+     * {@code SWT_AWT} leaves its frame until the composite has its real size. Shared by the blit and
+     * island paths. At any positive size the frame paints, and some content keeps what it painted
+     * at: a {@code JSplitPane} stops placing its divider from its children's preferred sizes once
+     * painted, so a placeholder 1x1 collapses its top component for good.
+     */
+    static void sizeFrame(Component frame, Rectangle area) {
+        frame.setSize(Math.max(0, area.width), Math.max(0, area.height));
     }
 
     /**
@@ -745,6 +754,7 @@ public final class EvolveSwingHost {
         private volatile JLightweightFrame frame;
         private volatile Runnable forceRepaint;
         private volatile EmbedCursor cursor;
+        private final AwtDropBridge drops;
         // Guards the container-listener reentrancy while we relocate app-added children.
         private boolean relocating;
 
@@ -761,6 +771,7 @@ public final class EvolveSwingHost {
         Host(Canvas canvas) {
             this.canvas = canvas;
             this.display = canvas.getDisplay();
+            this.drops = new AwtDropBridge(canvas);
         }
 
         /**
@@ -780,6 +791,7 @@ public final class EvolveSwingHost {
          */
         void bind(JLightweightFrame frame) {
             this.frame = frame;
+            drops.bind(frame);
             interceptAdds(frame);
             canvas.addPaintListener(this::paint);
             Runnable forceRepaint = () -> content.imageUpdated(0, 0, 0, 0);
@@ -791,9 +803,9 @@ public final class EvolveSwingHost {
             cursor = embedCursor;
             canvas.addListener(SWT.Resize, e -> {
                 Rectangle a = canvas.getClientArea();
-                final int w = Math.max(1, a.width), h = Math.max(1, a.height);
                 EventQueue.invokeLater(() -> {
-                    frame.setSize(w, h);
+                    sizeFrame(frame, a);
+                    final int w = frame.getWidth(), h = frame.getHeight();
                     // JLightweightFrame.reshape() reallocates the off-screen buffer and repaints
                     // immediately, but the content tree is still laid out for the old size, so that
                     // repaint fills the new buffer with background and drops the components — they
@@ -828,6 +840,7 @@ public final class EvolveSwingHost {
             canvas.addListener(SWT.Dispose, e -> {
                 if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
                 forgetEmbed(contentRoot, frame);
+                drops.dispose();
                 disposeFrame(frame);
             });
             scheduleStaggeredRepaints(forceRepaint, 300, 900, 2000);
@@ -1104,6 +1117,16 @@ public final class EvolveSwingHost {
             public void setCursor(java.awt.Cursor ignored) {
                 EmbedCursor c = cursor;
                 if (c != null) c.refresh();
+            }
+
+            @Override
+            public void addDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.register(dt);
+            }
+
+            @Override
+            public void removeDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.unregister(dt);
             }
 
             @Override public void focusGrabbed() {}

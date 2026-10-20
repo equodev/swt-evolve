@@ -104,7 +104,7 @@ final class MacApplicationMenu {
                 OS.sel_hide_, NSString.stringWith("h"), SWT.ID_HIDE);
         NSMenuItem hideOthers = add(appMenu, AppMenuMessages.label("SWT_HideOthers"),
                 OS.sel_hideOtherApplications_, NSString.stringWith("h"), SWT.ID_HIDE_OTHERS);
-        hideOthers.setKeyEquivalentModifierMask(OS.NSCommandKeyMask | OS.NSAlternateKeyMask);
+        hideOthers.setKeyEquivalentModifierMask(AppKitValues.COMMAND_KEY_MASK | AppKitValues.ALTERNATE_KEY_MASK);
         add(appMenu, AppMenuMessages.label("SWT_ShowAll"),
                 OS.sel_unhideAllApplications_, empty, SWT.ID_SHOW_ALL);
         appMenu.addItem(NSMenuItem.separatorItem());

@@ -78,6 +78,45 @@ class MenuEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
+    @DisplayName("a pick on a radio item tells the deselected item first and the picked one last, as natively")
+    void aPickTellsTheDeselectedRadioBeforeThePickedOne() {
+        MenuItem first = new MenuItem(menu, SWT.RADIO);
+        MenuItem second = new MenuItem(menu, SWT.RADIO);
+        first.setSelection(true);
+        List<String> heard = new ArrayList<>();
+        first.addListener(SWT.Selection, e -> heard.add("first selected=" + first.getSelection()));
+        second.addListener(SWT.Selection, e -> heard.add("second selected=" + second.getSelection()));
+
+        fromFlutter(second, "Selection/Selection");
+        runQueued();
+
+        assertThat(heard).containsExactly("first selected=false", "second selected=true");
+    }
+
+    @Test
+    @DisplayName("in a menu without radio groups a pick toggles only the picked radio item")
+    void aPickInANoRadioGroupMenuTogglesOnlyThePickedItem() {
+        Menu ungrouped = new Menu(DartMocks.dartShell(display), SWT.POP_UP | SWT.NO_RADIO_GROUP);
+        MenuItem first = new MenuItem(ungrouped, SWT.RADIO);
+        MenuItem second = new MenuItem(ungrouped, SWT.RADIO);
+        first.setSelection(true);
+        List<Event> secondHears = record(second, SWT.Selection);
+
+        fromFlutter(second, "Selection/Selection");
+        runQueued();
+
+        assertThat(first.getSelection()).isTrue();
+        assertThat(second.getSelection()).isTrue();
+        assertThat(secondHears).hasSize(1);
+
+        fromFlutter(second, "Selection/Selection");
+        runQueued();
+
+        assertThat(second.getSelection()).isFalse();
+        assertThat(secondHears).hasSize(2);
+    }
+
+    @Test
     @DisplayName("a radio group ends at an item that is not a radio")
     void aRadioGroupEndsAtANonRadioItem() {
         MenuItem above = new MenuItem(menu, SWT.RADIO);

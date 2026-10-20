@@ -91,6 +91,61 @@ class TextLayoutDrawNativeTest {
         assertThat(foregrounds()).as("one foreground per run").hasSizeGreaterThan(1);
     }
 
+    @Test
+    @DisplayName("an underline sits just under the baseline of its run, not at the bottom of the line")
+    void underlineHugsTheBaseline() {
+        GC gc = freshGc();
+        // A link styled with its control's font, smaller than the layout's own, which sizes the line.
+        Font small = new Font(gc.getDevice(), "System", 8, SWT.NORMAL);
+        Font gcFont = gc.getFont();
+        gc.setFont(small);
+        int ascent = gc.getFontMetrics().getAscent();
+        gc.setFont(gcFont);
+        TextLayout layout = new TextLayout(gc.getDevice());
+        layout.setText("appointment_id");
+        TextStyle link = new TextStyle(small, null, null);
+        link.underline = true;
+        layout.setStyle(link, 0, layout.getText().length());
+        int lineHeight = layout.getLineBounds(0).height;
+        layout.draw(gc, 0, 0);
+        layout.dispose();
+        gc.dispose();
+        small.dispose();
+
+        java.util.regex.Matcher line = java.util.regex.Pattern
+                .compile("drawLineintintintint\",\\[-?\\d+,(-?\\d+)").matcher(wire());
+        assertThat(line.find()).as("the underline reached the wire").isTrue();
+        assertThat(ascent + 1).as("sanity: the line has room below the run's baseline").isLessThan(lineHeight - 1);
+        assertThat(Integer.parseInt(line.group(1))).isEqualTo(ascent + 1);
+    }
+
+    @Test
+    @DisplayName("a strikeout crosses the middle of its run, not of the line")
+    void strikeoutCrossesItsRun() {
+        GC gc = freshGc();
+        Font small = new Font(gc.getDevice(), "System", 8, SWT.NORMAL);
+        Font gcFont = gc.getFont();
+        gc.setFont(small);
+        int runHeight = gc.getFontMetrics().getHeight();
+        gc.setFont(gcFont);
+        TextLayout layout = new TextLayout(gc.getDevice());
+        layout.setText("dropped");
+        TextStyle struck = new TextStyle(small, null, null);
+        struck.strikeout = true;
+        layout.setStyle(struck, 0, layout.getText().length());
+        int lineHeight = layout.getLineBounds(0).height;
+        layout.draw(gc, 0, 0);
+        layout.dispose();
+        gc.dispose();
+        small.dispose();
+
+        java.util.regex.Matcher line = java.util.regex.Pattern
+                .compile("drawLineintintintint\",\\[-?\\d+,(-?\\d+)").matcher(wire());
+        assertThat(line.find()).as("the strikeout reached the wire").isTrue();
+        assertThat(runHeight / 2).as("sanity: the run is shorter than the line").isLessThan(lineHeight / 2);
+        assertThat(Integer.parseInt(line.group(1))).isEqualTo(runHeight / 2);
+    }
+
     /** The distinct foreground colours the GC state carried over this paint. */
     private java.util.Set<String> foregrounds() {
         java.util.Set<String> seen = new java.util.LinkedHashSet<>();
