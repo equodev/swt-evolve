@@ -95,7 +95,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   bool _primaryPressed = false;
-  bool _tapped = false;
+  /// Whether the button was selected during this press, by Flutter's tap or by the keyboard.
+  bool _selectedThisPress = false;
 
   /// A check box's or radio's box, the gap after it and its label: the part of it that is the
   /// button, as on GTK, whose check button is exactly that wide.
@@ -107,10 +108,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   /// indicator row's content -- box, gap and label, not the row's empty end -- at any height of the
   /// row, above or below a label shorter than the box too.
   bool _isOverButton(PointerEvent e) {
-    if (!_selectsOverIndicatorRow) {
-      final size = context.size;
-      return size != null && (Offset.zero & size).contains(e.localPosition);
-    }
+    if (!_selectsOverIndicatorRow) return isOverSelf(e);
     final row = _indicatorRowKey.currentContext?.findRenderObject();
     if (row is! RenderBox || !row.hasSize) return false;
     final local = row.globalToLocal(e.position);
@@ -124,7 +122,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onPointerDown: (e) {
           _primaryPressed = e.buttons == kPrimaryButton && (state.enabled ?? false)
               && _isOverButton(e);
-          _tapped = false;
+          _selectedThisPress = false;
         },
         onPointerUp: (e) {
           if (!_primaryPressed) return;
@@ -132,7 +130,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           if (!_isOverButton(e)) return;
           // After the gesture arena, which delivers a tap within its slop on this same release.
           scheduleMicrotask(() {
-            if (mounted && !_tapped) _onPressed();
+            if (mounted && !_selectedThisPress && (state.enabled ?? false)) _onPressed();
           });
         },
         onPointerCancel: (_) => _primaryPressed = false,
@@ -715,7 +713,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   void _onPressed() {
-    _tapped = true;
+    _selectedThisPress = true;
     final isRadio = hasStyle(state.style, SWT.RADIO);
     if (isRadio ||
         hasStyle(state.style, SWT.CHECK) ||

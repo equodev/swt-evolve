@@ -19,6 +19,10 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
   bool _changedDuringPress = false;
   bool _pressed = false;
 
+  /// Set by an [_InertMargin] for the press it took, which reaches it before this control's own
+  /// handler: a press beyond the ends of the track counts for nothing.
+  bool _pressOnMargin = false;
+
   /// A Scale takes keyboard focus like any other control: clicking it focuses it, and the arrow,
   /// page, home and end keys then move the value. Java routes a keystroke to whatever
   /// getFocusControl() returns, so a Scale that never reports focus never receives one.
@@ -50,10 +54,8 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
       onPointerDown: (e) {
         _changedDuringPress = false;
         // Only a press on the track counts; one beyond its ends does nothing (see _InertMargin).
-        final along = isVertical ? e.localPosition.dy : e.localPosition.dx;
-        final length = isVertical ? size.height : size.width;
-        final inset = widgetTheme.horizontalPadding;
-        _pressed = e.buttons == kPrimaryButton && along >= inset && along <= length - inset;
+        _pressed = e.buttons == kPrimaryButton && !_pressOnMargin;
+        _pressOnMargin = false;
       },
       // A primary press that moves nothing still reports a Selection, ahead of its MouseUp, as a
       // native Scale does for a click on its knob; this Listener is reached before the control's
@@ -78,6 +80,7 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         height: size.height,
         isVertical: isVertical,
         widgetTheme: widgetTheme,
+        onMarginPress: () => _pressOnMargin = true,
         onChanged: (value) {
           _changedDuringPress = true;
           state.selection = value.round();
@@ -123,6 +126,7 @@ class _ThemedScale extends StatefulWidget {
   final ValueChanged<double> onChangeEnd;
   final FocusNode focusNode;
   final ValueChanged<bool> onFocusChanged;
+  final VoidCallback onMarginPress;
 
   const _ThemedScale({
     this.background,
@@ -136,6 +140,7 @@ class _ThemedScale extends StatefulWidget {
     required this.isVertical,
     required this.widgetTheme,
     required this.onChanged,
+    required this.onMarginPress,
     required this.onChangeEnd,
     required this.focusNode,
     required this.onFocusChanged,
@@ -275,12 +280,23 @@ class _ThemedScaleState extends State<_ThemedScale> {
               right: left ? null : 0,
               top: 0,
               bottom: 0,
-              width: widget.widgetTheme.horizontalPadding,
-              child: const _InertMargin(),
+              width: _marginWidth(left: left),
+              child: _InertMargin(onPress: widget.onMarginPress),
             ),
         ],
       ),
     );
+  }
+
+  /// The padding at one end of the track, up to where the knob begins: near that end the knob
+  /// reaches into the padding, and natively it can be grabbed anywhere on it.
+  double _marginWidth({required bool left}) {
+    final pad = widget.widgetTheme.horizontalPadding;
+    final length = widget.isVertical ? widget.height : widget.width;
+    if (widget.max <= widget.min || length <= 2 * pad) return pad;
+    final centre = _valueToX(widget.value, widget.min, widget.max, length, pad);
+    final edge = left ? centre - widget.widgetTheme.thumbRadius : length - centre - widget.widgetTheme.thumbRadius;
+    return math.max(0, math.min(pad, edge));
   }
 
   Widget _buildHorizontalScale(Widget scale) {
@@ -403,12 +419,17 @@ class _TickMarkPainter extends CustomPainter {
   }
 }
 
-/// Takes the pointer so the Slider beneath never sees it; the control's own handlers, which are
-/// ancestors, still do.
+/// Takes the pointer so the Slider beneath never sees it, and reports the press through [onPress];
+/// the control's own handlers, which are ancestors, still see it.
 class _InertMargin extends StatelessWidget {
-  const _InertMargin();
+  final VoidCallback onPress;
+
+  const _InertMargin({required this.onPress});
 
   @override
-  Widget build(BuildContext context) =>
-      const SizedBox.expand(child: ColoredBox(color: Color(0x00000000)));
+  Widget build(BuildContext context) => Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => onPress(),
+        child: const SizedBox.expand(),
+      );
 }

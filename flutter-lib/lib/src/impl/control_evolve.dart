@@ -609,6 +609,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// pointer's path receives its own transformed copy of the same event.
   static PointerEvent? _keptWheel;
 
+  /// Whether [e] is within this control's own bounds.
+  bool isOverSelf(PointerEvent e) {
+    final size = context.size;
+    return size != null && (Offset.zero & size).contains(e.localPosition);
+  }
+
   /// Whether a control below the pointer already kept [event].
   static bool wheelKeptBelow(PointerEvent event) => identical(event.original ?? event, _keptWheel);
 
@@ -829,9 +835,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..count = swtClickCount
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
         widget.sendMouseMouseUp(state, event);
-        // The pointer rests where the release left it; the hover starts counting from there.
-        final size = context.size;
-        if (size != null && (Offset.zero & size).contains(e.localPosition)) {
+        // A mouse rests where the release left it; the hover starts counting from there. A touch
+        // leaves nothing under the pointer.
+        if (e.kind == PointerDeviceKind.mouse && isOverSelf(e)) {
           _lastHoverPosition = e.position;
           _resetHoverTimer(state, VEvent()
             ..x = event.x

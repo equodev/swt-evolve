@@ -4773,7 +4773,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed() && !isActive())
+                if (isDisposed())
+                    return;
+                if (!isActive())
                     return;
                 if (!isDisposed()) {
                     sendEvent(SWT.DefaultSelection, e);

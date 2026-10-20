@@ -1945,7 +1945,9 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed() && !isActive())
+                if (isDisposed())
+                    return;
+                if (!isActive())
                     return;
                 if (!isDisposed()) {
                     if (e.detail == SWT.ICON_CANCEL) {
