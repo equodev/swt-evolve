@@ -109,9 +109,19 @@ public class WebFlutterServer {
     /** The headless Chrome we launched (see {@link #launchHeadless}); reaped in {@link #stop}. */
     private HeadlessChrome headlessChrome;
 
+    /** Carries this server's port to the JVM an application relaunches itself into. */
+    static final String RELAUNCH_PORT = "dev.equo.swt.web.relaunchPort";
+    /** Identifies this server; a page compares it with what {@link #INSTANCE_PATH} answers to tell it was served by a previous one. */
+    private final String instance = java.util.UUID.randomUUID().toString();
+    static final String INSTANCE_PATH = "/equo-instance";
+    private final java.util.concurrent.CountDownLatch pageAsked = new java.util.concurrent.CountDownLatch(1);
+    private final int relaunchPort;
+    private boolean onRelaunchPort;
+
     private WebFlutterServer(Builder builder) {
         this.webDirectory = builder.webDirectory;
         this.httpPort = builder.httpPort;
+        this.relaunchPort = builder.relaunchPort;
         this.commPort = builder.commPort;
         this.widgetId = builder.widgetId;
         this.widgetName = builder.widgetName;
@@ -141,8 +151,9 @@ public class WebFlutterServer {
             throw new IOException("Web directory does not exist: " + webDirectory.getAbsolutePath());
         }
 
-        httpServer = HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
-        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics));
+        httpServer = bind();
+        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance));
+        httpServer.createContext(INSTANCE_PATH, this::answerInstance);
         httpServer.createContext("/proxy", new ProxyHandler(proxyCookies));
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
@@ -165,6 +176,68 @@ public class WebFlutterServer {
         LOG.info("WebFlutterServer started on http://localhost:" + actualPort);
 //        System.out.println("WebFlutterServer started on http://localhost:" + actualPort);
         return actualPort;
+    }
+
+    /** The configured port, else the one an application relaunched from; a taken relaunch port falls back to any. */
+    private HttpServer bind() throws IOException {
+        if (httpPort == 0 && relaunchPort > 0) {
+            try {
+                HttpServer server = HttpServer.create(new InetSocketAddress("localhost", relaunchPort), 0);
+                onRelaunchPort = true;
+                return server;
+            } catch (java.net.BindException taken) {
+                LOG.info("Relaunch port " + relaunchPort + " is taken, serving on another one");
+            }
+        }
+        return HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
+    }
+
+    private void answerInstance(HttpExchange exchange) throws IOException {
+        try {
+            pageAsked.countDown();
+            byte[] body = instance.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        } finally {
+            exchange.close();
+        }
+    }
+
+    /**
+     * Whether this server took over the port of the JVM the application relaunched from, so the
+     * page that JVM served may still be open and will reload into this one.
+     */
+    public boolean servesRelaunchedPage() {
+        return onRelaunchPort;
+    }
+
+    /** Waits for a page served by another server on this port to ask whether it is still current. */
+    public boolean awaitReturningPage(long timeoutMs) throws InterruptedException {
+        return pageAsked.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Records {@code port} in {@code eclipse.vmargs}, which is what an RCP application rebuilds its
+     * command line from when it relaunches itself, so the next JVM serves on the same port. Not when
+     * sessions share the JVM: its command line is not any one session's to set.
+     */
+    public static void carryPortAcrossRelaunch(int port) {
+        if (org.eclipse.swt.internal.cloudready.DefaultDisplayResolver.isSet()) return;
+        String vmargs = System.getProperty("eclipse.vmargs");
+        if (vmargs != null) System.setProperty("eclipse.vmargs", withRelaunchPort(vmargs, port));
+    }
+
+    static String withRelaunchPort(String vmargs, int port) {
+        StringBuilder out = new StringBuilder("-D" + RELAUNCH_PORT + "=" + port);
+        for (String line : vmargs.split("\n", -1)) {
+            if (line.startsWith("-D" + RELAUNCH_PORT + "=")) continue;
+            out.append('\n').append(line);
+        }
+        return out.toString();
     }
 
     /**
@@ -328,15 +401,17 @@ public class WebFlutterServer {
         private final String widgetName;
         private final boolean serveServiceWorker;
         private final boolean enableTestSemantics;
+        private final String instance;
 
         StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker,
-                boolean enableTestSemantics) {
+                boolean enableTestSemantics, String instance) {
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
             this.widgetId = widgetId;
             this.widgetName = widgetName;
             this.serveServiceWorker = serveServiceWorker;
             this.enableTestSemantics = enableTestSemantics;
+            this.instance = instance;
         }
 
         @Override
@@ -429,6 +504,7 @@ public class WebFlutterServer {
                             .replace("{{EQUO_COMM_URL}}", "")
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
                             .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
+                            .replace("{{EQUO_INSTANCE}}", instance != null ? instance : "")
                             .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()))
                             .replace("{{EQUO_ENABLE_TEST_SEMANTICS}}", String.valueOf(enableTestSemantics))
                             // Browser-profiler marks: a runtime switch, since they are not free.
@@ -835,6 +911,7 @@ public class WebFlutterServer {
 
         private File webDirectory;
         private int httpPort = 0; // 0 = ephemeral
+        private int relaunchPort;
         private int commPort;
         private long widgetId;
         private String widgetName = "";
@@ -974,6 +1051,8 @@ public class WebFlutterServer {
                 String fixedHttpPort = System.getProperty("dev.equo.swt.web.httpPort");
                 if (fixedHttpPort != null) {
                     httpPort = Integer.parseInt(fixedHttpPort);
+                } else {
+                    relaunchPort = Integer.getInteger(RELAUNCH_PORT, 0);
                 }
             }
             if (browserCommand == null) {

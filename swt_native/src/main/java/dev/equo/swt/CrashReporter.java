@@ -35,6 +35,7 @@ public class CrashReporter {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleCrash(throwable));
         Thread initThread = new Thread(() -> {
             boolean cleanShutdown = checkAndWriteSessionMarker();
+            markCleanOnOrderlyExit();
             if (!cleanShutdown) {
                 checkNativeCrashFiles();
                 if (pendingNativeCrashes == null) {
@@ -46,6 +47,11 @@ public class CrashReporter {
         initThread.start();
     }
 
+    /** Whether the previous session ended without a clean exit and left no native crash file. */
+    static boolean previousSessionAbnormal() {
+        return pendingAbnormalExit;
+    }
+
     private static void checkNativeCrashFiles() {
         try {
             List<File> found = scanForNativeCrashFiles();
@@ -54,6 +60,17 @@ public class CrashReporter {
             }
         } catch (Throwable t) {
             System.err.println("[CrashReporter] Failed to scan for native crash files: " + t);
+        }
+    }
+
+    // An application may return from its entry point or call System.exit without disposing the
+    // Display. Shutdown hooks run for those exits and not for a native crash or a forced kill, which
+    // are the sessions the dialog is for. Registered after "started" is written, so it never runs first.
+    private static void markCleanOnOrderlyExit() {
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(CrashReporter::writeCleanShutdownMarker, "crash-reporter-shutdown"));
+        } catch (IllegalStateException alreadyShuttingDown) {
+            writeCleanShutdownMarker();
         }
     }
 
