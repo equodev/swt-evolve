@@ -497,6 +497,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/*Bridge*.java",
     "**/WebFlutterServer.java",
     "**/ProxyHandler.java",
+    "**/InlineDocumentHandler.java",
     "**/HeadlessChrome.java",
     "**/VDisplay.java",
     "**/VShellPopups.java",
