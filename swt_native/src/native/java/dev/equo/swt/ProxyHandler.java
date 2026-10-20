@@ -173,6 +173,7 @@ class ProxyHandler implements HttpHandler {
                 if (!headerLines.isEmpty()) {
                     html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
                 }
+                html = BrowserFunctionBootstrap.inject(html);
                 body = html.getBytes(StandardCharsets.UTF_8);
             } else if (lowerContentType.contains("css")) {
                 // A stylesheet's own url() references (icon fonts, background/mask-image icons)

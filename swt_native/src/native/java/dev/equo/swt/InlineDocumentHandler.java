@@ -20,8 +20,8 @@ import java.util.logging.Logger;
  * script; a frame showing a {@code blob:} URL is not scriptable from its creator on every browser.
  *
  * <p>{@code POST /inline-document} stores a document and answers its path,
- * {@code GET /inline-document/<token>} serves it, and {@code DELETE} drops it once the Browser shows
- * another {@code setText} document or is disposed.
+ * {@code GET /inline-document/<token>} serves it with {@link BrowserFunctionBootstrap} injected, and
+ * {@code DELETE} drops it once the Browser shows another {@code setText} document or is disposed.
  */
 class InlineDocumentHandler implements HttpHandler {
 
@@ -69,7 +69,9 @@ class InlineDocumentHandler implements HttpHandler {
                 if (document == null) {
                     sendText(exchange, 404, "Not Found");
                 } else {
-                    send(exchange, 200, "text/html; charset=utf-8", document);
+                    send(exchange, 200, "text/html; charset=utf-8", BrowserFunctionBootstrap
+                            .inject(new String(document, StandardCharsets.UTF_8))
+                            .getBytes(StandardCharsets.UTF_8));
                 }
             } else if ("DELETE".equalsIgnoreCase(method)) {
                 documents.remove(token);

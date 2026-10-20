@@ -43,10 +43,20 @@ public class InlineDocumentHandlerNativeTest {
         HttpResponse<String> page = send(HttpRequest.newBuilder(URI.create(base + path)).build());
         assertThat(page.statusCode()).isEqualTo(200);
         assertThat(page.headers().firstValue("Content-Type")).hasValue("text/html; charset=utf-8");
-        assertThat(page.body()).isEqualTo("<p>loading</p>");
+        assertThat(page.body()).isEqualTo(BrowserFunctionBootstrap.SCRIPT + "<p>loading</p>");
 
         send(HttpRequest.newBuilder(URI.create(base + path)).DELETE().build());
         assertThat(send(HttpRequest.newBuilder(URI.create(base + path)).build()).statusCode()).isEqualTo(404);
+    }
+
+    @Test
+    public void a_served_document_defines_browser_functions_ahead_of_its_own_scripts() throws Exception {
+        String path = send(post("<html><head><script>go()</script></head><body>café</body></html>",
+                "same-origin")).body();
+
+        String body = send(HttpRequest.newBuilder(URI.create(base + path)).build()).body();
+        assertThat(body).isEqualTo("<html><head>" + BrowserFunctionBootstrap.SCRIPT
+                + "<script>go()</script></head><body>café</body></html>");
     }
 
     @Test

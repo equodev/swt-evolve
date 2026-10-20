@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -720,12 +721,28 @@ public class WebFlutterServer {
      * {@link BrowserFunctionRegistry} (which runs it on the SWT display thread)
      * and returns {@code {"value": <json>}} or {@code {"error": <message>}}. The
      * iframe is served from this origin (via the proxy), so no CORS is needed.
+     * A {@code GET ?browserId=<id>} returns {@code {"names": [...]}}, the functions
+     * registered on that Browser, for {@link BrowserFunctionBootstrap}.
      */
     private static class BrowserFunctionHandler implements HttpHandler {
+
+        private static final Pattern BROWSER_ID_PARAM = Pattern.compile("(?:^|&)browserId=(-?\\d+)(?:&|$)");
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
+                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    String query = exchange.getRequestURI().getRawQuery();
+                    Matcher m = BROWSER_ID_PARAM.matcher(query == null ? "" : query);
+                    if (!m.find()) {
+                        sendJson(exchange, 400, "{\"error\":\"bad request\"}");
+                        return;
+                    }
+                    long browserId = Long.parseLong(m.group(1));
+                    sendJson(exchange, 200, "{\"names\":"
+                            + EvalJson.encode(BrowserFunctionRegistry.namesFor(browserId)) + "}");
+                    return;
+                }
                 if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                     sendJson(exchange, 405, "{\"error\":\"method not allowed\"}");
                     return;
@@ -867,9 +884,10 @@ public class WebFlutterServer {
          * browser refuses ("Not allowed to load local resource"), so the page renders with blank
          * icons. Applications built on Eclipse's {@code FileLocator.toFileURL} write exactly that
          * markup, so a served page gets the same rewrite a {@code setText} document does. Returns
-         * {@code null} — serve the file as-is — when it references no local file, or is too large
-         * to be the kind of page this is for. A page served under its token also gets its
-         * {@code <base href>} made relative, see {@link LocalFileServing#relativizeBaseHref}.
+         * {@code null} — serve the file as-is — when it is too large to be the kind of page this
+         * is for. A page served under its token also gets its {@code <base href>} made relative,
+         * see {@link LocalFileServing#relativizeBaseHref}, and every page gets
+         * {@link BrowserFunctionBootstrap}.
          * <p>
          * ISO-8859-1 maps bytes to chars one-to-one, so the rewrite (which only ever replaces ASCII
          * URLs) round-trips a document of any real encoding back to its own bytes.
@@ -883,7 +901,7 @@ public class WebFlutterServer {
                 if (tokenRelativePath != null) {
                     out = LocalFileServing.relativizeBaseHref(out, tokenRelativePath);
                 }
-                return out == html ? null : out.getBytes(StandardCharsets.ISO_8859_1);
+                return BrowserFunctionBootstrap.inject(out).getBytes(StandardCharsets.ISO_8859_1);
             } catch (IOException e) {
                 LOG.log(Level.FINE, "could not rewrite local resources in " + file, e);
                 return null;
