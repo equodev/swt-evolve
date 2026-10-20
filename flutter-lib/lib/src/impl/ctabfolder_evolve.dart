@@ -28,6 +28,7 @@ import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/swt_zoom_scale.dart';
 import 'utils/tracker_session.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
@@ -1732,6 +1733,9 @@ class _CTabInsertionMarkerPainter extends CustomPainter {
       oldDelegate.color != color;
 }
 
+/// Marks a tab's close button for hit tests.
+const _tabCloseButton = #ctabCloseButton;
+
 /// A CTabFolder's tab row. Every tab is a Flutter [Draggable] carrying a [DndDragPayload] and
 /// the row itself is a drop target, so a tab dropped on a *different* folder's row resolves
 /// there and reaches Java as a real `DND.Drop`.
@@ -1739,9 +1743,6 @@ class _CTabInsertionMarkerPainter extends CustomPainter {
 /// A folder that has an application `DropTarget` hands the drop to it and does not reorder
 /// itself: native CTabFolder has no built-in reordering, so running both would move the tab
 /// twice and diverge from the native backend.
-/// Marks a tab's close button for hit tests.
-const _tabCloseButton = #ctabCloseButton;
-
 class TabDragRow extends StatefulWidget {
   final List<Widget> children;
   final List<CTabItem> tabs;
@@ -2017,7 +2018,7 @@ class _TabDragRowState extends State<TabDragRow> {
       },
       resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
       resolvePosition: (details) =>
-          _row?.globalToLocal(details.offset) ?? details.offset,
+          _row?.globalToLocal(details.offset) ?? logicalToSwt(details.offset),
       onDrop: _handleDrop,
       builder: (context, child, negotiation, isHovering) {
         if (!isHovering) _insertHover.update(null);
