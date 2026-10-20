@@ -312,6 +312,9 @@ public class TextHelper {
             return;
         String proposed = e.text;
         applyClientEdit(text, proposed, e.start);
+        // A listener may have disposed the field: there is no text to compare, nor a client to answer.
+        if (text.isDisposed())
+            return;
         boolean applied = proposed.equals(text.getText());
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
@@ -354,8 +357,6 @@ public class TextHelper {
         }
         int at = range.x + inserted.length();
         commit(text, old.substring(0, range.x) + inserted + old.substring(range.y), at);
-        if (!text.isDisposed())
-            text.setSelection(at);
     }
 
     /**
@@ -450,8 +451,9 @@ public class TextHelper {
         text.clearSegments(false);
         text.setEditText(string);
         if (caret >= 0) {
-            text.selection = null;
-            text.caretPosition = caret;
+            // Placed before the Modify below: a listener reads the caret the edit left, and what it
+            // sets itself is not overridden afterwards.
+            text.setSelection(caret);
         } else {
             // The old selection belonged to the old text: the caret goes back to the start, as on Win32
             // and GTK (Cocoa leaves a single-line text's caret at the end).

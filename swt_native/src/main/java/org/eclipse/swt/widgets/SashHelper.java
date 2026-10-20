@@ -5,6 +5,9 @@ import org.eclipse.swt.graphics.Rectangle;
 
 public class SashHelper {
 
+    private SashHelper() {
+    }
+
     /**
      * A Selection the client reports for a press, a drag or a release. The press's comes ahead of its
      * MouseDown, and natively the press has activated the Sash before either

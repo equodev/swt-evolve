@@ -13,7 +13,7 @@ class ListArrowKeyTest extends KeyRoutingTestBase {
 
     private List list() {
         List list = new List(new Composite(shell(), SWT.NONE), SWT.SINGLE);
-        list.setItems("alpha", "bravo", "charlie");
+        list.setItems(new String[] {"alpha", "bravo", "charlie"});
         list.setSelection(1);
         return list;
     }

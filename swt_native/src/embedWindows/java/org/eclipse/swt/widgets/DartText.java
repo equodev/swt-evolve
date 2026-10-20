@@ -1944,25 +1944,23 @@ public class DartText extends DartScrollable implements IText {
                     return;
                 if (!isActive())
                     return;
-                if (!isDisposed()) {
-                    if (e.detail == SWT.ICON_CANCEL) {
-                        if (getCharCount() != 0) {
-                            setText("");
-                        }
-                        if (!isDisposed()) {
-                            sendEvent(SWT.DefaultSelection, e);
-                        }
-                        return;
-                    }
-                    if (!traverse(SWT.TRAVERSE_RETURN)) {
-                        Event crEvent = new Event();
-                        crEvent.keyCode = SWT.CR;
-                        crEvent.character = '\r';
-                        sendEvent(SWT.KeyDown, crEvent);
+                if (e.detail == SWT.ICON_CANCEL) {
+                    if (getCharCount() != 0) {
+                        setText("");
                     }
                     if (!isDisposed()) {
                         sendEvent(SWT.DefaultSelection, e);
                     }
+                    return;
+                }
+                if (!traverse(SWT.TRAVERSE_RETURN)) {
+                    Event crEvent = new Event();
+                    crEvent.keyCode = SWT.CR;
+                    crEvent.character = '\r';
+                    sendEvent(SWT.KeyDown, crEvent);
+                }
+                if (!isDisposed()) {
+                    sendEvent(SWT.DefaultSelection, e);
                 }
             });
         });
