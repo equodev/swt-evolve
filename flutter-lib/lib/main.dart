@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
@@ -35,6 +34,7 @@ import 'src/impl/window_commands_native.dart'
 import 'src/comm/comm.dart';
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
+import 'src/impl/client_ready.dart';
 import 'src/impl/display_evolve.dart';
 import 'src/impl/focus_requests.dart';
 import 'fontSize.dart' as font_size;
@@ -272,7 +272,7 @@ class _WindowMetricsReporter {
   // properties and re-serialize the whole Display — the same resync a page refresh gets —
   // and cancels any tab-close it had deferred.
   void _resyncAfterReconnect() {
-    _displayClientReadySent = false;
+    _clientReady.restart();
     _sendWindowSizedClientReady(widgetName, widgetId);
   }
 
@@ -363,48 +363,18 @@ Size? _currentLogicalMonitorSize() {
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
 }
 
-bool _displayClientReadySent = false;
-
-final Map<String, Map<String, Object>> _lastClientReady = {};
-
-@visibleForTesting
-Future Function(String channel, Object payload) clientReadySender = EquoCommService.sendPayload;
-
-@visibleForTesting
-void resetClientReadyState() {
-  _displayClientReadySent = false;
-  _lastClientReady.clear();
-}
-
-@visibleForTesting
-void sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) =>
-    _sendWindowSizedClientReady(widgetName, widgetId, sizeOverride: sizeOverride);
+final _clientReady = ClientReadyReporter();
 
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
   final size = sizeOverride ?? currentSwtViewSize();
-  final bool isFirst = !_displayClientReadySent;
-  _displayClientReadySent = true;
-  final int w = size?.width.toInt() ?? 1280;
-  final int h = size?.height.toInt() ?? 720;
   // The monitor the window is on (0 when unknown → Java keeps its default/viewport).
   final monitor = _currentLogicalMonitorSize();
-  final int mw = monitor?.width.toInt() ?? 0;
-  final int mh = monitor?.height.toInt() ?? 0;
-  final int zoom = monitorZoomPercent();
-  final channel = "$widgetName/$widgetId/ClientReady";
-  final Map<String, Object> payload = {
-    'width': w,
-    'height': h,
-    'isFirst': isFirst,
-    'displayWidth': mw,
-    'displayHeight': mh,
-    'zoom': zoom,
-  };
-  // A config change that moves the scale reaches here from both the scale and the config listener.
-  if (!isFirst && mapEquals(payload, _lastClientReady[channel])) return;
-  _lastClientReady[channel] = payload;
-  print('[ClientReady] $widgetName/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
-  clientReadySender(channel, payload);
+  _clientReady.report(widgetName, widgetId,
+      width: size?.width.toInt() ?? 1280,
+      height: size?.height.toInt() ?? 720,
+      displayWidth: monitor?.width.toInt() ?? 0,
+      displayHeight: monitor?.height.toInt() ?? 0,
+      zoom: monitorZoomPercent());
 }
 
 Future<void> initSwtEvolveProperties() async {
