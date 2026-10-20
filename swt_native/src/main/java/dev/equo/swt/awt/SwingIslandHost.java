@@ -81,6 +81,27 @@ public final class SwingIslandHost {
     /** The person closed a Shell, which Java's window decides: {@code {windowId}}, to the bundle. */
     static final String CLOSE_EVENT = "swingIsland.close";
 
+    /**
+     * Java's answer to a Shell request for a window that already has a live island:
+     * {@code {windowId}}, to the bundle.
+     *
+     * <p><b>Why silence was the wrong answer, measured.</b> Refusing to build the Shell and saying
+     * nothing looked safe — the client gives every request a deadline and declines an unanswered
+     * one, the same as for a Shell Java cannot build for any other reason. But declining is not
+     * "nothing happens": a declined window is drawn <em>in-view</em>, inside the box of whichever
+     * island is live. So the worst possible answer for a window that Java knows is an island was
+     * the one silence produced.
+     *
+     * <p>Reproduced in a snippet with four islands in two tab stacks: only the visible tab's region
+     * exists on the client, so three windows never register as islands, their Shell requests are
+     * refused here, and five seconds later all three are drawn inside the one visible island —
+     * three views stacked in one pane, each answering input, all moving together. The same shape
+     * had been measured on an application as "the same view drawn in two places", and
+     * the number of refusals there varied per boot because it depends on how many regions register
+     * before the client's own two-second wait runs out.
+     */
+    static final String IS_ISLAND_EVENT = "swingIsland.island";
+
     /** The Display's islands and Shell'd windows, by windowId. */
     private static final String ISLANDS_KEY = SwingIslandHost.class.getName() + ".islands";
 
@@ -158,6 +179,10 @@ public final class SwingIslandHost {
      * being an island.
      */
     static void mount(SwingIsland child, int windowId, int port, boolean surface) {
+        Map<Integer, SwingIsland> islands = registry(child.getDisplay(), ISLANDS_KEY);
+        if (!mountable(islands, child, windowId, surface)) {
+            return;
+        }
         DartSwingIsland island = (DartSwingIsland) child.getImpl();
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("windowId", windowId);
@@ -165,12 +190,145 @@ public final class SwingIslandHost {
         if (surface) info.put("surface", true);
         // The region asks when it mounts (it may not exist yet, and a push nobody listens to is
         // dropped) and is answered on its own channel; the push covers a region already there.
-        FlutterBridge.onPayload(island, ISLAND_EVENT, p -> FlutterBridge.send(island, ISLAND_EVENT, info));
+        FlutterBridge.onPayload(island, ISLAND_EVENT, p -> {
+            FlutterBridge.send(island, ISLAND_EVENT, info);
+            sayWhereItIs(child, windowId);
+        });
         FlutterBridge.send(island, ISLAND_EVENT, info);
 
-        Map<Integer, SwingIsland> islands = registry(child.getDisplay(), ISLANDS_KEY);
         islands.put(windowId, child);
         child.addListener(SWT.Dispose, e -> islands.remove(windowId, child));
+        say("island " + idOf(child) + " mounts window " + windowId
+                + (surface ? " as a Shell" : ""));
+    }
+
+    /**
+     * Whether this island may be told it mirrors {@code windowId} — the two ways that answer can be
+     * wrong, both of which used to pass silently.
+     *
+     * <p><b>A windowId of 0 is not a window.</b> {@code WindowIds.of} answers 0, never a valid id,
+     * for a window swing-evolve's toolkit has not peered, and {@link #describe} passed whatever it
+     * got straight through. A region told 0 asks the engine to mirror a window that does not exist.
+     *
+     * <p><b>And two live islands may not share one window.</b> The registry below is keyed by
+     * windowId, so a second mount used to overwrite the first entry while <em>both</em> regions had
+     * already been sent the same id — and both then drew the same view, each inside its own pane.
+     * Measured on an application with three editor parts, each hosting an island: three
+     * {@code SwingIsland} widgets, two registered windows, and one view rendered live in two panes
+     * at once — the application's own toolbar buttons still driving the right view while its
+     * pixels appeared in someone else's pane.
+     *
+     * <p>Refusing the second is safe by the router's own rule rather than by hope: a surface is
+     * requested only for a window that is <em>not</em> an island ({@code _IslandRouter.answer}
+     * answers {@code island} and asks for nothing when it is), so a window with a live island never
+     * legitimately acquires a second one.
+     */
+    private static boolean mountable(Map<Integer, SwingIsland> islands, SwingIsland child,
+            int windowId, boolean surface) {
+        if (windowId <= 0) {
+            say("refusing to mount island " + idOf(child) + " on windowId " + windowId
+                    + ": swing-evolve's engine has not peered that window, so there is nothing "
+                    + "to mirror");
+            return false;
+        }
+        SwingIsland held = islands.get(windowId);
+        if (held != null && held != child && !held.isDisposed()) {
+            say("window " + windowId + " is already mirrored by live island " + idOf(held)
+                    + "; refusing to mount it on island " + idOf(child) + ", asked for as "
+                    + (surface ? "a Shell the client requested" : "an embedded island")
+                    + ", which would draw the same view in two places");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether a Shell may be built for {@code windowId}, asked <em>before</em> anything is built.
+     *
+     * <p>{@link #mount} refuses a window that already has a live island, and refusing it there was
+     * half a fix: the Shell, its {@link SwingIsland} and its region had already been built,
+     * parented and opened, and the region was then never told which window it mirrors. Measured on
+     * the application this was found on: one
+     * {@code No handler for: SwingIsland/<id>/swingIsland} per refused island, naming exactly the
+     * ids the refusal lines named, with nothing else in either log mentioning them — a region on
+     * the client asking on a channel the engine will never answer. The refusal belongs here, where
+     * nothing has been built yet.
+     *
+     * <p>Nothing is sent back, and that is the client's own design rather than an omission: it gave
+     * the request a deadline ({@code shellOpenWait}), and an unanswered one is declined and its
+     * Shell asked for by id — the same path as a Shell Java could not build for any other reason.
+     */
+    private static boolean buildable(Map<Integer, SwingIsland> islands, int windowId,
+            CommService comm) {
+        if (windowId <= 0) {
+            // Nothing to say back: there is no island either, so the client declining it and
+            // drawing it in-view is the best available answer rather than the wrong one.
+            say("refusing to build a Shell for windowId " + windowId
+                    + ": swing-evolve's engine has not peered that window, so there is nothing "
+                    + "to mirror");
+            return false;
+        }
+        SwingIsland held = islands.get(windowId);
+        if (held != null && !held.isDisposed()) {
+            say("window " + windowId + " is already mirrored by live island " + idOf(held)
+                    + "; refusing to build the Shell the client asked for, and telling it the "
+                    + "window is an island so it is not drawn inside another one");
+            FlutterBridge.send(comm, IS_ISLAND_EVENT, Map.of("windowId", windowId));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The island's widget id — the same number the client's channel is named after, so a line here
+     * and a {@code SwingIsland/<id>} on that side are about the same widget.
+     *
+     * <p>Without it the census says how many islands mounted and which windows they took, and
+     * cannot say <em>which island</em> took which — which is the question left when the counts are
+     * right and the panes are still crossed.
+     */
+    private static int idOf(SwingIsland island) {
+        return island == null ? 0 : island.hashCode();
+    }
+
+    /**
+     * Says which island answered for which window, and where that island is on screen.
+     *
+     * <p>A census of mounts says how many islands there are and which windows they took. It cannot
+     * say which <em>pane</em> each one is in, which is the question left when the counts are right
+     * and the views are still drawn in the wrong places — and no amount of client log answers it
+     * either, because the client knows a region's box and not the window behind it. Java knows
+     * both. The island's display bounds here are in the same coordinates a person reads off the
+     * screen, so an island, a window and a pane become one line.
+     *
+     * <p>On the asking side rather than at mount: at mount the island has not been laid out and its
+     * box is the 1x1 the frame opened at. Deferred onto the Display, because the ask arrives on the
+     * comm's thread and a widget's bounds may only be read on the thread that owns it.
+     */
+    private static void sayWhereItIs(SwingIsland island, int windowId) {
+        Display display = island.getDisplay();
+        onDisplay(display, () -> {
+            if (island.isDisposed()) return;
+            Rectangle box = island.getBounds();
+            Point at = island.getParent() == null ? new Point(box.x, box.y)
+                    : island.getParent().toDisplay(box.x, box.y);
+            // A region asks as soon as it mounts, which is before the layout that gives it a box,
+            // so the first answer for a window is routinely 0x0 at wherever its unlaid-out parent
+            // happens to sit. Saying so costs a clause and stops a reader concluding that the
+            // window has no pane at all -- which is exactly what two readers did conclude, from
+            // the same 0x0 line, before a later answer for the same window landed on a real pane.
+            String laid = box.width <= 0 || box.height <= 0
+                    ? " -- not laid out yet, so this is not where it will be"
+                    : "";
+            say("island " + idOf(island) + " answers for window " + windowId + ", at " + at.x + ","
+                    + at.y + " " + box.width + "x" + box.height + " on screen, inside "
+                    + island.getParent() + laid);
+        });
+    }
+
+    /** Said out loud, because every one of these is a window appearing or failing to. */
+    private static void say(String what) {
+        System.err.println("[swing-island] " + what);
     }
 
     /**
@@ -267,6 +425,7 @@ public final class SwingIslandHost {
         if (previous != null) previous.dispose();
 
         Map<Integer, SwingIsland> islands = registry(display, ISLANDS_KEY);
+        if (!buildable(islands, windowId, comm)) return;
         SwingIsland owner = islands.get(intOf(request, "hostOwnerId"));
         if (owner != null && owner.isDisposed()) owner = null;
         Shell parent = owner != null ? owner.getShell() : display.getActiveShell();
