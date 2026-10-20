@@ -38,7 +38,6 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartControl;
@@ -205,10 +204,8 @@ public final class EvolveSwingHost {
         installMenuCloseFilter(parent.getDisplay());
 
         // A single full-bleed Canvas child is the paint surface (Evolve pipes its
-        // PaintListener + GC.drawImage to Flutter). FillLayout keeps it sized to
-        // the EMBEDDED composite.
-        parent.setLayout(new FillLayout());
-        final Canvas canvas = new Canvas(parent, SWT.NO_BACKGROUND);
+        // PaintListener + GC.drawImage to Flutter).
+        final Canvas canvas = newPaintSurface(parent);
 
         final Host host = new Host(canvas);
 
@@ -240,6 +237,69 @@ public final class EvolveSwingHost {
      */
     static void sizeFrame(Component frame, Rectangle area) {
         frame.setSize(Math.max(0, area.width), Math.max(0, area.height));
+    }
+
+    /**
+     * The canvas the frame is drawn into, kept at the composite's whole client area as a native
+     * embedded window is.
+     */
+    static Canvas newPaintSurface(Composite parent) {
+        PaintSurface canvas = new PaintSurface(parent);
+        Listener fill = e -> canvas.fill();
+        parent.addListener(SWT.Resize, fill);
+        canvas.addListener(SWT.Dispose, e -> parent.removeListener(SWT.Resize, fill));
+        canvas.fill();
+        return canvas;
+    }
+
+    /**
+     * Stands for the native window SWT_AWT embeds, which no SWT layout places: whatever bounds,
+     * size or location it is given, it takes the composite's client area. That area comes from the
+     * implementation, because SWT/Swing integration libraries override the composite's
+     * {@code getClientArea()}, some answering with the Swing component's preferred size.
+     * {@code SwingIsland} does the same for swing-evolve's engine.
+     */
+    static final class PaintSurface extends Canvas {
+        PaintSurface(Composite parent) {
+            super(parent, SWT.NO_BACKGROUND);
+        }
+
+        // Straight to the implementation: on some platforms the API setters call one another, and
+        // each of them lands back here.
+        void fill() {
+            Rectangle area = getParent().getImpl().getClientArea();
+            getImpl().setBounds(area.x, area.y, area.width, area.height);
+        }
+
+        @Override
+        public void setBounds(int x, int y, int width, int height) {
+            fill();
+        }
+
+        @Override
+        public void setBounds(Rectangle rect) {
+            fill();
+        }
+
+        @Override
+        public void setSize(int width, int height) {
+            fill();
+        }
+
+        @Override
+        public void setSize(Point size) {
+            fill();
+        }
+
+        @Override
+        public void setLocation(int x, int y) {
+            fill();
+        }
+
+        @Override
+        public void setLocation(Point location) {
+            fill();
+        }
     }
 
     /**

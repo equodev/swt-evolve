@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartSwingIsland;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
 import dev.equo.swt.Config;
@@ -113,14 +114,12 @@ public final class SwingIslandHost {
 
     public static Frame newFrame(Composite parent) {
         if (parent == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        parent.setLayout(new FillLayout());
-        SwingIsland child = new SwingIsland(parent, SWT.NONE);
+        SwingIsland child = newIsland(parent);
         if (!(child.getImpl() instanceof DartSwingIsland)) {
             child.dispose();
             throw new IllegalStateException("swing-evolve's engine owns AWT but " + parent
                     + " is not a Dart widget, so it cannot host a Swing island");
         }
-        parent.layout(true);
 
         // Shown on the calling (SWT) thread, where the blit path built its frame too. It opens at
         // the island's current size, 0x0 before layout: the mirror reports its real box on its
@@ -142,6 +141,16 @@ public final class SwingIslandHost {
         });
         parent.setData(EMBEDDED_FRAME_KEY, frame);
         return frame;
+    }
+
+    /** The island child, kept at the composite's client area whatever layout the composite has. */
+    static SwingIsland newIsland(Composite parent) {
+        SwingIsland child = new SwingIsland(parent, SWT.NONE);
+        Listener fill = e -> child.fill();
+        parent.addListener(SWT.Resize, fill);
+        child.addListener(SWT.Dispose, e -> parent.removeListener(SWT.Resize, fill));
+        child.fill();
+        return child;
     }
 
     /**
