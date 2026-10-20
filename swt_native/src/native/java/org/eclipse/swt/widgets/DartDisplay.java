@@ -1878,8 +1878,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     int getToolTipTime() {
         checkDevice();
-        //TODO get OS value (NSTooltipManager?)
-        return 560;
+        return dev.equo.swt.Config.hoverDelay();
     }
 
     Widget getWidget(long id) {

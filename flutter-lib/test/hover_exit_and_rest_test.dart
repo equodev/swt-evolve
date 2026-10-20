@@ -116,7 +116,7 @@ void main() {
       ),
     );
 
-    await tester.pump(const Duration(milliseconds: ControlImpl.hoverDelayMs + 50));
+    await tester.pump(Duration(milliseconds: ControlImpl.hoverDelayMs + 50));
 
     final hovers = sent.where((s) => s.$1.contains('MouseHover')).toList();
     expect(hovers, hasLength(1), reason: 'the stillness that makes a MouseHover due starts at the enter');

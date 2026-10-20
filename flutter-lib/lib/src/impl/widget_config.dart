@@ -176,6 +176,14 @@ bool gcUsesThemeColors(bool? themedCanvas) {
 /// not pass an explicit one: Java's `Display.getDoubleClickTime()`, sent in the config flags
 /// (`-Dswt.evolve.double_click_timeout_ms=<ms>` overrides it). Before the flags arrive, Flutter's
 /// [kDoubleTapTimeout].
+/// How long the pointer rests before a control reports MouseHover and shows its tooltip: Java's
+/// `Display.getToolTipTime()`, sent in the config flags (`-Dswt.evolve.hover_delay_ms=<ms>`
+/// overrides it). Before the flags arrive, 560ms.
+Duration get hoverDelay {
+  final ms = getConfigFlags().hover_delay_ms ?? 0;
+  return Duration(milliseconds: ms > 0 ? ms : 560);
+}
+
 Duration get doubleClickTimeout {
   final ms = getConfigFlags().double_click_timeout_ms ?? 0;
   return ms > 0 ? Duration(milliseconds: ms) : kDoubleTapTimeout;

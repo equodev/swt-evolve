@@ -68,9 +68,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   static const int _dragMoveThrottleMs = 15;
   // Win32's SM_CXDRAG/SM_CYDRAG default, which is what SWT's own drag detection uses.
   static const double _dragThresholdPx = 4.0;
-  // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
-  /// How long the pointer rests before a control reports MouseHover.
-  static const int hoverDelayMs = 560;
+  /// How long the pointer rests before a control reports MouseHover and shows its tooltip:
+  /// Display.getToolTipTime(), configurable ([hoverDelay]).
+  static int get hoverDelayMs => hoverDelay.inMilliseconds;
   Timer? _hoverTimer;
 
   // The control's own tooltip is placed by hand, in an overlay, at the pointer. See
@@ -255,7 +255,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   void _resetHoverTimer(V state, VEvent event) {
     _hoverTimer?.cancel();
-    _hoverTimer = Timer(const Duration(milliseconds: hoverDelayMs), () {
+    _hoverTimer = Timer(hoverDelay, () {
       if (!mounted) return;
       widget.sendMouseTrackMouseHover(state, event);
       _showTooltipAtPointer();

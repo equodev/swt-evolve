@@ -830,6 +830,15 @@ public class Config {
     /** The double-click time when none is configured: Win32's and Cocoa's default. */
     public static final int DOUBLE_CLICK_TIME_MS = 500;
 
+    /** The hover and tooltip delay when none is configured: Cocoa SWT's getToolTipTime(). */
+    public static final int HOVER_DELAY_MS = 560;
+
+    /** How long the pointer rests before MouseHover and the tooltip, in milliseconds; Java and the client share it. */
+    public static int hoverDelay() {
+        int ms = getConfigFlags().hover_delay_ms;
+        return ms > 0 ? ms : HOVER_DELAY_MS;
+    }
+
     /** The double-click time both Java and the client use, in milliseconds. */
     public static int doubleClickTime() {
         int ms = getConfigFlags().double_click_timeout_ms;
@@ -921,6 +930,9 @@ public class Config {
             // client's DoubleTapDetectors pair clicks with it, so both sides agree. A test harness
             // whose synthetic click pairs land further apart than a real user's widens it.
             configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", DOUBLE_CLICK_TIME_MS);
+            // Hover and tooltip delay (ms): MouseHover fires, and the tooltip shows, once the pointer
+            // has rested this long. A test harness that waits for hovers shortens it.
+            configFlags.hover_delay_ms = Integer.getInteger("swt.evolve.hover_delay_ms", HOVER_DELAY_MS);
             // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).

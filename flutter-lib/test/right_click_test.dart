@@ -45,7 +45,7 @@ class _RecordingTableSwt extends TableSwt<VTable> {
 }
 
 /// Past the hover timer a release starts, so no timer is left pending when a test ends.
-const _pastTheHover = Duration(milliseconds: 2 * ControlImpl.hoverDelayMs);
+final _pastTheHover = Duration(milliseconds: 2 * ControlImpl.hoverDelayMs);
 
 void main() {
   testWidgets('a right-click leaves a Text caret where it was', variant: TargetPlatformVariant.desktop(), (tester) async {

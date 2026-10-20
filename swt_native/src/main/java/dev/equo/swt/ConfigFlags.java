@@ -173,6 +173,9 @@ public class ConfigFlags {
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
     public int double_click_timeout_ms;
+    /** How long the pointer rests before a control reports MouseHover and shows its tooltip, in
+     *  milliseconds; Display.getToolTipTime() answers it. */
+    public int hover_delay_ms;
     /** Explicit CSD title-bar colour (RRGGBB/AARRGGBB hex); overrides the theme's own. */
     public String csd_titlebar_color;
 
@@ -234,6 +237,7 @@ public class ConfigFlags {
                 ", csd_os='" + csd_os + '\'' +
                 ", csd_maximize='" + csd_maximize + '\'' +
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
+                ", hover_delay_ms=" + hover_delay_ms +
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
                 ", font_point_scale=" + font_point_scale +
                 ", push_button_margin=" + push_button_margin +
