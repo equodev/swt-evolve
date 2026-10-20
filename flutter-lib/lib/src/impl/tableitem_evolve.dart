@@ -245,7 +245,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           "Mouse/MouseDoubleClick",
           e,
         );
-        _context!.tableImpl!.handleRowDoubleTap(rowIndex, state, buttonHeld: true);
+        _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);
       }
     }
 

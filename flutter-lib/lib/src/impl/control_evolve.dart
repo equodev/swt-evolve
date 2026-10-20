@@ -55,9 +55,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Offset? _lastPointerCrossing;
   int _lastDragMoveMs = 0;
 
-  /// Where the held pointer was last reported, by its press or a move.
-  int? _lastHeldX;
-  int? _lastHeldY;
+  /// Where the held pointer was last reported, by its press or a move, in whole pixels.
+  Offset? _lastHeld;
   int? _dragDetectPointer;
   Offset? _dragDetectOrigin;
   bool _dragDetectSent = false;
@@ -307,12 +306,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void sendThrottledDragMove(V state, VEvent event, int buttons) {
     // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
     // with the press.
-    if (event.x == _lastHeldX && event.y == _lastHeldY) return;
+    if (_lastHeld == Offset((event.x ?? 0).toDouble(), (event.y ?? 0).toDouble())) return;
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
       _lastDragMoveMs = now;
-      _lastHeldX = event.x;
-      _lastHeldY = event.y;
+      _lastHeld = Offset((event.x ?? 0).toDouble(), (event.y ?? 0).toDouble());
       event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
       RoundTripTiming.trace();
@@ -439,8 +437,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _lastButton = button;
     _dragDetectPointer = e.pointer;
     _dragDetectOrigin = e.localPosition;
-    _lastHeldX = e.localPosition.dx.round();
-    _lastHeldY = e.localPosition.dy.round();
+    _lastHeld = Offset(e.localPosition.dx.roundToDouble(), e.localPosition.dy.roundToDouble());
     _dragDetectSent = false;
   }
 
@@ -547,6 +544,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// The click count of the pointer-down still in flight, never 0 — an application gating on
   /// `count == 1` must see a plain click as one.
   int get swtClickCount => _clickCount == 0 ? 1 : _clickCount;
+
+  /// Whether the press in flight continues a click chain: the second press of a double click, or a
+  /// later one. Natively it reports no Selection of its own on a Scale or Slider.
+  bool get isRepeatPress => swtClickCount > 1;
 
   /// The second press of a chain delivers MouseDoubleClick right after its MouseDown, with the
   /// same position and button, as every native does; a third press is a plain MouseDown again.

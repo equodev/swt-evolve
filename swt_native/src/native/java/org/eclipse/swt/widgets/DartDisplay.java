@@ -1271,7 +1271,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public int getDoubleClickTime() {
         checkDevice();
-        return 500;
+        return dev.equo.swt.Config.doubleClickTime();
     }
 
     /**

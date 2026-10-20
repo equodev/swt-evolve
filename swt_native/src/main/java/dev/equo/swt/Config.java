@@ -827,6 +827,15 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
+    /** The double-click time when none is configured: Win32's and Cocoa's default. */
+    public static final int DOUBLE_CLICK_TIME_MS = 500;
+
+    /** The double-click time both Java and the client use, in milliseconds. */
+    public static int doubleClickTime() {
+        int ms = getConfigFlags().double_click_timeout_ms;
+        return ms > 0 ? ms : DOUBLE_CLICK_TIME_MS;
+    }
+
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
         return configFlags;
@@ -906,10 +915,10 @@ public class Config {
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
             //   -Ddev.equo.swt.csd.maximize=direct|bounds|native|fullscreen
             configFlags.csd_maximize = System.getProperty("dev.equo.swt.csd.maximize", "direct");
-            // Double-click pairing window (ms) for the Flutter-side DoubleTapDetector. Unset/0 keeps
-            // Flutter's kDoubleTapTimeout; a test harness whose synthetic click pairs land further
-            // apart than a real user's widens it without a rebuild.
-            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", 0);
+            // Double-click pairing window (ms): Display.getDoubleClickTime() answers it and the
+            // client's DoubleTapDetectors pair clicks with it, so both sides agree. A test harness
+            // whose synthetic click pairs land further apart than a real user's widens it.
+            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", DOUBLE_CLICK_TIME_MS);
             // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).

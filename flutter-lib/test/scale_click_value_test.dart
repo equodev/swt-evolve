@@ -176,6 +176,21 @@ void main() {
     expect(selections, isEmpty);
   });
 
+  testWidgets('a double click on the knob reports one Selection, from its first press only',
+      (tester) async {
+    final selections = <int?>[];
+    final value = _scale()..selection = 25;
+    final origin = await pumpScaleAt25(tester, selections, value);
+
+    await tester.tapAt(origin + const Offset(84, 20));
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(origin + const Offset(84, 20));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(value.selection, 25);
+    expect(selections, [25]);
+  });
+
   testWidgets('a drag from the knob moves it by where it was grabbed', (tester) async {
     final selections = <int?>[];
     final value = _scale()..selection = 25;

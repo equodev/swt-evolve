@@ -63,7 +63,7 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
       onPointerUp: (_) {
         final primary = _pressed;
         _pressed = false;
-        if (!primary || _changedDuringPress || !enabled || swtClickCount > 1) return;
+        if (!primary || _changedDuringPress || !enabled || isRepeatPress) return;
         widget.sendSelectionSelection(state, VEvent()
           ..index = state.selection
           ..stateMask = SWT.BUTTON1);

@@ -168,8 +168,9 @@ bool get canvasUsesThemeColors {
 }
 
 /// The shared double-click pairing window, used by every `DoubleTapDetector` whose call site does
-/// not pass an explicit one. Configured with `-Dswt.evolve.double_click_timeout_ms=<ms>`; unset (or
-/// 0) keeps Flutter's [kDoubleTapTimeout], which is what production runs on.
+/// not pass an explicit one: Java's `Display.getDoubleClickTime()`, sent in the config flags
+/// (`-Dswt.evolve.double_click_timeout_ms=<ms>` overrides it). Before the flags arrive, Flutter's
+/// [kDoubleTapTimeout].
 Duration get doubleClickTimeout {
   final ms = getConfigFlags().double_click_timeout_ms ?? 0;
   return ms > 0 ? Duration(milliseconds: ms) : kDoubleTapTimeout;

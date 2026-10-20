@@ -396,6 +396,17 @@ public class TextHelper {
      * arrow key -- and no native raises a Verify for that, because nothing is being edited and a
      * listener has nothing to veto. A real keystroke carries text; a real deletion carries a range.
      */
+    /**
+     * The caret Java recorded, within the text: where the user left it ({@link #clientCaretMoved}), or
+     * the start of a selection the application set, as Win32 and Cocoa report it (GTK puts it at
+     * the end). No selection yet means no caret has been placed.
+     */
+    public static int getCaretPosition(DartText text) {
+        if (text.selection == null)
+            return 0;
+        return Math.max(0, Math.min(text.caretPosition, text.getCharCount()));
+    }
+
     public static boolean proposesNoChange(Event e) {
         return e.text != null && e.text.isEmpty() && e.start == e.end;
     }

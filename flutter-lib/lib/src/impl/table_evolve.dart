@@ -887,8 +887,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  /// [buttonHeld]: sent from the press, so its stateMask carries the button, as a native's does.
-  void handleRowDoubleTap(int index, VTableItem item, {bool buttonHeld = false}) {
+  /// Sent from the second press, so its stateMask carries the button, as a native's does.
+  void handleRowDoubleTap(int index, VTableItem item) {
     if (state.enabled != true) return;
     setState(() {
       _selectedRowIndex = index;
@@ -898,7 +898,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
       final event = VEvent()
         ..segments = state.selection
-        ..stateMask = buttonHeld ? SWT.BUTTON1 : 0;
+        ..stateMask = SWT.BUTTON1;
       widget.sendSelectionDefaultSelection(state, event);
     });
   }
