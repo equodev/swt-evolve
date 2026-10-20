@@ -201,6 +201,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     if (api.isDisposed()) return;
                     for (Shell shell : api.getShells()) {
                         if (shell.isDisposed()) continue;
+                        // The menu strip is sized at the monitor's scale (Sizes.menuStripHeight).
+                        if (shell.getImpl() instanceof DartDecorations)
+                            ((DartDecorations) shell.getImpl()).getValue().markDirty(VDecorations.MENU_STRIP_HEIGHT);
                         shell.layout(true, true);
                         shell.redraw();
                     }
@@ -643,6 +646,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return null;
     }
 
+    /** Keeps the owner of {@code shell}'s window in line with where its parent is drawn now. */
+    protected void refreshShellWindowOwner(Shell shell, ShellWindow window) {
+    }
+
     /** Whether {@code shell} is one {@link WindowPolicy} puts in a window of its own. */
     protected boolean ownsWindow(Shell shell) {
         return windowEligible(shell) && !isMainShell(forDisplay, shell);
@@ -701,6 +708,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // rebuilds the window on the next pass, since a window closed here is not recorded as
             // lost. That is an endless create/destroy cycle, one new engine per turn.
             window.setVisible(shell.getVisible());
+            refreshShellWindowOwner(shell, window);
             return false;
         });
 
@@ -1307,6 +1315,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** Remember the shell the client just activated. */
     public void noteClientActivated(DartShell shell) {
         clientActivated = shell;
+    }
+
+    /** Forget the shell the client just deactivated, unless another one has been activated since. */
+    public void noteClientDeactivated(DartShell shell) {
+        if (clientActivated == shell)
+            clientActivated = null;
     }
 
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */

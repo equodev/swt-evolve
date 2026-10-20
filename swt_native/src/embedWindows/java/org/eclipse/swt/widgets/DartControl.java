@@ -4338,6 +4338,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    PaintState paintState;
+
     public boolean getDragSource() {
         Widget w = getApi();
         Object ds = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);

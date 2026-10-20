@@ -37,6 +37,8 @@ public class TreeSizes {
     private static final int TEXT_PADDING = 8;
     private static final int CELL_PADDING = 20;
     private static final int HEADER_PADDING = 20;
+    private static final int CELL_INSET = 4;
+    private static final int ALIGNMENT_INSET = 4;
 
     public static Point computeSize(DartTree tree, int wHint, int hHint, boolean changed) {
         int columnCount = tree.getColumnCount();
@@ -136,18 +138,17 @@ public class TreeSizes {
         return ICON_SPACE;
     }
 
+    /** Where a multi-column cell's content starts, from its column's left edge. */
+    public static int getCellInset(int alignment) {
+        return (alignment & (SWT.CENTER | SWT.RIGHT)) == 0 ? CELL_INSET + ALIGNMENT_INSET : CELL_INSET;
+    }
+
     /** The width a cell's text is shown in: the text and its padding. */
     public static int getTextWidth(TreeItem item, int index) {
         String text = item.getText(index);
         TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
         int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
         return width + TEXT_PADDING;
-    }
-
-    /** The height of one line of a cell's text. */
-    public static int getTextHeight(TreeItem item, int index) {
-        TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
-        return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y());
     }
 
     /** The width a multi-column cell needs to show its text whole. */

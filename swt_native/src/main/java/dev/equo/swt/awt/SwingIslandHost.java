@@ -102,12 +102,11 @@ public final class SwingIslandHost {
         parent.layout(true);
 
         // Shown on the calling (SWT) thread, where the blit path built its frame too. It opens at
-        // the island's current size, 1x1 before layout: the mirror reports its real box on its
+        // the island's current size, 0x0 before layout: the mirror reports its real box on its
         // first layout and Java adopts it.
         Frame frame = new Frame();
         frame.setUndecorated(true);
-        Rectangle area = child.getClientArea();
-        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+        EvolveSwingHost.sizeFrame(frame, child.getClientArea());
         frame.setVisible(true);
 
         CommService comm = FlutterBridge.commFor(child.getImpl());

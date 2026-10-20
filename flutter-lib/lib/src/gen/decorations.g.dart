@@ -59,7 +59,9 @@ VDecorations _$VDecorationsFromJson(Map<String, dynamic> json) => VDecorations()
   ..menuBar = json['menuBar'] == null
       ? null
       : VMenu.fromJson(json['menuBar'] as Map<String, dynamic>)
-  ..text = json['text'] as String?;
+  ..text = json['text'] as String?
+  ..menuStripHeight = (json['menuStripHeight'] as num?)?.toInt()
+  ..ownMenuStrip = json['ownMenuStrip'] as bool?;
 
 Map<String, dynamic> _$VDecorationsToJson(VDecorations instance) =>
     <String, dynamic>{
@@ -89,4 +91,6 @@ Map<String, dynamic> _$VDecorationsToJson(VDecorations instance) =>
       'caret': ?instance.caret,
       'menuBar': ?instance.menuBar,
       'text': ?instance.text,
+      'menuStripHeight': ?instance.menuStripHeight,
+      'ownMenuStrip': ?instance.ownMenuStrip,
     };

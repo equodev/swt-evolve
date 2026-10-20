@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
@@ -32,6 +33,8 @@ abstract class EventsFromFlutterNativeTestBase {
         // The mock display would swallow every event; its real dispatch only needs the listener table.
         DartDisplay impl = dartDisplay();
         doCallRealMethod().when(impl).sendEvent(any(EventTable.class), any(Event.class));
+        doCallRealMethod().when(impl).postEvent(any(Event.class));
+        doCallRealMethod().when(impl).runDeferredEvents();
     }
 
     @AfterEach
@@ -40,6 +43,9 @@ abstract class EventsFromFlutterNativeTestBase {
         doNothing().when(display).asyncExec(any(Runnable.class));
         DartDisplay impl = dartDisplay();
         doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
+        impl.eventQueue = null;
+        doNothing().when(impl).postEvent(any(Event.class));
+        doReturn(false).when(impl).runDeferredEvents();
         FlutterBridge.set(null);
     }
 
@@ -56,10 +62,14 @@ abstract class EventsFromFlutterNativeTestBase {
         fromFlutter(widget, channel, new Event());
     }
 
+    /** Runs the queued runnables as the event loop does: what one of them posts is dispatched before the next. */
     void runQueued() {
         List<Runnable> now = new ArrayList<>(queued);
         queued.clear();
-        now.forEach(Runnable::run);
+        for (Runnable runnable : now) {
+            runnable.run();
+            dartDisplay().runDeferredEvents();
+        }
     }
 
     /** Also what makes the widget send the type at all: without a listener it does not. */

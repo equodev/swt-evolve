@@ -1018,8 +1018,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ? (javaAscent + javaDescent).toDouble()
         : fontSize * 1.4;
     _ensureTextMetrics(text);
-    final totalHeight =
-        math.max(getBounds().height, _metricsLineCount * lineHeight);
+    // The measured layout counts wrapped rows; the logical line count does not, and a content
+    // box sized from it clips the text and the wheel short of the bottom of the view.
+    final shape = _shape;
+    final textHeight = shape != null
+        ? shape.off.dy + shape.textHeight + (state.bottomMargin ?? 0)
+        : _metricsLineCount * lineHeight;
+    final totalHeight = math.max(getBounds().height, textHeight);
 
     double totalWidth = getBounds().width;
     if (state.wordWrap != true) {
@@ -2099,6 +2104,9 @@ class TextShape extends Shape {
 
   List<double> _lineTops(List<String> lines) =>
       _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+
+  /// Height of the laid-out text, wrapped rows included, from the top of its first line.
+  double get textHeight => _lineTops(_lines).last;
 
   /// The first line whose band reaches [y], by bisection over the running totals.
   int _lineAtTop(List<double> tops, double y) {
