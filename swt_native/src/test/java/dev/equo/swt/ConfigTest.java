@@ -53,9 +53,8 @@ public class ConfigTest {
     }
 
     private static void restoreConfig() {
-        // The global default's static initial value is `equo`: a default-reliant test that runs first
-        // would see it instead of `eclipse`.
-        Config.defaultImpl = Config.Impl.eclipse;
+        // `equo` is Config's default; a class that ran earlier in this fork may have left `eclipse`.
+        Config.defaultToEquo();
         Config.forceEclipse = initialForceEclipse;
         // Config.reset() clears every dev.equo.swt.* property, the test task's included: put those back.
         Config.reset();
@@ -64,14 +63,14 @@ public class ConfigTest {
 
     @Test
     void should_default_to_swt() {
-        System.clearProperty("dev.equo.swt.Point");
         Config.defaultToEclipse();
         assertThat(Config.defaultImpl).isEqualTo(Config.Impl.eclipse);
-        assertThat(Config.isEquo(Point.class)).isFalse();
+        assertThat(Config.isEquo(CTabItem.class)).isFalse();
     }
 
     @Test
     void should_default_to_equo() {
+        Config.defaultToEclipse();
         Config.defaultToEquo();
         assertThat(Config.defaultImpl).isEqualTo(Config.Impl.equo);
         assertThat(Config.isEquo(CTabItem.class)).isTrue();
@@ -111,10 +110,10 @@ public class ConfigTest {
     @Test
     void reset_drops_every_per_class_choice() {
         Config.useEquo(Point.class);
-        Config.useEquo(Button.class);
+        Config.useEclipse(Button.class);
         Config.reset();
         assertThat(Config.isEquo(Point.class)).isFalse();
-        assertThat(Config.isEquo(Button.class)).isFalse();
+        assertThat(Config.isEquo(Button.class)).isTrue();
     }
 
     @Test
@@ -130,19 +129,19 @@ public class ConfigTest {
     class EquoWidgetDefaults {
 
         @Test
+        void button_should_default_to_equo() {
+            assertThat(Config.isEquo(Button.class)).isTrue();
+        }
+
+        @Test
         void button_should_default_to_swt_with_config() {
             Config.useEclipse(Button.class);
             assertThat(Config.isEquo(Button.class)).isFalse();
         }
 
         @Test
-        void button_should_default_to_equo_with_config() {
-            Config.useEquo(Button.class);
-            assertThat(Config.isEquo(Button.class)).isTrue();
-        }
-
-        @Test
-        void button_should_default_to_equo_with_property() {
+        void button_should_be_equo_with_property_when_the_default_is_eclipse() {
+            Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Button", Config.Impl.equo.name());
             assertThat(Config.isEquo(Button.class)).isTrue();
         }
@@ -157,11 +156,6 @@ public class ConfigTest {
 
     @Nested
     class GlobalDefaultRespect {
-
-        @AfterEach
-        void cleanup() {
-            Config.defaultToEclipse();
-        }
 
         @Test
         void should_respect_global_eclipse_default_for_button() {
@@ -203,6 +197,7 @@ public class ConfigTest {
 
         @Test
         void a_child_is_dart_even_when_the_default_is_eclipse() {
+            Config.defaultToEclipse();
             assertThat(Config.isEquo(Button.class, Mocks.shell())).isTrue();
         }
 
@@ -243,11 +238,6 @@ public class ConfigTest {
 
     @Nested
     class DependentWidgetActivation {
-
-        @AfterEach
-        void cleanup() {
-            Config.defaultToEclipse();
-        }
 
         // Tree group tests
         @Test
