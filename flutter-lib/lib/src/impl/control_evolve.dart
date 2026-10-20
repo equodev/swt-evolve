@@ -235,8 +235,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   void takeFocusOnPress() {}
 
-  void notePointerCrossing(Offset localPosition) {
-    _lastPointerCrossing = localPosition;
+  /// The pointer crossed this control's bounds at [depth], [entering] or leaving it.
+  void crossPointer(PointerEvent event, int depth, bool entering) {
+    _lastPointerCrossing = event.localPosition;
+    HoverExclusivityArbiter.instance.setActive(this, depth, entering, event.position);
   }
 
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
@@ -629,6 +631,19 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// report it again.
   static void markWheelKept(PointerEvent event) => _keptWheel = event.original ?? event;
 
+  /// The pointer event the deepest control on its path has taken, by its untransformed original.
+  static PointerEvent? _takenPointer;
+
+  /// Whether a control below the pointer already took [event]; when none has, this one takes it.
+  /// SWT reports a press, a move, a release or a hover to the one control under the pointer, and
+  /// every control on the path receives its own copy of the event, the deepest first.
+  static bool pointerTakenBelow(PointerEvent event) {
+    final original = event.original ?? event;
+    if (identical(original, _takenPointer)) return true;
+    _takenPointer = original;
+    return false;
+  }
+
   /// The lines one mouse wheel event reports, whatever its delta: SWT's count for one notch on Win32
   /// and GTK by default. A trackpad's swipe (see [panAsScroll]) and StyledText scale with the delta
   /// instead.
@@ -806,13 +821,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   /// The pointer events a native control reports on its own: MouseDown and MouseUp, MouseEnter and
   /// MouseExit settled by [HoverExclusivityArbiter], MouseMove while the pointer is over it,
-  /// MouseHover once it rests. [wrap] applies it; a control that builds its own tree instead has to
-  /// call this, or it reports none of them.
+  /// MouseHover once it rests -- none while it is disabled, and none for a child's pointer. [wrap]
+  /// applies it; a control that builds its own tree instead has to call this, or it reports none of
+  /// them.
   Widget trackPointer(Widget child) {
     final hoverDepth = ControlNestingScope.depthOf(context);
     return ControlNestingScope(
       depth: hoverDepth + 1,
-      child: _pointerListener(_pointerRegion(hoverDepth, child)),
+      child: blockWhenDisabled(_pointerListener(_pointerRegion(hoverDepth, child))),
     );
   }
 
@@ -821,8 +837,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       onPointerSignal: (e) {
         if (forwardsWheelFromWrap) reportWheel(e, e.localPosition);
       },
+      onPointerPanZoomUpdate: (e) {
+        if (!forwardsWheelFromWrap || wheelKeptBelow(e)) return;
+        panAsScroll(e, (wheel) => reportWheel(wheel, wheel.localPosition));
+        if (keepsWheel) markWheelKept(e);
+      },
       onPointerDown: (e) {
-        if (scrollBarPointers.contains(e.pointer)) return;
+        if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
         registerPointerDown(e);
         if (forwardsControlMouseDown) {
           final event = VEvent()
@@ -846,6 +867,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         }
       },
       onPointerUp: (e) {
+        if (pointerTakenBelow(e)) return;
         forgetDragDetect(e.pointer);
         if (scrollBarPointers.remove(e.pointer)) return;
         final event = VEvent()
@@ -869,7 +891,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         scrollBarPointers.remove(e.pointer);
       },
       onPointerMove: (e) {
-        if (scrollBarPointers.contains(e.pointer)) return;
+        if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
         // No hover while a button is held: the pointer is moving, not resting.
         _hoverTimer?.cancel();
         maybeSendDragDetect(e);
@@ -885,19 +907,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Widget _pointerRegion(int hoverDepth, Widget child) {
     return MouseRegion(
       onEnter: (e) {
-        _lastPointerCrossing = e.localPosition;
         _lastHoverPosition = e.position;
-        HoverExclusivityArbiter.instance.pointerPosition = e.position;
-        HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
+        crossPointer(e, hoverDepth, true);
       },
       onExit: (e) {
-        _lastPointerCrossing = e.localPosition;
-        HoverExclusivityArbiter.instance.pointerPosition = e.position;
         _hoverTimer?.cancel();
         _removeTooltip();
-        HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
+        crossPointer(e, hoverDepth, false);
       },
       onHover: (e) {
+        if (pointerTakenBelow(e)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();

@@ -7,19 +7,13 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.function.BiConsumer;
 
 public class ControlHelper {
 
     public static int inPaintDepth;
-
-    // Area each control still owes a Paint for, unioned as redraw() calls arrive and consumed by
-    // the paint that follows. Absent, or a null value, means the whole client area.
-    private static final Map<DartControl, Rectangle> pendingDamage = new WeakHashMap<>();
 
     // The control each native Shell last announced as activated, so the next announcement can end it.
     // Only an embedded Dart control in a native Shell lands here: a Dart Shell tracks its own active
@@ -172,11 +166,8 @@ public class ControlHelper {
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
         rememberTypingKey(control, key);
-        if (key.doit && !control.isDisposed()) {
-            BiConsumer<DartControl, Event> action = KEY_ACTIONS.get(control.getClass());
-            if (action != null)
-                action.accept(control, key);
-        }
+        if (key.doit && !control.isDisposed())
+            applyPlatformKey(control, key);
         return new RoutedKey(true, key.doit, traverseDoit);
     }
 
@@ -184,32 +175,28 @@ public class ControlHelper {
      * What the platform does with a key no listener vetoed: an item view moves its selection, a
      * spinner or scale steps its value.
      */
-    private static final Map<Class<? extends DartControl>, BiConsumer<DartControl, Event>> KEY_ACTIONS = new HashMap<>();
-
-    static {
-        KEY_ACTIONS.put(DartTable.class, (c, key) -> TableHelper.moveSelectionByKey((DartTable) c, key));
-        KEY_ACTIONS.put(DartList.class, (c, key) -> ListHelper.moveSelectionByKey((DartList) c, key));
-        KEY_ACTIONS.put(DartSpinner.class, (c, key) -> SpinnerHelper.stepByKey((DartSpinner) c, key));
-        KEY_ACTIONS.put(DartScale.class, (c, key) -> ScaleHelper.stepByKey((DartScale) c, key));
+    private static void applyPlatformKey(DartControl control, Event key) {
+        if (control instanceof DartTable)
+            TableHelper.moveSelectionByKey((DartTable) control, key);
+        else if (control instanceof DartList)
+            ListHelper.moveSelectionByKey((DartList) control, key);
+        else if (control instanceof DartSpinner)
+            SpinnerHelper.stepByKey((DartSpinner) control, key);
+        else if (control instanceof DartScale)
+            ScaleHelper.stepByKey((DartScale) control, key);
     }
-
-    /**
-     * The last KeyDown each control let through, keyed by the control so one session never sees
-     * another's key.
-     */
-    private static final Map<DartControl, Event> typingKeys = Collections.synchronizedMap(new WeakHashMap<>());
 
     /** Keeps the last KeyDown a control let through, for the edit it types; see {@link #takeTypingKey}. */
     private static void rememberTypingKey(DartControl control, Event key) {
         if (!key.doit || control.isDisposed()) {
-            typingKeys.remove(control);
+            control.typingKey = null;
             return;
         }
         Event copy = new Event();
         copy.character = key.character;
         copy.keyCode = key.keyCode;
         copy.stateMask = key.stateMask;
-        typingKeys.put(control, copy);
+        control.typingKey = copy;
     }
 
     /**
@@ -218,7 +205,8 @@ public class ControlHelper {
      * typed character for an insertion, Backspace or Delete for a removal. Consumed once read.
      */
     static Event takeTypingKey(DartControl control, String inserted) {
-        Event key = typingKeys.remove(control);
+        Event key = control.typingKey;
+        control.typingKey = null;
         if (key == null)
             return null;
         boolean types = inserted.length() == 1 && key.character == inserted.charAt(0);
@@ -262,7 +250,7 @@ public class ControlHelper {
         if ((control.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
         if (control instanceof Button || control instanceof Combo || control instanceof DateTime
-                || control instanceof List || control instanceof Scale || control instanceof Spinner
+                || control instanceof org.eclipse.swt.widgets.List || control instanceof Scale || control instanceof Spinner
                 || control instanceof TabFolder || control instanceof Table || control instanceof Tree
                 || control instanceof Text || control instanceof org.eclipse.swt.custom.CCombo
                 || control instanceof org.eclipse.swt.custom.StyledText)
@@ -313,7 +301,7 @@ public class ControlHelper {
      * ScrolledComposite's content. Moving their bar here as well would scroll them twice.
      */
     static boolean scrollsInClient(Widget api) {
-        return api instanceof Table || api instanceof Tree || api instanceof List
+        return api instanceof Table || api instanceof Tree || api instanceof org.eclipse.swt.widgets.List
                 || api instanceof org.eclipse.swt.custom.ScrolledComposite;
     }
 
@@ -801,36 +789,27 @@ public class ControlHelper {
     }
 
     /**
-     * The controls a button-1 press focuses natively; Win32 and GTK agree on every one of them. A
-     * Canvas is left to its own press handling, since natively it takes the focus only while it hooks
-     * key events. A TabFolder takes it only from a click that switches tabs (its client sends it), not
-     * from one on its strip or on the selected tab, as on GTK.
+     * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
+     * <p>
+     * Button 1 focuses the controls Win32 and GTK agree on. A Canvas is left to its own press
+     * handling, since natively it takes the focus only while it hooks key events. A TabFolder takes
+     * it only from a click that switches tabs (its client sends it), not from one on its strip or on
+     * the selected tab, as on GTK.
+     * <p>
+     * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
+     * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
+     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out.
      */
-    private static final java.util.List<Class<?>> FOCUSED_BY_BUTTON_1 = java.util.Arrays.asList(
-            Button.class, Combo.class, DateTime.class, List.class, Scale.class, Spinner.class,
-            Table.class, Tree.class, Text.class);
-
-    /**
-     * The controls a button-3 press focuses natively: the item views, which Win32 and GTK both focus
-     * ahead of the press, and the fields, which both focus too, though their natives report it after
-     * the MouseDown (Win32) or the MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and
-     * Cocoa, so it is left out.
-     */
-    private static final java.util.List<Class<?>> FOCUSED_BY_BUTTON_3 = java.util.Arrays.asList(
-            Combo.class, Spinner.class, Table.class, Tree.class, Text.class);
-
-    /** Whether a press of {@code button} focuses the control natively; never with NO_FOCUS. */
     static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
         if ((api.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
-        java.util.List<Class<?>> focused = button == 1 ? FOCUSED_BY_BUTTON_1
-                : button == 3 ? FOCUSED_BY_BUTTON_3 : java.util.Collections.emptyList();
-        for (Class<?> type : focused) {
-            if (type.isInstance(api))
-                return true;
-        }
-        return false;
+        boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
+                || api instanceof Tree || api instanceof Text;
+        if (button == 3)
+            return fieldOrItemView;
+        return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
+                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale);
     }
 
     /**

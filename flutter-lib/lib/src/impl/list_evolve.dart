@@ -283,6 +283,10 @@ class _ListItemState extends State<_ListItem> {
           _selectedByPress = true;
           scheduleMicrotask(widget.onTap);
         },
+        // A press that never became a tap (dragged off the item, cancelled) reaches neither tap
+        // callback; once the arena has settled on the release, the press is over either way.
+        onPointerUp: (_) => scheduleMicrotask(() => _selectedByPress = false),
+        onPointerCancel: (_) => scheduleMicrotask(() => _selectedByPress = false),
         // A tap with no press before it -- an accessibility or test tap through the semantics
         // tree -- still selects.
         child: InstantDoubleTapDetector(

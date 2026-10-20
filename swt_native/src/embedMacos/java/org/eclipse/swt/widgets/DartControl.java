@@ -4132,6 +4132,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     PaintState paintState;
 
+    Event typingKey;
+
     int resolveTextDirection() {
         /*
                      * For generic Controls do nothing here. Text-enabled Controls will resolve

@@ -81,23 +81,15 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     cursor: cursor,
     // A childless Composite reaches ControlImpl.wrap() (which already sends these); this
     // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
-    onEnter: (e) {
-      impl.notePointerCrossing(e.localPosition);
-      HoverExclusivityArbiter.instance.pointerPosition = e.position;
-      HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true);
-    },
-    onExit: (e) {
-      impl.notePointerCrossing(e.localPosition);
-      HoverExclusivityArbiter.instance.pointerPosition = e.position;
-      HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false);
-    },
+    onEnter: (e) => impl.crossPointer(e, hoverDepth, true),
+    onExit: (e) => impl.crossPointer(e, hoverDepth, false),
     onHover: (e) {
       if (!forwardsPointer) return;
       // Only the control under the pointer reports the move; its ancestors stay silent.
       // Nested MouseRegions all fire onHover for the same point, which is the very thing
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
       // the same rule. See onPointerMove below for what leaving it out costs.
-      if (_hitsAnyChild(state, e.localPosition)) return;
+      if (_hitsAnyChild(state, e.localPosition) || ControlImpl.pointerTakenBelow(e)) return;
       final event = VEvent()
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
@@ -110,7 +102,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       },
       onPointerDown: (e) {
         if (_hitsAnyChild(state, e.localPosition, childInset)) return;
-        if (!impl.forwardsControlMouseDown) return;
+        if (ControlImpl.pointerTakenBelow(e) || !impl.forwardsControlMouseDown) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
@@ -138,7 +130,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
-        if (!impl.capturedPointerDowns.remove(e.pointer)) return;
+        if (!impl.capturedPointerDowns.remove(e.pointer) || ControlImpl.pointerTakenBelow(e)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
@@ -170,14 +162,16 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
             _hitsAnyChild(state, e.localPosition)) {
           return;
         }
+        if (ControlImpl.pointerTakenBelow(e)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
         impl.sendThrottledDragMove(state, event, e.buttons);
       },
-      onPointerPanZoomUpdate: (e) => panAsScroll(e, (wheel) {
-        if (forwardsPointer && impl.forwardsWheelFromWrap) impl.reportWheel(wheel, wheel.localPosition);
-      }),
+      onPointerPanZoomUpdate: (e) {
+        if (!forwardsPointer || !impl.forwardsWheelFromWrap || ControlImpl.wheelKeptBelow(e)) return;
+        panAsScroll(e, (wheel) => impl.reportWheel(wheel, wheel.localPosition));
+      },
       child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),
   );

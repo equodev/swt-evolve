@@ -345,6 +345,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 : null;
     }
 
+    /** The chrome the client draws above the app content, as it reports it. Only a surface whose
+     *  window has its own screen position needs it. */
+    protected void applyClientInsetTop(int insetTop) {
+    }
+
     /**
      * Apply a client-reported geometry. Web surface (the default here): the browser viewport
      * <em>is</em> the Display, so sync {@code display.bounds} to the viewport and slave the
@@ -354,11 +359,6 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * re-push, or it would feed the resize loop. The desktop surface overrides this (there the Display
      * is the {@code monitor}, governed independently of the window — see {@code DeskDisplayBridge}).
      */
-    /** The chrome the client draws above the app content, as it reports it. Only a surface whose
-     *  window has its own screen position needs it. */
-    protected void applyClientInsetTop(int insetTop) {
-    }
-
     protected boolean applyClientViewport(DartDisplay display, Rectangle viewport, Rectangle monitor, boolean isFirst) {
         if (!isFirst && display.bounds.equals(viewport)) {
             return false; // idempotent: same viewport as before — no churn, no echo

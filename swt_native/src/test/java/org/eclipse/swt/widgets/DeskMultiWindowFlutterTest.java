@@ -671,6 +671,22 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
+    @DisplayName("the strip the client draws above the shell grows its window upwards by its height")
+    void reportedInsetGrowsTheWindowAboveTheShell() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(100, 100, 800, 500);
+        desk.mainWindowBounds.clear();
+
+        desk.applyClientInsetTop(30);
+
+        assertThat(desk.mainWindowBounds)
+                .as("the shell is the area below the strip, so a shell placed before the strip was known "
+                        + "gets a window that much taller, starting that much higher")
+                .containsExactly(new Rectangle(100, 70, 800, 530));
+    }
+
+    @Test
     @DisplayName("an inline modal is drawn in the window of the shell it belongs to")
     void inlineModalFollowsItsParentsWindow() {
         everyShellButModalsInItsOwnWindow();

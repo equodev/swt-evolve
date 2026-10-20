@@ -48,8 +48,6 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
           widget.sendSelectionSelection(state, e);
         }
       },
-      onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
-      onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
       onFocusOut: () => widget.sendFocusFocusOut(state, null),
     );
@@ -82,8 +80,6 @@ class StyledLink extends StatefulWidget {
   final VFont? vFont;
   final LinkThemeExtension widgetTheme;
   final Function(String) onTap;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
   final VoidCallback? onFocusOut;
 
@@ -100,8 +96,6 @@ class StyledLink extends StatefulWidget {
     this.vFont,
     required this.widgetTheme,
     required this.onTap,
-    this.onMouseEnter,
-    this.onMouseExit,
     this.onFocusIn,
     this.onFocusOut,
   }) : super(key: key);
@@ -119,11 +113,9 @@ class _StyledLinkState extends State<StyledLink> {
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovered = true);
-        widget.onMouseEnter?.call();
       },
       onExit: (_) {
         setState(() => _isHovered = false);
-        widget.onMouseExit?.call();
       },
       child: Focus(
         // A tab stop only while it holds a link, as natively.

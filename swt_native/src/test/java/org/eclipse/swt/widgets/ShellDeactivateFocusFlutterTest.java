@@ -62,6 +62,8 @@ class ShellDeactivateFocusFlutterTest {
         part.addListener(SWT.Activate, e -> log.add("Activate part " + name));
         part.addListener(SWT.Deactivate, e -> log.add("Deactivate part " + name));
         Canvas canvas = new Canvas(part, SWT.BORDER);
+        // A part's control hears keys, which is what lets a bare Canvas take the focus natively.
+        canvas.addListener(SWT.KeyDown, e -> { });
         canvas.addListener(SWT.FocusIn, e -> log.add("FocusIn " + name));
         canvas.addListener(SWT.FocusOut, e -> log.add("FocusOut " + name));
         return canvas;

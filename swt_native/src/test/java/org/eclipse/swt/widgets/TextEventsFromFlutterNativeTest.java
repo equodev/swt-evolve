@@ -149,16 +149,18 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
-    @DisplayName("an edit that reports no caret leaves it at the start, where setText puts it")
-    void editWithoutACaretLeavesItAtTheStart() {
+    @DisplayName("an edit that reports no caret leaves it after what the edit inserted")
+    void editWithoutACaretLeavesItAfterTheInsertion() {
         Text text = text(SWT.SINGLE, "old");
         text.setSelection(2);
 
         fromFlutter(text, "Modify/Modify", event("typed", -1, -1));
         runQueued();
 
+        // The edit replaces what lies between the common prefix and suffix ("ol" by "type"), as a
+        // typed one does, and a typed edit leaves the caret after its text.
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(text.getSelection()).isEqualTo(new Point(0, 0));
+        assertThat(text.getSelection()).isEqualTo(new Point(4, 4));
     }
 
     @Test

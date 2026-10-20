@@ -636,13 +636,6 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
     }
 
-    /**
-     * Desk semantics: the Display is the <em>monitor</em>, governed independently of the window. The
-     * reported {@code monitor} drives {@code display.bounds} (so {@code Display}/{@code Monitor} report
-     * the real screen), while the reported viewport drives the main <em>shell</em> only — the two are
-     * never conflated (that conflation is the resize loop). The shell resize is flagged so it is not
-     * echoed back to the OS window. Returns whether anything changed (a no-op repeat must not re-push).
-     */
     @Override
     protected void applyClientInsetTop(int insetTop) {
         if (insetTop == clientTopInset)
@@ -665,6 +658,13 @@ public class DeskDisplayBridge extends DisplayBridge {
         return new Rectangle(shell.x, shell.y - clientTopInset, shell.width, shell.height + clientTopInset);
     }
 
+    /**
+     * Desk semantics: the Display is the <em>monitor</em>, governed independently of the window. The
+     * reported {@code monitor} drives {@code display.bounds} (so {@code Display}/{@code Monitor} report
+     * the real screen), while the reported viewport drives the main <em>shell</em> only — the two are
+     * never conflated (that conflation is the resize loop). The shell resize is flagged so it is not
+     * echoed back to the OS window. Returns whether anything changed (a no-op repeat must not re-push).
+     */
     @Override
     protected boolean applyClientViewport(DartDisplay display, Rectangle viewport, Rectangle monitor, boolean isFirst) {
         boolean changed = false;

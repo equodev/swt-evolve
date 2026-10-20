@@ -104,9 +104,9 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     if (tabItems.isEmpty) {
       return SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(trackPointer(blockWhenDisabled(hasValidBounds
+          child: tagSemantics(trackPointer(hasValidBounds
               ? ConstrainedBox(constraints: constraints!, child: const SizedBox.expand())
-              : const SizedBox.shrink()))));
+              : const SizedBox.shrink())));
     }
 
     final tabContent = _buildTabContent(tabBodies);
@@ -120,26 +120,26 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     );
 
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
-    // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
-    // through `wrap()`, so it owes them that answer itself.
+    // every ancestor's - so a disabled folder disables the pages it holds: trackPointer's gate
+    // covers them.
     if (hasValidBounds) {
       return SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(trackPointer(blockWhenDisabled(ParentForegroundScope(
+          child: tagSemantics(trackPointer(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             child: ConstrainedBox(constraints: constraints!, child: content),
-          )))));
+          ))));
     }
 
     // The tabs letter and colour in the folder's own font/foreground: VTabItem has neither.
     return SwtControlScope(
         swt: state.swt,
-        child: tagSemantics(trackPointer(blockWhenDisabled(ParentForegroundScope(
+        child: tagSemantics(trackPointer(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           child: content,
-        )))));
+        ))));
   }
 
   Widget _buildTabContent(List<Widget> tabBodies) {
