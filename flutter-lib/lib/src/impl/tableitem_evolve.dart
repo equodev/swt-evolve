@@ -263,7 +263,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         if (e.buttons != kPrimaryButton) return;
         _pressSent = true;
         final count = enabled && _context?.tableImpl != null
-            ? _context!.tableImpl!.registerRowTap(rowIndex)
+            ? _context!.tableImpl!.registerRowTap(rowIndex, e.timeStamp)
             : 1;
         sendMouseDown(1, count, e.position);
         if (count == 2) sendDoubleClick(1, e.position);

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import '../gen/color.dart';
 import 'package:flutter/material.dart';
@@ -148,6 +149,11 @@ class _ThemedScaleState extends State<_ThemedScale> {
   double? _localValue;
   bool _isHovered = false;
 
+  /// How far the pointer pressed on the knob is from the knob's value. A press on the knob moves
+  /// nothing and a drag moves the knob by where it was grabbed, as on GTK and Cocoa; the Slider
+  /// alone would jump the value to the pointer.
+  double _grabOffset = 0;
+
   @override
   void initState() {
     super.initState();
@@ -248,13 +254,18 @@ class _ThemedScaleState extends State<_ThemedScale> {
       ),
       child: Stack(
         children: [
-          Slider(
-            value: displayValue.clamp(widget.min, widget.max),
-            min: widget.min,
-            max: widget.max,
-            focusNode: widget.focusNode,
-            onChanged: widget.enabled ? _handleChanged : null,
-            onChangeEnd: widget.enabled ? _handleChangeEnd : null,
+          LayoutBuilder(
+            builder: (context, constraints) => Listener(
+              onPointerDown: (e) => _grabOffset = _offsetFromKnob(e.localPosition.dx, constraints.maxWidth),
+              child: Slider(
+                value: displayValue.clamp(widget.min, widget.max),
+                min: widget.min,
+                max: widget.max,
+                focusNode: widget.focusNode,
+                onChanged: widget.enabled ? _handleChanged : null,
+                onChangeEnd: widget.enabled ? _handleChangeEnd : null,
+              ),
+            ),
           ),
           // Beyond the ends of the track a press moves nothing, as on Win32 and GTK; Flutter's
           // Slider would take it as a press on the track's nearest end.
@@ -306,18 +317,39 @@ class _ThemedScaleState extends State<_ThemedScale> {
     );
   }
 
-  void _handleChanged(double value) {
+  /// The value under [x] minus the knob's value, when [x] is on the knob; 0 anywhere else.
+  double _offsetFromKnob(double x, double length) {
+    final pad = widget.widgetTheme.horizontalPadding;
+    final track = length - 2 * pad;
+    final range = widget.max - widget.min;
+    if (track <= 0 || range <= 0) return 0;
+    final current = (_localValue ?? widget.value).clamp(widget.min, widget.max).toDouble();
+    final knobX = _valueToX(current, widget.min, widget.max, length, pad);
+    final radius = math.max(widget.widgetTheme.thumbRadius, widget.widgetTheme.thumbHoverRadius);
+    if ((x - knobX).abs() > radius) return 0;
+    return (x - knobX) / track * range;
+  }
+
+  void _handleChanged(double raw) {
     // Touching a Scale focuses it, as it does natively; Flutter's Slider does not do this itself.
     if (!widget.focusNode.hasFocus) widget.focusNode.requestFocus();
+    final value = (raw - _grabOffset).clamp(widget.min, widget.max).toDouble();
+    if (value.round() == (_localValue ?? widget.value).round()) return;
     setState(() => _localValue = value);
     widget.onChanged(value);
   }
 
-  void _handleChangeEnd(double value) {
+  void _handleChangeEnd(double raw) {
+    final value = _localValue ?? widget.value;
+    _grabOffset = 0;
     setState(() => _localValue = null);
     widget.onChangeEnd(value);
   }
 }
+
+/// Where [value] sits along a track of [length] that the slider insets by [pad] at each end.
+double _valueToX(double value, double min, double max, double length, double pad) =>
+    pad + (value - min) / (max - min) * (length - 2 * pad);
 
 class _TickMarkPainter extends CustomPainter {
   final List<double> ticks;
@@ -349,9 +381,7 @@ class _TickMarkPainter extends CustomPainter {
     final halfTickHeight = tickHeight / 2;
 
     for (final tickValue in ticks) {
-      final position = (tickValue - min) / (max - min);
-      final x =
-          horizontalPadding + (position * (size.width - 2 * horizontalPadding));
+      final x = _valueToX(tickValue, min, max, size.width, horizontalPadding);
 
       canvas.drawLine(
         Offset(x, verticalCenter - halfTickHeight),

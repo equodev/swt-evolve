@@ -307,7 +307,7 @@ public class TextHelper {
         if (e.text == null)
             return;
         String proposed = e.text;
-        text.setText(proposed);
+        applyClientEdit(text, proposed, e.start);
         boolean applied = proposed.equals(text.getText());
         if (applied && e.start >= 0) {
             text.setSelection(e.start);
@@ -316,6 +316,78 @@ public class TextHelper {
             dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
                     dev.equo.swt.Java8.map("doit", applied));
         }
+    }
+
+    /**
+     * Applies the field's whole new text as the edit the user made: the Verify names only the
+     * replaced range and the text typed into it, with the KeyDown that typed it, as every native
+     * reports a keystroke, rather than replacing the whole text from 0 the way setText does.
+     * {@code caret} is where the client put the caret after the edit, or negative when unknown.
+     */
+    static void applyClientEdit(DartText text, String proposed, int caret) {
+        String old = text.getText();
+        Point range = editedRange(old, proposed, text.getSelection(), caret);
+        String inserted = proposed.substring(range.x, proposed.length() - (old.length() - range.y));
+        Event key = ControlHelper.takeTypingKey(text, inserted);
+        if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
+            Event verify = new Event();
+            verify.text = inserted;
+            verify.start = range.x;
+            verify.end = range.y;
+            if (key != null) {
+                verify.character = key.character;
+                verify.keyCode = key.keyCode;
+                verify.stateMask = key.stateMask;
+            }
+            text.sendEvent(SWT.Verify, verify);
+            if (!verify.doit || text.isDisposed() || verify.text == null)
+                return;
+            inserted = verify.text;
+        }
+        // Like a native field at its limit, keep what fits of the inserted text.
+        if (text.textLimit != Text.LIMIT) {
+            int room = text.textLimit - (old.length() - (range.y - range.x));
+            inserted = inserted.substring(0, Math.max(0, Math.min(inserted.length(), room)));
+            if (inserted.isEmpty() && range.x == range.y)
+                return;
+        }
+        int at = range.x + inserted.length();
+        commit(text, old.substring(0, range.x) + inserted + old.substring(range.y), at);
+        if (!text.isDisposed())
+            text.setSelection(at);
+    }
+
+    /**
+     * The range of {@code old} that {@code proposed} replaces. The selection Java last heard from
+     * the client is where typing lands, so it wins when the new text agrees with it. Otherwise the
+     * text after the client's caret is what the edit left alone, which places a removal among
+     * repeated characters where it happened; without a caret, the range is what lies between the
+     * common prefix and the common suffix.
+     */
+    static Point editedRange(String old, String proposed, Point selection, int caret) {
+        if (selection != null && selection.x >= 0 && selection.y <= old.length() && selection.x <= selection.y
+                && proposed.length() >= selection.x + (old.length() - selection.y)
+                && proposed.startsWith(old.substring(0, selection.x))
+                && proposed.endsWith(old.substring(selection.y))) {
+            return new Point(selection.x, selection.y);
+        }
+        int max = Math.min(old.length(), proposed.length());
+        if (caret >= 0 && caret <= proposed.length() && proposed.length() - caret <= old.length()
+                && old.endsWith(proposed.substring(caret))) {
+            int suffix = proposed.length() - caret;
+            int prefix = 0;
+            while (prefix < max - suffix && old.charAt(prefix) == proposed.charAt(prefix))
+                prefix++;
+            return new Point(prefix, old.length() - suffix);
+        }
+        int prefix = 0;
+        while (prefix < max && old.charAt(prefix) == proposed.charAt(prefix))
+            prefix++;
+        int suffix = 0;
+        while (suffix < max - prefix
+                && old.charAt(old.length() - 1 - suffix) == proposed.charAt(proposed.length() - 1 - suffix))
+            suffix++;
+        return new Point(prefix, old.length() - suffix);
     }
 
     /**
@@ -349,16 +421,22 @@ public class TextHelper {
                 return;
         }
 
-        text.clearSegments(false);
-
         if (text.textLimit != Text.LIMIT && string.length() > text.textLimit) {
             string = string.substring(0, text.textLimit);
         }
+        commit(text, string, -1);
+    }
 
+    /**
+     * Writes the field's new text and reports it, for setText and for an edit typed in the client
+     * alike. {@code caret} is where the caret goes, or negative to leave it.
+     */
+    private static void commit(DartText text, String string, int caret) {
+        text.clearSegments(false);
         text.setEditText(string);
-        text.text = string;
         text.selection = null;
-
+        if (caret >= 0)
+            text.caretPosition = caret;
         text.updateAutoTextDirectionIfNeeded();
         // Modify before Segments. Upstream calls applySegments() first and only then sends Modify,
         // but for a single-line Text the Modify it reports is not that one: writing the text is what

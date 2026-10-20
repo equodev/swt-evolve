@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show BoxHitTestResult;
 import '../gen/button.dart';
 import '../gen/color.dart';
 import '../gen/swt.dart';
@@ -90,27 +91,45 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     } else {
       button = _buildPushButton(context, widgetTheme, enabled, text);
     }
-    // A check box or radio is selected only over its box and label, as on GTK and Cocoa; the
-    // tap on those already covers it.
-    final selectableAnywhere = !hasStyle(state.style, SWT.CHECK) && !hasStyle(state.style, SWT.RADIO);
-    return _selectOnReleaseInside(button, selectableAnywhere);
+    return _selectOnReleaseInside(button);
   }
 
   bool _primaryPressed = false;
   bool _tapped = false;
 
-  /// A native button is selected by a primary release over it, however far the pointer travelled
-  /// while held; Flutter's tap gives up once it moves past its slop.
-  Widget _selectOnReleaseInside(Widget button, bool active) => Listener(
+  /// A check box's or radio's box, the gap after it and its label: the part of it that is the
+  /// button, as on GTK, whose check button is exactly that wide.
+  final GlobalKey _indicatorRowKey = GlobalKey();
+
+  bool get _selectsOverIndicatorRow => hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO);
+
+  /// Whether [e] is over the button: anywhere in its bounds, or for a check box or radio over its
+  /// indicator row's content -- box, gap and label, not the row's empty end -- at any height of the
+  /// row, above or below a label shorter than the box too.
+  bool _isOverButton(PointerEvent e) {
+    if (!_selectsOverIndicatorRow) {
+      final size = context.size;
+      return size != null && (Offset.zero & size).contains(e.localPosition);
+    }
+    final row = _indicatorRowKey.currentContext?.findRenderObject();
+    if (row is! RenderBox || !row.hasSize) return false;
+    final local = row.globalToLocal(e.position);
+    if (local.dy < 0 || local.dy >= row.size.height) return false;
+    return row.hitTest(BoxHitTestResult(), position: Offset(local.dx, row.size.height / 2));
+  }
+
+  /// A native button is selected by a primary release over it after a press on it, however far the
+  /// pointer travelled while held; Flutter's tap gives up once it moves past its slop.
+  Widget _selectOnReleaseInside(Widget button) => Listener(
         onPointerDown: (e) {
-          _primaryPressed = active && e.buttons == kPrimaryButton && (state.enabled ?? false);
+          _primaryPressed = e.buttons == kPrimaryButton && (state.enabled ?? false)
+              && _isOverButton(e);
           _tapped = false;
         },
         onPointerUp: (e) {
           if (!_primaryPressed) return;
           _primaryPressed = false;
-          final size = context.size;
-          if (size == null || !(Offset.zero & size).contains(e.localPosition)) return;
+          if (!_isOverButton(e)) return;
           // After the gesture arena, which delivers a tap within its slop on this same release.
           scheduleMicrotask(() {
             if (mounted && !_tapped) _onPressed();
@@ -659,7 +678,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       children: [
         if (leadingWidget != null) ...[
           leadingWidget,
-          if (hasText || imageWidget != null) SizedBox(width: leadingSpacing),
+          // The gap between a check box or radio and its label is part of the button, as on GTK.
+          if (hasText || imageWidget != null)
+            MetaData(
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(width: leadingSpacing, height: double.infinity),
+            ),
         ],
         if (imageWidget != null) imageWidget,
 
@@ -684,7 +708,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     );
 
     if (leadingWidget != null) {
-      return IntrinsicHeight(child: rowContent);
+      return IntrinsicHeight(key: _indicatorRowKey, child: rowContent);
     }
 
     return rowContent;

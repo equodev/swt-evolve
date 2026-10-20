@@ -90,4 +90,53 @@ void main() {
     expect(value.selection, 25);
     expect(selections, isEmpty);
   });
+
+  Future<Offset> pumpScaleAt25(WidgetTester tester, List<int?> selections, VScale value) async {
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 300,
+          height: 40,
+          child: _RecordingScaleSwt(value: value, selections: selections),
+        ),
+      ),
+    ));
+    await tester.pump();
+    return tester.getTopLeft(find.byType(_RecordingScaleSwt));
+  }
+
+  // The knob at 25 sits at 12 + 0.25 * 276 = 81; 84 is on it, off its centre.
+  testWidgets('a click on the knob keeps its value and reports one Selection, as Cocoa does',
+      (tester) async {
+    final selections = <int?>[];
+    final value = _scale()..selection = 25;
+    final origin = await pumpScaleAt25(tester, selections, value);
+
+    await tester.tapAt(origin + const Offset(84, 20));
+    await tester.pump();
+
+    expect(value.selection, 25);
+    expect(selections, [25]);
+  });
+
+  testWidgets('a drag from the knob moves it by where it was grabbed', (tester) async {
+    final selections = <int?>[];
+    final value = _scale()..selection = 25;
+    final origin = await pumpScaleAt25(tester, selections, value);
+
+    final gesture = await tester.startGesture(origin + const Offset(84, 20));
+    for (var x = 104.0; x <= 222; x += 20) {
+      await gesture.moveTo(origin + Offset(x, 20));
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    await gesture.moveTo(origin + const Offset(222, 20));
+    await tester.pump(const Duration(milliseconds: 20));
+    await gesture.up();
+    await tester.pump();
+
+    expect(value.selection, 75);
+    expect(selections.last, 75);
+  });
 }

@@ -103,6 +103,65 @@ public class TableHelper {
         }
     }
 
+    /**
+     * Up and Down move a single selection to the row above or below, Home and End to the first and
+     * last row, and Page Down and Page Up to the last or first row in view, or a page on when already
+     * there, as the platform's table does for a key no listener vetoed, and report it as a Selection
+     * naming the item. The page keys read the top index, which the client does not report when it
+     * scrolls. A MULTI table moves from its first selected row, not a focus row of its own, and ends
+     * with that one row selected; Shift and Ctrl with a key are not handled.
+     */
+    public static void moveSelectionByKey(DartTable table, Event key) {
+        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+            return;
+        int count = table.getItemCount();
+        if (count == 0)
+            return;
+        int current = table.getSelectionIndex();
+        int next;
+        switch (key.keyCode) {
+            case SWT.ARROW_UP:
+                next = current < 0 ? 0 : current - 1;
+                break;
+            case SWT.ARROW_DOWN:
+                next = current < 0 ? 0 : current + 1;
+                break;
+            case SWT.HOME:
+                next = 0;
+                break;
+            case SWT.END:
+                next = count - 1;
+                break;
+            case SWT.PAGE_DOWN: {
+                // The last row of the page in view, or a page on from there when already on it.
+                int bottom = table.getTopIndex() + visibleRows(table) - 1;
+                next = current < bottom ? bottom : current + visibleRows(table) - 1;
+                break;
+            }
+            case SWT.PAGE_UP: {
+                int top = table.getTopIndex();
+                next = current > top ? top : current - visibleRows(table) + 1;
+                break;
+            }
+            default:
+                return;
+        }
+        next = Math.max(0, Math.min(count - 1, next));
+        if (next == current)
+            return;
+        Event selection = new Event();
+        selection.segments = new int[] { next };
+        sendSelection(table, selection, SWT.Selection);
+    }
+
+    /** How many whole rows the table shows below its header. */
+    static int visibleRows(DartTable table) {
+        Table api = table.getApi();
+        int itemHeight = Math.max(1, api.getItemHeight());
+        int height = api.getClientArea().height - (api.getHeaderVisible() ? api.getHeaderHeight() : 0);
+        return Math.max(1, height / itemHeight);
+    }
+
     public static void sendSelection(DartTable table, Event event, int selectionType) {
         if (event.detail == SWT.CHECK) {
             if (event.segments != null && event.segments.length > 0) {

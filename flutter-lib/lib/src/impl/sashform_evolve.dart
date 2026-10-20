@@ -10,6 +10,7 @@ import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'color_utils.dart';
+import 'utils/focus_report.dart';
 
 class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     extends CompositeImpl<T, V> {
@@ -167,7 +168,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   static const int _liveSyncMinDelta = 5;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'SashForm');
-  bool _focusReported = false;
+  final FocusReport _focusReport = FocusReport();
 
   @override
   void initState() {
@@ -185,14 +186,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
 
   // hasFocus is true for any focused descendant; SWT gives a SashForm focus only when it holds it itself.
   void _handleFocusChange() {
-    final own = _focusNode.hasPrimaryFocus;
-    if (own == _focusReported) return;
-    _focusReported = own;
-    if (own) {
-      widget.onFocusIn();
-    } else {
-      widget.onFocusOut();
-    }
+    _focusReport.update(_focusNode.hasPrimaryFocus, focusIn: widget.onFocusIn, focusOut: widget.onFocusOut);
   }
 
   @override

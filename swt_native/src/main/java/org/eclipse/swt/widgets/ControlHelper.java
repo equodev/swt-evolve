@@ -6,9 +6,11 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.BiConsumer;
 
 public class ControlHelper {
 
@@ -166,7 +168,59 @@ public class ControlHelper {
         if (traversed || control.isDisposed())
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
+        rememberTypingKey(control, key);
+        if (key.doit && !control.isDisposed()) {
+            BiConsumer<DartControl, Event> action = KEY_ACTIONS.get(control.getClass());
+            if (action != null)
+                action.accept(control, key);
+        }
         return new RoutedKey(true, key.doit, traverseDoit);
+    }
+
+    /**
+     * What the platform does with a key no listener vetoed: an item view moves its selection, a
+     * spinner or scale steps its value.
+     */
+    private static final Map<Class<? extends DartControl>, BiConsumer<DartControl, Event>> KEY_ACTIONS = new HashMap<>();
+
+    static {
+        KEY_ACTIONS.put(DartTable.class, (c, key) -> TableHelper.moveSelectionByKey((DartTable) c, key));
+        KEY_ACTIONS.put(DartList.class, (c, key) -> ListHelper.moveSelectionByKey((DartList) c, key));
+        KEY_ACTIONS.put(DartSpinner.class, (c, key) -> SpinnerHelper.stepByKey((DartSpinner) c, key));
+        KEY_ACTIONS.put(DartScale.class, (c, key) -> ScaleHelper.stepByKey((DartScale) c, key));
+    }
+
+    /**
+     * The last KeyDown each control let through, keyed by the control so one session never sees
+     * another's key.
+     */
+    private static final Map<DartControl, Event> typingKeys = Collections.synchronizedMap(new WeakHashMap<>());
+
+    /** Keeps the last KeyDown a control let through, for the edit it types; see {@link #takeTypingKey}. */
+    private static void rememberTypingKey(DartControl control, Event key) {
+        if (!key.doit || control.isDisposed()) {
+            typingKeys.remove(control);
+            return;
+        }
+        Event copy = new Event();
+        copy.character = key.character;
+        copy.keyCode = key.keyCode;
+        copy.stateMask = key.stateMask;
+        typingKeys.put(control, copy);
+    }
+
+    /**
+     * The KeyDown that typed the edit {@code control} is applying, or null when the edit came from
+     * elsewhere (a paste, an input method). Natively a typed edit's Verify carries its key: the
+     * typed character for an insertion, Backspace or Delete for a removal. Consumed once read.
+     */
+    static Event takeTypingKey(DartControl control, String inserted) {
+        Event key = typingKeys.remove(control);
+        if (key == null)
+            return null;
+        boolean types = inserted.length() == 1 && key.character == inserted.charAt(0);
+        boolean removes = inserted.isEmpty() && (key.character == SWT.BS || key.character == SWT.DEL);
+        return types || removes ? key : null;
     }
 
     /**
@@ -685,7 +739,8 @@ public class ControlHelper {
     /**
      * The controls a button-1 press focuses natively. Win32 and GTK agree on every one of them; a
      * Canvas is left to its own press handling, since natively it takes the focus only while it
-     * hooks key events.
+     * hooks key events. A TabFolder takes it only from a click that switches tabs (its client sends
+     * it), not from one on its strip or on the selected tab, as on GTK.
      */
     static boolean takesFocusOnClick(DartControl control) {
         Control api = control.getApi();
@@ -693,8 +748,7 @@ public class ControlHelper {
             return false;
         return api instanceof Button || api instanceof Combo || api instanceof DateTime
                 || api instanceof List || api instanceof Scale || api instanceof Spinner
-                || api instanceof TabFolder || api instanceof Table || api instanceof Tree
-                || api instanceof Text;
+                || api instanceof Table || api instanceof Tree || api instanceof Text;
     }
 
     /** The controls a button-3 press focuses natively, as Win32 and GTK do: the fields and the item views. */

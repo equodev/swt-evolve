@@ -29,4 +29,23 @@ public final class DateTimeHelper {
     public static boolean isValidDate(int year, int month, int day) {
         return month >= 0 && month <= 11 && day >= 1 && day <= daysInMonth(year, month);
     }
+
+    /**
+     * Takes the date (or time) the client carries in a Selection's geometry fields into the control,
+     * and clears those fields, so listeners see a Selection as the native sends it.
+     */
+    public static void applySelection(DartDateTime control, Event e) {
+        if (e == null)
+            return;
+        if ((control.getApi().style & org.eclipse.swt.SWT.TIME) != 0) {
+            control.hours = e.height;
+            control.minutes = e.count;
+            control.seconds = e.index;
+        } else {
+            control.year = e.x;
+            control.month = e.y;
+            control.day = e.width;
+        }
+        e.x = e.y = e.width = e.height = e.count = e.index = 0;
+    }
 }

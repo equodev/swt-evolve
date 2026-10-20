@@ -1095,17 +1095,35 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * Whether a bare Canvas turns down the focus the client gave it. The client focuses any empty
-     * surface it is pressed or tabbed onto; natively a Canvas takes the focus only while it hooks key
-     * events (Composite's button-press and traversal both check hooksKeys), so one with no key
-     * listener leaves it where it was. A shell is a Canvas too, and keeps its own.
+     * Whether a bare Canvas or Composite turns down the focus the client gave it. The client focuses
+     * any empty surface it is pressed or tabbed onto; natively one takes the focus only while it hooks
+     * key events (Composite's button-press and traversal both check hooksKeys), so one with no key
+     * listener leaves it where it was, and none takes it with NO_FOCUS. A shell is a Canvas too, and
+     * keeps its own; the native controls that extend Composite (Table, Spinner, TabFolder...) take
+     * theirs regardless.
      */
-    private static boolean declinesClientFocus(Control api) {
-        if (!(api instanceof Canvas) || api instanceof Decorations)
+    static boolean declinesClientFocus(Control api) {
+        if (!isPaintedSurface(api) || api instanceof Decorations)
             return false;
-        if (((Canvas) api).getChildren().length > 0 || (api.getStyle() & org.eclipse.swt.SWT.EMBEDDED) != 0)
+        if (((Composite) api).getChildren().length > 0 || (api.getStyle() & org.eclipse.swt.SWT.EMBEDDED) != 0)
             return false;
+        if ((api.getStyle() & org.eclipse.swt.SWT.NO_FOCUS) != 0)
+            return true;
         return !api.isListening(org.eclipse.swt.SWT.KeyDown) && !api.isListening(org.eclipse.swt.SWT.KeyUp);
+    }
+
+    /**
+     * Whether the control is a Canvas or a plain Composite, natively a bare surface rather than one of
+     * the native controls. Decided by the implementation, which an application subclass of the API
+     * class does not change. SashForm, ScrolledComposite, ViewForm and CBanner are plain Composites
+     * natively too, but stay out: declining leaves the client's own focus on the surface, and for them
+     * that strands the keyboard.
+     */
+    private static boolean isPaintedSurface(Control api) {
+        if (!(api instanceof Composite))
+            return false;
+        Class<?> impl = ((Composite) api).getImpl().getClass();
+        return impl == DartCanvas.class || impl == DartComposite.class;
     }
 
     /** For each shell, the shell that was active when it became active. */

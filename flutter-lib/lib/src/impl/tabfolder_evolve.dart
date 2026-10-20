@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/theme_settings/tabfolder_theme_settings.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -12,6 +16,7 @@ import '../impl/composite_evolve.dart';
 import '../impl/ctabfolder_evolve.dart';
 import '../theme/theme_extensions/tabfolder_theme_extension.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/focus_report.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
@@ -20,6 +25,38 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   late int _selectedIndex;
   int? _focusedTab;
   final DoubleTapDetector _tabTap = DoubleTapDetector();
+
+  final FocusReport _focusReport = FocusReport();
+  final List<FocusNode> _tabNodes = [];
+
+  /// The tab a primary press landed on, until the folder's own press handling reads it.
+  int? _pressedTab;
+
+  FocusNode _tabNode(int index) {
+    while (_tabNodes.length <= index) {
+      _tabNodes.add(FocusNode(debugLabel: 'TabItem'));
+    }
+    return _tabNodes[index];
+  }
+
+  /// A press that switches tabs focuses the folder, as on GTK: the pressed tab takes the client's
+  /// focus, so keys and Tab start from it. A press on the strip or on the selected tab does not.
+  @override
+  void takeFocusOnPress() {
+    final index = _pressedTab;
+    _pressedTab = null;
+    if (index == null || index == _selectedIndex || state.enabled != true) return;
+    _tabNode(index).requestFocus();
+    _focusReport.update(true, focusIn: () => widget.sendFocusFocusIn(state, null), focusOut: () {});
+  }
+
+  @override
+  void dispose() {
+    for (final node in _tabNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -192,17 +229,16 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
     return tagItemSemantics(vItem, MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: Material(
+      child: Listener(
+        onPointerDown: (e) {
+          if (e.buttons == kPrimaryButton) _pressedTab = index;
+        },
+        child: Material(
         color: Colors.transparent,
         child: InkWell(
+          focusNode: _tabNode(index),
           onTap: enabled ? () => _handleTabTap(index, onTap) : null,
-          onFocusChange: (focused) => setState(() {
-            if (focused) {
-              _focusedTab = index;
-            } else if (_focusedTab == index) {
-              _focusedTab = null;
-            }
-          }),
+          onFocusChange: (focused) => _onTabFocusChange(index, focused),
           child: _Overhang(
             bottom: isSelected && enabled ? widgetTheme.tabSelectedBorderWidth : 0,
             child: Container(
@@ -248,8 +284,40 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
           ),
         ),
       ),
+      ),
     ));
   }
+
+  /// The folder holds the focus while any of its tabs does: Tab moving onto a tab focuses it, and
+  /// only the focus leaving every tab is a FocusOut -- moving between tabs is neither.
+  void _onTabFocusChange(int index, bool focused) {
+    // SWT moves the focus between controls by Tab only; an arrow key's directional focus walking
+    // into the strip from outside the folder is undone, as natively the arrows stay where they were.
+    if (focused && !_focusReport.reported && _arrowKeyDown()) {
+      FocusManager.instance.primaryFocus?.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+      return;
+    }
+    setState(() {
+      if (focused) {
+        _focusedTab = index;
+      } else if (_focusedTab == index) {
+        _focusedTab = null;
+      }
+    });
+    if (focused) {
+      _focusReport.update(true, focusIn: () => widget.sendFocusFocusIn(state, null), focusOut: () {});
+    } else {
+      // Flutter takes the focus off one tab before it gives it to the next.
+      scheduleMicrotask(() {
+        if (!mounted || _focusedTab != null) return;
+        _focusReport.update(false, focusIn: () {}, focusOut: () => widget.sendFocusFocusOut(state, null));
+      });
+    }
+  }
+
+  static bool _arrowKeyDown() => HardwareKeyboard.instance.logicalKeysPressed.any((k) =>
+      k == LogicalKeyboardKey.arrowLeft || k == LogicalKeyboardKey.arrowRight
+      || k == LogicalKeyboardKey.arrowUp || k == LogicalKeyboardKey.arrowDown);
 
   void _updateSelection(int index) {
     setState(() {

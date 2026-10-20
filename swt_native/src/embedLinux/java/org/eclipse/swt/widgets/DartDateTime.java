@@ -2123,17 +2123,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (e != null) {
-                    if ((getApi().style & SWT.TIME) != 0) {
-                        hours = e.height;
-                        minutes = e.count;
-                        seconds = e.index;
-                    } else {
-                        year = e.x;
-                        month = e.y;
-                        day = e.width;
-                    }
-                }
+                DateTimeHelper.applySelection(this, e);
                 sendEvent(SWT.Selection, e);
             });
         });

@@ -196,9 +196,14 @@ class _StyledSliderState extends State<_StyledSlider> {
 
   static const Duration _replayQuiet = Duration(milliseconds: 250);
 
+  /// A slider takes no keyboard focus from a click, as on every native, so the arrows a user
+  /// presses afterwards go to whatever holds the focus instead of moving it.
+  final FocusNode _focusNode = FocusNode(canRequestFocus: false, skipTraversal: true);
+
   @override
   void dispose() {
     _replay?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -254,6 +259,7 @@ class _StyledSliderState extends State<_StyledSlider> {
         value: displayValue.clamp(widget.min, widget.max),
         min: widget.min,
         max: widget.max,
+        focusNode: _focusNode,
         onChangeStart: widget.enabled
             ? (_) {
                 _replay?.cancel();

@@ -82,4 +82,25 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(detector.registerTap(position: const Offset(50, 50)), 1);
   });
+
+  group('event timestamps', () {
+    tearDown(() => DoubleTapDetector.clock = DateTime.now);
+
+    test('two presses 150ms apart pair though they were handled 400ms apart', () {
+      var now = DateTime(2026);
+      DoubleTapDetector.clock = () => now;
+      final detector = DoubleTapDetector();
+
+      expect(detector.registerTap(key: 1, at: const Duration(milliseconds: 1000)), 1);
+      now = now.add(const Duration(milliseconds: 400));
+      expect(detector.registerTap(key: 1, at: const Duration(milliseconds: 1150)), 2);
+    });
+
+    test('two presses 400ms apart do not pair however fast they were handled', () {
+      final detector = DoubleTapDetector();
+
+      expect(detector.registerTap(key: 1, at: const Duration(milliseconds: 1000)), 1);
+      expect(detector.registerTap(key: 1, at: const Duration(milliseconds: 1400)), 1);
+    });
+  });
 }

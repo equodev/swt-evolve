@@ -9,6 +9,7 @@ import '../gen/group.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import 'utils/focus_report.dart';
 import 'utils/widget_utils.dart';
 import 'utils/text_utils.dart';
 
@@ -55,18 +56,13 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
     );
   }
 
-  bool _focusReported = false;
+  final FocusReport _focusReport = FocusReport();
 
   // hasFocus is true for any focused descendant; SWT gives a Group focus only when it holds it itself.
   void _handleFocusChange() {
-    final own = _focusNode!.hasPrimaryFocus;
-    if (own == _focusReported) return;
-    _focusReported = own;
-    if (own) {
-      widget.sendFocusFocusIn(state, null);
-    } else {
-      widget.sendFocusFocusOut(state, null);
-    }
+    _focusReport.update(_focusNode!.hasPrimaryFocus,
+        focusIn: () => widget.sendFocusFocusIn(state, null),
+        focusOut: () => widget.sendFocusFocusOut(state, null));
   }
 
   @override
