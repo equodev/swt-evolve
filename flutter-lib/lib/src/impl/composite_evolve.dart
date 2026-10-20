@@ -327,12 +327,16 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     // state.background already resolves inheritance (DartControl.getBackground(), Java side)
     // and always wins when set; ParentBackgroundScope.backgroundOf only fills in the default
     // for a Composite with no color of its own (e.g. a control hosted on a ToolBar band).
+    // Inside a trim bar that default is the bar's ground at any depth: the scope above stops at
+    // each INHERIT_NONE Composite, and a contribution nested two levels down would otherwise paint
+    // the generic Composite color as a block across the bar.
     final backgroundColor = getCompositeBackgroundColor(
       context,
       state,
       widgetTheme,
       isEnabled: enabled,
-      parentBackground: ParentBackgroundScope.backgroundOf(context),
+      parentBackground:
+          ParentBackgroundScope.backgroundOf(context) ?? ToolbarAreaMarker.backgroundOf(context),
     );
     final decorationImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
     // Inherited backgroundImage is already painted once by the ancestor that owns it
