@@ -1,19 +1,13 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,25 +18,6 @@ import static org.mockito.Mockito.when;
  */
 @Tag("native-unit")
 class ButtonEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
-
-    /** Events posted to the display queue; a Selection is posted, as in SWT, not sent. */
-    private final List<Event> posted = new ArrayList<>();
-
-    @BeforeEach
-    void recordPostedEvents() {
-        DartDisplay impl = dartDisplay();
-        doAnswer(invocation -> posted.add(invocation.getArgument(0))).when(impl).postEvent(any(Event.class));
-    }
-
-    @AfterEach
-    void stopRecordingPostedEvents() {
-        DartDisplay impl = dartDisplay();
-        doNothing().when(impl).postEvent(any(Event.class));
-    }
-
-    private List<Event> postedFor(Button button, int type) {
-        return posted.stream().filter(e -> e.widget == button && e.type == type).toList();
-    }
 
     @Test
     @DisplayName("a DefaultSelection from Flutter reaches the button's DefaultSelection listeners")
@@ -89,12 +64,12 @@ class ButtonEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase 
     @DisplayName("a click from Flutter selects a PUSH button without giving it a selection state")
     void clickOnAPushButtonSendsSelectionOnly() {
         Button button = new Button(DartMocks.dartShell(display), SWT.PUSH);
-        record(button, SWT.Selection);
+        List<Event> events = record(button, SWT.Selection);
 
         fromFlutter(button, "Selection/Selection");
         runQueued();
 
-        assertThat(postedFor(button, SWT.Selection)).hasSize(1);
+        assertThat(events).hasSize(1);
         assertThat(button.getSelection()).as("a PUSH button has no selection to toggle").isFalse();
     }
 
@@ -103,26 +78,26 @@ class ButtonEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase 
     void clickOnACheckedCheckButtonClearsIt() {
         Button button = new Button(DartMocks.dartShell(display), SWT.CHECK);
         button.setSelection(true);
-        record(button, SWT.Selection);
+        List<Event> events = record(button, SWT.Selection);
 
         fromFlutter(button, "Selection/Selection");
         runQueued();
 
         assertThat(button.getSelection()).isFalse();
-        assertThat(postedFor(button, SWT.Selection)).hasSize(1);
+        assertThat(events).hasSize(1);
     }
 
     @Test
     @DisplayName("a click that arrives after the button was disposed is dropped")
     void clickOnADisposedButtonIsDropped() {
         Button button = new Button(DartMocks.dartShell(display), SWT.CHECK);
-        record(button, SWT.Selection);
+        List<Event> events = record(button, SWT.Selection);
 
         fromFlutter(button, "Selection/Selection");
         button.dispose();
         runQueued();
 
-        assertThat(postedFor(button, SWT.Selection)).isEmpty();
+        assertThat(events).isEmpty();
     }
 
     @Test
@@ -132,13 +107,13 @@ class ButtonEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase 
         Button first = new Button(group, SWT.RADIO);
         Button second = new Button(group, SWT.RADIO);
         first.setSelection(true);
-        record(second, SWT.Selection);
+        List<Event> secondHears = record(second, SWT.Selection);
 
         fromFlutter(second, "Selection/Selection");
         runQueued();
 
         assertThat(second.getSelection()).isTrue();
         assertThat(first.getSelection()).as("no radio group: the sibling keeps its selection").isTrue();
-        assertThat(postedFor(second, SWT.Selection)).hasSize(1);
+        assertThat(secondHears).hasSize(1);
     }
 }
