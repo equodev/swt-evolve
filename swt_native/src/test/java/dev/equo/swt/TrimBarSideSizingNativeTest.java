@@ -2,8 +2,11 @@ package dev.equo.swt;
 
 import org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartMainToolbar;
 import org.eclipse.swt.widgets.DartMocks;
+import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,5 +79,62 @@ class TrimBarSideSizingNativeTest {
         Composite bottom = trim.getTrimComposite(shell, SWT.BOTTOM);
 
         assertThat(bottom.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).y).isEqualTo(36);
+    }
+
+    /**
+     * e4's TrimBarLayout caches the lines it wraps the trim into and only rebuilds them when
+     * computeSize is asked to flush; TrimmedPartLayout asks exactly that of the bottom trim on every
+     * pass. A status bar that answers without consulting its layout leaves the lines of its first,
+     * wider pass in place, and every contribution past the new width is laid out off-screen.
+     */
+    @Test
+    void the_bottom_trim_lets_its_layout_rebuild_for_the_new_width() {
+        Composite bottom = trim.getTrimComposite(shell, SWT.BOTTOM);
+        RecordingLayout layout = new RecordingLayout();
+        bottom.setLayout(layout);
+
+        bottom.computeSize(1920, SWT.DEFAULT, true);
+        Point size = bottom.computeSize(1400, SWT.DEFAULT, true);
+
+        assertThat(layout.lastWHint).isEqualTo(1400);
+        assertThat(layout.lastFlush).isTrue();
+        assertThat(size.y).isEqualTo(36);
+    }
+
+    /**
+     * The first trim is built as the main toolbar, so on a Shell whose first trim is the bottom one
+     * that class sizes the status bar, and owes its layout the same flush.
+     */
+    @Test
+    void a_main_toolbar_on_the_bottom_trim_lets_its_layout_rebuild_too() {
+        Shell bottomFirst = DartMocks.dartShell();
+        TrimmedPartLayout bottomFirstTrim = new TrimmedPartLayout();
+        when(bottomFirst.getLayout()).thenReturn(bottomFirstTrim);
+        Composite bottom = bottomFirstTrim.getTrimComposite(bottomFirst, SWT.BOTTOM);
+        assertThat(bottom.getImpl()).isInstanceOf(DartMainToolbar.class);
+        RecordingLayout layout = new RecordingLayout();
+        bottom.setLayout(layout);
+
+        Point size = bottom.computeSize(1400, SWT.DEFAULT, true);
+
+        assertThat(layout.lastWHint).isEqualTo(1400);
+        assertThat(layout.lastFlush).isTrue();
+        assertThat(size.y).isEqualTo(36);
+    }
+
+    private static final class RecordingLayout extends Layout {
+        int lastWHint = Integer.MIN_VALUE;
+        boolean lastFlush;
+
+        @Override
+        protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+            lastWHint = wHint;
+            lastFlush = flushCache;
+            return new Point(wHint, 30);
+        }
+
+        @Override
+        protected void layout(Composite composite, boolean flushCache) {
+        }
     }
 }

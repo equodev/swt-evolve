@@ -38,7 +38,7 @@ public class DartMainToolbar extends DartComposite {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        if (isStatusSide()) return new Point(1650, 36); // behave as status bar
+        if (isStatusSide()) return DartStatusBar.statusSize(this, wHint, hHint, changed);
         // Report the height the wrapped rows actually need. Reporting a single row's height while the
         // layout wraps into several leaves the extra rows with nowhere to go: they land back on row 0
         // and every icon is drawn over the one above it.

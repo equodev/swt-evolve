@@ -352,7 +352,11 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
-      child: !gcUsesThemeColors(gcOverlay?.themedCanvas) && hostsAppColoredContent
+      // A trim bar is themed as a whole, so a Canvas contributed to one hosts ordinary status
+      // controls rather than application-colored content.
+      child: !gcUsesThemeColors(gcOverlay?.themedCanvas) &&
+              hostsAppColoredContent &&
+              !ToolbarAreaMarker.of(context)
           ? SwtColorScope(child: NoLayout(children: children, composite: state))
           : NoLayout(children: children, composite: state),
     );

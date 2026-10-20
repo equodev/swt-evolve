@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons, Icon, Divider, Theme;
@@ -22,7 +24,6 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   late TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   final OverlayPortalController _overlayController = OverlayPortalController();
-  final LayerLink _layerLink = LayerLink();
   bool _isFocused = false;
   final bool _isHovered = false;
   /// The last `listVisible` Java sent. The dropdown is otherwise local UI state Java only drives
@@ -315,7 +316,6 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             borderColor: borderColor,
             iconColor: iconColor,
             overlayController: _overlayController,
-            layerLink: _layerLink,
             onSelected: _onItemSelected,
             onTextChanged: _handleTextChanged,
             onToggleOverlay: _toggleOverlay,
@@ -387,7 +387,6 @@ class _DropdownComboLayout extends StatelessWidget {
   final bool isEnabled, isReadOnly;
   final Color bgColor, borderColor, iconColor;
   final OverlayPortalController overlayController;
-  final LayerLink layerLink;
   final ValueChanged<String?> onSelected;
   final ValueChanged<String> onTextChanged;
   final VoidCallback onToggleOverlay;
@@ -410,7 +409,6 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.borderColor,
     required this.iconColor,
     required this.overlayController,
-    required this.layerLink,
     required this.onSelected,
     required this.onTextChanged,
     required this.onToggleOverlay,
@@ -424,135 +422,157 @@ class _DropdownComboLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OverlayPortal(
+    // The layout builder hands over the field's rect on every layout, so an open list keeps
+    // following a field that scrolls or moves without the Combo itself rebuilding.
+    return OverlayPortal.overlayChildLayoutBuilder(
       controller: overlayController,
-      overlayChildBuilder: (_) => _buildOverlay(),
-      child: CompositedTransformTarget(
-        link: layerLink,
-        child: Container(
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(theme.borderRadius),
-            border: Border.all(color: borderColor, width: theme.borderWidth),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: isEnabled && !isReadOnly
-                      ? () => focusNode.requestFocus()
-                      : (isEnabled ? onToggleOverlay : null),
-                  child: Padding(
-                    padding: textPadding,
-                    // The DOM <input> Flutter Web builds for a text field's semantics node is
-                    // disabled unless that node carries SemanticsFlag.isEnabled, and a disabled
-                    // input can never take DOM focus, so no keystroke ever reaches the field. A
-                    // bare EditableText does not set the flag (TextField is what normally does),
-                    // hence this annotation.
-                    child: IgnorePointer(
-                      ignoring: isReadOnly,
-                      child: Semantics(
-                        enabled: isEnabled,
-                        child: EditableText(
-                          controller: controller,
-                          focusNode: focusNode,
-                          readOnly: isReadOnly,
-                          onChanged: onTextChanged,
-                          style: textStyle,
-                          cursorColor: textStyle.color ?? theme.textColor,
-                          backgroundCursorColor: bgColor,
-                          // A READ_ONLY Combo has no editable text to select,
-                          // so the word selection a double-click leaves behind
-                          // must not be painted: native SWT shows none.
-                          selectionColor: isReadOnly
-                              ? const Color(0x00000000)
-                              : (DefaultSelectionStyle.of(context).selectionColor ??
-                                  Theme.of(context).colorScheme.primary.withOpacity(0.4)),
-                        ),
+      overlayChildBuilder: (_, info) => _buildOverlay(
+          MatrixUtils.transformRect(info.childPaintTransform, Offset.zero & info.childSize)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(theme.borderRadius),
+          border: Border.all(color: borderColor, width: theme.borderWidth),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: isEnabled && !isReadOnly
+                    ? () => focusNode.requestFocus()
+                    : (isEnabled ? onToggleOverlay : null),
+                child: Padding(
+                  padding: textPadding,
+                  // The DOM <input> Flutter Web builds for a text field's semantics node is
+                  // disabled unless that node carries SemanticsFlag.isEnabled, and a disabled
+                  // input can never take DOM focus, so no keystroke ever reaches the field. A
+                  // bare EditableText does not set the flag (TextField is what normally does),
+                  // hence this annotation.
+                  child: IgnorePointer(
+                    ignoring: isReadOnly,
+                    child: Semantics(
+                      enabled: isEnabled,
+                      child: EditableText(
+                        controller: controller,
+                        focusNode: focusNode,
+                        readOnly: isReadOnly,
+                        onChanged: onTextChanged,
+                        style: textStyle,
+                        cursorColor: textStyle.color ?? theme.textColor,
+                        backgroundCursorColor: bgColor,
+                        // A READ_ONLY Combo has no editable text to select,
+                        // so the word selection a double-click leaves behind
+                        // must not be painted: native SWT shows none.
+                        selectionColor: isReadOnly
+                            ? const Color(0x00000000)
+                            : (DefaultSelectionStyle.of(context).selectionColor ??
+                                Theme.of(context).colorScheme.primary.withOpacity(0.4)),
                       ),
                     ),
                   ),
                 ),
               ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: isEnabled ? onToggleOverlay : null,
-                child: Padding(
-                  // Right-only: the text field's own right padding already
-                  // separates text from arrow; a left inset here eats viewport
-                  // width the preferred size doesn't account for.
-                  padding: EdgeInsets.only(right: arrowSpacing),
-                  child: Icon(
-                    Icons.arrow_drop_down,
-                    color: iconColor,
-                    size: theme.iconSize,
-                  ),
+            ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: isEnabled ? onToggleOverlay : null,
+              child: Padding(
+                // Right-only: the text field's own right padding already
+                // separates text from arrow; a left inset here eats viewport
+                // width the preferred size doesn't account for.
+                padding: EdgeInsets.only(right: arrowSpacing),
+                child: Icon(
+                  Icons.arrow_drop_down,
+                  color: iconColor,
+                  size: theme.iconSize,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildOverlay() {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: CompositedTransformFollower(
-        link: layerLink,
-        targetAnchor: Alignment.bottomLeft,
-        followerAnchor: Alignment.topLeft,
-        child: pointerInterceptor(TapRegion(
-          onTapOutside: (_) => overlayController.hide(),
-          // SWT sizes the list to its widest item and never narrower than the
-          // field. Pinning it to the field's width wraps every item of a Combo
-          // an application hinted below its preferred width, and the list then
-          // grows down over whatever follows it.
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: width),
-            child: Container(
-              decoration: BoxDecoration(
-                // The drop-down is part of the Combo, so it carries the Combo's own ground: the
-                // closed field already did, and the list looked like a different widget.
-                color: getBackgroundColor(
-                      background: state.background,
-                      defaultColor: theme.backgroundColor,
-                    ) ??
-                    theme.backgroundColor,
-                borderRadius: BorderRadius.circular(theme.borderRadius),
-                border: Border.all(
-                  color: theme.dividerColor,
-                  width: theme.borderWidth,
-                ),
+  /// [field] is the field's rect in the coordinates of the overlay the list is shown in.
+  Widget _buildOverlay(Rect field) {
+    return CustomSingleChildLayout(
+      delegate: _ComboListLayout(field),
+      child: pointerInterceptor(TapRegion(
+        onTapOutside: (_) => overlayController.hide(),
+        // SWT sizes the list to its widest item and never narrower than the
+        // field. Pinning it to the field's width wraps every item of a Combo
+        // an application hinted below its preferred width, and the list then
+        // grows down over whatever follows it.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: width),
+          child: Container(
+            decoration: BoxDecoration(
+              // The drop-down is part of the Combo, so it carries the Combo's own ground: the
+              // closed field already did, and the list looked like a different widget.
+              color: getBackgroundColor(
+                    background: state.background,
+                    defaultColor: theme.backgroundColor,
+                  ) ??
+                  theme.backgroundColor,
+              borderRadius: BorderRadius.circular(theme.borderRadius),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: theme.borderWidth,
               ),
-              child: SingleChildScrollView(
-                child: IntrinsicWidth(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (i, item) in (state.items ?? const <String>[]).indexed)
-                        _ComboItem(
-                          key: i == highlighted ? highlightedKey : null,
-                          text: item,
-                          isSelected: i == highlighted,
-                          theme: theme,
-                          textStyle: textStyle,
-                          onHover: () => onHighlight(i),
-                          onTap: () => onSelected(item),
-                        ),
-                    ],
-                  ),
+            ),
+            child: SingleChildScrollView(
+              child: IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (i, item) in (state.items ?? const <String>[]).indexed)
+                      _ComboItem(
+                        key: i == highlighted ? highlightedKey : null,
+                        text: item,
+                        isSelected: i == highlighted,
+                        theme: theme,
+                        textStyle: textStyle,
+                        onHover: () => onHighlight(i),
+                        onTap: () => onSelected(item),
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
-        )),
-      ),
+        ),
+      )),
     );
   }
+}
+
+/// Places the list under the field, and above it when it does not fit underneath and there is more
+/// room above, as native SWT does: a Combo on the window's bottom edge would otherwise open
+/// off-screen.
+class _ComboListLayout extends SingleChildLayoutDelegate {
+  _ComboListLayout(this.field);
+
+  final Rect field;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final double below = constraints.maxHeight - field.bottom;
+    return constraints.loosen().copyWith(maxHeight: math.max(0.0, math.max(below, field.top)));
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final double below = size.height - field.bottom;
+    final bool above = childSize.height > below && field.top > below;
+    final double x = math.max(0.0, math.min(field.left, size.width - childSize.width));
+    return Offset(x, above ? field.top - childSize.height : field.bottom);
+  }
+
+  @override
+  bool shouldRelayout(_ComboListLayout oldDelegate) => oldDelegate.field != field;
 }
 
 class _SimpleComboLayout extends StatelessWidget {
