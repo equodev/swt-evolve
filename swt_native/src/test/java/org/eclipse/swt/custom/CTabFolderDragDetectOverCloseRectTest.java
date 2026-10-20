@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Mocks;
@@ -18,8 +19,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * A DragDetect on a tab reaches the application even where this side's own layout puts a close
- * button: the render side, which draws the close buttons, withholds a DragDetect that starts on one.
+ * A drag that starts on a close button is not a drag, as upstream decides it, but against the close
+ * buttons as the render side draws them. This side's own close rectangles come from a layout that
+ * does not match the drawing: in a narrow folder one sits under the middle of a tab drawn without it.
  */
 @ExtendWith(Mocks.class)
 class CTabFolderDragDetectOverCloseRectTest {
@@ -45,23 +47,59 @@ class CTabFolderDragDetectOverCloseRectTest {
     }
 
     @Test
-    @DisplayName("a DragDetect inside this side's close button rectangle is not cancelled")
-    void dragDetectOverTheCloseRectIsNotCancelled() {
+    @DisplayName("a DragDetect where only this side's layout puts a close button is not cancelled")
+    void thisSidesCloseRectDoesNotCancel() {
+        CTabFolder folder = folderWithJavaCloseRectAt105();
+        drawsStrip(folder, "0,212;0,0,0,0");
+
+        assertThat(dragDetectAt(folder, 107, 16)).isEqualTo(SWT.DragDetect);
+    }
+
+    @Test
+    @DisplayName("a DragDetect on a drawn close button is cancelled")
+    void aDrawnCloseButtonCancels() {
+        CTabFolder folder = folderWithJavaCloseRectAt105();
+        drawsStrip(folder, "0,212;190,6,18,18");
+
+        assertThat(dragDetectAt(folder, 198, 14))
+                .as("upstream's rule: a drag that starts on a close button is not a drag")
+                .isEqualTo(SWT.None);
+        assertThat(dragDetectAt(folder, 107, 16)).isEqualTo(SWT.DragDetect);
+    }
+
+    @Test
+    @DisplayName("the close buttons in the report leave the strip the tabs are found by unchanged")
+    void theStripStillFindsTheTab() {
+        CTabFolder folder = folderWithJavaCloseRectAt105();
+        folder.setBounds(0, 0, 254, 300);
+        drawsStrip(folder, "0,212;190,6,18,18");
+
+        assertThat(folder.getItem(new Point(150, folder.getTabHeight() / 2))).isSameAs(folder.getItem(0));
+    }
+
+    /** As the VM trace showed it: this side's layout put the selected tab's close button at 105. */
+    private CTabFolder folderWithJavaCloseRectAt105() {
         CTabFolder folder = new CTabFolder(Mocks.shell(), SWT.CLOSE);
         CTabItem item = new CTabItem(folder, SWT.CLOSE);
         Rectangle close = ((DartCTabItem) item.getImpl()).closeRect;
         close.x = 105;
         close.y = 4;
         close.width = close.height = 18;
+        return folder;
+    }
 
+    private void drawsStrip(CTabFolder folder, String report) {
+        Event e = new Event();
+        e.text = report;
+        CTabFolderHelper.handleStripLaidOut((DartCTabFolder) folder.getImpl(), e);
+    }
+
+    private int dragDetectAt(CTabFolder folder, int x, int y) {
         Event drag = new Event();
         drag.type = SWT.DragDetect;
-        drag.x = 107;
-        drag.y = 16;
+        drag.x = x;
+        drag.y = y;
         ((DartCTabFolder) folder.getImpl()).onDragDetect(drag);
-
-        assertThat(drag.type)
-                .as("left a DragDetect, so the listeners after the folder's own - the workbench's - get it")
-                .isEqualTo(SWT.DragDetect);
+        return drag.type;
     }
 }

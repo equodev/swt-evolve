@@ -1779,6 +1779,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void onDragDetect(Event event) {
+        CTabFolderHelper.onDragDetect(this, event);
     }
 
     void onFocus(Event event) {
@@ -4700,6 +4701,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     int showListPopupSeq = 0;
+
+    int[] drawnCloseButtons;
 
     private void paintChildrenRecursively(Control control) {
         if (control instanceof Composite) {

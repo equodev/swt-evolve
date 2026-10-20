@@ -83,20 +83,52 @@ public class CTabFolderHelper {
     private static final java.util.Map<DartCTabFolder, int[]> stripLayout =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
+    /**
+     * The strip, then after a {@code ;} each tab's drawn close button as {@code x, y, width, height}
+     * in the folder's own coordinates, with a zero width for a tab that shows none.
+     */
     public static void handleStripLaidOut(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         if (e.text == null || e.text.isEmpty()) {
             stripLayout.remove(obj);
+            obj.drawnCloseButtons = null;
             return;
         }
-        String[] parts = e.text.split(",");
-        int[] layout = new int[parts.length];
+        String[] sections = e.text.split(";", -1);
+        int[] strip = parseInts(sections[0]);
+        int[] close = sections.length > 1 ? parseInts(sections[1]) : new int[0];
+        if (strip == null || close == null) return;
+        stripLayout.put(obj, strip);
+        obj.drawnCloseButtons = close;
+    }
+
+    private static int[] parseInts(String list) {
+        if (list.trim().isEmpty()) return new int[0];
+        String[] parts = list.split(",");
+        int[] values = new int[parts.length];
         try {
-            for (int i = 0; i < parts.length; i++) layout[i] = Integer.parseInt(parts[i].trim());
+            for (int i = 0; i < parts.length; i++) values[i] = Integer.parseInt(parts[i].trim());
         } catch (NumberFormatException malformed) {
-            return;
+            return null;
         }
-        stripLayout.put(obj, layout);
+        return values;
+    }
+
+    /**
+     * Upstream's rule that a drag starting on a close button is not a drag, tested against the close
+     * buttons as they are drawn. This side's own close rectangles come from a layout that does not
+     * match the drawing: a narrow folder puts one under the middle of a tab drawn without it.
+     */
+    public static void onDragDetect(DartCTabFolder folder, Event event) {
+        int[] close = folder.drawnCloseButtons;
+        if (close == null) return;
+        for (int i = 0; i + 3 < close.length; i += 4) {
+            int x = close[i], y = close[i + 1], width = close[i + 2], height = close[i + 3];
+            if (width > 0 && event.x >= x && event.x < x + width && event.y >= y && event.y < y + height) {
+                event.type = SWT.None;
+                return;
+            }
+        }
     }
 
     /**

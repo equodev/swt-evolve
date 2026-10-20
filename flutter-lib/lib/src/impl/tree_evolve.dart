@@ -20,7 +20,6 @@ import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/font_utils.dart';
-import 'utils/swt_zoom_scale.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../testing/tree_test_registry.dart';
@@ -1507,8 +1506,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return id ?? 0;
     }
 
-    Offset resolvePosition(DragTargetDetails<DndDragPayload> details) =>
-        localOffset(details) ?? logicalToSwt(details.offset);
+    Offset? resolvePosition(DragTargetDetails<DndDragPayload> details) => localOffset(details);
 
     return wrapDropTarget<DndDragPayload>(
       child: content,

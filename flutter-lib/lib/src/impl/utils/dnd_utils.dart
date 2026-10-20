@@ -235,8 +235,7 @@ Widget wrapDraggable<T extends Object>({
   Widget Function(Widget child)? childWhenDraggingBuilder,
   bool useLongPress = false,
   bool alwaysDraggable = false,
-  /// The DragDetect to raise for this drag, or null to raise none.
-  VEvent? Function()? dragDetectEvent,
+  VEvent Function()? dragDetectEvent,
   DragDetectGate? dragDetectGate,
 }) {
   // alwaysDraggable: a CTabFolder tab is draggable for the folder's own tab reordering even when
@@ -245,8 +244,7 @@ Widget wrapDraggable<T extends Object>({
   if (!hasDragSource && !alwaysDraggable) return child;
 
   void sendDragDetect() {
-    final event = dragDetectEvent == null ? VEvent() : dragDetectEvent();
-    if (event != null) widget.sendDragDetectDragDetect(state, event);
+    widget.sendDragDetectDragDetect(state, dragDetectEvent?.call() ?? VEvent());
   }
 
   void onUpdate(DragUpdateDetails d) {
@@ -320,7 +318,9 @@ Widget wrapDropTarget<T extends Object>({
   required void Function(T data, int? index, int? itemId, Offset position) onDrop,
   int Function(DragTargetDetails<T> details)? resolveIndex,
   int Function(DragTargetDetails<T> details)? resolveItemId,
-  Offset Function(DragTargetDetails<T> details)? resolvePosition,
+  /// The drop point in SWT units; when it is null, or answers null, the pointer's global position
+  /// converted to SWT units.
+  Offset? Function(DragTargetDetails<T> details)? resolvePosition,
   Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder,
   bool alwaysAccepts = false,
   bool alwaysResolves = false,
@@ -346,7 +346,7 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
   final int? dropTargetId;
   final int Function(DragTargetDetails<T> details)? resolveIndex;
   final int Function(DragTargetDetails<T> details)? resolveItemId;
-  final Offset Function(DragTargetDetails<T> details)? resolvePosition;
+  final Offset? Function(DragTargetDetails<T> details)? resolvePosition;
   final void Function(T data, int? index, int? itemId, Offset position) onDrop;
   final Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder;
 
@@ -421,9 +421,8 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     super.deactivate();
   }
 
-  Offset _resolvePosition(DragTargetDetails<T> details) => widget.resolvePosition != null
-      ? widget.resolvePosition!(details)
-      : logicalToSwt(details.offset);
+  Offset _resolvePosition(DragTargetDetails<T> details) =>
+      widget.resolvePosition?.call(details) ?? logicalToSwt(details.offset);
 
   void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;
