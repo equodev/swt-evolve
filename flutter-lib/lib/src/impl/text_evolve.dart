@@ -15,6 +15,7 @@ import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
+import 'utils/key_edit_order.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
@@ -39,6 +40,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller = TextEditingController(text: state.text);
     _controller.addListener(_updateCaretPosition);
     _focusNode.addListener(_handleFocusChange);
+    KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping);
     _modifyGate.attach(state.swt, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
@@ -71,6 +73,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         ..text = newValue.text
         ..start = newValue.selection.baseOffset,
     );
+    KeyEditOrder.instance.editApplied();
     return oldValue;
   }
 
@@ -383,7 +386,10 @@ class TextImpl<T extends TextSwt, V extends VText>
       ..text = value
       ..start = _controller.selection.baseOffset;
     widget.sendModifyModify(state, e);
+    KeyEditOrder.instance.editApplied();
   }
+
+  bool _takesTyping() => (state.editable ?? true) && !hasStyle(state.style, SWT.READ_ONLY);
 
   void _handleSubmitted(String value) {
     widget.sendSelectionDefaultSelection(state, null);
@@ -452,6 +458,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller.removeListener(_updateCaretPosition);
     _controller.dispose();
     _focusNode.removeListener(_handleFocusChange);
+    KeyEditOrder.instance.unregisterEditor(_focusNode);
     _focusNode.dispose();
     super.dispose();
   }

@@ -17,6 +17,7 @@ import 'key_forwarding.dart';
 import 'menu_evolve.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
+import 'utils/key_edit_order.dart';
 import 'utils/traversal_veto_scope.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
@@ -102,15 +103,28 @@ class _DisplaySwtState extends State<DisplaySwt> {
       if (compositionOwnsKey(event.character ?? '')) return false;
       final v = mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
-        EquoCommService.sendPayload('Display/$id/Key/KeyDown', v);
+        KeyEditOrder.instance.forward(
+          typed: _typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
+          send: () => EquoCommService.sendPayload('Display/$id/Key/KeyDown', v),
+        );
       }
     } else if (event is KeyUpEvent) {
       final v = mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
-        EquoCommService.sendPayload('Display/$id/Key/KeyUp', v);
+        KeyEditOrder.instance.forward(
+          typed: false,
+          send: () => EquoCommService.sendPayload('Display/$id/Key/KeyUp', v),
+        );
       }
     }
     return false;
+  }
+
+  /// A printable character with no Ctrl, Alt or Meta held: one a text field types.
+  static bool _typesCharacter(int character) {
+    final keyboard = HardwareKeyboard.instance;
+    return character >= 0x20 && character != 0x7F
+        && !keyboard.isControlPressed && !keyboard.isAltPressed && !keyboard.isMetaPressed;
   }
 
   void _onUpdate(dynamic raw) {
