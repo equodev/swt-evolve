@@ -305,8 +305,12 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /** Places and sizes a native window, whose bounds the window system takes in its logical pixels. */
-    private static void setNativeBounds(long context, Rectangle swt) {
-        Rectangle w = toWindowUnits(swt);
+    private void setNativeBounds(long context, Rectangle swt) {
+        placeNativeWindow(context, toWindowUnits(swt));
+    }
+
+    /** Seam: tests record the rectangle instead of placing a window. */
+    protected void placeNativeWindow(long context, Rectangle w) {
         FlutterNative.setBounds(context, w.x, w.y, w.width, w.height, w.x, w.y, w.width, w.height);
     }
 
@@ -347,11 +351,16 @@ public class DeskDisplayBridge extends DisplayBridge {
      * toDisplay landed outside it.
      */
     protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
-        long packed = FlutterNative.getOrigin(context);
+        long packed = nativeOrigin(context);
         if (packed == FlutterNative.ORIGIN_UNKNOWN) return null;
         return new org.eclipse.swt.graphics.Point(
                 Config.logicalToSwt(FlutterNative.originX(packed)),
                 Config.logicalToSwt(FlutterNative.originY(packed)) + clientTopInset);
+    }
+
+    /** Seam: tests stand in a window origin without JNI. */
+    protected long nativeOrigin(long context) {
+        return FlutterNative.getOrigin(context);
     }
 
 
