@@ -1,8 +1,8 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.AutoScalePolicy;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
+import dev.equo.swt.IntegerOn150;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.DPIUtil;
@@ -48,23 +48,14 @@ class DeskWindowUnitsTest {
 
     @Test
     void a_window_is_placed_in_the_window_systems_pixels_not_in_swt_units() {
-        // `integer` on a 150 % monitor, the default on the oldest supported SWT: SWT draws at 100, so
-        // a 600-unit shell takes 400 logical pixels -- the 600 physical pixels it is drawn in.
-        AutoScalePolicy.runWith("integer", () -> {
-            DPIUtil.setDeviceZoom(150);
-            Config.setClientDeviceZoom(150);
-
-            assertThat(DeskDisplayBridge.toWindowUnits(new Rectangle(300, 150, 600, 450)))
-                    .isEqualTo(new Rectangle(200, 100, 400, 300));
-        });
+        // A 600-unit shell takes 400 logical pixels -- the 600 physical pixels it is drawn in.
+        IntegerOn150.run(() -> assertThat(DeskDisplayBridge.toWindowUnits(new Rectangle(300, 150, 600, 450)))
+                .isEqualTo(new Rectangle(200, 100, 400, 300)));
     }
 
     @Test
     void windows_that_touch_in_swt_units_still_touch_on_screen() {
-        AutoScalePolicy.runWith("integer", () -> {
-            DPIUtil.setDeviceZoom(150);
-            Config.setClientDeviceZoom(150);
-
+        IntegerOn150.run(() -> {
             Rectangle left = DeskDisplayBridge.toWindowUnits(new Rectangle(0, 0, 101, 50));
             Rectangle right = DeskDisplayBridge.toWindowUnits(new Rectangle(101, 0, 101, 50));
 
@@ -74,9 +65,7 @@ class DeskWindowUnitsTest {
 
     @Test
     void a_window_origin_is_read_back_in_swt_units() {
-        AutoScalePolicy.runWith("integer", () -> {
-            DPIUtil.setDeviceZoom(150);
-            Config.setClientDeviceZoom(150);
+        IntegerOn150.run(() -> {
             DeskDisplayBridge desk = new DeskDisplayBridge(null) {
                 @Override
                 protected long nativeOrigin(long context) {
@@ -90,9 +79,7 @@ class DeskWindowUnitsTest {
 
     @Test
     void the_displays_window_is_placed_in_the_window_systems_pixels() {
-        AutoScalePolicy.runWith("integer", () -> {
-            DPIUtil.setDeviceZoom(150);
-            Config.setClientDeviceZoom(150);
+        IntegerOn150.run(() -> {
             List<Rectangle> placed = new ArrayList<>();
             DeskDisplayBridge desk = new DeskDisplayBridge(null) {
                 @Override

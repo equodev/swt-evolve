@@ -297,19 +297,17 @@ public class DeskDisplayBridge extends DisplayBridge {
         // placeholder size, and a window shrunk to a pixel never reports a viewport worth having, so
         // nothing ever corrects it. Move it, but keep the size it already has.
         if (b.width <= 1 || b.height <= 1) {
-            int x = Config.swtToLogical(b.x), y = Config.swtToLogical(b.y);
-            FlutterNative.setBounds(context, x, y, 0, 0, x, y, 0, 0);
+            Rectangle w = toWindowUnits(b);
+            placeNativeWindow(context, new Rectangle(w.x, w.y, 0, 0));
             return;
         }
-        setNativeBounds(context, b);
+        placeNativeWindow(context, toWindowUnits(b));
     }
 
-    /** Places and sizes a native window, whose bounds the window system takes in its logical pixels. */
-    private void setNativeBounds(long context, Rectangle swt) {
-        placeNativeWindow(context, toWindowUnits(swt));
-    }
-
-    /** Seam: tests record the rectangle instead of placing a window. */
+    /**
+     * Seam: places and sizes a native window, in the window system's logical pixels; tests record
+     * the rectangle instead.
+     */
     protected void placeNativeWindow(long context, Rectangle w) {
         FlutterNative.setBounds(context, w.x, w.y, w.width, w.height, w.x, w.y, w.width, w.height);
     }
@@ -848,7 +846,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         // no viewport, so the handshake that would correct it never runs: keep the size it has.
         if (bounds.width <= 1 || bounds.height <= 1) return;
         windowOrigin = new Point(bounds.x, bounds.y);
-        setNativeBounds(windowContext, bounds);
+        placeNativeWindow(windowContext, toWindowUnits(bounds));
     }
 
     @Override

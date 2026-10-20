@@ -119,8 +119,8 @@ void main() {
     // pixels. At 1.0 they coincide; at any other scale a missed conversion gives the left panel a
     // different share than the pointer moved it to.
     Future<int> leftWeightAt(double scale) async {
-      appScaleNotifier.value = scale;
-      addTearDown(() => appScaleNotifier.value = 1.0);
+      setAppScaleOverride(scale);
+      addTearDown(() => setAppScaleOverride(null));
       final selections = <VEvent?>[];
       await tester.pumpWidget(EvolveApp(
         theme: ThemeMode.light,
@@ -150,9 +150,8 @@ void main() {
     }
 
     // Weights are normalized to 1000, so 500 is the divider where it started.
-    final plain = await leftWeightAt(1.0) - 500;
-    final zoomed = await leftWeightAt(1.5) - 500;
-
-    expect(zoomed, closeTo(plain / 1.5, 3));
+    // The pointer travels 60 of the view's pixels: 60 SWT units at 1.0, 40 at 1.5.
+    expect(await leftWeightAt(1.0) - 500, closeTo(154, 3));
+    expect(await leftWeightAt(1.5) - 500, closeTo(103, 3));
   });
 }

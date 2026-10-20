@@ -29,7 +29,8 @@ ConfigFlags configFlags = ConfigFlags();
 
 /// The factor the app is drawn at: how many of the view's logical pixels one SWT unit takes. The
 /// one scale every conversion between Flutter and SWT space reads -- see `swt_zoom_scale.dart`.
-/// Set through [refreshAppScale] and [setAppScaleOverride], which keep it in step with its inputs.
+/// The app sets it only through [refreshAppScale] and [setAppScaleOverride], which keep it in step
+/// with its inputs.
 final ValueNotifier<double> appScaleNotifier = ValueNotifier<double>(1.0);
 
 /// The factor the scale control pinned, or null while the app follows SWT's zoom.

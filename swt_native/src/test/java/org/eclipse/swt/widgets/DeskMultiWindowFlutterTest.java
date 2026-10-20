@@ -1,8 +1,7 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.AutoScalePolicy;
-import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.IntegerOn150;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowPolicy;
@@ -10,7 +9,6 @@ import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.DPIUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -113,25 +111,17 @@ class DeskMultiWindowFlutterTest {
     @DisplayName("a detached window opens at its shell's size in the window system's pixels")
     void opensAtTheShellsSizeInWindowPixels() {
         TestDeskBridge desk = install();
-        int savedZoom = DPIUtil.getDeviceZoom();
-        try {
-            // `integer` on a 150 % monitor: a 600-unit shell is drawn in 400 logical pixels.
-            AutoScalePolicy.runWith("integer", () -> {
-                DPIUtil.setDeviceZoom(150);
-                Config.setClientDeviceZoom(150);
-                openShell("Main");
-                Shell detached = new Shell(display, SWT.SHELL_TRIM);
-                detached.setBounds(300, 150, 600, 450);
-                detached.setVisible(true);
+        // A 600-unit shell is drawn in 400 logical pixels.
+        IntegerOn150.run(() -> {
+            openShell("Main");
+            Shell detached = new Shell(display, SWT.SHELL_TRIM);
+            detached.setBounds(300, 150, 600, 450);
+            detached.setVisible(true);
 
-                OpenedWindow window = desk.opened.get(0);
-                assertThat(window.width).isEqualTo(400);
-                assertThat(window.height).isEqualTo(300);
-            });
-        } finally {
-            DPIUtil.setDeviceZoom(savedZoom);
-            Config.setClientDeviceZoom(100);
-        }
+            OpenedWindow window = desk.opened.get(0);
+            assertThat(window.width).isEqualTo(400);
+            assertThat(window.height).isEqualTo(300);
+        });
     }
 
     @Test

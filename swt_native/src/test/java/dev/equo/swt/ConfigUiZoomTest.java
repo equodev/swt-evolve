@@ -101,12 +101,7 @@ class ConfigUiZoomTest {
 
     @Test
     void a_coordinate_crosses_into_the_render_side_at_the_scale_the_tree_is_drawn_at() {
-        // `integer` on a 150 % monitor, the default on the oldest supported SWT: SWT draws at 100,
-        // so one SWT unit takes two thirds of a logical pixel.
-        AutoScalePolicy.runWith("integer", () -> {
-            DPIUtil.setDeviceZoom(150);
-            Config.setClientDeviceZoom(150);
-
+        IntegerOn150.run(() -> {
             assertThat(Config.swtToLogical(300)).isEqualTo(200);
             assertThat(Config.logicalToSwt(200)).isEqualTo(300);
         });

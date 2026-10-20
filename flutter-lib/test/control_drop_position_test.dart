@@ -54,8 +54,8 @@ void main() {
   for (final scale in [1.0, 1.5]) {
     testWidgets('a drop on a Control at scale $scale reports where it landed, in SWT units',
         (tester) async {
-      appScaleNotifier.value = scale;
-      addTearDown(() => appScaleNotifier.value = 1.0);
+      setAppScaleOverride(scale);
+      addTearDown(() => setAppScaleOverride(null));
       EquoCommBase.recordSentFrames = true;
       addTearDown(() => EquoCommBase.recordSentFrames = false);
 
