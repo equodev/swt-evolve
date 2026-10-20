@@ -172,12 +172,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         // to avoid double-dispatch. In the embedded backend (no whole-tree Display) it is the only
         // path — Text builds its own field via [wrapDnd] and never routes through [ControlImpl.wrap].
         trackPointer(
-          Listener(
-            onPointerDown: _reportFocusOnPress,
-            child: displayLevelKeyForwardingActive
-                ? fieldWrapper
-                : _forwardShortcutKeys(fieldWrapper),
-          ),
+          displayLevelKeyForwardingActive ? fieldWrapper : _forwardShortcutKeys(fieldWrapper),
         ),
       ),
     );
@@ -314,7 +309,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       },
       child: Listener(
         onPointerDown: (e) {
-          if (!ControlImpl.isSecondaryPress(e)) return;
+          if (!ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(e.buttons))) return;
           // A field that never held a caret has Java's, which the focus this press brings would
           // otherwise move to the end.
           final selection = _controller.selection;
@@ -392,13 +387,6 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   void _handleSubmitted(String value) {
     widget.sendSelectionDefaultSelection(state, null);
-  }
-
-  /// A press focuses the field natively even when it already holds the client focus, which Java may
-  /// have moved elsewhere in between (a part activation focusing its own control); the focus node
-  /// only reports changes.
-  void _reportFocusOnPress(PointerDownEvent event) {
-    if (_focusNode.hasFocus) widget.sendFocusFocusIn(state, null);
   }
 
   void _handleFocusChange() {

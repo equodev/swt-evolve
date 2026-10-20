@@ -692,19 +692,6 @@ public class DeskDisplayBridge extends DisplayBridge {
                 return changed;
             }
             windowShell = main;
-            // The shell still carries the window's content height here, and the client has just
-            // reported the part of it SWT actually gets; the difference is the chrome drawn above.
-            // Width has to match, so a genuine resize is never mistaken for chrome.
-            if (current != null && current.width == viewport.width && current.height > viewport.height) {
-                clientTopInset = current.height - viewport.height;
-            }
-            Rectangle takenOver = takeoverBounds;
-            takeoverBounds = null;
-            if (takenOver != null && clientTopInset > 0 && current != null
-                    && current.width == viewport.width && current.height == takenOver.height) {
-                forwardWindowBounds(withChrome(takenOver));
-                return true;
-            }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
             boolean shellMatches = current != null
@@ -790,9 +777,6 @@ public class DeskDisplayBridge extends DisplayBridge {
         return false;
     }
 
-    /** Where a shell taking the window over was, while the chrome height is still unknown. */
-    private Rectangle takeoverBounds;
-
     /** Moves and sizes the window to where {@code shell}'s own window was. */
     private void takeOverWindowGeometry(Shell shell) {
         windowShell = shell;
@@ -802,19 +786,11 @@ public class DeskDisplayBridge extends DisplayBridge {
             setShellWindowState(windowContext, state);
         } else {
             setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
-            // The shell measures the client area of the window it leaves. Until the chrome above it
-            // is measured, the window is grown by it once the first viewport reports it, instead of
-            // the shell being shrunk to fit.
-            Rectangle b = shell.getBounds();
-            takeoverBounds = clientTopInset > 0 ? null : b;
-            forwardWindowBounds(withChrome(b));
+            // The shell measures the client area of the window it leaves, so the window grows by the
+            // strip the client draws above it (applyClientInsetTop) instead of the shell shrinking.
+            forwardWindowBounds(windowBoundsFor(shell.getBounds()));
         }
         bindWindowView();
-    }
-
-    /** {@code shell} bounds grown by the chrome the window draws above the shell. */
-    private Rectangle withChrome(Rectangle shell) {
-        return new Rectangle(shell.x, shell.y, shell.width, shell.height + clientTopInset);
     }
 
     private void setMainWindowTitle(String title) {

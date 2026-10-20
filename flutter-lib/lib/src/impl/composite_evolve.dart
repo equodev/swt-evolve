@@ -89,7 +89,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       // Nested MouseRegions all fire onHover for the same point, which is the very thing
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
       // the same rule. See onPointerMove below for what leaving it out costs.
-      if (_hitsAnyChild(state, e.localPosition) || ControlImpl.pointerTakenBelow(e)) return;
+      if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition)) return;
       final event = VEvent()
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
@@ -101,8 +101,10 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         if (forwardsPointer && impl.forwardsWheelFromWrap) impl.reportWheel(e, e.localPosition);
       },
       onPointerDown: (e) {
-        if (_hitsAnyChild(state, e.localPosition, childInset)) return;
-        if (ControlImpl.pointerTakenBelow(e) || !impl.forwardsControlMouseDown) return;
+        // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
+        // composite, not with an ancestor further up.
+        if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
+        if (!impl.forwardsControlMouseDown) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
@@ -130,7 +132,8 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
-        if (!impl.capturedPointerDowns.remove(e.pointer) || ControlImpl.pointerTakenBelow(e)) return;
+        final takenBelow = ControlImpl.pointerTakenBelow(e);
+        if (!impl.capturedPointerDowns.remove(e.pointer) || takenBelow) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
@@ -158,11 +161,11 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // A pointer this composite captured keeps reporting wherever it travels, mirroring
         // onPointerUp: SWT sends moves to the control holding the capture, not to whatever
         // the pointer has since wandered over.
+        if (ControlImpl.pointerTakenBelow(e)) return;
         if (!impl.capturedPointerDowns.contains(e.pointer) &&
             _hitsAnyChild(state, e.localPosition)) {
           return;
         }
-        if (ControlImpl.pointerTakenBelow(e)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();

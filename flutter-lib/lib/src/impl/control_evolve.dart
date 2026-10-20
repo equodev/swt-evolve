@@ -347,10 +347,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   /// Whether a press of [button] is the platform's context-menu trigger: the secondary
   /// button anywhere, plus Ctrl+Click on macOS — the same pair [applyMenu] opens on.
-  /// Whether [e] is a press of the secondary button alone: the right-click a native control
-  /// reports as a MenuDetect.
-  static bool isSecondaryPress(PointerEvent e) => e.buttons == kSecondaryButton;
-
   static bool isMenuDetectTrigger(int button) =>
       button == 3 ||
       (defaultTargetPlatform == TargetPlatform.macOS &&
@@ -625,11 +621,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   /// Whether a control below the pointer already kept [event].
-  static bool wheelKeptBelow(PointerEvent event) => identical(event.original ?? event, _keptWheel);
+  static bool wheelKeptBelow(PointerEvent event) =>
+      identical(event.original ?? event, _keptWheel) ||
+      (swipeBeingReported != null && identical(swipeBeingReported, _keptWheel));
 
   /// Marks [event] as kept by a control on the pointer's path, so the controls above it do not
   /// report it again.
-  static void markWheelKept(PointerEvent event) => _keptWheel = event.original ?? event;
+  static void markWheelKept(PointerEvent event) => _keptWheel = swipeBeingReported ?? event.original ?? event;
 
   /// The pointer event the deepest control on its path has taken, by its untransformed original.
   static PointerEvent? _takenPointer;

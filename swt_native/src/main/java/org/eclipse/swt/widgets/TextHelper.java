@@ -313,9 +313,6 @@ public class TextHelper {
         String proposed = e.text;
         applyClientEdit(text, proposed, e.start);
         boolean applied = proposed.equals(text.getText());
-        if (applied && e.start >= 0) {
-            text.setSelection(e.start);
-        }
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
                     dev.equo.swt.Java8.map("doit", applied));
@@ -395,12 +392,6 @@ public class TextHelper {
     }
 
     /**
-     * Whether a Verify coming from the render side proposes no edit at all: nothing to replace, and
-     * nothing to replace it with. The client sends one when the user moves the caret -- a click, an
-     * arrow key -- and no native raises a Verify for that, because nothing is being edited and a
-     * listener has nothing to veto. A real keystroke carries text; a real deletion carries a range.
-     */
-    /**
      * The caret Java recorded, within the text: where the user left it ({@link #clientCaretMoved}), or
      * the start of a selection the application set, as Win32 and Cocoa report it (GTK puts it at
      * the end). No selection yet means no caret has been placed.
@@ -411,6 +402,12 @@ public class TextHelper {
         return Math.max(0, Math.min(text.caretPosition, text.getCharCount()));
     }
 
+    /**
+     * Whether a Verify coming from the render side proposes no edit at all: nothing to replace, and
+     * nothing to replace it with. The client sends one when the user moves the caret -- a click, an
+     * arrow key -- and no native raises a Verify for that, because nothing is being edited and a
+     * listener has nothing to veto. A real keystroke carries text; a real deletion carries a range.
+     */
     public static boolean proposesNoChange(Event e) {
         return e.text != null && e.text.isEmpty() && e.start == e.end;
     }

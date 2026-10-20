@@ -2,7 +2,7 @@
 // keeps the wheel (a Table) is the only one to report it; one that passes it on (a Button) is
 // reported again by each parent on the pointer's path, as natively.
 
-import 'package:flutter/gestures.dart' show PointerScrollEvent;
+import 'package:flutter/gestures.dart' show PointerDeviceKind, PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -66,6 +66,28 @@ Future<List<String>> _wheel(WidgetTester tester, Widget content, Offset Function
   return sent;
 }
 
+/// As [_wheel], for a two-finger trackpad swipe up at [at].
+Future<List<String>> _swipe(WidgetTester tester, Widget content, Offset Function() at) async {
+  final sent = <String>[];
+  EquoCommBase.sendObserverForTesting = (action, payload) {
+    if (action.endsWith('/MouseWheel/MouseWheel')) sent.add(action);
+  };
+  addTearDown(() => EquoCommBase.sendObserverForTesting = null);
+  await tester.pumpWidget(EvolveApp(
+    theme: ThemeMode.light,
+    contentWidget: Align(alignment: Alignment.topLeft, child: content),
+  ));
+  await tester.pump();
+  sent.clear();
+  final gesture = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+  await gesture.panZoomStart(at());
+  await gesture.panZoomUpdate(at(), pan: const Offset(0, -30));
+  await tester.pump();
+  await gesture.panZoomEnd();
+  await tester.pump(const Duration(seconds: 2));
+  return sent;
+}
+
 void main() {
   setUp(resetConfigFlags);
 
@@ -100,6 +122,22 @@ void main() {
       () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 50),
     );
     expect(sent.map((s) => s.split('/').take(2).join('/')), ['StyledText/4']);
+  });
+
+  testWidgets('a swipe over a styled text in a composite is reported by the styled text only', (tester) async {
+    final text = VStyledText()
+      ..id = 4
+      ..style = SWT.MULTI | SWT.V_SCROLL
+      ..enabled = true
+      ..text = List.generate(40, (i) => 'line $i').join('\n')
+      ..bounds = _rect(10, 10, 150, 80);
+    final sent = await _swipe(
+      tester,
+      SizedBox(width: 200, height: 120, child: CompositeSwt<VComposite>(value: _composite(text))),
+      () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 50),
+    );
+    expect(sent.map((s) => s.split('/').take(2).join('/')).toSet(), {'StyledText/4'},
+        reason: 'the StyledText scrolls by the swipe, so it keeps it, as it keeps a wheel');
   });
 
   testWidgets('a wheel over a button in a composite is reported by the button, then the composite', (tester) async {

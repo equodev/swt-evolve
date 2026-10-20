@@ -656,17 +656,15 @@ class DeskMultiWindowFlutterTest {
         Shell welcome = openShell("Welcome");
         Shell workbench = openShell("Workbench");
         workbench.setBounds(120, 120, 900, 568);
-        welcome.setVisible(false);
+        desk.applyClientInsetTop(32);
         desk.mainWindowBounds.clear();
 
-        // The window was given the shell's own size, so the client reports that less the strip it
-        // draws above the shell.
-        DartDisplay dd = (DartDisplay) display.getImpl();
-        desk.applyClientViewport(dd, new Rectangle(0, 0, 900, 536), null, false);
+        welcome.setVisible(false);
 
         assertThat(desk.mainWindowBounds)
-                .as("the window grows by the chrome instead of the shell shrinking by it")
-                .containsExactly(new Rectangle(120, 120, 900, 600));
+                .as("the window grows by the strip the client draws above the shell instead of the "
+                        + "shell shrinking by it, and starts that much higher")
+                .containsExactly(new Rectangle(120, 88, 900, 600));
         assertThat(workbench.getSize().y).isEqualTo(568);
     }
 

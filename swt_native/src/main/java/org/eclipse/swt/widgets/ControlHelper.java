@@ -293,10 +293,6 @@ public class ControlHelper {
     }
 
     /**
-     * {@code count} is lines, positive up; a pixel scroll arrives in {@code detail}, positive down,
-     * and moves the bar by those pixels. Listeners always see {@code detail} as SCROLL_LINE.
-     */
-    /**
      * The controls the client scrolls itself, reporting the scroll: an item view's rows, a
      * ScrolledComposite's content. Moving their bar here as well would scroll them twice.
      */
@@ -305,6 +301,10 @@ public class ControlHelper {
                 || api instanceof org.eclipse.swt.custom.ScrolledComposite;
     }
 
+    /**
+     * {@code count} is lines, positive up; a pixel scroll arrives in {@code detail}, positive down,
+     * and moves the bar by those pixels. Listeners always see {@code detail} as SCROLL_LINE.
+     */
     public static void handleMouseWheel(DartControl control, Event e) {
         int pixels = e.detail;
         e.detail = SWT.SCROLL_LINE;

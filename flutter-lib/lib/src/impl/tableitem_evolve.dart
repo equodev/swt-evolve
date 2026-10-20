@@ -220,8 +220,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     // A secondary press is sent from the raw down, as the primary one is, so it is reported ahead
     // of the Table's focus and where the pointer is; MenuDetect follows it.
-    void secondaryPress(Offset globalPosition) {
-      sendMouseDown(3, 1, globalPosition);
+    void menuPress(int button, Offset globalPosition) {
+      sendMouseDown(button, 1, globalPosition);
       if (enabled && _context?.tableImpl != null) {
         MenuDetectGate.withhold(
           _context!.parentTableValue.swt,
@@ -260,8 +260,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // SWT delivers the press first. The click count is registered here too, because that is
       // the event SWT numbers -- onTap only decides what the completed gesture was.
       onPointerDown: (e) {
-        if (ControlImpl.isSecondaryPress(e)) {
-          secondaryPress(e.position);
+        final button = ControlImpl.swtButtonOf(e.buttons);
+        if (ControlImpl.isMenuDetectTrigger(button)) {
+          menuPress(button, e.position);
           return;
         }
         if (e.buttons != kPrimaryButton) return;

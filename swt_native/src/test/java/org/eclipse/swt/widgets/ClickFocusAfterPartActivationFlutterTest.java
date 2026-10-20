@@ -65,7 +65,29 @@ class ClickFocusAfterPartActivationFlutterTest {
                 .isTrue();
     }
 
-    /** The focus the client reports for a clicked field; a text field reports no MouseDown of its own. */
+    @Test
+    @DisplayName("pressing a field that still holds the client's focus takes Java's focus back to it")
+    void pressOnAFieldJavaFocusedAwayFromRefocusesIt() {
+        Shell shell = new Shell(display);
+        Text search = new Text(shell, SWT.SINGLE | SWT.SEARCH);
+        Tree tree = new Tree(shell, SWT.NONE);
+        shell.open();
+        reportFocusIn(search);
+        // A part activation focuses its default control; the client's focus stays in the field.
+        tree.setFocus();
+        drain();
+
+        Event press = new Event();
+        press.button = 1;
+        bridge.comm.fireContaining(FlutterBridge.event((DartWidget) search.getImpl(), "Mouse", "MouseDown"), press);
+        drain();
+
+        assertThat(bridge.hasFocus((DartControl) search.getImpl()))
+                .as("a press focuses a field natively, whoever Java last gave the focus to")
+                .isTrue();
+    }
+
+    /** The focus the client reports when a press focuses a field. */
     private void reportFocusIn(Control control) {
         bridge.comm.fireContaining(FlutterBridge.event((DartWidget) control.getImpl(), "Focus", "FocusIn"), new Event());
         drain();
