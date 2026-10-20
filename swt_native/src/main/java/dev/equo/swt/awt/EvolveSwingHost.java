@@ -49,6 +49,7 @@ import org.eclipse.swt.widgets.Shell;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import sun.awt.AWTAccessor;
+import sun.awt.FwDispatcher;
 import sun.awt.NullComponentPeer;
 import sun.swing.JLightweightFrame;
 import sun.swing.LightweightContent;
@@ -96,28 +97,37 @@ public final class EvolveSwingHost {
      * with {@code IllegalAccessError}. Merely loading this host — which {@link dev.equo.swt.Jdk9}
      * does to find {@code newFrame} — does not reach that definition, so it is not proof the bridge
      * can run. This asks {@link #openSwingInternals()} to open the packages itself and then forces
-     * the content class to be defined; if it still cannot, the bridge degrades to {@code SWT_AWT}'s
-     * stock path instead of letting the error reach the host application's editor.</p>
+     * both classes that implement a JDK-internal interface to be defined. When either cannot be,
+     * {@code SWT_AWT.new_Frame} fails for a Dart-backed composite with {@code ERROR_NOT_IMPLEMENTED},
+     * as SWT_AWT does on a JRE that cannot embed, instead of an {@code IllegalAccessError} reaching
+     * the host application's editor.</p>
      */
     public static boolean canHost() {
+        return hostFailure() == null;
+    }
+
+    /** Why the bridge cannot host Swing on this JVM, or null when it can (see {@link #canHost()}). */
+    public static Throwable hostFailure() {
         openSwingInternals();
         try {
             Class.forName("dev.equo.swt.awt.EvolveSwingHost$Host$EvolveContent");
-            return true;
+            Class.forName("dev.equo.swt.awt.EvolveSwingHost$EvolveDispatcherWrapper");
+            return null;
         } catch (ClassNotFoundException | LinkageError cannotDefine) {
             warnUnavailable(cannotDefine);
-            return false;
+            return cannotDefine;
         }
     }
 
     /**
-     * Exports the JDK internals the bridge is built on — {@code java.desktop/sun.swing},
-     * {@code java.desktop/sun.awt} and {@code jdk.unsupported.desktop/jdk.swing.interop} — to this
-     * module, so that defining {@code EvolveContent implements sun.swing.LightweightContent} and
-     * using {@code JLightweightFrame}, {@code AWTAccessor} and the AWT dispatcher pass the JVM's
-     * access check. The command-line {@code --add-exports} for the same packages also works (all
-     * three live in boot-layer modules), so an app that already carries those flags needs none of
-     * this — it is the path for one that carries only {@code --add-opens=java.base/java.lang=ALL-UNNAMED}.
+     * Exports the JDK internals the bridge is built on — {@code java.desktop/sun.swing} and
+     * {@code java.desktop/sun.awt} — to this module, so that defining
+     * {@code EvolveContent implements sun.swing.LightweightContent} and
+     * {@code EvolveDispatcherWrapper implements sun.awt.FwDispatcher}, and using
+     * {@code JLightweightFrame} and {@code AWTAccessor}, pass the JVM's access check. The
+     * command-line {@code --add-exports} for the same packages also works ({@code java.desktop} is
+     * a boot-layer module), so an app that already carries those flags needs none of this — it is
+     * the path for one that carries only {@code --add-opens=java.base/java.lang=ALL-UNNAMED}.
      *
      * <p>{@code Module.addExports} is caller-sensitive, so it goes through {@code implAddExports},
      * which needs {@code java.lang} opened to us; that one flag works from the command line because
@@ -131,9 +141,8 @@ public final class EvolveSwingHost {
             implAddExports.setAccessible(true);
             Module self = EvolveSwingHost.class.getModule();
             selfExport(implAddExports, self, "java.desktop", "sun.swing", "sun.awt");
-            selfExport(implAddExports, self, "jdk.unsupported.desktop", "jdk.swing.interop");
         } catch (Throwable notOpenable) {
-            // Left closed: canHost() reports it and SWT_AWT falls back. Enable with
+            // Left closed: canHost() reports it and SWT_AWT.new_Frame fails. Enable with
             // --add-opens=java.base/java.lang=ALL-UNNAMED.
         }
     }
@@ -151,11 +160,11 @@ public final class EvolveSwingHost {
         }
     }
 
-    /** Explains the degraded (stock-path) Swing bridge once per JVM — otherwise it is undiagnosable. */
+    /** Explains once per JVM why the Swing bridge cannot host, which is otherwise undiagnosable. */
     private static void warnUnavailable(Throwable cause) {
         if (UNAVAILABLE_WARNED.compareAndSet(false, true)) {
-            System.err.println("[EvolveSwingHost] Swing embedding disabled — SWT_AWT falls back to its "
-                    + "stock path. The JDK internals the bridge needs (sun.swing, sun.awt) are not "
+            System.err.println("[EvolveSwingHost] Swing embedding disabled: SWT_AWT.new_Frame will fail with "
+                    + "ERROR_NOT_IMPLEMENTED. The JDK internals the bridge needs (sun.swing, sun.awt) are not "
                     + "reachable from this module. Add either "
                     + "--add-exports=java.desktop/sun.swing=ALL-UNNAMED and "
                     + "--add-exports=java.desktop/sun.awt=ALL-UNNAMED, or "
@@ -504,19 +513,17 @@ public final class EvolveSwingHost {
         try {
             EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(Display.getDefault());
             if (wrapper.isDispatchThread() == EventQueue.isDispatchThread()) return;
-            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(
-                    Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
+            setFwDispatcher(Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
         } catch (Throwable notInstallable) {
         }
     }
 
     /**
      * Installs {@link EvolveDispatcherWrapper} on the system {@link EventQueue} — see the
-     * class-level "AWT/Swing dispatch" section for why. Requires
-     * {@code --add-exports jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED} on the
-     * actual runtime JVM command line, not just at compile time; if that export is missing
-     * this fails closed (logged, caught) and dispatch falls back to whatever the host's own
-     * JavaFX/AWT bridge does by default.
+     * class-level "AWT/Swing dispatch" section for why. Needs {@code java.desktop/sun.awt}
+     * reachable from this module, as the rest of the bridge does ({@link #openSwingInternals()});
+     * without it this fails closed and dispatch falls back to whatever the host's own JavaFX/AWT
+     * bridge does by default.
      *
      * <p>Installs the first time any Evolve Swing embedding happens in the process. A host
      * that constructs its own {@code JFXPanel} (unrelated to Evolve) before that point installs
@@ -527,15 +534,25 @@ public final class EvolveSwingHost {
         try {
             Display display = Display.getDefault();
             EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
-            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
+            setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
         } catch (Throwable ignored) {
             // Falls back to default AWT/JavaFX dispatch behavior.
         }
     }
 
+    /**
+     * Puts {@code dispatcher} in the queue's forwarding-dispatcher slot. This is the call
+     * {@code jdk.swing.interop.DispatcherWrapper} wraps, made directly: that class lives in
+     * {@code jdk.unsupported.desktop}, a module a trimmed runtime image can leave out, and any
+     * reference to it stops this whole class from loading on such a runtime.
+     */
+    static void setFwDispatcher(EventQueue queue, FwDispatcher dispatcher) {
+        AWTAccessor.getEventQueueAccessor().setFwDispatcher(queue, dispatcher);
+    }
+
     // Package-private (not private) so EvolveDispatcherWrapperTest can construct and exercise
     // these directly instead of only through the full JavaFX/AWT dispatch-merge trigger.
-    static final class EvolveDispatcherWrapper extends jdk.swing.interop.DispatcherWrapper {
+    static final class EvolveDispatcherWrapper implements FwDispatcher {
         private final Display display;
 
         EvolveDispatcherWrapper(Display display) {
