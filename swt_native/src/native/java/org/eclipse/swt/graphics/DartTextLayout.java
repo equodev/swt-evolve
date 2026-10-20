@@ -319,21 +319,22 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 if (style != null && (style.underline || style.strikeout || style.borderStyle != SWT.NONE)) {
                     int lineHeight = _lineHeight[line];
                     Color runForeground = gc.getForeground();
+                    int runHeight = Math.max(1, Math.min(lineHeight, runMetrics.ascent + runMetrics.descent));
                     if (style.underline) {
                         gc.setForeground(style.underlineColor != null ? style.underlineColor : runForeground);
-                        int underlineY = lineY + lineHeight - 1;
+                        int underlineY = Math.min(lineY + lineHeight - 1, runY + runMetrics.ascent + 1);
                         gc.drawLine(runX, underlineY, runX + runWidth, underlineY);
                     }
                     if (style.strikeout) {
                         gc.setForeground(style.strikeoutColor != null ? style.strikeoutColor : runForeground);
-                        int strikeoutY = lineY + lineHeight / 2;
+                        int strikeoutY = runY + runHeight / 2;
                         gc.drawLine(runX, strikeoutY, runX + runWidth, strikeoutY);
                     }
                     if (style.borderStyle != SWT.NONE) {
                         int lineStyle = gc.getLineStyle();
                         gc.setForeground(style.borderColor != null ? style.borderColor : runForeground);
                         gc.setLineStyle(style.borderStyle == SWT.BORDER_DOT ? SWT.LINE_DOT : style.borderStyle == SWT.BORDER_DASH ? SWT.LINE_DASH : SWT.LINE_SOLID);
-                        gc.drawRectangle(runX, lineY, Math.max(0, runWidth - 1), lineHeight - 1);
+                        gc.drawRectangle(runX, runY, Math.max(0, runWidth - 1), runHeight - 1);
                         gc.setLineStyle(lineStyle);
                     }
                     gc.setForeground(runForeground);

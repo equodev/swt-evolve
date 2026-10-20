@@ -60,6 +60,8 @@ VShell _$VShellFromJson(Map<String, dynamic> json) => VShell()
       ? null
       : VMenu.fromJson(json['menuBar'] as Map<String, dynamic>)
   ..text = json['text'] as String?
+  ..menuStripHeight = (json['menuStripHeight'] as num?)?.toInt()
+  ..ownMenuStrip = json['ownMenuStrip'] as bool?
   ..dialogs = parseDialogs(json['dialogs'])
   ..alpha = (json['alpha'] as num?)?.toInt()
   ..fullScreen = json['fullScreen'] as bool?
@@ -98,6 +100,8 @@ Map<String, dynamic> _$VShellToJson(VShell instance) => <String, dynamic>{
   'caret': ?instance.caret,
   'menuBar': ?instance.menuBar,
   'text': ?instance.text,
+  'menuStripHeight': ?instance.menuStripHeight,
+  'ownMenuStrip': ?instance.ownMenuStrip,
   'dialogs': ?instance.dialogs,
   'alpha': ?instance.alpha,
   'fullScreen': ?instance.fullScreen,

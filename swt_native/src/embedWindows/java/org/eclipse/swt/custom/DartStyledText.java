@@ -329,9 +329,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     final static boolean IS_MAC, IS_GTK;
 
     static {
-        String platform = SWT.getPlatform();
-        IS_MAC = "cocoa".equals(platform);
-        IS_GTK = "gtk".equals(platform);
+        IS_MAC = false;
+        IS_GTK = false;
     }
 
     /**

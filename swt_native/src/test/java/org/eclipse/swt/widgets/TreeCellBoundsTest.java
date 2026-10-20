@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -26,6 +27,8 @@ class TreeCellBoundsTest {
     private static final int TREE_WIDTH = 300;
     // A multi-column row's cells start after the edge gap (0.005 of 300, 1.5) and the row padding (12).
     private static final int CELLS_LEFT = 14;
+    // A left-aligned cell's content starts after the cell padding (4) and the alignment inset (4).
+    private static final int TEXT_INSET = 8;
 
     @BeforeAll
     static void useEquo() {
@@ -106,8 +109,49 @@ class TreeCellBoundsTest {
         Rectangle cell = item.getBounds(1);
         Rectangle text = item.getTextBounds(1);
 
-        assertThat(text.x).isEqualTo(cell.x);
+        assertThat(text.x).isEqualTo(cell.x + TEXT_INSET);
         assertThat(text.height).isPositive().isLessThan(cell.height);
         assertThat(text.y - cell.y).isEqualTo((cell.height - text.height) / 2);
+    }
+
+    @Test
+    void aCellImageSitsWhereTheTextWouldStartAndTheTextFollowsIt() {
+        TreeItem item = itemInThreeColumns();
+        Image image = new Image(item.getDisplay(), 16, 16);
+        try {
+            item.setImage(1, image);
+            Rectangle cell = item.getBounds(1);
+
+            assertThat(item.getImageBounds(1).x).isEqualTo(cell.x + TEXT_INSET);
+            // The 16 px icon and its 8 px spacing.
+            assertThat(item.getTextBounds(1).x).isEqualTo(cell.x + TEXT_INSET + 24);
+        } finally {
+            image.dispose();
+        }
+    }
+
+    @Test
+    void textBoundsAreALineOfTheFontAListenerDrawsWith() {
+        TreeItem item = itemInThreeColumns();
+        org.eclipse.swt.graphics.Font font = new org.eclipse.swt.graphics.Font(item.getDisplay(), "System", 11, SWT.NORMAL);
+        try {
+            item.getParent().setFont(font);
+            Rectangle cell = item.getBounds(1);
+            Rectangle text = item.getTextBounds(1);
+            int fontHeight = org.eclipse.swt.graphics.GCHelper.textExtent("Ag", 0, font).y;
+
+            assertThat(text.height).isEqualTo(fontHeight);
+            assertThat(text.y - cell.y).isEqualTo((cell.height - fontHeight) / 2);
+        } finally {
+            font.dispose();
+        }
+    }
+
+    @Test
+    void aRightAlignedColumnHasNoAlignmentInset() {
+        TreeItem item = itemInThreeColumns();
+        item.getParent().getColumn(1).setAlignment(SWT.RIGHT);
+
+        assertThat(item.getTextBounds(1).x - item.getBounds(1).x).isEqualTo(4);
     }
 }
