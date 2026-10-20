@@ -256,7 +256,7 @@ public class ControlHelper {
 
     /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
     private static boolean isTabStop(Control control) {
-        if ((control.getStyle() & SWT.NO_FOCUS) != 0 || control instanceof Shell)
+        if ((control.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
         if (control instanceof Button || control instanceof Combo || control instanceof DateTime
                 || control instanceof List || control instanceof Scale || control instanceof Spinner
@@ -265,9 +265,21 @@ public class ControlHelper {
                 || control instanceof org.eclipse.swt.custom.StyledText)
             return true;
         if (control instanceof Link)
-            return ((Link) control).getText().toLowerCase().contains("<a");
-        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget)
-            return ((DartWidget) control.getImpl()).hooks(SWT.KeyDown) || ((DartWidget) control.getImpl()).hooks(SWT.KeyUp);
+            return holdsLink(((Link) control).getText());
+        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
+            DartWidget impl = (DartWidget) control.getImpl();
+            return impl.hooks(SWT.KeyDown) || impl.hooks(SWT.KeyUp);
+        }
+        return false;
+    }
+
+    /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
+    static boolean holdsLink(String text) {
+        String lower = text.toLowerCase();
+        for (int i = lower.indexOf("<a"); i >= 0; i = lower.indexOf("<a", i + 1)) {
+            if (i + 2 < lower.length() && (lower.charAt(i + 2) == '>' || Character.isWhitespace(lower.charAt(i + 2))))
+                return true;
+        }
         return false;
     }
 

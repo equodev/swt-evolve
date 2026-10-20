@@ -87,6 +87,9 @@ class StyledLink extends StatefulWidget {
   final VoidCallback? onFocusIn;
   final VoidCallback? onFocusOut;
 
+  /// Whether the text holds a link: `<a` followed by `>` or whitespace, as SWT's Link parses one.
+  bool get hasLinks => RegExp(r'<a[>\s]', caseSensitive: false).hasMatch(text);
+
   const StyledLink({
     Key? key,
     required this.text,
@@ -124,7 +127,7 @@ class _StyledLinkState extends State<StyledLink> {
       },
       child: Focus(
         // A tab stop only while it holds a link, as natively.
-        skipTraversal: !widget.text.toLowerCase().contains('<a'),
+        skipTraversal: !widget.hasLinks,
         onFocusChange: (hasFocus) {
           setState(() => _isFocused = hasFocus);
           if (hasFocus) {
@@ -156,8 +159,7 @@ class _StyledLinkState extends State<StyledLink> {
           : widget.widgetTheme.disabledTextStyle,
     );
 
-    final hasLinks = widget.text.toLowerCase().contains('<a');
-    if (!hasLinks) {
+    if (!widget.hasLinks) {
       return Text(stripAccelerators(widget.text), style: baseTextStyle);
     }
 
