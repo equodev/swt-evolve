@@ -1,4 +1,4 @@
-import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
@@ -16,6 +16,7 @@ import '../impl/color_utils.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
+import 'control_evolve.dart' show ControlImpl;
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
@@ -256,7 +257,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // SWT delivers the press first. The click count is registered here too, because that is
       // the event SWT numbers -- onTap only decides what the completed gesture was.
       onPointerDown: (e) {
-        if (e.buttons == kSecondaryButton) {
+        if (ControlImpl.isSecondaryPress(e)) {
           secondaryPress(e.position);
           return;
         }

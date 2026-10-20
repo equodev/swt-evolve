@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/impl/control_evolve.dart' show ControlImpl;
 
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
@@ -43,6 +44,9 @@ class _RecordingTableSwt extends TableSwt<VTable> {
       calls.add('$ev:${payload?.button}@${payload?.x},${payload?.y}');
 }
 
+/// Past the hover timer a release starts, so no timer is left pending when a test ends.
+const _pastTheHover = Duration(milliseconds: 2 * ControlImpl.hoverDelayMs);
+
 void main() {
   testWidgets('a right-click leaves a Text caret where it was', variant: TargetPlatformVariant.desktop(), (tester) async {
     final value = VText()
@@ -64,7 +68,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.selection, const TextSelection.collapsed(offset: 0));
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(_pastTheHover);
   });
 
   testWidgets('a right-click on a Scale reports no Selection', (tester) async {
@@ -84,7 +88,7 @@ void main() {
     await tester.pump();
 
     expect(calls.where((c) => c.startsWith('Selection/')), isEmpty);
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(_pastTheHover);
   });
 
   testWidgets('a right-click on a Table row is pressed where the pointer is, before MenuDetect',
@@ -123,6 +127,6 @@ void main() {
     expect(press, isNonNegative);
     expect(calls[press], 'Mouse/MouseDown:3@${local.dx.round()},${local.dy.round()}');
     expect(menu, greaterThan(press));
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(_pastTheHover);
   });
 }

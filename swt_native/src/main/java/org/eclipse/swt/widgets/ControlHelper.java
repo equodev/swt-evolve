@@ -748,8 +748,7 @@ public class ControlHelper {
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;
-        boolean focuses = event.button == 1 ? takesFocusOnClick(control)
-                : event.button == 3 && takesFocusOnSecondaryClick(control);
+        boolean focuses = takesFocusOnPress(control, event.button);
         if (!focuses || control.isFocusControl())
             return;
         if (control.forceFocus() && !control.isDisposed())
@@ -757,27 +756,36 @@ public class ControlHelper {
     }
 
     /**
-     * The controls a button-1 press focuses natively. Win32 and GTK agree on every one of them; a
-     * Canvas is left to its own press handling, since natively it takes the focus only while it
-     * hooks key events. A TabFolder takes it only from a click that switches tabs (its client sends
-     * it), not from one on its strip or on the selected tab, as on GTK.
+     * The controls a button-1 press focuses natively; Win32 and GTK agree on every one of them. A
+     * Canvas is left to its own press handling, since natively it takes the focus only while it hooks
+     * key events. A TabFolder takes it only from a click that switches tabs (its client sends it), not
+     * from one on its strip or on the selected tab, as on GTK.
      */
-    static boolean takesFocusOnClick(DartControl control) {
-        Control api = control.getApi();
-        if ((api.getStyle() & SWT.NO_FOCUS) != 0)
-            return false;
-        return api instanceof Button || api instanceof Combo || api instanceof DateTime
-                || api instanceof List || api instanceof Scale || api instanceof Spinner
-                || api instanceof Table || api instanceof Tree || api instanceof Text;
-    }
+    private static final java.util.List<Class<?>> FOCUSED_BY_BUTTON_1 = java.util.Arrays.asList(
+            Button.class, Combo.class, DateTime.class, List.class, Scale.class, Spinner.class,
+            Table.class, Tree.class, Text.class);
 
-    /** The controls a button-3 press focuses natively, as Win32 and GTK do: the fields and the item views. */
-    static boolean takesFocusOnSecondaryClick(DartControl control) {
+    /**
+     * The controls a button-3 press focuses natively: the item views, which Win32 and GTK both focus
+     * ahead of the press, and the fields, which both focus too, though their natives report it after
+     * the MouseDown (Win32) or the MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and
+     * Cocoa, so it is left out.
+     */
+    private static final java.util.List<Class<?>> FOCUSED_BY_BUTTON_3 = java.util.Arrays.asList(
+            Combo.class, Spinner.class, Table.class, Tree.class, Text.class);
+
+    /** Whether a press of {@code button} focuses the control natively; never with NO_FOCUS. */
+    static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
         if ((api.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
-        return api instanceof Combo || api instanceof Spinner || api instanceof Table || api instanceof Tree
-                || api instanceof Text;
+        java.util.List<Class<?>> focused = button == 1 ? FOCUSED_BY_BUTTON_1
+                : button == 3 ? FOCUSED_BY_BUTTON_3 : java.util.Collections.emptyList();
+        for (Class<?> type : focused) {
+            if (type.isInstance(api))
+                return true;
+        }
+        return false;
     }
 
     /**

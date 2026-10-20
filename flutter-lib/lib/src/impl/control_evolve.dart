@@ -69,7 +69,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   // Win32's SM_CXDRAG/SM_CYDRAG default, which is what SWT's own drag detection uses.
   static const double _dragThresholdPx = 4.0;
   // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
-  static const int _hoverDelayMs = 560;
+  /// How long the pointer rests before a control reports MouseHover.
+  static const int hoverDelayMs = 560;
   Timer? _hoverTimer;
 
   // The control's own tooltip is placed by hand, in an overlay, at the pointer. See
@@ -252,7 +253,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   void _resetHoverTimer(V state, VEvent event) {
     _hoverTimer?.cancel();
-    _hoverTimer = Timer(const Duration(milliseconds: _hoverDelayMs), () {
+    _hoverTimer = Timer(const Duration(milliseconds: hoverDelayMs), () {
       if (!mounted) return;
       widget.sendMouseTrackMouseHover(state, event);
       _showTooltipAtPointer();
@@ -345,6 +346,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   /// Whether a press of [button] is the platform's context-menu trigger: the secondary
   /// button anywhere, plus Ctrl+Click on macOS — the same pair [applyMenu] opens on.
+  /// Whether [e] is a press of the secondary button alone: the right-click a native control
+  /// reports as a MenuDetect.
+  static bool isSecondaryPress(PointerEvent e) => e.buttons == kSecondaryButton;
+
   static bool isMenuDetectTrigger(int button) =>
       button == 3 ||
       (defaultTargetPlatform == TargetPlatform.macOS &&

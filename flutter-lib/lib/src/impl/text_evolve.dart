@@ -19,6 +19,7 @@ import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
+import 'control_evolve.dart' show ControlImpl;
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> with PendingTextEchoes {
@@ -312,7 +313,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       },
       child: Listener(
         onPointerDown: (e) {
-          if (e.buttons & kSecondaryMouseButton == 0) return;
+          if (!ControlImpl.isSecondaryPress(e)) return;
           // A field that never held a caret has Java's, which the focus this press brings would
           // otherwise move to the end.
           final selection = _controller.selection;
