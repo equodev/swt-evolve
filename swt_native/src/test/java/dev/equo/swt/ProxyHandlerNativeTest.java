@@ -11,8 +11,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,8 +33,11 @@ public class ProxyHandlerNativeTest {
 
     private static final String SELF = "http://localhost:4000";
     private static final URI PAGE = URI.create("http://127.0.0.1:9000/idp/login");
+    /** In a browser's navigation {@code Accept}, absent from {@code HttpURLConnection}'s default one. */
+    private static final String BROWSER_ONLY_ACCEPT_TOKEN = "application/xhtml+xml";
 
     private HttpServer server;
+    private HttpServer proxy;
     private String base;
 
     @BeforeEach
@@ -37,6 +48,7 @@ public class ProxyHandlerNativeTest {
     @AfterEach
     public void stopServer() {
         if (server != null) server.stop(0);
+        if (proxy != null) proxy.stop(0);
     }
 
     private static String rewriteForms(String html) {
@@ -109,12 +121,13 @@ public class ProxyHandlerNativeTest {
         base = "http://127.0.0.1:" + server.getAddress().getPort();
         ProxyCookieJar jar = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
 
-        ProxyHandler.Fetched form = ProxyHandler.fetch(base + "/start", "GET", new byte[0], null, null,
-                Collections.<String>emptyList(), jar);
+        ProxyHandler.Fetched form = ProxyHandler.fetch(base + "/start", "GET", new byte[0],
+                Collections.<String, String>emptyMap(), Collections.<String>emptyList(), jar);
         assertThat(new String(form.body, StandardCharsets.UTF_8)).isEqualTo("form");
 
         ProxyHandler.Fetched done = ProxyHandler.fetch(base + "/idp/authenticate", "POST",
-                "user=u".getBytes(StandardCharsets.UTF_8), "application/x-www-form-urlencoded", null,
+                "user=u".getBytes(StandardCharsets.UTF_8),
+                Collections.singletonMap("Content-Type", "application/x-www-form-urlencoded"),
                 Collections.<String>emptyList(), jar);
         assertThat(done.finalUrl).isEqualTo(base + "/done");
         assertThat(new String(done.body, StandardCharsets.UTF_8)).isEqualTo("SESSION=s2");
@@ -122,17 +135,46 @@ public class ProxyHandlerNativeTest {
     }
 
     @Test
-    public void the_viewer_language_reaches_every_hop() throws IOException {
+    public void the_page_headers_reach_every_hop_unless_set_url_gives_its_own() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/start", ex -> redirect(ex, "/page", null));
-        server.createContext("/page", ex -> respond(ex, 200, String.valueOf(ex.getRequestHeaders().getFirst("Accept-Language"))));
+        server.createContext("/page", ex -> respond(ex, 200, ex.getRequestHeaders().getFirst("Accept")
+                + " | " + ex.getRequestHeaders().getFirst("Accept-Language")));
         server.start();
         base = "http://127.0.0.1:" + server.getAddress().getPort();
+        Map<String, String> pageHeaders = new LinkedHashMap<>();
+        pageHeaders.put("Accept", "text/html");
+        pageHeaders.put("Accept-Language", "es-AR,es;q=0.9");
 
-        ProxyHandler.Fetched page = ProxyHandler.fetch(base + "/start", "GET", new byte[0], null, "es-AR,es;q=0.9",
-                Collections.<String>emptyList(), new ProxyCookieJar(WebFlutterServer::proxyAllowed));
+        assertThat(fetchBody(base + "/start", pageHeaders, Collections.<String>emptyList()))
+                .isEqualTo("text/html | es-AR,es;q=0.9");
+        assertThat(fetchBody(base + "/start", pageHeaders, Collections.singletonList("Accept: application/json")))
+                .isEqualTo("application/json | es-AR,es;q=0.9");
+    }
 
-        assertThat(new String(page.body, StandardCharsets.UTF_8)).isEqualTo("es-AR,es;q=0.9");
+    /** A server that picks the representation from {@code Accept} serves the page a browser would get. */
+    @Test
+    public void the_page_accept_header_reaches_the_upstream() throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/info", ex -> respond(ex, 200,
+                String.valueOf(ex.getRequestHeaders().getFirst("Accept")).contains(BROWSER_ONLY_ACCEPT_TOKEN)
+                        ? "text/html" : "text/plain",
+                "<html><head></head><body></body></html>"));
+        server.start();
+        base = "http://127.0.0.1:" + server.getAddress().getPort();
+        proxy = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        proxy.createContext("/proxy", new ProxyHandler(new ProxyCookieJar(WebFlutterServer::proxyAllowed)));
+        proxy.start();
+
+        HttpResponse<String> page = HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create(
+                        "http://127.0.0.1:" + proxy.getAddress().getPort() + "/proxy?url="
+                                + URLEncoder.encode(base + "/info", StandardCharsets.UTF_8)))
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .timeout(Duration.ofSeconds(10))
+                .build(), HttpResponse.BodyHandlers.ofString());
+
+        assertThat(page.headers().firstValue("Content-Type")).hasValue("text/html");
+        assertThat(page.body()).contains("<base href=\"" + base + "/info\">");
     }
 
     @Test
@@ -160,9 +202,20 @@ public class ProxyHandlerNativeTest {
         ex.close();
     }
 
+    private static String fetchBody(String url, Map<String, String> pageHeaders, List<String> setUrlHeaders)
+            throws IOException {
+        ProxyHandler.Fetched page = ProxyHandler.fetch(url, "GET", new byte[0], pageHeaders, setUrlHeaders,
+                new ProxyCookieJar(WebFlutterServer::proxyAllowed));
+        return new String(page.body, StandardCharsets.UTF_8);
+    }
+
     private static void respond(HttpExchange ex, int code, String body) throws IOException {
+        respond(ex, code, "text/plain", body);
+    }
+
+    private static void respond(HttpExchange ex, int code, String contentType, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        ex.getResponseHeaders().add("Content-Type", "text/plain");
+        ex.getResponseHeaders().add("Content-Type", contentType);
         ex.sendResponseHeaders(code, bytes.length);
         try (OutputStream out = ex.getResponseBody()) {
             out.write(bytes);

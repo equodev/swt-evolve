@@ -69,6 +69,14 @@ class ProxyHandler implements HttpHandler {
                 }
             });
 
+    /**
+     * Request headers from the page that describe its body and pick the representation and
+     * language, forwarded upstream unless {@code Browser.setUrl} gave its own. Not
+     * {@code Accept-Encoding} ({@link HttpURLConnection} does not decode a compressed body) nor
+     * conditional-cache headers (a {@code 304} has no body to serve).
+     */
+    private static final String[] FORWARDED_HEADERS = {"Content-Type", "Accept", "Accept-Language"};
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
@@ -115,17 +123,13 @@ class ProxyHandler implements HttpHandler {
             String method = exchange.getRequestMethod();
             boolean hasBody = !"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method);
             byte[] requestBody = hasBody ? Java8.readAllBytes(exchange.getRequestBody()) : new byte[0];
-            // Content-Type from the page's own fetch/XHR call, so a JSON PUT/POST body is
-            // interpreted correctly upstream. Deliberately narrow rather than forwarding every
-            // inbound header: a browser sends its own Accept/Accept-Encoding/conditional-cache
-            // headers on every request, including the plain navigations that never carry a
-            // postData body at all, and blindly relaying those upstream is a wider behavior
-            // change than this proxy needs to make to support writes.
-            String requestContentType = exchange.getRequestHeaders().getFirst("Content-Type");
-            // The page should come back in the viewer's language, as it would loaded directly.
-            String acceptLanguage = exchange.getRequestHeaders().getFirst("Accept-Language");
+            Map<String, String> forwardedHeaders = new LinkedHashMap<>();
+            for (String name : FORWARDED_HEADERS) {
+                String value = exchange.getRequestHeaders().getFirst(name);
+                if (value != null) forwardedHeaders.put(name, value);
+            }
 
-            Fetched resp = fetch(target, method, requestBody, requestContentType, acceptLanguage, headerLines, cookies);
+            Fetched resp = fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies);
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
             String lowerContentType = contentType.toLowerCase();
@@ -199,16 +203,13 @@ class ProxyHandler implements HttpHandler {
      * <p>Cookies go both ways on every hop, redirects included: an OAuth2 login sets its session on
      * the hop that redirects to the identity provider and checks it on the one coming back.
      */
-    static Fetched fetch(String target, String method, byte[] requestBody, String requestContentType,
-            String acceptLanguage, List<String> headerLines, ProxyCookieJar cookies) throws IOException {
+    static Fetched fetch(String target, String method, byte[] requestBody, Map<String, String> forwardedHeaders,
+            List<String> headerLines, ProxyCookieJar cookies) throws IOException {
         String url = target;
         for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod(method);
             conn.setInstanceFollowRedirects(false);
-            if (requestContentType != null) {
-                try { conn.setRequestProperty("Content-Type", requestContentType); } catch (Exception ignored) { }
-            }
             for (String header : headerLines) {
                 int colon = header.indexOf(':');
                 if (colon <= 0) continue;
@@ -217,8 +218,10 @@ class ProxyHandler implements HttpHandler {
                 if (name.isEmpty()) continue;
                 try { conn.setRequestProperty(name, value); } catch (Exception ignored) { }
             }
-            if (acceptLanguage != null && conn.getRequestProperty("Accept-Language") == null) {
-                conn.setRequestProperty("Accept-Language", acceptLanguage);
+            for (Map.Entry<String, String> header : forwardedHeaders.entrySet()) {
+                if (conn.getRequestProperty(header.getKey()) == null) {
+                    try { conn.setRequestProperty(header.getKey(), header.getValue()); } catch (Exception ignored) { }
+                }
             }
             URI hopUri = toUri(url);
             String jarCookies = hopUri != null ? cookies.header(hopUri) : null;
