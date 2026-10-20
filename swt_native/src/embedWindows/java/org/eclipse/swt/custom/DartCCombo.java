@@ -2144,6 +2144,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 }
             case SWT.Modify:
                 {
+                    _text = text.getText();
                     list.deselectAll();
                     Event e = new Event();
                     e.time = event.time;
