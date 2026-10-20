@@ -100,21 +100,51 @@ String localFileBaseRewrite(String? basePath) {
 
 /// Same-origin URL for a `setText` document. Rendering it from a `data:` URL (what the webview
 /// plugin's `loadHtmlString` does) gives the frame an opaque origin, so the embedding page cannot
-/// script it: execute/evaluate/BrowserFunction all fail with a cross-origin SecurityError. A `blob:`
-/// URL minted here carries this page's origin instead, and inside the document `location.origin` is
-/// the app's — which the BrowserFunction shim posts to (an `srcdoc` frame is scriptable too, but its
-/// `location.origin` is "null"). [baseUrl], when given, is injected as the document's `<base href>`,
-/// as `loadHtmlString` would.
+/// script it: execute/evaluate/BrowserFunction all fail with a cross-origin SecurityError. The app
+/// server serves it over http instead (`/inline-document`), so inside the document `location.origin`
+/// is the app's — which the BrowserFunction shim posts to (an `srcdoc` frame is scriptable too, but
+/// its `location.origin` is "null"). A `blob:` URL carries the app's origin as well, but some
+/// Chromium builds (151, for one) load it in a process of its own, where the page cannot script it;
+/// it is only the fallback for a document that endpoint does not take. [baseUrl], when given, is
+/// injected as the document's `<base href>`, as `loadHtmlString` would.
 ///
 /// The caller owns the URL: revoke it with [browserRevokeInlineDocumentUrl] once replaced.
-String browserInlineDocumentUrl(String html, String? baseUrl) {
-  final blob = web.Blob(
-      [_injectBaseUrl(html, baseUrl).toJS as JSAny].toJS,
+Future<String?> browserInlineDocumentUrl(String html, String? baseUrl) async {
+  final document = _injectBaseUrl(html, baseUrl);
+  final endpoint = browserInlineDocumentEndpoint();
+  try {
+    final response = await web.window
+        .fetch(
+            endpoint.toJS,
+            web.RequestInit(
+                method: 'POST',
+                body: document.toJS,
+                headers: {'Content-Type': 'text/html;charset=utf-8'}.jsify()
+                    as web.HeadersInit))
+        .toDart;
+    if (response.ok) return '${browserAppBaseUrl()}${(await response.text().toDart).toDart}';
+    web.console.warn('Browser.setText: $endpoint answered ${response.status}, '
+            'showing the document from a blob: URL'
+        .toJS);
+  } catch (e) {
+    web.console.warn(
+        'Browser.setText: $endpoint failed ($e), showing the document from a blob: URL'.toJS);
+  }
+  final blob = web.Blob([document.toJS as JSAny].toJS,
       web.BlobPropertyBag(type: 'text/html;charset=utf-8'));
   return web.URL.createObjectURL(blob);
 }
 
-void browserRevokeInlineDocumentUrl(String url) => web.URL.revokeObjectURL(url);
+/// Where the app server serves `setText` documents (see `InlineDocumentHandler`).
+String browserInlineDocumentEndpoint() => '${browserAppBaseUrl()}inline-document';
+
+void browserRevokeInlineDocumentUrl(String url) {
+  if (url.startsWith('blob:')) {
+    web.URL.revokeObjectURL(url);
+  } else {
+    web.window.fetch(url.toJS, web.RequestInit(method: 'DELETE')).toDart.ignore();
+  }
+}
 
 final RegExp _headTag = RegExp(r'<head[^>]*>', caseSensitive: false);
 

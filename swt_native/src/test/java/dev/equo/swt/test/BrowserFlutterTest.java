@@ -437,6 +437,21 @@ class BrowserFlutterTest {
             assertThat(browser.getText()).contains("TRUSTED-OK");
         }
 
+        /** The order an application uses to show a loading page and replace it once it has loaded. */
+        @Test
+        void setText_completesForAListenerAddedRightAfterIt() {
+            browser.setText(taggedHtml("T", "<p id='m'>LOADING-PAGE</p>"));
+            CountDownLatch done = new CountDownLatch(1);
+            browser.addProgressListener(ProgressListener.completedAdapter(e -> done.countDown()));
+            flutter.flush();
+
+            assertThat(awaitLatch(done, ACTION_TIMEOUT)).as("completed for the setText document").isTrue();
+            assertThat(browser.evaluate("return document.getElementById('m').textContent;"))
+                    .as("the setText document is scriptable").isEqualTo("LOADING-PAGE");
+            assertThat(browser.evaluate("return location.protocol;"))
+                    .as("the setText document is served over http, not from a blob: URL").isEqualTo("http:");
+        }
+
         @Test
         void setText_reachesRenderedState() {
             String html = taggedHtml("T", "RENDERED-MARKER");

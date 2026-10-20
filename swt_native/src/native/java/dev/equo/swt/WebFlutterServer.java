@@ -146,6 +146,7 @@ public class WebFlutterServer {
         httpServer.createContext("/proxy", new ProxyHandler(proxyCookies));
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
+        httpServer.createContext(InlineDocumentHandler.PATH, new InlineDocumentHandler());
         // ProxyHandler's sibling-wait (see TARGET_AUTH_CACHE) can block a worker thread for up to a
         // few seconds while a concurrent request for the same target populates the auth cache. A
         // single page load fires a dozen-plus /proxy requests at once (the document, its stylesheet,
