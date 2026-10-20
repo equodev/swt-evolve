@@ -15,11 +15,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.AdditionalAnswers;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * A control redrawn from its own paint loop gets one Paint per frame its client shows, as a native
@@ -44,6 +49,7 @@ class PaintPacingTest {
     private Client client;
     private final ConcurrentLinkedDeque<Runnable> asyncQueue = new ConcurrentLinkedDeque<>();
     private final List<Runnable> timers = new CopyOnWriteArrayList<>();
+    private final List<Runnable> disposeExecs = new CopyOnWriteArrayList<>();
     private final AtomicInteger paints = new AtomicInteger();
     /** Whether each paint draws something new, so none is dropped as a repeat of the last. */
     private boolean varies = true;
@@ -135,6 +141,29 @@ class PaintPacingTest {
     }
 
     @Test
+    @DisplayName("another Display's state leaves its held paints held")
+    void anotherDisplaysStateLeavesAHeldPaint() {
+        Display other = mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display()));
+        AtomicInteger otherPaints = new AtomicInteger();
+        Canvas canvas = inFlightFull(Mocks.shell(), paints);
+        Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
+        Button button = new Button(canvas.getShell(), SWT.PUSH);
+        pumpAsync();
+
+        canvas.redraw();
+        otherCanvas.redraw();
+        pumpAsync();
+        assertThat(paints).hasValue(PaintPacing.IN_FLIGHT);
+        assertThat(otherPaints).hasValue(PaintPacing.IN_FLIGHT);
+
+        button.setText("changed");
+        FlutterBridge.update();
+        pumpAsync();
+        assertThat(paints).as("the held paint of the button's Display").hasValue(PaintPacing.IN_FLIGHT + 1);
+        assertThat(otherPaints).as("the held paint of the other Display").hasValue(PaintPacing.IN_FLIGHT);
+    }
+
+    @Test
     @DisplayName("a repaint of what is already shown still waits for its frame, not the timeout")
     void aRepeatAsksForItsFrame() {
         varies = false;
@@ -170,14 +199,79 @@ class PaintPacingTest {
         assertThat(paints).hasValue(PaintPacing.IN_FLIGHT);
     }
 
+    @Test
+    @DisplayName("Displays on one connection each get their client's answers")
+    void displaysSharingAConnectionEachGetTheirAnswers() {
+        Display other = mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display()));
+        AtomicInteger otherPaints = new AtomicInteger();
+        Canvas canvas = inFlightFull(Mocks.shell(), paints);
+        Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
+        canvas.redraw();
+        otherCanvas.redraw();
+        pumpAsync();
+
+        client.inFrame(canvas);
+        waitFor(() -> !asyncQueue.isEmpty());
+        pumpAsync();
+        client.inFrame(otherCanvas);
+        waitFor(() -> !asyncQueue.isEmpty());
+        pumpAsync();
+        assertThat(paints).as("paints of the first Display's canvas").hasValue(PaintPacing.IN_FLIGHT + 1);
+        assertThat(otherPaints).as("paints of the second Display's canvas").hasValue(PaintPacing.IN_FLIGHT + 1);
+    }
+
+    @Test
+    @DisplayName("a disposed Display stops getting answers on a connection that outlives it")
+    void aDisposedDisplayLeavesTheConnection() {
+        Display other = mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display()));
+        AtomicInteger otherPaints = new AtomicInteger();
+        Canvas canvas = inFlightFull(Mocks.shell(), paints);
+        Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
+        canvas.redraw();
+        otherCanvas.redraw();
+        pumpAsync();
+
+        disposeExecs.remove(0).run();
+        // Answers arrive in order, so once the second one is handled the first one was too.
+        client.inFrame(canvas);
+        client.inFrame(otherCanvas);
+        waitFor(() -> !asyncQueue.isEmpty());
+        pumpAsync();
+        assertThat(paints).as("paints of the disposed Display's canvas").hasValue(PaintPacing.IN_FLIGHT);
+        assertThat(otherPaints).as("paints of the live Display's canvas").hasValue(PaintPacing.IN_FLIGHT + 1);
+    }
+
+    @Test
+    @DisplayName("a disposed control leaves its Display's pacing")
+    void aDisposedControlLeavesThePacing() {
+        Canvas canvas = inFlightFull();
+        canvas.redraw();
+        pumpAsync();
+        DartControl impl = (DartControl) canvas.getImpl();
+        PaintPacing.Pacer pacer = ControlHelper.paintState(impl).pacer;
+        assertThat(pacer.byId).containsValue(impl);
+        assertThat(pacer.held).contains(impl);
+
+        canvas.dispose();
+        assertThat(pacer.byId).as("controls the client answers for").isEmpty();
+        assertThat(pacer.held).as("controls with a held paint").isEmpty();
+    }
+
     /** A canvas that has painted as often as it may without an answer from its client. */
     private Canvas inFlightFull() {
-        Shell shell = Mocks.shell();
+        return inFlightFull(Mocks.shell(), paints);
+    }
+
+    /** {@link #inFlightFull()} on [shell], counting its paints in [paints]. */
+    private Canvas inFlightFull(Shell shell, AtomicInteger paints) {
         Display display = shell.getDisplay();
+        Map<String, Object> data = new HashMap<>();
+        doAnswer(inv -> data.get(inv.<String>getArgument(0))).when(display).getData(anyString());
+        doAnswer(inv -> data.put(inv.getArgument(0), inv.getArgument(1))).when(display).setData(anyString(), any());
         DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
-            if (ev != null && (ev.type == SWT.Paint || ev.type == SWT.Resize)) {
+            if (ev != null && (ev.type == SWT.Paint || ev.type == SWT.Resize || ev.type == SWT.Dispose)) {
                 return inv.callRealMethod();
             }
             return null;
@@ -190,6 +284,10 @@ class PaintPacingTest {
             timers.add(inv.getArgument(1));
             return null;
         }).when(display).timerExec(anyInt(), any(Runnable.class));
+        doAnswer(inv -> {
+            disposeExecs.add(inv.getArgument(0));
+            return null;
+        }).when(display).disposeExec(any(Runnable.class));
         Canvas canvas = new Canvas(shell, SWT.NONE);
         canvas.setBounds(0, 0, 100, 100);
         canvas.addPaintListener(e -> {

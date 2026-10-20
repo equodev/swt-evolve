@@ -708,7 +708,68 @@ public class Sizes {
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
         // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
         if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
-        return new Rectangle(x, y, width, height);
+        int menuBar = menuStripOutsideClientArea(widget);
+        return new Rectangle(x, y - menuBar, width, height + menuBar);
+    }
+
+    /** A Decorations that draws its own menu strip has it outside its client area, as a native one does. */
+    private static int menuStripOutsideClientArea(DartScrollable widget) {
+        Scrollable api = widget.getApi();
+        return api instanceof Decorations ? ownMenuStripHeight((Decorations) api) : 0;
+    }
+
+    /**
+     * Height of the menu strip a Decorations draws above its client area, as a native menu bar is
+     * drawn: only when its menu bar has something in it and no visible main toolbar hosts it. The
+     * client draws the strip on this answer, which it receives as {@code ownMenuStrip}.
+     */
+    public static int ownMenuStripHeight(Decorations decorations) {
+        if (!DartMainToolbar.hasMenuBarItems(decorations)) return 0;
+        Menu bar = decorations.getMenuBar();
+        if (bar == null || bar.isDisposed()) return 0;
+        for (Control child : decorations.getChildren()) {
+            if (child.getImpl() instanceof DartMainToolbar && child.getVisible()) return 0;
+        }
+        return menuStripHeight();
+    }
+
+    /**
+     * The menu strip's height in layout units, wherever it is drawn. The zoom leaves its text at its
+     * true size, so the strip is sized at the monitor's scale, as a native menu bar is: it grows by
+     * what the zoom takes off. The client draws it at this height, received as {@code menuStripHeight}.
+     */
+    public static int menuStripHeight() {
+        return (int) Math.round(MenuSizes.MENU_BAR_HEIGHT / Config.uiScale());
+    }
+
+    /**
+     * Follows a change that may have given a Dart-backed Decorations its own menu strip or taken it
+     * away, given its {@link #ownMenuStripHeight} from before the change. The strip is re-sent, and
+     * the client area it comes out of is resized and laid out again, as a native menu bar's
+     * appearing does.
+     */
+    static void menuStripChanged(Decorations decorations, int before) {
+        if (decorations == null || decorations.isDisposed()) return;
+        if (!(decorations.getImpl() instanceof DartComposite)) return;
+        if (ownMenuStripHeight(decorations) == before) return;
+        DartComposite impl = (DartComposite) decorations.getImpl();
+        impl.getValue().markDirty("ownMenuStrip");
+        impl.sendEvent(SWT.Resize);
+        if (decorations.isDisposed()) return;
+        if (impl.layout != null) {
+            impl.markLayout(false, false);
+            impl.updateLayout(false);
+        }
+    }
+
+    /**
+     * Re-sends whether a Dart-backed Decorations draws its own menu strip; an unchanged answer is not
+     * sent. Without menu items there is no strip for a main toolbar's coming or going to move.
+     */
+    static void resendMenuStrip(Decorations decorations) {
+        if (!DartMainToolbar.hasMenuBarItems(decorations)) return;
+        if (decorations.getImpl() instanceof DartWidget)
+            ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
     }
 
     public static Rectangle getBounds(DartTableItem item) {
@@ -757,7 +818,7 @@ public class Sizes {
     }
 
     public static Rectangle getImageBounds(DartTableItem item, int index) {
-        Rectangle cell = getBounds(item, index);
+        Rectangle cell = tableContentCell(item, index, getBounds(item, index));
         if (cell.width == 0 && cell.height == 0)
             return cell;
         Image[] images = item._images();
@@ -772,13 +833,32 @@ public class Sizes {
         int columnCount = dartTable.columnCount;
         if (!(0 <= index && index < Math.max(1, columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        Rectangle cellBounds = getBounds(item, index);
-        if (cellBounds == null)
-            return new Rectangle(0, 0, 0, 0);
+        Rectangle cellBounds = tableContentCell(item, index, getBounds(item, index));
         Image[] images = item._images();
         Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
         int shift = image != null ? dev.equo.swt.size.TableSizes.getIconSpace(item.getApi()) : 0;
-        return new Rectangle(cellBounds.x + shift, cellBounds.y, Math.max(0, cellBounds.width - shift), cellBounds.height);
+        Rectangle text = new Rectangle(cellBounds.x + shift, cellBounds.y, Math.max(0, cellBounds.width - shift), cellBounds.height);
+        return centredTextLine(text, item.getFont(index));
+    }
+
+    /** A column's cell past the padding Flutter starts its content at; the first cell's bounds include it already. */
+    private static Rectangle tableContentCell(DartTableItem item, int index, Rectangle cell) {
+        if (index == 0 || ((DartTable) item._parent().getImpl()).columnCount == 0) return cell;
+        return insetCell(cell, dev.equo.swt.size.TableSizes.getCellInset());
+    }
+
+    private static Rectangle insetCell(Rectangle cell, int inset) {
+        int shift = Math.min(cell.width, inset);
+        return new Rectangle(cell.x + shift, cell.y, cell.width - shift, cell.height);
+    }
+
+    /**
+     * A line of {@code font} as the GC draws it, centred in {@code cell} as Flutter centres a cell's
+     * text: where an owner-drawing listener draws its text through a GC in that font.
+     */
+    private static Rectangle centredTextLine(Rectangle cell, Font font) {
+        int line = Math.min(cell.height, GCHelper.textExtent("Ag", 0, font).y);
+        return new Rectangle(cell.x, cell.y + (cell.height - line) / 2, cell.width, line);
     }
 
     public static List<TreeItem> flattenVisibleTreeItems(DartTree tree) {
@@ -847,28 +927,31 @@ public class Sizes {
     public static Rectangle getImageBounds(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = treeCell(item, index, row);
+        Rectangle cell = contentCell(item, index, treeCell(item, index, row));
         Image image = index == 0 ? item.getImage() : item.getImage(index);
         int width = image != null ? dev.equo.swt.size.TreeSizes.getIconSize() : 0;
         return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
-    /**
-     * The line a cell's text occupies: Flutter centres it vertically in the row, and an owner-drawing
-     * listener that draws its text at these bounds expects to land on it, as on Cocoa.
-     */
+    /** A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already. */
+    private static Rectangle contentCell(DartTreeItem item, int index, Rectangle cell) {
+        DartTree tree = (DartTree) item._parent().getImpl();
+        if (index == 0 || index >= tree.columnCount) return cell;
+        return insetCell(cell, dev.equo.swt.size.TreeSizes.getCellInset(tree.columns[index].getAlignment()));
+    }
+
+    /** A line of the item's font, centred in the row as Flutter centres its own text. */
     public static Rectangle getTextBounds(DartTreeItem item, int index) {
         Rectangle cell = textCell(item, index);
         if (cell.height == 0) return cell;
-        int line = Math.min(cell.height, dev.equo.swt.size.TreeSizes.getTextHeight(item.getApi(), index));
-        return new Rectangle(cell.x, cell.y + (cell.height - line) / 2, cell.width, line);
+        return centredTextLine(cell, item.getFont(index));
     }
 
     /** A cell's text area: the cell after its image, the full height of the row. */
     private static Rectangle textCell(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = treeCell(item, index, row);
+        Rectangle cell = contentCell(item, index, treeCell(item, index, row));
         Image image = index == 0 ? item.getImage() : item.getImage(index);
         int shift = image != null ? dev.equo.swt.size.TreeSizes.getIconSpace() : 0;
         int width = ((DartTree) item._parent().getImpl()).columnCount > 0
@@ -1002,7 +1085,8 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
-        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight));
+        int menuBar = menuStripOutsideClientArea(widget);
+        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
     }
 
     public static Point getSize(DartScrollBar scrollBar) {

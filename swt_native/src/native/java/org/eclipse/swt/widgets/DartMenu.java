@@ -322,6 +322,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void createItem(MenuItem item, int index) {
+        int menuStripBefore = menuBarStripHeight();
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         ;
@@ -336,6 +337,7 @@ public class DartMenu extends DartWidget implements IMenu {
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         ;
+        menuBarItemsChanged(menuStripBefore);
         getValue().markDirty(VMenu.ITEMS);
     }
 
@@ -354,6 +356,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void destroyItem(MenuItem item) {
+        int menuStripBefore = menuBarStripHeight();
         int index = 0;
         while (index < itemCount) {
             if (items[index] == item)
@@ -368,6 +371,7 @@ public class DartMenu extends DartWidget implements IMenu {
             items = new MenuItem[4];
         if (((DartDisplay) display.getImpl()).menuBar == this.getApi()) {
         }
+        menuBarItemsChanged(menuStripBefore);
         getValue().markDirty(VMenu.ITEMS);
     }
 
@@ -1063,6 +1067,22 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     Control ownerControl;
+
+    /**
+     * The menu strip of the Decorations this menu is the bar of; 0 when it is no bar.
+     */
+    int menuBarStripHeight() {
+        return isParentMenuBar() ? Sizes.ownMenuStripHeight(parent) : 0;
+    }
+
+    void menuBarItemsChanged(int menuStripBefore) {
+        if (isParentMenuBar())
+            Sizes.menuStripChanged(parent, menuStripBefore);
+    }
+
+    private boolean isParentMenuBar() {
+        return parent != null && ((DartDecorations) parent.getImpl()).menuBar == getApi();
+    }
 
     public Control findOwnerControl() {
         if (ownerControl != null) {

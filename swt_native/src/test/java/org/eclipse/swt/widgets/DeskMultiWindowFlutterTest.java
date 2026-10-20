@@ -183,6 +183,111 @@ class DeskMultiWindowFlutterTest {
         assertThat(desk.nativeWindowHandle(main)).isZero();
     }
 
+    // ---- which window owns a detached one ------------------------------------------------------------
+    //
+    // A shell with a parent is an owned window natively: it stays above its owner, minimizes with it
+    // and has no task-switcher entry of its own. The owner is the window its parent is drawn into.
+
+    /** Stands in for the Display's own window, so being owned by it is distinguishable from none. */
+    private static final long MAIN_WINDOW_OWNER = 0x5A11L;
+
+    @Test
+    @DisplayName("a parentless detached shell's window has no owner")
+    void topLevelShellIsUnowned() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        openShell("Detached");
+
+        assertThat(desk.opened.get(0).owner).isZero();
+    }
+
+    @Test
+    @DisplayName("a detached child of the main shell is owned by the Display's window")
+    void childOfMainShellIsOwnedByTheDisplayWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell child = new Shell(main, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+
+        assertThat(desk.opened).hasSize(1);
+        assertThat(desk.opened.get(0).owner).isEqualTo(MAIN_WINDOW_OWNER);
+    }
+
+    @Test
+    @DisplayName("a detached child of a detached shell is owned by that shell's window")
+    void childOfDetachedShellIsOwnedByItsWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+        Shell child = new Shell(detached, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+
+        assertThat(desk.opened).hasSize(2);
+        assertThat(desk.opened.get(1).owner).isEqualTo(desk.opened.get(0).handle);
+    }
+
+    @Test
+    @DisplayName("a detached child of an inline shell is owned by the window that inline shell is in")
+    void childOfInlineShellIsOwnedByTheWindowItIsDrawnInto() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell inline = new Shell(main, SWT.DIALOG_TRIM);
+        inline.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        inline.setVisible(true);
+        Shell child = new Shell(inline, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+
+        assertThat(desk.opened).hasSize(1);
+        assertThat(desk.opened.get(0).owner).isEqualTo(MAIN_WINDOW_OWNER);
+    }
+
+    @Test
+    @DisplayName("a detached child is re-owned once its parent gets a window of its own")
+    void childIsReownedWhenItsParentGetsAWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell parent = new Shell(main, SWT.SHELL_TRIM);
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        parent.setVisible(true);
+        Shell child = new Shell(parent, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+        long childWindow = handleOf(desk, child);
+
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        parent.setVisible(false);
+        parent.setVisible(true);
+        child.setVisible(false);
+        child.setVisible(true);
+
+        assertThat(desk.owners.get(childWindow)).containsExactly(handleOf(desk, parent));
+    }
+
+    @Test
+    @DisplayName("a detached child is re-owned by the next window up once its parent's window closes")
+    void childIsReownedWhenItsParentLosesItsWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell parent = new Shell(main, SWT.SHELL_TRIM);
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        parent.setVisible(true);
+        Shell child = new Shell(parent, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+        long childWindow = handleOf(desk, child);
+
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        parent.setVisible(false);
+        parent.setVisible(true);
+        child.setVisible(false);
+        child.setVisible(true);
+
+        assertThat(desk.owners.get(childWindow)).containsExactly(MAIN_WINDOW_OWNER);
+    }
+
     // ---- driving them ---------------------------------------------------------------------------------
 
     @Test
@@ -655,13 +760,15 @@ class DeskMultiWindowFlutterTest {
     /** One {@code FlutterNative.initialize} the bridge asked for. */
     private static final class OpenedWindow {
         final long handle;
+        final long owner;
         final long widgetId;
         final String widgetName;
         final int width;
         final int height;
 
-        OpenedWindow(long handle, long widgetId, String widgetName, int width, int height) {
+        OpenedWindow(long handle, long owner, long widgetId, String widgetName, int width, int height) {
             this.handle = handle;
+            this.owner = owner;
             this.widgetId = widgetId;
             this.widgetName = widgetName;
             this.width = width;
@@ -700,6 +807,7 @@ class DeskMultiWindowFlutterTest {
         final Map<Long, Rectangle> bounds = new LinkedHashMap<>();
         final Map<Long, List<Integer>> states = new LinkedHashMap<>();
         final Map<Long, List<Boolean>> visibility = new LinkedHashMap<>();
+        final Map<Long, List<Long>> owners = new LinkedHashMap<>();
         final Map<Shell, Long> boundViews = new LinkedHashMap<>();
         final List<Long> disposed = new ArrayList<>();
         final List<Integer> mainWindowStates = new ArrayList<>();
@@ -816,9 +924,9 @@ class DeskMultiWindowFlutterTest {
         // The detached windows: handed out as fake handles, with every call recorded.
 
         @Override
-        protected long openNativeWindow(long widgetId, String widgetName, int width, int height) {
+        protected long openNativeWindow(long owner, long widgetId, String widgetName, int width, int height) {
             long handle = ++nextHandle;
-            opened.add(new OpenedWindow(handle, widgetId, widgetName, width, height));
+            opened.add(new OpenedWindow(handle, owner, widgetId, widgetName, width, height));
             if (reenterOnOpen) {
                 // What the real bridge does here: opening a window pumps, and a pump dispatches
                 // whatever is queued -- including another update for this same Display.
@@ -849,6 +957,16 @@ class DeskMultiWindowFlutterTest {
         @Override
         protected long mainWindowView() {
             return MAIN_WINDOW_VIEW;
+        }
+
+        @Override
+        protected long mainWindowContext() {
+            return MAIN_WINDOW_OWNER;
+        }
+
+        @Override
+        protected void setShellWindowOwner(long context, long owner) {
+            owners.computeIfAbsent(context, c -> new ArrayList<>()).add(owner);
         }
 
         @Override
