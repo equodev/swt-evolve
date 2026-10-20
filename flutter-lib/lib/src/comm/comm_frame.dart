@@ -452,7 +452,13 @@ abstract class EquoCommBase {
     }
   }
 
+  /// Sees every event the client sends to Java, so a widget test can check what controls built
+  /// from state report.
+  @visibleForTesting
+  static void Function(String actionId, Payload? payload)? sendObserverForTesting;
+
   Future send(String actionId, [Payload? payload]) {
+    sendObserverForTesting?.call(actionId, payload);
     final body = payload != null ? (_jsonBytes.encode(payload) as Uint8List) : Uint8List(0);
     _enqueue(_frame(actionId, body));
     return Future.value();

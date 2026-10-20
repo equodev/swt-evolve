@@ -600,8 +600,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// StyledText) overrides this to false.
   bool get forwardsWheelFromWrap => true;
 
-  /// Whether a wheel over this control ends with it: a List, Table, Tree, Scale or Combo keeps it, as
-  /// Win32 and Cocoa agree; any other control passes it on, and its parents report it too.
+  /// Whether a wheel over this control ends with it: a List, Table or Tree keeps it (Win32 and
+  /// Cocoa), and a Scale or Combo (Win32); any other control passes it on, and its parents report it
+  /// too.
   bool get keepsWheel => false;
 
   /// The wheel event a control below has kept, by its untransformed original: every listener on the
@@ -611,7 +612,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// Whether a control below the pointer already kept [event].
   static bool wheelKeptBelow(PointerEvent event) => identical(event.original ?? event, _keptWheel);
 
-  /// Reports the mouse wheel to Java at [localPosition], one notch as three lines, positive up.
+  /// Marks [event] as kept by a control on the pointer's path, so the controls above it do not
+  /// report it again.
+  static void markWheelKept(PointerEvent event) => _keptWheel = event.original ?? event;
+
+  /// The lines one wheel event reports, whatever its delta: SWT's count for one notch on Win32 and
+  /// GTK by default. StyledText scales with the delta instead, since it scrolls by that delta.
+  static const int wheelLinesPerEvent = 3;
+
+  /// Reports the mouse wheel to Java at [localPosition], [wheelLinesPerEvent] lines, positive up.
   void reportWheel(PointerSignalEvent event, Offset localPosition) {
     if (event is! PointerScrollEvent || event.scrollDelta.dy == 0 || wheelKeptBelow(event)) return;
     widget.sendMouseWheelMouseWheel(
@@ -619,9 +628,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       VEvent()
         ..x = localPosition.dx.round()
         ..y = localPosition.dy.round()
-        ..count = event.scrollDelta.dy > 0 ? -3 : 3,
+        ..count = event.scrollDelta.dy > 0 ? -wheelLinesPerEvent : wheelLinesPerEvent,
     );
-    if (keepsWheel) _keptWheel = event.original ?? event;
+    if (keepsWheel) markWheelKept(event);
   }
 
   bool get wrapsWholeWidgetForDnd => true;

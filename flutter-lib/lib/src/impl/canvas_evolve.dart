@@ -9,6 +9,7 @@ import '../gen/canvas.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/event.dart';
+import 'control_evolve.dart' show ControlImpl;
 import '../gen/gc.dart';
 import '../gen/image.dart';
 import '../gen/scrollbar.dart';
@@ -503,8 +504,11 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   }
 
   void _handleMouseWheel(PointerScrollEvent event) {
+    if (ControlImpl.wheelKeptBelow(event)) return;
     final vBar = state.verticalBar;
     if (vBar != null && vBar.visible != false && vBar.enabled != false) {
+      // The Canvas scrolls by the wheel, so it keeps it: its parents do not report it again.
+      ControlImpl.markWheelKept(event);
       final increment = vBar.increment ?? 1;
       final minimum = vBar.minimum ?? 0;
       final maximum = vBar.maximum ?? 100;

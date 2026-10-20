@@ -14,6 +14,7 @@ import '../comm/delivery_gate.dart' show deliveryGate, widgetRefreshChannel;
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
+import 'control_evolve.dart' show ControlImpl;
 import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/stylerange.dart';
@@ -948,6 +949,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Vertical ticks go through SWT.MouseWheel (a listener may veto), horizontal ones move the bar.
   /// An unmodified vertical tick sends pixels rather than lines, so a trackpad does not jump.
   void _onWheel(PointerScrollEvent event) {
+    // A StyledText scrolls by the wheel, so it keeps it: its parents do not report it again.
+    if (ControlImpl.wheelKeptBelow(event)) return;
+    ControlImpl.markWheelKept(event);
     final dy = event.scrollDelta.dy;
     final dx = event.scrollDelta.dx;
     if (dy != 0) {
