@@ -1,6 +1,5 @@
-// A drag that starts on a tab's close button raises no DragDetect, as in native SWT. The side that
-// draws the close button is the one that can tell: the Java side's own layout of the strip does not
-// match the drawing, and testing the reported point against it cancelled drags on the tab itself.
+// A drag that starts on a tab's close button raises no DragDetect, as in native SWT; the side that
+// draws the close button is the one that decides.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,7 +19,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
 }
 
-const _labels = ['Stratigraphic Modeling', 'Facies Trend Modeling'];
+const _labels = ['First View', 'Second View'];
 
 VCTabFolder _folder(int id) => VCTabFolder()
   ..id = id
