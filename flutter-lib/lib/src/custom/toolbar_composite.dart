@@ -77,9 +77,14 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
   @override
   Widget buildComposite() {
-    final children = state.children;
+    // Dropped like a hidden Composite: a hidden main toolbar leaves the menu bar to the Shell.
+    if (state.visible == false) return const SizedBox.shrink();
 
-    if (children == null || children.isEmpty) {
+    final children = state.children ?? const <VControl>[];
+
+    // An empty main toolbar still hosts the menu bar: the Shell leaves it to any visible one.
+    if (children.isEmpty &&
+        !(_isRootToolbar && DecorationsMenuData.of(context)?.hasItems == true)) {
       return wrap(const SizedBox.shrink());
     }
 

@@ -94,7 +94,25 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).text = value;
     }
 
+    public int getMenuStripHeight() {
+        return ((DartDecorations) impl).wireMenuStripHeight();
+    }
+
+    public void setMenuStripHeight(int value) {
+    }
+
+    public boolean getOwnMenuStrip() {
+        return ((DartDecorations) impl).wireOwnMenuStrip();
+    }
+
+    public void setOwnMenuStrip(boolean value) {
+    }
+
     public static final String MENU_BAR = "menuBar";
+
+    public static final String MENU_STRIP_HEIGHT = "menuStripHeight";
+
+    public static final String OWN_MENU_STRIP = "ownMenuStrip";
 
     public static final String TEXT = "text";
 
@@ -106,6 +124,12 @@ public class VDecorations extends VCanvas {
                 return;
             case "text":
                 Serializer.writeKeyValue(writer, "text", getText());
+                return;
+            case "menuStripHeight":
+                Serializer.writeKeyValue(writer, "menuStripHeight", getMenuStripHeight());
+                return;
+            case "ownMenuStrip":
+                Serializer.writeKeyValue(writer, "ownMenuStrip", getOwnMenuStrip());
                 return;
         }
         super.writeProperty(writer, key);

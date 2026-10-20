@@ -329,6 +329,11 @@ public class ControlHelper {
             if (parent instanceof Group) {
                 y -= parent.computeTrim(0, 0, 0, 0).y;
             }
+            // A Decorations' own menu strip sits outside its client area, as a native menu bar does,
+            // so no child's bounds carry it.
+            if (parent instanceof Decorations) {
+                y += Sizes.ownMenuStripHeight((Decorations) parent);
+            }
             // A main composite paints each child as a panel: inset by the gap on every side, with the
             // child's content scaled into what is left (NoLayout._wrapAsPanel). Its bounds alone put
             // every point inside it up to a gap off from where it is painted.
