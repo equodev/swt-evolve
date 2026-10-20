@@ -20,7 +20,9 @@ public class ControlHelper {
     // the paint that follows. Absent, or a null value, means the whole client area.
     private static final Map<DartControl, Rectangle> pendingDamage = new WeakHashMap<>();
 
-    // The control each Shell last announced as activated, so the next announcement can end it.
+    // The control each native Shell last announced as activated, so the next announcement can end it.
+    // Only an embedded Dart control in a native Shell lands here: a Dart Shell tracks its own active
+    // control (FlutterBridge.setActiveControl). Keyed by Shell, which belongs to one Display.
     private static final Map<Shell, Control> lastActivated =
             Collections.synchronizedMap(new WeakHashMap<>());
 
@@ -836,7 +838,7 @@ public class ControlHelper {
             return;
         // A Dart Shell already tracks its active control: Shell.setActiveControl, which focus changes
         // drive too. A second tracker here announced every focus change twice, once from each.
-        if (control.getBridge().setActiveControl(now, detail))
+        if (control.getBridge().setActiveControl(control, detail))
             return;
         Control previous = lastActivated.put(shell, now);
         // An open shell is the active control of itself until something inside it takes over -- what

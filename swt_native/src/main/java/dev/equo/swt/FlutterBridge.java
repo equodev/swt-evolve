@@ -1641,7 +1641,7 @@ public abstract class FlutterBridge {
      * {@code detail}, when the shell tracks that itself. False when it does not -- a native shell --
      * and the caller has to announce the change on its own.
      */
-    public boolean setActiveControl(Control control, int detail) {
+    public boolean setActiveControl(DartControl control, int detail) {
         return false;
     }
 

@@ -97,9 +97,21 @@ public class TableHelper {
             Event selection = new Event();
             selection.segments = event.segments;
             selection.detail = event.detail;
-            selection.stateMask = event.stateMask | (event.button == 3 ? SWT.BUTTON3 : SWT.BUTTON1);
+            selection.stateMask = event.stateMask | buttonMask(event.button);
             selection.time = event.time;
             sendSelection(table, selection, SWT.Selection);
+        }
+    }
+
+    /** The stateMask bit of a held mouse button; SWT's BUTTON4 and BUTTON5 do not follow BUTTON3. */
+    static int buttonMask(int button) {
+        switch (button) {
+            case 1: return SWT.BUTTON1;
+            case 2: return SWT.BUTTON2;
+            case 3: return SWT.BUTTON3;
+            case 4: return SWT.BUTTON4;
+            case 5: return SWT.BUTTON5;
+            default: return 0;
         }
     }
 

@@ -409,9 +409,19 @@ static void on_display_window_active(GObject *object, GParamSpec * /*pspec*/, gp
 // still down, and the view would hand both on as a MouseExit and MouseEnter on every click. Dropped
 // by the rule native SWT applies (Control.gtk_enter_notify_event / gtk_leave_notify_event): a
 // crossing counts only when no button is held -- a held button is SWT's implicit capture -- and only
-// when it is a normal one or the end of a grab.
+// when it is a normal one or the end of a grab. Only crossings on a Flutter view are filtered; a
+// GTK dialog in the same process gets every one. Cocoa and Win32 report no crossing on such a click,
+// so the other runners need no counterpart.
+static bool IsOnFlView(GdkWindow *window) {
+  gpointer data = nullptr;
+  if (window != nullptr) gdk_window_get_user_data(window, &data);
+  return data != nullptr && GTK_IS_WIDGET(data) &&
+         gtk_widget_get_ancestor(GTK_WIDGET(data), fl_view_get_type()) != nullptr;
+}
+
 static void DropCapturedCrossings(GdkEvent *event, gpointer) {
-  if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_LEAVE_NOTIFY) {
+  if ((event->type == GDK_ENTER_NOTIFY || event->type == GDK_LEAVE_NOTIFY) &&
+      IsOnFlView(event->crossing.window)) {
     const GdkEventCrossing *crossing = &event->crossing;
     const guint buttons = GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK;
     if (crossing->mode != GDK_CROSSING_NORMAL && crossing->mode != GDK_CROSSING_UNGRAB) return;
@@ -457,8 +467,13 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
     return nullptr;
   }
   InstallXErrorHandler();
-  // This process's GTK serves no one else here: the whole SWT tree is this one view.
-  gdk_event_handler_set(DropCapturedCrossings, nullptr, nullptr);
+  // Replaces GTK's own handler, which the filter hands every event on to; nothing else in this
+  // process installs one. Once per process, however many windows the Display opens.
+  static bool crossing_filter_installed = false;
+  if (!crossing_filter_installed) {
+    gdk_event_handler_set(DropCapturedCrossings, nullptr, nullptr);
+    crossing_filter_installed = true;
+  }
 
   FlutterWindow *ctx = new FlutterWindow;
   ctx->headless_window = nullptr;

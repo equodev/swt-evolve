@@ -5,6 +5,19 @@ import org.eclipse.swt.SWT;
 public class ScaleHelper {
 
     /**
+     * A user change to a Scale, which notifies its listeners; setSelection(int) alone is the
+     * programmatic setter, which does not. The event carries the button still held.
+     */
+    public static void selected(DartScale c, Event e) {
+        c.setSelection(e.index);
+        if (c.isDisposed())
+            return;
+        Event event = new Event();
+        event.stateMask = e.stateMask;
+        c.sendSelectionEvent(SWT.Selection, event, true);
+    }
+
+    /**
      * Page Down and Page Up move a Scale by its page increment, Home and End to its minimum and
      * maximum, as Win32 and GTK do for a key no listener vetoed, each with a Selection. The arrows are
      * the client's slider's own.

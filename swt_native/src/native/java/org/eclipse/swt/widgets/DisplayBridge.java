@@ -1081,11 +1081,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     @Override
-    public boolean setActiveControl(Control control, int detail) {
-        Shell shell = control.getShell();
+    public boolean setActiveControl(DartControl control, int detail) {
+        Shell shell = control.getApi().getShell();
         if (!(shell.getImpl() instanceof DartShell))
             return false;
-        ((DartShell) shell.getImpl()).setActiveControl(control, detail);
+        ((DartShell) shell.getImpl()).setActiveControl(control.getApi(), detail);
         return true;
     }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -269,6 +271,10 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         sendMouseDown(1, count, e.position);
         if (count == 2) sendDoubleClick(1, e.position);
       },
+      // A press whose tap lost the arena before tap-down (a drag) reaches neither tap callback; once
+      // the arena has settled on the release, the press is over either way.
+      onPointerUp: (_) => scheduleMicrotask(() => _pressSent = false),
+      onPointerCancel: (_) => scheduleMicrotask(() => _pressSent = false),
       child: GestureDetector(
       // A tap through the semantics tree arrives here with no press before it; one that follows a
       // pointer press was already sent above.

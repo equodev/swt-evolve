@@ -121,6 +121,24 @@ class TextSelectionUpdateTest {
         assertThat(field.getCaretPosition()).isEqualTo(2);
     }
 
+    @Test
+    @DisplayName("selecting again the range the client last heard, after the user moved off it, is sent")
+    void reselectingAfterTheUserMovedIsNamed() {
+        Text field = openedDialogField();
+        DartText impl = (DartText) field.getImpl();
+        field.setSelection(2, 5);
+        serializer.toDiff(impl);
+        Serializer.markDelivered();
+
+        TextHelper.clientCaretMoved(impl, 0, 0);
+        field.setSelection(2, 5);
+
+        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
+                .as("the client's caret moved on from the range it was last sent; naming that range "
+                        + "again is a change for it, not a repeat")
+                .contains("\"selection\"");
+    }
+
     /** A field as a JFace input dialog leaves it: a name in it, all of it selected, client told. */
     private Text openedDialogField() {
         Shell shell = Mocks.shell();
