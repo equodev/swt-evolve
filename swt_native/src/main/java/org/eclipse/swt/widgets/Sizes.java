@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
+import org.eclipse.swt.custom.CTabFolderHelper;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
@@ -1027,8 +1028,9 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int top = onBottom ? border : CTabFolderSizes.TAB_STRIP_HEIGHT;
-        int bottom = onBottom ? CTabFolderSizes.TAB_STRIP_HEIGHT : border;
+        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
+        int top = onBottom ? border : tabs;
+        int bottom = onBottom ? tabs : border;
         return new Rectangle(border, top,
                 Math.max(0, b.width - border * 2),
                 Math.max(0, b.height - top - bottom));
@@ -1038,8 +1040,9 @@ public class Sizes {
     public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int top = onBottom ? border : CTabFolderSizes.TAB_STRIP_HEIGHT;
-        int bottom = onBottom ? CTabFolderSizes.TAB_STRIP_HEIGHT : border;
+        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
+        int top = onBottom ? border : tabs;
+        int bottom = onBottom ? tabs : border;
         return new Rectangle(x - border, y - top,
                 width + border * 2, height + top + bottom);
     }
