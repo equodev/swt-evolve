@@ -62,7 +62,7 @@ final class DebugLog {
 
     /** Prints a {@code send:} line for this event/payload when debugging is on and the event passes filters. */
     static void logSend(String eventName, byte[] bytes, int offset, int length) {
-        PointerTrace.record("java sent " + eventName);
+        if (PointerTrace.enabled()) PointerTrace.record("java sent " + eventName);
         if (!shouldLog(eventName)) return;
         String raw = new String(bytes, offset, length, StandardCharsets.UTF_8);
         String body;
