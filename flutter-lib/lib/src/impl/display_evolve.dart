@@ -2,6 +2,7 @@ import 'utils/composed_text_input.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
 import '../gen/menu.dart';
@@ -54,6 +55,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
     GestureBinding.instance.pointerRouter.addGlobalRoute(_tracePointer);
+    SchedulerBinding.instance.addPersistentFrameCallback(_traceFrame);
     _listenToClipboardRequests();
   }
 
@@ -129,6 +131,12 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final p = event.position;
     EquoCommService.sendPayload('Display/${widget.value.id ?? 0}/PointerTrace',
         '${event.runtimeType} ${p.dx.round()},${p.dy.round()} buttons=${event.buttons}');
+  }
+
+  /// Reports each frame the client builds, beside the pointer events (see [_tracePointer]).
+  void _traceFrame(Duration timeStamp) {
+    if (!mounted || getConfigFlags().trace_pointer != true) return;
+    EquoCommService.sendPayload('Display/${widget.value.id ?? 0}/PointerTrace', 'frame');
   }
 
   /// A printable character with no Ctrl, Alt or Meta held: one a text field types.

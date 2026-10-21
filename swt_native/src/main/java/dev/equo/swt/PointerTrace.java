@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The raw pointer events the client received, and the mouse events that reached Java from it, in
- * arrival order: what a test reads to tell input that never reached the client from input the client
- * received and did not report. Off unless {@code -Ddev.equo.swt.tracePointer=true}.
+ * The raw pointer events the client received and the frames it built, the mouse events that reached
+ * Java from it, and what Java sent it, in arrival order: what a test reads to tell input that never
+ * reached the client from input the client received and did not report, and a client that lags the
+ * widget tree from one that was never told. Off unless {@code -Ddev.equo.swt.tracePointer=true}.
  */
 public final class PointerTrace {
 
