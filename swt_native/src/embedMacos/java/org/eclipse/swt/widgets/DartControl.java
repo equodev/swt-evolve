@@ -4132,6 +4132,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     PaintState paintState;
 
+    Event typingKey;
+
     int resolveTextDirection() {
         /*
                      * For generic Controls do nothing here. Text-enabled Controls will resolve
@@ -4204,6 +4206,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
                     return;
                 sendEvent(SWT.DragDetect, e);
             });
@@ -4291,6 +4295,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
                     return;
                 sendEvent(SWT.MouseDown, e);
             });

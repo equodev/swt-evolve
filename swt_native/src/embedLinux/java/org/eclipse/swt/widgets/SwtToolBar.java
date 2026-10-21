@@ -327,8 +327,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         checkWidget();
         int itemCount = 0;
         if (GTK.GTK4) {
+            /* Must match _getItems(): a Menu's GtkPopover is also parented here
+		 * as a native child and would otherwise count as a phantom item. */
             for (long child = GTK4.gtk_widget_get_first_child(getApi().handle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-                itemCount++;
+                if (((SwtDisplay) display.getImpl()).getWidget(child) instanceof ToolItem)
+                    itemCount++;
             }
         } else {
             long list = GTK3.gtk_container_get_children(getApi().handle);
@@ -366,8 +369,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             ArrayList<ToolItem> childrenList = new ArrayList<>();
             for (long child = GTK4.gtk_widget_get_first_child(getApi().handle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
                 Widget childWidget = ((SwtDisplay) display.getImpl()).getWidget(child);
-                if (childWidget != null) {
-                    childrenList.add((ToolItem) childWidget);
+                /* A Menu's GtkPopover is also a native child here; skip non-ToolItems. */
+                if (childWidget instanceof ToolItem toolItem) {
+                    childrenList.add(toolItem);
                 }
             }
             return childrenList.toArray(new ToolItem[childrenList.size()]);
@@ -560,10 +564,12 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 hasImage |= ((SwtItem) item.getImpl()).image != null;
             }
         }
-        if (GTK.GTK4) {
-            /* TODO: GTK4 no more GtkToolbar, we have to use a generic GtkBox
-		 * therefore we will need to implement these style ourselves. */
-        } else {
+        /*
+	 * GTK4 has no GtkToolbar and thus no gtk_toolbar_set_style(). There, each item
+	 * shows or hides its image and its label as they are set, and arranges them
+	 * according to SWT.RIGHT, see ToolItem#createHandle.
+	 */
+        if (!GTK.GTK4) {
             int type = GTK.GTK_TOOLBAR_ICONS;
             if (hasText && hasImage) {
                 if ((getApi().style & SWT.RIGHT) != 0) {
@@ -634,8 +640,14 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void setBackgroundGdkRGBA(long context, long handle, GdkRGBA rgba) {
+        /*
+	 * On GTK4 the tool bar is a GtkBox carrying the "toolbar" style class, so its CSS
+	 * node is named "box" and a plain "toolbar" selector never matches, leaving the
+	 * tool bar with the theme background instead of the requested one.
+	 */
+        String selector = GTK.GTK4 ? "box.toolbar" : "toolbar";
         // Form background string
-        String css = "toolbar {background-color: " + ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(rgba) + ";}";
+        String css = selector + " {background-color: " + ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(rgba) + ";}";
         // Cache background color
         this.cssBackground = css;
         // Apply background color and any foreground color

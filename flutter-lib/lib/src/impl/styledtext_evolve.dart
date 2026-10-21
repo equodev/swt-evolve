@@ -14,6 +14,7 @@ import '../comm/delivery_gate.dart' show deliveryGate, widgetRefreshChannel;
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
+import 'control_evolve.dart' show ControlImpl;
 import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/stylerange.dart';
@@ -39,6 +40,9 @@ import 'utils/wheel_input.dart';
 /// selection and scroll offset are Java's and nothing here edits them.
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> implements RenderFactsSource {
+  @override
+  bool get forwardsWheelFromWrap => false;
+
   // Keys are forwarded from [_onKeyEvent], which also keeps them away from Flutter's shortcuts.
   @override
   bool get forwardsKeysFromWrap => false;
@@ -321,21 +325,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (scrollBarPointers.contains(event.pointer)) return;
     widget.sendFocusFocusIn(state, null);
     _focusNode.requestFocus();
-    // The second press of a double click also delivers MouseDoubleClick, after its MouseDown. The
-    // MouseDown is sent by the same pointer dispatch, once this handler returns.
-    final position = event.localPosition;
-    scheduleMicrotask(() {
-      if (!mounted || swtClickCount != 2) return;
-      widget.sendMouseMouseDoubleClick(
-        state,
-        VEvent()
-          ..button = swtButton
-          ..count = 2
-          ..x = position.dx.round()
-          ..y = position.dy.round()
-          ..stateMask = moveStateMask(0),
-      );
-    });
   }
 
   /// Line count and longest line in one pass, over code units — `text[i]` allocates a
@@ -968,50 +957,24 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Less than a pixel of vertical wheel travel, held until it adds up to one.
   double _wheelCarry = 0;
 
-  /// Vertical ticks go through SWT.MouseWheel (a listener may veto), horizontal ones move the bar.
-  /// An unmodified vertical tick sends pixels rather than lines, so a trackpad does not jump.
+  /// Both axes go through Java, where a listener may veto before the bar moves. An unmodified
+  /// vertical tick sends pixels rather than lines, so a trackpad does not jump.
   void _onWheel(PointerScrollEvent event) {
-    final dy = event.scrollDelta.dy;
-    final dx = event.scrollDelta.dx;
-    if (dy != 0) {
-      final stateMask = moveStateMask(0);
-      int? pixels;
-      if (stateMask & SWT.MODIFIER_MASK == 0) {
-        final exact = _wheelCarry + dy;
-        pixels = exact.round();
+    // A StyledText scrolls by the wheel, so it keeps it: its parents do not report it again.
+    if (ControlImpl.wheelKeptBelow(event)) return;
+    ControlImpl.markWheelKept(event);
+    final stateMask = moveStateMask(0);
+    for (final wheel in wheelEvents(event, stateMask: stateMask)) {
+      if (wheel.type == SWT.MouseWheel && stateMask & SWT.MODIFIER_MASK == 0) {
+        final exact = _wheelCarry + wheelDelta(event).dy;
+        final pixels = exact.round();
         _wheelCarry = exact - pixels;
-        if (pixels == 0) return;
+        if (pixels == 0) continue;
+        wheel.detail = pixels;
       }
-      widget.sendMouseWheelMouseWheel(
-        state,
-        VEvent()
-          ..x = event.localPosition.dx.round()
-          ..y = event.localPosition.dy.round()
-          ..count = -wheelLines(dy)
-          ..detail = pixels
-          ..stateMask = stateMask,
-      );
-    }
-    final hBar = state.horizontalBar;
-    if (dx != 0 && hBar != null && hBar.visible != false && hBar.enabled != false) {
-      final minimum = hBar.minimum ?? 0;
-      final maximum = hBar.maximum ?? 100;
-      final thumb = hBar.thumb ?? 0;
-      final next = _hScroll.next(
-        reported: hBar.selection ?? minimum,
-        lines: wheelLines(dx),
-        increment: hBar.increment ?? 1,
-        minimum: minimum,
-        maximum: maximum,
-        thumb: thumb,
-      );
-      if (next != null) {
-        sendScrollBarSelection(hBar, next, dx > 0 ? SWT.ARROW_DOWN : SWT.ARROW_UP);
-      }
+      widget.sendMouseWheelMouseWheel(state, wheel);
     }
   }
-
-  final HorizontalWheelScroll _hScroll = HorizontalWheelScroll();
 
   Size _computeContentSize() {
     final text = state.text ?? '';
@@ -4534,36 +4497,6 @@ class _GeometrySplice {
   final int offsetDelta;
   final double yDelta;
   final List<GeometryRow> rows;
-}
-
-/// Where the horizontal bar is being asked to go across one gesture: Java's answer is a round
-/// trip away, so each event builds on the last request rather than on the stale position.
-@visibleForTesting
-class HorizontalWheelScroll {
-  int? _target;
-  int? _from;
-
-  /// Where to ask the bar to go after a wheel event worth [lines], or null when it would not move.
-  int? next({
-    required int reported,
-    required int lines,
-    required int increment,
-    required int minimum,
-    required int maximum,
-    required int thumb,
-  }) {
-    // Java reporting anything other than what it reported when we started asking means it has
-    // caught up, or moved for its own reasons. Either way its position is now the truth.
-    if (_from != reported) _target = null;
-    final base = _target ?? reported;
-    final next = (base + lines * increment)
-        .clamp(minimum, math.max(minimum, maximum - thumb))
-        .toInt();
-    if (next == base) return null;
-    _from = reported;
-    _target = next;
-    return next;
-  }
 }
 
 /// Drops the ranges another range already covers, from a list sorted by start; the sort makes

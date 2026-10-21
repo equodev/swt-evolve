@@ -63,6 +63,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private final java.util.LinkedHashMap<Shell, ShellWindow> shellWindows =
             new java.util.LinkedHashMap<>();
 
+    /**
+     * Whether the Display's first geometry query waits for the client's report. Set by a surface whose
+     * client is not there when the Display is created; read and cleared on the Display thread.
+     */
+    protected boolean awaitsClientGeometry;
+
+    /** What applies the first client report to the Display; it is also posted to the Display thread. */
+    private final java.util.concurrent.CompletableFuture<Runnable> firstClientReport =
+            new java.util.concurrent.CompletableFuture<>();
+
     protected DisplayBridge(DartDisplay display) {
         this.forDisplay = display;
         System.setProperty("dev.equo.swt.desktop", "false");
@@ -230,7 +240,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             onDisplayClientReady(first);
 
             Display api = display.getApi();
-            Runnable apply = () -> {
+            Runnable apply = once(() -> {
                 int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
                 // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
@@ -242,12 +252,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
                     broadcastSwtEvolveProperties();
                 }
+                applyClientInsetTop(p.insetTop);
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
                 // Only for a client that holds nothing (first ClientReady, or a page refresh): a
                 // viewport change resizes shells, which travel on their own; the Display has no bounds.
                 if (first || p.isFirst) sendDisplayUpdate(display);
-            };
+            });
+            firstClientReport.complete(apply);
             // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
             // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
             // until the Display thread services the runnable, but the idle E4 workbench parks the Display
@@ -259,6 +271,48 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.getThread() == Thread.currentThread()) apply.run();
             else api.asyncExec(apply);
         });
+    }
+
+    /**
+     * Holds the Display thread, on its first query of the Display's or a Monitor's geometry, until
+     * the client has reported its viewport. An application places its first window from those values
+     * before any client has connected, and until then they are only a default. Applies the report on
+     * the spot, since the Display thread is the one its posted copy is waiting for.
+     */
+    public void awaitClientGeometry(DartDisplay display) {
+        if (!awaitsClientGeometry) return;
+        Display api = display.getApi();
+        if (api == null || api.getThread() != Thread.currentThread()) return;
+        awaitsClientGeometry = false;
+        Runnable apply;
+        try {
+            apply = firstClientReport.get(clientGeometryWaitMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            return;
+        }
+        apply.run();
+    }
+
+    /** Bounds the hold in {@link #awaitClientGeometry}: past it the Display keeps reporting its default. */
+    protected long clientGeometryWaitMs() {
+        return 30_000;
+    }
+
+    /** {@code task}, run at most once however many times the result is run. Display thread only. */
+    private static Runnable once(Runnable task) {
+        return new Runnable() {
+            private boolean ran;
+
+            @Override
+            public void run() {
+                if (ran) return;
+                ran = true;
+                task.run();
+            }
+        };
     }
 
     public void writeClipboardText(String text) {
@@ -345,6 +399,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return (p.displayWidth > 0 && p.displayHeight > 0)
                 ? new Rectangle(0, 0, p.displayWidth, p.displayHeight)
                 : null;
+    }
+
+    /** The chrome the client draws above the app content, as it reports it. Only a surface whose
+     *  window has its own screen position needs it. */
+    protected void applyClientInsetTop(int insetTop) {
     }
 
     /**
@@ -1134,8 +1193,56 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         if (reportPrecedesPendingRequest(widget))
             return;
+        if (api != null && !api.isDisposed() && declinesClientFocus(api))
+            return;
         focusRequested = widget;
         setFocus(widget);
+    }
+
+    @Override
+    public boolean setActiveControl(DartControl control, int detail) {
+        Shell shell = control.getApi().getShell();
+        if (!(shell.getImpl() instanceof DartShell))
+            return false;
+        ((DartShell) shell.getImpl()).setActiveControl(control.getApi(), detail);
+        return true;
+    }
+
+    @Override
+    public void focusClient(DartControl widget) {
+        requestClientFocus(widget, true);
+    }
+
+    /**
+     * Whether a bare Canvas or Composite turns down the focus the client gave it. The client focuses
+     * any empty surface it is pressed or tabbed onto; natively one takes the focus only while it hooks
+     * key events (Composite's button-press and traversal both check hooksKeys), so one with no key
+     * listener leaves it where it was, and none takes it with NO_FOCUS. A shell is a Canvas too, and
+     * keeps its own; the native controls that extend Composite (Table, Spinner, TabFolder...) take
+     * theirs regardless.
+     */
+    static boolean declinesClientFocus(Control api) {
+        if (!isPaintedSurface(api) || api instanceof Decorations)
+            return false;
+        if (((Composite) api).getChildren().length > 0 || (api.getStyle() & org.eclipse.swt.SWT.EMBEDDED) != 0)
+            return false;
+        if ((api.getStyle() & org.eclipse.swt.SWT.NO_FOCUS) != 0)
+            return true;
+        return !api.isListening(org.eclipse.swt.SWT.KeyDown) && !api.isListening(org.eclipse.swt.SWT.KeyUp);
+    }
+
+    /**
+     * Whether the control is a Canvas or a plain Composite, natively a bare surface rather than one of
+     * the native controls. Decided by the implementation, which an application subclass of the API
+     * class does not change. SashForm, ScrolledComposite, ViewForm and CBanner are plain Composites
+     * natively too, but stay out: declining leaves the client's own focus on the surface, and for them
+     * that strands the keyboard.
+     */
+    private static boolean isPaintedSurface(Control api) {
+        if (!(api instanceof Composite))
+            return false;
+        Class<?> impl = ((Composite) api).getImpl().getClass();
+        return impl == DartCanvas.class || impl == DartComposite.class;
     }
 
     /** For each shell, the shell that was active when it became active. */

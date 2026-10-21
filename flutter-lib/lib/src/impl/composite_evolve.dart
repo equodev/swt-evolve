@@ -54,21 +54,6 @@ bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
   return false;
 }
 
-/// A vertical wheel or trackpad swipe over the composite's own area, not a child's, as SWT.MouseWheel:
-/// an application that draws its own rows and scrolls them from a Slider beside them listens there.
-void _forwardWheel(CompositeImpl impl, PointerScrollEvent e) {
-  final dy = e.scrollDelta.dy;
-  if (!impl.forwardsWheel || dy == 0 || _hitsAnyChild(impl.state, e.localPosition)) return;
-  impl.widget.sendMouseWheelMouseWheel(
-    impl.state,
-    VEvent()
-      ..x = e.localPosition.dx.round()
-      ..y = e.localPosition.dy.round()
-      ..count = -wheelLines(dy)
-      ..stateMask = impl.moveStateMask(0),
-  );
-}
-
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
   final hoverDepth = ControlNestingScope.depthOf(impl.context);
@@ -96,21 +81,15 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     cursor: cursor,
     // A childless Composite reaches ControlImpl.wrap() (which already sends these); this
     // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
-    onEnter: (e) {
-      impl.notePointerCrossing(e.localPosition);
-      HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true);
-    },
-    onExit: (e) {
-      impl.notePointerCrossing(e.localPosition);
-      HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false);
-    },
+    onEnter: (e) => impl.crossPointer(e, hoverDepth, true),
+    onExit: (e) => impl.crossPointer(e, hoverDepth, false),
     onHover: (e) {
       if (!forwardsPointer) return;
       // Only the control under the pointer reports the move; its ancestors stay silent.
       // Nested MouseRegions all fire onHover for the same point, which is the very thing
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
       // the same rule. See onPointerMove below for what leaving it out costs.
-      if (_hitsAnyChild(state, e.localPosition)) return;
+      if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition)) return;
       final event = VEvent()
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
@@ -118,24 +97,28 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
+      onPointerSignal: (e) {
+        if (forwardsPointer && impl.forwardsWheelFromWrap) impl.reportWheel(e, e.localPosition);
+      },
       onPointerDown: (e) {
-        if (_hitsAnyChild(state, e.localPosition, childInset)) return;
+        // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
+        // composite, not with an ancestor further up.
+        if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
         if (!impl.forwardsControlMouseDown) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
           impl.capturedPointerDowns.add(e.pointer);
           impl.registerPointerDown(e);
-          impl.widget.sendMouseMouseDown(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = impl.swtButton
-              ..count = impl.swtClickCount
-              ..stateMask =
-                  impl.swtStateMask(released: false, flutterButtons: e.buttons),
-          );
+          final press = VEvent()
+            ..x = pos.dx.round()
+            ..y = pos.dy.round()
+            ..button = impl.swtButton
+            ..count = impl.swtClickCount
+            ..stateMask =
+                impl.swtStateMask(released: false, flutterButtons: e.buttons);
+          impl.widget.sendMouseMouseDown(state, press);
+          impl.sendDoubleClickOnSecondPress(press);
           // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
           // "has children" path bypasses it, so MenuDetect never fired over the composite's
           // own area -- the gap a container with a lazily-built context menu falls into.
@@ -144,23 +127,13 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
             impl.handleMenuDetect(e.pointer, e.localPosition);
           }
         }
-        if (!impl.forwardsCompositeDoubleClick) return;
-        if (impl.dblTap.registerTap(position: pos) == 2) {
-          impl.widget.sendMouseMouseDoubleClick(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = 1
-              ..count = 2,
-          );
-        }
       },
       onPointerUp: (e) {
         if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
-        if (!impl.capturedPointerDowns.remove(e.pointer)) return;
+        final takenBelow = ControlImpl.pointerTakenBelow(e);
+        if (!impl.capturedPointerDowns.remove(e.pointer) || takenBelow) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
@@ -188,6 +161,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // A pointer this composite captured keeps reporting wherever it travels, mirroring
         // onPointerUp: SWT sends moves to the control holding the capture, not to whatever
         // the pointer has since wandered over.
+        if (ControlImpl.pointerTakenBelow(e)) return;
         if (!impl.capturedPointerDowns.contains(e.pointer) &&
             _hitsAnyChild(state, e.localPosition)) {
           return;
@@ -197,10 +171,10 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           ..y = e.localPosition.dy.round();
         impl.sendThrottledDragMove(state, event, e.buttons);
       },
-      onPointerSignal: (e) {
-        if (e is PointerScrollEvent) _forwardWheel(impl, e);
+      onPointerPanZoomUpdate: (e) {
+        if (!forwardsPointer || !impl.forwardsWheelFromWrap || ControlImpl.wheelKeptBelow(e)) return;
+        panAsScroll(e, (wheel) => impl.reportWheel(wheel, wheel.localPosition));
       },
-      onPointerPanZoomUpdate: (e) => panAsScroll(e, (wheel) => _forwardWheel(impl, wheel)),
       child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),
   );
@@ -307,15 +281,6 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
   /// Pointer ids whose MouseDown this composite (not a descendant) forwarded to Java.
   final Set<int> capturedPointerDowns = {};
-
-  /// Whether this composite forwards MouseDoubleClick from the interaction
-  /// chrome. CanvasImpl overrides this to false because it forwards its own
-  /// double-click in build(); forwarding here too would double-fire.
-  bool get forwardsCompositeDoubleClick => true;
-
-  /// Whether [wrapCompositeInteractionChrome] reports the wheel to Java. A subclass that scrolls on
-  /// its own, or reports the wheel itself, turns it off.
-  bool get forwardsWheel => true;
 
   @override
   Widget build(BuildContext context) {

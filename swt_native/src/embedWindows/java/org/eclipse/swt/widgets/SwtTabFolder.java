@@ -59,7 +59,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 
     static final long TabFolderProc;
 
-    static final TCHAR TabFolderClass = new TCHAR(0, OS.WC_TABCONTROL, true);
+    static final TCHAR TabFolderClass = new TCHAR(OS.WC_TABCONTROL, true);
 
     boolean createdAsRTL;
 
@@ -1107,11 +1107,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         if ((lpwp.flags & (OS.SWP_NOSIZE | OS.SWP_NOREDRAW)) != 0) {
             return result;
         }
-        // TEMPORARY CODE
-        //	if (OS.IsAppThemed ()) {
-        //		OS.InvalidateRect (handle, null, true);
-        //		return result;
-        //	}
         int bits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
         if ((bits & OS.TCS_MULTILINE) != 0) {
             OS.InvalidateRect(getApi().handle, null, true);

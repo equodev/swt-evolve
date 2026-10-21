@@ -17,5 +17,7 @@ public interface ImplDragSource extends ImplWidget {
 
     long _targetList();
 
+    long _dragSourceController();
+
     boolean _moveData();
 }

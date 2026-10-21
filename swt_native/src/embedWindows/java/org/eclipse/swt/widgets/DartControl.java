@@ -1090,10 +1090,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return this.bounds;
     }
 
-    int getCodePage() {
-        return 0;
-    }
-
     String getClipboardText() {
         String string = "";
         return string;
@@ -2079,6 +2075,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
+                return true;
             }
         } else {
             if (control.getImpl()._backgroundImage() != null) {
@@ -4340,6 +4337,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     PaintState paintState;
 
+    Event typingKey;
+
     public boolean getDragSource() {
         Widget w = getApi();
         Object ds = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
@@ -4392,6 +4391,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
                     return;
                 sendEvent(SWT.DragDetect, e);
             });
@@ -4479,6 +4480,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
                     return;
                 sendEvent(SWT.MouseDown, e);
             });

@@ -42,6 +42,9 @@ class _RowWindow {
 
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
+  @override
+  bool get keepsWheel => true;
+
   int _selectedRowIndex = -1;
 
   // Cached layout values updated each build, used by Flutter→Java listeners
@@ -70,8 +73,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// the editor twice, which opens two dialogs for one double-click.
   int get lastRowTapCount => _lastRowTapCount;
 
-  int registerRowTap(int rowIndex) =>
-      _lastRowTapCount = _rowTapDetector.registerTap(key: rowIndex);
+  int registerRowTap(int rowIndex, [Duration? at]) =>
+      _lastRowTapCount = _rowTapDetector.registerTap(key: rowIndex, at: at);
 
   // Each cell has its own GestureDetector that sends MouseDown; suppress both
   // the ControlImpl.wrap() Listener and wrapCompositeInteractionChrome to
@@ -898,6 +901,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
+  /// Sent from the second press, so its stateMask carries the button, as a native's does.
   void handleRowDoubleTap(int index, VTableItem item) {
     if (state.enabled != true) return;
     setState(() {
@@ -906,7 +910,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
       state.selection!.clear();
       state.selection!.add(_selectedRowIndex);
 
-      final event = VEvent()..segments = state.selection;
+      final event = VEvent()
+        ..segments = state.selection
+        ..stateMask = SWT.BUTTON1;
       widget.sendSelectionDefaultSelection(state, event);
     });
   }

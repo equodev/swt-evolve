@@ -127,6 +127,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     Listener listener;
 
+    Listener tabControlZoomListener;
+
     boolean ignoreTraverse;
 
     boolean useDefaultRenderer;
@@ -382,6 +384,9 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     break;
             }
         };
+        // A tab control is rescaled after the folder itself, so its size can only be
+        // measured reliably once it has processed the zoom change on its own.
+        tabControlZoomListener = event -> updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
         int[] folderEvents = new int[] { SWT.Dispose, SWT.DragDetect, SWT.FocusIn, SWT.FocusOut, SWT.KeyDown, SWT.MenuDetect, SWT.MouseDoubleClick, SWT.MouseDown, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover, SWT.MouseMove, SWT.MouseUp, SWT.Paint, SWT.Resize, SWT.Traverse, SWT.Activate, SWT.Deactivate, SWT.ZoomChanged };
         for (int folderEvent : folderEvents) {
             addListener(folderEvent, listener);
@@ -2154,6 +2159,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                         if (e.doit && !isDisposed()) {
                             showList(chevronRect);
                         }
+                    } else {
+                        index = visible[(current + offset + idx) % idx];
                     }
                 }
             }
@@ -2795,7 +2802,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (styleChange && chevronImage == null)
             return;
         int newCount = getChevronCount();
-        if (!styleChange && chevronCount == newCount)
+        if (!styleChange && chevronImage != null && chevronCount == newCount)
             return;
         if (chevronImage != null)
             chevronImage.dispose();
@@ -2980,6 +2987,13 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     /**
      * Reorder the items of the receiver.
+     * <p>
+     * <code>indices[i]</code> is the index of the item that should be moved to
+     * position <code>i</code>. The argument must contain every index of the
+     * receiver's items exactly once. The currently selected item remains selected
+     * after the reorder.
+     * </p>
+     *
      * @param indices an array containing the new indices for all items
      *
      * @exception IllegalArgumentException <ul>
@@ -3003,6 +3017,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         int newSelectedIndex = -1;
         boolean[] seen = new boolean[items.length];
         CTabItem[] temp = new CTabItem[items.length];
+        // oldToNew[oldIndex] is the position the item at oldIndex moves to.
+        int[] oldToNew = new int[items.length];
         for (int i = 0; i < indices.length; i++) {
             int index = indices[i];
             if (!(0 <= index && index < items.length))
@@ -3013,10 +3029,68 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             if (index == selectedIndex)
                 newSelectedIndex = i;
             temp[i] = items[index];
+            oldToNew[index] = i;
         }
         items = temp;
         selectedIndex = newSelectedIndex;
+        // priority[] and firstIndex hold indices into items[], so remap them to the
+        // items' new positions to keep the chevron/visible-tab state correct.
+        for (int i = 0; i < priority.length; i++) {
+            priority[i] = oldToNew[priority[i]];
+        }
+        if (firstIndex != -1)
+            firstIndex = oldToNew[firstIndex];
         updateFolder(REDRAW);
+    }
+
+    /**
+     * Moves the item at the <code>from</code> index to the <code>to</code> index.
+     * The items between the two indices shift by one position to fill the gap; all
+     * other items keep their relative order. This is a convenience for the common
+     * single-item reorder gesture, such as dragging a tab.
+     * <p>
+     * If <code>from</code> and <code>to</code> are equal this method has no effect.
+     * The currently selected item remains selected after the move.
+     * </p>
+     *
+     * @param from the zero-relative index of the item to move
+     * @param to the zero-relative index the item should be moved to
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_RANGE - if either <code>from</code> or <code>to</code> is
+     *    not between 0 and the number of items minus 1 (inclusive)</li>
+     * </ul>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.135
+     */
+    public void moveItem(int from, int to) {
+        checkWidget();
+        int count = items.length;
+        if (from < 0 || from >= count)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (to < 0 || to >= count)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (from == to)
+            return;
+        // Build the permutation that removes the item at `from` and re-inserts it at
+        // `to`, then delegate so priority[]/firstIndex are remapped in one place.
+        int[] order = new int[count];
+        int next = 0;
+        for (int i = 0; i < count; i++) {
+            if (i == to) {
+                order[i] = from;
+            } else {
+                if (next == from)
+                    next++;
+                order[i] = next++;
+            }
+        }
+        setItemOrder(order);
     }
 
     boolean setItemSize(GC gc) {
@@ -3694,7 +3768,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
      */
     @Deprecated(forRemoval = true, since = "2026-06")
     public void setSimple(boolean simple) {
-        checkWidget();
     }
 
     /**
@@ -4158,6 +4231,15 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                 changed |= setItemSize(gc);
             }
         }
+        if (showChevron) {
+            // Give the chevron its image (and thus its real preferred size) before
+            // setItemLocation decides how many tabs are showing. Both setItemLocation
+            // and computeControlBounds reserve space for the chevron via
+            // getRightItemEdge(); an image-less chevron measures much smaller than the
+            // final one, which would let an extra tab remain visible and make the
+            // chevron overlap the trailing controls (e.g. the min/max toolbar).
+            updateChevronImage(false);
+        }
         changed |= setItemLocation(gc);
         setButtonBounds();
         changed |= chevronChanged;
@@ -4346,6 +4428,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         }
         int length = controls.length;
         control.addListener(SWT.Resize, listener);
+        control.addListener(SWT.ZoomChanged, tabControlZoomListener);
         //Grow all 4 arrays
         Control[] newControls = new Control[length + 1];
         System.arraycopy(controls, 0, newControls, 0, length);
@@ -4408,6 +4491,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             return;
         if (!control.isDisposed()) {
             control.removeListener(SWT.Resize, listener);
+            control.removeListener(SWT.ZoomChanged, tabControlZoomListener);
             control.setBackground(null);
             control.setBackgroundImage(null);
             if (control instanceof Composite)
@@ -4600,6 +4684,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     public Listener _listener() {
         return listener;
+    }
+
+    public Listener _tabControlZoomListener() {
+        return tabControlZoomListener;
     }
 
     public boolean _ignoreTraverse() {
