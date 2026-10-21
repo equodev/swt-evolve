@@ -187,10 +187,10 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     void createHandle() {
         NSDatePicker widget = (NSDatePicker) new SWTDatePicker().alloc();
         widget.init();
-        int pickerStyle = (getApi().style & SWT.DROP_DOWN) != 0 ? OS.NSTextFieldDatePickerStyle : OS.NSTextFieldAndStepperDatePickerStyle;
+        int pickerStyle = (getApi().style & SWT.DROP_DOWN) != 0 ? OS.NSDatePickerStyleTextField : OS.NSDatePickerStyleTextFieldAndStepper;
         int elementFlags = 0;
         if ((getApi().style & SWT.CALENDAR) != 0) {
-            pickerStyle = OS.NSClockAndCalendarDatePickerStyle;
+            pickerStyle = OS.NSDatePickerStyleClockAndCalendar;
             elementFlags = OS.NSYearMonthDayDatePickerElementFlag;
         } else {
             if ((getApi().style & SWT.TIME) != 0) {
@@ -337,12 +337,12 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     int getBezelInset() {
         //TODO: Determine this value from the system instead of using constants
-        return (buttonView.cell().controlSize() == OS.NSMiniControlSize) ? 3 : 1;
+        return (buttonView.cell().controlSize() == OS.NSControlSizeMini) ? 3 : 1;
     }
 
     int getBezelSize() {
         //TODO: Determine this value from the system instead of using constants
-        return (buttonView.cell().controlSize() == OS.NSMiniControlSize) ? 6 : 4;
+        return (buttonView.cell().controlSize() == OS.NSControlSizeMini) ? 6 : 4;
     }
 
     NSCalendarDate getCalendarDate() {
@@ -804,7 +804,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     @Override
     void setSmallSize() {
         if (buttonView != null)
-            buttonView.cell().setControlSize(OS.NSMiniControlSize);
+            buttonView.cell().setControlSize(OS.NSControlSizeMini);
     }
 
     /**

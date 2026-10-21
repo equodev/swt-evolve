@@ -998,8 +998,8 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void setSmallSize() {
-        textView.cell().setControlSize(OS.NSSmallControlSize);
-        buttonView.cell().setControlSize(OS.NSSmallControlSize);
+        textView.cell().setControlSize(OS.NSControlSizeSmall);
+        buttonView.cell().setControlSize(OS.NSControlSizeSmall);
     }
 
     /**

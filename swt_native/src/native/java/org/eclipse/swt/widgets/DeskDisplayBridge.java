@@ -43,9 +43,8 @@ public class DeskDisplayBridge extends DisplayBridge {
     /**
      * Height of the chrome the render side draws inside the window's own content area -- the CSD
      * title strip. The window's content is not the shell's client area when one is drawn, so the
-     * shell starts this far below the window origin. Measured from the handshake (content height
-     * minus the viewport the client reports for SWT) rather than assumed, so it follows whatever the
-     * render side actually draws instead of a constant Java would have to keep in step with Dart.
+     * shell starts this far below the window origin. The client reports it with every viewport it
+     * sends, so it follows whatever the render side actually draws.
      */
     private int clientTopInset;
 
@@ -102,6 +101,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = (b != null && b.width > 0 && b.width <= 2560) ? b.width : 1280;
         int height = (b != null && b.height > 0 && b.height <= 1600) ? b.height : 800;
 
+        // Logical pixels, not converted: the client has not reported its monitor yet, so the UI
+        // scale is unknown here, and the shell is fitted to whatever viewport the window reports.
         windowContext = openNativeWindow(0, displayId, "Display", width, height);
     }
 
@@ -178,7 +179,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = bounds.width > 0 ? bounds.width : 640;
         int height = bounds.height > 0 ? bounds.height : 480;
         long owner = ownerWindowContext(shell);
-        long context = openNativeWindow(owner, shell.hashCode(), "Shell", width, height);
+        long context = openNativeWindow(owner, shell.hashCode(), "Shell", Config.swtToLogical(width),
+                Config.swtToLogical(height));
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
         window.owner = owner;
@@ -294,10 +296,30 @@ public class DeskDisplayBridge extends DisplayBridge {
         // placeholder size, and a window shrunk to a pixel never reports a viewport worth having, so
         // nothing ever corrects it. Move it, but keep the size it already has.
         if (b.width <= 1 || b.height <= 1) {
-            FlutterNative.setBounds(context, b.x, b.y, 0, 0, b.x, b.y, 0, 0);
+            Rectangle w = toWindowUnits(b);
+            placeNativeWindow(context, new Rectangle(w.x, w.y, 0, 0));
             return;
         }
-        FlutterNative.setBounds(context, b.x, b.y, b.width, b.height, b.x, b.y, b.width, b.height);
+        placeNativeWindow(context, toWindowUnits(b));
+    }
+
+    /**
+     * Seam: places and sizes a native window, in the window system's logical pixels; tests record
+     * the rectangle instead.
+     */
+    protected void placeNativeWindow(long context, Rectangle w) {
+        FlutterNative.setBounds(context, w.x, w.y, w.width, w.height, w.x, w.y, w.width, w.height);
+    }
+
+    /**
+     * A rectangle in SWT units, in the window system's logical pixels. Its edges are converted rather
+     * than its size, so two windows that touch in SWT units still touch on screen.
+     */
+    static Rectangle toWindowUnits(Rectangle swt) {
+        int x = Config.swtToLogical(swt.x);
+        int y = Config.swtToLogical(swt.y);
+        return new Rectangle(x, y,
+                Config.swtToLogical(swt.x + swt.width) - x, Config.swtToLogical(swt.y + swt.height) - y);
     }
 
     protected void setShellWindowState(long context, int state) {
@@ -326,10 +348,16 @@ public class DeskDisplayBridge extends DisplayBridge {
      * toDisplay landed outside it.
      */
     protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
-        long packed = FlutterNative.getOrigin(context);
+        long packed = nativeOrigin(context);
         if (packed == FlutterNative.ORIGIN_UNKNOWN) return null;
         return new org.eclipse.swt.graphics.Point(
-                FlutterNative.originX(packed), FlutterNative.originY(packed) + clientTopInset);
+                Config.logicalToSwt(FlutterNative.originX(packed)),
+                Config.logicalToSwt(FlutterNative.originY(packed)) + clientTopInset);
+    }
+
+    /** Seam: tests stand in a window origin without JNI. */
+    protected long nativeOrigin(long context) {
+        return FlutterNative.getOrigin(context);
     }
 
 
@@ -637,6 +665,28 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
     }
 
+    @Override
+    protected void applyClientInsetTop(int insetTop) {
+        if (insetTop == clientTopInset)
+            return;
+        clientTopInset = insetTop;
+        // A shell placed before the strip's height was known has a window that much too short.
+        Shell main = forDisplay == null ? null : mainShell(forDisplay);
+        if (main != null && !main.getMaximized() && !main.getFullScreen())
+            forwardWindowBounds(windowBoundsFor(main.getBounds()));
+    }
+
+    /**
+     * The window a main shell's bounds call for: the shell is the area below the CSD strip (see
+     * {@link #shellWindowOrigin}), so its window is that much taller and starts that much higher.
+     * Sized to the shell alone, the window left the shell a strip-height short, and the next viewport
+     * report shrank it -- whenever that report happened to arrive.
+     */
+    private Rectangle windowBoundsFor(Rectangle shell) {
+        if (shell == null || clientTopInset == 0) return shell;
+        return new Rectangle(shell.x, shell.y - clientTopInset, shell.width, shell.height + clientTopInset);
+    }
+
     /**
      * Desk semantics: the Display is the <em>monitor</em>, governed independently of the window. The
      * reported {@code monitor} drives {@code display.bounds} (so {@code Display}/{@code Monitor} report
@@ -665,25 +715,12 @@ public class DeskDisplayBridge extends DisplayBridge {
             // real viewport the shell is the source of truth, so push its geometry out.
             if (!realViewport) {
                 if (current != null && current.width > 1 && current.height > 1) {
-                    forwardWindowBounds(current);
+                    forwardWindowBounds(windowBoundsFor(current));
                     changed = true;
                 }
                 return changed;
             }
             windowShell = main;
-            // The shell still carries the window's content height here, and the client has just
-            // reported the part of it SWT actually gets; the difference is the chrome drawn above.
-            // Width has to match, so a genuine resize is never mistaken for chrome.
-            if (current != null && current.width == viewport.width && current.height > viewport.height) {
-                clientTopInset = current.height - viewport.height;
-            }
-            Rectangle takenOver = takeoverBounds;
-            takeoverBounds = null;
-            if (takenOver != null && clientTopInset > 0 && current != null
-                    && current.width == viewport.width && current.height == takenOver.height) {
-                forwardWindowBounds(withChrome(takenOver));
-                return true;
-            }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
             boolean shellMatches = current != null
@@ -769,9 +806,6 @@ public class DeskDisplayBridge extends DisplayBridge {
         return false;
     }
 
-    /** Where a shell taking the window over was, while the chrome height is still unknown. */
-    private Rectangle takeoverBounds;
-
     /** Moves and sizes the window to where {@code shell}'s own window was. */
     private void takeOverWindowGeometry(Shell shell) {
         windowShell = shell;
@@ -781,19 +815,11 @@ public class DeskDisplayBridge extends DisplayBridge {
             setShellWindowState(windowContext, state);
         } else {
             setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
-            // The shell measures the client area of the window it leaves. Until the chrome above it
-            // is measured, the window is grown by it once the first viewport reports it, instead of
-            // the shell being shrunk to fit.
-            Rectangle b = shell.getBounds();
-            takeoverBounds = clientTopInset > 0 ? null : b;
-            forwardWindowBounds(withChrome(b));
+            // The shell measures the client area of the window it leaves, so the window grows by the
+            // strip the client draws above it (applyClientInsetTop) instead of the shell shrinking.
+            forwardWindowBounds(windowBoundsFor(shell.getBounds()));
         }
         bindWindowView();
-    }
-
-    /** {@code shell} bounds grown by the chrome the window draws above the shell. */
-    private Rectangle withChrome(Rectangle shell) {
-        return new Rectangle(shell.x, shell.y, shell.width, shell.height + clientTopInset);
     }
 
     private void setMainWindowTitle(String title) {
@@ -817,8 +843,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         // no viewport, so the handshake that would correct it never runs: keep the size it has.
         if (bounds.width <= 1 || bounds.height <= 1) return;
         windowOrigin = new Point(bounds.x, bounds.y);
-        FlutterNative.setBounds(windowContext, bounds.x, bounds.y, bounds.width, bounds.height,
-                bounds.x, bounds.y, bounds.width, bounds.height);
+        placeNativeWindow(windowContext, toWindowUnits(bounds));
     }
 
     @Override
@@ -923,7 +948,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             return;
         }
         windowShell = shell;
-        forwardWindowBounds(bounds);
+        forwardWindowBounds(windowBoundsFor(bounds));
     }
 
     @Override

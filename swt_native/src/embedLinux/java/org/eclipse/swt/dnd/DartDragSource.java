@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -115,6 +115,9 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     long targetList;
 
+    /* GTK4 GtkDragSource event controller added to the control */
+    long dragSourceController;
+
     //workaround - remember action performed for DragEnd
     boolean moveData = false;
 
@@ -158,6 +161,21 @@ public class DartDragSource extends DartWidget implements IDragSource {
             this.bridge.dirty((DartWidget) control.getImpl());
         }
         _hookEvents();
+        // Dispose listeners
+        controlListener = event -> {
+            if (event.type == SWT.Dispose) {
+                if (!DartDragSource.this.getApi().isDisposed()) {
+                    DartDragSource.this.getApi().dispose();
+                }
+            }
+            if (event.type == SWT.DragDetect) {
+                if (!DartDragSource.this.getApi().isDisposed()) {
+                    DartDragSource.this.drag(event);
+                }
+            }
+        };
+        control.addListener(SWT.Dispose, controlListener);
+        this.addListener(SWT.Dispose, e -> onDispose());
     }
 
     static int checkStyle(int style) {
@@ -166,24 +184,60 @@ public class DartDragSource extends DartWidget implements IDragSource {
         return style;
     }
 
-    static void dragBeginProc(long source, long drag) {
-    }
-
     static long dragPrepareProc(long source, double x, double y) {
         return 0;
     }
 
-    long dragPrepare() {
-        TransferData transferData = new TransferData();
-        DNDEvent event = new DNDEvent();
-        event.widget = this.getApi();
-        event.dataType = transferData;
-        notifyListeners(DND.DragSetData, event);
-        if (!event.doit)
+    long dragPrepare(long source) {
+        if (transferAgents == null || transferAgents.length == 0)
             return 0;
-        // TODO: Need to return GdkContentProvider for the data given from event.data
-        // Data from event.data also has to be converted to native through the Transfer class
-        return 0;
+        DNDEvent startEvent = new DNDEvent();
+        startEvent.widget = this.getApi();
+        startEvent.doit = true;
+        notifyListeners(DND.DragStart, startEvent);
+        if (!startEvent.doit)
+            return 0;
+        // If specified, setup drag icon
+        Image dragIcon = startEvent.image;
+        if (source != 0 && dragIcon != null) {
+        }
+        // Collect the data to be transferred for every supported transfer type.
+        Object[] data = new Object[transferAgents.length];
+        Transfer[] transfers = new Transfer[transferAgents.length];
+        int count = 0;
+        for (Transfer transfer : transferAgents) {
+            if (transfer == null)
+                continue;
+            TransferData[] supportedTypes = transfer.getSupportedTypes();
+            if (supportedTypes == null || supportedTypes.length == 0)
+                continue;
+            DNDEvent event = new DNDEvent();
+            event.widget = this.getApi();
+            event.dataType = supportedTypes[0];
+            event.doit = true;
+            notifyListeners(DND.DragSetData, event);
+            if (!event.doit || event.data == null)
+                continue;
+            transfers[count] = transfer;
+            data[count] = event.data;
+            count++;
+        }
+        if (count == 0)
+            return 0;
+        if (count < transferAgents.length) {
+            Object[] trimmedData = new Object[count];
+            Transfer[] trimmedTransfers = new Transfer[count];
+            System.arraycopy(data, 0, trimmedData, 0, count);
+            System.arraycopy(transfers, 0, trimmedTransfers, 0, count);
+            data = trimmedData;
+            transfers = trimmedTransfers;
+        }
+        long providers = ContentProviders.getInstance().createContentProviders(data, transfers, ContentProviders.CLIPBOARD_DATA.DRAG);
+        if (providers == 0)
+            return 0;
+        // The "prepare" return is transfer-full and unref'd when the drag ends, but
+        // ContentProviders keeps its own reference (unref'd on the next drag). Add a
+        return providers;
     }
 
     static void dragEndProc(long source, long drag, boolean delete_data) {
@@ -426,8 +480,6 @@ public class DartDragSource extends DartWidget implements IDragSource {
     void onDispose() {
         if (control == null)
             return;
-        if (targetList != 0) {
-        }
         targetList = 0;
         if (controlListener != null) {
             control.removeListener(SWT.Dispose, controlListener);
@@ -518,6 +570,10 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     public long _targetList() {
         return targetList;
+    }
+
+    public long _dragSourceController() {
+        return dragSourceController;
     }
 
     public boolean _moveData() {

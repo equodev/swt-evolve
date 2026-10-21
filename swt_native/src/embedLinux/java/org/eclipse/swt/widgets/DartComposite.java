@@ -200,7 +200,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }
@@ -981,10 +981,6 @@ public class DartComposite extends DartScrollable implements IComposite {
     public void moveBelow(long child, long sibling) {
         if (child == sibling)
             return;
-        long parentHandle = parentingHandle();
-        if (sibling == 0 && parentHandle == fixedHandle) {
-            return;
-        }
         return;
     }
 

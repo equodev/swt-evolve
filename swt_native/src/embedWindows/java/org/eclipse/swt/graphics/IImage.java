@@ -12,6 +12,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.image.*;
+import org.eclipse.swt.widgets.*;
 
 public interface IImage extends IResource, ImplImage {
 

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
 import '../gen/sash.dart';
@@ -5,6 +6,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/control_evolve.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'package:swtflutter/src/styles.dart';
@@ -112,12 +114,12 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     final height = boundsHeight > 0 ? boundsHeight : widgetTheme.defaultSize;
 
     Widget sashContent = MouseRegion(
-      onEnter: (_) => handleMouseEnter(),
-      onExit: (_) => handleMouseExit(),
       cursor: isHorizontal
           ? SystemMouseCursors.resizeRow
           : SystemMouseCursors.resizeColumn,
       child: Focus(
+        // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+        skipTraversal: true,
         onFocusChange: (hasFocus) {
           if (hasFocus) {
             handleFocusIn();
@@ -125,7 +127,26 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
             handleFocusOut();
           }
         },
-        child: GestureDetector(
+        // A press and a release each report the sash's position, ahead of their MouseDown and
+        // MouseUp, as a native Sash does; this Listener sits inside the control's own, so it is
+        // reached first. The drag in between reports its moves from the pan below. The second
+        // press of a double click reports neither, as on Win32 and Cocoa.
+        child: Listener(
+          onPointerDown: enabled
+              ? (e) {
+                  _primaryPress = e.buttons == kPrimaryButton;
+                  if (_primaryPress && !continuesClickChain(e)) {
+                    _sendPositionSelection(pressed: true);
+                  }
+                }
+              : null,
+          onPointerUp: enabled
+              ? (_) {
+                  if (_primaryPress && swtClickCount == 1) _sendPositionSelection(pressed: false);
+                  _primaryPress = false;
+                }
+              : null,
+          child: GestureDetector(
           onPanStart: enabled
               ? (details) {
                   _isDragging = true;
@@ -152,6 +173,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
             color: sashColor,
           ),
         ),
+        ),
       ),
     );
 
@@ -160,7 +182,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       lastAppliedY = _localY;
     }
 
-    return tagSemantics(sashContent);
+    return tagSemantics(trackPointer(sashContent));
   }
 
   void _enterLocalEditMode() {
@@ -173,27 +195,36 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
   }
 
   void _exitLocalEditMode() {
-    if (_isInLocalEditMode && _localX != null && _localY != null) {
-      final bounds = state.bounds;
-      if (bounds != null) {
-        final event = VEvent()
-          ..x = _localX
-          ..y = _localY
-          ..width = bounds.width
-          ..height = bounds.height
-          ..detail = 0
-          ..stateMask = 0;
-
-        widget.sendSelectionSelection(state, event);
-
-        _isInLocalEditMode = false;
-        return;
-      }
+    // The release already reported where the drag ended (_sendPositionSelection); the local
+    // position stays until Java's bounds catch up.
+    if (_isInLocalEditMode && _localX != null && _localY != null && state.bounds != null) {
+      _isInLocalEditMode = false;
+      return;
     }
 
     _isInLocalEditMode = false;
     _localX = null;
     _localY = null;
+  }
+
+  /// Whether the press in flight is the primary button's: only that one moves a sash.
+  bool _primaryPress = false;
+
+  /// The Selection a press or a release reports: where the sash is now, with the button still
+  /// held on the press.
+  void _sendPositionSelection({required bool pressed}) {
+    final bounds = state.bounds;
+    if (bounds == null) return;
+    widget.sendSelectionSelection(
+      state,
+      VEvent()
+        ..x = _localX ?? bounds.x
+        ..y = _localY ?? bounds.y
+        ..width = bounds.width
+        ..height = bounds.height
+        ..detail = 0
+        ..stateMask = pressed ? SWT.BUTTON1 : 0,
+    );
   }
 
   void handleSelectionStart(DragStartDetails details) {
@@ -204,8 +235,10 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       _lastX = _localX ?? bounds.x;
       _lastY = _localY ?? bounds.y;
 
-      _startX = details.globalPosition.dx.round() - _lastX;
-      _startY = details.globalPosition.dy.round() - _lastY;
+      // The pointer is read against the view and the bounds are SWT units.
+      final pointer = logicalToSwt(details.globalPosition);
+      _startX = pointer.dx.round() - _lastX;
+      _startY = pointer.dy.round() - _lastY;
     }
   }
 
@@ -220,9 +253,10 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
     int newX = _lastX;
     int newY = _lastY;
+    final pointer = logicalToSwt(details.globalPosition);
 
     if (isHorizontal) {
-      newY = details.globalPosition.dy.round() - _startY;
+      newY = pointer.dy.round() - _startY;
 
       if (newY < 0) {
         newY = 0;
@@ -237,7 +271,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         newY = maxY;
       }
     } else {
-      newX = details.globalPosition.dx.round() - _startX;
+      newX = pointer.dx.round() - _startX;
 
       if (newX < 0) {
         newX = 0;
@@ -285,14 +319,6 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
       _exitLocalEditMode();
     }
-  }
-
-  void handleMouseEnter() {
-    widget.sendMouseTrackMouseEnter(state, null);
-  }
-
-  void handleMouseExit() {
-    widget.sendMouseTrackMouseExit(state, null);
   }
 
   void handleFocusIn() {

@@ -371,7 +371,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             NSRect sourceRect = new NSRect();
             sourceRect.width = destRect.width;
             sourceRect.height = destRect.height;
-            image.handle.drawInRect(destRect, sourceRect, OS.NSCompositeSourceOver, 1f);
+            image.handle.drawInRect(destRect, sourceRect, OS.NSCompositingOperationSourceOver, 1f);
             if (isFlipped)
                 context.restoreGraphicsState();
             drawX += destRect.width;

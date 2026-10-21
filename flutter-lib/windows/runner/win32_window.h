@@ -62,6 +62,9 @@ class Win32Window {
 
   void Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize);
 
+  // Physical pixels per logical pixel, the factor Move scales by.
+  double scale_factor() const { return scale_factor_; }
+
   // Returns the backing Window handle to enable clients to set icon and other
   // window properties. Returns nullptr if the window has been destroyed.
   HWND GetHandle();

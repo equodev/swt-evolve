@@ -5,12 +5,16 @@ import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.awt.AWTEvent;
+import java.awt.EventQueue;
 import java.awt.SecondaryLoop;
+import java.awt.event.ActionEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -134,6 +138,30 @@ class EvolveDispatcherWrapperTest {
         runner.join(2000);
         assertThat(runner.isAlive()).isFalse();
         assertThat(enterReturned.get()).isTrue();
+    }
+
+    /** An event dispatched off the Display's thread is handed to the installed wrapper, not run in place. */
+    @Test
+    void installingTheWrapperRoutesTheQueuesDispatchThroughTheDisplay() throws InterruptedException {
+        Display display = Mocks.display();
+        ForwardingQueue queue = new ForwardingQueue();
+        EvolveSwingHost.setFwDispatcher(queue, new EvolveSwingHost.EvolveDispatcherWrapper(display));
+
+        // The mock's Display thread is this one, so here the event is dispatched in place.
+        queue.dispatch(new ActionEvent(new Object(), ActionEvent.ACTION_PERFORMED, ""));
+        verify(display, never()).asyncExec(org.mockito.ArgumentMatchers.any());
+
+        Thread other = new Thread(() -> queue.dispatch(new ActionEvent(new Object(), ActionEvent.ACTION_PERFORMED, "")));
+        other.start();
+        other.join();
+
+        verify(display).asyncExec(org.mockito.ArgumentMatchers.any());
+    }
+
+    private static final class ForwardingQueue extends EventQueue {
+        void dispatch(AWTEvent event) {
+            dispatchEvent(event);
+        }
     }
 
     @Test

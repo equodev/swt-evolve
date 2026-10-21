@@ -34,6 +34,8 @@ public final class SwtGCData implements IGCData {
 
     int imageZoom;
 
+    boolean reapplicable;
+
     void copyTo(GCData originalData) {
         originalData.device = getApi().device;
         originalData.style = getApi().style;
