@@ -203,6 +203,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onStripLayout: _handleStripLayout,
             onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
+            folderPointFor: _folderPointFor,
           ),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
         // shrinks computeSize, it never hides the selected control. A collapsed folder
@@ -245,6 +246,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onStripLayout: _handleStripLayout,
             onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
+            folderPointFor: _folderPointFor,
           ),
       ],
     );
@@ -454,6 +456,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return press != null && drawn.contains(press) ? press : drawn.center;
   }
 
+  /// [global] in the folder's own coordinates, which Java maps to the display for a drop event.
+  Offset? _folderPointFor(Offset global) {
+    final box = context.findRenderObject();
+    return box is RenderBox && box.hasSize ? box.globalToLocal(global) : null;
+  }
+
   static Rect _toLocal(RenderBox box, Rect global) =>
       Rect.fromPoints(box.globalToLocal(global.topLeft), box.globalToLocal(global.bottomRight));
 
@@ -563,6 +571,9 @@ class _CTabBar extends StatefulWidget {
   /// went down.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
+  /// A global point in the folder's own coordinates.
+  final Offset? Function(Offset global)? folderPointFor;
+
   const _CTabBar({
     required this.state,
     required this.folderWidget,
@@ -583,6 +594,7 @@ class _CTabBar extends StatefulWidget {
     this.onStripLayout,
     this.onStripPointerDown,
     this.dragPointFor,
+    this.folderPointFor,
   });
 
   @override
@@ -787,6 +799,7 @@ class _CTabBarState extends State<_CTabBar> {
       key: _rowState,
       onStripLayout: widget.onStripLayout,
       dragPointFor: widget.dragPointFor,
+      folderPointFor: widget.folderPointFor,
       children: tabChildren,
       tabs: displayTabs,
       folderState: widget.state,
@@ -1881,6 +1894,10 @@ class TabDragRow extends StatefulWidget {
   /// went down, both in global coordinates.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
+  /// A global point in the folder's own coordinates: drop events report positions in those, not
+  /// in the row's, which the strip offsets and scrolls.
+  final Offset? Function(Offset global)? folderPointFor;
+
   const TabDragRow({
     super.key,
     required this.children,
@@ -1895,6 +1912,7 @@ class TabDragRow extends StatefulWidget {
     this.onDragStart,
     this.onStripLayout,
     this.dragPointFor,
+    this.folderPointFor,
   });
 
   @override
@@ -2120,7 +2138,7 @@ class _TabDragRowState extends State<TabDragRow> {
         return index;
       },
       resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
-      resolvePosition: (details) => _row?.globalToLocal(details.offset),
+      resolvePosition: (details) => widget.folderPointFor?.call(details.offset),
       onDrop: _handleDrop,
       builder: (context, child, negotiation, isHovering) {
         if (!isHovering) _insertHover.update(null);

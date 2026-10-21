@@ -81,7 +81,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         child: Material(type: MaterialType.transparency, child: row),
       ),
       dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
-      onDragStarted: () {
+      beforeDragDetect: () {
         ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
         final e = _createEvent();
         e.count = 1;
