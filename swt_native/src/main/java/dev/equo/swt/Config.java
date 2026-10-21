@@ -933,6 +933,7 @@ public class Config {
             // Hover and tooltip delay (ms): MouseHover fires, and the tooltip shows, once the pointer
             // has rested this long. A test harness that waits for hovers shortens it.
             configFlags.hover_delay_ms = Integer.getInteger("swt.evolve.hover_delay_ms", HOVER_DELAY_MS);
+            configFlags.trace_pointer = PointerTrace.enabled();
             // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).

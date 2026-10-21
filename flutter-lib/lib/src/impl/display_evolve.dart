@@ -1,6 +1,7 @@
 import 'utils/composed_text_input.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
 import '../gen/menu.dart';
@@ -52,6 +53,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     startDisplayKeyForwarding();
     _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_tracePointer);
     _listenToClipboardRequests();
   }
 
@@ -83,6 +85,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_tracePointer);
     _traverseGate.detach();
     stopDisplayKeyForwarding();
     super.dispose();
@@ -118,6 +121,14 @@ class _DisplaySwtState extends State<DisplaySwt> {
       }
     }
     return false;
+  }
+
+  /// Reports each raw pointer event to Java while the config flags ask for it (Java's PointerTrace).
+  void _tracePointer(PointerEvent event) {
+    if (getConfigFlags().trace_pointer != true) return;
+    final p = event.position;
+    EquoCommService.sendPayload('Display/${widget.value.id ?? 0}/PointerTrace',
+        '${event.runtimeType} ${p.dx.round()},${p.dy.round()} buttons=${event.buttons}');
   }
 
   /// A printable character with no Ctrl, Alt or Meta held: one a text field types.

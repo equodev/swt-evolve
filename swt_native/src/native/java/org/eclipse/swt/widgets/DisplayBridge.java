@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.PointerTrace;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowBridge;
@@ -301,6 +302,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyDown, ev));
         comm().on("Display/" + displayId + "/Key/KeyUp", Event.class,
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyUp, ev));
+        if (PointerTrace.enabled()) {
+            comm().on("Display/" + displayId + "/PointerTrace", String.class, line -> PointerTrace.record("client " + line));
+        }
     }
 
     private void routeKeyToFocused(DartDisplay display, int type, Event ev) {
