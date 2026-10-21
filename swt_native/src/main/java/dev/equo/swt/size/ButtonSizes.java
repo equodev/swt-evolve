@@ -20,8 +20,8 @@ import static dev.equo.swt.Styles.hasFlags;
 public class ButtonSizes {
 
     static class ARROW {
-        static final double MIN_WIDTH = 26.0;
-        static final double MIN_HEIGHT = 26.0;
+        static final double MIN_WIDTH = 21.0;
+        static final double MIN_HEIGHT = 21.0;
     }
 
     static class CHECK {

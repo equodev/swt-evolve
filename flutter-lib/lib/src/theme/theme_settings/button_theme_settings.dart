@@ -121,7 +121,7 @@ ButtonThemeExtension _getButtonTheme({
     radioButtonTextSpacing: 8.0,
     
     // Dropdown Button sizes
-    dropdownButtonIconSize: 24.0,
+    dropdownButtonIconSize: 19.0,
     
     // Checkbox sizes
     checkboxSize: 16.8,
