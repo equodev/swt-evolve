@@ -1592,6 +1592,11 @@ public class DartTree extends DartComposite implements ITree {
     public void removeAll() {
         checkWidget();
         checkSetDataInProcessBeforeRemoval();
+        // Disconnect the model from the view before clearing it.
+        // gtk_tree_store_clear fires cell-data / row-changed callbacks for every
+        // row it removes. Those callbacks re-enter SWT (cellDataProc -> checkData
+        // -> getParentItem -> gtk_tree_model_get_path) with iterators that are
+        // already being freed, causing a SIGSEGV. With no model attached the view
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed())

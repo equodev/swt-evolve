@@ -849,6 +849,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         int[] x = new int[1];
         ((DartTree) parent.getImpl()).ignoreSize = true;
         ((DartTree) parent.getImpl()).ignoreSize = false;
+        int[] buffer = new int[1];
+        int horizontalSeparator;
+        horizontalSeparator = buffer[0];
         /*
 	 * Fix for Eclipse bug 476562, we need to re-adjust the bounds for the text
 	 * when the separator value is less than the width of the image. Previously

@@ -270,6 +270,20 @@ public class DartMenu extends DartWidget implements IMenu {
         return hasLocation;
     }
 
+    /*
+ * Keep a bottom-of-screen popup menu from being shrunk into a scrolled view.
+ *
+ * GtkPopover's layout carries GDK_ANCHOR_RESIZE_Y (a GtkPopoverMenu can always
+ * shrink), so when the menu fits neither below the anchor nor flipped above it,
+ * the compositor shrinks it and shows a scrollbar. Wayland has no global window
+ * coordinates, so we cannot compute the overflow directly; instead we compare
+ * the popover's allocated height to its natural height and shift the anchor up
+ * by the shortfall, which yields exactly that much more room below. Repeated
+ * until it fits (usually 2-3 passes; the bound is just a safety cap). The
+ * popover stays hidden until settled.
+ */
+    static final int GTK4_POPOVER_FIT_MAX_ITERATIONS = 6;
+
     public void _setVisible(boolean visible) {
         if (visible) {
             /*
@@ -623,13 +637,88 @@ public class DartMenu extends DartWidget implements IMenu {
         return this.visible;
     }
 
+    /**
+     * Re-runs the CASCADE submenu SHOW/HIDE wiring after the menu structure changed
+     * while already mapped. The initial wiring at
+     * {@link #gtk_map}/{@link #gtk_show} only covers submenus that existed then;
+     * ones attached, replaced or rebuilt later would otherwise never get their
+     * {@link SWT#Show} event, making lazily-populated submenus appear empty.
+     */
+    private void reconnectDropDownMenuSignalsIfMapped() {
+        if ((getApi().style & SWT.BAR) != 0) {
+        } else if ((getApi().style & SWT.POP_UP) != 0) {
+        } else if ((getApi().style & SWT.DROP_DOWN) != 0) {
+        }
+    }
+
+    /**
+     * Hooks this menu's {@code items-changed} handler on the given {@code GMenu}
+     * model (no-op for {@code 0}), routing back via {@link #handle}. Connected in the
+     * signal's <em>after</em> phase so it runs once GTK's {@code GtkMenuTracker} has
+     * already (re)built the nested GtkPopoverMenu widgets, letting re-wiring run
+     * synchronously.
+     */
+    void hookItemsChanged(long model) {
+    }
+
+    /**
+     * Called when this menu's {@code GMenuModel} emitted {@code items-changed} (its
+     * content was modified after creation). Re-runs the CASCADE submenu wiring from
+     * the nearest mapped ancestor so any nested GtkPopoverMenu GTK (re)built gets its
+     * {@link SWT#Show} routed to the SWT DROP_DOWN submenu. Runs synchronously (see
+     * {@link #hookItemsChanged(long)}); a cheap no-op if no ancestor is mapped.
+     */
+    void modelItemsChanged() {
+        Menu root = this.getApi();
+        while (root.getImpl()._cascade() != null && ((DartMenuItem) root.getImpl()._cascade().getImpl()).parent != null && !((DartMenuItem) root.getImpl()._cascade().getImpl()).parent.isDisposed()) {
+            root = ((DartMenuItem) root.getImpl()._cascade().getImpl()).parent;
+        }
+        ((DartMenu) root.getImpl()).reconnectDropDownMenuSignalsIfMapped();
+    }
+
+    /**
+     * Wires the SHOW/HIDE signals of the given DROP_DOWN {@code submenu} to the
+     * discovered {@code popover} GtkPopoverMenu widget, refreshing the SWT-side
+     * cache. If the submenu was previously wired to a now-stale popover (e.g. GTK
+     * rebuilt the widget after a model change), the stale handle is released first.
+     */
+    private void wireSubMenuPopover(Menu submenu, long popover) {
+        if (submenu.getImpl()._popoverHandle() == popover)
+            return;
+        if (submenu.getImpl()._popoverHandle() != 0) {
+            /*
+		 * Release the stale popover we previously cached (mirrors deregister()). Its
+		 * SHOW/HIDE closures are deliberately left connected: GTK normally destroys the
+		 * widget along with the model change, and should it survive, removeWidget() above
+		 * means its handlers no longer resolve to a widget and simply no-op.
+		 */
+            ((SwtDisplay) display.getImpl()).removeWidget(submenu.getImpl()._popoverHandle());
+            if (submenu.getImpl() instanceof DartMenu) {
+                ((DartMenu) submenu.getImpl()).popoverHandle = 0;
+            }
+            if (submenu.getImpl() instanceof SwtMenu) {
+                ((SwtMenu) submenu.getImpl()).popoverHandle = 0;
+            }
+        }
+        if (submenu.getImpl() instanceof DartMenu) {
+            ((DartMenu) submenu.getImpl()).popoverHandle = popover;
+        }
+        if (submenu.getImpl() instanceof SwtMenu) {
+            ((SwtMenu) submenu.getImpl()).popoverHandle = popover;
+        }
+        ((SwtDisplay) display.getImpl()).addWidget(popover, submenu);
+    }
+
     private void connectDropDownMenuSignals() {
         if (items == null)
             return;
         for (MenuItem menuItem : items) {
             if ((menuItem.style & SWT.SEPARATOR) != 0)
                 continue;
-            if (((DartMenuItem) menuItem.getImpl()).menu != null && ((DartMenuItem) menuItem.getImpl()).menu.getImpl()._popoverHandle() == 0) {
+            if (((DartMenuItem) menuItem.getImpl()).menu != null) {
+                if (((DartMenuItem) menuItem.getImpl()).menu.getImpl()._popoverHandle() != 0) {
+                    connectCascadeSubMenuSignals(((DartMenuItem) menuItem.getImpl()).menu);
+                }
             }
         }
     }
@@ -638,34 +727,34 @@ public class DartMenu extends DartWidget implements IMenu {
         connectCascadeSubMenuSignals(menu, menu.getImpl()._popoverHandle());
     }
 
+    /**
+     * Connects SHOW/HIDE signals for the CASCADE submenus of the given menu. A
+     * submenu whose GtkPopoverMenu is not (yet) present is simply skipped; the next
+     * pass triggered by MAP, SHOW or "items-changed" picks it up.
+     */
     private void connectCascadeSubMenuSignals(Menu menu, long parentPopoverHandle) {
         if (menu == null || parentPopoverHandle == 0 || menu.getImpl().getItems() == null)
             return;
         for (MenuItem item : menu.getImpl().getItems()) {
             if ((item.style & SWT.CASCADE) != 0 && ((DartMenuItem) item.getImpl()).menu != null) {
-                /*
-			 * item.menu is the CASCADE submenu (always SWT.DROP_DOWN style).
-			 * Its popoverHandle is 0 until we find and register its GtkPopoverMenu.
-			 * Skip if already connected (popoverHandle != 0).
-			 */
-                if (((DartMenuItem) item.getImpl()).menu.getImpl()._popoverHandle() != 0)
-                    continue;
+                /* Re-discover every pass: a rebuild can make GTK replace the widget,
+			 * leaving a stale handle whose SHOW never fires (submenu appears empty). */
                 long nestedPopover = findNestedPopoverForModel(parentPopoverHandle, ((DartMenuItem) item.getImpl()).menu.getImpl()._modelHandle());
                 if (nestedPopover != 0) {
-                    if (((DartMenuItem) item.getImpl()).menu.getImpl() instanceof DartMenu) {
-                        ((DartMenu) ((DartMenuItem) item.getImpl()).menu.getImpl()).popoverHandle = nestedPopover;
+                    if (((DartMenuItem) item.getImpl()).menu.getImpl()._popoverHandle() != nestedPopover) {
+                        wireSubMenuPopover(((DartMenuItem) item.getImpl()).menu, nestedPopover);
                     }
-                    if (((DartMenuItem) item.getImpl()).menu.getImpl() instanceof SwtMenu) {
-                        ((SwtMenu) ((DartMenuItem) item.getImpl()).menu.getImpl()).popoverHandle = nestedPopover;
-                    }
-                    ((SwtDisplay) display.getImpl()).addWidget(nestedPopover, ((DartMenuItem) item.getImpl()).menu);
-                    // Recurse to handle further nested CASCADE submenus
                     connectCascadeSubMenuSignals(((DartMenuItem) item.getImpl()).menu);
                 }
             }
         }
     }
 
+    /**
+     * Recursively searches the widget subtree rooted at {@code parentWidget} for the
+     * nested GtkPopoverMenu whose GMenuModel is {@code targetModel}, returning its
+     * handle or {@code 0} if it is not (yet) present.
+     */
     private long findNestedPopoverForModel(long parentWidget, long targetModel) {
         if (parentWidget == 0 || targetModel == 0)
             return 0;

@@ -277,6 +277,92 @@ public class SwtMenu extends SwtWidget implements IMenu {
         return hasLocation;
     }
 
+    /*
+ * GtkPopoverMenu inserts section-separator widgets from a GLib idle callback
+ * (gtk_menu_section_box_handle_sync_separators). Calling gtk_popover_popup()
+ * synchronously would measure the menu before those widgets exist, undersizing
+ * it into a scrollbar. Deferring via asyncExec lets that idle run first.
+ */
+    void popupGtk4Popover(boolean hasPointingTo, int pointX, int pointY) {
+        if (isDisposed())
+            return;
+        display.asyncExec(() -> {
+            if (isDisposed())
+                return;
+            if (hasPointingTo) {
+                GdkRectangle popoverPosition = new GdkRectangle();
+                popoverPosition.x = pointX;
+                popoverPosition.y = pointY;
+                popoverPosition.width = popoverPosition.height = 1;
+                GTK.gtk_popover_set_pointing_to(getApi().handle, popoverPosition);
+                // Hide during the fit (scheduleGtk4PopoverFit) so the menu appears
+                // directly at its final location without a visible jump.
+                GTK.gtk_widget_set_opacity(getApi().handle, 0.0);
+                GTK.gtk_popover_popup(getApi().handle);
+                scheduleGtk4PopoverFit(pointX, pointY, 0);
+            } else {
+                GTK.gtk_popover_popup(getApi().handle);
+            }
+        });
+    }
+
+    /*
+ * Keep a bottom-of-screen popup menu from being shrunk into a scrolled view.
+ *
+ * GtkPopover's layout carries GDK_ANCHOR_RESIZE_Y (a GtkPopoverMenu can always
+ * shrink), so when the menu fits neither below the anchor nor flipped above it,
+ * the compositor shrinks it and shows a scrollbar. Wayland has no global window
+ * coordinates, so we cannot compute the overflow directly; instead we compare
+ * the popover's allocated height to its natural height and shift the anchor up
+ * by the shortfall, which yields exactly that much more room below. Repeated
+ * until it fits (usually 2-3 passes; the bound is just a safety cap). The
+ * popover stays hidden until settled.
+ */
+    static final int GTK4_POPOVER_FIT_MAX_ITERATIONS = 6;
+
+    void scheduleGtk4PopoverFit(int pointX, int pointY, int iteration) {
+        display.asyncExec(() -> {
+            if (isDisposed())
+                return;
+            if (!GTK.gtk_widget_get_mapped(getApi().handle)) {
+                // Menu was dismissed before it settled; make sure it is not left
+                // permanently transparent for a future show.
+                GTK.gtk_widget_set_opacity(getApi().handle, 1.0);
+                return;
+            }
+            if (iteration >= GTK4_POPOVER_FIT_MAX_ITERATIONS) {
+                revealGtk4Popover();
+                return;
+            }
+            int[] natHeight = new int[1];
+            GTK4.gtk_widget_measure(getApi().handle, GTK.GTK_ORIENTATION_VERTICAL, -1, null, natHeight, null, null);
+            int allocated = GTK4.gtk_widget_get_height(getApi().handle);
+            if (natHeight[0] <= 0 || allocated <= 0) {
+                // Not measured/allocated yet; wait another turn.
+                scheduleGtk4PopoverFit(pointX, pointY, iteration + 1);
+                return;
+            }
+            int shortfall = natHeight[0] - allocated;
+            if (shortfall <= 0) {
+                revealGtk4Popover();
+                return;
+            }
+            int newPointY = pointY - shortfall;
+            GdkRectangle popoverPosition = new GdkRectangle();
+            popoverPosition.x = pointX;
+            popoverPosition.y = newPointY;
+            popoverPosition.width = popoverPosition.height = 1;
+            GTK.gtk_popover_set_pointing_to(getApi().handle, popoverPosition);
+            scheduleGtk4PopoverFit(pointX, newPointY, iteration + 1);
+        });
+    }
+
+    void revealGtk4Popover() {
+        if (isDisposed())
+            return;
+        GTK.gtk_widget_set_opacity(getApi().handle, 1.0);
+    }
+
     public void _setVisible(boolean visible) {
         if (visible == GTK.gtk_widget_get_mapped(getApi().handle))
             return;
@@ -324,7 +410,6 @@ public class SwtMenu extends SwtWidget implements IMenu {
                 long eventPtr = 0;
                 if (ableToSetLocation()) {
                     if (GTK.GTK4) {
-                        GdkRectangle popoverPosition = new GdkRectangle();
                         /*
 					 * gtk_popover_set_pointing_to expects coordinates in the coordinate
 					 * space of the popover's current parent widget.
@@ -340,23 +425,16 @@ public class SwtMenu extends SwtWidget implements IMenu {
 					 * relative to that control - do not apply the shell to
 					 * parent.handle translation.
 					 */
+                        int pointX = x, pointY = y;
                         long currentParent = GTK.gtk_widget_get_parent(getApi().handle);
                         if (currentParent == parent.handle) {
                             double[] relX = new double[1], relY = new double[1];
                             if (GTK4.gtk_widget_translate_coordinates(((SwtShell) parent.getShell().getImpl()).topHandle(), parent.handle, x, y, relX, relY)) {
-                                popoverPosition.x = (int) relX[0];
-                                popoverPosition.y = (int) relY[0];
-                            } else {
-                                popoverPosition.x = x;
-                                popoverPosition.y = y;
+                                pointX = (int) relX[0];
+                                pointY = (int) relY[0];
                             }
-                        } else {
-                            popoverPosition.x = x;
-                            popoverPosition.y = y;
                         }
-                        popoverPosition.width = popoverPosition.height = 1;
-                        GTK.gtk_popover_set_pointing_to(getApi().handle, popoverPosition);
-                        GTK.gtk_popover_popup(getApi().handle);
+                        popupGtk4Popover(true, pointX, pointY);
                     } else {
                         // Create the GdkEvent manually as we need to control
                         // certain fields like the event window
@@ -397,7 +475,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
                     }
                 } else {
                     if (GTK.GTK4) {
-                        GTK.gtk_popover_popup(getApi().handle);
+                        popupGtk4Popover(false, 0, 0);
                     } else {
                         /*
 					 *  GTK Feature: gtk_menu_popup is deprecated as of GTK3.22 and the new method gtk_menu_popup_at_pointer
@@ -886,6 +964,99 @@ public class SwtMenu extends SwtWidget implements IMenu {
         return super.gtk_map(widget);
     }
 
+    /**
+     * Re-runs the CASCADE submenu SHOW/HIDE wiring after the menu structure changed
+     * while already mapped. The initial wiring at
+     * {@link #gtk_map}/{@link #gtk_show} only covers submenus that existed then;
+     * ones attached, replaced or rebuilt later would otherwise never get their
+     * {@link SWT#Show} event, making lazily-populated submenus appear empty.
+     */
+    private void reconnectDropDownMenuSignalsIfMapped() {
+        if (!GTK.GTK4)
+            return;
+        if ((getApi().style & SWT.BAR) != 0) {
+            if (getApi().handle != 0 && GTK.gtk_widget_get_mapped(getApi().handle)) {
+                connectDropDownMenuSignals();
+            }
+        } else if ((getApi().style & SWT.POP_UP) != 0) {
+            if (getApi().handle != 0 && GTK.gtk_widget_get_mapped(getApi().handle)) {
+                connectCascadeSubMenuSignals(this.getApi(), getApi().handle);
+            }
+        } else if ((getApi().style & SWT.DROP_DOWN) != 0) {
+            if (popoverHandle != 0 && GTK.gtk_widget_get_mapped(popoverHandle)) {
+                connectCascadeSubMenuSignals(this.getApi(), popoverHandle);
+            }
+        }
+    }
+
+    /**
+     * Hooks this menu's {@code items-changed} handler on the given {@code GMenu}
+     * model (no-op for {@code 0}), routing back via {@link #handle}. Connected in the
+     * signal's <em>after</em> phase so it runs once GTK's {@code GtkMenuTracker} has
+     * already (re)built the nested GtkPopoverMenu widgets, letting re-wiring run
+     * synchronously.
+     */
+    void hookItemsChanged(long model) {
+        if (GTK.GTK4 && model != 0) {
+            long closure = OS.g_cclosure_new(((SwtDisplay) display.getImpl()).menuItemsChangedProc, getApi().handle, 0);
+            OS.g_signal_connect_closure(model, OS.items_changed, closure, true);
+        }
+    }
+
+    /**
+     * Called when this menu's {@code GMenuModel} emitted {@code items-changed} (its
+     * content was modified after creation). Re-runs the CASCADE submenu wiring from
+     * the nearest mapped ancestor so any nested GtkPopoverMenu GTK (re)built gets its
+     * {@link SWT#Show} routed to the SWT DROP_DOWN submenu. Runs synchronously (see
+     * {@link #hookItemsChanged(long)}); a cheap no-op if no ancestor is mapped.
+     */
+    void modelItemsChanged() {
+        if (!GTK.GTK4 || isDisposed())
+            return;
+        Menu root = this.getApi();
+        while (root.getImpl()._cascade() != null && ((SwtMenuItem) root.getImpl()._cascade().getImpl()).parent != null && !((SwtMenuItem) root.getImpl()._cascade().getImpl()).parent.isDisposed()) {
+            root = ((SwtMenuItem) root.getImpl()._cascade().getImpl()).parent;
+        }
+        ((SwtMenu) root.getImpl()).reconnectDropDownMenuSignalsIfMapped();
+    }
+
+    /**
+     * Wires the SHOW/HIDE signals of the given DROP_DOWN {@code submenu} to the
+     * discovered {@code popover} GtkPopoverMenu widget, refreshing the SWT-side
+     * cache. If the submenu was previously wired to a now-stale popover (e.g. GTK
+     * rebuilt the widget after a model change), the stale handle is released first.
+     */
+    private void wireSubMenuPopover(Menu submenu, long popover) {
+        if (submenu.getImpl()._popoverHandle() == popover)
+            return;
+        if (submenu.getImpl()._popoverHandle() != 0) {
+            /*
+		 * Release the stale popover we previously cached (mirrors deregister()). Its
+		 * SHOW/HIDE closures are deliberately left connected: GTK normally destroys the
+		 * widget along with the model change, and should it survive, removeWidget() above
+		 * means its handlers no longer resolve to a widget and simply no-op.
+		 */
+            ((SwtDisplay) display.getImpl()).removeWidget(submenu.getImpl()._popoverHandle());
+            OS.g_object_unref(submenu.getImpl()._popoverHandle());
+            if (submenu.getImpl() instanceof DartMenu) {
+                ((DartMenu) submenu.getImpl()).popoverHandle = 0;
+            }
+            if (submenu.getImpl() instanceof SwtMenu) {
+                ((SwtMenu) submenu.getImpl()).popoverHandle = 0;
+            }
+        }
+        OS.g_object_ref(popover);
+        if (submenu.getImpl() instanceof DartMenu) {
+            ((DartMenu) submenu.getImpl()).popoverHandle = popover;
+        }
+        if (submenu.getImpl() instanceof SwtMenu) {
+            ((SwtMenu) submenu.getImpl()).popoverHandle = popover;
+        }
+        ((SwtDisplay) display.getImpl()).addWidget(popover, submenu);
+        OS.g_signal_connect_closure_by_id(popover, ((SwtDisplay) display.getImpl()).signalIds[SHOW], 0, ((SwtDisplay) display.getImpl()).getClosure(SHOW), false);
+        OS.g_signal_connect_closure_by_id(popover, ((SwtDisplay) display.getImpl()).signalIds[HIDE], 0, ((SwtDisplay) display.getImpl()).getClosure(HIDE), false);
+    }
+
     private void connectDropDownMenuSignals() {
         if (items == null)
             return;
@@ -895,22 +1066,13 @@ public class SwtMenu extends SwtWidget implements IMenu {
                 break;
             if ((menuItem.style & SWT.SEPARATOR) != 0)
                 continue;
-            if (((SwtMenuItem) menuItem.getImpl()).menu != null && ((SwtMenuItem) menuItem.getImpl()).menu.getImpl()._popoverHandle() == 0) {
+            if (((SwtMenuItem) menuItem.getImpl()).menu != null) {
                 long popover = findGtkPopoverMenuChild(barItem);
-                if (popover != 0) {
-                    OS.g_object_ref(popover);
-                    if (((SwtMenuItem) menuItem.getImpl()).menu.getImpl() instanceof DartMenu) {
-                        ((DartMenu) ((SwtMenuItem) menuItem.getImpl()).menu.getImpl()).popoverHandle = popover;
-                    }
-                    if (((SwtMenuItem) menuItem.getImpl()).menu.getImpl() instanceof SwtMenu) {
-                        ((SwtMenu) ((SwtMenuItem) menuItem.getImpl()).menu.getImpl()).popoverHandle = popover;
-                    }
-                    ((SwtDisplay) display.getImpl()).addWidget(popover, ((SwtMenuItem) menuItem.getImpl()).menu);
-                    OS.g_signal_connect_closure_by_id(popover, ((SwtDisplay) display.getImpl()).signalIds[SHOW], 0, ((SwtDisplay) display.getImpl()).getClosure(SHOW), false);
-                    OS.g_signal_connect_closure_by_id(popover, ((SwtDisplay) display.getImpl()).signalIds[HIDE], 0, ((SwtDisplay) display.getImpl()).getClosure(HIDE), false);
-                    /*
-				 * Also connect SHOW/HIDE signals for nested CASCADE submenus.
-				 */
+                /* Re-wire when the discovered popover differs from the cache (initial or GTK rebuilt it). */
+                if (popover != 0 && ((SwtMenuItem) menuItem.getImpl()).menu.getImpl()._popoverHandle() != popover) {
+                    wireSubMenuPopover(((SwtMenuItem) menuItem.getImpl()).menu, popover);
+                }
+                if (((SwtMenuItem) menuItem.getImpl()).menu.getImpl()._popoverHandle() != 0) {
                     connectCascadeSubMenuSignals(((SwtMenuItem) menuItem.getImpl()).menu);
                 }
             }
@@ -922,37 +1084,34 @@ public class SwtMenu extends SwtWidget implements IMenu {
         connectCascadeSubMenuSignals(menu, menu.getImpl()._popoverHandle());
     }
 
+    /**
+     * Connects SHOW/HIDE signals for the CASCADE submenus of the given menu. A
+     * submenu whose GtkPopoverMenu is not (yet) present is simply skipped; the next
+     * pass triggered by MAP, SHOW or "items-changed" picks it up.
+     */
     private void connectCascadeSubMenuSignals(Menu menu, long parentPopoverHandle) {
         if (menu == null || parentPopoverHandle == 0 || menu.getImpl().getItems() == null)
             return;
         for (MenuItem item : menu.getImpl().getItems()) {
             if ((item.style & SWT.CASCADE) != 0 && ((SwtMenuItem) item.getImpl()).menu != null) {
-                /*
-			 * item.menu is the CASCADE submenu (always SWT.DROP_DOWN style).
-			 * Its popoverHandle is 0 until we find and register its GtkPopoverMenu.
-			 * Skip if already connected (popoverHandle != 0).
-			 */
-                if (((SwtMenuItem) item.getImpl()).menu.getImpl()._popoverHandle() != 0)
-                    continue;
+                /* Re-discover every pass: a rebuild can make GTK replace the widget,
+			 * leaving a stale handle whose SHOW never fires (submenu appears empty). */
                 long nestedPopover = findNestedPopoverForModel(parentPopoverHandle, ((SwtMenuItem) item.getImpl()).menu.getImpl()._modelHandle());
                 if (nestedPopover != 0) {
-                    OS.g_object_ref(nestedPopover);
-                    if (((SwtMenuItem) item.getImpl()).menu.getImpl() instanceof DartMenu) {
-                        ((DartMenu) ((SwtMenuItem) item.getImpl()).menu.getImpl()).popoverHandle = nestedPopover;
+                    if (((SwtMenuItem) item.getImpl()).menu.getImpl()._popoverHandle() != nestedPopover) {
+                        wireSubMenuPopover(((SwtMenuItem) item.getImpl()).menu, nestedPopover);
                     }
-                    if (((SwtMenuItem) item.getImpl()).menu.getImpl() instanceof SwtMenu) {
-                        ((SwtMenu) ((SwtMenuItem) item.getImpl()).menu.getImpl()).popoverHandle = nestedPopover;
-                    }
-                    ((SwtDisplay) display.getImpl()).addWidget(nestedPopover, ((SwtMenuItem) item.getImpl()).menu);
-                    OS.g_signal_connect_closure_by_id(nestedPopover, ((SwtDisplay) display.getImpl()).signalIds[SHOW], 0, ((SwtDisplay) display.getImpl()).getClosure(SHOW), false);
-                    OS.g_signal_connect_closure_by_id(nestedPopover, ((SwtDisplay) display.getImpl()).signalIds[HIDE], 0, ((SwtDisplay) display.getImpl()).getClosure(HIDE), false);
-                    // Recurse to handle further nested CASCADE submenus
                     connectCascadeSubMenuSignals(((SwtMenuItem) item.getImpl()).menu);
                 }
             }
         }
     }
 
+    /**
+     * Recursively searches the widget subtree rooted at {@code parentWidget} for the
+     * nested GtkPopoverMenu whose GMenuModel is {@code targetModel}, returning its
+     * handle or {@code 0} if it is not (yet) present.
+     */
     private long findNestedPopoverForModel(long parentWidget, long targetModel) {
         if (parentWidget == 0 || targetModel == 0)
             return 0;
@@ -1015,6 +1174,10 @@ public class SwtMenu extends SwtWidget implements IMenu {
             return 0;
         }
         sendEvent(SWT.Show);
+        /* Wire cascade submenu SHOW/HIDE signals once the DROP_DOWN popover is shown. */
+        if (GTK.GTK4 && (getApi().style & SWT.DROP_DOWN) != 0 && popoverHandle != 0) {
+            connectCascadeSubMenuSignals(this.getApi(), popoverHandle);
+        }
         if (OS.ubuntu_menu_proxy_get() != 0) {
             MenuItem[] items = getItems();
             for (int i = 0; i < items.length; i++) {
@@ -1070,15 +1233,25 @@ public class SwtMenu extends SwtWidget implements IMenu {
                 error(SWT.ERROR_NO_HANDLES);
             GTK4.gtk_shortcut_controller_set_scope(shortcutController, GTK.GTK_SHORTCUT_SCOPE_GLOBAL);
             GTK4.gtk_widget_add_controller(parent.handle, shortcutController);
+            /*
+		 * Hook "items-changed" so content (re)built after creation re-runs the submenu
+		 * wiring (see modelItemsChanged). Items go into per-section models and the
+		 * signal does not propagate to the top model, so hook every section too
+		 * (SEPARATOR sections in MenuItem.createHandle).
+		 */
+            hookItemsChanged(modelHandle);
+            if (sections != null && !sections.isEmpty()) {
+                hookItemsChanged(sections.getFirst().getSectionHandle());
+            }
             if ((getApi().style & SWT.DROP_DOWN) == 0) {
                 OS.g_signal_connect_closure_by_id(getApi().handle, ((SwtDisplay) display.getImpl()).signalIds[SHOW], 0, ((SwtDisplay) display.getImpl()).getClosure(SHOW), false);
                 OS.g_signal_connect_closure_by_id(getApi().handle, ((SwtDisplay) display.getImpl()).signalIds[HIDE], 0, ((SwtDisplay) display.getImpl()).getClosure(HIDE), false);
                 if ((getApi().style & (SWT.BAR | SWT.POP_UP)) != 0) {
                     /*
-				 * Connect MAP signal on the GtkPopoverMenuBar so that once it is
-				 * realized and its internal GtkPopoverMenuBarItem children exist,
-				 * we can find the GtkPopoverMenu for each DROP_DOWN submenu and
-				 * route SHOW/HIDE signals back to the SWT DROP_DOWN Menu.
+				 * Connect MAP signal on the GtkPopoverMenuBar so that once it is realized and
+				 * its internal GtkPopoverMenuBarItem children exist, we can find the
+				 * GtkPopoverMenu for each DROP_DOWN submenu and route SHOW/HIDE signals back to
+				 * the SWT DROP_DOWN Menu.
 				 */
                     OS.g_signal_connect_closure_by_id(getApi().handle, ((SwtDisplay) display.getImpl()).signalIds[MAP], 0, ((SwtDisplay) display.getImpl()).getClosure(MAP), false);
                 }

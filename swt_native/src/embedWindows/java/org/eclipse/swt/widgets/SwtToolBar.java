@@ -65,7 +65,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     static final long ToolBarProc;
 
-    static final TCHAR ToolBarClass = new TCHAR(0, OS.TOOLBARCLASSNAME, true);
+    static final TCHAR ToolBarClass = new TCHAR(OS.TOOLBARCLASSNAME, true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -146,10 +146,8 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 		* not lay out properly.  The work around does not run
 		* in this case.
 		*/
-            if (OS.IsAppThemed()) {
-                if ((style & SWT.RIGHT) != 0)
-                    bits |= OS.TBSTYLE_LIST;
-            }
+            if ((style & SWT.RIGHT) != 0)
+                bits |= OS.TBSTYLE_LIST;
             OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, bits | OS.CCS_VERT);
         } else {
             this.getApi().style |= SWT.HORIZONTAL;
@@ -363,23 +361,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     void createHandle() {
         super.createHandle();
         getApi().state &= ~CANVAS;
-        /*
-	* Feature in Windows.  When TBSTYLE_FLAT is used to create
-	* a flat toolbar, for some reason TBSTYLE_TRANSPARENT is
-	* also set.  This causes the toolbar to flicker when it is
-	* moved or resized.  The fix is to clear TBSTYLE_TRANSPARENT.
-	*
-	* NOTE:  This work around is unnecessary on XP.  There is no
-	* flickering and clearing the TBSTYLE_TRANSPARENT interferes
-	* with the XP theme.
-	*/
-        if ((getApi().style & SWT.FLAT) != 0) {
-            if (!OS.IsAppThemed()) {
-                int bits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
-                bits &= ~OS.TBSTYLE_TRANSPARENT;
-                OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, bits);
-            }
-        }
         /*
 	* Feature in Windows.  Despite the fact that the
 	* tool tip text contains \r\n, the tooltip will
@@ -751,38 +732,36 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	* not lay out properly.  The work around does not run
 	* in this case.
 	*/
-        if (OS.IsAppThemed()) {
-            if ((getApi().style & SWT.RIGHT) != 0 && (getApi().style & SWT.VERTICAL) == 0) {
-                boolean hasText = false, hasImage = false;
-                for (ToolItem item : items) {
-                    if (item != null) {
-                        if (!hasText)
-                            hasText = ((SwtItem) item.getImpl()).text.length() != 0;
-                        if (!hasImage)
-                            hasImage = ((SwtItem) item.getImpl()).image != null;
-                        if (hasText && hasImage)
-                            break;
-                    }
+        if ((getApi().style & SWT.RIGHT) != 0 && (getApi().style & SWT.VERTICAL) == 0) {
+            boolean hasText = false, hasImage = false;
+            for (ToolItem item : items) {
+                if (item != null) {
+                    if (!hasText)
+                        hasText = ((SwtItem) item.getImpl()).text.length() != 0;
+                    if (!hasImage)
+                        hasImage = ((SwtItem) item.getImpl()).image != null;
+                    if (hasText && hasImage)
+                        break;
                 }
-                int oldBits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE), newBits = oldBits;
-                if (hasText && hasImage) {
-                    newBits |= OS.TBSTYLE_LIST;
-                } else {
-                    newBits &= ~OS.TBSTYLE_LIST;
-                }
-                if (newBits != oldBits) {
-                    setDropDownItems(false);
-                    OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, newBits);
-                    /*
-				* Feature in Windows.  For some reason, when the style
-				* is changed to TBSTYLE_LIST, Windows does not lay out
-				* the tool items.  The fix is to use WM_SETFONT to force
-				* the tool bar to redraw and lay out.
-				*/
-                    long hFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
-                    OS.SendMessage(getApi().handle, OS.WM_SETFONT, hFont, 0);
-                    setDropDownItems(true);
-                }
+            }
+            int oldBits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE), newBits = oldBits;
+            if (hasText && hasImage) {
+                newBits |= OS.TBSTYLE_LIST;
+            } else {
+                newBits &= ~OS.TBSTYLE_LIST;
+            }
+            if (newBits != oldBits) {
+                setDropDownItems(false);
+                OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, newBits);
+                /*
+			* Feature in Windows.  For some reason, when the style
+			* is changed to TBSTYLE_LIST, Windows does not lay out
+			* the tool items.  The fix is to use WM_SETFONT to force
+			* the tool bar to redraw and lay out.
+			*/
+                long hFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
+                OS.SendMessage(getApi().handle, OS.WM_SETFONT, hFont, 0);
+                setDropDownItems(true);
             }
         }
         /*
@@ -792,44 +771,42 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	 * This affects every button in the tool bar and makes the preferred height too big.
 	 * The fix is to set the TBSTYLE_LIST, so that Windows can condense the unused space.
 	 */
-        if (OS.IsAppThemed()) {
-            if ((getApi().style & SWT.RIGHT) == 0 && (getApi().style & SWT.HORIZONTAL) != 0) {
-                boolean hasText = false, hasImage = false, hasTextAndImageInSingleItem = false;
-                for (ToolItem item : items) {
-                    if (item != null) {
-                        boolean itemHasText = false, itemHasImage = false;
-                        itemHasText = ((SwtItem) item.getImpl()).text.length() != 0;
-                        itemHasImage = ((SwtItem) item.getImpl()).image != null;
-                        if (!hasText) {
-                            hasText = itemHasText;
-                        }
-                        if (!hasImage) {
-                            hasImage = itemHasImage;
-                        }
-                        if (itemHasText && itemHasImage) {
-                            hasTextAndImageInSingleItem = true;
-                            break;
-                        }
+        if ((getApi().style & SWT.RIGHT) == 0 && (getApi().style & SWT.HORIZONTAL) != 0) {
+            boolean hasText = false, hasImage = false, hasTextAndImageInSingleItem = false;
+            for (ToolItem item : items) {
+                if (item != null) {
+                    boolean itemHasText = false, itemHasImage = false;
+                    itemHasText = ((SwtItem) item.getImpl()).text.length() != 0;
+                    itemHasImage = ((SwtItem) item.getImpl()).image != null;
+                    if (!hasText) {
+                        hasText = itemHasText;
+                    }
+                    if (!hasImage) {
+                        hasImage = itemHasImage;
+                    }
+                    if (itemHasText && itemHasImage) {
+                        hasTextAndImageInSingleItem = true;
+                        break;
                     }
                 }
-                int oldBits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE), newBits = oldBits;
-                if (hasText && hasImage && !hasTextAndImageInSingleItem) {
-                    newBits |= OS.TBSTYLE_LIST;
-                } else {
-                    newBits &= ~OS.TBSTYLE_LIST;
-                }
-                if (newBits != oldBits) {
-                    setDropDownItems(false);
-                    OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, newBits);
-                    /*
-				 * Feature in Windows. For some reason, when the style is changed to
-				 * TBSTYLE_LIST, Windows does not lay out the tool items. The fix is to use
-				 * WM_SETFONT to force the tool bar to redraw and lay out.
-				 */
-                    long hFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
-                    OS.SendMessage(getApi().handle, OS.WM_SETFONT, hFont, 0);
-                    setDropDownItems(true);
-                }
+            }
+            int oldBits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE), newBits = oldBits;
+            if (hasText && hasImage && !hasTextAndImageInSingleItem) {
+                newBits |= OS.TBSTYLE_LIST;
+            } else {
+                newBits &= ~OS.TBSTYLE_LIST;
+            }
+            if (newBits != oldBits) {
+                setDropDownItems(false);
+                OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, newBits);
+                /*
+			 * Feature in Windows. For some reason, when the style is changed to
+			 * TBSTYLE_LIST, Windows does not lay out the tool items. The fix is to use
+			 * WM_SETFONT to force the tool bar to redraw and lay out.
+			 */
+                long hFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
+                OS.SendMessage(getApi().handle, OS.WM_SETFONT, hFont, 0);
+                setDropDownItems(true);
             }
         }
         if ((getApi().style & SWT.WRAP) != 0) {
@@ -1004,28 +981,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     void setBackgroundTransparent(boolean transparent) {
-        /*
-	* Feature in Windows.  When TBSTYLE_TRANSPARENT is set
-	* in a tool bar that is drawing a background, images in
-	* the image list that include transparency information
-	* do not draw correctly.  The fix is to clear and set
-	* TBSTYLE_TRANSPARENT depending on the background color.
-	*
-	* NOTE:  This work around is unnecessary on XP.  The
-	* TBSTYLE_TRANSPARENT style is never cleared on that
-	* platform.
-	*/
-        if ((getApi().style & SWT.FLAT) != 0) {
-            if (!OS.IsAppThemed()) {
-                int bits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
-                if (!transparent && findBackgroundControl() == null) {
-                    bits &= ~OS.TBSTYLE_TRANSPARENT;
-                } else {
-                    bits |= OS.TBSTYLE_TRANSPARENT;
-                }
-                OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, bits);
-            }
-        }
     }
 
     @Override
@@ -1059,32 +1014,30 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	* NOTE:  This work around only runs when the tool bar contains
 	* only images.
 	*/
-        if (OS.IsAppThemed()) {
-            boolean hasText = false, hasImage = false;
-            for (ToolItem item : items) {
-                if (item != null) {
-                    if (!hasText)
-                        hasText = ((SwtItem) item.getImpl()).text.length() != 0;
-                    if (!hasImage)
-                        hasImage = ((SwtItem) item.getImpl()).image != null;
-                    if (hasText && hasImage)
-                        break;
-                }
+        boolean hasText = false, hasImage = false;
+        for (ToolItem item : items) {
+            if (item != null) {
+                if (!hasText)
+                    hasText = ((SwtItem) item.getImpl()).text.length() != 0;
+                if (!hasImage)
+                    hasImage = ((SwtItem) item.getImpl()).image != null;
+                if (hasText && hasImage)
+                    break;
             }
-            if (hasImage && !hasText) {
-                for (ToolItem item : items) {
-                    if (item != null && (item.style & SWT.DROP_DOWN) != 0) {
-                        TBBUTTONINFO info = new TBBUTTONINFO();
-                        info.cbSize = TBBUTTONINFO.sizeof;
-                        info.dwMask = OS.TBIF_STYLE;
-                        OS.SendMessage(getApi().handle, OS.TB_GETBUTTONINFO, ((SwtToolItem) item.getImpl()).id, info);
-                        if (set) {
-                            info.fsStyle |= OS.BTNS_DROPDOWN;
-                        } else {
-                            info.fsStyle &= ~OS.BTNS_DROPDOWN;
-                        }
-                        OS.SendMessage(getApi().handle, OS.TB_SETBUTTONINFO, ((SwtToolItem) item.getImpl()).id, info);
+        }
+        if (hasImage && !hasText) {
+            for (ToolItem item : items) {
+                if (item != null && (item.style & SWT.DROP_DOWN) != 0) {
+                    TBBUTTONINFO info = new TBBUTTONINFO();
+                    info.cbSize = TBBUTTONINFO.sizeof;
+                    info.dwMask = OS.TBIF_STYLE;
+                    OS.SendMessage(getApi().handle, OS.TB_GETBUTTONINFO, ((SwtToolItem) item.getImpl()).id, info);
+                    if (set) {
+                        info.fsStyle |= OS.BTNS_DROPDOWN;
+                    } else {
+                        info.fsStyle &= ~OS.BTNS_DROPDOWN;
                     }
+                    OS.SendMessage(getApi().handle, OS.TB_SETBUTTONINFO, ((SwtToolItem) item.getImpl()).id, info);
                 }
             }
         }
@@ -1374,32 +1327,13 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     int widgetStyle() {
-        int bits = super.widgetStyle() | OS.CCS_NORESIZE | OS.TBSTYLE_TOOLTIPS | OS.TBSTYLE_CUSTOMERASE;
-        if (OS.IsAppThemed())
-            bits |= OS.TBSTYLE_TRANSPARENT;
+        int bits = super.widgetStyle() | OS.CCS_NORESIZE | OS.TBSTYLE_TOOLTIPS | OS.TBSTYLE_CUSTOMERASE | OS.TBSTYLE_TRANSPARENT;
         if ((getApi().style & SWT.SHADOW_OUT) == 0)
             bits |= OS.CCS_NODIVIDER;
         if ((getApi().style & SWT.WRAP) != 0)
             bits |= OS.TBSTYLE_WRAPABLE;
         if ((getApi().style & SWT.FLAT) != 0)
             bits |= OS.TBSTYLE_FLAT;
-        /*
-	* Feature in Windows.  When a tool bar has the style
-	* TBSTYLE_LIST and has a drop down item, Window leaves
-	* too much padding around the button.  This affects
-	* every button in the tool bar and makes the preferred
-	* height too big.  The fix is to set the TBSTYLE_LIST
-	* when the tool bar contains both text and images.
-	*
-	* NOTE: Tool bars with CCS_VERT must have TBSTYLE_LIST
-	* set before any item is added or the tool bar does
-	* not lay out properly.  The work around does not run
-	* in this case.
-	*/
-        if (!OS.IsAppThemed()) {
-            if ((getApi().style & SWT.RIGHT) != 0)
-                bits |= OS.TBSTYLE_LIST;
-        }
         return bits;
     }
 
@@ -1868,8 +1802,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         // Remove and re-add all button the let Windows resize the tool bar
         Stack<ToolItemData> buttondata = new Stack<>();
         for (int i = itemCount - 1; i >= 0; i--) {
-            TBBUTTON lpButton = new TBBUTTON();
-            OS.SendMessage(getApi().handle, OS.TB_GETBUTTON, i, lpButton);
             ToolItem item = toolItems[i];
             if ((item.style & SWT.SEPARATOR) != 0 && item.getControl() != null) {
                 // Take note of widths of separators with control, so they can be resized
@@ -1877,6 +1809,13 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 seperatorWidth[i] = item.getWidth();
             }
             item.notifyListeners(SWT.ZoomChanged, event);
+            // Capture the button data AFTER handling the zoom change. The zoom refresh
+            // may update the item's image-list slot (iBitmap), so capturing the button
+            // beforehand could re-add it with a stale image index, resulting in the
+            // wrong (or a blank) icon being shown. Reading the button here ensures the
+            // current, post-refresh image index is preserved.
+            TBBUTTON lpButton = new TBBUTTON();
+            OS.SendMessage(getApi().handle, OS.TB_GETBUTTON, i, lpButton);
             buttondata.push(new ToolItemData(item, lpButton));
             OS.SendMessage(getApi().handle, OS.TB_DELETEBUTTON, i, 0);
         }
@@ -1894,6 +1833,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 }
             }
         }
+        // Refresh the image lists so the image list for the correct zoom is used
+        setImageList(getImageList());
+        setDisabledImageList(getDisabledImageList());
+        setHotImageList(getHotImageList());
+        boolean toolBarEnabled = getEnabled();
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = toolItems[i];
             // If the separator is used with a control, we must reset the size to the cached value,
@@ -1901,11 +1845,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             if ((item.style & SWT.SEPARATOR) != 0 && item.getControl() != null) {
                 item.setWidth(seperatorWidth[i]);
             }
+            // Make sure the tool item is resized with the new image and font size
+            ((SwtToolItem) toolItems[i].getImpl()).updateImages(toolItems[i].getEnabled() && toolBarEnabled);
         }
-        // Refresh the image lists so the image list for the correct zoom is used
-        setImageList(getImageList());
-        setDisabledImageList(getDisabledImageList());
-        setHotImageList(getHotImageList());
         OS.SendMessage(getApi().handle, OS.TB_AUTOSIZE, 0, 0);
         clearSizeCache(true);
     }

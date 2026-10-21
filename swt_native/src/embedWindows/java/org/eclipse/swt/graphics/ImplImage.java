@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.widgets.*;
 
 public interface ImplImage extends ImplResource {
 

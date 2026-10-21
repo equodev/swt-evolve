@@ -1753,7 +1753,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (type != SWT.KeyDown)
             return result;
         long modifierFlags = nsEvent.modifierFlags();
-        if ((modifierFlags & OS.NSCommandKeyMask) != 0) {
+        if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0) {
             short keyCode = nsEvent.keyCode();
             switch(keyCode) {
                 case 7:
@@ -2530,8 +2530,8 @@ public class SwtText extends SwtScrollable implements IText {
             if (key == 48 && /* Tab */
             theEvent != null) {
                 long modifiers = theEvent.modifierFlags();
-                boolean next = (modifiers & OS.NSShiftKeyMask) == 0;
-                if (next && (modifiers & OS.NSControlKeyMask) == 0) {
+                boolean next = (modifiers & OS.NSEventModifierFlagShift) == 0;
+                if (next && (modifiers & OS.NSEventModifierFlagControl) == 0) {
                     bits &= ~(SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS);
                 }
             }

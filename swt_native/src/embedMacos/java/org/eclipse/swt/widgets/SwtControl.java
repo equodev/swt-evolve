@@ -1076,7 +1076,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 			 * is down, because we likely triggered the current key sequence via flagsChanged.
 			 */
                 long modifiers = nsEvent.modifierFlags();
-                if (((SwtShell) s.getImpl()).keyInputHappened == false || (modifiers & OS.NSCommandKeyMask) != 0) {
+                if (((SwtShell) s.getImpl()).keyInputHappened == false || (modifiers & OS.NSEventModifierFlagCommand) != 0) {
                     ((SwtShell) s.getImpl()).keyInputHappened = true;
                     boolean[] consume = new boolean[1];
                     if (translateTraversal(nsEvent.keyCode(), nsEvent, consume))
@@ -1412,13 +1412,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                         mask = OS.NSAlternateKeyMask;
                         break;
                     case SWT.CONTROL:
-                        mask = OS.NSControlKeyMask;
+                        mask = OS.NSEventModifierFlagControl;
                         break;
                     case SWT.COMMAND:
-                        mask = OS.NSCommandKeyMask;
+                        mask = OS.NSEventModifierFlagCommand;
                         break;
                     case SWT.SHIFT:
-                        mask = OS.NSShiftKeyMask;
+                        mask = OS.NSEventModifierFlagShift;
                         break;
                     case SWT.CAPS_LOCK:
                         Event event = new Event();
@@ -2607,6 +2607,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     @Override
     void scrollWheel(long id, long sel, long theEvent) {
+        if (display == null)
+            return;
         boolean handled = false;
         if (id == getApi().view.id) {
             NSEvent nsEvent = new NSEvent(theEvent);
@@ -2660,7 +2662,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control runEnterExitControl = null;
         switch(nsType) {
             case OS.NSLeftMouseDown:
-                if (nsEvent.clickCount() == 1 && (nsEvent.modifierFlags() & OS.NSControlKeyMask) == 0 && (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect)) {
+                if (nsEvent.clickCount() == 1 && (nsEvent.modifierFlags() & OS.NSEventModifierFlagControl) == 0 && (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect)) {
                     consume = new boolean[1];
                     NSPoint location = getApi().view.convertPoint_fromView_(nsEvent.locationInWindow(), null);
                     if (!getApi().view.isFlipped()) {
@@ -4485,7 +4487,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (getApi().view instanceof NSControl) {
             NSCell cell = ((NSControl) getApi().view).cell();
             if (cell != null)
-                cell.setControlSize(OS.NSSmallControlSize);
+                cell.setControlSize(OS.NSControlSizeSmall);
         }
     }
 
@@ -5022,7 +5024,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 /* Tab */
                 {
                     long modifiers = theEvent.modifierFlags();
-                    boolean next = (modifiers & OS.NSShiftKeyMask) == 0;
+                    boolean next = (modifiers & OS.NSEventModifierFlagShift) == 0;
                     detail = next ? SWT.TRAVERSE_TAB_NEXT : SWT.TRAVERSE_TAB_PREVIOUS;
                     break;
                 }
@@ -5047,7 +5049,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 {
                     all = true;
                     long modifiers = theEvent.modifierFlags();
-                    if ((modifiers & OS.NSControlKeyMask) == 0)
+                    if ((modifiers & OS.NSEventModifierFlagControl) == 0)
                         return false;
                     detail = key == 121 ? /* Page down */
                     SWT.TRAVERSE_PAGE_NEXT : SWT.TRAVERSE_PAGE_PREVIOUS;

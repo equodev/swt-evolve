@@ -1270,6 +1270,9 @@ public abstract class SwtWidget implements IWidget {
         return 0;
     }
 
+    void gtk_layout(long surface, int width, int height) {
+    }
+
     long gtk_status_icon_popup_menu(long handle, long button, long activate_time) {
         return 0;
     }
@@ -1669,7 +1672,7 @@ public abstract class SwtWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 

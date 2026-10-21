@@ -42,6 +42,7 @@
     window.evolve = {};
     window.evolve.widgetId = parseInt("{{EQUO_WIDGETID}}", 10) || 0;
     window.evolve.widgetName = "{{EQUO_WIDGETNAME}}".indexOf("{{") === 0 ? "" : "{{EQUO_WIDGETNAME}}";
+    window.evolve.instance = "{{EQUO_INSTANCE}}".indexOf("{{") === 0 ? "" : "{{EQUO_INSTANCE}}";
     window.evolve.browserProxy = "{{EQUO_BROWSER_PROXY}}" === "true";
     window.evolve.enableTestSemantics = "{{EQUO_ENABLE_TEST_SEMANTICS}}" === "true";
     // Names the widget's own passes for the browser's profiler (User Timing), so a release build

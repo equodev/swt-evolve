@@ -162,8 +162,15 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     public Control[] _getChildren() {
         long parentHandle = parentingHandle();
         if (GTK.GTK4) {
+            /*
+		 * The GTK4 child list is ordered back-to-front (first = bottom, last =
+		 * top), because that is the order GTK4 paints its children in. This
+		 * method has to hand out the topmost child first, so walk the native
+		 * list backwards - that also makes the result match GTK3, whose
+		 * swt_fixed list is kept in front-to-back order instead.
+		 */
             ArrayList<Control> childrenList = new ArrayList<>();
-            for (long child = GTK4.gtk_widget_get_first_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
+            for (long child = GTK4.gtk_widget_get_last_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_prev_sibling(child)) {
                 Widget childWidget = ((SwtDisplay) display.getImpl()).getWidget(child);
                 if (childWidget != null && childWidget instanceof Control && childWidget != this.getApi()) {
                     childrenList.add((Control) childWidget);
@@ -239,7 +246,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }
@@ -356,6 +363,11 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             error(SWT.ERROR_NO_HANDLES);
         if (GTK.GTK4) {
             GTK4.gtk_widget_set_focusable(getApi().handle, true);
+            /*
+		 * Without GTK_OVERFLOW_HIDDEN, children can draw freely outside the parent.
+		 * With GTK_OVERFLOW_HIDDEN we reproduce the GTK3 clipping behaviour.
+		 */
+            GTK4.gtk_widget_set_overflow(getApi().handle, GTK4.GTK_OVERFLOW_HIDDEN);
         } else {
             GTK3.gtk_widget_set_has_window(getApi().handle, true);
         }
@@ -748,10 +760,16 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             return;
         long parentHandle = parentingHandle();
         if (GTK.GTK4) {
-            /* TODO: GTK4 parent does not hold the list of children it has created (parent-children relationship can only be done
-		 * with GdkPopup) Will need to consider if we can get children some other way or not have to do fixZOrder at all
-		 * and use GdkPopup autohide feature.
+            /*
+		 * Keep the widget's own content at the very bottom of the child list, so
+		 * that child controls (e.g. Table/Tree editors) are never stacked behind
+		 * it. This mirrors the GTK3 branch below, which lowers the widget's own
+		 * internal GdkWindows underneath those of the children.
 		 */
+            long content = scrolledHandle != 0 ? scrolledHandle : getApi().handle;
+            if (content != 0 && GTK.gtk_widget_get_parent(content) == parentHandle) {
+                GTK4.gtk_widget_insert_after(content, parentHandle, 0L);
+            }
         } else {
             long parentWindow = gtk_widget_get_window(parentHandle);
             if (parentWindow == 0)
@@ -1433,10 +1451,20 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             return;
         long parentHandle = parentingHandle();
         if (GTK.GTK4) {
+            /*
+		 * GTK4 has no per-widget GdkWindow: paint and hit-test order is simply
+		 * the parent's child-list order, first = bottom, last = top. So "above"
+		 * means "later in the list" - the mirror image of the GTK3 swt_fixed
+		 * list, where the head of the list is the topmost child.
+		 *
+		 * gtk_widget_insert_before(..., NULL) appends (top of the z-order),
+		 * gtk_widget_insert_after(..., sibling) places the child directly on
+		 * top of that sibling.
+		 */
             if (sibling == 0) {
-                GTK4.gtk_widget_insert_after(child, parentHandle, 0L);
+                GTK4.gtk_widget_insert_before(child, parentHandle, 0L);
             } else {
-                GTK4.gtk_widget_insert_before(child, parentHandle, sibling);
+                GTK4.gtk_widget_insert_after(child, parentHandle, sibling);
             }
         } else {
             OS.swt_fixed_restack(parentHandle, child, sibling, true);
@@ -1448,15 +1476,25 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (child == sibling)
             return;
         long parentHandle = parentingHandle();
-        if (sibling == 0 && parentHandle == fixedHandle) {
+        /*
+     * GTK3-only: when sibling == 0 (move to the bottom of the z-order) the
+     * child would be stacked behind the scrolled content's GdkWindow, hiding
+     * overlay controls such as Table/Tree editors. Re-place it just above the
+     * scrolled content instead.
+     *
+     * Not needed on GTK4: widgets have no per-widget GdkWindow, so paint order
+     * is simply the parent's child-list order (first = bottom, last = top).
+     */
+        if (!GTK.GTK4 && sibling == 0 && parentHandle == fixedHandle) {
             moveAbove(child, scrolledHandle != 0 ? scrolledHandle : getApi().handle);
             return;
         }
         if (GTK.GTK4) {
+            /* Mirror image of moveAbove - see the comment there. */
             if (sibling == 0) {
-                GTK4.gtk_widget_insert_before(child, parentHandle, 0L);
+                GTK4.gtk_widget_insert_after(child, parentHandle, 0L);
             } else {
-                GTK4.gtk_widget_insert_after(child, parentHandle, sibling);
+                GTK4.gtk_widget_insert_before(child, parentHandle, sibling);
             }
         } else {
             OS.swt_fixed_restack(parentHandle, child, sibling, false);

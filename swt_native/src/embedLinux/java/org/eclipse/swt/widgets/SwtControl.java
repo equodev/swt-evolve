@@ -1120,7 +1120,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 	 * Feature in GTK3.20+: size calculations take into account GtkCSSNode
 	 * elements which we cannot access. If the to-be-allocated size minus
 	 * these elements is < 0, allocate the preferred size instead. See bug 486068.
+	 *
+	 * On GTK4 the widget is sized via its own
+	 * gtk_widget_size_allocate(), which clamps to the minimum size internally,
+	 * so this adjustment is unnecessary. Return the requested size unchanged on GTK4.
 	 */
+        if (GTK.GTK4)
+            return sizes;
         GtkRequisition minimumSize = new GtkRequisition();
         GtkRequisition naturalSize = new GtkRequisition();
         GTK.gtk_widget_get_preferred_size(widget, minimumSize, naturalSize);
@@ -1220,7 +1226,18 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 gtk_widget_show(topHandle);
                 gtk_widget_get_preferred_size(topHandle, requisition);
                 gtk_widget_size_allocate(topHandle, allocation, -1);
-                gtk_widget_hide(topHandle);
+                /*
+			 * On Gtk 4 gtk_widget_hide() resets the widget's allocation to 0x0. If the SWT
+			 * widget is no longer in the HIDDEN state but visibility hasn't propagated in
+			 * GTK 4, leave it visible on the GTK side so its allocation (and the propagated
+			 * allocations of its children) survive. Otherwise children of a Composite that
+			 * was made visible right before this setBounds call would be left at size 0x0
+			 * and miss Resize events. See
+			 * https://github.com/eclipse-platform/eclipse.platform.swt/issues/3330
+			 */
+                if (!GTK.GTK4 || (getApi().state & HIDDEN) != 0) {
+                    gtk_widget_hide(topHandle);
+                }
                 /* Bug 540002: Showing and hiding widget causes original focused control to loose focus,
 			 * Reset focus to original focused control after dealing with allocation.
 			 */
@@ -1229,6 +1246,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 }
             } else {
                 if (GTK.GTK4) {
+                    // Prevent GTK+ allocation warnings, preferred size should be retrieved before setting allocation size.
+                    GTK.gtk_widget_get_preferred_size(topHandle, null, null);
                     GTK4.gtk_widget_size_allocate(topHandle, allocation, -1);
                 } else {
                     // Prevent GTK+ allocation warnings, preferred size should be retrieved before setting allocation size.
@@ -1833,8 +1852,26 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     Point getControlOrigin() {
         double[] originX = new double[1], originY = new double[1];
         long widgetHandle = fixedHandle != 0 ? fixedHandle : eventHandle();
-        boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, ((SwtShell) getShell().getImpl()).shellHandle, 0, 0, originX, originY);
-        return success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
+        Shell shell = getShell();
+        boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, ((SwtShell) shell.getImpl()).shellHandle, 0, 0, originX, originY);
+        Point origin = success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
+        /*
+	 * A popover-backed Shell renders in its own surface positioned (via oldX/oldY) within
+	 * the nearest real top-level window's content. translate_coordinates only yields the
+	 * offset within the popover, so add the placement of each popover-backed ancestor to
+	 * keep display coordinates consistent with that window (e.g. so a sibling popup can be
+	 * laid out next to it via toDisplay, including the javadoc popup parented to the
+	 * content-assist proposal popup).
+	 */
+        while (((SwtShell) shell.getImpl()).popover) {
+            origin.x += ((SwtShell) shell.getImpl()).oldX;
+            origin.y += ((SwtShell) shell.getImpl()).oldY;
+            Shell parentShell = shell.getImpl()._parent() != null ? shell.getImpl()._parent().getShell() : null;
+            if (parentShell == null || parentShell == shell)
+                break;
+            shell = parentShell;
+        }
+        return origin;
     }
 
     /**
@@ -2549,7 +2586,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return;
         /* there will not be any */
         if (labelRelation != null) {
-            _getAccessible().removeRelation(ACC.RELATION_LABELLED_BY, ((SwtControl) labelRelation.getImpl())._getAccessible());
+            if (accessible != null && labelRelation.getImpl()._accessible() != null) {
+                accessible.removeRelation(ACC.RELATION_LABELLED_BY, labelRelation.getImpl()._accessible());
+            }
             labelRelation = null;
         }
     }
@@ -2995,8 +3034,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (isDisposed())
             return false;
         Shell shell = getShell();
-        long shellHandle = ((SwtShell) shell.getImpl()).shellHandle;
-        long handle = GTK.gtk_window_get_focus(shellHandle);
+        long handle = GTK.gtk_window_get_focus(((SwtShell) shell.getImpl()).focusWindowHandle());
         while (handle != 0) {
             if (handle == focusHandle) {
                 /* Cancel any previous ignoreFocus requests */
@@ -3030,13 +3068,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         Color color;
         if (backgroundAlpha == 0) {
-            color = SwtColor.gtk_new(display, this.getBackgroundGdkRGBA(), 0);
+            color = SwtColor.gtk_new(this.getBackgroundGdkRGBA(), 0);
             return color;
         } else {
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return SwtColor.gtk_new(display, ((SwtControl) control.getImpl()).getBackgroundGdkRGBA(), backgroundAlpha);
+            return SwtColor.gtk_new(((SwtControl) control.getImpl()).getBackgroundGdkRGBA(), backgroundAlpha);
         }
     }
 
@@ -4888,10 +4926,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 // GTK windows don't have a parent, so destroy it now
                 GTK4.gtk_window_destroy(currHandle);
             } else if (parent != null) {
-                if (fixedHandle != 0) {
-                    // Remove widget from hierarchy by removing it from parent container
-                    OS.swt_fixed_remove(parent.getImpl().parentingHandle(), fixedHandle);
-                }
+                /* Use currHandle, not fixedHandle alone - widgets without a
+			 * separate fixedHandle wrapper were otherwise never actually
+			 * unparented here, leaving them alive and rendered natively. */
+                OS.swt_fixed_remove(parent.getImpl().parentingHandle(), currHandle);
             } else {
                 assert false : "widgets must have a parent or be a GtkWindow";
             }
@@ -5102,13 +5140,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     sendOrPost(SWT.MouseDown, mouseDownEvent);
                 }
             }
-            /* This checks for Wayland, a previous MouseDown || MouseMove in the
-		 * dragDetectionQueue and it checks if the current event is MouseMove
-		 * This will prevent them from not being queued, which caused
-		 * Bug 576215 - [Wayland] Mouse events not received as on other platforms.
-		 * In x11 this will always return true as before.
+            /*
+		 * Wayland: drag detection happens during MouseMove, so the initial MouseDown
+		 * and the following moves must be queued even when the application does not
+		 * hook these events. Without them queued a control with only a DragSource never detects
+		 * the drag (issue #1145).
 		 */
-            if ((OS.isX11() || (dragDetectionQueue == null) || (type != SWT.MouseMove)))
+            boolean waylandDragDetect = OS.isWayland() && ((type == SWT.MouseDown && button == 1 && (this.getApi().state & DRAG_DETECT) != 0 && wantDragDropDetection()) || dragDetectionQueue != null);
+            if (!waylandDragDetect)
                 return true;
         }
         Event event = new Event();
@@ -5158,7 +5197,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
          */
         event.data = Boolean.valueOf(send);
         if (OS.isWayland()) {
-            if (type == SWT.MouseDown) {
+            if (type == SWT.MouseDown && event.button == 1) {
                 if (wantDragDropDetection()) {
                     // Delay MouseDown
                     dragDetectionQueue = new LinkedList<>();
@@ -6236,6 +6275,20 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                         GDK.gdk_window_show_unraised(enableWindow);
                 }
                 gtk_widget_show(topHandle);
+                /*
+			 * On GTK4, a Composite laid out while it (or an ancestor) is hidden can end
+			 * up with its children sized against a stale 0x0 client area, because
+			 * gtk_widget_hide() resets allocations to 0x0 (issue #3330) and setBounds on a
+			 * hidden widget shows/allocates/re-hides it. The size given while hidden is
+			 * still stored in the parent's swt_fixed child list, so re-running the parent's
+			 * size allocation re-applies this control's real size (restoring its client
+			 * area), after which a re-layout of its own subtree lets the children pick up
+			 * the now-correct client area. See issue #3450.
+			 */
+                if (GTK.GTK4 && this.getApi() instanceof Composite composite && composite.getImpl()._layout() != null) {
+                    ((SwtControl) parent.getImpl()).forceResize();
+                    composite.layout(true, true);
+                }
             }
         } else {
             /*
@@ -6312,9 +6365,12 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
         long topHandle = topHandle();
         long siblingHandle = sibling != null ? sibling.getImpl().topHandle() : 0;
-        if (GTK.GTK4) {
-            //TODO: Test GTK3 behavior then implement, probably using gdk_toplevel_lower
-        } else {
+        /*
+	 * Nothing to restack on GTK4: its widgets have no GdkWindow of their own, so
+	 * the z-order is entirely determined by the position in the parent's child
+	 * list, which parent.moveAbove()/moveBelow() below takes care of.
+	 */
+        if (!GTK.GTK4) {
             long window = gtk_widget_get_window(topHandle);
             if (window != 0) {
                 long siblingWindow = 0;
@@ -6971,7 +7027,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return;
         if (!GTK.gtk_widget_get_realized(getApi().handle))
             return;
-        if (flush && OS.isX11()) {
+        // flushExposes drains X11 Expose events and is a no-op on GTK4, which uses a
+        // frame-clock/render-node draw model and no longer has GdkWindows to flush.
+        if (flush && OS.isX11() && !GTK.GTK4) {
             long window = paintWindow();
             ((SwtDisplay) display.getImpl()).flushExposes(window, all);
         }
@@ -7055,8 +7113,19 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public Point getSurfaceOrigin() {
         double[] originX = new double[1], originY = new double[1];
         long widgetHandle = fixedHandle != 0 ? fixedHandle : eventHandle();
-        boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, ((SwtShell) getShell().getImpl()).shellHandle, 0, 0, originX, originY);
-        return success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
+        Shell shell = getShell();
+        boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, ((SwtShell) shell.getImpl()).shellHandle, 0, 0, originX, originY);
+        Point origin = success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
+        /* See getControlOrigin(): account for the placement of each popover-backed ancestor. */
+        while (((SwtShell) shell.getImpl()).popover) {
+            origin.x += ((SwtShell) shell.getImpl()).oldX;
+            origin.y += ((SwtShell) shell.getImpl()).oldY;
+            Shell parentShell = shell.getImpl()._parent() != null ? shell.getImpl()._parent().getShell() : null;
+            if (parentShell == null || parentShell == shell)
+                break;
+            shell = parentShell;
+        }
+        return origin;
     }
 
     public long _fixedHandle() {

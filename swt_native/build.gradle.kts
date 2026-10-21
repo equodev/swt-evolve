@@ -202,10 +202,12 @@ dependencies {
 val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
 
 // Classes that need a JDK newer than Java 8 and have no Java 8 equivalent to fall back on:
-// dev/equo/swt/awt is built on jdk.swing.interop (added in 9) and dev/equo/swt/jdk9 on StackWalker.
+// dev/equo/swt/awt opens its JDK internals through java.lang.Module (added in 9) and dev/equo/swt/jdk9
+// is built on StackWalker.
 // Everything reaches them through dev.equo.swt.Jdk9, which resolves them reflectively, so a fragment
-// built for an older SWT release can leave them out and still work -- SWT_AWT falls back to native
-// reparenting, Config to a Throwable-based stack read. Excluding them is what lets the rest of the
+// built for an older SWT release can leave them out and still work -- SWT_AWT.new_Frame fails with
+// ERROR_NOT_IMPLEMENTED for a Dart-backed composite, and Config reads the stack through a Throwable.
+// Excluding them is what lets the rest of the
 // tree compile at --release 8, where those packages are not visible at all.
 //
 // javafx/embed/swt (FXCanvas) is the same case: it opens the host's javafx.graphics module to this
@@ -422,7 +424,7 @@ tasks.withType<JavaCompile> {
     //
     // Two ways of saying it, because javac refuses --add-exports on a system module together with
     // --release, at ANY level. Below 9 the Swing bridge that needs those exports is excluded anyway
-    // (jdk.swing.interop does not exist there), so --release applies and brings its API check with
+    // (java.lang.Module does not exist there), so --release applies and brings its API check with
     // it. From 9 up the bridge ships, so the level is set with -source/-target and the API check is
     // left to checkJavaApiLevel, which excludes the bridge and can therefore use --release.
     when {
@@ -439,18 +441,17 @@ tasks.withType<JavaCompile> {
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.
-    // jdk.swing.interop.DispatcherWrapper: lets EvolveSwingHost install its own AWT/Swing
-    // dispatcher on java.awt.EventQueue, routed through the SWT Display's own pump, instead of
-    // leaving whatever JavaFX/host bridge code installs last (which routes through a JavaFX
-    // event loop DartDisplay never pumps, so posted tasks never run). The runtime JVM this
-    // actually executes under also needs the matching --add-exports on its own command line
-    // (the deployment's own -vmargs), independent of this compile-time one.
+    // sun.awt.FwDispatcher: lets EvolveSwingHost install its own AWT/Swing dispatcher on
+    // java.awt.EventQueue, routed through the SWT Display's own pump, instead of leaving whatever
+    // JavaFX/host bridge code installs last (which routes through a JavaFX event loop DartDisplay
+    // never pumps, so posted tasks never run). At runtime the bridge exports both packages to
+    // itself (EvolveSwingHost.openSwingInternals), or takes the matching --add-exports from the
+    // deployment's own -vmargs.
     // Only meaningful from 9 on: below that there are no modules to export from, javac rejects the
     // flag outright, and the Swing bridge that needs them is excluded from the build anyway.
     if (!dropJdk9Sources) options.compilerArgs.addAll(listOf(
         "--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-        "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED"
+        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED"
     ))
 }
 
@@ -461,7 +462,7 @@ tasks.withType<JavaCompile> {
 // surface too, so Map.ofEntries or String.isBlank fail here instead of at a customer's runtime.
 //
 // dev/equo/swt/awt (and the SWT_AWT that calls into it) is excluded: the Swing bridge is built on
-// sun.swing / jdk.swing.interop, which --release hides because they are not documented API. That
+// sun.swing / sun.awt, which --release hides because they are not documented API. That
 // pair is the one thing still standing between this check and dropping the bytecode downgrader --
 // either the bridge leaves the fragments built for pre-9 releases, or it keeps them on -source 8
 // with no API check.
@@ -496,6 +497,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/*Bridge*.java",
     "**/WebFlutterServer.java",
     "**/ProxyHandler.java",
+    "**/InlineDocumentHandler.java",
     "**/HeadlessChrome.java",
     "**/VDisplay.java",
     "**/VShellPopups.java",
@@ -682,8 +684,7 @@ tasks.register<Test>("embedTest") {
     // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
     // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
     systemProperty("harness.client", "native")
     // Lets a run choose how state is delivered, so the two modes can be compared against each
     // other on the same suite. Read once at class-load, so it has to reach the test JVM itself
@@ -759,8 +760,7 @@ tasks.test {
     // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
     // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
     // equo.swt.diff: lets this suite run against either way of delivering state, so the whole
     // end-to-end path can be compared between them rather than only the Java side.
     // fontsize.seed: FontSizeTest fuzzes over random sizes and texts and prints the seed it used,

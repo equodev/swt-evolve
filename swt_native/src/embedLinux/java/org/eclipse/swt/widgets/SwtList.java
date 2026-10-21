@@ -1097,7 +1097,10 @@ public class SwtList extends SwtScrollable implements IList {
     @Override
     long paintWindow() {
         GTK.gtk_widget_realize(getApi().handle);
-        // TODO: this function has been removed on GTK4
+        if (GTK.GTK4) {
+            // gtk_tree_view_get_bin_window was removed in GTK4; fall back to the widget surface
+            return gtk_widget_get_surface(getApi().handle);
+        }
         return GTK3.gtk_tree_view_get_bin_window(getApi().handle);
     }
 

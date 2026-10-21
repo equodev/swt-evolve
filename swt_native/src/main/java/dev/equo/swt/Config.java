@@ -747,11 +747,13 @@ public class Config {
     }
 
     /**
-     * Hosts a Swing scene on the Flutter surface, or null when this fragment was built without the
-     * Swing bridge (see {@link Jdk9}). SWT_AWT calls this and falls back to native reparenting.
+     * Hosts a Swing scene on the Flutter surface. SWT_AWT calls this for a Dart-backed composite,
+     * which has no native window for its own embedding to reparent a frame into — so when the bridge
+     * cannot run here (see {@link Jdk9}) this fails the way SWT_AWT does on a JRE that cannot embed,
+     * with the reason as the error's cause.
      */
     public static java.awt.Frame newSwingFrame(org.eclipse.swt.widgets.Composite parent) {
-        if (Jdk9.SWING_HOST_NEW_FRAME == null) return null;
+        if (Jdk9.SWING_HOST_NEW_FRAME == null) return swingUnavailable(Jdk9.swingHostFailure(false));
         try {
             return (java.awt.Frame) Jdk9.SWING_HOST_NEW_FRAME.invoke(null, parent);
         } catch (java.lang.reflect.InvocationTargetException e) {
@@ -760,8 +762,15 @@ public class Config {
             if (cause instanceof Error) throw (Error) cause;
             throw new RuntimeException(cause);
         } catch (IllegalAccessException e) {
-            return null;
+            return swingUnavailable(e);
         }
+    }
+
+    /** Throws SWT_AWT's error for a JRE that cannot embed; never returns. */
+    private static java.awt.Frame swingUnavailable(Throwable cause) {
+        SWT.error(SWT.ERROR_NOT_IMPLEMENTED, cause, " [Swing cannot be embedded here: the SWT Evolve "
+                + "Swing bridge is not in this build or cannot run on this Java runtime]");
+        return null;
     }
 
     private static boolean isInStackTrace(String className, String methodName) {
@@ -1014,6 +1023,19 @@ public class Config {
     static double uiScaleFor(int uiZoom, int monitorZoom) {
         if (uiZoom <= 0 || monitorZoom <= 0) return 1.0;
         return uiZoom / (double) monitorZoom;
+    }
+
+    /**
+     * An SWT coordinate in the render side's logical pixels, the units a native window is placed and
+     * sized in. Java-side conversions go through this pair, so the scale is read in one place.
+     */
+    public static int swtToLogical(int swt) {
+        return (int) Math.round(swt * uiScale());
+    }
+
+    /** A coordinate in the render side's logical pixels, in SWT units: the inverse of {@link #swtToLogical}. */
+    public static int logicalToSwt(int logical) {
+        return (int) Math.round(logical / uiScale());
     }
 
     /**

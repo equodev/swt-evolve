@@ -362,7 +362,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         } else {
             parentOrigin = new Point(0, 0);
         }
-        context.setCompositingOperation(erase ? OS.NSCompositeClear : OS.NSCompositeSourceOver);
+        context.setCompositingOperation(erase ? OS.NSCompositingOperationClear : OS.NSCompositingOperationSourceOver);
         NSRect rectFrame = new NSRect();
         NSPoint globalPoint = new NSPoint();
         double screenHeight = ((SwtDisplay) display.getImpl()).getPrimaryFrame().height;
@@ -583,13 +583,13 @@ public class SwtTracker extends SwtWidget implements ITracker {
                             mask = OS.NSAlternateKeyMask;
                             break;
                         case SWT.CONTROL:
-                            mask = OS.NSControlKeyMask;
+                            mask = OS.NSEventModifierFlagControl;
                             break;
                         case SWT.COMMAND:
-                            mask = OS.NSCommandKeyMask;
+                            mask = OS.NSEventModifierFlagCommand;
                             break;
                         case SWT.SHIFT:
-                            mask = OS.NSShiftKeyMask;
+                            mask = OS.NSEventModifierFlagShift;
                             break;
                         case SWT.CAPS_LOCK:
                             Event event = new Event();
@@ -612,7 +612,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
                     break;
                 }
         }
-        int stepSize = (modifierFlags & OS.NSControlKeyMask) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
+        int stepSize = (modifierFlags & OS.NSEventModifierFlagControl) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
         int xChange = 0, yChange = 0;
         switch(nsKeyCode) {
             case 53:
@@ -823,7 +823,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             }
             NSGraphicsContext.static_saveGraphicsState();
             NSGraphicsContext.setCurrentContext(context);
-            context.setCompositingOperation(OS.NSCompositeClear);
+            context.setCompositingOperation(OS.NSCompositingOperationClear);
             frame.x = frame.y = 0;
             NSBezierPath.fillRect(frame);
             NSGraphicsContext.static_restoreGraphicsState();

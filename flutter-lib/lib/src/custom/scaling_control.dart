@@ -37,13 +37,13 @@ class _ScalingScaleControlState extends State<ScalingScaleControl> {
 
   void _onScaleChangeEnd(double value) {
     setState(() => _scale = value);
-    appScaleNotifier.value = value;
+    setAppScaleOverride(value);
   }
 
   void _resetScale() {
     const reset = 1.0;
     setState(() => _scale = reset);
-    appScaleNotifier.value = reset;
+    setAppScaleOverride(reset);
   }
 
   @override

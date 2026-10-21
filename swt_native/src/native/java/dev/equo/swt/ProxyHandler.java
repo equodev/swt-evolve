@@ -13,8 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -61,18 +63,37 @@ class ProxyHandler implements HttpHandler {
     // Bounded LRU (eldest-evicted, access-ordered) so a long session cycling through many
     // distinct local endpoints doesn't grow this without limit.
     private static final int TARGET_AUTH_CACHE_MAX = 64;
-    private static final Map<String, List<String>> TARGET_AUTH_CACHE =
-            Collections.synchronizedMap(new LinkedHashMap<String, List<String>>(16, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, List<String>> eldest) {
-                    return size() > TARGET_AUTH_CACHE_MAX;
-                }
-            });
+    private static final Map<String, List<String>> TARGET_AUTH_CACHE = lruMap(TARGET_AUTH_CACHE_MAX);
+
+    // The header lines last sent for an origin on this server: a module requested in path form has
+    // no query of its own to carry them. One per server, like the cookie jar.
+    private final Map<String, List<String>> originAuthCache = lruMap(TARGET_AUTH_CACHE_MAX);
+
+    private static <K, V> Map<K, V> lruMap(final int max) {
+        return Collections.synchronizedMap(new LinkedHashMap<K, V>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+                return size() > max;
+            }
+        });
+    }
+
+    /**
+     * Request headers from the page that describe its body and pick the representation and
+     * language, forwarded upstream unless {@code Browser.setUrl} gave its own. Not
+     * {@code Accept-Encoding} ({@link HttpURLConnection} does not decode a compressed body) nor
+     * conditional-cache headers (a {@code 304} has no body to serve).
+     */
+    private static final String[] FORWARDED_HEADERS = {"Content-Type", "Accept", "Accept-Language"};
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
-            String target = queryParam(exchange.getRequestURI().getRawQuery(), "url");
+            String rawQuery = exchange.getRequestURI().getRawQuery();
+            // The path form first: a module's own query may carry url= or header= of its own.
+            String target = pathFormTarget(exchange.getRequestURI());
+            boolean pathForm = target != null;
+            if (!pathForm) target = queryParam(rawQuery, "url");
             if (target == null || !WebFlutterServer.proxyAllowed(target)) { sendPlain(exchange, 403, "url not allowed"); return; }
 
             // Headers from Browser.setUrl(url, postData, headers): an iframe navigation can't
@@ -82,12 +103,17 @@ class ProxyHandler implements HttpHandler {
             // each "Name: value" line here (one repeated "header" param) and we attach them to
             // the server-side fetch instead. A header HttpURLConnection itself rejects (Host,
             // Content-Length, …) is skipped rather than failing the whole proxy.
-            List<String> headerLines = queryParams(exchange.getRequestURI().getRawQuery(), "header");
+            List<String> headerLines = pathForm ? new ArrayList<String>() : queryParams(rawQuery, "header");
             if (!headerLines.isEmpty()) {
                 TARGET_AUTH_CACHE.put(target, headerLines);
+                originAuthCache.put(originOf(URI.create(target)), headerLines);
+            } else if (pathForm) {
+                List<String> remembered = TARGET_AUTH_CACHE.get(target);
+                if (remembered == null) remembered = originAuthCache.get(originOf(URI.create(target)));
+                if (remembered != null) headerLines = remembered;
             } else {
                 List<String> remembered = TARGET_AUTH_CACHE.get(target);
-                if (remembered == null) {
+                if (remembered == null && isNavigation(exchange.getRequestHeaders().getFirst("Sec-Fetch-Dest"))) {
                     // A header-bearing sibling request for this same target can be in flight on
                     // another worker thread right now (the app's own two near-simultaneous
                     // requests for one logical "open" -- see TARGET_AUTH_CACHE's own comment).
@@ -115,17 +141,13 @@ class ProxyHandler implements HttpHandler {
             String method = exchange.getRequestMethod();
             boolean hasBody = !"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method);
             byte[] requestBody = hasBody ? Java8.readAllBytes(exchange.getRequestBody()) : new byte[0];
-            // Content-Type from the page's own fetch/XHR call, so a JSON PUT/POST body is
-            // interpreted correctly upstream. Deliberately narrow rather than forwarding every
-            // inbound header: a browser sends its own Accept/Accept-Encoding/conditional-cache
-            // headers on every request, including the plain navigations that never carry a
-            // postData body at all, and blindly relaying those upstream is a wider behavior
-            // change than this proxy needs to make to support writes.
-            String requestContentType = exchange.getRequestHeaders().getFirst("Content-Type");
-            // The page should come back in the viewer's language, as it would loaded directly.
-            String acceptLanguage = exchange.getRequestHeaders().getFirst("Accept-Language");
+            Map<String, String> forwardedHeaders = new LinkedHashMap<>();
+            for (String name : FORWARDED_HEADERS) {
+                String value = exchange.getRequestHeaders().getFirst(name);
+                if (value != null) forwardedHeaders.put(name, value);
+            }
 
-            Fetched resp = fetch(target, method, requestBody, requestContentType, acceptLanguage, headerLines, cookies);
+            Fetched resp = fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies);
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
             String lowerContentType = contentType.toLowerCase();
@@ -143,12 +165,15 @@ class ProxyHandler implements HttpHandler {
                 // href=, so a <base> already in place would itself be rewritten to a /proxy?url=
                 // wrapper -- and the page's real address is read back from document.baseURI.
                 html = rewriteResourceUrls(html, finalUri, headerLines, selfOrigin);
+                html = rewriteModuleScripts(html, selfOrigin);
                 html = rewriteFormActions(html, finalUri, headerLines, selfOrigin);
+                html = injectModuleImportMap(html, finalUri, selfOrigin);
                 html = injectBaseHref(html, resp.finalUrl);
                 html = injectNavigationShim(html, originOf(finalUri), headerLines, selfOrigin);
                 if (!headerLines.isEmpty()) {
                     html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
                 }
+                html = BrowserFunctionBootstrap.inject(html);
                 body = html.getBytes(StandardCharsets.UTF_8);
             } else if (lowerContentType.contains("css")) {
                 // A stylesheet's own url() references (icon fonts, background/mask-image icons)
@@ -162,7 +187,20 @@ class ProxyHandler implements HttpHandler {
             }
             // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
             exchange.getResponseHeaders().set("Content-Type", contentType);
-            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            // Cached as the origin says, unless the response depends on what the browser's cache key
+            // cannot see: a page (the cookie jar, the shims), header lines (a rewritten stylesheet
+            // embeds them), a redirect (the headers belong to another URL), or a Vary on
+            // credentials the browser never sends here.
+            boolean cacheable = !lowerContentType.contains("html") && headerLines.isEmpty()
+                    && resp.finalUrl.equals(target) && !resp.cacheHeaders.isEmpty()
+                    && !variesOnCredentials(resp.cacheHeaders.get("Vary"));
+            if (!cacheable) {
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            } else {
+                for (Map.Entry<String, String> header : resp.cacheHeaders.entrySet()) {
+                    exchange.getResponseHeaders().set(header.getKey(), header.getValue());
+                }
+            }
             WebFlutterServer.StaticFileHandler.setCrossOriginHeaders(exchange);
             exchange.sendResponseHeaders(resp.statusCode, body.length == 0 ? -1 : body.length);
             if (body.length > 0) {
@@ -182,13 +220,48 @@ class ProxyHandler implements HttpHandler {
         final int statusCode;
         final byte[] body;
         final String contentType;
+        /** The origin's caching headers ({@link #CACHE_HEADERS}) it sent. */
+        final Map<String, String> cacheHeaders;
 
-        Fetched(String finalUrl, int statusCode, byte[] body, String contentType) {
+        Fetched(String finalUrl, int statusCode, byte[] body, String contentType, Map<String, String> cacheHeaders) {
             this.finalUrl = finalUrl;
             this.statusCode = statusCode;
             this.body = body;
             this.contentType = contentType;
+            this.cacheHeaders = cacheHeaders;
         }
+    }
+
+    /**
+     * The headers that decide how long a response may be reused. No validators: a conditional request
+     * is not forwarded, so a {@code 304} could never come back to revalidate with.
+     */
+    private static final String[] CACHE_HEADERS = {"Cache-Control", "Expires", "Vary"};
+
+    private static Map<String, String> cacheHeaders(HttpURLConnection conn) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        for (String name : CACHE_HEADERS) {
+            String value = conn.getHeaderField(name);
+            if (value != null) headers.put(name, value);
+        }
+        if (!headers.containsKey("Cache-Control") && !headers.containsKey("Expires")) headers.clear();
+        return headers;
+    }
+
+    /**
+     * Whether the request loads a document. Only a Browser's own navigation can race a sibling
+     * request that carries its headers; a sub-resource of a page served without headers has none
+     * to wait for.
+     */
+    static boolean isNavigation(String secFetchDest) {
+        return secFetchDest == null || secFetchDest.equals("iframe") || secFetchDest.equals("document")
+                || secFetchDest.equals("frame") || secFetchDest.equals("embed") || secFetchDest.equals("object");
+    }
+
+    private static boolean variesOnCredentials(String vary) {
+        if (vary == null) return false;
+        String lower = vary.toLowerCase();
+        return lower.contains("cookie") || lower.contains("authorization") || lower.contains("*");
     }
 
     /**
@@ -199,16 +272,13 @@ class ProxyHandler implements HttpHandler {
      * <p>Cookies go both ways on every hop, redirects included: an OAuth2 login sets its session on
      * the hop that redirects to the identity provider and checks it on the one coming back.
      */
-    static Fetched fetch(String target, String method, byte[] requestBody, String requestContentType,
-            String acceptLanguage, List<String> headerLines, ProxyCookieJar cookies) throws IOException {
+    static Fetched fetch(String target, String method, byte[] requestBody, Map<String, String> forwardedHeaders,
+            List<String> headerLines, ProxyCookieJar cookies) throws IOException {
         String url = target;
         for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod(method);
             conn.setInstanceFollowRedirects(false);
-            if (requestContentType != null) {
-                try { conn.setRequestProperty("Content-Type", requestContentType); } catch (Exception ignored) { }
-            }
             for (String header : headerLines) {
                 int colon = header.indexOf(':');
                 if (colon <= 0) continue;
@@ -217,8 +287,10 @@ class ProxyHandler implements HttpHandler {
                 if (name.isEmpty()) continue;
                 try { conn.setRequestProperty(name, value); } catch (Exception ignored) { }
             }
-            if (acceptLanguage != null && conn.getRequestProperty("Accept-Language") == null) {
-                conn.setRequestProperty("Accept-Language", acceptLanguage);
+            for (Map.Entry<String, String> header : forwardedHeaders.entrySet()) {
+                if (conn.getRequestProperty(header.getKey()) == null) {
+                    try { conn.setRequestProperty(header.getKey(), header.getValue()); } catch (Exception ignored) { }
+                }
             }
             URI hopUri = toUri(url);
             String jarCookies = hopUri != null ? cookies.header(hopUri) : null;
@@ -254,7 +326,7 @@ class ProxyHandler implements HttpHandler {
             InputStream in = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
             try {
                 byte[] body = in == null ? new byte[0] : Java8.readAllBytes(in);
-                return new Fetched(url, code, body, conn.getContentType());
+                return new Fetched(url, code, body, conn.getContentType(), cacheHeaders(conn));
             } finally {
                 if (in != null) in.close();
                 conn.disconnect();
@@ -326,10 +398,15 @@ class ProxyHandler implements HttpHandler {
                 + "if(b&&b.tagName==='BASE'){pin(b);"
                 + "try{new MutationObserver(function(){pin(b);}).observe(b,{attributes:true,attributeFilter:['href']});}catch(e){}}"
                 + "})();</script>";
-        String insertion = baseTag + pinScript;
-        Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
-        return m.find() ? html.substring(0, m.end()) + insertion + html.substring(m.end())
-                        : insertion + html;
+        return insertAfterHead(html, baseTag + pinScript);
+    }
+
+    private static final Pattern HEAD_TAG = Pattern.compile("<head(?:\\s[^>]*)?>", Pattern.CASE_INSENSITIVE);
+
+    /** {@code html} with {@code insertion} right after its {@code <head>} tag, or first when it has none. */
+    private static String insertAfterHead(String html, String insertion) {
+        Matcher m = HEAD_TAG.matcher(html);
+        return m.find() ? html.substring(0, m.end()) + insertion + html.substring(m.end()) : insertion + html;
     }
 
     private static final Pattern RESOURCE_ATTR = Pattern.compile(
@@ -401,23 +478,207 @@ class ProxyHandler implements HttpHandler {
 
     /** The {@code /proxy} URL serving {@code rawValue}, or null when it is not proxied. */
     private static String proxiedUrl(String rawValue, URI baseUri, List<String> headerLines, String selfOrigin) {
+        // The value as the browser reads it: a literal &amp; in a query is a different URL.
+        URI target = proxiableTarget(baseUri, decodeCharRefs(rawValue));
+        return target == null ? null : queryFormUrl(selfOrigin, target, headerLines);
+    }
+
+    /** {@code value} resolved against {@code base} when it is an http(s) URL the proxy may serve, else null. */
+    private static URI proxiableTarget(URI base, String value) {
         try {
-            // The value as the browser reads it: a literal &amp; in a query is a different URL.
-            URI resolved = baseUri.resolve(decodeCharRefs(rawValue));
+            URI resolved = base.resolve(value);
             String scheme = resolved.getScheme();
-            if (scheme == null || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
-                    || !WebFlutterServer.proxyAllowed(resolved.toString())) {
-                return null;
+            if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
+                    && WebFlutterServer.proxyAllowed(resolved.toString())) {
+                return resolved;
             }
-            StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
-                    .append(Java8.urlEncode(resolved.toString(), StandardCharsets.UTF_8));
-            for (String header : headerLines) {
-                proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
-            }
-            return proxied.toString();
-        } catch (Exception e) {
-            return null;
+        } catch (Exception ignored) { }
+        return null;
+    }
+
+    private static String queryFormUrl(String selfOrigin, URI target, List<String> headerLines) {
+        StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
+                .append(Java8.urlEncode(target.toString(), StandardCharsets.UTF_8));
+        for (String header : headerLines) {
+            proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
         }
+        return proxied.toString();
+    }
+
+    private static String pathFormUrl(String selfOrigin, String target) {
+        return selfOrigin + PATH_FORM + target;
+    }
+
+    /**
+     * The target of a path-form request, {@code /proxy/<absolute url>}. Modules are served this way
+     * so that a module's own relative imports resolve against a URL that still mirrors the target's
+     * path; the query-form wrapper would resolve them against this origin's root.
+     */
+    static String pathFormTarget(URI requestUri) {
+        String path = requestUri.getRawPath();
+        if (path == null || !path.startsWith(PATH_FORM)) return null;
+        String target = path.substring(PATH_FORM.length());
+        if (!target.startsWith("http://") && !target.startsWith("https://")) return null;
+        String query = requestUri.getRawQuery();
+        return query == null ? target : target + "?" + query;
+    }
+
+    private static final String PATH_FORM = "/proxy/";
+
+    private static final Pattern MODULE_TAG = Pattern.compile(
+            "<(?:script\\b[^>]*\\btype\\s*=\\s*[\"']?module\\b|link\\b[^>]*\\brel\\s*=\\s*[\"']?modulepreload\\b)[^>]*>",
+            Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern IMPORT_MAP = Pattern.compile(
+            "(<script\\b[^>]*\\btype\\s*=\\s*[\"']?importmap\\b[^>]*>)(.*?)(</script>)",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+    /** Switches the module scripts and preloads {@link #rewriteResourceUrls} proxied to the path form. */
+    static String rewriteModuleScripts(String html, String selfOrigin) {
+        String queryForm = selfOrigin + "/proxy?";
+        Matcher tag = MODULE_TAG.matcher(html);
+        StringBuffer out = new StringBuffer();
+        while (tag.find()) {
+            String rewritten = tag.group();
+            Matcher attr = RESOURCE_ATTR.matcher(rewritten);
+            if (attr.find() && attr.group(3).startsWith(queryForm)) {
+                String target = queryParam(attr.group(3).substring(queryForm.length()), "url");
+                if (target != null) {
+                    String pathForm = pathFormUrl(selfOrigin, target).replace("&", "&amp;").replace("\"", "%22").replace("'", "%27");
+                    rewritten = rewritten.substring(0, attr.start(3)) + pathForm + rewritten.substring(attr.end(3));
+                }
+            }
+            tag.appendReplacement(out, Matcher.quoteReplacement(rewritten));
+        }
+        tag.appendTail(out);
+        return out.toString();
+    }
+
+    private static final Pattern DYNAMIC_IMPORT = Pattern.compile("\\bimport\\s*\\(");
+
+    /**
+     * Routes the page's module imports through the path form. An {@code import} specifier in script
+     * text is not markup {@link #rewriteResourceUrls} can see, and it resolves against the injected
+     * {@code <base>}, straight to the target, where CORS blocks it. For the page's origin and every
+     * other origin it loads modules from, the import map sends that origin to the path form, and a
+     * scope sends a proxied module's root-relative imports there too; its relative ones already
+     * resolve inside it. The page's own import maps get their addresses moved to the path form,
+     * since an address an import map gives is not mapped again, and the first one carries these
+     * entries. A map that does not parse is left as the browser will read it.
+     */
+    @SuppressWarnings("unchecked")
+    static String injectModuleImportMap(String html, URI pageUri, String selfOrigin) {
+        Matcher m = IMPORT_MAP.matcher(html);
+        boolean hasMap = m.find();
+        if (!hasMap && !MODULE_TAG.matcher(html).find() && !DYNAMIC_IMPORT.matcher(html).find()) return html;
+        List<int[]> regions = new ArrayList<>();
+        List<Map<String, Object>> maps = new ArrayList<>();
+        if (hasMap) {
+            do {
+                Object parsed = EvalJson.parse(m.group(2));
+                if (parsed instanceof Map) {
+                    regions.add(new int[]{m.start(2), m.end(2)});
+                    maps.add(proxiedImportMap((Map<String, Object>) parsed, pageUri, selfOrigin));
+                }
+            } while (m.find());
+        }
+
+        Set<String> origins = new LinkedHashSet<>();
+        origins.add(originOf(pageUri));
+        Matcher proxied = Pattern.compile(Pattern.quote(pathFormUrl(selfOrigin, "")) + "(https?://[^/\"'\\s?#&]+)").matcher(html);
+        while (proxied.find()) origins.add(proxied.group(1));
+        for (Map<String, Object> map : maps) collectProxiedOrigins(map, selfOrigin, origins);
+
+        Map<String, Object> carrier = maps.isEmpty() ? new LinkedHashMap<String, Object>() : maps.get(0);
+        addProxyEntries(carrier, origins, selfOrigin);
+        if (maps.isEmpty()) return insertAfterHead(html, "<script type=\"importmap\">" + importMapJson(carrier) + "</script>");
+
+        StringBuilder out = new StringBuilder();
+        int pos = 0;
+        for (int i = 0; i < maps.size(); i++) {
+            out.append(html, pos, regions.get(i)[0]).append(importMapJson(maps.get(i)));
+            pos = regions.get(i)[1];
+        }
+        return out.append(html.substring(pos)).toString();
+    }
+
+    private static String importMapJson(Map<String, Object> map) {
+        return EvalJson.encode(map).replace("</", "<\\/");
+    }
+
+    /** The page's import map with every address, scope and integrity key the proxy serves in the path form. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> proxiedImportMap(Map<String, Object> map, URI pageUri, String selfOrigin) {
+        Map<String, Object> out = new LinkedHashMap<>(map);
+        out.put("imports", proxiedAddresses(map.get("imports"), pageUri, selfOrigin));
+        Map<String, Object> scopes = new LinkedHashMap<>();
+        if (map.get("scopes") instanceof Map) {
+            for (Map.Entry<String, Object> scope : ((Map<String, Object>) map.get("scopes")).entrySet()) {
+                scopes.put(proxiedAddress(scope.getKey(), pageUri, selfOrigin), proxiedAddresses(scope.getValue(), pageUri, selfOrigin));
+            }
+        }
+        out.put("scopes", scopes);
+        if (map.get("integrity") instanceof Map) {
+            Map<String, Object> integrity = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> e : ((Map<String, Object>) map.get("integrity")).entrySet()) {
+                integrity.put(proxiedAddress(e.getKey(), pageUri, selfOrigin), e.getValue());
+            }
+            out.put("integrity", integrity);
+        }
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void collectProxiedOrigins(Map<String, Object> map, String selfOrigin, Set<String> origins) {
+        String prefix = pathFormUrl(selfOrigin, "");
+        for (Map.Entry<String, Object> e : map.entrySet()) {
+            for (String s : new String[]{e.getKey(), e.getValue() instanceof String ? (String) e.getValue() : null}) {
+                if (s == null || !s.startsWith(prefix)) continue;
+                URI target = toUri(s.substring(prefix.length()));
+                if (target != null && target.getHost() != null) origins.add(originOf(target));
+            }
+            if (e.getValue() instanceof Map) collectProxiedOrigins((Map<String, Object>) e.getValue(), selfOrigin, origins);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addProxyEntries(Map<String, Object> map, Set<String> origins, String selfOrigin) {
+        Map<String, Object> imports = map.get("imports") instanceof Map
+                ? (Map<String, Object>) map.get("imports") : new LinkedHashMap<String, Object>();
+        Map<String, Object> scopes = map.get("scopes") instanceof Map
+                ? (Map<String, Object>) map.get("scopes") : new LinkedHashMap<String, Object>();
+        for (String origin : origins) {
+            String root = pathFormUrl(selfOrigin, origin + "/");
+            if (!imports.containsKey(origin + "/")) imports.put(origin + "/", root);
+            Map<String, Object> inRoot = scopes.get(root) instanceof Map
+                    ? (Map<String, Object>) scopes.get(root) : new LinkedHashMap<String, Object>();
+            if (!inRoot.containsKey(selfOrigin + "/")) inRoot.put(selfOrigin + "/", root);
+            // The longest prefix wins: a proxied module's relative imports, already in the path form,
+            // match this identity entry and are left alone by the one above.
+            if (!inRoot.containsKey(selfOrigin + PATH_FORM)) inRoot.put(selfOrigin + PATH_FORM, selfOrigin + PATH_FORM);
+            scopes.put(root, inRoot);
+        }
+        map.put("imports", imports);
+        map.put("scopes", scopes);
+    }
+
+    /** A specifier map with every address the proxy serves moved to the path form. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> proxiedAddresses(Object specifierMap, URI pageUri, String selfOrigin) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (!(specifierMap instanceof Map)) return out;
+        for (Map.Entry<String, Object> e : ((Map<String, Object>) specifierMap).entrySet()) {
+            Object address = e.getValue();
+            out.put(e.getKey(), address instanceof String ? proxiedAddress((String) address, pageUri, selfOrigin) : address);
+        }
+        return out;
+    }
+
+    private static String proxiedAddress(String address, URI pageUri, String selfOrigin) {
+        boolean urlLike = address.startsWith("/") || address.startsWith("./") || address.startsWith("../")
+                || address.startsWith("http://") || address.startsWith("https://");
+        URI target = urlLike ? proxiableTarget(pageUri, address) : null;
+        return target == null ? address : pathFormUrl(selfOrigin, target.toString());
     }
 
     /** Decodes the character references a URL in an attribute value can carry. */
@@ -458,22 +719,9 @@ class ProxyHandler implements HttpHandler {
         StringBuffer out = new StringBuffer();
         while (m.find()) {
             String replacement = m.group(0);
-            try {
-                String value = m.group(2).trim();
-                if (!value.startsWith("data:")) {
-                    URI resolved = baseUri.resolve(value);
-                    String scheme = resolved.getScheme();
-                    if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
-                            && WebFlutterServer.proxyAllowed(resolved.toString())) {
-                        StringBuilder proxied = new StringBuilder(selfOrigin).append("/proxy?url=")
-                                .append(Java8.urlEncode(resolved.toString(), StandardCharsets.UTF_8));
-                        for (String header : headerLines) {
-                            proxied.append("&header=").append(Java8.urlEncode(header, StandardCharsets.UTF_8));
-                        }
-                        replacement = "url(\"" + proxied + "\")";
-                    }
-                }
-            } catch (Exception ignored) { }
+            String value = m.group(2).trim();
+            URI target = value.startsWith("data:") ? null : proxiableTarget(baseUri, value);
+            if (target != null) replacement = "url(\"" + queryFormUrl(selfOrigin, target, headerLines) + "\")";
             m.appendReplacement(out, Matcher.quoteReplacement(replacement));
         }
         m.appendTail(out);
@@ -511,8 +759,7 @@ class ProxyHandler implements HttpHandler {
                 + "for(var i=0;i<HEADERS.length;i++){u+='&header='+encodeURIComponent(HEADERS[i]);}"
                 + "e.preventDefault();location.href=u;}catch(err){}"
                 + "});})();</script>";
-        Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
-        return m.find() ? html.substring(0, m.end()) + script + html.substring(m.end()) : script + html;
+        return insertAfterHead(html, script);
     }
 
     /**
@@ -633,9 +880,7 @@ class ProxyHandler implements HttpHandler {
                 + "}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','href','style']});"
                 + "}catch(e){}"
                 + "})();</script>";
-        Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
-        return m.find() ? html.substring(0, m.end()) + script + html.substring(m.end())
-                        : script + html;
+        return insertAfterHead(html, script);
     }
 
     private static String jsStringLiteral(String s) {

@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../widget_config.dart';
 
+/// A position or distance read in the view's logical pixels -- a pointer event's `position`, a
+/// drag's `globalPosition` or `offset` -- in SWT units. Everything below [SwtZoomScale] is already
+/// in SWT units when read locally; only what is read against the view needs this. A position is
+/// measured from the view's top-left, where the zoom is anchored, so a position inside a control is
+/// read with that control's `globalToLocal` instead, which takes the control's own offset out too.
+Offset logicalToSwt(Offset logical) => logical / appScaleNotifier.value;
+
+/// The size of an area of the view, in SWT units: what SWT is told it has to lay out in.
+Size logicalToSwtSize(Size logical) => logical / appScaleNotifier.value;
+
 /// Draws the app at the factor SWT's zoom implies, and lays it out in the space it is drawn into
 /// — `Transform.scale` changes what is painted, not the constraints the child is handed, and SWT
 /// positions widgets across the area it was told about.

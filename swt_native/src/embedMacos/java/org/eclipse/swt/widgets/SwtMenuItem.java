@@ -366,7 +366,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return false;
-        return nsItem.state() == OS.NSOnState;
+        return nsItem.state() == OS.NSControlStateValueOn;
     }
 
     /**
@@ -674,11 +674,11 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         nsstring.release();
         int mask = 0;
         if ((accelerator & SWT.SHIFT) != 0)
-            mask |= OS.NSShiftKeyMask;
+            mask |= OS.NSEventModifierFlagShift;
         if ((accelerator & SWT.CONTROL) != 0)
-            mask |= OS.NSControlKeyMask;
+            mask |= OS.NSEventModifierFlagControl;
         if ((accelerator & SWT.COMMAND) != 0)
-            mask |= OS.NSCommandKeyMask;
+            mask |= OS.NSEventModifierFlagCommand;
         if ((accelerator & SWT.ALT) != 0)
             mask |= OS.NSAlternateKeyMask;
         nsItem.setKeyEquivalentModifierMask(mask);
@@ -853,7 +853,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
-        nsItem.setState(selected ? OS.NSOnState : OS.NSOffState);
+        nsItem.setState(selected ? OS.NSControlStateValueOn : OS.NSControlStateValueOff);
     }
 
     /**
@@ -1028,7 +1028,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                 for (j = i + 1; j < buffer.length; j++) {
                     switch(buffer[j]) {
                         case '\u2303':
-                            mask |= OS.NSControlKeyMask;
+                            mask |= OS.NSEventModifierFlagControl;
                             i++;
                             break;
                         case '\u2325':
@@ -1036,11 +1036,11 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                             i++;
                             break;
                         case '\u21E7':
-                            mask |= OS.NSShiftKeyMask;
+                            mask |= OS.NSEventModifierFlagShift;
                             i++;
                             break;
                         case '\u2318':
-                            mask |= OS.NSCommandKeyMask;
+                            mask |= OS.NSEventModifierFlagCommand;
                             i++;
                             break;
                         default:

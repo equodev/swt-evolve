@@ -197,6 +197,7 @@ public class WebDisplayBridge extends DisplayBridge {
         webServer = serverBuilder.build();
         try {
             webServer.start();
+            WebFlutterServer.carryPortAcrossRelaunch(webServer.getPort());
             if (isChromium) {
                 try {
                     chromiumLauncher = new ChromiumStandaloneLauncher();
@@ -209,6 +210,8 @@ public class WebDisplayBridge extends DisplayBridge {
                     e.printStackTrace();
                     webServer.launchBrowser();
                 }
+            } else if (webServer.servesRelaunchedPage()) {
+                launchBrowserUnlessThePageReturns(webServer);
             } else {
                 webServer.launchBrowser();
             }
@@ -220,6 +223,36 @@ public class WebDisplayBridge extends DisplayBridge {
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
         dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
+        armClientGeometryWait();
+    }
+
+    /**
+     * The browser was only opened now, so the viewport it will report is not known yet. Not for a
+     * window this thread has to pump: holding the thread would stop the page that reports it.
+     */
+    protected void armClientGeometryWait() {
+        awaitsClientGeometry = !needsPump();
+    }
+
+    /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */
+    private static final long RETURNING_PAGE_WAIT_MS = 5_000;
+
+    /**
+     * The page the previous JVM served reloads into this one when it is still open, so a browser is
+     * only opened when no page asks within the wait: the user had closed it.
+     */
+    private static void launchBrowserUnlessThePageReturns(WebFlutterServer server) {
+        Thread waiter = new Thread(() -> {
+            try {
+                if (!server.awaitReturningPage(RETURNING_PAGE_WAIT_MS)) server.launchBrowser();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.io.IOException e) {
+                System.err.println("[WebDisplayBridge] Could not open a browser on " + server.getApplicationUrl() + ": " + e);
+            }
+        }, "relaunch-browser");
+        waiter.setDaemon(true);
+        waiter.start();
     }
 
     /**

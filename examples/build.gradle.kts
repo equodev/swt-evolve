@@ -127,6 +127,21 @@ tasks.withType<JavaExec>().configureEach {
     }
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
             "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
+    // Forwarded when the caller sets them, because -D on the Gradle command line sets a property
+    // on the Gradle JVM, where nothing reads it, and the run then looks silently unconfigured.
+    // These are the switches a reproduction is driven with: `workbench.plainSwing` runs the
+    // workbench as an ordinary SWT_AWT application, which is the oracle every defect reproduced
+    // there is measured against, and `map.scriptedBandDrag` drives the gesture that found one.
+    for (name in listOf("workbench.plainSwing", "map.scriptedBandDrag", "map.statusFollowsPointer",
+            "tabs", "dev.equo.swing.traceFrames"))
+        System.getProperty(name)?.let { systemProperty(name, it) }
+    // And every switch of the two reproduction families by prefix rather than by name: `gl.` is
+    // the 3D-like canvas and its producer, `dev.equo.swing.nativeSurface` is the engine's own
+    // configuration of the route. Naming each one here meant a new switch looked ignored until
+    // somebody remembered this list, which happened.
+    System.getProperties().stringPropertyNames()
+        .filter { it.startsWith("gl.") || it.startsWith("dev.equo.swing.nativeSurface") }
+        .forEach { systemProperty(it, System.getProperty(it)) }
 }
 
 tasks.register<JavaExec>("runExample") {
@@ -369,4 +384,29 @@ tasks.register<JavaExec>("runEmbedExample") {
 
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+}
+
+// The oracle runs with no `-XstartOnFirstThread`: that flag is SWT's on macOS and it is exactly
+// what AWT cannot live with — Swing's own toolkit wants the primordial thread for AppKit, and with
+// the flag set it spins in `LWCToolkit.initAppkit` and never opens a window. A pure-Swing snippet
+// is the one example here that must not get it.
+tasks.register<JavaExec>("runPlainSwing") {
+    group = "examples"
+    description = "Run a plain-Swing example with no SWT flags. Usage: -PmainClass=…"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set(project.findProperty("mainClass")?.toString()
+            ?: "dev.equo.swing.PlainSwingWorkbenchSnippet")
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
+}
+
+
+// The oracle is launched with `java` directly, not through this task: a Gradle JavaExec does not
+// hand the application the primordial thread, and AWT on macOS spins in `LWCToolkit.initAppkit`
+// waiting for it. This prints what to put on `-cp`.
+tasks.register("printClasspath") {
+    group = "examples"
+    description = "The runtime class path, for launching a plain-Swing example with java directly."
+    val cp = sourceSets["main"].runtimeClasspath
+    doLast { println(cp.asPath) }
 }

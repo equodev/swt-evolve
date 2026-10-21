@@ -69,6 +69,12 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
     long expandBeginTime;
 
     /**
+     * Tracks whether the drag-dest-row currently shown was set by this effect (via the feedback flags)
+     * so it doesn't clear insertMark set via {@link org.eclipse.swt.widgets.Tree#setInsertMark}.
+     */
+    private boolean ownsInsertMark;
+
+    /**
      * Creates a new <code>TreeDropTargetEffect</code> to handle the drag under effect on the specified
      * <code>Tree</code>.
      *
@@ -126,6 +132,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
     @Override
     public void dragLeave(DropTargetEvent event) {
         Tree tree = (Tree) control;
+        ownsInsertMark = false;
         scrollBeginTime = 0;
         scrollIndex = -1;
         expandBeginTime = 0;
@@ -189,9 +196,12 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
         if (path[0] != 0) {
             int position = -1;
             if (position != -1) {
-            } else {
+                ownsInsertMark = true;
+            } else if (ownsInsertMark) {
+                ownsInsertMark = false;
             }
-        } else {
+        } else if (ownsInsertMark) {
+            ownsInsertMark = false;
         }
     }
 

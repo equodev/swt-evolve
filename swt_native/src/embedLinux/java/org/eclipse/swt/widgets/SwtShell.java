@@ -130,6 +130,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     boolean mapped, moved, resized, opened, fullScreen, showWithParent, modified, center;
 
+    /**
+     * On GTK4 an ON_TOP child Shell is backed by a GtkPopover to enable positioning by the client.
+     */
+    boolean popover;
+
     int oldX, oldY, oldWidth, oldHeight;
 
     GeometryInterface geometry;
@@ -596,7 +601,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             if (activeShell == null)
                 return;
             if (!((SwtDisplay) display.getImpl()).activePending) {
-                long focusHandle = GTK.gtk_window_get_focus(((SwtShell) activeShell.getImpl()).shellHandle);
+                long focusHandle = GTK.gtk_window_get_focus(((SwtShell) activeShell.getImpl()).focusWindowHandle());
                 if (focusHandle != 0 && !GTK.gtk_widget_has_focus(focusHandle))
                     return;
             }
@@ -604,6 +609,15 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (activeShell != null) {
             ((SwtDisplay) display.getImpl()).activeShell = null;
             ((SwtDisplay) display.getImpl()).activePending = true;
+        }
+        if (popover) {
+            /*
+		 * A GtkPopover manages its own focus/grab when popped up; there is no toplevel
+		 * window to present or focus to set. Track it as the active shell.
+		 */
+            ((SwtDisplay) display.getImpl()).activeShell = this.getApi();
+            ((SwtDisplay) display.getImpl()).activePending = true;
+            return;
         }
         /*
 	* Feature in GTK.  When the shell is an override redirect
@@ -664,6 +678,31 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
         ((SwtDisplay) display.getImpl()).activeShell = this.getApi();
         ((SwtDisplay) display.getImpl()).activePending = true;
+    }
+
+    /**
+     * Returns the handle of the GtkWindow whose keyboard focus tracks this shell.
+     * For a popover-backed shell there is no toplevel GtkWindow of its own; it shares
+     * the root window of its parent, so the parent's GtkRoot is used for focus queries.
+     */
+    long focusWindowHandle() {
+        if (popover)
+            return GTK4.gtk_widget_get_root(shellHandle);
+        return shellHandle;
+    }
+
+    /**
+     * Returns the nearest ancestor Shell that is backed by a real top-level GtkWindow
+     * (i.e. not popover-backed). A popover renders in its own surface and is positioned
+     * relative to a host widget; that host, and the coordinate space used to position it,
+     * must be a real window.
+     */
+    Shell rootWindowShell() {
+        Shell s = this.getApi();
+        while (((SwtShell) s.getImpl()).popover && s.getImpl()._parent() != null) {
+            s = s.getImpl()._parent().getShell();
+        }
+        return s;
     }
 
     void center() {
@@ -746,14 +785,6 @@ public class SwtShell extends SwtDecorations implements IShell {
             trim.y -= menuBarHeight;
             trim.height += menuBarHeight;
         }
-        if (GTK.GTK4 && OS.isWayland()) {
-            long titlebar = GTK4.gtk_window_get_titlebar(shellHandle);
-            if (titlebar != 0) {
-                int titleBarHeight = GTK4.gtk_widget_get_height(titlebar);
-                trim.y -= titleBarHeight;
-                trim.height += titleBarHeight;
-            }
-        }
         return trim;
     }
 
@@ -767,18 +798,48 @@ public class SwtShell extends SwtDecorations implements IShell {
                 if (isChildShell && (getApi().style & SWT.ON_TOP) != 0)
                     type = GTK.GTK_WINDOW_POPUP;
                 if (GTK.GTK4) {
-                    shellHandle = GTK4.gtk_window_new();
-                    if (OS.isWayland()) {
-                        long headerbar = GTK4.gtk_window_get_titlebar(shellHandle);
-                        if (headerbar == 0) {
-                            // Force-install a headerbar if none exists in order to be able to qurey its size later
-                            // If none set by the app gtk_window_get_titlebar returns 0 but Gtk still draws one internally
-                            long hb = GTK4.gtk_header_bar_new();
-                            GTK4.gtk_window_set_titlebar(shellHandle, hb);
-                        }
-                    }
                     if (type == GTK.GTK_WINDOW_POPUP) {
-                        GTK.gtk_window_set_decorated(shellHandle, false);
+                        /*
+					 * GTK4 toplevel windows cannot be positioned by the client, especially on Wayland. Back ON_TOP
+					 * child shells with a GtkPopover, which GDK positions relative to its parent
+					 * widget on all backends.
+					 */
+                        popover = true;
+                        shellHandle = GTK4.gtk_popover_new();
+                        if (shellHandle == 0)
+                            error(SWT.ERROR_NO_HANDLES);
+                        GTK4.gtk_popover_set_has_arrow(shellHandle, false);
+                        GTK4.gtk_popover_set_autohide(shellHandle, false);
+                        GTK.gtk_popover_set_position(shellHandle, GTK.GTK_POS_BOTTOM);
+                        /*
+					 * A GtkPopover wraps its child in a frame with theme-defined padding, margin
+					 * and minimum size, making the popover render wider/taller than the requested
+					 * Shell bounds. Tag the shell with a CSS class that zeroes the frame for that
+					 * class so the popover matches the requested bounds exactly.
+					 */
+                        GTK.gtk_widget_add_css_class(shellHandle, Converter.javaStringToCString("swt-popover-shell"));
+                        /*
+					 * Parent the popover to the nearest real top-level window's content box
+					 * (vboxHandle).
+					 * On GTK4 SWT display coordinates are relative to that window's content area
+					 * (below the menu bar / CSD), which is exactly the vboxHandle origin, so the
+					 * requested location can be used directly as the popover's pointing-to
+					 * rectangle. Flattening onto the root window (rather than parenting a popover
+					 * to another popover) keeps positioning in a single coordinate space across
+					 * X11 and Wayland. See positionPopover().
+					 */
+                        GTK.gtk_widget_set_parent(shellHandle, ((SwtDecorations) rootWindowShell().getImpl()).vboxHandle);
+                    } else {
+                        shellHandle = GTK4.gtk_window_new();
+                        if (OS.isWayland()) {
+                            long headerbar = GTK4.gtk_window_get_titlebar(shellHandle);
+                            if (headerbar == 0) {
+                                // Force-install a headerbar if none exists in order to be able to qurey its size later
+                                // If none set by the app gtk_window_get_titlebar returns 0 but Gtk still draws one internally
+                                long hb = GTK4.gtk_header_bar_new();
+                                GTK4.gtk_window_set_titlebar(shellHandle, hb);
+                            }
+                        }
                     }
                 } else {
                     shellHandle = GTK3.gtk_window_new(type);
@@ -788,93 +849,95 @@ public class SwtShell extends SwtDecorations implements IShell {
             }
             if (shellHandle == 0)
                 error(SWT.ERROR_NO_HANDLES);
-            if (isChildShell) {
-                if (GTK.GTK4) {
-                    GTK.gtk_window_set_transient_for(shellHandle, parent.getImpl().topHandle());
-                    GTK.gtk_window_set_destroy_with_parent(shellHandle, true);
-                    // TODO: GTK4 need case for SWT.MIN
-                } else {
-                    /*
-				 * Problems with GTK_WINDOW_POPUP attached to another GTK_WINDOW_POPUP parent
-				 * 1) Bug 530138: GTK_WINDOW_POPUP attached to a GTK_WINDOW_POPUP parent
-				 * gets positioned relatively to the GTK_WINDOW_POPUP. We want to position it
-				 * relatively to the GTK_WINDOW_TOPLEVEL surface. Fix is to set the child popup's transient
-				 * parent to the top level window.
-				 *
-				 * 2) Bug 540166: When a parent popup is destroyed, the child popup sometimes does not
-				 * get destroyed and is stuck until its transient top level parent gets destroyed.
-				 * Fix is to implement a similar gtk_window_set_destroy_with_parent with its *logical*
-				 * parent by connecting a "destroy" signal.
-				 */
-                    if (OS.isWayland()) {
-                        Composite topLevelParent = parent;
-                        while (topLevelParent != null && (topLevelParent.style & SWT.ON_TOP) != 0) {
-                            topLevelParent = parent.getParent();
-                        }
-                        // transient parent must be the a toplevel window to position correctly
-                        if (topLevelParent != null) {
-                            GTK.gtk_window_set_transient_for(shellHandle, topLevelParent.getImpl().topHandle());
+            if (!popover) {
+                if (isChildShell) {
+                    if (GTK.GTK4) {
+                        GTK.gtk_window_set_transient_for(shellHandle, parent.getImpl().topHandle());
+                        GTK.gtk_window_set_destroy_with_parent(shellHandle, true);
+                        // TODO: GTK4 need case for SWT.MIN
+                    } else {
+                        /*
+					 * Problems with GTK_WINDOW_POPUP attached to another GTK_WINDOW_POPUP parent
+					 * 1) Bug 530138: GTK_WINDOW_POPUP attached to a GTK_WINDOW_POPUP parent
+					 * gets positioned relatively to the GTK_WINDOW_POPUP. We want to position it
+					 * relatively to the GTK_WINDOW_TOPLEVEL surface. Fix is to set the child popup's transient
+					 * parent to the top level window.
+					 *
+					 * 2) Bug 540166: When a parent popup is destroyed, the child popup sometimes does not
+					 * get destroyed and is stuck until its transient top level parent gets destroyed.
+					 * Fix is to implement a similar gtk_window_set_destroy_with_parent with its *logical*
+					 * parent by connecting a "destroy" signal.
+					 */
+                        if (OS.isWayland()) {
+                            Composite topLevelParent = parent;
+                            while (topLevelParent != null && (topLevelParent.style & SWT.ON_TOP) != 0) {
+                                topLevelParent = parent.getParent();
+                            }
+                            // transient parent must be the a toplevel window to position correctly
+                            if (topLevelParent != null) {
+                                GTK.gtk_window_set_transient_for(shellHandle, topLevelParent.getImpl().topHandle());
+                            } else {
+                                GTK.gtk_window_set_transient_for(shellHandle, parent.getImpl().topHandle());
+                            }
+                            // this marks the logical parent
+                            GTK3.gtk_window_set_attached_to(shellHandle, parent.getImpl().topHandle());
+                            // implements the gtk_window_set_destroy_with_parent for the *logical* parent
+                            if (parent != topLevelParent && isMappedToPopup()) {
+                                if (parent.getImpl() instanceof DartComposite) {
+                                    ((DartComposite) parent.getImpl()).popupChild = this.getApi();
+                                }
+                                if (parent.getImpl() instanceof SwtComposite) {
+                                    ((SwtComposite) parent.getImpl()).popupChild = this.getApi();
+                                }
+                            }
                         } else {
                             GTK.gtk_window_set_transient_for(shellHandle, parent.getImpl().topHandle());
                         }
-                        // this marks the logical parent
-                        GTK3.gtk_window_set_attached_to(shellHandle, parent.getImpl().topHandle());
-                        // implements the gtk_window_set_destroy_with_parent for the *logical* parent
-                        if (parent != topLevelParent && isMappedToPopup()) {
-                            if (parent.getImpl() instanceof DartComposite) {
-                                ((DartComposite) parent.getImpl()).popupChild = this.getApi();
-                            }
-                            if (parent.getImpl() instanceof SwtComposite) {
-                                ((SwtComposite) parent.getImpl()).popupChild = this.getApi();
-                            }
+                        GTK.gtk_window_set_destroy_with_parent(shellHandle, true);
+                        // if child shells are minimizable, we want them to have a
+                        // taskbar icon, so they can be unminimized
+                        if ((getApi().style & SWT.MIN) == 0) {
+                            GTK3.gtk_window_set_skip_taskbar_hint(shellHandle, true);
                         }
-                    } else {
-                        GTK.gtk_window_set_transient_for(shellHandle, parent.getImpl().topHandle());
                     }
-                    GTK.gtk_window_set_destroy_with_parent(shellHandle, true);
-                    // if child shells are minimizable, we want them to have a
-                    // taskbar icon, so they can be unminimized
-                    if ((getApi().style & SWT.MIN) == 0) {
-                        GTK3.gtk_window_set_skip_taskbar_hint(shellHandle, true);
+                } else if ((getApi().style & SWT.ON_TOP) != 0) {
+                    /*
+				 * gtk_window_set_keep_above is not available in GTK 4.
+				 * No replacements were provided. GTK dev suggestion is
+				 * to use platform-specific API if this functionality
+				 * is necessary.
+				 */
+                    if (!GTK.GTK4)
+                        GTK3.gtk_window_set_keep_above(shellHandle, true);
+                }
+                GTK.gtk_window_set_title(shellHandle, new byte[1]);
+                if ((getApi().style & SWT.RESIZE) != 0) {
+                    GTK.gtk_window_set_resizable(shellHandle, true);
+                } else {
+                    GTK.gtk_window_set_resizable(shellHandle, false);
+                }
+                if ((getApi().style & (SWT.NO_TRIM | SWT.BORDER | SWT.SHELL_TRIM)) == 0) {
+                    gtk_container_set_border_width(shellHandle, 1);
+                }
+                if ((getApi().style & SWT.TOOL) != 0) {
+                    if (!GTK.GTK4) {
+                        GTK3.gtk_window_set_type_hint(shellHandle, GDK.GDK_WINDOW_TYPE_HINT_UTILITY);
                     }
                 }
-            } else if ((getApi().style & SWT.ON_TOP) != 0) {
+                if ((getApi().style & SWT.NO_TRIM) != 0) {
+                    GTK.gtk_window_set_decorated(shellHandle, false);
+                }
                 /*
-			 * gtk_window_set_keep_above is not available in GTK 4.
-			 * No replacements were provided. GTK dev suggestion is
-			 * to use platform-specific API if this functionality
-			 * is necessary.
+			 * On Wayland, shells with no SHELL_TRIM style specified have decorations by default.
+			 * This fixes the issue that the open editor dialog (Ctrl+E) for Eclipse on Wayland
+			 * has a tile bar on top.
 			 */
-                if (!GTK.GTK4)
-                    GTK3.gtk_window_set_keep_above(shellHandle, true);
-            }
-            GTK.gtk_window_set_title(shellHandle, new byte[1]);
-            if ((getApi().style & SWT.RESIZE) != 0) {
-                GTK.gtk_window_set_resizable(shellHandle, true);
-            } else {
-                GTK.gtk_window_set_resizable(shellHandle, false);
-            }
-            if ((getApi().style & (SWT.NO_TRIM | SWT.BORDER | SWT.SHELL_TRIM)) == 0) {
-                gtk_container_set_border_width(shellHandle, 1);
-            }
-            if ((getApi().style & SWT.TOOL) != 0) {
-                if (!GTK.GTK4) {
-                    GTK3.gtk_window_set_type_hint(shellHandle, GDK.GDK_WINDOW_TYPE_HINT_UTILITY);
+                if (!OS.isX11() && (getApi().style & SWT.SHELL_TRIM) == 0) {
+                    GTK.gtk_window_set_decorated(shellHandle, false);
                 }
-            }
-            if ((getApi().style & SWT.NO_TRIM) != 0) {
-                GTK.gtk_window_set_decorated(shellHandle, false);
-            }
-            /*
-		 * On Wayland, shells with no SHELL_TRIM style specified have decorations by default.
-		 * This fixes the issue that the open editor dialog (Ctrl+E) for Eclipse on Wayland
-		 * has a tile bar on top.
-		 */
-            if (!OS.isX11() && (getApi().style & SWT.SHELL_TRIM) == 0) {
-                GTK.gtk_window_set_decorated(shellHandle, false);
-            }
-            if (isCustomResize()) {
-                gtk_container_set_border_width(shellHandle, BORDER);
+                if (isCustomResize()) {
+                    gtk_container_set_border_width(shellHandle, BORDER);
+                }
             }
         }
         createHandle(index, false, true);
@@ -895,8 +958,12 @@ public class SwtShell extends SwtDecorations implements IShell {
 	* which may be confused for a resize event from the window manager if
 	* received too late.  The fix is to realize the window during creation
 	* to avoid confusion.
+	*
+	* A GtkPopover creates its (GdkPopup) surface lazily when popped up, so it
+	* must not be realized here.
 	*/
-        GTK.gtk_widget_realize(shellHandle);
+        if (!popover)
+            GTK.gtk_widget_realize(shellHandle);
     }
 
     @Override
@@ -995,13 +1062,16 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (GTK.GTK4) {
             // TODO: GTK4 see if same signals are required in GTK4 as in GTK3, if so, will require the legacy event controller
             // Replaced "window-state-event" with GdkSurface "notify::state", pass shellHandle as user_data
-            GTK.gtk_widget_realize(shellHandle);
-            long gdkSurface = gtk_widget_get_surface(shellHandle);
-            OS.g_signal_connect(gdkSurface, OS.notify_state, ((SwtDisplay) display.getImpl()).notifyProc, shellHandle);
-            OS.g_signal_connect(gdkSurface, OS.compute_size, ((SwtDisplay) display.getImpl()).computeSizeProc, shellHandle);
-            OS.g_signal_connect(shellHandle, OS.notify_default_height, ((SwtDisplay) display.getImpl()).notifyProc, SwtWidget.NOTIFY_DEFAULT_HEIGHT);
-            OS.g_signal_connect(shellHandle, OS.notify_default_width, ((SwtDisplay) display.getImpl()).notifyProc, SwtWidget.NOTIFY_DEFAULT_WIDTH);
-            OS.g_signal_connect(shellHandle, OS.notify_maximized, ((SwtDisplay) display.getImpl()).notifyProc, SwtWidget.NOTIFY_MAXIMIZED);
+            if (!popover) {
+                GTK.gtk_widget_realize(shellHandle);
+                long gdkSurface = gtk_widget_get_surface(shellHandle);
+                OS.g_signal_connect(gdkSurface, OS.notify_state, ((SwtDisplay) display.getImpl()).notifyProc, shellHandle);
+                OS.g_signal_connect(gdkSurface, OS.compute_size, ((SwtDisplay) display.getImpl()).computeSizeProc, shellHandle);
+                OS.g_signal_connect(gdkSurface, OS.layout, ((SwtDisplay) display.getImpl()).layoutProc, shellHandle);
+                OS.g_signal_connect(shellHandle, OS.notify_default_height, ((SwtDisplay) display.getImpl()).notifyProc, SwtWidget.NOTIFY_DEFAULT_HEIGHT);
+                OS.g_signal_connect(shellHandle, OS.notify_default_width, ((SwtDisplay) display.getImpl()).notifyProc, SwtWidget.NOTIFY_DEFAULT_WIDTH);
+                OS.g_signal_connect(shellHandle, OS.notify_maximized, ((SwtDisplay) display.getImpl()).notifyProc, SwtWidget.NOTIFY_MAXIMIZED);
+            }
         } else {
             OS.g_signal_connect_closure_by_id(shellHandle, ((SwtDisplay) display.getImpl()).signalIds[WINDOW_STATE_EVENT], 0, ((SwtDisplay) display.getImpl()).getClosure(WINDOW_STATE_EVENT), false);
             OS.g_signal_connect_closure_by_id(shellHandle, ((SwtDisplay) display.getImpl()).signalIds[CONFIGURE_EVENT], 0, ((SwtDisplay) display.getImpl()).getClosure(CONFIGURE_EVENT), false);
@@ -1009,8 +1079,10 @@ public class SwtShell extends SwtDecorations implements IShell {
             OS.g_signal_connect_closure_by_id(shellHandle, ((SwtDisplay) display.getImpl()).signalIds[SIZE_ALLOCATE], 0, ((SwtDisplay) display.getImpl()).getClosure(SIZE_ALLOCATE), false);
         }
         if (GTK.GTK4) {
-            OS.g_signal_connect_closure(shellHandle, OS.close_request, ((SwtDisplay) display.getImpl()).getClosure(CLOSE_REQUEST), false);
-            OS.g_signal_connect(shellHandle, OS.notify_is_active, ((SwtDisplay) display.getImpl()).windowActiveProc, FOCUS_IN);
+            if (!popover) {
+                OS.g_signal_connect_closure(shellHandle, OS.close_request, ((SwtDisplay) display.getImpl()).getClosure(CLOSE_REQUEST), false);
+                OS.g_signal_connect(shellHandle, OS.notify_is_active, ((SwtDisplay) display.getImpl()).windowActiveProc, FOCUS_IN);
+            }
             long keyController = GTK4.gtk_event_controller_key_new();
             GTK4.gtk_widget_add_controller(shellHandle, keyController);
             GTK.gtk_event_controller_set_propagation_phase(keyController, GTK.GTK_PHASE_TARGET);
@@ -1311,6 +1383,8 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
         int[] x = new int[1], y = new int[1];
         if (GTK.GTK4) {
+            if (popover)
+                return new Point(oldX, oldY);
             // TODO: GTK4 GtkWindow no longer has the ability to get position
         } else {
             GTK3.gtk_window_get_position(shellHandle, x, y);
@@ -1341,14 +1415,6 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        if (GTK.GTK4) {
-            int[] widthP = new int[1];
-            int[] heightP = new int[1];
-            GTK4.gtk_widget_get_size_request(shellHandle, widthP, heightP);
-            int width = Math.max(1, widthP[0] + trimWidth());
-            int height = Math.max(1, heightP[0] + trimHeight());
-            return new Point(width, height);
-        }
         int width = Math.max(1, geometry.getMinWidth() + trimWidth());
         int height = Math.max(1, geometry.getMinHeight() + trimHeight());
         return new Point(width, height);
@@ -1850,8 +1916,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     long gtk_size_allocate(long widget, long allocation) {
+        // A GtkPopover is not a GtkWindow and sizes itself to its child; the window-based
+        // allocation handling below does not apply and would emit GTK criticals.
+        if (popover)
+            return 0;
         int width, height;
-        GdkRectangle monitorSize = new GdkRectangle();
         int[] widthA = new int[1];
         int[] heightA = new int[1];
         /*Bug 577431:
@@ -1878,11 +1947,14 @@ public class SwtShell extends SwtDecorations implements IShell {
                     heightA[0] = Math.max(1, heightA[0] - headerNaturalHeight[0]);
                 }
             } else {
-                long display = GDK.gdk_display_get_default();
-                long monitor = GDK.gdk_display_get_monitor_at_surface(display, paintSurface());
-                GDK.gdk_monitor_get_geometry(monitor, monitorSize);
-                widthA[0] = monitorSize.width;
-                heightA[0] = monitorSize.height - headerNaturalHeight[0];
+                /*
+			 * For maximized windows, neither gtk_window_get_default_size() nor
+			 * gdk_surface_get_width/height() have the new dimensions yet when
+			 * notify::maximized fires. The GdkSurface::layout signal fires
+			 * synchronously after the compositor commits the new allocation;
+			 * gtk_layout() handles the resize from there.
+			 */
+                return 0;
             }
         } else {
             GTK3.gtk_window_get_size(shellHandle, widthA, heightA);
@@ -1899,6 +1971,37 @@ public class SwtShell extends SwtDecorations implements IShell {
             resizeBounds(width, height, true);
         }
         return 0;
+    }
+
+    @Override
+    void gtk_layout(long surface, int surfaceWidth, int surfaceHeight) {
+        /*
+	 * Used exclusively for the maximized case:
+	 * notify::maximized fires before the compositor commits the new size, so
+	 * gtk_size_allocate returns 0 early for maximized windows and defers here.
+	 *
+	 * For non-maximized resizes, sizing is already handled correctly via
+	 * gtk_window_get_default_size, so those are skipped here to avoid overriding
+	 * with different surface dimensions.
+	 *
+	 * Surface width and height - total GTK window size including the header bar.
+	 */
+        if (!GTK4.gtk_window_is_maximized(shellHandle))
+            return;
+        long header = GTK4.gtk_window_get_titlebar(shellHandle);
+        int headerH = 0;
+        if (header != 0) {
+            int[] headerNaturalHeight = new int[1];
+            GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
+            headerH = headerNaturalHeight[0];
+        }
+        int newWidth = surfaceWidth;
+        int newHeight = Math.max(1, surfaceHeight - headerH);
+        if ((!resized || oldWidth != newWidth || oldHeight != newHeight) && newWidth > 0) {
+            oldWidth = newWidth;
+            oldHeight = newHeight;
+            resizeBounds(newWidth, newHeight, true);
+        }
     }
 
     private void updateDecorations(long gdkResource) {
@@ -2360,7 +2463,19 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
         int result = 0;
         if (move) {
-            if (!GTK.GTK4) {
+            if (popover) {
+                if (x != oldX || y != oldY) {
+                    moved = true;
+                    oldX = x;
+                    oldY = y;
+                    sendEvent(SWT.Move);
+                    if (isDisposed())
+                        return 0;
+                    result |= MOVED;
+                }
+                if (mapped)
+                    positionPopover();
+            } else if (!GTK.GTK4) {
                 int[] x_pos = new int[1], y_pos = new int[1];
                 GTK3.gtk_window_get_position(shellHandle, x_pos, y_pos);
                 GTK3.gtk_window_move(shellHandle, x, y);
@@ -2399,25 +2514,26 @@ public class SwtShell extends SwtDecorations implements IShell {
             if (geometry.getMaxHeight() > 0) {
                 height = Math.min(height, geometry.getMaxHeight());
             }
-            /*
-		* If the shell is created without a RESIZE style bit, and the
-		* minWidth/minHeight/maxWidth/maxHeight have been set, allow the resize.
-		*/
-            if ((getApi().style & SWT.RESIZE) != 0 || (geometry.getMinHeight() != 0 || geometry.getMinWidth() != 0 || geometry.getMaxHeight() != 0 || geometry.getMaxWidth() != 0)) {
-                if (GTK.GTK4) {
-                    /*
-				 * On GTK4, GtkWindow size includes the header bar. In order to keep window size allocation of the client area
-				 * consistent with previous versions of SWT, we need to include the header bar height in addition to the given height value.
-				 */
-                    long header = GTK4.gtk_window_get_titlebar(shellHandle);
-                    int[] headerNaturalHeight = new int[1];
-                    if (header != 0) {
-                        GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
-                    }
-                    GTK.gtk_window_set_default_size(shellHandle, width, height + headerNaturalHeight[0]);
-                } else {
-                    GTK3.gtk_window_resize(shellHandle, width, height);
+            if (popover) {
+                // A GtkPopover sizes to its child; force the requested size on the content box.
+                GTK.gtk_widget_set_size_request(vboxHandle, width, height);
+                if (mapped)
+                    positionPopover();
+            } else if (GTK.GTK4) {
+                /*
+			 * GtkWindow size includes the header bar. To stay consistent with previous
+			 * versions of SWT, header bar height has to be added to the given height value.
+			 * This applies to all shell styles that have a title bar (e.g. SHELL_TRIM,
+			 * DIALOG_TRIM).
+			 */
+                long header = GTK4.gtk_window_get_titlebar(shellHandle);
+                int[] headerNaturalHeight = new int[1];
+                if (header != 0) {
+                    GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
                 }
+                GTK.gtk_window_set_default_size(shellHandle, width, height + headerNaturalHeight[0]);
+            } else if ((getApi().style & SWT.RESIZE) != 0 || (geometry.getMinHeight() != 0 || geometry.getMinWidth() != 0 || geometry.getMaxHeight() != 0 || geometry.getMaxWidth() != 0)) {
+                GTK3.gtk_window_resize(shellHandle, width, height);
             }
             boolean changed = width != oldWidth || height != oldHeight;
             if (changed) {
@@ -2555,6 +2671,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void setInitialBounds() {
+        // A popover-backed shell has no toplevel window; it is sized via its child size
+        // request and positioned relative to its parent in setBounds(), so skip the
+        // window-based default size handling below.
+        if (popover)
+            return;
         int width = 0, height = 0;
         if ((getApi().state & FOREIGN_HANDLE) != 0) {
             GtkAllocation allocation = new GtkAllocation();
@@ -2573,18 +2694,17 @@ public class SwtShell extends SwtDecorations implements IShell {
                     width = (int) (dest.width * SHELL_TO_MONITOR_RATIO);
                     height = (int) (dest.height * SHELL_TO_MONITOR_RATIO);
                 }
-                if ((getApi().style & SWT.RESIZE) != 0) {
-                    /*
-				 * On GTK4, GtkWindow size includes the header bar. In order to keep window size allocation of the client area
-				 * consistent with previous versions of SWT, we need to include the header bar height in addition to the given height value.
-				 */
-                    long header = GTK4.gtk_window_get_titlebar(shellHandle);
-                    int[] headerNaturalHeight = new int[1];
-                    if (header != 0) {
-                        GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
-                    }
-                    GTK.gtk_window_set_default_size(shellHandle, width, height + headerNaturalHeight[0]);
+                /*
+			 * GtkWindow size includes the header bar. To stay
+			 * consistent with previous versions of SWT the header bar height is added the given height value.
+			 * This applies to all shell styles.
+			 */
+                long header = GTK4.gtk_window_get_titlebar(shellHandle);
+                int[] headerNaturalHeight = new int[1];
+                if (header != 0) {
+                    GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
                 }
+                GTK.gtk_window_set_default_size(shellHandle, width, height + headerNaturalHeight[0]);
             } else {
                 long display = GDK.gdk_display_get_default();
                 if (display != 0) {
@@ -2698,7 +2818,15 @@ public class SwtShell extends SwtDecorations implements IShell {
         geometry.setMinHeight(Math.max(height, trimHeight()) - trimHeight());
         if (GTK.GTK4) {
             geometry.setMinSizeRequested(true);
-            GTK4.gtk_widget_set_size_request(shellHandle, width, height);
+            /*
+		 * Account for headerbar if one is there (CSD on wayland and non-CST on x11/xwayland).
+		 */
+            long header = GTK4.gtk_window_get_titlebar(shellHandle);
+            int[] headerNaturalHeight = new int[1];
+            if (header != 0) {
+                GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
+            }
+            GTK4.gtk_widget_set_size_request(shellHandle, geometry.getMinWidth(), geometry.getMinHeight() + headerNaturalHeight[0]);
             return;
         }
         int hint = GDK.GDK_HINT_MIN_SIZE;
@@ -2931,6 +3059,9 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     public void setText(String string) {
         super.setText(string);
+        // A GtkPopover has no window title; the title is tracked in SWT state only.
+        if (popover)
+            return;
         /*
 	* GTK bug 82013.  For some reason, if the title string
 	* is less than 7 bytes long and is not terminated by
@@ -2946,9 +3077,76 @@ public class SwtShell extends SwtDecorations implements IShell {
         GTK.gtk_window_set_title(shellHandle, buffer);
     }
 
+    /**
+     * Positions a GtkPopover-backed Shell (GTK4 ON_TOP child shells) relative to
+     * its parent.
+     *
+     * SWT display coordinates (oldX/oldY), as produced by {@link Display#map} /
+     * {@link Control#toDisplay}, are relative to the nearest real top-level window.
+     * The popover is parented to that window's content box (vboxHandle), whose
+     * origin does not coincide with the window top when the window draws
+     * client-side decorations. The anchor is therefore translated from shellHandle
+     * space into vboxHandle space so it is correct regardless of decoration mode .
+     * The anchor rectangle spans the requested width so that, with GTK_POS_BOTTOM,
+     * the popover's left edge lines up with the requested location (the popover is
+     * centred horizontally on the anchor).
+     */
+    void positionPopover() {
+        if (!popover)
+            return;
+        Shell parentShell = rootWindowShell();
+        double[] anchorX = new double[1], anchorY = new double[1];
+        if (!GTK4.gtk_widget_translate_coordinates(((SwtShell) parentShell.getImpl()).shellHandle, ((SwtDecorations) parentShell.getImpl()).vboxHandle, oldX, oldY, anchorX, anchorY)) {
+            anchorX[0] = oldX;
+            anchorY[0] = oldY;
+        }
+        GdkRectangle rect = new GdkRectangle();
+        rect.x = (int) anchorX[0];
+        rect.y = (int) anchorY[0];
+        rect.width = Math.max(1, oldWidth);
+        rect.height = 0;
+        GTK.gtk_popover_set_pointing_to(shellHandle, rect);
+    }
+
+    void setVisiblePopover(boolean visible) {
+        showWithParent = visible;
+        if (GTK.gtk_widget_get_mapped(shellHandle) == visible)
+            return;
+        if (visible) {
+            sendEvent(SWT.Show);
+            if (isDisposed())
+                return;
+            positionPopover();
+            GTK.gtk_popover_popup(shellHandle);
+            mapped = true;
+            opened = true;
+            ((SwtDisplay) display.getImpl()).activeShell = this.getApi();
+            ((SwtDisplay) display.getImpl()).activePending = true;
+            if (!resized) {
+                resized = true;
+                sendEvent(SWT.Resize);
+                if (isDisposed())
+                    return;
+                if (layout != null) {
+                    markLayout(false, false);
+                    updateLayout(false);
+                }
+            }
+        } else {
+            fixActiveShell();
+            GTK.gtk_popover_popdown(shellHandle);
+            mapped = false;
+            sendEvent(SWT.Hide);
+        }
+    }
+
     @Override
     public void setVisible(boolean visible) {
         checkWidget();
+        if (popover) {
+            setVisiblePopover(visible);
+            return;
+        }
         if (moved) {
             //fix shell location if it was moved.
             setLocation(oldX, oldY);
@@ -3145,7 +3343,11 @@ public class SwtShell extends SwtDecorations implements IShell {
             }
         }
         if (GTK.GTK4) {
-            GTK4.gtk_window_set_child(shellHandle, vboxHandle);
+            if (popover) {
+                GTK4.gtk_popover_set_child(shellHandle, vboxHandle);
+            } else {
+                GTK4.gtk_window_set_child(shellHandle, vboxHandle);
+            }
         } else {
             GTK3.gtk_container_add(shellHandle, vboxHandle);
         }
@@ -3213,6 +3415,25 @@ public class SwtShell extends SwtDecorations implements IShell {
         // See bug 319612.
         if (isCustomResize())
             return 0;
+        if (GTK.GTK4 && OS.isWayland()) {
+            /*
+		 * On GTK4 Wayland, window decorations are implemented as GTK CSD widgets. The
+		 * title bar (GtkHeaderBar) is part of the GtkWindow and its height must be
+		 * queried dynamically. Use gtk_widget_get_height() if already allocated,
+		 * otherwise gtk_widget_measure() which works even before the window is
+		 * realized/shown.
+		 */
+            long titlebar = GTK4.gtk_window_get_titlebar(shellHandle);
+            if (titlebar != 0) {
+                int height = GTK4.gtk_widget_get_height(titlebar);
+                if (height > 0)
+                    return height;
+                int[] naturalHeight = new int[1];
+                GTK4.gtk_widget_measure(titlebar, GTK.GTK_ORIENTATION_VERTICAL, -1, null, naturalHeight, null, null);
+                return naturalHeight[0];
+            }
+            return 0;
+        }
         boolean hasTitle = false, hasResize = false, hasBorder = false;
         hasTitle = (getApi().style & (SWT.MIN | SWT.MAX | SWT.TITLE | SWT.MENU)) != 0;
         hasResize = (getApi().style & SWT.RESIZE) != 0;
@@ -3240,6 +3461,10 @@ public class SwtShell extends SwtDecorations implements IShell {
         // See bug 319612.
         if (isCustomResize())
             return 0;
+        if (GTK.GTK4 && OS.isWayland()) {
+            // On GTK4 Wayland CSD, the title bar adds height only.
+            return 0;
+        }
         boolean hasTitle = false, hasResize = false, hasBorder = false;
         hasTitle = (getApi().style & (SWT.MIN | SWT.MAX | SWT.TITLE | SWT.MENU)) != 0;
         hasResize = (getApi().style & SWT.RESIZE) != 0;
@@ -3460,6 +3685,10 @@ public class SwtShell extends SwtDecorations implements IShell {
         int[] x = new int[1], y = new int[1];
         if ((getApi().state & SwtWidget.DISPOSE_SENT) == 0) {
             if (GTK.GTK4) {
+                if (popover) {
+                    x[0] = oldX;
+                    y[0] = oldY;
+                }
                 // TODO: GTK4 GtkWindow no longer has the ability to get position
             } else {
                 GTK3.gtk_window_get_position(shellHandle, x, y);
@@ -3486,8 +3715,30 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void releaseHandle() {
+        if (popover && shellHandle != 0) {
+            /*
+		 * A GtkPopover is parented to its logical parent's widget via gtk_widget_set_parent
+		 * rather than added to a GtkWindow, so it must be explicitly unparented (which drops
+		 * the parent's reference and destroys it) instead of relying on gtk_window_destroy.
+		 * This is done here rather than in destroyWidget() because a child shell disposed by
+		 * its parent is released with destroy=false, which calls releaseHandle() but not
+		 * destroyWidget(); unparenting here covers both paths and avoids leaving the popover
+		 * attached to a finalizing parent window.
+		 */
+            GTK.gtk_popover_popdown(shellHandle);
+            GTK.gtk_widget_unparent(shellHandle);
+        }
         super.releaseHandle();
         shellHandle = 0;
+    }
+
+    @Override
+    void destroyWidget() {
+        if (popover) {
+            releaseHandle();
+            return;
+        }
+        super.destroyWidget();
     }
 
     @Override

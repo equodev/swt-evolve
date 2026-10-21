@@ -134,13 +134,6 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void _setText(String text) {
-        /*
-	* Bug in Windows.  When a Button control is right-to-left and
-	* is disabled, the first pixel of the text is clipped.  The fix
-	* is to append a space to the text.
-	*/
-        if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
-        }
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
         }
@@ -257,13 +250,6 @@ public class DartButton extends DartControl implements IButton {
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
-        /*
-	* Bug in Windows.  When a Button control is right-to-left and
-	* is disabled, the first pixel of the text is clipped.  The fix
-	* is to append a space to the text.
-	*/
-        if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
-        }
         /*
 	* Bug in Windows.  When a button has the style BS_CHECKBOX
 	* or BS_RADIOBUTTON, is checked, and is displaying both an
@@ -806,9 +792,6 @@ public class DartButton extends DartControl implements IButton {
 
     private int getCheckboxTextOffset(long hdc) {
         int result = 0;
-        {
-            result += DPIUtil.pointToPixel(13, getApi().nativeZoom);
-        }
         return result;
     }
 

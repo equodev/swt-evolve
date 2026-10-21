@@ -463,7 +463,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         super.drawImageWithFrameInView(id, sel, image, rect, view);
         if (drawSelected) {
             NSColor.colorWithDeviceRed(0, 0, 0, .3f).setFill();
-            OS.NSRectFillUsingOperation(rect, OS.NSCompositeSourceAtop);
+            OS.NSRectFillUsingOperation(rect, OS.NSCompositingOperationSourceAtop);
             OS.CGContextEndTransparencyLayer(cgContext);
             NSGraphicsContext.currentContext().restoreGraphicsState();
         }

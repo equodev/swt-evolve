@@ -6,6 +6,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/control_evolve.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'package:swtflutter/src/styles.dart';
@@ -234,8 +235,10 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       _lastX = _localX ?? bounds.x;
       _lastY = _localY ?? bounds.y;
 
-      _startX = details.globalPosition.dx.round() - _lastX;
-      _startY = details.globalPosition.dy.round() - _lastY;
+      // The pointer is read against the view and the bounds are SWT units.
+      final pointer = logicalToSwt(details.globalPosition);
+      _startX = pointer.dx.round() - _lastX;
+      _startY = pointer.dy.round() - _lastY;
     }
   }
 
@@ -250,9 +253,10 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
     int newX = _lastX;
     int newY = _lastY;
+    final pointer = logicalToSwt(details.globalPosition);
 
     if (isHorizontal) {
-      newY = details.globalPosition.dy.round() - _startY;
+      newY = pointer.dy.round() - _startY;
 
       if (newY < 0) {
         newY = 0;
@@ -267,7 +271,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         newY = maxY;
       }
     } else {
-      newX = details.globalPosition.dx.round() - _startX;
+      newX = pointer.dx.round() - _startX;
 
       if (newX < 0) {
         newX = 0;

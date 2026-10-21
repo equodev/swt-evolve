@@ -157,6 +157,11 @@ public class DartCanvas extends DartComposite implements ICanvas {
     }
 
     @Override
+    boolean hooksPaint() {
+        return super.hooksPaint();
+    }
+
+    @Override
     void redrawWidget(int x, int y, int width, int height, boolean redrawAll, boolean all, boolean trim) {
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)

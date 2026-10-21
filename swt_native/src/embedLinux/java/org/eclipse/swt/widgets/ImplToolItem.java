@@ -23,6 +23,8 @@ public interface ImplToolItem extends ImplItem {
 
     long _groupHandle();
 
+    long _imageBoxHandle();
+
     ToolBar _parent();
 
     Control _control();

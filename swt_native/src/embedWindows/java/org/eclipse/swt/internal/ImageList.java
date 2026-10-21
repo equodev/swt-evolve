@@ -28,9 +28,7 @@ public class ImageList {
 
     Image[] images;
 
-    private final int zoom;
-
-    private final int width, height;
+    private int width, height;
 
     private final int flags;
 
@@ -48,10 +46,11 @@ public class ImageList {
         this.flags = listFlags;
         this.height = height;
         this.width = width;
-        handle = OS.ImageList_Create(width, height, this.flags, 16, 16);
+        int widthInPixels = DPIUtil.pointToPixel(width, zoom);
+        int heightInPixels = DPIUtil.pointToPixel(height, zoom);
+        handle = OS.ImageList_Create(widthInPixels, heightInPixels, this.flags, 16, 16);
         zoomToHandle.put(zoom, handle);
         images = new Image[4];
-        this.zoom = zoom;
     }
 
     public int add(Image image) {
@@ -64,8 +63,10 @@ public class ImageList {
             index++;
         }
         if (count == 0) {
-            Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), zoom, 100);
-            OS.ImageList_SetIconSize(handle, rect.width, rect.height);
+            Rectangle bounds = image.getBounds();
+            width = bounds.width;
+            height = bounds.height;
+            zoomToHandle.forEach((zoom, handleForZoom) -> OS.ImageList_SetIconSize(handleForZoom, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom)));
         }
         setForAllHandles(index, image, count);
         if (index == images.length) {
@@ -322,8 +323,8 @@ public class ImageList {
     }
 
     public void dispose() {
-        if (handle != 0)
-            OS.ImageList_Destroy(handle);
+        zoomToHandle.values().stream().filter(it -> it != 0).forEach(OS::ImageList_Destroy);
+        zoomToHandle.clear();
         handle = 0;
         images = null;
     }
@@ -334,8 +335,8 @@ public class ImageList {
 
     public long getHandle(int targetZoom) {
         if (!zoomToHandle.containsKey(targetZoom)) {
-            int scaledWidth = DPIUtil.pointToPixel(DPIUtil.pixelToPoint(width, this.zoom), targetZoom);
-            int scaledHeight = DPIUtil.pointToPixel(DPIUtil.pixelToPoint(height, this.zoom), targetZoom);
+            int scaledWidth = DPIUtil.pointToPixel(width, targetZoom);
+            int scaledHeight = DPIUtil.pointToPixel(height, targetZoom);
             long newImageListHandle = OS.ImageList_Create(scaledWidth, scaledHeight, flags, 16, 16);
             int count = OS.ImageList_GetImageCount(handle);
             for (int i = 0; i < count; i++) {
@@ -367,14 +368,11 @@ public class ImageList {
      * {@return size of Images in the ImageList in points}
      */
     public Point getImageSize() {
-        int[] cx = new int[1], cy = new int[1];
-        OS.ImageList_GetIconSize(handle, cx, cy);
-        return Win32DPIUtils.pixelToPointAsSize(new Point(cx[0], cy[0]), zoom);
+        return new Point(width, height);
     }
 
-    public boolean isFittingFor(int style, int width, int height, int zoom) {
-        Point imageSize = getImageSize();
-        return this.style == style && imageSize.x == width && imageSize.y == height && this.zoom == zoom;
+    public boolean isFittingFor(int style, int width, int height) {
+        return this.style == style && this.width == width && this.height == height;
     }
 
     public int indexOf(Image image) {
@@ -397,15 +395,6 @@ public class ImageList {
         if (image != null)
             setForAllHandles(index, image, count);
         images[index] = image;
-    }
-
-    public void remove(int index) {
-        int count = OS.ImageList_GetImageCount(handle);
-        if (!(0 <= index && index < count))
-            return;
-        zoomToHandle.values().forEach(handle -> OS.ImageList_Remove(handle, index));
-        System.arraycopy(images, index + 1, images, index, --count - index);
-        images[index] = null;
     }
 
     public int removeRef() {

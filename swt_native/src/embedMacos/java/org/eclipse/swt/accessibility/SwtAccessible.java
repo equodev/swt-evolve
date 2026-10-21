@@ -125,7 +125,7 @@ public class SwtAccessible implements IAccessible {
      * @since 3.5
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     protected SwtAccessible(Accessible api) {
         setApi(api);
     }

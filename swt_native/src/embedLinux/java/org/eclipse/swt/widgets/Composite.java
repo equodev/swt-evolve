@@ -133,7 +133,7 @@ public class Composite extends Scrollable {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         getImpl().changed(changed);
     }

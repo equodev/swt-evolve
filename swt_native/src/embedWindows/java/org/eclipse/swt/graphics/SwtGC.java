@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
+import org.eclipse.swt.graphics.Region.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
@@ -738,6 +739,10 @@ public final class SwtGC extends SwtResource implements IGC {
                 style |= Gdip.FontStyleBold;
             if (logFont.lfItalic != 0)
                 style |= Gdip.FontStyleItalic;
+            if (logFont.lfUnderline != 0)
+                style |= Gdip.FontStyleUnderline;
+            if (logFont.lfStrikeOut != 0)
+                style |= Gdip.FontStyleStrikeout;
             char[] chars = logFont.lfFaceName;
             int index = 0;
             while (index < chars.length) {
@@ -772,7 +777,22 @@ public final class SwtGC extends SwtResource implements IGC {
             if (outFont != null && font != 0) {
                 long hHeap = OS.GetProcessHeap();
                 long pLogFont = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, LOGFONT.sizeof);
-                Gdip.Font_GetLogFontW(font, graphics, pLogFont);
+                if (graphics != 0) {
+                    // Font_GetLogFontW applies the graphics's world transform when converting the
+                    // font size to LOGFONT units. A non-identity user transform would cause lfHeight
+                    // to be scaled, producing an incorrectly-sized GDI font for GetTextMetrics.
+                    // Temporarily set identity so the LOGFONT reflects device-pixel metrics.
+                    long savedMatrix = Gdip.Matrix_new(0, 0, 0, 0, 0, 0);
+                    Gdip.Graphics_GetTransform(graphics, savedMatrix);
+                    long identityMatrix = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
+                    Gdip.Graphics_SetTransform(graphics, identityMatrix);
+                    Gdip.Font_GetLogFontW(font, graphics, pLogFont);
+                    Gdip.Graphics_SetTransform(graphics, savedMatrix);
+                    Gdip.Matrix_delete(identityMatrix);
+                    Gdip.Matrix_delete(savedMatrix);
+                } else {
+                    Gdip.Font_GetLogFontW(font, graphics, pLogFont);
+                }
                 outFont[0] = OS.CreateFontIndirect(pLogFont);
                 OS.HeapFree(hHeap, 0, pLogFont);
             }
@@ -1354,10 +1374,14 @@ public final class SwtGC extends SwtResource implements IGC {
 		 * computed to pixels depending on the factor of the full image bounds to the
 		 * actual OS handle size that will be used.
 		 */
-            float scaleFactor = Math.min(1f * imageHandle.width() / fullImageBounds.width, 1f * imageHandle.height() / fullImageBounds.height);
-            int closestZoomOfHandle = Math.round(scaleFactor * 100);
-            Rectangle srcPixels = Win32DPIUtils.pointToPixel(drawable, src, closestZoomOfHandle);
-            if (closestZoomOfHandle != 100) {
+            float scaleFactorX = (1f * imageHandle.width()) / fullImageBounds.width;
+            float scaleFactorY = (1f * imageHandle.height()) / fullImageBounds.height;
+            int srcXPixels = Math.round(scaleFactorX * src.x);
+            int srcWidthPixels = Math.round(scaleFactorX * (src.x + src.width)) - srcXPixels;
+            int srcYPixels = Math.round(scaleFactorY * src.y);
+            int srcHeightPixels = Math.round(scaleFactorY * (src.y + src.height)) - srcYPixels;
+            Rectangle srcPixels = new Rectangle(srcXPixels, srcYPixels, srcWidthPixels, srcHeightPixels);
+            if (Math.abs(scaleFactorX - 1f) >= 0.01f || Math.abs(scaleFactorY - 1f) >= 0.01f) {
                 /*
 			 * This is a HACK! Due to rounding errors at fractional scale factors,
 			 * the coordinates may be slightly off. The workaround is to restrict
@@ -1366,7 +1390,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 int errX = srcPixels.x + srcPixels.width - imageHandle.width();
                 int errY = srcPixels.y + srcPixels.height - imageHandle.height();
                 if (errX != 0 || errY != 0) {
-                    if (errX <= closestZoomOfHandle / 100 && errY <= closestZoomOfHandle / 100) {
+                    if (errX <= Math.max(1, scaleFactorX) && errY <= Math.max(1, scaleFactorY)) {
                         srcPixels.intersect(new Rectangle(0, 0, imageHandle.width(), imageHandle.height()));
                     } else {
                         SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3197,6 +3221,10 @@ public final class SwtGC extends SwtResource implements IGC {
         char[] buffer;
         if ((flags & SWT.DRAW_DELIMITER) == 0) {
             string = string.replaceAll("[\\r\\n]+", "");
+        } else {
+            // Graphics_DrawString only recognises \n as a line break, not bare \r.
+            // Normalise \r\n -> \n first, then lone \r -> \n (order matters).
+            string = string.replace("\r\n", "\n").replace("\r", "\n");
         }
         int length = string.length();
         if (length != 0) {
@@ -4118,16 +4146,10 @@ public final class SwtGC extends SwtResource implements IGC {
 
     private class GetClippingOperation extends Operation {
 
-        private final Map<Integer, Long> zoomToRegionHandle = new HashMap<>();
+        private final SwtRegion.ZoomToRegionMap zoomToRegionHandle = new SwtRegion.ZoomToRegionMap();
 
         public GetClippingOperation(Region region) {
-            ((SwtRegion) region.getImpl()).set(zoom -> {
-                if (!zoomToRegionHandle.containsKey(zoom)) {
-                    System.err.println("No clipping handle for zoom " + zoom + " has been created on this GC");
-                    return zoomToRegionHandle.values().iterator().next();
-                }
-                return zoomToRegionHandle.get(zoom);
-            }, getZoom());
+            ((SwtRegion) region.getImpl()).set(zoomToRegionHandle, getZoom());
         }
 
         // Whenever the GC handle is recalculated for a new zoom, we compute and store the clipping
@@ -4135,14 +4157,11 @@ public final class SwtGC extends SwtResource implements IGC {
         // that clipping is set can retrieve it from the storage when required.
         @Override
         void apply() {
-            zoomToRegionHandle.computeIfAbsent(getZoom(), __ -> getClippingRegion());
+            zoomToRegionHandle.register(getZoom(), () -> getClippingRegion());
         }
 
         @Override
         void disposeAll() {
-            for (long handle : zoomToRegionHandle.values()) {
-                OS.DeleteObject(handle);
-            }
             super.disposeAll();
         }
     }
@@ -5064,7 +5083,6 @@ public final class SwtGC extends SwtResource implements IGC {
         SetBackgroundOperation(Color color) {
             RGB rgb = color.getRGB();
             this.color = new Color(rgb);
-            registerForDisposal(this.color);
         }
 
         @Override
@@ -5108,17 +5126,33 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetBackgroundPatternOperation(pattern));
     }
 
-    private class SetBackgroundPatternOperation extends Operation {
+    private abstract class PatternOperation extends Operation {
 
-        private final Pattern pattern;
+        private Pattern pattern;
+
+        PatternOperation(Pattern pattern) {
+            this.pattern = pattern;
+        }
+
+        protected Pattern getPattern() {
+            if (pattern != null && pattern.isDisposed()) {
+                // recreate locally managed pattern if the original was disposed
+                pattern = ((SwtPattern) pattern.getImpl()).copy();
+                registerForDisposal(pattern);
+            }
+            return pattern;
+        }
+    }
+
+    private class SetBackgroundPatternOperation extends PatternOperation {
 
         SetBackgroundPatternOperation(Pattern pattern) {
-            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
-            registerForDisposal(this.pattern);
+            super(pattern);
         }
 
         @Override
         void apply() {
+            Pattern pattern = getPattern();
             if (data.gdipGraphics == 0 && pattern == null)
                 return;
             initGdip();
@@ -5433,7 +5467,6 @@ public final class SwtGC extends SwtResource implements IGC {
         SetForegroundOperation(Color color) {
             RGB rgb = color.getRGB();
             this.color = new Color(rgb);
-            registerForDisposal(this.color);
         }
 
         @Override
@@ -5476,17 +5509,15 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetForegroundPatternOperation(pattern));
     }
 
-    private class SetForegroundPatternOperation extends Operation {
-
-        private final Pattern pattern;
+    private class SetForegroundPatternOperation extends PatternOperation {
 
         SetForegroundPatternOperation(Pattern pattern) {
-            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
-            registerForDisposal(this.pattern);
+            super(pattern);
         }
 
         @Override
         void apply() {
+            Pattern pattern = getPattern();
             if (data.gdipGraphics == 0 && pattern == null)
                 return;
             initGdip();
@@ -5963,14 +5994,22 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     /**
-     * If the argument is <code>true</code>, puts the receiver
-     * in a drawing mode where the resulting color in the destination
-     * is the <em>exclusive or</em> of the color values in the source
-     * and the destination, and if the argument is <code>false</code>,
-     * puts the receiver in a drawing mode where the destination color
-     * is replaced with the source color value.
+     * If the argument is <code>true</code>, puts the receiver in a drawing mode
+     * where the resulting color in the destination is the <em>exclusive or</em> of
+     * the color values in the source and the destination, and if the argument is
+     * <code>false</code>, puts the receiver in a drawing mode where the destination
+     * color is replaced with the source color value.
+     * <p>
+     * <b>IMPORTANT:</b> This operation may not work on every platform or with every
+     * configuration. Especially on Windows, GDI+ has no direct support for raster
+     * operations (ROPs). This means that advanced graphics must be <b>disabled</b>
+     * when using XOR mode. More specifically, this means that all operations that
+     * require advanced mode (e.g. {@link Transform}) can't be used in combination
+     * with XOR mode.
+     * </p>
      *
-     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise <em>source copy</em> mode is used
+     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise
+     *            <em>source copy</em> mode is used
      *
      * @exception SWTException <ul>
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
@@ -6261,9 +6300,12 @@ public final class SwtGC extends SwtResource implements IGC {
         return new Point(rect.right, rect.bottom);
     }
 
-    void refreshFor(Drawable drawable, SwtImage.ImageHandle imageHandle) {
+    void reapplyTo(Drawable drawable, SwtImage.ImageHandle imageHandle) {
         if (drawable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (!((SwtGCData) data.getImpl()).reapplicable) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         destroy();
         GCData newData = new GCData();
         ((SwtGCData) originalData.getImpl()).copyTo(newData);
@@ -6380,9 +6422,13 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     private void storeAndApplyOperationForExistingHandle(Operation operation) {
-        removePreviousOperationIfSupercededBy(operation);
-        operations.add(operation);
         operation.apply();
+        if (((SwtGCData) data.getImpl()).reapplicable) {
+            removePreviousOperationIfSupercededBy(operation);
+            operations.add(operation);
+        } else {
+            operation.disposeAll();
+        }
     }
 
     private void removePreviousOperationIfSupercededBy(Operation operation) {

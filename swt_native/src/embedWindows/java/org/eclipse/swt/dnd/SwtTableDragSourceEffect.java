@@ -91,7 +91,7 @@ public class SwtTableDragSourceEffect extends SwtDragSourceEffect implements ITa
         dragSourceImage = null;
         SHDRAGIMAGE shdi = new SHDRAGIMAGE();
         //$NON-NLS-1$
-        int DI_GETDRAGIMAGE = OS.RegisterWindowMessage(new TCHAR(0, "ShellGetDragImage", true));
+        int DI_GETDRAGIMAGE = OS.RegisterWindowMessage(new TCHAR("ShellGetDragImage", true));
         if (OS.SendMessage(control.handle, DI_GETDRAGIMAGE, 0, shdi) != 0) {
             if ((control.getStyle() & SWT.MIRRORED) != 0) {
                 event.offsetX = shdi.sizeDragImage.cx - shdi.ptOffset.x;

@@ -6,6 +6,7 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderMetaData;
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
@@ -439,34 +440,43 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   /// The point to hand the workbench for a drag on this tab, in the folder's own coordinates - the
   /// ones it maps the cursor into before asking which tab is there.
   ///
-  /// The centre of what is DRAWN of the tab, not the centre of the tab: a tab scrolled half out at
-  /// the strip's left edge has its own centre at a negative x, which is outside the folder, and a
-  /// drag whose point finds no tab is read as a drag of the whole stack.
-  Offset? _dragPointFor(Rect tabInGlobal) {
+  /// Where the press went down, when it is on what is DRAWN of the tab; else the centre of that.
+  /// Not the centre of the tab: a tab scrolled half out at the strip's left edge has its own centre
+  /// at a negative x, which is outside the folder, and a drag whose point finds no tab is read as a
+  /// drag of the whole stack.
+  Offset? _dragPointFor(Rect tabInGlobal, Offset? pressInGlobal) {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return null;
-    final local = Rect.fromPoints(
-        box.globalToLocal(tabInGlobal.topLeft), box.globalToLocal(tabInGlobal.bottomRight));
-    final drawn = local.intersect(Offset.zero & box.size);
+    final drawn = _toLocal(box, tabInGlobal).intersect(Offset.zero & box.size);
     if (drawn.isEmpty) return null;
-    return drawn.center;
+    final press = pressInGlobal == null ? null : box.globalToLocal(pressInGlobal);
+    return press != null && drawn.contains(press) ? press : drawn.center;
   }
+
+  static Rect _toLocal(RenderBox box, Rect global) =>
+      Rect.fromPoints(box.globalToLocal(global.topLeft), box.globalToLocal(global.bottomRight));
 
   String _reportedStrip = '';
 
   /// Tells Java where this side draws each tab, as `x,width` pairs in the folder's own coordinates
   /// - which is what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides
-  /// which view a drag picked up.
-  void _handleStripLayout(List<Rect> tabs) {
+  /// which view a drag picked up - then, after a `;`, each tab's close button as `x,y,width,height`
+  /// (zeros for a tab drawn without one).
+  void _handleStripLayout(List<DrawnTab> tabs) {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return;
-    final buffer = StringBuffer();
+    final strip = <String>[];
+    final close = <String>[];
     for (final tab in tabs) {
-      final left = box.globalToLocal(tab.topLeft).dx;
-      if (buffer.isNotEmpty) buffer.write(',');
-      buffer.write('${left.round()},${tab.width.round()}');
+      final local = _toLocal(box, tab.tab);
+      strip.add('${local.left.round()},${local.width.round()}');
+      final button = tab.close == null ? null : _toLocal(box, tab.close!);
+      close.add(button == null
+          ? '0,0,0,0'
+          : '${button.left.round()},${button.top.round()},'
+              '${button.width.round()},${button.height.round()}');
     }
-    final report = buffer.toString();
+    final report = '${strip.join(',')};${close.join(',')}';
     if (report == _reportedStrip) return;
     _reportedStrip = report;
     widget.sendCTabFolderstripLaidOut(state, VEvent()..text = report);
@@ -542,14 +552,15 @@ class _CTabBar extends StatefulWidget {
   final void Function(BuildContext, CTabFolderThemeExtension widgetTheme)? onChevronShowList;
 
 
-  /// Where each tab is drawn, in global coordinates, for the side that answers hit tests.
-  final void Function(List<Rect> tabs)? onStripLayout;
+  /// Where each tab and its close button are drawn, for the side that answers hit tests.
+  final void Function(List<DrawnTab> tabs)? onStripLayout;
 
   /// Every press on the tabs or on the empty strip beside them.
   final ValueChanged<PointerDownEvent>? onStripPointerDown;
 
-  /// The point to report for a drag on a tab, given where that tab is drawn.
-  final Offset? Function(Rect tabInGlobal)? dragPointFor;
+  /// The point to report for a drag on a tab, given where that tab is drawn and where the press
+  /// went down.
+  final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
   const _CTabBar({
     required this.state,
@@ -1233,16 +1244,20 @@ class _CTabBarState extends State<_CTabBar> {
                   cursor: enabled
                       ? SystemMouseCursors.click
                       : SystemMouseCursors.basic,
-                  child: GestureDetector(
-                    onTap: onClose,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        bottom: widgetTheme.tabCloseIconBottomPadding,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: widgetTheme.tabCloseIconSize,
-                        color: getCTabCloseButtonColor(widgetTheme, isSelected),
+                  child: MetaData(
+                    metaData: _tabCloseButton,
+                    behavior: HitTestBehavior.opaque,
+                    child: GestureDetector(
+                      onTap: onClose,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom: widgetTheme.tabCloseIconBottomPadding,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: widgetTheme.tabCloseIconSize,
+                          color: getCTabCloseButtonColor(widgetTheme, isSelected),
+                        ),
                       ),
                     ),
                   ),
@@ -1289,8 +1304,18 @@ class _CTabBarState extends State<_CTabBar> {
     widget.onChevronShowList?.call(buttonContext, widgetTheme);
   }
 
+  /// The controls row gives its children unbounded width, and the toolbar's own row fills whatever
+  /// it gets: unbounded, it cannot be laid out, and neither can the strip or the page below it.
+  /// The width Java gave the control bounds it, and arrives on the control's own channel.
   Widget _buildTopRightComposite(VComposite composite, {Color? backgroundColor}) {
-    return ToolbarComposite(value: composite, backgroundColor: backgroundColor);
+    return ListenableBuilder(
+      listenable: VRegistry.instance.boundsChangesOn([VRegistry.channelOf(composite)]),
+      builder: (context, toolbar) {
+        final bounds = composite.bounds;
+        return SizedBox(width: hasBounds(bounds) ? bounds!.width.toDouble() : 0, child: toolbar);
+      },
+      child: ToolbarComposite(value: composite, backgroundColor: backgroundColor),
+    );
   }
 
   Widget _buildControlButton({
@@ -1727,6 +1752,35 @@ class _CTabInsertionMarkerPainter extends CustomPainter {
       oldDelegate.color != color;
 }
 
+/// Marks a tab's close button, so the strip report can find where it is drawn.
+const _tabCloseButton = #ctabCloseButton;
+
+/// Where a tab and its close button are drawn, in global coordinates.
+class DrawnTab {
+  final Rect tab;
+  final Rect? close;
+
+  const DrawnTab(this.tab, this.close);
+}
+
+Rect _globalRect(RenderBox box) => Rect.fromPoints(
+    box.localToGlobal(Offset.zero), box.localToGlobal(box.size.bottomRight(Offset.zero)));
+
+RenderBox? _closeButtonIn(RenderObject root) {
+  RenderBox? found;
+  void visit(RenderObject node) {
+    if (found != null) return;
+    if (node is RenderMetaData && node.metaData == _tabCloseButton && node.hasSize) {
+      found = node;
+      return;
+    }
+    node.visitChildren(visit);
+  }
+
+  visit(root);
+  return found;
+}
+
 /// A CTabFolder's tab row. Every tab is a Flutter [Draggable] carrying a [DndDragPayload] and
 /// the row itself is a drop target, so a tab dropped on a *different* folder's row resolves
 /// there and reaches Java as a real `DND.Drop`.
@@ -1750,11 +1804,12 @@ class TabDragRow extends StatefulWidget {
   final ValueChanged<int>? onTabDragStarted;
   final VoidCallback? onDragStart;
 
-  /// Where each tab is drawn, in global coordinates.
-  final void Function(List<Rect> tabs)? onStripLayout;
+  /// Where each tab and its close button are drawn.
+  final void Function(List<DrawnTab> tabs)? onStripLayout;
 
-  /// The point to report for a drag on a tab, given where that tab is drawn.
-  final Offset? Function(Rect tabInGlobal)? dragPointFor;
+  /// The point to report for a drag on a tab, given where that tab is drawn and where the press
+  /// went down, both in global coordinates.
+  final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
   const TabDragRow({
     super.key,
@@ -1802,13 +1857,14 @@ class _TabDragRowState extends State<TabDragRow> {
   void reportStripLayout() {
     final report = widget.onStripLayout;
     if (report == null) return;
-    final rects = <Rect>[];
+    final tabs = <DrawnTab>[];
     for (var i = 0; i < widget.children.length; i++) {
       final box = _itemBox(i);
       if (box == null || !box.hasSize) return;
-      rects.add(box.localToGlobal(Offset.zero) & box.size);
+      final close = _closeButtonIn(box);
+      tabs.add(DrawnTab(_globalRect(box), close == null ? null : _globalRect(close)));
     }
-    report(rects);
+    report(tabs);
   }
 
   final GlobalKey _rowKey = GlobalKey();
@@ -1822,6 +1878,9 @@ class _TabDragRowState extends State<TabDragRow> {
   }
 
   RenderBox? get _row => _rowKey.currentContext?.findRenderObject() as RenderBox?;
+
+  /// Where the last press on the strip went down.
+  Offset? _pressAt;
 
   RenderBox? _itemBox(int index) => index < _itemKeys.length
       ? _itemKeys[index].currentContext?.findRenderObject() as RenderBox?
@@ -1892,20 +1951,20 @@ class _TabDragRowState extends State<TabDragRow> {
       widget: widget.folderWidget,
       state: widget.folderState,
       alwaysDraggable: true,
-      // The workbench reads DragDetect's x/y to work out which tab is being dragged, so the event
-      // has to carry the tab's own position - in the folder's coordinates, which is what it maps
-      // the cursor into before asking. Not the row's: the row is the strip's scrolling content, so
+      // The workbench reads DragDetect's x/y to work out which tab is being dragged, and the folder
+      // tests it against the drawn close buttons, so the event carries where the press went down on
+      // the tab - in the folder's coordinates, which is what it maps the cursor into before asking.
+      // Not the row's: the row is the strip's scrolling content, so
       // once the strip has been scrolled its coordinates are the tab's unscrolled position, and the
       // workbench finds no tab there and drags the whole stack instead.
       dragDetectEvent: () {
         final box = _itemBox(index);
-        final centre = box == null
+        final point = box == null
             ? Offset.zero
-            : widget.dragPointFor?.call(box.localToGlobal(Offset.zero) & box.size) ??
-                Offset.zero;
+            : widget.dragPointFor?.call(_globalRect(box), _pressAt) ?? Offset.zero;
         return VEvent()
-          ..x = centre.dx.round()
-          ..y = centre.dy.round();
+          ..x = point.dx.round()
+          ..y = point.dy.round();
       },
       onDragStarted: () {
         widget.onDragStart?.call();
@@ -1966,12 +2025,15 @@ class _TabDragRowState extends State<TabDragRow> {
 
     // mainAxisSize.min so the row takes its natural width and the scroll view overflows when
     // tabs don't fit; the default (max) fills and clips instead.
-    final row = Row(
-      key: _rowKey,
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-        count,
-        (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+    final row = Listener(
+      onPointerDown: (e) => _pressAt = e.position,
+      child: Row(
+        key: _rowKey,
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(
+          count,
+          (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+        ),
       ),
     );
 
@@ -1988,8 +2050,7 @@ class _TabDragRowState extends State<TabDragRow> {
         return index;
       },
       resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
-      resolvePosition: (details) =>
-          _row?.globalToLocal(details.offset) ?? details.offset,
+      resolvePosition: (details) => _row?.globalToLocal(details.offset),
       onDrop: _handleDrop,
       builder: (context, child, negotiation, isHovering) {
         if (!isHovering) _insertHover.update(null);
