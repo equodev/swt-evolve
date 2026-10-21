@@ -3,7 +3,7 @@
 //
 // An application is free to pin a control's height through GridData.heightHint,
 // and real ones do: a preference page hints 18px for its READ_ONLY combos --
-// enough for a native combo cell, well under the height this one prefers. The
+// enough for a native combo cell, well under the ~34px this one prefers. The
 // text-field padding is a fixed inset, so the Row leaves EditableText a 2px
 // viewport and the glyphs are cut off at the bottom. (Measured live on that
 // page: combo render box 364x20, EditableText viewport 310x2, line height 16.)
@@ -18,7 +18,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/swt.dart';
-import 'package:swtflutter/src/theme/theme_extensions/combo_theme_extension.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 
 VRectangle _rect(int x, int y, int width, int height) => VRectangle()
@@ -92,8 +91,7 @@ void main() {
     final double boxHeight = tester.getSize(find.byType(ComboSwt<VCombo>)).height;
     final double viewportHeight = tester.getSize(editable).height;
 
-    final theme = Theme.of(tester.element(editable)).extension<ComboThemeExtension>()!;
-    expect(boxHeight - viewportHeight,
-        theme.textFieldPadding.vertical + theme.borderWidth * 2);
+    // 8px of padding above and below the text, and the 1px border on each side.
+    expect(boxHeight - viewportHeight, 18.0);
   });
 }

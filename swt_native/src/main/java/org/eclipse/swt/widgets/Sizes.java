@@ -45,11 +45,8 @@ public class Sizes {
 
     public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
         Point size = ButtonSizes.computeSize(c, wHint, hHint, changed);
-        int style = c.getApi().getStyle();
         if (wHint == SWT.DEFAULT)
-            size.x += 2 * pushButtonMargin(style);
-        if (hHint == SWT.DEFAULT && (style & (SWT.CHECK | SWT.RADIO)) != 0)
-            size.y = Math.max(size.y, SingleLineHeight.of(c));
+            size.x += 2 * pushButtonMargin(c.getApi().getStyle());
         return size;
     }
 
@@ -161,10 +158,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {
-        Point size = ComboSizes.computeSize(c, wHint, hHint, changed);
-        if (hHint == SWT.DEFAULT && (c.getApi().getStyle() & SWT.SIMPLE) == 0)
-            size.y = Math.max(size.y, SingleLineHeight.of(c));
-        return size;
+        return ComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
     private static boolean inInfoPopup(Control c) {

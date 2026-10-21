@@ -8,8 +8,9 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.*;
 
 /**
- * A filter row as a RowLayout lays it out: each child top-aligned at its preferred height, so the
- * date fields, check boxes and combo only line up when they are equally tall.
+ * A filter row as a RowLayout lays it out: each child top-aligned at its preferred height. Each date
+ * field is a Text with an ARROW button beside it, so an arrow taller than the Text stretches the
+ * field and the row no longer lines up.
  */
 public class RowLayoutFilterRowSnippet {
 
