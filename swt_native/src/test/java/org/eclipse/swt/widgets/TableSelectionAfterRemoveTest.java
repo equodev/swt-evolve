@@ -81,14 +81,29 @@ class TableSelectionAfterRemoveTest {
     }
 
     @Test
-    @DisplayName("removing the selected last row leaves nothing selected")
+    @DisplayName("removing the selected last row leaves nothing selected and tells the client")
     void removeSelectedLastRow() {
         Table table = table(SWT.SINGLE, 3);
         table.setSelection(2);
+        value(table).clearDirty();
 
         table.remove(2);
 
         assertNothingSelected(table);
+        assertThat(value(table).changedKeys()).contains(VTable.SELECTION);
+    }
+
+    @Test
+    @DisplayName("disposing the selected last item leaves nothing selected and tells the client")
+    void disposeSelectedLastItem() {
+        Table table = table(SWT.SINGLE, 3);
+        table.setSelection(2);
+        value(table).clearDirty();
+
+        table.getItem(2).dispose();
+
+        assertNothingSelected(table);
+        assertThat(value(table).changedKeys()).contains(VTable.SELECTION);
     }
 
     @Test
@@ -130,13 +145,15 @@ class TableSelectionAfterRemoveTest {
     }
 
     @Test
-    @DisplayName("shrinking the item count past the selected row leaves nothing selected")
+    @DisplayName("shrinking the item count past the selected row leaves nothing selected and tells the client")
     void setItemCountBelowTheSelection() {
         Table table = table(SWT.SINGLE, 4);
         table.setSelection(3);
+        value(table).clearDirty();
 
         table.setItemCount(2);
 
         assertNothingSelected(table);
+        assertThat(value(table).changedKeys()).contains(VTable.SELECTION);
     }
 }

@@ -1660,7 +1660,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void select(int[] indices, int count, boolean clear) {
-        TableHelper.select(this, indices, count, clear);
+        TableHelper.select(this, indices, count);
     }
 
     /**

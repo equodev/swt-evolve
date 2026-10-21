@@ -476,19 +476,13 @@ public class TableHelper {
     }
 
     /**
-     * Selects the first {@code count} of {@code indices}, replacing the selection when {@code clear}
-     * is set and adding to it otherwise. The cocoa-derived callers pass the receiver's own selection
-     * array after rewriting it in place, so the old value is gone and the change is always recorded.
+     * Replaces the selection with the first {@code count} of {@code indices}. The cocoa-derived
+     * callers pass the receiver's own selection array after rewriting it in place, so the old value
+     * is gone and the change is always recorded.
      */
-    public static void select(DartTable table, int[] indices, int count, boolean clear) {
-        int[] selected = Arrays.copyOf(indices, count);
-        if (!clear && table.selection != null) {
-            int[] combined = Arrays.copyOf(table.selection, table.selection.length + count);
-            System.arraycopy(selected, 0, combined, table.selection.length, count);
-            selected = Arrays.stream(combined).sorted().distinct().toArray();
-        }
+    public static void select(DartTable table, int[] indices, int count) {
         table.getValue().markDirty(VTable.SELECTION);
-        table.selection = selected;
+        table.selection = Arrays.copyOf(indices, count);
     }
 
     /**
