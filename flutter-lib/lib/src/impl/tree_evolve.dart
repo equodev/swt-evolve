@@ -1509,8 +1509,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return id ?? 0;
     }
 
-    Offset resolvePosition(DragTargetDetails<DndDragPayload> details) =>
-        localOffset(details) ?? details.offset;
+    Offset? resolvePosition(DragTargetDetails<DndDragPayload> details) => localOffset(details);
 
     return wrapDropTarget<DndDragPayload>(
       child: content,

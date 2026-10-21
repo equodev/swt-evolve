@@ -34,6 +34,8 @@ public interface ImplCTabFolder extends ImplComposite {
 
     Listener _listener();
 
+    Listener _tabControlZoomListener();
+
     boolean _ignoreTraverse();
 
     boolean _useDefaultRenderer();

@@ -2,6 +2,7 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <cmath>
 #include <string>
 #include <iostream>
 #include <memory>
@@ -347,7 +348,8 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jcl
 
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen (approximated as maximized).
 // The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
-// LLONG_MIN when there is no window.
+// LLONG_MIN when there is no window. In logical pixels, the units SetBounds takes, so a position
+// read back can be set again unchanged.
 JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, jclass cls, jlong context) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return LLONG_MIN;
@@ -355,8 +357,11 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, j
     if (!hwnd) return LLONG_MIN;
     POINT origin = {0, 0};
     if (!::ClientToScreen(hwnd, &origin)) return LLONG_MIN;
-    return (static_cast<jlong>(origin.x) << 32)
-            | (static_cast<jlong>(static_cast<uint32_t>(origin.y)));
+    const double scale = s->window->scale_factor();
+    const LONG x = static_cast<LONG>(std::lround(origin.x / scale));
+    const LONG y = static_cast<LONG>(std::lround(origin.y / scale));
+    return (static_cast<jlong>(x) << 32)
+            | (static_cast<jlong>(static_cast<uint32_t>(y)));
 }
 
 // Whether this window is the one the OS gives keyboard input to. The foreground window is the

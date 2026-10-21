@@ -115,7 +115,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             size.height = height;
             int border = hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder;
             // Always include the scroll bar in the trim even when the scroll style is overlay
-            size = NSScrollView.frameSizeForContentSize(size, (getApi().style & SWT.H_SCROLL) != 0 ? OS.class_NSScroller : 0, (getApi().style & SWT.V_SCROLL) != 0 ? OS.class_NSScroller : 0, border, OS.NSRegularControlSize, OS.NSScrollerStyleLegacy);
+            size = NSScrollView.frameSizeForContentSize(size, (getApi().style & SWT.H_SCROLL) != 0 ? OS.class_NSScroller : 0, (getApi().style & SWT.V_SCROLL) != 0 ? OS.class_NSScroller : 0, border, OS.NSControlSizeRegular, OS.NSScrollerStyleLegacy);
             width = (int) size.width;
             height = (int) size.height;
             NSRect frame = scrollView.contentView().frame();

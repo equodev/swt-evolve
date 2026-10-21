@@ -736,6 +736,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
         return year;
     }
 
+    {
+        DateTimeHelper.startAtNow(this);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

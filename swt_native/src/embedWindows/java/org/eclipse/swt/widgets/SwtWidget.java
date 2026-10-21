@@ -1090,7 +1090,7 @@ public abstract class SwtWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -2466,20 +2466,18 @@ public abstract class SwtWidget implements IWidget {
 	* default window proc and then draw the theme border on top.
 	*/
         if ((lParam & OS.PRF_NONCLIENT) != 0) {
-            if (OS.IsAppThemed()) {
-                int bits = OS.GetWindowLong(hwnd, OS.GWL_EXSTYLE);
-                if ((bits & OS.WS_EX_CLIENTEDGE) != 0) {
-                    long code = callWindowProc(hwnd, OS.WM_PRINT, wParam, lParam);
-                    RECT rect = new RECT();
-                    OS.GetWindowRect(hwnd, rect);
-                    rect.right -= rect.left;
-                    rect.bottom -= rect.top;
-                    rect.left = rect.top = 0;
-                    int border = getSystemMetrics(OS.SM_CXEDGE);
-                    OS.ExcludeClipRect(wParam, border, border, rect.right - border, rect.bottom - border);
-                    OS.DrawThemeBackground(((SwtDisplay) display.getImpl()).hEditTheme(getApi().nativeZoom), wParam, OS.EP_EDITTEXT, OS.ETS_NORMAL, rect, null);
-                    return new LRESULT(code);
-                }
+            int bits = OS.GetWindowLong(hwnd, OS.GWL_EXSTYLE);
+            if ((bits & OS.WS_EX_CLIENTEDGE) != 0) {
+                long code = callWindowProc(hwnd, OS.WM_PRINT, wParam, lParam);
+                RECT rect = new RECT();
+                OS.GetWindowRect(hwnd, rect);
+                rect.right -= rect.left;
+                rect.bottom -= rect.top;
+                rect.left = rect.top = 0;
+                int border = getSystemMetrics(OS.SM_CXEDGE);
+                OS.ExcludeClipRect(wParam, border, border, rect.right - border, rect.bottom - border);
+                OS.DrawThemeBackground(((SwtDisplay) display.getImpl()).hEditTheme(getApi().nativeZoom), wParam, OS.EP_EDITTEXT, OS.ETS_NORMAL, rect, null);
+                return new LRESULT(code);
             }
         }
         return null;

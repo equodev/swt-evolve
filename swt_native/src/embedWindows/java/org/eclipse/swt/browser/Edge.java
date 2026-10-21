@@ -115,7 +115,7 @@ class Edge extends WebBrowser {
      */
     private final Map<Integer, String> functionScriptIds = new HashMap<>();
 
-    private boolean ignoreGotFocus;
+    private int ignoreGotFocus;
 
     private boolean ignoreFocusIn;
 
@@ -679,7 +679,7 @@ class Edge extends WebBrowser {
         String browserDir = System.getProperty(BROWSER_DIR_PROP);
         String browserArgs = System.getProperty(BROWSER_ARGS_PROP);
         String language = System.getProperty(LANGUAGE_PROP);
-        boolean allowSSO = Boolean.getBoolean(ALLOW_SINGLE_SIGN_ON_USING_OS_PRIMARY_ACCOUNT_PROP);
+        boolean allowSSO = !"false".equalsIgnoreCase(System.getProperty(ALLOW_SINGLE_SIGN_ON_USING_OS_PRIMARY_ACCOUNT_PROP));
         String dataDir = getDataDir(display);
         // Initialize options
         long pOpts = COM.CreateSwtWebView2Options();
@@ -956,7 +956,15 @@ class Edge extends WebBrowser {
         // We need to ignore that next event, as in the meantime the user might
         // have moved focus to some other control and reacting on that event
         // would bring us back to the Browser.
-        ignoreGotFocus = true;
+        // https://github.com/eclipse-platform/eclipse.platform.swt/pull/1849#issuecomment-4753007036
+        // There can be multiple focus-in events within the same event loop iteration,
+        // e.g.,
+        // other.setFocus();
+        // browser.setFocus();
+        // other.setFocus();
+        // browser.setFocus();
+        // We need to apply the ignore handling to all of them, so a counter is used.
+        ignoreGotFocus++;
         controller.MoveFocus(COM.COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
     }
 
@@ -1567,8 +1575,8 @@ class Edge extends WebBrowser {
     }
 
     int handleGotFocus(long pView, long pArg) {
-        if (ignoreGotFocus) {
-            ignoreGotFocus = false;
+        if (ignoreGotFocus > 0) {
+            ignoreGotFocus--;
             return COM.S_OK;
         }
         // https://github.com/eclipse-platform/eclipse.platform.swt/issues/1139
@@ -1941,7 +1949,7 @@ class Edge extends WebBrowser {
 
     private void registerFunctionScript(int functionIndex, String functionString) {
         String[] scriptId = new String[1];
-        callAndWait(scriptId, completion -> webViewProvider.getWebView(true).AddScriptToExecuteOnDocumentCreated(stringToWstr(functionString), completion.getAddress()));
+        callAndWait(scriptId, completion -> webViewProvider.getWebView(false).AddScriptToExecuteOnDocumentCreated(stringToWstr(functionString), completion.getAddress()));
         if (scriptId[0] != null) {
             functionScriptIds.put(functionIndex, scriptId[0]);
         }

@@ -333,7 +333,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
             return false;
         if (hFont != 0)
             return false;
-        return false;
+        return true;
     }
 
     void layoutItems(int index, boolean setScrollbar) {

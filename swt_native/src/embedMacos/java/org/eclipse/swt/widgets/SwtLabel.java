@@ -248,7 +248,7 @@ public class SwtLabel extends SwtControl implements ILabel {
             widget.setContentViewMargins(offsetSize);
             NSImageView imageWidget = (NSImageView) new SWTImageView().alloc();
             imageWidget.init();
-            imageWidget.setImageScaling(OS.NSScaleNone);
+            imageWidget.setImageScaling(OS.NSImageScaleNone);
             NSTextField textWidget = (NSTextField) new SWTTextField().alloc();
             textWidget.init();
             textWidget.setBordered(false);

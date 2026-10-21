@@ -83,7 +83,8 @@ void main() {
 
     expect(reports.last, isNot(atRest), reason: 'the tabs moved, so their report has to move too');
 
-    final reported = reports.last.split(',').map(int.parse).toList();
+    // The strip comes first; the close buttons follow after a ';'.
+    final reported = reports.last.split(';').first.split(',').map(int.parse).toList();
     final folder = tester.getRect(
         find.byWidgetPredicate((w) => w is CTabFolderSwt<VCTabFolder>));
     for (var i = 0; i < _labels.length; i++) {

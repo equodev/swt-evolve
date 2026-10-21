@@ -135,9 +135,9 @@ public class SwtTable extends SwtComposite implements ITable {
 
     static final long TableProc;
 
-    static final TCHAR TableClass = new TCHAR(0, OS.WC_LISTVIEW, true);
+    static final TCHAR TableClass = new TCHAR(OS.WC_LISTVIEW, true);
 
-    static final TCHAR HeaderClass = new TCHAR(0, OS.WC_HEADER, true);
+    static final TCHAR HeaderClass = new TCHAR(OS.WC_HEADER, true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -932,22 +932,20 @@ public class SwtTable extends SwtComposite implements ITable {
                         if (control == null)
                             control = this.getApi();
                         fillBackground(nmcd.hdc, control.getImpl().getBackgroundPixel(), rect);
-                        if (OS.IsAppThemed()) {
-                            if (sortColumn != null && sortDirection != SWT.NONE) {
-                                int index = indexOf(sortColumn);
-                                if (index != -1) {
-                                    ((SwtControl) parent.getImpl()).forceResize();
-                                    int clrSortBk = getSortColumnPixel();
-                                    RECT columnRect = new RECT(), headerRect = new RECT();
-                                    OS.GetClientRect(getApi().handle, columnRect);
-                                    long hwndHeader = OS.SendMessage(getApi().handle, OS.LVM_GETHEADER, 0, 0);
-                                    if (OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, index, headerRect) != 0) {
-                                        OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
-                                        columnRect.left = headerRect.left;
-                                        columnRect.right = headerRect.right;
-                                        if (OS.IntersectRect(columnRect, columnRect, rect)) {
-                                            fillBackground(nmcd.hdc, clrSortBk, columnRect);
-                                        }
+                        if (sortColumn != null && sortDirection != SWT.NONE) {
+                            int index = indexOf(sortColumn);
+                            if (index != -1) {
+                                ((SwtControl) parent.getImpl()).forceResize();
+                                int clrSortBk = getSortColumnPixel();
+                                RECT columnRect = new RECT(), headerRect = new RECT();
+                                OS.GetClientRect(getApi().handle, columnRect);
+                                long hwndHeader = OS.SendMessage(getApi().handle, OS.LVM_GETHEADER, 0, 0);
+                                if (OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, index, headerRect) != 0) {
+                                    OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
+                                    columnRect.left = headerRect.left;
+                                    columnRect.right = headerRect.right;
+                                    if (OS.IntersectRect(columnRect, columnRect, rect)) {
+                                        fillBackground(nmcd.hdc, clrSortBk, columnRect);
                                     }
                                 }
                             }
@@ -1572,10 +1570,8 @@ public class SwtTable extends SwtComposite implements ITable {
         super.createHandle();
         getApi().state &= ~(CANVAS | THEME_BACKGROUND);
         /* Use the Explorer theme */
-        if (OS.IsAppThemed()) {
-            explorerTheme = true;
-            OS.SetWindowTheme(getApi().handle, SwtDisplay.EXPLORER, null);
-        }
+        explorerTheme = true;
+        OS.SetWindowTheme(getApi().handle, SwtDisplay.EXPLORER, null);
         /* Get the header window handle */
         hwndHeader = OS.SendMessage(getApi().handle, OS.LVM_GETHEADER, 0, 0);
         maybeEnableDarkSystemTheme(hwndHeader);
@@ -1653,7 +1649,7 @@ public class SwtTable extends SwtComposite implements ITable {
         int bits = 0;
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0)
             bits |= OS.WS_EX_LAYOUTRTL;
-        headerToolTipHandle = OS.CreateWindowEx(bits, new TCHAR(0, OS.TOOLTIPS_CLASS, true), null, OS.TTS_NOPREFIX, OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0, getApi().handle, 0, OS.GetModuleHandle(null), null);
+        headerToolTipHandle = OS.CreateWindowEx(bits, new TCHAR(OS.TOOLTIPS_CLASS, true), null, OS.TTS_NOPREFIX, OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0, getApi().handle, 0, OS.GetModuleHandle(null), null);
         if (headerToolTipHandle == 0)
             error(SWT.ERROR_NO_HANDLES);
         maybeEnableDarkSystemTheme(headerToolTipHandle);
@@ -4437,8 +4433,6 @@ public class SwtTable extends SwtComposite implements ITable {
         int count = 8, flags = OS.ILC_COLOR32;
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0)
             flags |= OS.ILC_MIRROR;
-        if (!OS.IsAppThemed())
-            flags |= OS.ILC_MASK;
         long hStateList = OS.ImageList_Create(width, height, flags, count, count);
         long hDC = OS.GetDC(getApi().handle);
         long memDC = OS.CreateCompatibleDC(hDC);
@@ -4446,18 +4440,10 @@ public class SwtTable extends SwtComposite implements ITable {
         long hOldBitmap = OS.SelectObject(memDC, hBitmap);
         RECT rect = new RECT();
         OS.SetRect(rect, 0, 0, width * count, height);
-        int clrBackground;
-        if (OS.IsAppThemed()) {
-            Control control = findBackgroundControl();
-            if (control == null)
-                control = this.getApi();
-            clrBackground = control.getImpl().getBackgroundPixel();
-        } else {
-            clrBackground = 0x020000FF;
-            if ((clrBackground & 0xFFFFFF) == OS.GetSysColor(OS.COLOR_WINDOW)) {
-                clrBackground = 0x0200FF00;
-            }
-        }
+        Control control = findBackgroundControl();
+        if (control == null)
+            control = this.getApi();
+        int clrBackground = control.getImpl().getBackgroundPixel();
         long hBrush = OS.CreateSolidBrush(clrBackground);
         OS.FillRect(memDC, rect, hBrush);
         OS.DeleteObject(hBrush);
@@ -4467,75 +4453,44 @@ public class SwtTable extends SwtComposite implements ITable {
         OS.SelectObject(hDC, oldFont);
         int itemWidth = Math.min(tm.tmHeight, width);
         int itemHeight = Math.min(tm.tmHeight, height);
-        if (OS.IsAppThemed()) {
-            /*
-		 * Feature in Windows. DrawThemeBackground stretches the checkbox
-		 * bitmap to fill the provided rectangle. To avoid stretching
-		 * artifacts, limit the rectangle to actual checkbox bitmap size.
-		 */
-            SIZE size = new SIZE();
-            OS.GetThemePartSize(((SwtDisplay) display.getImpl()).hButtonTheme(getApi().nativeZoom), memDC, OS.BP_CHECKBOX, 0, null, OS.TS_TRUE, size);
-            itemWidth = Math.min(size.cx, itemWidth);
-            itemHeight = Math.min(size.cy, itemHeight);
-        }
+        /*
+	 * Feature in Windows. DrawThemeBackground stretches the checkbox
+	 * bitmap to fill the provided rectangle. To avoid stretching
+	 * artifacts, limit the rectangle to actual checkbox bitmap size.
+	 */
+        SIZE size = new SIZE();
+        OS.GetThemePartSize(((SwtDisplay) display.getImpl()).hButtonTheme(getApi().nativeZoom), memDC, OS.BP_CHECKBOX, 0, null, OS.TS_TRUE, size);
+        itemWidth = Math.min(size.cx, itemWidth);
+        itemHeight = Math.min(size.cy, itemHeight);
         int left = (width - itemWidth) / 2, top = (height - itemHeight) / 2;
         OS.SetRect(rect, left, top, left + itemWidth, top + itemHeight);
-        if (OS.IsAppThemed()) {
-            long hTheme = ((SwtDisplay) display.getImpl()).hButtonTheme(getApi().nativeZoom);
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_CHECKEDNORMAL, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_MIXEDNORMAL, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDDISABLED, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_CHECKEDDISABLED, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDDISABLED, rect, null);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_MIXEDDISABLED, rect, null);
-        } else {
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_CHECKED | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_INACTIVE | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_CHECKED | OS.DFCS_INACTIVE | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_CHECKED | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_INACTIVE | OS.DFCS_FLAT);
-            rect.left += width;
-            rect.right += width;
-            OS.DrawFrameControl(memDC, rect, OS.DFC_BUTTON, OS.DFCS_BUTTONCHECK | OS.DFCS_CHECKED | OS.DFCS_INACTIVE | OS.DFCS_FLAT);
-        }
+        long hTheme = ((SwtDisplay) display.getImpl()).hButtonTheme(getApi().nativeZoom);
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_CHECKEDNORMAL, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_MIXEDNORMAL, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDDISABLED, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_CHECKEDDISABLED, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDDISABLED, rect, null);
+        rect.left += width;
+        rect.right += width;
+        OS.DrawThemeBackground(hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_MIXEDDISABLED, rect, null);
         OS.SelectObject(memDC, hOldBitmap);
         OS.DeleteDC(memDC);
         OS.ReleaseDC(getApi().handle, hDC);
-        if (OS.IsAppThemed()) {
-            OS.ImageList_Add(hStateList, hBitmap, 0);
-        } else {
-            OS.ImageList_AddMasked(hStateList, hBitmap, clrBackground);
-        }
+        OS.ImageList_Add(hStateList, hBitmap, 0);
         OS.DeleteObject(hBitmap);
         /*
 	* Bug in Windows.  Making any change to an item that
@@ -5076,7 +5031,7 @@ public class SwtTable extends SwtComposite implements ITable {
                         OS.ReleaseDC(getApi().handle, hDC);
                         newWidth = Math.max(newWidth, rect.right - rect.left);
                     } else {
-                        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+                        TCHAR buffer = new TCHAR(string, true);
                         newWidth = Math.max(newWidth, (int) OS.SendMessage(getApi().handle, OS.LVM_GETSTRINGWIDTH, 0, buffer));
                     }
                 }
@@ -7506,15 +7461,13 @@ public class SwtTable extends SwtComposite implements ITable {
                         return result;
                     if (toolTipText != null)
                         break;
-                    result = positionTooltip(hdr, lParam);
-                    return result;
+                    return positionTooltip(hdr, lParam) ? LRESULT.ONE : null;
                 }
         }
         return null;
     }
 
-    private LRESULT positionTooltip(NMHDR hdr, long lParam) {
-        LRESULT result = null;
+    private boolean positionTooltip(NMHDR hdr, long lParam) {
         LVHITTESTINFO pinfo = new LVHITTESTINFO();
         int pos = OS.GetMessagePos();
         POINT pt = new POINT();
@@ -7545,8 +7498,10 @@ public class SwtTable extends SwtComposite implements ITable {
                     long hwndToolTip = OS.SendMessage(getApi().handle, OS.LVM_GETTOOLTIPS, 0, 0);
                     int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER;
                     Rectangle adjustedTooltipBounds = ((SwtDisplay) getDisplay().getImpl()).fitRectangleBoundsIntoMonitorWithCursor(toolRect);
-                    OS.SetWindowPos(hwndToolTip, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y, adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
-                    result = LRESULT.ONE;
+                    if (adjustedTooltipBounds != null) {
+                        OS.SetWindowPos(hwndToolTip, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y, adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
+                        return true;
+                    }
                 } else if (isCustomToolTip()) {
                     RECT itemRect = getItemBounds(pinfo, item, hDC);
                     NMTTDISPINFO lpnmtdi = new NMTTDISPINFO();
@@ -7567,7 +7522,7 @@ public class SwtTable extends SwtComposite implements ITable {
                             string.getChars(0, string.length(), chars, 0);
                             ((SwtShell) shell.getImpl()).setToolTipText(lpnmtdi, chars);
                             OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-                            result = LRESULT.ONE;
+                            return true;
                         }
                     }
                 }
@@ -7578,7 +7533,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 OS.SelectObject(hDC, oldFont);
             OS.ReleaseDC(getApi().handle, hDC);
         }
-        return result;
+        return false;
     }
 
     private RECT getItemBounds(LVHITTESTINFO pinfo, TableItem item, long hDC) {

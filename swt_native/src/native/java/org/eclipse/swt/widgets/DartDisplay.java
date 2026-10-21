@@ -1060,6 +1060,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public Rectangle getBounds() {
+        awaitClientGeometry();
         return bounds;
     }
 
@@ -1095,6 +1096,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     @Override
     public Rectangle getClientArea() {
         checkDevice();
+        awaitClientGeometry();
         return new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
@@ -1434,6 +1436,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     public Monitor[] getMonitors() {
         checkDevice();
         {
+            awaitClientGeometry();
             Monitor m = new Monitor();
             m.setBounds(bounds);
             m.setClientArea(bounds);
@@ -1451,6 +1454,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Monitor getPrimaryMonitor() {
         checkDevice();
+        awaitClientGeometry();
         Monitor monitor = new Monitor();
         monitor.setBounds(bounds);
         monitor.setClientArea(bounds);
@@ -4045,6 +4049,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     Rectangle bounds = new Rectangle(0, 0, 1920, 1080);
+
+    private void awaitClientGeometry() {
+        if (displayBridge != null)
+            displayBridge.awaitClientGeometry(this);
+    }
 
     int deviceZoom = 100;
 

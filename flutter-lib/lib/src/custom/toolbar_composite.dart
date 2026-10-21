@@ -560,17 +560,18 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final containerBox = _containerKey.currentContext?.findRenderObject() as RenderBox?;
       if (containerBox == null) return;
-      final containerGlobalY = containerBox.localToGlobal(Offset.zero).dy;
 
+      // Measured against the container rather than the view, whose pixels differ from the
+      // container's own at any zoom.
       final newDividers = <double>[];
       for (var i = 0; i < visibleChildren.length - 1; i++) {
         final box = _childKeys[i]?.currentContext?.findRenderObject() as RenderBox?;
         final boxNext = _childKeys[i + 1]?.currentContext?.findRenderObject() as RenderBox?;
         if (box == null || boxNext == null) continue;
-        final endGlobal = box.localToGlobal(Offset(0, box.size.height)).dy;
-        final startNextGlobal = boxNext.localToGlobal(Offset.zero).dy;
-        if (!endGlobal.isNaN && !startNextGlobal.isNaN) {
-          newDividers.add((endGlobal + startNextGlobal) / 2 - containerGlobalY);
+        final end = box.localToGlobal(Offset(0, box.size.height), ancestor: containerBox).dy;
+        final startNext = boxNext.localToGlobal(Offset.zero, ancestor: containerBox).dy;
+        if (!end.isNaN && !startNext.isNaN) {
+          newDividers.add((end + startNext) / 2);
         }
       }
 

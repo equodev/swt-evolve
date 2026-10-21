@@ -159,16 +159,16 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
      */
     public int open() {
         NSAlert alert = (NSAlert) new NSAlert().alloc().init();
-        int alertType = OS.NSInformationalAlertStyle;
+        int alertType = OS.NSAlertStyleInformational;
         if ((style & SWT.ICON_ERROR) != 0) {
-            alertType = OS.NSCriticalAlertStyle;
+            alertType = OS.NSAlertStyleCritical;
         }
         if (((style & SWT.ICON_INFORMATION) != 0) || ((style & SWT.ICON_WORKING) != 0) || ((style & SWT.ICON_QUESTION) != 0)) {
-            alertType = OS.NSInformationalAlertStyle;
+            alertType = OS.NSAlertStyleInformational;
             alert.setIcon(NSImage.imageNamed(OS.NSImageNameInfo));
         }
         if ((style & SWT.ICON_WARNING) != 0) {
-            alertType = OS.NSWarningAlertStyle;
+            alertType = OS.NSAlertStyleWarning;
             alert.setIcon(NSImage.imageNamed(OS.NSImageNameCaution));
         }
         alert.setAlertStyle(alertType);

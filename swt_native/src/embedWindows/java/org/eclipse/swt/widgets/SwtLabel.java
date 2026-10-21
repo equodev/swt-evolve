@@ -66,7 +66,7 @@ public class SwtLabel extends SwtControl implements ILabel {
 
     static final long LabelProc;
 
-    static final TCHAR LabelClass = new TCHAR(0, "STATIC", true);
+    static final TCHAR LabelClass = new TCHAR("STATIC", true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -436,7 +436,7 @@ public class SwtLabel extends SwtControl implements ILabel {
             return;
         text = string;
         string = SwtDisplay.withCrLf(string);
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         OS.SetWindowText(getApi().handle, buffer);
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
@@ -560,9 +560,7 @@ public class SwtLabel extends SwtControl implements ILabel {
         boolean redraw = findImageControl() != null;
         if (!redraw) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
-                if (OS.IsAppThemed()) {
-                    redraw = findThemeControl() != null;
-                }
+                redraw = findThemeControl() != null;
             }
         }
         if (redraw) {

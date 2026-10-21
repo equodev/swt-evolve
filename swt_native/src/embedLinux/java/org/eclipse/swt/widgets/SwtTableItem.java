@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -353,16 +353,13 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         ((SwtTable) parent.getImpl()).ignoreSize = false;
         rect.width = w[0];
         int horizontalSeparator;
+        int[] buffer = new int[1];
         if (GTK.GTK4) {
-            long separator = GTK.gtk_separator_new(GTK.GTK_ORIENTATION_HORIZONTAL);
-            GtkAllocation allocation = new GtkAllocation();
-            GTK.gtk_widget_get_allocation(separator, allocation);
-            horizontalSeparator = allocation.height;
+            GTK.gtk_cell_renderer_get_padding(textRenderer, buffer, null);
         } else {
-            int[] buffer = new int[1];
             GTK3.gtk_widget_style_get(parentHandle, OS.horizontal_separator, buffer, 0);
-            horizontalSeparator = buffer[0];
         }
+        horizontalSeparator = buffer[0];
         rect.x += horizontalSeparator;
         gtk_tree_view_column_cell_get_position(column, textRenderer, x, null);
         rect.x += x[0];
@@ -808,16 +805,13 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         gtk_cell_renderer_get_preferred_size(textRenderer, parentHandle, w, null);
         ((SwtTable) parent.getImpl()).ignoreSize = false;
         int horizontalSeparator;
+        int[] buffer = new int[1];
         if (GTK.GTK4) {
-            long separator = GTK.gtk_separator_new(GTK.GTK_ORIENTATION_HORIZONTAL);
-            GtkAllocation allocation = new GtkAllocation();
-            GTK.gtk_widget_get_allocation(separator, allocation);
-            horizontalSeparator = allocation.height;
+            GTK.gtk_cell_renderer_get_padding(textRenderer, buffer, null);
         } else {
-            int[] buffer = new int[1];
             GTK3.gtk_widget_style_get(parentHandle, OS.horizontal_separator, buffer, 0);
-            horizontalSeparator = buffer[0];
         }
+        horizontalSeparator = buffer[0];
         rect.x += horizontalSeparator;
         gtk_tree_view_column_cell_get_position(column, textRenderer, x, null);
         /*

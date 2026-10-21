@@ -277,8 +277,8 @@ public final class SwtPDFDocument extends SwtDevice implements IPDFDocument {
         this.actualWidthInPoints = bestMatch.widthInPoints;
         this.actualHeightInPoints = bestMatch.heightInPoints;
         // Create printer DC for "Microsoft Print to PDF"
-        TCHAR driver = new TCHAR(0, "WINSPOOL", true);
-        TCHAR deviceName = new TCHAR(0, PDF_PRINTER_NAME, true);
+        TCHAR driver = new TCHAR("WINSPOOL", true);
+        TCHAR deviceName = new TCHAR(PDF_PRINTER_NAME, true);
         // Get printer settings
         long[] hPrinter = new long[1];
         if (OS.OpenPrinter(deviceName, hPrinter, 0)) {
@@ -316,13 +316,13 @@ public final class SwtPDFDocument extends SwtDevice implements IPDFDocument {
             di.cbSize = DOCINFO.sizeof;
             long hHeap = OS.GetProcessHeap();
             // Set output filename
-            TCHAR buffer = new TCHAR(0, filename, true);
+            TCHAR buffer = new TCHAR(filename, true);
             int byteCount = buffer.length() * TCHAR.sizeof;
             long lpszOutput = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
             OS.MoveMemory(lpszOutput, buffer, byteCount);
             di.lpszOutput = lpszOutput;
             // Set document name
-            TCHAR docName = new TCHAR(0, "SWT PDF Document", true);
+            TCHAR docName = new TCHAR("SWT PDF Document", true);
             int docByteCount = docName.length() * TCHAR.sizeof;
             long lpszDocName = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, docByteCount);
             OS.MoveMemory(lpszDocName, docName, docByteCount);

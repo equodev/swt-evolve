@@ -739,7 +739,7 @@ public class Sizes {
      * what the zoom takes off. The client draws it at this height, received as {@code menuStripHeight}.
      */
     public static int menuStripHeight() {
-        return (int) Math.round(MenuSizes.MENU_BAR_HEIGHT / Config.uiScale());
+        return Config.logicalToSwt(MenuSizes.MENU_BAR_HEIGHT);
     }
 
     /**

@@ -63,6 +63,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private final java.util.LinkedHashMap<Shell, ShellWindow> shellWindows =
             new java.util.LinkedHashMap<>();
 
+    /**
+     * Whether the Display's first geometry query waits for the client's report. Set by a surface whose
+     * client is not there when the Display is created; read and cleared on the Display thread.
+     */
+    protected boolean awaitsClientGeometry;
+
+    /** What applies the first client report to the Display; it is also posted to the Display thread. */
+    private final java.util.concurrent.CompletableFuture<Runnable> firstClientReport =
+            new java.util.concurrent.CompletableFuture<>();
+
     protected DisplayBridge(DartDisplay display) {
         this.forDisplay = display;
         System.setProperty("dev.equo.swt.desktop", "false");
@@ -230,7 +240,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             onDisplayClientReady(first);
 
             Display api = display.getApi();
-            Runnable apply = () -> {
+            Runnable apply = once(() -> {
                 int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
                 // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
@@ -248,7 +258,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // Only for a client that holds nothing (first ClientReady, or a page refresh): a
                 // viewport change resizes shells, which travel on their own; the Display has no bounds.
                 if (first || p.isFirst) sendDisplayUpdate(display);
-            };
+            });
+            firstClientReport.complete(apply);
             // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
             // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
             // until the Display thread services the runnable, but the idle E4 workbench parks the Display
@@ -260,6 +271,48 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.getThread() == Thread.currentThread()) apply.run();
             else api.asyncExec(apply);
         });
+    }
+
+    /**
+     * Holds the Display thread, on its first query of the Display's or a Monitor's geometry, until
+     * the client has reported its viewport. An application places its first window from those values
+     * before any client has connected, and until then they are only a default. Applies the report on
+     * the spot, since the Display thread is the one its posted copy is waiting for.
+     */
+    public void awaitClientGeometry(DartDisplay display) {
+        if (!awaitsClientGeometry) return;
+        Display api = display.getApi();
+        if (api == null || api.getThread() != Thread.currentThread()) return;
+        awaitsClientGeometry = false;
+        Runnable apply;
+        try {
+            apply = firstClientReport.get(clientGeometryWaitMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            return;
+        }
+        apply.run();
+    }
+
+    /** Bounds the hold in {@link #awaitClientGeometry}: past it the Display keeps reporting its default. */
+    protected long clientGeometryWaitMs() {
+        return 30_000;
+    }
+
+    /** {@code task}, run at most once however many times the result is run. Display thread only. */
+    private static Runnable once(Runnable task) {
+        return new Runnable() {
+            private boolean ran;
+
+            @Override
+            public void run() {
+                if (ran) return;
+                ran = true;
+                task.run();
+            }
+        };
     }
 
     public void writeClipboardText(String text) {

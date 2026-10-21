@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2023 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -77,6 +77,20 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     DartMenu.Section section;
 
+    /**
+     * The action's own name within the parent's action group, i.e. the name
+     * g_simple_action_new() was given. Use this with the GActionMap API (e.g.
+     * g_action_map_remove_action), which keys actions by their plain name.
+     */
+    String actionId;
+
+    /**
+     * The <em>detailed</em> action name: actionId qualified with the prefix the
+     * action group was inserted under (see Menu#createHandle), plus a target for
+     * SWT.RADIO. Use this where an action is referenced by name, such as
+     * g_menu_item_new() or gtk_named_action_new(), and never with the GActionMap
+     * API.
+     */
     String actionName;
 
     /**
@@ -1054,6 +1068,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         return section;
     }
 
+    public String _actionId() {
+        return actionId;
+    }
+
     public String _actionName() {
         return actionName;
     }
@@ -1097,16 +1115,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if ((getApi().style & SWT.CHECK) != 0) {
-                    setSelection(!getSelection());
-                } else if ((getApi().style & SWT.RADIO) != 0) {
-                    if ((parent.getStyle() & SWT.NO_RADIO_GROUP) != 0) {
-                        setSelection(!getSelection());
-                    } else {
-                        selectRadio();
-                    }
-                }
-                sendSelectionEvent(SWT.Selection, e, false);
+                MenuItemHelper.pick(this, e);
             });
         });
     }

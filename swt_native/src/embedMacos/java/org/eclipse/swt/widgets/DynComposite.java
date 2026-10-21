@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.ExceptionStash;
+import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
 import java.util.Map;
 import java.util.HashMap;
@@ -127,7 +127,7 @@ public class DynComposite extends DynScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         System.out.println("+++ CONVERTING DynComposite from Composite#changed(Control[]) #" + getApi().hashCode());
         IComposite newImpl = convert();

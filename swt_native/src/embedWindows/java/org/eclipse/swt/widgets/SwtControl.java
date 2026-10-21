@@ -939,12 +939,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
         if (pixel == -1) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
-                if (OS.IsAppThemed()) {
-                    control = findThemeControl();
-                    if (control != null) {
-                        fillThemeBackground(hDC, control, rect);
-                        return;
-                    }
+                control = findThemeControl();
+                if (control != null) {
+                    fillThemeBackground(hDC, control, rect);
+                    return;
                 }
             }
         }
@@ -1280,10 +1278,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return new Rectangle(rect.left, rect.top, width, height);
     }
 
-    int getCodePage() {
-        return OS.CP_ACP;
-    }
-
     String getClipboardText() {
         String string = "";
         if (OS.OpenClipboard(0)) {
@@ -1293,7 +1287,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 int byteCount = OS.GlobalSize(hMem) / TCHAR.sizeof * TCHAR.sizeof;
                 long ptr = OS.GlobalLock(hMem);
                 if (ptr != 0) {
-                    TCHAR buffer = new TCHAR(0, byteCount / TCHAR.sizeof);
+                    TCHAR buffer = new TCHAR(byteCount / TCHAR.sizeof);
                     OS.MoveMemory(buffer, ptr, byteCount);
                     string = buffer.toString(0, buffer.strlen());
                     OS.GlobalUnlock(hMem);
@@ -2627,10 +2621,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
-                if (OS.IsAppThemed()) {
-                    OS.InvalidateRect(getApi().handle, null, true);
-                    return true;
-                }
+                OS.InvalidateRect(getApi().handle, null, true);
+                return true;
             }
         } else {
             if (control.getImpl()._backgroundImage() != null) {
@@ -3393,10 +3385,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 flags |= OS.SWP_NOCOPYBITS;
         } else {
             if (OS.GetWindow(getApi().handle, OS.GW_CHILD) == 0) {
-                if (OS.IsAppThemed()) {
-                    if (findThemeControl() != null)
-                        flags |= OS.SWP_NOCOPYBITS;
-                }
+                if (findThemeControl() != null)
+                    flags |= OS.SWP_NOCOPYBITS;
             }
         }
         long topHandle = topHandle();
@@ -5617,10 +5607,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 return LRESULT.ONE;
         }
         if ((getApi().state & THEME_BACKGROUND) != 0) {
-            if (OS.IsAppThemed()) {
-                if (findThemeControl() != null)
-                    return LRESULT.ONE;
-            }
+            if (findThemeControl() != null)
+                return LRESULT.ONE;
         }
         return null;
     }
@@ -6009,11 +5997,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 redrawChildren();
         } else {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
-                if (OS.IsAppThemed()) {
-                    if (OS.IsWindowVisible(getApi().handle)) {
-                        if (findThemeControl() != null)
-                            redrawChildren();
-                    }
+                if (OS.IsWindowVisible(getApi().handle)) {
+                    if (findThemeControl() != null)
+                        redrawChildren();
                 }
             }
         }
@@ -6429,17 +6415,15 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
-                if (OS.IsAppThemed()) {
-                    control = findThemeControl();
-                    if (control != null) {
-                        RECT rect = new RECT();
-                        OS.GetClientRect(getApi().handle, rect);
-                        OS.SetTextColor(wParam, getForegroundPixel());
-                        OS.SetBkColor(wParam, getBackgroundPixel());
-                        fillThemeBackground(wParam, control, rect);
-                        OS.SetBkMode(wParam, OS.TRANSPARENT);
-                        return new LRESULT(OS.GetStockObject(OS.NULL_BRUSH));
-                    }
+                control = findThemeControl();
+                if (control != null) {
+                    RECT rect = new RECT();
+                    OS.GetClientRect(getApi().handle, rect);
+                    OS.SetTextColor(wParam, getForegroundPixel());
+                    OS.SetBkColor(wParam, getBackgroundPixel());
+                    fillThemeBackground(wParam, control, rect);
+                    OS.SetBkMode(wParam, OS.TRANSPARENT);
+                    return new LRESULT(OS.GetStockObject(OS.NULL_BRUSH));
                 }
             }
             if (foreground == -1)

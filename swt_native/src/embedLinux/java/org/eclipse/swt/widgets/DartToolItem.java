@@ -54,6 +54,16 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     long boxHandle, groupHandle;
 
+    /**
+     * GTK4 only field, used to keep track of the box wrapping the image, see {@link #createHandle}
+     */
+    long imageBoxHandle;
+
+    /**
+     * GTK4 only, gap between the image and the text when SWT.RIGHT is set on the tool bar
+     */
+    static final int TEXT_IMAGE_SPACING = 4;
+
     ToolBar parent;
 
     Control control;
@@ -539,7 +549,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     @Override
     void releaseHandle() {
         super.releaseHandle();
-        arrowHandle = labelHandle = imageHandle = eventHandle = 0;
+        arrowHandle = labelHandle = imageHandle = imageBoxHandle = eventHandle = 0;
     }
 
     @Override
@@ -1144,6 +1154,10 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public long _groupHandle() {
         return groupHandle;
+    }
+
+    public long _imageBoxHandle() {
+        return imageBoxHandle;
     }
 
     public ToolBar _parent() {

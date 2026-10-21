@@ -132,7 +132,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     //$NON-NLS-1$
     static final int CFSTR_PERFORMEDDROPEFFECT = SwtTransfer.registerType("Performed DropEffect");
 
-    static final TCHAR WindowClass = new TCHAR(0, "#32770", true);
+    static final TCHAR WindowClass = new TCHAR("#32770", true);
 
     private class COMIDropSource extends COMObject {
 

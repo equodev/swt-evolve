@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -118,6 +118,9 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
 
     long targetList;
 
+    /* GTK4 GtkDragSource event controller added to the control */
+    long dragSourceController;
+
     //workaround - remember action performed for DragEnd
     boolean moveData = false;
 
@@ -125,14 +128,13 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     static final String DEFAULT_DRAG_SOURCE_EFFECT = "DEFAULT_DRAG_SOURCE_EFFECT";
 
     /* GTK4 GtkDragSource event controller signal callbacks */
-    static Callback dragBeginProc, dragPrepareProc, dragEndProc;
+    static Callback dragPrepareProc, dragEndProc;
 
     /* GTK3 GtkWidget drag event signal callbacks */
     static Callback DragBegin, DragGetData, DragEnd, DragDataDelete;
 
     static {
         if (GTK.GTK4) {
-            dragBeginProc = new Callback(SwtDragSource.class, "dragBeginProc", void.class, new Type[] { long.class, long.class });
             dragPrepareProc = new Callback(SwtDragSource.class, "dragPrepareProc", long.class, new Type[] { long.class, double.class, double.class });
             dragEndProc = new Callback(SwtDragSource.class, "dragEndProc", void.class, new Type[] { long.class, long.class, boolean.class });
         } else {
@@ -180,16 +182,15 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         super(control, checkStyle(style), api);
         this.control = control;
         if (GTK.GTK4) {
-            if (dragBeginProc == null || dragPrepareProc == null || dragEndProc == null) {
+            if (dragPrepareProc == null || dragEndProc == null) {
                 DND.error(DND.ERROR_CANNOT_INIT_DRAG);
             }
             if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
                 DND.error(DND.ERROR_CANNOT_INIT_DRAG);
             }
             control.setData(DND.DRAG_SOURCE_KEY, this.getApi());
-            long dragSourceController = GTK4.gtk_drag_source_new();
+            dragSourceController = GTK4.gtk_drag_source_new();
             GTK4.gtk_widget_add_controller(control.handle, dragSourceController);
-            OS.g_signal_connect(dragSourceController, OS.drag_begin, dragBeginProc.getAddress(), 0);
             OS.g_signal_connect(dragSourceController, OS.prepare, dragPrepareProc.getAddress(), 0);
             OS.g_signal_connect(dragSourceController, OS.drag_end, dragEndProc.getAddress(), 0);
             // Set permitted actions on the GtkDragSource
@@ -209,20 +210,6 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
             OS.g_signal_connect(control.handle, OS.drag_data_get, DragGetData.getAddress(), 0);
             OS.g_signal_connect(control.handle, OS.drag_end, DragEnd.getAddress(), 0);
             OS.g_signal_connect(control.handle, OS.drag_data_delete, DragDataDelete.getAddress(), 0);
-            controlListener = event -> {
-                if (event.type == SWT.Dispose) {
-                    if (!SwtDragSource.this.getApi().isDisposed()) {
-                        SwtDragSource.this.getApi().dispose();
-                    }
-                }
-                if (event.type == SWT.DragDetect) {
-                    if (!SwtDragSource.this.getApi().isDisposed()) {
-                        SwtDragSource.this.drag(event);
-                    }
-                }
-            };
-            control.addListener(SWT.Dispose, controlListener);
-            control.addListener(SWT.DragDetect, controlListener);
             Object effect = control.getData(DEFAULT_DRAG_SOURCE_EFFECT);
             if (effect instanceof DragSourceEffect) {
                 dragEffect = (DragSourceEffect) effect;
@@ -233,8 +220,25 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
             } else if (control instanceof List) {
                 dragEffect = new ListDragSourceEffect((List) control);
             }
-            this.addListener(SWT.Dispose, e -> onDispose());
         }
+        // Dispose listeners
+        controlListener = event -> {
+            if (event.type == SWT.Dispose) {
+                if (!SwtDragSource.this.getApi().isDisposed()) {
+                    SwtDragSource.this.getApi().dispose();
+                }
+            }
+            if (event.type == SWT.DragDetect) {
+                if (!SwtDragSource.this.getApi().isDisposed()) {
+                    SwtDragSource.this.drag(event);
+                }
+            }
+        };
+        control.addListener(SWT.Dispose, controlListener);
+        // On GTK4 the drag is started by the GtkDragSource controller, not by SWT.DragDetect.
+        if (!GTK.GTK4)
+            control.addListener(SWT.DragDetect, controlListener);
+        this.addListener(SWT.Dispose, e -> onDispose());
     }
 
     static int checkStyle(int style) {
@@ -243,52 +247,70 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         return style;
     }
 
-    static void dragBeginProc(long source, long drag) {
+    static long dragPrepareProc(long source, double x, double y) {
         long widgetHandle = GTK.gtk_event_controller_get_widget(source);
         DragSource dragSource = FindDragSource(widgetHandle);
         if (dragSource == null)
-            return;
-        if (dragSource.getImpl() instanceof SwtDragSource) {
-            ((SwtDragSource) dragSource.getImpl()).dragBeginGtk4(source);
-        }
+            return 0;
+        return ((SwtDragSource) dragSource.getImpl()).dragPrepare(source);
     }
 
-    void dragBeginGtk4(long source) {
-        DNDEvent event = new DNDEvent();
-        event.widget = this.getApi();
-        event.doit = true;
-        notifyListeners(DND.DragStart, event);
-        if (!event.doit || transferAgents == null || transferAgents.length == 0)
-            return;
+    long dragPrepare(long source) {
+        if (transferAgents == null || transferAgents.length == 0)
+            return 0;
+        DNDEvent startEvent = new DNDEvent();
+        startEvent.widget = this.getApi();
+        startEvent.doit = true;
+        notifyListeners(DND.DragStart, startEvent);
+        if (!startEvent.doit)
+            return 0;
         // If specified, setup drag icon
-        Image dragIcon = event.image;
+        Image dragIcon = startEvent.image;
         if (source != 0 && dragIcon != null) {
             long pixbuf = ImageList.createPixbuf(dragIcon);
             long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
             OS.g_object_unref(pixbuf);
             GTK4.gtk_drag_source_set_icon(source, texture, 0, 0);
         }
-    }
-
-    static long dragPrepareProc(long source, double x, double y) {
-        long widgetHandle = GTK.gtk_event_controller_get_widget(source);
-        DragSource dragSource = FindDragSource(widgetHandle);
-        if (dragSource == null)
+        // Collect the data to be transferred for every supported transfer type.
+        Object[] data = new Object[transferAgents.length];
+        Transfer[] transfers = new Transfer[transferAgents.length];
+        int count = 0;
+        for (Transfer transfer : transferAgents) {
+            if (transfer == null)
+                continue;
+            TransferData[] supportedTypes = transfer.getSupportedTypes();
+            if (supportedTypes == null || supportedTypes.length == 0)
+                continue;
+            DNDEvent event = new DNDEvent();
+            event.widget = this.getApi();
+            event.dataType = supportedTypes[0];
+            event.doit = true;
+            notifyListeners(DND.DragSetData, event);
+            if (!event.doit || event.data == null)
+                continue;
+            transfers[count] = transfer;
+            data[count] = event.data;
+            count++;
+        }
+        if (count == 0)
             return 0;
-        return ((SwtDragSource) dragSource.getImpl()).dragPrepare();
-    }
-
-    long dragPrepare() {
-        TransferData transferData = new TransferData();
-        DNDEvent event = new DNDEvent();
-        event.widget = this.getApi();
-        event.dataType = transferData;
-        notifyListeners(DND.DragSetData, event);
-        if (!event.doit)
+        if (count < transferAgents.length) {
+            Object[] trimmedData = new Object[count];
+            Transfer[] trimmedTransfers = new Transfer[count];
+            System.arraycopy(data, 0, trimmedData, 0, count);
+            System.arraycopy(transfers, 0, trimmedTransfers, 0, count);
+            data = trimmedData;
+            transfers = trimmedTransfers;
+        }
+        long providers = ContentProviders.getInstance().createContentProviders(data, transfers, ContentProviders.CLIPBOARD_DATA.DRAG);
+        if (providers == 0)
             return 0;
-        // TODO: Need to return GdkContentProvider for the data given from event.data
-        // Data from event.data also has to be converted to native through the Transfer class
-        return 0;
+        // The "prepare" return is transfer-full and unref'd when the drag ends, but
+        // ContentProviders keeps its own reference (unref'd on the next drag). Add a
+        // ref so both owners balance; otherwise the next drag unrefs a freed provider.
+        OS.g_object_ref(providers);
+        return providers;
     }
 
     static void dragEndProc(long source, long drag, boolean delete_data) {
@@ -613,7 +635,12 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     void onDispose() {
         if (control == null)
             return;
-        if (targetList != 0) {
+        if (GTK.GTK4) {
+            if (dragSourceController != 0) {
+                GTK4.gtk_widget_remove_controller(control.handle, dragSourceController);
+                dragSourceController = 0;
+            }
+        } else if (targetList != 0) {
             GTK3.gtk_target_list_unref(targetList);
         }
         targetList = 0;
@@ -629,22 +656,30 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
 
     int opToOsOp(int operation) {
         int osOperation = 0;
+        // GTK4 redefined the GdkDragAction values, so they differ from GTK3.
+        int copy = GTK.GTK4 ? GTK4.GDK_ACTION_COPY : GDK.GDK_ACTION_COPY;
+        int move = GTK.GTK4 ? GTK4.GDK_ACTION_MOVE : GDK.GDK_ACTION_MOVE;
+        int link = GTK.GTK4 ? GTK4.GDK_ACTION_LINK : GDK.GDK_ACTION_LINK;
         if ((operation & DND.DROP_COPY) == DND.DROP_COPY)
-            osOperation |= GDK.GDK_ACTION_COPY;
+            osOperation |= copy;
         if ((operation & DND.DROP_MOVE) == DND.DROP_MOVE)
-            osOperation |= GDK.GDK_ACTION_MOVE;
+            osOperation |= move;
         if ((operation & DND.DROP_LINK) == DND.DROP_LINK)
-            osOperation |= GDK.GDK_ACTION_LINK;
+            osOperation |= link;
         return osOperation;
     }
 
     int osOpToOp(int osOperation) {
         int operation = DND.DROP_NONE;
-        if ((osOperation & GDK.GDK_ACTION_COPY) == GDK.GDK_ACTION_COPY)
+        // GTK4 redefined the GdkDragAction values, so they differ from GTK3.
+        int copy = GTK.GTK4 ? GTK4.GDK_ACTION_COPY : GDK.GDK_ACTION_COPY;
+        int move = GTK.GTK4 ? GTK4.GDK_ACTION_MOVE : GDK.GDK_ACTION_MOVE;
+        int link = GTK.GTK4 ? GTK4.GDK_ACTION_LINK : GDK.GDK_ACTION_LINK;
+        if ((osOperation & copy) == copy)
             operation |= DND.DROP_COPY;
-        if ((osOperation & GDK.GDK_ACTION_MOVE) == GDK.GDK_ACTION_MOVE)
+        if ((osOperation & move) == move)
             operation |= DND.DROP_MOVE;
-        if ((osOperation & GDK.GDK_ACTION_LINK) == GDK.GDK_ACTION_LINK)
+        if ((osOperation & link) == link)
             operation |= DND.DROP_LINK;
         return operation;
     }
@@ -754,6 +789,10 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
 
     public long _targetList() {
         return targetList;
+    }
+
+    public long _dragSourceController() {
+        return dragSourceController;
     }
 
     public boolean _moveData() {

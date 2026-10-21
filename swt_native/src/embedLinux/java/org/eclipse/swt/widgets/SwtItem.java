@@ -233,7 +233,6 @@ public abstract class SwtItem extends SwtWidget implements IItem {
         // Refresh the image
         Image image = getImage();
         if (image != null) {
-            setImage(null);
             setImage(image);
         }
     }

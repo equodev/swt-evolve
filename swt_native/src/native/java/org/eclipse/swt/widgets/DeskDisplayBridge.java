@@ -101,6 +101,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = (b != null && b.width > 0 && b.width <= 2560) ? b.width : 1280;
         int height = (b != null && b.height > 0 && b.height <= 1600) ? b.height : 800;
 
+        // Logical pixels, not converted: the client has not reported its monitor yet, so the UI
+        // scale is unknown here, and the shell is fitted to whatever viewport the window reports.
         windowContext = openNativeWindow(0, displayId, "Display", width, height);
     }
 
@@ -177,7 +179,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = bounds.width > 0 ? bounds.width : 640;
         int height = bounds.height > 0 ? bounds.height : 480;
         long owner = ownerWindowContext(shell);
-        long context = openNativeWindow(owner, shell.hashCode(), "Shell", width, height);
+        long context = openNativeWindow(owner, shell.hashCode(), "Shell", Config.swtToLogical(width),
+                Config.swtToLogical(height));
         if (context == 0) return null;
         NativeShellWindow window = new NativeShellWindow(shell, context);
         window.owner = owner;
@@ -293,10 +296,30 @@ public class DeskDisplayBridge extends DisplayBridge {
         // placeholder size, and a window shrunk to a pixel never reports a viewport worth having, so
         // nothing ever corrects it. Move it, but keep the size it already has.
         if (b.width <= 1 || b.height <= 1) {
-            FlutterNative.setBounds(context, b.x, b.y, 0, 0, b.x, b.y, 0, 0);
+            Rectangle w = toWindowUnits(b);
+            placeNativeWindow(context, new Rectangle(w.x, w.y, 0, 0));
             return;
         }
-        FlutterNative.setBounds(context, b.x, b.y, b.width, b.height, b.x, b.y, b.width, b.height);
+        placeNativeWindow(context, toWindowUnits(b));
+    }
+
+    /**
+     * Seam: places and sizes a native window, in the window system's logical pixels; tests record
+     * the rectangle instead.
+     */
+    protected void placeNativeWindow(long context, Rectangle w) {
+        FlutterNative.setBounds(context, w.x, w.y, w.width, w.height, w.x, w.y, w.width, w.height);
+    }
+
+    /**
+     * A rectangle in SWT units, in the window system's logical pixels. Its edges are converted rather
+     * than its size, so two windows that touch in SWT units still touch on screen.
+     */
+    static Rectangle toWindowUnits(Rectangle swt) {
+        int x = Config.swtToLogical(swt.x);
+        int y = Config.swtToLogical(swt.y);
+        return new Rectangle(x, y,
+                Config.swtToLogical(swt.x + swt.width) - x, Config.swtToLogical(swt.y + swt.height) - y);
     }
 
     protected void setShellWindowState(long context, int state) {
@@ -325,10 +348,16 @@ public class DeskDisplayBridge extends DisplayBridge {
      * toDisplay landed outside it.
      */
     protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
-        long packed = FlutterNative.getOrigin(context);
+        long packed = nativeOrigin(context);
         if (packed == FlutterNative.ORIGIN_UNKNOWN) return null;
         return new org.eclipse.swt.graphics.Point(
-                FlutterNative.originX(packed), FlutterNative.originY(packed) + clientTopInset);
+                Config.logicalToSwt(FlutterNative.originX(packed)),
+                Config.logicalToSwt(FlutterNative.originY(packed)) + clientTopInset);
+    }
+
+    /** Seam: tests stand in a window origin without JNI. */
+    protected long nativeOrigin(long context) {
+        return FlutterNative.getOrigin(context);
     }
 
 
@@ -814,8 +843,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         // no viewport, so the handshake that would correct it never runs: keep the size it has.
         if (bounds.width <= 1 || bounds.height <= 1) return;
         windowOrigin = new Point(bounds.x, bounds.y);
-        FlutterNative.setBounds(windowContext, bounds.x, bounds.y, bounds.width, bounds.height,
-                bounds.x, bounds.y, bounds.width, bounds.height);
+        placeNativeWindow(windowContext, toWindowUnits(bounds));
     }
 
     @Override

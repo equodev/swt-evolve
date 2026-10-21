@@ -56,11 +56,11 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     static final long EditProc;
 
-    static final TCHAR EditClass = new TCHAR(0, "EDIT", true);
+    static final TCHAR EditClass = new TCHAR("EDIT", true);
 
     static final long UpDownProc;
 
-    static final TCHAR UpDownClass = new TCHAR(0, OS.UPDOWN_CLASS, true);
+    static final TCHAR UpDownClass = new TCHAR(OS.UPDOWN_CLASS, true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -784,7 +784,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
             return false;
         if (newText == oldText)
             return true;
-        TCHAR buffer = new TCHAR(getCodePage(), newText, true);
+        TCHAR buffer = new TCHAR(newText, true);
         OS.SendMessage(hwndText, OS.EM_SETSEL, start[0], end[0]);
         OS.SendMessage(hwndText, OS.EM_REPLACESEL, 0, buffer);
         return false;
@@ -996,7 +996,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
                 if (string == null)
                     return;
             }
-            TCHAR buffer = new TCHAR(getCodePage(), string, true);
+            TCHAR buffer = new TCHAR(string, true);
             OS.SetWindowText(hwndText, buffer);
             OS.SendMessage(hwndText, OS.EM_SETSEL, 0, -1);
             OS.NotifyWinEvent(OS.EVENT_OBJECT_FOCUS, hwndText, OS.OBJID_CLIENT, 0);
@@ -1427,7 +1427,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
                 if (call) {
                     OS.CallWindowProc(EditProc, hwndText, msg, wParam, lParam);
                 }
-                TCHAR buffer = new TCHAR(getCodePage(), newText, true);
+                TCHAR buffer = new TCHAR(newText, true);
                 if (msg == OS.WM_SETTEXT) {
                     long hHeap = OS.GetProcessHeap();
                     int byteCount = buffer.length() * TCHAR.sizeof;

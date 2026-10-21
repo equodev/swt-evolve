@@ -5,6 +5,7 @@ import '../../gen/droptarget.dart';
 import '../../gen/event.dart';
 import '../../gen/widget.dart';
 import 'dnd_session.dart';
+import 'swt_zoom_scale.dart';
 
 class DndDragPayload {
   final int sourceControlId;
@@ -159,9 +160,6 @@ class DropOperationBadge extends StatelessWidget {
 /// dragged image keeps its top-left corner at the pointer.
 const double _cursorSlop = 8.0;
 
-Offset _feedbackAnchor(Draggable<Object> draggable, BuildContext context, Offset position) =>
-    const Offset(_cursorSlop, _cursorSlop);
-
 /// The drag image with a region on top that carries the drag cursor. The region lets hit testing
 /// through, so the drop targets underneath are still found.
 Widget _withDropCursor(Widget visual) {
@@ -279,8 +277,14 @@ Widget wrapDraggable<T extends Object>({
         );
   // A drag with no SWT DragSource behind it (a CTabFolder reordering its own tabs, a workbench
   // moving a view) is not an SWT DnD operation and has no drop answer to show.
-  final feedback = hasDragSource ? _withDropCursor(visual) : visual;
-  final anchor = hasDragSource ? _feedbackAnchor : pointerDragAnchorStrategy;
+  // Drawn shifted back by the slop rather than anchored away from the pointer: a drag target reads
+  // the feedback's offset as where the drop happens, so its origin has to stay at the pointer.
+  final feedback = hasDragSource
+      ? Transform.translate(
+          offset: const Offset(-_cursorSlop, -_cursorSlop),
+          child: _withDropCursor(visual),
+        )
+      : visual;
   final childWhenDragging = childWhenDraggingBuilder != null
       ? childWhenDraggingBuilder(child)
       : Opacity(opacity: 0.3, child: child);
@@ -288,7 +292,7 @@ Widget wrapDraggable<T extends Object>({
   return useLongPress
       ? LongPressDraggable<T>(
           data: data,
-          dragAnchorStrategy: anchor,
+          dragAnchorStrategy: pointerDragAnchorStrategy,
           ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
@@ -298,7 +302,7 @@ Widget wrapDraggable<T extends Object>({
         )
       : Draggable<T>(
           data: data,
-          dragAnchorStrategy: anchor,
+          dragAnchorStrategy: pointerDragAnchorStrategy,
           ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
@@ -314,7 +318,9 @@ Widget wrapDropTarget<T extends Object>({
   required void Function(T data, int? index, int? itemId, Offset position) onDrop,
   int Function(DragTargetDetails<T> details)? resolveIndex,
   int Function(DragTargetDetails<T> details)? resolveItemId,
-  Offset Function(DragTargetDetails<T> details)? resolvePosition,
+  /// The drop point in SWT units; when it is null, or answers null, the pointer's global position
+  /// converted to SWT units.
+  Offset? Function(DragTargetDetails<T> details)? resolvePosition,
   Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder,
   bool alwaysAccepts = false,
   bool alwaysResolves = false,
@@ -340,7 +346,7 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
   final int? dropTargetId;
   final int Function(DragTargetDetails<T> details)? resolveIndex;
   final int Function(DragTargetDetails<T> details)? resolveItemId;
-  final Offset Function(DragTargetDetails<T> details)? resolvePosition;
+  final Offset? Function(DragTargetDetails<T> details)? resolvePosition;
   final void Function(T data, int? index, int? itemId, Offset position) onDrop;
   final Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder;
 
@@ -416,7 +422,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
   }
 
   Offset _resolvePosition(DragTargetDetails<T> details) =>
-      widget.resolvePosition != null ? widget.resolvePosition!(details) : details.offset;
+      widget.resolvePosition?.call(details) ?? logicalToSwt(details.offset);
 
   void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;

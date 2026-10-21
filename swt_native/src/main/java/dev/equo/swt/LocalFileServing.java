@@ -339,7 +339,7 @@ public final class LocalFileServing {
      * process — or, combined with a CORS misconfiguration, any web page — probe
      * small integers and read files back out of a registered directory.
      */
-    private static String newToken() {
+    static String newToken() {
         byte[] bytes = new byte[16];
         RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);

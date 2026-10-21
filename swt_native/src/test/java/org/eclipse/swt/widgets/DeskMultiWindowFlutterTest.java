@@ -1,10 +1,12 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.IntegerOn150;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowPolicy;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -104,6 +106,23 @@ class DeskMultiWindowFlutterTest {
         assertThat(desk.opened).extracting(w -> w.widgetId)
                 .containsExactly((long) first.hashCode(), (long) second.hashCode(),
                         (long) third.hashCode());
+    }
+
+    @Test
+    @DisplayName("a detached window opens at its shell's size in the window system's pixels")
+    void opensAtTheShellsSizeInWindowPixels() {
+        TestDeskBridge desk = install();
+        // A 600-unit shell is drawn in 400 logical pixels.
+        IntegerOn150.run(() -> {
+            openShell("Main");
+            Shell detached = new Shell(display, SWT.SHELL_TRIM);
+            detached.setBounds(300, 150, 600, 450);
+            detached.setVisible(true);
+
+            OpenedWindow window = desk.opened.get(0);
+            assertThat(window.width).isEqualTo(400);
+            assertThat(window.height).isEqualTo(300);
+        });
     }
 
     @Test
@@ -787,28 +806,6 @@ class DeskMultiWindowFlutterTest {
             this.widgetName = widgetName;
             this.width = width;
             this.height = height;
-        }
-    }
-
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
         }
     }
 
