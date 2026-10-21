@@ -1,11 +1,14 @@
 package org.eclipse.swt.custom;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Event;
 
 /**
  * Glue for {@code DartCCombo}, whose drop-down list is drawn by Flutter: Java learns that it is open
- * only from Flutter, and its keyboard focus stays on the field while it is.
+ * only from Flutter, and its keyboard focus stays on the field while it is. The CCombo holds the state
+ * a native one keeps in its List.
  */
 public class CComboHelper {
 
@@ -30,20 +33,51 @@ public class CComboHelper {
     }
 
     /**
-     * Hands the field's Escape to the open list, which is where a native CCombo's focus is: the list
-     * closes, in Flutter too, and the Traverse stops at the CCombo with doit=false.
+     * Gives the field's Escape the meaning it has on the open list, where a native CCombo's focus is:
+     * the Traverse stops at the CCombo with doit=false, and the key closes the list, in Flutter too.
      */
     public static boolean routeToOpenList(DartCCombo combo, Event event) {
         if (!combo.isDropped())
             return false;
-        boolean escape = event.type == SWT.Traverse
-                ? event.detail == SWT.TRAVERSE_ESCAPE
-                : event.type == SWT.KeyDown && event.character == SWT.ESC;
-        if (!escape)
-            return false;
-        combo.listEvent(event);
-        if (!combo.isDisposed() && !combo.isDropped())
+        if (event.type == SWT.Traverse && event.detail == SWT.TRAVERSE_ESCAPE) {
+            Event e = new Event();
+            e.time = event.time;
+            e.detail = event.detail;
+            e.doit = false;
+            e.character = event.character;
+            e.keyCode = event.keyCode;
+            e.keyLocation = event.keyLocation;
+            combo.notifyListeners(SWT.Traverse, e);
+            event.doit = e.doit;
+            event.detail = e.detail;
+            return true;
+        }
+        if (event.type == SWT.KeyDown && event.character == SWT.ESC) {
+            combo.dropDown(false);
+            if (combo.isDisposed())
+                return true;
             combo.getValue().markDirty(VCCombo.LIST_VISIBLE);
-        return true;
+            Event e = new Event();
+            e.time = event.time;
+            e.character = event.character;
+            e.keyCode = event.keyCode;
+            e.keyLocation = event.keyLocation;
+            e.stateMask = event.stateMask;
+            combo.notifyListeners(SWT.KeyDown, e);
+            event.doit = e.doit;
+            return true;
+        }
+        return false;
+    }
+
+    /** The height of a row of the list Flutter draws: the font's height plus the row's margin, as a List's. */
+    static int itemHeight(DartCCombo combo) {
+        Font font = combo.getFont();
+        if (font == null || font.isDisposed())
+            return 0;
+        FontData[] fontData = font.getFontData();
+        if (fontData == null || fontData.length == 0 || fontData[0] == null)
+            return 0;
+        return fontData[0].getHeight() + 4;
     }
 }

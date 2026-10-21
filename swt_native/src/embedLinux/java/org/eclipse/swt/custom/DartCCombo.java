@@ -57,11 +57,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     Text text;
 
-    List list;
-
     int visibleItemCount = 5;
-
-    Button arrow;
 
     boolean hasFocus;
 
@@ -124,14 +120,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 textEvent(event);
                 return;
             }
-            if (list == event.widget) {
-                listEvent(event);
-                return;
-            }
-            if (arrow == event.widget) {
-                arrowEvent(event);
-                return;
-            }
             if (DartCCombo.this.getApi() == event.widget) {
                 comboEvent(event);
                 return;
@@ -145,10 +133,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
             }
         };
         createText(checkedStyle);
-        int arrowStyle = SWT.ARROW | SWT.DOWN;
-        if ((checkedStyle & SWT.FLAT) != 0)
-            arrowStyle |= SWT.FLAT;
-        arrow = new Button(this.getApi(), arrowStyle);
         filter = event -> {
             if (isDisposed())
                 return;
@@ -171,22 +155,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
         };
         int[] comboEvents = { SWT.Dispose, SWT.FocusIn, SWT.Move, SWT.Resize, SWT.FocusOut };
         for (int comboEvent : comboEvents) this.addListener(comboEvent, listener);
-        int[] arrowEvents = { SWT.DragDetect, SWT.MouseDown, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover, SWT.MouseMove, SWT.MouseUp, SWT.MouseWheel, SWT.Selection, SWT.FocusIn };
-        for (int arrowEvent : arrowEvents) arrow.addListener(arrowEvent, listener);
-        // Initialize list without creating popup shell (for tests)
-        int listStyle = SWT.SINGLE | SWT.V_SCROLL | SWT.H_SCROLL;
-        if ((checkedStyle & SWT.FLAT) != 0)
-            listStyle |= SWT.FLAT;
-        if ((checkedStyle & SWT.RIGHT_TO_LEFT) != 0)
-            listStyle |= SWT.RIGHT_TO_LEFT;
-        if ((checkedStyle & SWT.LEFT_TO_RIGHT) != 0)
-            listStyle |= SWT.LEFT_TO_RIGHT;
-        list = new List(this.getApi(), listStyle);
-        int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.FocusOut, SWT.Dispose };
-        for (int listEvent : listEvents) list.addListener(listEvent, listener);
-        ;
         if ((style & SWT.SIMPLE) == 0) {
-            int itemHeight = list.getItemHeight();
+            int itemHeight = getItemHeight();
             if (itemHeight != 0) {
                 Monitor monitor = getMonitor();
                 if (monitor != null) {
@@ -336,7 +306,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
         newItems[index] = string;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
-        list.add(string);
+        if (selectionIndex >= index)
+            selectionIndex++;
         getValue().markDirty(VCCombo.ITEMS);
     }
 
@@ -416,67 +387,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         addTypedListener(listener, SWT.Verify);
     }
 
-    void arrowEvent(Event event) {
-        switch(event.type) {
-            case SWT.FocusIn:
-                {
-                    handleFocus(SWT.FocusIn);
-                    break;
-                }
-            case SWT.DragDetect:
-            case SWT.MouseDown:
-            case SWT.MouseUp:
-            case SWT.MouseMove:
-            case SWT.MouseEnter:
-            case SWT.MouseExit:
-            case SWT.MouseHover:
-                {
-                    Point pt = getDisplay().map(arrow, this.getApi(), event.x, event.y);
-                    event.x = pt.x;
-                    event.y = pt.y;
-                    notifyListeners(event.type, event);
-                    event.type = SWT.None;
-                    break;
-                }
-            case SWT.MouseWheel:
-                {
-                    Point pt = getDisplay().map(arrow, this.getApi(), event.x, event.y);
-                    event.x = pt.x;
-                    event.y = pt.y;
-                    notifyListeners(SWT.MouseWheel, event);
-                    event.type = SWT.None;
-                    if (isDisposed())
-                        break;
-                    if (!event.doit)
-                        break;
-                    if (event.count != 0) {
-                        event.doit = false;
-                        int oldIndex = getSelectionIndex();
-                        if (event.count > 0) {
-                            select(Math.max(oldIndex - 1, 0));
-                        } else {
-                            select(Math.min(oldIndex + 1, getItemCount() - 1));
-                        }
-                        if (oldIndex != getSelectionIndex()) {
-                            Event e = new Event();
-                            e.time = event.time;
-                            e.stateMask = event.stateMask;
-                            notifyListeners(SWT.Selection, e);
-                        }
-                        if (isDisposed())
-                            break;
-                    }
-                    break;
-                }
-            case SWT.Selection:
-                {
-                    text.setFocus();
-                    dropDown(!isDropped());
-                    break;
-                }
-        }
-    }
-
     @Override
     public void checkSubclass() {
         String name = getClass().getName();
@@ -506,7 +416,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void clearSelection() {
         checkWidget();
         text.clearSelection();
-        list.deselectAll();
+        selectionIndex = -1;
     }
 
     void comboEvent(Event event) {
@@ -520,19 +430,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 Display display = getDisplay();
                 display.removeFilter(SWT.FocusIn, filter);
                 text = null;
-                list = null;
-                arrow = null;
                 _shell = null;
                 break;
             case SWT.FocusIn:
-                Control focusControl = getDisplay().getFocusControl();
-                if (focusControl == arrow || focusControl == list)
-                    return;
-                if (isDropped()) {
-                    list.setFocus();
-                } else {
-                    text.setFocus();
-                }
+                text.setFocus();
                 break;
             case SWT.FocusOut:
                 text.clearSelection();
@@ -570,30 +471,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         text.copy();
     }
 
-    void createPopup(String[] items, int selectionIndex) {
-        int style = getStyle();
-        int listStyle = SWT.SINGLE | SWT.V_SCROLL | SWT.H_SCROLL;
-        if ((style & SWT.FLAT) != 0)
-            listStyle |= SWT.FLAT;
-        if ((style & SWT.RIGHT_TO_LEFT) != 0)
-            listStyle |= SWT.RIGHT_TO_LEFT;
-        if ((style & SWT.LEFT_TO_RIGHT) != 0)
-            listStyle |= SWT.LEFT_TO_RIGHT;
-        list = new List(this.getApi(), listStyle);
-        if (font != null)
-            list.setFont(font);
-        if (foreground != null)
-            list.setForeground(foreground);
-        if (background != null)
-            list.setBackground(background);
-        int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.FocusOut, SWT.Dispose };
-        for (int listEvent : listEvents) list.addListener(listEvent, listener);
-        if (items != null)
-            list.setItems(items);
-        if (selectionIndex != -1)
-            list.setSelection(selectionIndex);
-    }
-
     /**
      * Cuts the selected text.
      * <p>
@@ -627,11 +504,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void deselect(int index) {
         checkWidget();
-        if (0 <= index && index < items.length && index == getSelectionIndex() && _text.equals(items[index])) {
+        if (0 <= index && index < items.length && index == selectionIndex && text.getText().equals(items[index])) {
             //$NON-NLS-1$
             text.setText("");
-            _text = "";
-            list.deselect(index);
+            selectionIndex = -1;
         }
     }
 
@@ -653,69 +529,23 @@ public class DartCCombo extends DartComposite implements ICCombo {
         checkWidget();
         //$NON-NLS-1$
         text.setText("");
-        _text = "";
-        list.deselectAll();
+        selectionIndex = -1;
     }
 
     void dropDown(boolean drop) {
-        if (drop == isDropped())
+        if (drop == listVisible)
             return;
+        getValue().markDirty(VCCombo.ITEMS);
+        listVisible = drop;
         Display display = getDisplay();
-        if (!drop) {
-            display.removeFilter(SWT.Selection, filter);
-            if (!isDisposed() && isFocusControl()) {
-                text.setFocus();
-            }
-            return;
-        }
-        if (!getApi().isVisible())
-            return;
-        Point comboSize = getSize();
-        int itemCount = list.getItemCount();
-        itemCount = (itemCount == 0) ? visibleItemCount : Math.min(visibleItemCount, itemCount);
-        int itemHeight = list.getItemHeight() * itemCount;
-        Point listSize = list.computeSize(SWT.DEFAULT, itemHeight, false);
-        Rectangle displayRect = getMonitor().getClientArea();
-        list.setBounds(1, 1, Math.max(comboSize.x - 2, Math.min(listSize.x, displayRect.width - 2)), listSize.y);
-        int index = list.getSelectionIndex();
-        if (index != -1)
-            list.setTopIndex(index);
-        Rectangle listRect = list.getBounds();
-        Rectangle parentRect = display.map(getParent(), null, getBounds());
-        int width = listRect.width + 2;
-        int height = listRect.height + 2;
-        int x = parentRect.x;
-        if (x + width > displayRect.x + displayRect.width) {
-            x = displayRect.x + displayRect.width - width;
-        }
-        int y = parentRect.y + comboSize.y;
-        if (y + height > displayRect.y + displayRect.height) {
-            int popUpwardsHeight = (parentRect.y - height < displayRect.y) ? parentRect.y - displayRect.y : height;
-            int popDownwardsHeight = displayRect.y + displayRect.height - y;
-            if (popUpwardsHeight > popDownwardsHeight) {
-                height = popUpwardsHeight;
-                y = parentRect.y - popUpwardsHeight;
-            } else {
-                height = popDownwardsHeight;
-            }
-            listRect.height = height - 2;
-        }
-        /*
-	 * Invisible HScrollBar lead to empty space at end of CCombo drop-down.
-	 * Fix is to reduce height of list and shell in that case, bug 388126.
-	 */
-        ScrollBar hBar = list.getHorizontalBar();
-        int emptyHBarSpace = hBar.isVisible() ? 0 : hBar.getSize().y;
-        list.setSize(listRect.width, listRect.height - emptyHBarSpace);
-        if (isFocusControl())
-            list.setFocus();
-        /*
-	 * Add a filter to listen to scrolling of the parent composite, when the
-	 * drop-down is visible. Remove the filter when drop-down is not
-	 * visible.
-	 */
         display.removeFilter(SWT.Selection, filter);
-        display.addFilter(SWT.Selection, filter);
+        if (!drop) {
+            if (!isDisposed() && isFocusControl())
+                text.setFocus();
+            return;
+        }
+        if (getApi().isVisible())
+            display.addFilter(SWT.Selection, filter);
     }
 
     /*
@@ -845,7 +675,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public int getItemHeight() {
         checkWidget();
-        return list.getItemHeight();
+        return CComboHelper.itemHeight(this);
     }
 
     /**
@@ -930,7 +760,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public int getSelectionIndex() {
         checkWidget();
-        return list.getSelectionIndex();
+        return selectionIndex;
     }
 
     @Override
@@ -972,7 +802,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public String getText() {
         checkWidget();
-        return _text;
+        return text.getText();
     }
 
     /**
@@ -1050,7 +880,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
                     if (!hasFocus)
                         return;
                     Control focusControl = getDisplay().getFocusControl();
-                    if (focusControl == arrow || focusControl == list || focusControl == text)
+                    if (focusControl == text)
                         return;
                     hasFocus = false;
                     Shell shell = getShell();
@@ -1067,8 +897,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     void handleScroll(Event event) {
         ScrollBar scrollBar = (ScrollBar) event.widget;
         Control scrollableParent = scrollBar.getParent();
-        if (scrollableParent.equals(list))
-            return;
         if (isParentScrolling(scrollableParent))
             dropDown(false);
     }
@@ -1167,27 +995,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         };
         getAccessible().addAccessibleListener(accessibleAdapter);
         text.getAccessible().addAccessibleListener(accessibleAdapter);
-        if (list != null)
-            list.getAccessible().addAccessibleListener(accessibleAdapter);
-        arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
-
-            @Override
-            public void getName(AccessibleEvent e) {
-                //$NON-NLS-1$ //$NON-NLS-2$
-                e.result = isDropped() ? SWT.getMessage("SWT_Close") : SWT.getMessage("SWT_Open");
-            }
-
-            @Override
-            public void getKeyboardShortcut(AccessibleEvent e) {
-                //$NON-NLS-1$
-                e.result = "Alt+Down Arrow";
-            }
-
-            @Override
-            public void getHelp(AccessibleEvent e) {
-                e.result = getToolTipText();
-            }
-        });
         getAccessible().addAccessibleTextListener(new AccessibleTextAdapter() {
 
             @Override
@@ -1249,14 +1056,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 e.detail = text.getEditable() ? ACC.ROLE_TEXT : ACC.ROLE_LABEL;
             }
         });
-        arrow.getAccessible().addAccessibleControlListener(new AccessibleControlAdapter() {
-
-            @Override
-            public void getDefaultAction(AccessibleControlEvent e) {
-                //$NON-NLS-1$ //$NON-NLS-2$
-                e.result = isDropped() ? SWT.getMessage("SWT_Close") : SWT.getMessage("SWT_Open");
-            }
-        });
     }
 
     boolean isDropped() {
@@ -1283,146 +1082,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         if (isDropped())
             dropDown(false);
         Rectangle rect = getClientArea();
-        int width = rect.width;
-        int height = rect.height;
-        Point arrowSize = arrow.computeSize(SWT.DEFAULT, height, changed);
-        text.setBounds(0, 0, width - arrowSize.x, height);
-        arrow.setBounds(width - arrowSize.x, 0, arrowSize.x, arrowSize.y);
-    }
-
-    void listEvent(Event event) {
-        switch(event.type) {
-            case SWT.Dispose:
-                break;
-            case SWT.FocusIn:
-                {
-                    handleFocus(SWT.FocusIn);
-                    break;
-                }
-            case SWT.FocusOut:
-                {
-                    /*
-			 * Behavior in Windows, GTK & Cocoa: When the arrow button is pressed
-			 * with the popup list visible, the following events are received-
-			 * popup control receives a deactivate event,
-			 * list receives focus lost event, and then
-			 * arrow button receives a selection event.
-			 * If we hide the popup in the focus out event, the selection event will
-			 * show it again. To prevent the popup from showing again, we will detect
-			 * this case and let the selection event of the arrow button hide the popup.
-			 */
-                    Point point = arrow.toControl(getDisplay().getCursorLocation());
-                    Point size = arrow.getSize();
-                    Rectangle rect = new Rectangle(0, 0, size.x, size.y);
-                    if (rect.contains(point)) {
-                        boolean comboShellActivated = getDisplay().getActiveShell() == getShell();
-                        if (!comboShellActivated)
-                            dropDown(false);
-                        break;
-                    }
-                    dropDown(false);
-                    break;
-                }
-            case SWT.MouseUp:
-                {
-                    if (event.button != 1)
-                        return;
-                    dropDown(false);
-                    break;
-                }
-            case SWT.Selection:
-                {
-                    int index = list.getSelectionIndex();
-                    if (index == -1)
-                        return;
-                    if (index >= 0 && index < items.length) {
-                        text.setText(items[index]);
-                        _text = items[index];
-                    }
-                    if (text.getEditable() && text.isFocusControl())
-                        text.selectAll();
-                    list.setSelection(index);
-                    Event e = new Event();
-                    e.time = event.time;
-                    e.stateMask = event.stateMask;
-                    e.doit = event.doit;
-                    notifyListeners(SWT.Selection, e);
-                    event.doit = e.doit;
-                    break;
-                }
-            case SWT.Traverse:
-                {
-                    switch(event.detail) {
-                        case SWT.TRAVERSE_RETURN:
-                        case SWT.TRAVERSE_ESCAPE:
-                        case SWT.TRAVERSE_ARROW_PREVIOUS:
-                        case SWT.TRAVERSE_ARROW_NEXT:
-                            event.doit = false;
-                            break;
-                        case SWT.TRAVERSE_TAB_NEXT:
-                        case SWT.TRAVERSE_TAB_PREVIOUS:
-                            event.doit = text.traverse(event.detail);
-                            event.detail = SWT.TRAVERSE_NONE;
-                            if (event.doit)
-                                dropDown(false);
-                            return;
-                    }
-                    Event e = new Event();
-                    e.time = event.time;
-                    e.detail = event.detail;
-                    e.doit = event.doit;
-                    e.character = event.character;
-                    e.keyCode = event.keyCode;
-                    e.keyLocation = event.keyLocation;
-                    notifyListeners(SWT.Traverse, e);
-                    event.doit = e.doit;
-                    event.detail = e.detail;
-                    break;
-                }
-            case SWT.KeyUp:
-                {
-                    Event e = new Event();
-                    e.time = event.time;
-                    e.character = event.character;
-                    e.keyCode = event.keyCode;
-                    e.keyLocation = event.keyLocation;
-                    e.stateMask = event.stateMask;
-                    notifyListeners(SWT.KeyUp, e);
-                    event.doit = e.doit;
-                    break;
-                }
-            case SWT.KeyDown:
-                {
-                    if (event.character == SWT.ESC) {
-                        // Escape key cancels popup list
-                        dropDown(false);
-                    }
-                    if ((event.stateMask & SWT.ALT) != 0 && (event.keyCode == SWT.ARROW_UP || event.keyCode == SWT.ARROW_DOWN)) {
-                        dropDown(false);
-                    }
-                    if (event.character == SWT.CR) {
-                        // Enter causes default selection
-                        dropDown(false);
-                        Event e = new Event();
-                        e.time = event.time;
-                        e.stateMask = event.stateMask;
-                        notifyListeners(SWT.DefaultSelection, e);
-                    }
-                    // At this point the widget may have been disposed.
-                    // If so, do not continue.
-                    if (isDisposed())
-                        break;
-                    Event e = new Event();
-                    e.time = event.time;
-                    e.character = event.character;
-                    e.keyCode = event.keyCode;
-                    e.keyLocation = event.keyLocation;
-                    e.stateMask = event.stateMask;
-                    notifyListeners(SWT.KeyDown, e);
-                    event.doit = e.doit;
-                    break;
-                }
-        }
+        text.setBounds(0, 0, rect.width, rect.height);
     }
 
     /**
@@ -1459,7 +1119,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void redraw() {
         super.redraw();
         text.redraw();
-        arrow.redraw();
     }
 
     @Override
@@ -1489,6 +1148,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
         System.arraycopy(items, 0, newItems, 0, index);
         System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
         items = newItems;
+        if (selectionIndex == index)
+            selectionIndex = -1;
+        else if (selectionIndex > index)
+            selectionIndex--;
         getValue().markDirty(VCCombo.ITEMS);
     }
 
@@ -1519,6 +1182,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
         System.arraycopy(items, 0, newItems, 0, start);
         System.arraycopy(items, end + 1, newItems, start, items.length - end - 1);
         items = newItems;
+        if (selectionIndex > end)
+            selectionIndex -= count;
+        else if (selectionIndex >= start)
+            selectionIndex = -1;
         getValue().markDirty(VCCombo.ITEMS);
     }
 
@@ -1561,8 +1228,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
         checkWidget();
         //$NON-NLS-1$
         text.setText("");
-        _text = "";
         items = new String[0];
+        selectionIndex = -1;
         getValue().markDirty(VCCombo.ITEMS);
     }
 
@@ -1656,26 +1323,15 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void select(int index) {
         checkWidget();
         if (index == -1) {
-            list.deselectAll();
             //$NON-NLS-1$
             text.setText("");
-            _text = "";
-            getValue().markDirty(VCCombo.TEXT);
-            getValue().markDirty(VCCombo.SELECTION);
-            return;
-        }
-        if (0 <= index && index < items.length) {
-            // Always update _text, regardless of current selection
+            selectionIndex = -1;
+        } else if (0 <= index && index < items.length) {
             text.setText(items[index]);
-            _text = items[index];
-            if (index != getSelectionIndex()) {
-                if (text.getEditable() && text.isFocusControl())
-                    text.selectAll();
-                list.select(index);
-                list.showSelection();
-            }
+            if (text.getEditable() && text.isFocusControl())
+                text.selectAll();
+            selectionIndex = index;
         }
-        // The field shows _text, which is not the property the rewritten dirty() marks.
         getValue().markDirty(VCCombo.TEXT);
         getValue().markDirty(VCCombo.SELECTION);
     }
@@ -1709,10 +1365,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         background = color;
         if (text != null)
             text.setBackground(color);
-        if (list != null)
-            list.setBackground(color);
-        if (arrow != null)
-            arrow.setBackground(color);
     }
 
     /**
@@ -1739,8 +1391,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         super.setEnabled(enabled);
         if (text != null)
             text.setEnabled(enabled);
-        if (arrow != null)
-            arrow.setEnabled(enabled);
     }
 
     @Override
@@ -1758,7 +1408,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         super.setFont(font);
         this.font = font;
         text.setFont(font);
-        list.setFont(font);
         internalLayout(true);
     }
 
@@ -1768,10 +1417,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         foreground = color;
         if (text != null)
             text.setForeground(color);
-        if (list != null)
-            list.setForeground(color);
-        if (arrow != null)
-            arrow.setForeground(color);
     }
 
     /**
@@ -1825,7 +1470,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.items = items;
-        list.setItems(items);
+        selectionIndex = -1;
         //$NON-NLS-1$
         if (!text.getEditable())
             text.setText("");
@@ -1940,21 +1585,13 @@ public class DartCCombo extends DartComposite implements ICCombo {
         checkWidget();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        // Use indexOf() which searches in items array, not list widget
         int index = indexOf(string);
-        if (index == -1) {
-            list.deselectAll();
-            text.setText(string);
-            this._text = string;
-            getValue().markDirty(VCCombo.TEXT);
-            return;
-        }
         text.setText(string);
-        if (text.getEditable() && text.isFocusControl())
-            text.selectAll();
-        list.setSelection(index);
-        list.showSelection();
-        this._text = string;
+        if (index != -1) {
+            if (text.getEditable() && text.isFocusControl())
+                text.selectAll();
+            selectionIndex = index;
+        }
         getValue().markDirty(VCCombo.TEXT);
     }
 
@@ -1986,7 +1623,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setToolTipText(String string) {
         checkWidget();
         super.setToolTipText(string);
-        arrow.setToolTipText(string);
         text.setToolTipText(string);
     }
 
@@ -2144,8 +1780,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 }
             case SWT.Modify:
                 {
-                    _text = text.getText();
-                    list.deselectAll();
+                    selectionIndex = -1;
+                    getValue().markDirty(VCCombo.TEXT);
                     Event e = new Event();
                     e.time = event.time;
                     notifyListeners(SWT.Modify, e);
@@ -2291,8 +1927,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     private void handleDPIChange(Event event) {
         forwardDPIChange(event, text);
-        forwardDPIChange(event, list);
-        forwardDPIChange(event, arrow);
     }
 
     private void forwardDPIChange(Event event, Widget widget) {
@@ -2313,24 +1947,14 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     Point selection;
 
-    String _text = "";
-
     int textLimit;
 
     public Text _text() {
         return text;
     }
 
-    public List _list() {
-        return list;
-    }
-
     public int _visibleItemCount() {
         return visibleItemCount;
-    }
-
-    public Button _arrow() {
-        return arrow;
     }
 
     public boolean _hasFocus() {
@@ -2377,10 +2001,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         return selection;
     }
 
-    public String __text() {
-        return _text;
-    }
-
     public int _textLimit() {
         return textLimit;
     }
@@ -2401,6 +2021,18 @@ public class DartCCombo extends DartComposite implements ICCombo {
             return;
         }
         super.setData(key, value);
+    }
+
+    int selectionIndex = -1;
+
+    @Override
+    public Control[] _displayedChildren() {
+        return new Control[0];
+    }
+
+    @Override
+    public boolean _drawsItself(Control child) {
+        return true;
     }
 
     protected void _hookEvents() {
@@ -2434,13 +2066,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 if (isDisposed())
                     return;
                 if (e.text != null) {
-                    _text = e.text;
-                    text.setText(e.text);
-                    // Update list selection to match
                     int index = indexOf(e.text);
-                    if (index >= 0) {
-                        list.setSelection(index);
-                    }
+                    text.setText(e.text);
+                    if (index >= 0)
+                        selectionIndex = index;
                 }
                 sendEvent(SWT.Selection, e);
             });

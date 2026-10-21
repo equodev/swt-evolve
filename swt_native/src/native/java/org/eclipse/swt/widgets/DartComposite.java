@@ -1151,6 +1151,10 @@ public class DartComposite extends DartScrollable implements IComposite {
         return _getChildren();
     }
 
+    public boolean _drawsItself(Control child) {
+        return false;
+    }
+
     private boolean hasLayoutableClientArea() {
         Rectangle client = getApi().getClientArea();
         return client == null || client.width > 0 || client.height > 0;
