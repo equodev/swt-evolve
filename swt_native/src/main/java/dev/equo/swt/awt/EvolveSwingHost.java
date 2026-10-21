@@ -221,7 +221,7 @@ public final class EvolveSwingHost {
         host.bind(frame);
 
         // Pre-open the canvas reports 0x0; the Resize listener sizes the frame once it is laid out.
-        sizeFrame(frame, canvas.getClientArea());
+        sizeBlitFrame(frame, host.contentRoot, canvas.getClientArea());
         syncFrameLocation(canvas, frame);
         frame.setVisible(true);
         host.syncOwner();
@@ -229,14 +229,23 @@ public final class EvolveSwingHost {
     }
 
     /**
-     * Sizes an embedding's frame to its host control's client area, 0x0 included, as native
-     * {@code SWT_AWT} leaves its frame until the composite has its real size. Shared by the blit and
-     * island paths. At any positive size the frame paints, and some content keeps what it painted
-     * at: a {@code JSplitPane} stops placing its divider from its children's preferred sizes once
-     * painted, so a placeholder 1x1 collapses its top component for good.
+     * Sizes an island's frame to its host control's client area, 0x0 included, as native
+     * {@code SWT_AWT} leaves its frame until the composite has its real size. At any positive size
+     * the frame paints, and some content keeps what it painted at: a {@code JSplitPane} stops placing
+     * its divider from its children's preferred sizes once painted, so a placeholder 1x1 collapses
+     * its top component for good.
      */
     static void sizeFrame(Component frame, Rectangle area) {
         frame.setSize(Math.max(0, area.width), Math.max(0, area.height));
+    }
+
+    /**
+     * Never below 1x1: a component added to a 0x0 frame is never laid out. {@code root} paints only
+     * once the area is real.
+     */
+    static void sizeBlitFrame(Component frame, ContentRoot root, Rectangle area) {
+        if (area.width > 0 && area.height > 0) root.place();
+        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
     }
 
     /**
@@ -784,10 +793,32 @@ public final class EvolveSwingHost {
      */
     static final class ContentRoot extends JPanel {
         private final Runnable drawn;
+        private volatile boolean placed;
 
         ContentRoot(Runnable drawn) {
             super(new BorderLayout());
             this.drawn = drawn;
+        }
+
+        /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
+        void place() {
+            placed = true;
+        }
+
+        @Override
+        protected void paintChildren(Graphics g) {
+            if (placed) super.paintChildren(g);
+        }
+
+        // Until placed, a descendant's own repaint starts from here, so it goes through paintChildren.
+        @Override
+        public boolean isOptimizedDrawingEnabled() {
+            return placed && super.isOptimizedDrawingEnabled();
+        }
+
+        @Override
+        public boolean isPaintingOrigin() {
+            return !placed;
         }
 
         @Override
@@ -826,7 +857,7 @@ public final class EvolveSwingHost {
         // Cached at construction so the EDT never calls canvas.getDisplay() (which throws once the
         // canvas is disposed during shutdown). Display.isDisposed()/asyncExec are thread-safe.
         private final Display display;
-        private final JPanel contentRoot = new ContentRoot(this::pushSoon);
+        private final ContentRoot contentRoot = new ContentRoot(this::pushSoon);
         private final EvolveContent content = new EvolveContent();
         private volatile JLightweightFrame frame;
         private volatile Runnable forceRepaint;
@@ -881,7 +912,7 @@ public final class EvolveSwingHost {
             canvas.addListener(SWT.Resize, e -> {
                 Rectangle a = canvas.getClientArea();
                 EventQueue.invokeLater(() -> {
-                    sizeFrame(frame, a);
+                    sizeBlitFrame(frame, contentRoot, a);
                     final int w = frame.getWidth(), h = frame.getHeight();
                     // JLightweightFrame.reshape() reallocates the off-screen buffer and repaints
                     // immediately, but the content tree is still laid out for the old size, so that
