@@ -184,6 +184,6 @@ void main() {
         .toList();
     expect(setBounds, hasLength(1));
     final body = jsonDecode(setBounds.single.$2) as Map<String, dynamic>;
-    expect(body['detail'], 1, reason: 'DisplayBridge.INITIAL_CLIENT_BOUNDS');
+    expect(body['detail'], initialClientBounds);
   });
 }

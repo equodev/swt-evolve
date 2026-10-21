@@ -53,16 +53,29 @@ class DisplayClientGeometryFlutterTest {
     }
 
     @Test
-    void aDialogCenteredOnItsParentFollowsIt() {
+    void aDialogCenteredOnItsParentIsCenteredOnWhereTheParentMoved() {
         TestWebBridge web = install();
-        Shell parent = centeredOnMonitor(850, 800);
-        Shell child = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
-        child.setSize(400, 300);
-        Rectangle p = parent.getBounds();
-        child.setLocation(p.x + (p.width - 400) / 2, p.y + (p.height - 300) / 2);
+        Shell parent = new Shell(display, SWT.CLOSE | SWT.TITLE | SWT.ON_TOP);
+        parent.setBounds(535, 50, 850, 600);
+        Shell child = centeredOn(parent, 400, 300);
+        assertThat(child.getLocation()).isEqualTo(new Point(760, 200));
 
         clientReady(web.comm, 1600, 900);
 
+        assertThat(parent.getLocation()).as("centered across, kept down").isEqualTo(new Point(375, 50));
+        assertThat(child.getLocation()).as("on the parent, not on the viewport").isEqualTo(new Point(600, 200));
+    }
+
+    @Test
+    void aDialogCenteredOnTheMainShellIsCenteredOnTheViewport() {
+        TestWebBridge web = install();
+        Shell main = new Shell(display);
+        main.open();
+        Shell child = centeredOn(main, 400, 300);
+
+        clientReady(web.comm, 1600, 900);
+
+        assertThat(main.getBounds()).isEqualTo(new Rectangle(0, 0, 1600, 900));
         assertThat(child.getLocation()).isEqualTo(new Point(600, 300));
     }
 
@@ -82,16 +95,43 @@ class DisplayClientGeometryFlutterTest {
     }
 
     @Test
-    void theClientsFirstReportOfAMovedDialogDoesNotMoveItBack() {
+    void theClientsFirstReportOfAMovedDialogKeepsItsPositionAndSetsItsSize() {
+        TestWebBridge web = install();
+        Shell login = centeredOnMonitor(850, 800);
+        login.setVisible(true);
+        clientReady(web.comm, 1280, 720);
+
+        // Drawn at the old position, its body capped to the viewport.
+        clientBounds(web.comm, 430, 0, 850, 648, DisplayBridge.INITIAL_CLIENT_BOUNDS);
+        assertThat(login.getBounds()).isEqualTo(new Rectangle(215, 0, 850, 648));
+
+        clientBounds(web.comm, 300, 40, 850, 648, 0);
+        assertThat(login.getLocation()).as("moved by the user").isEqualTo(new Point(300, 40));
+    }
+
+    @Test
+    void aDialogMovedWhileHiddenTakesTheFirstReportOnceShown() {
         TestWebBridge web = install();
         Shell login = centeredOnMonitor(850, 800);
         clientReady(web.comm, 1600, 900);
+        login.setVisible(true);
 
-        clientBounds(web.comm, 535, 140, DisplayBridge.INITIAL_CLIENT_BOUNDS);
-        assertThat(login.getLocation()).as("drawn before the move reached it").isEqualTo(new Point(375, 50));
+        clientBounds(web.comm, 380, 60, 850, 800, DisplayBridge.INITIAL_CLIENT_BOUNDS);
 
-        clientBounds(web.comm, 300, 40, 0);
-        assertThat(login.getLocation()).as("moved by the user").isEqualTo(new Point(300, 40));
+        assertThat(login.getLocation()).isEqualTo(new Point(380, 60));
+    }
+
+    @Test
+    void aRefreshedPageSendsNoStaleReport() {
+        TestWebBridge web = install();
+        Shell login = centeredOnMonitor(850, 800);
+        login.setVisible(true);
+        clientReady(web.comm, 1600, 900);
+
+        clientReady(web.comm, 1600, 900);
+        clientBounds(web.comm, 380, 60, 850, 800, DisplayBridge.INITIAL_CLIENT_BOUNDS);
+
+        assertThat(login.getLocation()).isEqualTo(new Point(380, 60));
     }
 
     @Test
@@ -138,6 +178,14 @@ class DisplayClientGeometryFlutterTest {
         return shell;
     }
 
+    private static Shell centeredOn(Shell parent, int width, int height) {
+        Shell shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        shell.setSize(width, height);
+        Rectangle p = parent.getBounds();
+        shell.setLocation(p.x + (p.width - width) / 2, p.y + (p.height - height) / 2);
+        return shell;
+    }
+
     private TestWebBridge install() {
         FlutterBridge.set(new RecordingBridge());
         display = new Display();
@@ -158,13 +206,13 @@ class DisplayClientGeometryFlutterTest {
         comm.fireContaining("ClientReady", p);
     }
 
-    /** The client's report of the only shell's bounds at the size it was given, as it arrives on the Display thread. */
-    private void clientBounds(RecordingComm comm, int x, int y, int detail) {
+    /** The client's report of the only shell's bounds, as it arrives on the Display thread. */
+    private void clientBounds(RecordingComm comm, int x, int y, int width, int height, int detail) {
         Event e = new Event();
         e.x = x;
         e.y = y;
-        e.width = 850;
-        e.height = 800;
+        e.width = width;
+        e.height = height;
         e.detail = detail;
         comm.fireContaining("/Shell/SetBounds", e);
         while (display.readAndDispatch()) {

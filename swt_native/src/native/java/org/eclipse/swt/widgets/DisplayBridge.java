@@ -70,10 +70,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** {@code Event.detail} of the bounds a client reports once it has first drawn a shell. */
     public static final int INITIAL_CLIENT_BOUNDS = 1;
 
-    /** Shells moved by {@link #replaceShells} whose initial client bounds have not arrived yet.
-     *  Display thread only. */
-    private final java.util.Set<Shell> replacedShells =
+    /** Shown shells moved by {@link #repositionShells} whose initial client bounds have not arrived
+     *  yet. Display thread only. */
+    private final java.util.Set<Shell> repositionedShells =
             java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /** Integer centering, {@code (outer - inner) / 2}, leaves the odd pixel on either side. */
+    private static final int CENTERING_SLACK = 1;
 
     protected DisplayBridge(DartDisplay display) {
         this.forDisplay = display;
@@ -243,6 +246,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
             Display api = display.getApi();
             Runnable apply = () -> {
+                // A refreshed page draws every shell from the bounds held here, so no report it sends is stale.
+                if (!first && p.isFirst) repositionedShells.clear();
                 int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
                 // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
@@ -383,7 +388,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         clientViewportApplied = true;
         display.bounds = viewport;
         applyClientBounds(() -> resizeMainShells(display, viewport));
-        if (placedOnDefault != null) replaceShells(display, placedOnDefault, defaultBounds);
+        if (placedOnDefault != null) repositionShells(display, placedOnDefault, defaultBounds);
         return true;
     }
 
@@ -396,13 +401,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * Corrects the shells placed before any client reported its viewport, so against the Display's
-     * default bounds. One centered on what it was placed in is centered on it again: its parent shell,
-     * or the Display when there is none or the parent still has the bounds a shell inherits from the
-     * Display. Any other keeps its position, moved only as far as needed to stay inside the viewport.
-     * A shell placed outside its reference is left alone.
+     * Moves the shells placed before any client reported its viewport, so against the Display's default
+     * bounds. A shell centered on its reference is centered on that reference's new bounds: the
+     * reference is its parent shell, or the Display when there is none or the parent still has the
+     * bounds a shell inherits from the Display. Any other shell keeps its position, moved only as far
+     * as needed to stay inside the viewport. A shell placed outside its reference is left alone.
      */
-    private void replaceShells(DartDisplay display, java.util.Map<Shell, Rectangle> placed, Rectangle defaultBounds) {
+    private void repositionShells(DartDisplay display, java.util.Map<Shell, Rectangle> placed, Rectangle defaultBounds) {
         Shell main = mainShell(display);
         Rectangle viewport = display.bounds;
         for (java.util.Map.Entry<Shell, Rectangle> entry : placed.entrySet()) {
@@ -415,30 +420,37 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             Rectangle before = inParent ? placed.get(parent) : defaultBounds;
             Rectangle after = inParent ? parent.getBounds() : viewport;
             if (before.equals(after) || !before.contains(at.x, at.y)) continue;
-            int x = replaced(at.x, at.width, before.x, before.width, after.x, after.width, viewport.x, viewport.width);
-            int y = replaced(at.y, at.height, before.y, before.height, after.y, after.height, viewport.y, viewport.height);
+            int x = inside(recentered(at.x, at.width, before.x, before.width, after.x, after.width),
+                    at.width, viewport.x, viewport.width);
+            int y = inside(recentered(at.y, at.height, before.y, before.height, after.y, after.height),
+                    at.height, viewport.y, viewport.height);
             if (x == at.x && y == at.y) continue;
             shell.setLocation(x, y);
-            replacedShells.add(shell);
+            // The client draws only shown shells, so only those can have been drawn from the old position.
+            if (shell.getVisible()) repositionedShells.add(shell);
         }
     }
 
     /**
-     * Whether a client's report of {@code shell}'s bounds is to be ignored: the one it makes once it
-     * has first drawn a shell {@link #replaceShells} moved, which it may have drawn from the bounds
-     * the shell had before.
+     * Whether the position in a client's report of {@code shell}'s bounds is to be ignored: the report
+     * it makes once it has first drawn a shell {@link #repositionShells} moved, which it may have drawn
+     * from the position before the move. Its size still applies.
      */
-    public boolean ignoresClientBounds(Shell shell, int detail) {
-        return detail == INITIAL_CLIENT_BOUNDS && replacedShells.remove(shell);
+    public boolean ignoresClientPosition(Shell shell, int detail) {
+        return detail == INITIAL_CLIENT_BOUNDS && repositionedShells.remove(shell);
     }
 
-    /** One axis of {@link #replaceShells}: re-centered on {@code [newStart, newStart+newLength)} if it was
-     *  centered on {@code [start, start+length)}, then kept within {@code [min, min+span)}. */
-    private static int replaced(int pos, int size, int start, int length, int newStart, int newLength, int min, int span) {
+    /** {@code pos} on one axis: centered in {@code [newStart, newStart+newLength)} when it was centered
+     *  in {@code [start, start+length)}, unchanged otherwise. */
+    private static int recentered(int pos, int size, int start, int length, int newStart, int newLength) {
         int lead = pos - start;
         int trail = start + length - pos - size;
-        int moved = Math.abs(lead - trail) <= 1 ? newStart + (newLength - size) / 2 : pos;
-        return Math.max(min, Math.min(moved, min + span - size));
+        return Math.abs(lead - trail) <= CENTERING_SLACK ? newStart + (newLength - size) / 2 : pos;
+    }
+
+    /** {@code pos} moved only as far as needed for {@code size} to fit in {@code [min, min+span)}. */
+    private static int inside(int pos, int size, int min, int span) {
+        return Math.max(min, Math.min(pos, min + span - size));
     }
 
     /** Runs {@code apply} (which resizes shells) with the window-echo suppressed. */

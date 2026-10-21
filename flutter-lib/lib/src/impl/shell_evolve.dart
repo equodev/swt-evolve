@@ -28,6 +28,10 @@ import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
 
+/// `VEvent.detail` of the bounds a shell reports once it is first drawn (Java's
+/// `DisplayBridge.INITIAL_CLIENT_BOUNDS`).
+const int initialClientBounds = 1;
+
 class FloatingShellChromeScope extends InheritedWidget {
   final BoxConstraints viewportConstraints;
 
@@ -421,9 +425,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
               (isFullScreen || _maximized) ? viewport.maxWidth.round() : bodyW.round()
           ..height =
               (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round()
-          // Java ignores this one for a shell it moved after this frame's bounds were sent
-          // (DisplayBridge.INITIAL_CLIENT_BOUNDS).
-          ..detail = initial ? 1 : null,
+          // Java ignores the position in this one for a shell it moved after this frame's bounds were sent.
+          ..detail = initial ? initialClientBounds : null,
       );
     }
 
