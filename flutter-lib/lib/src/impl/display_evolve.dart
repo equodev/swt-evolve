@@ -1,8 +1,6 @@
 import 'utils/composed_text_input.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
 import '../gen/menu.dart';
@@ -54,13 +52,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
     startDisplayKeyForwarding();
     _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
-    GestureBinding.instance.pointerRouter.addGlobalRoute(_tracePointer);
-    _traceDisplayId = widget.value.id;
-    if (!_frameTraceRegistered) {
-      _frameTraceRegistered = true;
-      SchedulerBinding.instance.addPersistentFrameCallback(_traceFrame);
-    }
-    SchedulerBinding.instance.addTimingsCallback(_traceTimings);
     _listenToClipboardRequests();
   }
 
@@ -92,9 +83,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
-    GestureBinding.instance.pointerRouter.removeGlobalRoute(_tracePointer);
-    SchedulerBinding.instance.removeTimingsCallback(_traceTimings);
-    if (_traceDisplayId == widget.value.id) _traceDisplayId = null;
     _traverseGate.detach();
     stopDisplayKeyForwarding();
     super.dispose();
@@ -130,36 +118,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
       }
     }
     return false;
-  }
-
-  /// Reports each raw pointer event to Java while the config flags ask for it (Java's PointerTrace).
-  void _tracePointer(PointerEvent event) {
-    if (getConfigFlags().trace_pointer != true) return;
-    final p = event.position;
-    EquoCommService.sendPayload('Display/${widget.value.id ?? 0}/PointerTrace',
-        '${event.runtimeType} ${p.dx.round()},${p.dy.round()} buttons=${event.buttons}');
-  }
-
-  /// The Display a frame is reported to. A persistent frame callback can never be removed, so one
-  /// static callback is registered once and follows whichever Display is mounted.
-  static int? _traceDisplayId;
-  static bool _frameTraceRegistered = false;
-
-  /// Reports each frame the client builds, beside the pointer events (see [_tracePointer]).
-  static void _traceFrame(Duration timeStamp) {
-    final id = _traceDisplayId;
-    if (id == null || getConfigFlags().trace_pointer != true) return;
-    EquoCommService.sendPayload('Display/$id/PointerTrace', 'frame');
-  }
-
-  /// Reports how long each frame took to build and to rasterize, as the engine measured it.
-  void _traceTimings(List<FrameTiming> timings) {
-    if (getConfigFlags().trace_pointer != true) return;
-    for (final t in timings) {
-      EquoCommService.sendPayload('Display/${widget.value.id ?? 0}/PointerTrace',
-          'timing build=${t.buildDuration.inMilliseconds}ms raster=${t.rasterDuration.inMilliseconds}ms'
-          ' total=${t.totalSpan.inMilliseconds}ms');
-    }
   }
 
   /// A printable character with no Ctrl, Alt or Meta held: one a text field types.

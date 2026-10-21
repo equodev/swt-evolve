@@ -889,9 +889,6 @@ public abstract class FlutterBridge {
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
         String eventName = event(widget, listener, event);
         commFor(widget).on(eventName, Event.class, ev -> {
-            if (PointerTrace.enabled() && listener.startsWith("Mouse")) {
-                PointerTrace.record("java " + eventName + (widget.isDisposed() ? " (disposed)" : ""));
-            }
             if (widget.isDisposed()) {
                 DebugLog.checkpoint(eventName, "skipped: widget disposed");
                 return;

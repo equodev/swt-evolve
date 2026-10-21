@@ -176,8 +176,6 @@ public class ConfigFlags {
     /** How long the pointer rests before a control reports MouseHover and shows its tooltip, in
      *  milliseconds; Display.getToolTipTime() answers it. */
     public int hover_delay_ms;
-    /** Whether the client reports every raw pointer event it receives, for {@link PointerTrace}. */
-    public boolean trace_pointer;
     /** Explicit CSD title-bar colour (RRGGBB/AARRGGBB hex); overrides the theme's own. */
     public String csd_titlebar_color;
 
@@ -240,7 +238,6 @@ public class ConfigFlags {
                 ", csd_maximize='" + csd_maximize + '\'' +
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
                 ", hover_delay_ms=" + hover_delay_ms +
-                ", trace_pointer=" + trace_pointer +
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
                 ", font_point_scale=" + font_point_scale +
                 ", push_button_margin=" + push_button_margin +
