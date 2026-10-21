@@ -642,25 +642,18 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return false;
   }
 
-  /// The lines one mouse wheel event reports, whatever its delta: SWT's count for one notch on Win32
-  /// and GTK by default. A trackpad's swipe (see [panAsScroll]) and StyledText scale with the delta
-  /// instead.
-  static const int wheelLinesPerEvent = 3;
-
-  /// Reports the mouse wheel to Java at [localPosition], positive up.
+  /// Reports the mouse wheel to Java at [localPosition]: SWT.MouseWheel for its vertical part,
+  /// positive up, and SWT.MouseHorizontalWheel for its horizontal part, positive left.
   void reportWheel(PointerSignalEvent event, Offset localPosition) {
-    if (event is! PointerScrollEvent || event.scrollDelta.dy == 0 || wheelKeptBelow(event)) return;
-    final dy = event.scrollDelta.dy;
-    widget.sendMouseWheelMouseWheel(
-      state,
-      VEvent()
-        ..x = localPosition.dx.round()
-        ..y = localPosition.dy.round()
-        ..count = event.kind == PointerDeviceKind.trackpad
-            ? -wheelLines(dy)
-            : (dy > 0 ? -wheelLinesPerEvent : wheelLinesPerEvent)
-        ..stateMask = moveStateMask(0),
-    );
+    if (event is! PointerScrollEvent || wheelKeptBelow(event)) return;
+    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0))) {
+      widget.sendMouseWheelMouseWheel(
+        state,
+        wheel
+          ..x = localPosition.dx.round()
+          ..y = localPosition.dy.round(),
+      );
+    }
     if (keepsWheel) markWheelKept(event);
   }
 

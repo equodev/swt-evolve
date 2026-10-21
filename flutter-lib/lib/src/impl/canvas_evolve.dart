@@ -408,10 +408,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     void onSignal(PointerSignalEvent event) {
       if (event is PointerScrollEvent && onWheel != null) {
         onWheel(event);
-      } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+      } else if (event is PointerScrollEvent && event.scrollDelta != Offset.zero) {
         final now = DateTime.now().millisecondsSinceEpoch;
         if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
-          _handleMouseWheel(event);
+          _sendWheel(event);
         }
       }
     }
@@ -514,20 +514,13 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  void _handleMouseWheel(PointerScrollEvent event) {
+  /// Java runs the wheel listeners, which may veto, then scrolls the bar of each axis.
+  void _sendWheel(PointerScrollEvent event) {
     if (ControlImpl.wheelKeptBelow(event)) return;
-    final vBar = state.verticalBar;
-    if (vBar != null && vBar.visible != false && vBar.enabled != false) {
-      // The Canvas scrolls by the wheel, so it keeps it: its parents do not report it again.
-      ControlImpl.markWheelKept(event);
-      final increment = vBar.increment ?? 1;
-      final minimum = vBar.minimum ?? 0;
-      final maximum = vBar.maximum ?? 100;
-      final thumb = vBar.thumb ?? 0;
-      final selection = vBar.selection ?? minimum;
-      final delta = event.scrollDelta.dy > 0 ? increment : -increment;
-      final newSel = (selection + delta).clamp(minimum, maximum - thumb);
-      _sendSelection(vBar, newSel, 0);
+    // The Canvas scrolls by the wheel, so it keeps it: its parents do not report it again.
+    ControlImpl.markWheelKept(event);
+    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0))) {
+      widget.sendMouseWheelMouseWheel(state, wheel);
     }
   }
 

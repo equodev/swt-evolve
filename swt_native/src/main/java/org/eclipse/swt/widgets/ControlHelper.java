@@ -307,19 +307,22 @@ public class ControlHelper {
     }
 
     /**
-     * {@code count} is lines, positive up; a pixel scroll arrives in {@code detail}, positive down,
-     * and moves the bar by those pixels. Listeners always see {@code detail} as SCROLL_LINE.
+     * {@code count} is lines, positive up, or left when {@code type} is SWT.MouseHorizontalWheel; a
+     * pixel scroll arrives in {@code detail}, positive down, and moves the bar by those pixels.
+     * Listeners always see {@code detail} as SCROLL_LINE.
      */
     public static void handleMouseWheel(DartControl control, Event e) {
         int pixels = e.detail;
+        boolean horizontal = e.type == SWT.MouseHorizontalWheel;
         e.detail = SWT.SCROLL_LINE;
         e.doit = true;
-        control.sendEvent(SWT.MouseWheel, e);
+        control.sendEvent(horizontal ? SWT.MouseHorizontalWheel : SWT.MouseWheel, e);
         if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
             return;
         if (scrollsInClient(control.getApi()))
             return;
-        ScrollBar bar = ((Scrollable) control.getApi()).getVerticalBar();
+        Scrollable scrollable = (Scrollable) control.getApi();
+        ScrollBar bar = horizontal ? scrollable.getHorizontalBar() : scrollable.getVerticalBar();
         if (bar == null || !bar.getEnabled())
             return;
         int max = bar.getMaximum() - bar.getThumb();

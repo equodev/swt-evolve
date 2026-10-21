@@ -153,7 +153,8 @@ void main() {
 
     await _swipe(tester, const Offset(-60, 0));
 
-    expect(wheels, isEmpty);
+    // Fingers moving left scroll the content right, which SWT counts negative.
+    expect(wheels.map((e) => (e.type, e.count)), List.filled(3, (SWT.MouseHorizontalWheel, -1)));
   });
 
   testWidgets('a two-finger swipe over a StyledText scrolls by the distance the fingers moved',
