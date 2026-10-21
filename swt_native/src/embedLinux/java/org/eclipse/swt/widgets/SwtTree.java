@@ -712,6 +712,23 @@ public class SwtTree extends SwtComposite implements ITree {
                 }
             }
         }
+        /*
+	 * Single column Trees may return a very small initial width if the tree has not
+	 * yet been rendered. Walk all root items to compute the required width directly
+	 * from their cell renderers.
+	 */
+        if (wHint == SWT.DEFAULT && size.x == 0 && columnCount == 0) {
+            long col = GTK.gtk_tree_view_get_column(getApi().handle, 0);
+            if (col != 0) {
+                long iter = OS.g_malloc(GTK.GtkTreeIter_sizeof());
+                boolean valid = GTK.gtk_tree_model_iter_children(modelHandle, iter, 0);
+                while (valid) {
+                    size.x = Math.max(size.x, calculateWidth(col, iter, true));
+                    valid = GTK.gtk_tree_model_iter_next(modelHandle, iter);
+                }
+                OS.g_free(iter);
+            }
+        }
         Rectangle trim = computeTrimInPixels(0, 0, size.x, size.y);
         size.x = trim.width;
         /*
@@ -918,8 +935,23 @@ public class SwtTree extends SwtComposite implements ITree {
         if (!searchEnabled()) {
             GTK.gtk_tree_view_set_search_column(getApi().handle, -1);
         }
-        if (GTK.GTK4)
+        if (GTK.GTK4) {
             bindArrowKeyBindings();
+            /*
+		 * GTK renders the drop highlight requested through
+		 * gtk_tree_view_set_drag_dest_row() from the private TreeViewDragInfo struct,
+		 * but only gtk_tree_view_enable_model_drag_dest() ever allocates it and the
+		 * snapshot code dereferences it without a NULL check. Driving the highlight
+		 * ourselves, as setInsertMark() and TreeDropTargetEffect do, would therefore
+		 * crash on the next repaint, so allocate the struct up front. The drop target
+		 * GTK installs alongside it gets an empty format list and no actions, which
+		 * makes it reject every drag so that GTK's own tree view drag handlers never
+		 * compete with SWT's DropTarget.
+		 */
+            long formats = GTK4.gdk_content_formats_builder_free_to_formats(GTK4.gdk_content_formats_builder_new());
+            GTK4.gtk_tree_view_enable_model_drag_dest(getApi().handle, formats, 0);
+            GTK4.gdk_content_formats_unref(formats);
+        }
     }
 
     /**
@@ -2843,7 +2875,10 @@ public class SwtTree extends SwtComposite implements ITree {
     @Override
     long paintWindow() {
         GTK.gtk_widget_realize(getApi().handle);
-        // TODO: this function has been removed on GTK4
+        if (GTK.GTK4) {
+            // gtk_tree_view_get_bin_window was removed in GTK4; fall back to the widget surface
+            return gtk_widget_get_surface(getApi().handle);
+        }
         return GTK3.gtk_tree_view_get_bin_window(getApi().handle);
     }
 
@@ -3026,7 +3061,15 @@ public class SwtTree extends SwtComposite implements ITree {
         checkSetDataInProcessBeforeRemoval();
         long selection = GTK.gtk_tree_view_get_selection(getApi().handle);
         OS.g_signal_handlers_block_matched(selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+        // Disconnect the model from the view before clearing it.
+        // gtk_tree_store_clear fires cell-data / row-changed callbacks for every
+        // row it removes. Those callbacks re-enter SWT (cellDataProc -> checkData
+        // -> getParentItem -> gtk_tree_model_get_path) with iterators that are
+        // already being freed, causing a SIGSEGV. With no model attached the view
+        // has nothing to render, so no callbacks are fired during the clear.
+        GTK.gtk_tree_view_set_model(getApi().handle, 0);
         GTK.gtk_tree_store_clear(modelHandle);
+        GTK.gtk_tree_view_set_model(getApi().handle, modelHandle);
         OS.g_signal_handlers_unblock_matched(selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -39,8 +39,8 @@ public final class SwtColor extends SwtResource implements IColor {
 
     int alpha = 0;
 
-    SwtColor(Device device, Color api) {
-        super(device, api);
+    SwtColor(Color api) {
+        super(api);
     }
 
     /**
@@ -478,13 +478,12 @@ public final class SwtColor extends SwtResource implements IColor {
      * application code.
      * </p>
      *
-     * @param device the device on which to allocate the color
      * @param gdkRGBA the handle for the color
      *
      * @noreference This method is not intended to be referenced by clients.
      */
     public static Color gtk_new(Device device, GdkRGBA gdkRGBA) {
-        Color color = new Color(device);
+        Color color = new Color();
         color.handle = gdkRGBA;
         if (color.getImpl() instanceof DartColor) {
             ((DartColor) color.getImpl()).alpha = (int) (gdkRGBA.alpha * 255);
@@ -505,14 +504,13 @@ public final class SwtColor extends SwtResource implements IColor {
      * application code.
      * </p>
      *
-     * @param device the device on which to allocate the color
      * @param gdkRGBA the handle for the color
      * @param alpha the int for the alpha content in the color(Currently SWT honors extreme values for alpha ie. 0 or 255)
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static Color gtk_new(Device device, GdkRGBA gdkRGBA, int alpha) {
-        Color color = new Color(device);
+    public static Color gtk_new(GdkRGBA gdkRGBA, int alpha) {
+        Color color = new Color();
         color.handle = gdkRGBA;
         if (color.getImpl() instanceof DartColor) {
             ((DartColor) color.getImpl()).alpha = alpha;

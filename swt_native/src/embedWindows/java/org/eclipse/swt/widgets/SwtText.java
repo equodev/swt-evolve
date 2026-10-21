@@ -91,7 +91,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     static final long EditProc;
 
-    static final TCHAR EditClass = new TCHAR(0, "EDIT", true);
+    static final TCHAR EditClass = new TCHAR("EDIT", true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -503,7 +503,7 @@ public class SwtText extends SwtScrollable implements IText {
         }
         OS.SendMessage(getApi().handle, OS.EM_SETSEL, length, length);
         clearSegments(true);
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         /*
 	* Feature in Windows.  When an edit control with ES_MULTILINE
 	* style that does not have the WS_VSCROLL style is full (i.e.
@@ -661,8 +661,7 @@ public class SwtText extends SwtScrollable implements IText {
         boolean oldIgnoreCharacter = ignoreCharacter, oldIgnoreModify = ignoreModify, oldIgnoreVerify = ignoreVerify;
         ignoreCharacter = ignoreModify = ignoreVerify = true;
         int length = OS.GetWindowTextLength(getApi().handle);
-        int cp = getCodePage();
-        TCHAR buffer = new TCHAR(cp, length + 1);
+        TCHAR buffer = new TCHAR(length + 1);
         if (length > 0)
             OS.GetWindowText(getApi().handle, buffer, length + 1);
         buffer = deprocessText(buffer, 0, -1, true);
@@ -877,7 +876,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (start != 0 || end != length) {
             char[] newChars = new char[length];
             System.arraycopy(chars, start, newChars, 0, length);
-            return new TCHAR(getCodePage(), newChars, terminate);
+            return new TCHAR(newChars, terminate);
         }
         return text;
     }
@@ -1370,7 +1369,7 @@ public class SwtText extends SwtScrollable implements IText {
         OS.SendMessage(getApi().handle, OS.EM_GETSEL, start, end);
         if (start[0] == end[0])
             return "";
-        TCHAR buffer = new TCHAR(getCodePage(), length + 1);
+        TCHAR buffer = new TCHAR(length + 1);
         OS.GetWindowText(getApi().handle, buffer, length + 1);
         if (segments != null) {
             buffer = deprocessText(buffer, start[0], end[0], false);
@@ -1433,7 +1432,7 @@ public class SwtText extends SwtScrollable implements IText {
         int length = OS.GetWindowTextLength(getApi().handle);
         if (length == 0)
             return "";
-        TCHAR buffer = new TCHAR(getCodePage(), length + 1);
+        TCHAR buffer = new TCHAR(length + 1);
         OS.GetWindowText(getApi().handle, buffer, length + 1);
         if (segments != null) {
             buffer = deprocessText(buffer, 0, -1, false);
@@ -1472,7 +1471,7 @@ public class SwtText extends SwtScrollable implements IText {
         int length = OS.GetWindowTextLength(getApi().handle);
         if (length == 0)
             return new char[0];
-        TCHAR buffer = new TCHAR(getCodePage(), length + 1);
+        TCHAR buffer = new TCHAR(length + 1);
         OS.GetWindowText(getApi().handle, buffer, length + 1);
         if (segments != null)
             buffer = deprocessText(buffer, 0, -1, false);
@@ -1629,7 +1628,7 @@ public class SwtText extends SwtScrollable implements IText {
                 return;
         }
         clearSegments(true);
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         /*
 	* Feature in Windows.  When an edit control with ES_MULTILINE
 	* style that does not have the WS_VSCROLL style is full (i.e.
@@ -1798,7 +1797,7 @@ public class SwtText extends SwtScrollable implements IText {
         int textDirection = SWT.NONE;
         int length = OS.GetWindowTextLength(getApi().handle);
         if (length > 0) {
-            TCHAR buffer = new TCHAR(getCodePage(), length + 1);
+            TCHAR buffer = new TCHAR(length + 1);
             OS.GetWindowText(getApi().handle, buffer, length + 1);
             if (segments != null) {
                 buffer = deprocessText(buffer, 0, -1, false);
@@ -1928,7 +1927,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (newText == oldText)
             return true;
         newText = SwtDisplay.withCrLf(newText);
-        TCHAR buffer = new TCHAR(getCodePage(), newText, true);
+        TCHAR buffer = new TCHAR(newText, true);
         OS.SendMessage(getApi().handle, OS.EM_SETSEL, start[0], end[0]);
         /*
 	* Feature in Windows.  When an edit control with ES_MULTILINE
@@ -2386,7 +2385,7 @@ public class SwtText extends SwtScrollable implements IText {
         int limit = (int) OS.SendMessage(getApi().handle, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
         if (string.length() > limit)
             string = string.substring(0, limit);
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         OS.SetWindowText(getApi().handle, buffer);
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             super.updateTextDirection(AUTO_TEXT_DIRECTION);
@@ -2452,7 +2451,7 @@ public class SwtText extends SwtScrollable implements IText {
             System.arraycopy(text, 0, temp, 0, limit);
             text = temp;
         }
-        TCHAR buffer = new TCHAR(getCodePage(), text, true);
+        TCHAR buffer = new TCHAR(text, true);
         OS.SetWindowText(getApi().handle, buffer);
         buffer.clear();
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
@@ -2656,9 +2655,7 @@ public class SwtText extends SwtScrollable implements IText {
 		*/
             if ((getApi().style & SWT.READ_ONLY) != 0) {
                 if ((getApi().style & (SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.PASSWORD)) == 0) {
-                    if (OS.IsAppThemed()) {
-                        bits |= OS.ES_MULTILINE;
-                    }
+                    bits |= OS.ES_MULTILINE;
                 }
             }
             return bits;
@@ -2844,7 +2841,7 @@ public class SwtText extends SwtScrollable implements IText {
         POINT pt = new POINT();
         OS.MapWindowPoints(struct.hwndItem, getApi().handle, pt, 1);
         drawBackground(struct.hDC, rect, -1, pt.x, pt.y);
-        if (struct.CtlID == SWT.ICON_CANCEL && struct.hwndItem == hwndActiveIcon && OS.IsAppThemed()) {
+        if (struct.CtlID == SWT.ICON_CANCEL && struct.hwndItem == hwndActiveIcon) {
             int state = OS.GetKeyState(OS.VK_LBUTTON) < 0 ? OS.PBS_PRESSED : OS.PBS_HOT;
             OS.DrawThemeBackground(((SwtDisplay) display.getImpl()).hButtonThemeAuto(getApi().nativeZoom), struct.hDC, OS.BP_PUSHBUTTON, state, rect, null);
         }
@@ -2867,14 +2864,12 @@ public class SwtText extends SwtScrollable implements IText {
                     Control control = findBackgroundControl();
                     if (control == null && background == -1) {
                         if ((getApi().state & THEME_BACKGROUND) != 0) {
-                            if (OS.IsAppThemed()) {
-                                control = findThemeControl();
-                                if (control != null) {
-                                    RECT rect = new RECT();
-                                    OS.GetClientRect(getApi().handle, rect);
-                                    fillThemeBackground(wParam, control, rect);
-                                    return LRESULT.ONE;
-                                }
+                            control = findThemeControl();
+                            if (control != null) {
+                                RECT rect = new RECT();
+                                OS.GetClientRect(getApi().handle, rect);
+                                fillThemeBackground(wParam, control, rect);
+                                return LRESULT.ONE;
                             }
                         }
                     }
@@ -3104,7 +3099,7 @@ public class SwtText extends SwtScrollable implements IText {
                     callWindowProc(getApi().handle, msg, wParam, lParam);
                 }
                 newText = SwtDisplay.withCrLf(newText);
-                TCHAR buffer = new TCHAR(getCodePage(), newText, true);
+                TCHAR buffer = new TCHAR(newText, true);
                 /*
 			* Feature in Windows.  When an edit control with ES_MULTILINE
 			* style that does not have the WS_VSCROLL style is full (i.e.
@@ -3140,14 +3135,12 @@ public class SwtText extends SwtScrollable implements IText {
                     Control control = findBackgroundControl();
                     if (control == null && background == -1) {
                         if ((getApi().state & THEME_BACKGROUND) != 0) {
-                            if (OS.IsAppThemed()) {
-                                control = findThemeControl();
-                                if (control != null) {
-                                    OS.SetTextColor(wParam, getForegroundPixel());
-                                    OS.SetBkColor(wParam, getBackgroundPixel());
-                                    OS.SetBkMode(wParam, OS.TRANSPARENT);
-                                    return new LRESULT(OS.GetStockObject(OS.NULL_BRUSH));
-                                }
+                            control = findThemeControl();
+                            if (control != null) {
+                                OS.SetTextColor(wParam, getForegroundPixel());
+                                OS.SetBkColor(wParam, getBackgroundPixel());
+                                OS.SetBkMode(wParam, OS.TRANSPARENT);
+                                return new LRESULT(OS.GetStockObject(OS.NULL_BRUSH));
                             }
                         }
                     }

@@ -1115,7 +1115,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         menuItem.setTarget(applicationDelegate);
         title = NSString.stringWith(SWT.getMessage("SWT_HideOthers"));
         menuItem = appleMenu.addItemWithTitle(title, OS.sel_hideOtherApplications_, NSString.stringWith("h"));
-        menuItem.setKeyEquivalentModifierMask(OS.NSCommandKeyMask | OS.NSAlternateKeyMask);
+        menuItem.setKeyEquivalentModifierMask(OS.NSEventModifierFlagCommand | OS.NSAlternateKeyMask);
         menuItem.setTarget(applicationDelegate);
         title = NSString.stringWith(SWT.getMessage("SWT_ShowAll"));
         menuItem = appleMenu.addItemWithTitle(title, OS.sel_unhideAllApplications_, emptyStr);
@@ -2096,7 +2096,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (color == null)
             return null;
         NSColorSpace colorSpace = color.colorSpace();
-        if (colorSpace == null || colorSpace.colorSpaceModel() != OS.NSRGBColorSpaceModel) {
+        if (colorSpace == null || colorSpace.colorSpaceModel() != OS.NSColorSpaceModelRGB) {
             color = color.colorUsingColorSpaceName(OS.NSDeviceRGBColorSpace);
         }
         if (color == null)
@@ -3279,7 +3279,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (font != 0) {
             result = new NSFont(font);
         } else {
-            result = NSFont.systemFontOfSize(NSFont.systemFontSizeForControlSize(OS.NSRegularControlSize));
+            result = NSFont.systemFontOfSize(NSFont.systemFontSizeForControlSize(OS.NSControlSizeRegular));
         }
         result.retain();
         OS.objc_msgSend(widget, OS.sel_release);
@@ -3999,11 +3999,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         long modifierFlags = nsEvent.modifierFlags();
         if ((modifierFlags & OS.NSAlternateKeyMask) != 0)
             stateMask |= SWT.ALT;
-        if ((modifierFlags & OS.NSShiftKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagShift) != 0)
             stateMask |= SWT.SHIFT;
-        if ((modifierFlags & OS.NSControlKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagControl) != 0)
             stateMask |= SWT.CONTROL;
-        if ((modifierFlags & OS.NSCommandKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0)
             stateMask |= SWT.COMMAND;
         if (stateMask == SWT.COMMAND) {
             short keyCode = nsEvent.keyCode();
@@ -5838,14 +5838,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 	 * Feature in Cocoa. The help key triggers context-sensitive help but doesn't get forwarded to the window as a key event.
 	 * If the event is destined for the key window, is the help key, and is an NSKeyDown, send it directly to the window first.
 	 */
-        if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyDown && (nsEvent.modifierFlags() & OS.NSHelpKeyMask) != 0) {
+        if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyDown && (nsEvent.modifierFlags() & OS.NSEventModifierFlagHelp) != 0) {
             window.sendEvent(nsEvent);
         }
         /*
 	 * Feature in Cocoa. NSKeyUp events are not delivered to the window if the command key is down.
 	 * If the event is destined for the key window, and it's a key up and the command key is down, send it directly to the window.
 	 */
-        if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyUp && (nsEvent.modifierFlags() & OS.NSCommandKeyMask) != 0) {
+        if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyUp && (nsEvent.modifierFlags() & OS.NSEventModifierFlagCommand) != 0) {
             window.sendEvent(nsEvent);
         } else {
             objc_super super_struct = new objc_super();

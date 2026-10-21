@@ -637,7 +637,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 destRect.y = destY;
                 destRect.width = destWidth * scaleFactor;
                 destRect.height = destHeight * scaleFactor;
-                data.image.handle.drawInRect(destRect, srcRect, OS.NSCompositeCopy, 1);
+                data.image.handle.drawInRect(destRect, srcRect, OS.NSCompositingOperationCopy, 1);
                 NSGraphicsContext.static_restoreGraphicsState();
                 return;
             }
@@ -821,7 +821,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 destRect.y = destY;
                 destRect.width = width;
                 destRect.height = height;
-                imageHandle.drawInRect(destRect, srcRect, OS.NSCompositeCopy, 1);
+                imageHandle.drawInRect(destRect, srcRect, OS.NSCompositingOperationCopy, 1);
                 getApi().handle.restoreGraphicsState();
                 return;
             }
@@ -1434,7 +1434,7 @@ public final class SwtGC extends SwtResource implements IGC {
             destRect.y = destY;
             destRect.width = destWidth;
             destRect.height = destHeight;
-            imageHandle.drawInRect(destRect, srcRect, OS.NSCompositeSourceOver, data.alpha / 255f);
+            imageHandle.drawInRect(destRect, srcRect, OS.NSCompositingOperationSourceOver, data.alpha / 255f);
             getApi().handle.restoreGraphicsState();
         } finally {
             uncheckGC(pool);
@@ -4368,14 +4368,22 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     /**
-     * If the argument is <code>true</code>, puts the receiver
-     * in a drawing mode where the resulting color in the destination
-     * is the <em>exclusive or</em> of the color values in the source
-     * and the destination, and if the argument is <code>false</code>,
-     * puts the receiver in a drawing mode where the destination color
-     * is replaced with the source color value.
+     * If the argument is <code>true</code>, puts the receiver in a drawing mode
+     * where the resulting color in the destination is the <em>exclusive or</em> of
+     * the color values in the source and the destination, and if the argument is
+     * <code>false</code>, puts the receiver in a drawing mode where the destination
+     * color is replaced with the source color value.
+     * <p>
+     * <b>IMPORTANT:</b> This operation may not work on every platform or with every
+     * configuration. Especially on Windows, GDI+ has no direct support for raster
+     * operations (ROPs). This means that advanced graphics must be <b>disabled</b>
+     * when using XOR mode. More specifically, this means that all operations that
+     * require advanced mode (e.g. {@link Transform}) can't be used in combination
+     * with XOR mode.
+     * </p>
      *
-     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise <em>source copy</em> mode is used
+     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise
+     *            <em>source copy</em> mode is used
      *
      * @exception SWTException <ul>
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>

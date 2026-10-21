@@ -15,15 +15,10 @@
  */
 package org.eclipse.swt.internal;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.jar.Attributes;
+import java.io.*;
+import java.net.*;
+import java.nio.file.*;
+import java.util.jar.*;
 
 public class Library {
 
@@ -36,12 +31,12 @@ public class Library {
     /**
      * SWT Minor version number (must be in the range 0..999)
      */
-    static int MINOR_VERSION = 973;
+    static int MINOR_VERSION = 974;
 
     /**
      * SWT revision number (must be >= 0)
      */
-    static int REVISION = 12;
+    static int REVISION = 10;
 
     /**
      * The JAVA and SWT versions
@@ -219,6 +214,10 @@ public class Library {
     }
 
     static boolean isLoadable() {
+        return isLoadable(false);
+    }
+
+    static boolean isLoadable(boolean ignoreMissingManifest) {
         //$NON-NLS-1$
         URL url = Platform.class.getClassLoader().getResource("org/eclipse/swt/internal/Library.class");
         if (!url.getProtocol().equals("jar")) {
@@ -245,6 +244,9 @@ public class Library {
         //$NON-NLS-1$
         String manifestArch = attributes.getValue("SWT-Arch");
         if (arch.equals(manifestArch) && os.equals(manifestOS)) {
+            return true;
+        }
+        if (manifestArch == null && manifestOS == null && ignoreMissingManifest) {
             return true;
         }
         return false;

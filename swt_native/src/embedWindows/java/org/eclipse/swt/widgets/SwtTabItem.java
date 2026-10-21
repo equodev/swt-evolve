@@ -143,7 +143,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         }
         long hwnd = parent.handle;
         long hHeap = OS.GetProcessHeap();
-        TCHAR buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         int byteCount = buffer.length() * TCHAR.sizeof;
         long pszText = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
         OS.MoveMemory(pszText, buffer, byteCount);

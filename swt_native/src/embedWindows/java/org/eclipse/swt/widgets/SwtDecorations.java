@@ -1334,7 +1334,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        TCHAR buffer = new TCHAR(0, string, true);
+        TCHAR buffer = new TCHAR(string, true);
         /* Ensure that the title appears in the task bar.*/
         if ((getApi().state & FOREIGN_HANDLE) != 0) {
             long hHeap = OS.GetProcessHeap();
@@ -1399,16 +1399,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
                     oldWidth = rect.width;
                     oldHeight = rect.height;
                 }
-                /*
-			* Bug in Windows.  On Vista using the Classic theme,
-			* when the window is hung and UpdateWindow() is called,
-			* nothing is drawn, and outstanding WM_PAINTs are cleared.
-			* This causes pixel corruption.  The fix is to avoid calling
-			* update on hung windows.
-			*/
-                if (OS.IsAppThemed() || !OS.IsHungAppWindow(getApi().handle)) {
-                    OS.UpdateWindow(getApi().handle);
-                }
+                OS.UpdateWindow(getApi().handle);
             }
         } else {
             if (OS.IsIconic(getApi().handle)) {

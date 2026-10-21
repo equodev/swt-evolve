@@ -312,6 +312,18 @@ class WebKit extends WebBrowser {
                 case SWT.FocusIn:
                     WebKit.this.webView.window().makeFirstResponder(WebKit.this.webView);
                     break;
+                case SWT.KeyDown:
+                    if ((e.stateMask & SWT.MOD1) != 0 && Character.toUpperCase((char) e.keyCode) == 'A') {
+                        NSWindow window = WebKit.this.webView.window();
+                        if (window != null) {
+                            NSResponder responder = window.firstResponder();
+                            if (responder != null) {
+                                OS.objc_msgSend(responder.id, OS.sel_selectAll_, 0);
+                                e.doit = false;
+                            }
+                        }
+                    }
+                    break;
                 case SWT.Dispose:
                     {
                         /* make this handler run after other dispose listeners */

@@ -336,7 +336,7 @@ public class SwtTree extends SwtComposite implements ITree {
         long modifiers = NSApplication.sharedApplication().currentEvent().modifierFlags();
         boolean drag = (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect);
         if (drag) {
-            if (!widget.isRowSelected(row) && (modifiers & (OS.NSCommandKeyMask | OS.NSShiftKeyMask | OS.NSAlternateKeyMask | OS.NSControlKeyMask)) == 0) {
+            if (!widget.isRowSelected(row) && (modifiers & (OS.NSEventModifierFlagCommand | OS.NSEventModifierFlagShift | OS.NSAlternateKeyMask | OS.NSEventModifierFlagControl)) == 0) {
                 NSIndexSet set = (NSIndexSet) new NSIndexSet().alloc();
                 set = set.initWithIndex(row);
                 widget.selectRowIndexes(set, false);
@@ -654,7 +654,7 @@ public class SwtTree extends SwtComposite implements ITree {
             buttonCell.init();
             checkColumn.setDataCell(buttonCell);
             buttonCell.setButtonType(OS.NSButtonTypeSwitch);
-            buttonCell.setControlSize(OS.NSSmallControlSize);
+            buttonCell.setControlSize(OS.NSControlSizeSmall);
             buttonCell.setImagePosition(OS.NSImageOnly);
             buttonCell.setAllowsMixedState(true);
             checkColumn.setWidth(getCheckColumnWidth());
@@ -1252,7 +1252,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 transform.scaleXBy(1, -1);
                 transform.translateXBy(0, -(destRect.height + 2 * destRect.y));
                 transform.concat();
-                image.drawInRect(destRect, srcRect, OS.NSCompositeSourceOver, 1);
+                image.drawInRect(destRect, srcRect, OS.NSCompositingOperationSourceOver, 1);
                 context.restoreGraphicsState();
                 int imageWidth = imageBounds.width + IMAGE_GAP;
                 rect.x += imageWidth;
@@ -2207,7 +2207,7 @@ public class SwtTree extends SwtComposite implements ITree {
             // it from menuForEvent:.  This has the side effect, however, of sending control-click to the NSTableView,
             // which is interpreted as a single click that clears the selection.  Fix is to ignore control-click,
             NSEvent event = new NSEvent(theEvent);
-            if ((event.modifierFlags() & OS.NSControlKeyMask) != 0)
+            if ((event.modifierFlags() & OS.NSEventModifierFlagControl) != 0)
                 return;
         }
         super.mouseDown(id, sel, theEvent);
@@ -2270,9 +2270,9 @@ public class SwtTree extends SwtComposite implements ITree {
             index = (int) outlineView.selectedRow();
         TreeItem item = (TreeItem) ((SwtDisplay) display.getImpl()).getWidget(outlineView.itemAtRow(index).id);
         if (((SwtTreeItem) item.getImpl()).grayed) {
-            return ((SwtTreeItem) item.getImpl()).checked ? OS.NSOffState : OS.NSMixedState;
+            return ((SwtTreeItem) item.getImpl()).checked ? OS.NSControlStateValueOff : OS.NSControlStateValueMixed;
         }
-        return ((SwtTreeItem) item.getImpl()).checked ? OS.NSOffState : OS.NSOnState;
+        return ((SwtTreeItem) item.getImpl()).checked ? OS.NSControlStateValueOff : OS.NSControlStateValueOn;
     }
 
     @Override
@@ -2301,9 +2301,9 @@ public class SwtTree extends SwtComposite implements ITree {
         if (checkColumn != null && tableColumn == checkColumn.id) {
             NSNumber value;
             if (((SwtTreeItem) item.getImpl()).checked && ((SwtTreeItem) item.getImpl()).grayed) {
-                value = NSNumber.numberWithInt(OS.NSMixedState);
+                value = NSNumber.numberWithInt(OS.NSControlStateValueMixed);
             } else {
-                value = NSNumber.numberWithInt(((SwtTreeItem) item.getImpl()).checked ? OS.NSOnState : OS.NSOffState);
+                value = NSNumber.numberWithInt(((SwtTreeItem) item.getImpl()).checked ? OS.NSControlStateValueOn : OS.NSControlStateValueOff);
             }
             return value.id;
         }

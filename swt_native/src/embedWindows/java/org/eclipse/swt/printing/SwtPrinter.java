@@ -64,11 +64,11 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
 
     static {
         //$NON-NLS-1$
-        profile = new TCHAR(0, "PrinterPorts", true);
+        profile = new TCHAR("PrinterPorts", true);
         //$NON-NLS-1$
-        appName = new TCHAR(0, "windows", true);
+        appName = new TCHAR("windows", true);
         //$NON-NLS-1$
-        keyName = new TCHAR(0, "device", true);
+        keyName = new TCHAR("device", true);
     }
 
     /**
@@ -80,8 +80,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
      */
     public static PrinterData[] getPrinterList() {
         int length = 1024;
-        TCHAR buf = new TCHAR(0, length);
-        TCHAR nullBuf = new TCHAR(0, 1);
+        TCHAR buf = new TCHAR(length);
+        TCHAR nullBuf = new TCHAR(1);
         int n = OS.GetProfileString(profile, null, nullBuf, buf, length);
         if (n == 0)
             return new PrinterData[0];
@@ -105,7 +105,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
             String device = deviceNames[p];
             //$NON-NLS-1$
             String driver = "";
-            if (OS.GetProfileString(profile, new TCHAR(0, device, true), nullBuf, buf, length) > 0) {
+            if (OS.GetProfileString(profile, new TCHAR(device, true), nullBuf, buf, length) > 0) {
                 int commaIndex = 0;
                 while (buf.tcharAt(commaIndex) != ',' && commaIndex < length) commaIndex++;
                 if (commaIndex < length) {
@@ -129,8 +129,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
     public static PrinterData getDefaultPrinterData() {
         String deviceName = null;
         int length = 1024;
-        TCHAR buf = new TCHAR(0, length);
-        TCHAR nullBuf = new TCHAR(0, 1);
+        TCHAR buf = new TCHAR(length);
+        TCHAR nullBuf = new TCHAR(1);
         int n = OS.GetProfileString(appName, keyName, nullBuf, buf, length);
         if (n == 0)
             return null;
@@ -143,7 +143,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
             return null;
         //$NON-NLS-1$
         String driver = "";
-        if (OS.GetProfileString(profile, new TCHAR(0, deviceName, true), nullBuf, buf, length) > 0) {
+        if (OS.GetProfileString(profile, new TCHAR(deviceName, true), nullBuf, buf, length) > 0) {
             commaIndex = 0;
             while (buf.tcharAt(commaIndex) != ',' && commaIndex < length) commaIndex++;
             if (commaIndex < length) {
@@ -214,8 +214,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
     @Override
     public void create(DeviceData deviceData) {
         data = (PrinterData) deviceData;
-        TCHAR driver = new TCHAR(0, data.driver, true);
-        TCHAR device = new TCHAR(0, data.name, true);
+        TCHAR driver = new TCHAR(data.driver, true);
+        TCHAR device = new TCHAR(data.name, true);
         long lpInitData = 0;
         byte[] devmodeData = data.otherData;
         long hHeap = OS.GetProcessHeap();
@@ -374,7 +374,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
         long hHeap = OS.GetProcessHeap();
         long lpszDocName = 0;
         if (jobName != null && jobName.length() != 0) {
-            TCHAR buffer = new TCHAR(0, jobName, true);
+            TCHAR buffer = new TCHAR(jobName, true);
             int byteCount = buffer.length() * TCHAR.sizeof;
             lpszDocName = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
             OS.MoveMemory(lpszDocName, buffer, byteCount);
@@ -387,7 +387,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
                 //$NON-NLS-1$
                 data.fileName = "FILE:";
             }
-            TCHAR buffer = new TCHAR(0, data.fileName, true);
+            TCHAR buffer = new TCHAR(data.fileName, true);
             int byteCount = buffer.length() * TCHAR.sizeof;
             lpszOutput = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
             OS.MoveMemory(lpszOutput, buffer, byteCount);

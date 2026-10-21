@@ -80,7 +80,7 @@ public class SwtClipboard implements IClipboard {
         }
         this.display = display;
         //$NON-NLS-1$
-        TCHAR chFormatName = new TCHAR(0, "Preferred DropEffect", true);
+        TCHAR chFormatName = new TCHAR("Preferred DropEffect", true);
         CFSTR_PREFERREDDROPEFFECT = OS.RegisterClipboardFormat(chFormatName);
         createCOMInterfaces();
         this.AddRef();

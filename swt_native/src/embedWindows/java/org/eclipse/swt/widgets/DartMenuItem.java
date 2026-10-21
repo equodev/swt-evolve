@@ -717,6 +717,9 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     private void updateImage() {
         if (((DartMenu) parent.getImpl()).needsMenuCallback()) {
         } else {
+            hBitmap = getMenuItemIconBitmapHandle(image);
+            {
+            }
         }
         ((DartMenu) parent.getImpl()).redraw();
     }

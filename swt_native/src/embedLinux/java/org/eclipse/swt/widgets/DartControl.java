@@ -1368,6 +1368,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @return the origin of the Control's SWTFixed container relative to the Shell
      */
     Point getControlOrigin() {
+        Shell shell = getShell();
+        /*
+	 * A popover-backed Shell renders in its own surface positioned (via oldX/oldY) within
+	 * the nearest real top-level window's content. translate_coordinates only yields the
+	 * offset within the popover, so add the placement of each popover-backed ancestor to
+	 * keep display coordinates consistent with that window (e.g. so a sibling popup can be
+	 * laid out next to it via toDisplay, including the javadoc popup parented to the
+	 * content-assist proposal popup).
+	 */
+        while (((SwtShell) shell.getImpl()).popover) {
+            Shell parentShell = shell.getImpl()._parent() != null ? shell.getImpl()._parent().getShell() : null;
+            if (parentShell == null || parentShell == shell)
+                break;
+            shell = parentShell;
+        }
         return null;
     }
 
@@ -2083,7 +2098,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         /* there will not be any */
         if (labelRelation != null) {
-            _getAccessible().removeRelation(ACC.RELATION_LABELLED_BY, ((DartControl) labelRelation.getImpl())._getAccessible());
+            if (accessible != null && labelRelation.getImpl()._accessible() != null) {
+                accessible.removeRelation(ACC.RELATION_LABELLED_BY, labelRelation.getImpl()._accessible());
+            }
             labelRelation = null;
         }
     }
@@ -4635,6 +4652,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void update(boolean all, boolean flush) {
+        // flushExposes drains X11 Expose events and is a no-op on GTK4, which uses a
     }
 
     public void updateBackgroundMode() {

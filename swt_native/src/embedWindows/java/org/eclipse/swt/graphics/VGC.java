@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
+import org.eclipse.swt.graphics.Region.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;

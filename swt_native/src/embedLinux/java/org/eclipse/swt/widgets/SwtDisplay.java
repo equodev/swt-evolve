@@ -147,7 +147,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     long changeValueProc;
 
-    long snapshotDrawProc, keyPressReleaseProc, focusProc, windowActiveProc, enterMotionProc, leaveProc, scrollProc, resizeProc, activateProc, gesturePressReleaseProc;
+    long snapshotDrawProc, keyPressReleaseProc, focusProc, windowActiveProc, enterMotionProc, leaveProc, scrollProc, resizeProc, layoutProc, activateProc, gesturePressReleaseProc;
+
+    long menuItemsChangedProc;
 
     long notifyProc;
 
@@ -157,7 +159,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     Callback changeValue;
 
-    Callback snapshotDraw, keyPressReleaseCallback, focusCallback, windowActiveCallback, enterMotionCallback, computeSizeCallback, scrollCallback, leaveCallback, resizeCallback, activateCallback, gesturePressReleaseCallback;
+    Callback snapshotDraw, keyPressReleaseCallback, focusCallback, windowActiveCallback, enterMotionCallback, computeSizeCallback, scrollCallback, leaveCallback, resizeCallback, layoutCallback, activateCallback, gesturePressReleaseCallback;
+
+    Callback menuItemsChangedCallback;
 
     Callback notifyCallback;
 
@@ -1863,6 +1867,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void flushExposes(long window, boolean all) {
+        // GTK4 uses a frame-clock/render-node draw model and has no X11 Expose events
+        // or GdkWindows to flush, so checkIfEventProc rejects everything: skip the scan.
+        if (GTK.GTK4)
+            return;
         if (OS.isX11()) {
             this.flushWindow = window;
             this.flushAll = all;
@@ -2629,8 +2637,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         if (activeShell == null)
             return null;
-        long shellHandle = ((SwtShell) activeShell.getImpl()).shellHandle;
-        long handle = GTK.gtk_window_get_focus(shellHandle);
+        long handle = GTK.gtk_window_get_focus(((SwtShell) activeShell.getImpl()).focusWindowHandle());
         if (handle == 0)
             return null;
         do {
@@ -2754,6 +2761,24 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     public void setDarkThemePreferred(boolean preferred) {
         checkDevice();
         OS.setTheme(preferred);
+        if (GTK.GTK4) {
+            /*
+		 * Re-initialize the cached system colors so that widgets created or repainted
+		 * after this call pick up the correct dark/light theme background and
+		 * foreground colors. GTK3 uses gtk_draw which calls
+		 * gtk_render_background(context, cairo, ...). This asks GTK's live style
+		 * context to paint the background — the style context is always up-to-date with
+		 * the current theme setting, so it reflects dark/light dynamically without any
+		 * cached values.
+		 *
+		 * GTK4 removed the draw signal entirely. SWT replaced it with
+		 * snapshotBackground which uses Cairo-based custom painting via
+		 * drawBackground() → control.getBackgroundGdkRGBA() → defaultBackground() → the
+		 * cached COLOR_WIDGET_BACKGROUND_RGBA. That cache is only populated at Display
+		 * creation time, so it goes stale when the theme is changed afterwards.
+		 */
+            initializeSystemColors();
+        }
     }
 
     int getLastEventTime() {
@@ -3530,21 +3555,15 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     GdkRGBA styleContextGetColor(long context, int flag) {
-        /*
-	* Feature in GTK: we need to handle calls to gtk_style_context_get_color()
-	* differently due to changes in GTK3.18+. This solves failing test cases
-	* which started failing after GTK3.16. See Bug 481122 for more info.
-	* Reference: https://blogs.gnome.org/mclasen/2015/11/20/a-gtk-update/
-	*/
         GdkRGBA rgba = new GdkRGBA();
+        GTK.gtk_style_context_save(context);
+        GTK.gtk_style_context_set_state(context, flag);
         if (GTK.GTK4) {
             GTK4.gtk_style_context_get_color(context, rgba);
         } else {
-            GTK.gtk_style_context_save(context);
-            GTK.gtk_style_context_set_state(context, flag);
             GTK3.gtk_style_context_get_color(context, flag, rgba);
-            GTK.gtk_style_context_restore(context);
         }
+        GTK.gtk_style_context_restore(context);
         return rgba;
     }
 
@@ -3745,8 +3764,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             resizeCallback = new Callback(this, "resizeProc", void.class, new Type[] { long.class, int.class, int.class });
             resizeProc = resizeCallback.getAddress();
             //$NON-NLS-1$
+            layoutCallback = new Callback(this, "layoutProc", void.class, new Type[] { long.class, int.class, int.class, long.class });
+            layoutProc = layoutCallback.getAddress();
+            //$NON-NLS-1$
             activateCallback = new Callback(this, "activateProc", void.class, new Type[] { long.class, long.class, long.class });
             activateProc = activateCallback.getAddress();
+            menuItemsChangedCallback = new Callback(this, "menuItemsChangedProc", void.class, new Type[] { long.class, int.class, int.class, int.class, //$NON-NLS-1$
+            long.class });
+            menuItemsChangedProc = menuItemsChangedCallback.getAddress();
             //$NON-NLS-1$
             computeSizeCallback = new Callback(this, "computeSizeProc", void.class, new Type[] { long.class, long.class, long.class });
             computeSizeProc = computeSizeCallback.getAddress();
@@ -4171,9 +4196,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (to != null && to.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         Point point = new Point(x, y);
-        if (GTK.GTK4 && (to == null || from == null)) {
-            return point;
-        }
         if (from == to)
             return point;
         if (from != null) {
@@ -4283,9 +4305,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         Rectangle rect = new Rectangle(x, y, width, height);
         if (from == to)
             return rect;
-        if (GTK.GTK4 && (to == null || from == null)) {
-            return rect;
-        }
         boolean fromRTL = false, toRTL = false;
         if (from != null) {
             Point origin = GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin();
@@ -4778,9 +4797,15 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             resizeCallback.dispose();
             resizeCallback = null;
             resizeProc = 0;
+            layoutCallback.dispose();
+            layoutCallback = null;
+            layoutProc = 0;
             activateCallback.dispose();
             activateCallback = null;
             activateProc = 0;
+            menuItemsChangedCallback.dispose();
+            menuItemsChangedCallback = null;
+            menuItemsChangedProc = 0;
             computeSizeCallback.dispose();
             computeSizeCallback = null;
             computeSizeProc = 0;
@@ -6328,11 +6353,25 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
     }
 
+    void menuItemsChangedProc(long model, int position, int removed, int added, long user_data) {
+        Widget widget = getWidget(user_data);
+        if (widget instanceof Menu menu)
+            ((SwtMenu) menu.getImpl()).modelItemsChanged();
+    }
+
     void resizeProc(long handle, int width, int height) {
         Widget widget = getWidget(handle);
         if (widget != null)
             if (widget == null || widget.getImpl() instanceof SwtWidget) {
                 ((SwtWidget) widget.getImpl()).gtk_size_allocate(handle, 0);
+            }
+    }
+
+    void layoutProc(long surface, int width, int height, long user_data) {
+        Widget widget = getWidget(user_data);
+        if (widget != null)
+            if (widget == null || widget.getImpl() instanceof SwtWidget) {
+                ((SwtWidget) widget.getImpl()).gtk_layout(surface, width, height);
             }
     }
 

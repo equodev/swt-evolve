@@ -1090,10 +1090,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return this.bounds;
     }
 
-    int getCodePage() {
-        return 0;
-    }
-
     String getClipboardText() {
         String string = "";
         return string;
@@ -2079,6 +2075,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
+                return true;
             }
         } else {
             if (control.getImpl()._backgroundImage() != null) {

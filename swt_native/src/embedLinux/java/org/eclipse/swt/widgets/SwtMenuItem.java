@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2023 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -78,6 +78,20 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     Section section;
 
+    /**
+     * The action's own name within the parent's action group, i.e. the name
+     * g_simple_action_new() was given. Use this with the GActionMap API (e.g.
+     * g_action_map_remove_action), which keys actions by their plain name.
+     */
+    String actionId;
+
+    /**
+     * The <em>detailed</em> action name: actionId qualified with the prefix the
+     * action group was inserted under (see Menu#createHandle), plus a target for
+     * SWT.RADIO. Use this where an action is referenced by name, such as
+     * g_menu_item_new() or gtk_named_action_new(), and never with the GActionMap
+     * API.
+     */
     String actionName;
 
     /**
@@ -275,32 +289,57 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                 case SWT.SEPARATOR:
                     modelHandle = OS.g_menu_new();
                     getApi().handle = OS.g_menu_item_new_section(null, modelHandle);
+                    /*
+				 * A separator starts a new section GMenu; observe it for
+				 * "items-changed" too so submenus added into this section later get
+				 * wired (see Menu#hookItemsChanged and issue #3451).
+				 */
+                    ((SwtMenu) parent.getImpl()).hookItemsChanged(modelHandle);
                     break;
                 case SWT.RADIO:
                     long stringVariantType = OS.g_variant_type_new(OS.G_VARIANT_TYPE_STRING);
-                    actionHandle = OS.g_simple_action_new_stateful(Converter.javaStringToCString(String.valueOf(this.hashCode())), stringVariantType, OS.g_variant_new_string(Converter.javaStringToCString("untoggled")));
+                    actionId = String.valueOf(this.hashCode());
+                    actionHandle = OS.g_simple_action_new_stateful(Converter.javaStringToCString(actionId), stringVariantType, OS.g_variant_new_string(Converter.javaStringToCString("untoggled")));
                     OS.g_action_map_add_action(((SwtMenu) parent.getImpl()).actionGroup, actionHandle);
-                    actionName = String.valueOf(parent.hashCode()) + "." + String.valueOf(this.hashCode()) + "::toggled";
+                    actionName = String.valueOf(parent.hashCode()) + "." + actionId + "::toggled";
                     getApi().handle = OS.g_menu_item_new(null, Converter.javaStringToCString(actionName));
                     OS.g_variant_type_free(stringVariantType);
                     break;
                 case SWT.CHECK:
                     long boolVariantType = OS.g_variant_type_new(OS.G_VARIANT_TYPE_BOOLEAN);
-                    actionHandle = OS.g_simple_action_new_stateful(Converter.javaStringToCString(String.valueOf(this.hashCode())), 0, OS.g_variant_new_boolean(false));
+                    actionId = String.valueOf(this.hashCode());
+                    actionHandle = OS.g_simple_action_new_stateful(Converter.javaStringToCString(actionId), 0, OS.g_variant_new_boolean(false));
                     OS.g_action_map_add_action(((SwtMenu) parent.getImpl()).actionGroup, actionHandle);
-                    actionName = String.valueOf(parent.hashCode()) + "." + String.valueOf(this.hashCode());
+                    actionName = String.valueOf(parent.hashCode()) + "." + actionId;
                     getApi().handle = OS.g_menu_item_new(null, Converter.javaStringToCString(actionName));
                     OS.g_variant_type_free(boolVariantType);
                     break;
                 case SWT.CASCADE:
                     modelHandle = OS.g_menu_new();
-                    getApi().handle = OS.g_menu_item_new_submenu(Converter.javaStringToCString(""), modelHandle);
+                    /*
+				 * Give the CASCADE item an action so it can be enabled/disabled like
+				 * on the other platforms and like GTK3. A plain submenu item created
+				 * via g_menu_item_new_submenu has no action, so its GtkModelButton is
+				 * always sensitive: setEnabled(false) would be a no-op and the (possibly
+				 * empty) submenu could still be opened. Attaching a SimpleAction makes
+				 * the item follow the action's enabled state. While the action is
+				 * enabled, activating the item still navigates into the submenu (the
+				 * action is not triggered); while disabled, the item is insensitive and
+				 * the submenu cannot be opened.
+				 */
+                    actionId = String.valueOf(this.hashCode());
+                    actionHandle = OS.g_simple_action_new(Converter.javaStringToCString(actionId), 0);
+                    OS.g_action_map_add_action(((SwtMenu) parent.getImpl()).actionGroup, actionHandle);
+                    actionName = String.valueOf(parent.hashCode()) + "." + actionId;
+                    getApi().handle = OS.g_menu_item_new(Converter.javaStringToCString(""), Converter.javaStringToCString(actionName));
+                    OS.g_menu_item_set_submenu(getApi().handle, modelHandle);
                     break;
                 case SWT.PUSH:
                 default:
-                    actionHandle = OS.g_simple_action_new(Converter.javaStringToCString(String.valueOf(this.hashCode())), 0);
+                    actionId = String.valueOf(this.hashCode());
+                    actionHandle = OS.g_simple_action_new(Converter.javaStringToCString(actionId), 0);
                     OS.g_action_map_add_action(((SwtMenu) parent.getImpl()).actionGroup, actionHandle);
-                    actionName = String.valueOf(parent.hashCode()) + "." + String.valueOf(this.hashCode());
+                    actionName = String.valueOf(parent.hashCode()) + "." + actionId;
                     getApi().handle = OS.g_menu_item_new(null, Converter.javaStringToCString(actionName));
                     break;
             }
@@ -518,9 +557,6 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     public boolean getEnabled() {
         checkWidget();
         if (GTK.GTK4) {
-            if ((getApi().style & SWT.CASCADE) != 0) {
-                return true;
-            }
             return OS.g_action_get_enabled(actionHandle);
         } else {
             return GTK.gtk_widget_get_sensitive(getApi().handle);
@@ -653,6 +689,9 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                 selectRadio();
             }
         }
+        if (GTK.GTK4 && (getApi().style & SWT.CHECK) != 0) {
+            OS.g_simple_action_set_state(actionHandle, OS.g_variant_new_boolean(!getSelection()));
+        }
         sendSelectionEvent(SWT.Selection);
         return 0;
     }
@@ -683,7 +722,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     void hookEvents() {
         super.hookEvents();
         if (GTK.GTK4) {
-            if ((getApi().style & SWT.PUSH) != 0 || (getApi().style & SWT.RADIO) != 0) {
+            if ((getApi().style & SWT.PUSH) != 0 || (getApi().style & SWT.RADIO) != 0 || (getApi().style & SWT.CHECK) != 0) {
                 OS.g_signal_connect(actionHandle, OS.activate, ((SwtDisplay) display.getImpl()).activateProc, getApi().handle);
             }
         } else {
@@ -736,8 +775,13 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     void releaseWidget() {
         super.releaseWidget();
         if (GTK.GTK4) {
-            if (((SwtMenu) parent.getImpl()).actionGroup != 0 && actionName != null)
-                OS.g_action_map_remove_action(((SwtMenu) parent.getImpl()).actionGroup, Converter.javaStringToCString(actionName));
+            /*
+		 * Remove by actionId, not actionName: GActionMap keys actions by their own
+		 * name, so passing the prefixed detailed name silently removes nothing and
+		 * leaks the action for the lifetime of the parent's action group.
+		 */
+            if (((SwtMenu) parent.getImpl()).actionGroup != 0 && actionId != null)
+                OS.g_action_map_remove_action(((SwtMenu) parent.getImpl()).actionGroup, Converter.javaStringToCString(actionId));
         } else {
             long accelGroup = getAccelGroup();
             if (accelGroup != 0)
@@ -1153,6 +1197,17 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             }
             OS.g_menu_remove(section.getSectionHandle(), section.getItemPosition(this.getApi()));
             OS.g_menu_insert_item(section.getSectionHandle(), section.getItemPosition(this.getApi()), getApi().handle);
+            /*
+		 * If a DROP_DOWN is attached while its parent is already mapped (contributions
+		 * added/rebuilt after the parent was shown, e.g. workspace restore), wire its
+		 * SHOW/HIDE now; otherwise SWT.Show never fires and the submenu appears empty
+		 * (issue #3451). The g_menu calls above already emit "items-changed" on the
+		 * section model, so this is normally redundant; go through modelItemsChanged()
+		 * anyway so both paths re-wire from the same (root) menu.
+		 */
+            if (menu != null) {
+                ((SwtMenu) parent.getImpl()).modelItemsChanged();
+            }
         } else {
             long accelGroup = getAccelGroup();
             if (accelGroup != 0)
@@ -1588,6 +1643,10 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     public Section _section() {
         return section;
+    }
+
+    public String _actionId() {
+        return actionId;
     }
 
     public String _actionName() {

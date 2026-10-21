@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
@@ -28,6 +29,7 @@ import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.image.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.widgets.*;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -158,6 +160,15 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return zoomLevelToImageHandle.keySet();
         }
 
+        Integer getNearestAvailableZoom(int zoom) {
+            TreeSet<Integer> availableZooms = new TreeSet<>(getAllZooms());
+            if (availableZooms.contains(zoom)) {
+                return zoom;
+            }
+            Integer higher = availableZooms.higher(zoom);
+            return higher != null ? higher : availableZooms.lower(zoom);
+        }
+
         void destroyHandles(Predicate<Integer> filter) {
             zoomLevelToImageHandle.entrySet().removeIf(entry -> {
                 if (filter.test(entry.getKey())) {
@@ -186,30 +197,42 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
     private class HandleAtSize {
 
+        record TemporaryHandleForZoom(DestroyableImageHandle handle, int zoom) {
+        }
+
         private InternalImageHandle handleContainer = null;
 
-        private DestroyableImageHandle temporaryHandleContainer = null;
+        private TemporaryHandleForZoom temporaryHandleContainer = null;
 
         private int requestedWidth = -1;
 
         private int requestedHeight = -1;
 
         public void destroy() {
-            if (temporaryHandleContainer != null) {
-                temporaryHandleContainer.destroy();
-                temporaryHandleContainer = null;
+            TemporaryHandleForZoom previousHandle = reset();
+            if (previousHandle != null) {
+                previousHandle.handle().destroy();
             }
+        }
+
+        private TemporaryHandleForZoom reset() {
+            TemporaryHandleForZoom previousHandle = temporaryHandleContainer;
+            temporaryHandleContainer = null;
             handleContainer = null;
             requestedWidth = -1;
             requestedHeight = -1;
+            return previousHandle;
         }
 
         public ImageHandle refresh(int width, int height) {
             if (!isReusable(width, height)) {
-                destroy();
+                TemporaryHandleForZoom previousHandle = reset();
                 requestedWidth = width;
                 requestedHeight = height;
-                handleContainer = createHandleAtExactSize(width, height).orElseGet(() -> getOrCreateImageHandleAtClosestSize(width, height));
+                handleContainer = createHandleAtExactSize(width, height).orElseGet(() -> getOrCreateImageHandleAtClosestSize(width, height, previousHandle));
+                if (previousHandle != null && previousHandle.handle() != handleContainer) {
+                    previousHandle.handle().destroy();
+                }
             }
             return handleContainer;
         }
@@ -224,23 +247,58 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         private Optional<InternalImageHandle> createHandleAtExactSize(int width, int height) {
             Optional<ImageData> imageData = imageProvider.loadImageDataAtExactSize(width, height);
             if (imageData.isPresent()) {
-                temporaryHandleContainer = init(imageData.get(), -1);
-                return Optional.of(temporaryHandleContainer);
+                temporaryHandleContainer = new TemporaryHandleForZoom(init(imageData.get(), -1), 0);
+                return Optional.of(temporaryHandleContainer.handle());
             }
             return Optional.empty();
         }
 
-        private InternalImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint) {
+        private InternalImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint, TemporaryHandleForZoom previousHandle) {
             Rectangle bounds = getBounds(100);
             int imageZoomForWidth = 100 * widthHint / bounds.width;
             int imageZoomForHeight = 100 * heightHint / bounds.height;
             int imageZoom = DPIUtil.getZoomForAutoscaleProperty(Math.max(imageZoomForWidth, imageZoomForHeight));
-            InternalImageHandle bestFittingHandle = imageHandleManager.get(imageZoom);
-            if (bestFittingHandle == null) {
-                ImageData bestFittingImageData = imageProvider.loadImageData(imageZoom).element();
-                bestFittingHandle = temporaryHandleContainer = init(bestFittingImageData, -1);
+            int nearestAvailableZoom = imageProvider.nearestAvailableZoom(imageZoom);
+            InternalImageHandle bestFittingHandle = getPersistentHandle(imageZoom, nearestAvailableZoom);
+            if (bestFittingHandle != null) {
+                return bestFittingHandle;
             }
-            return bestFittingHandle;
+            if (previousHandle != null && previousHandle.zoom() == nearestAvailableZoom) {
+                temporaryHandleContainer = previousHandle;
+                return previousHandle.handle();
+            }
+            ElementAtZoom<ImageData> imageData = imageProvider.loadImageData(imageZoom);
+            temporaryHandleContainer = new TemporaryHandleForZoom(init(imageData.element(), -1), imageData.zoom());
+            return temporaryHandleContainer.handle();
+        }
+
+        private InternalImageHandle getPersistentHandle(int imageZoom, int nearestAvailableZoom) {
+            InternalImageHandle bestFittingHandle = imageHandleManager.get(imageZoom);
+            if (bestFittingHandle != null) {
+                return bestFittingHandle;
+            }
+            if (getShellZooms().contains(imageZoom)) {
+                return getHandleInternal(imageZoom, imageZoom);
+            }
+            bestFittingHandle = imageHandleManager.get(nearestAvailableZoom);
+            if (bestFittingHandle != null) {
+                return bestFittingHandle;
+            }
+            if (nearestAvailableZoom == 100) {
+                return getHandleInternal(100, 100);
+            }
+            return null;
+        }
+
+        private Set<Integer> getShellZooms() {
+            if (getDevice() instanceof Display display) {
+                try {
+                    return Arrays.stream(display.getShells()).map(Shell::getZoom).collect(Collectors.toSet());
+                } catch (SWTException e) {
+                    return Collections.emptySet();
+                }
+            }
+            return Collections.emptySet();
         }
     }
 
@@ -260,16 +318,27 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * by creating a GC and using any of its drawing operations,
      * as shown in the following example:
      * <pre>
-     *    Image i = new Image(device, width, height);
+     *    Image i = new Image(device, imageWidth, imageHeight);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, imageWidth, imageHeight);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), imageWidth, imageHeight);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -287,6 +356,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *    <li>ERROR_NO_HANDLES if a handle could not be obtained for image creation</li>
      * </ul>
      *
+     * @see #Image(Device, ImageGcDrawer, int, int)
      * @see #dispose()
      */
     public SwtImage(Device device, int width, int height, Image api) {
@@ -431,14 +501,25 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * <pre>
      *    Image i = new Image(device, boundsRectangle);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, boundsRectangle.width, boundsRectangle.height);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), boundsRectangle.width, boundsRectangle.height);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -458,7 +539,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      *
-     * @deprecated use {@link Image#Image(Device, int, int)} instead
+     * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
     public SwtImage(Device device, Rectangle bounds, Image api) {
@@ -944,6 +1025,10 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     }
 
     ImageHandle getHandle(int targetZoom, int nativeZoom) {
+        return getHandleInternal(targetZoom, nativeZoom);
+    }
+
+    InternalImageHandle getHandleInternal(int targetZoom, int nativeZoom) {
         if (isDisposed()) {
             return null;
         }
@@ -2078,6 +2163,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return false;
         }
 
+        abstract int nearestAvailableZoom(int zoom);
+
         /**
          * Returns image data at the best-fitting available zoom for the given zoom.
          * The returned data will have a potential gray/disable style applied.
@@ -2089,8 +2176,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         abstract AbstractImageProviderWrapper createCopy(Image image);
 
         ElementAtZoom<ImageData> getClosestAvailableImageData(int zoom) {
-            TreeSet<Integer> availableZooms = new TreeSet<>(imageHandleManager.getAllZooms());
-            int closestZoom = Optional.ofNullable(availableZooms.higher(zoom)).orElse(availableZooms.lower(zoom));
+            int closestZoom = imageHandleManager.getNearestAvailableZoom(zoom);
             ImageData imageData = imageHandleManager.get(closestZoom).getImageData();
             return new ElementAtZoom<>(imageData, closestZoom);
         }
@@ -2170,6 +2256,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             ImageData resizedData = newImageData(zoomContext.targetZoom());
             return newImageHandle(resizedData, zoomContext);
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return zoomForHandle;
+        }
     }
 
     private abstract class ImageFromImageDataProviderWrapper extends AbstractImageProviderWrapper {
@@ -2242,6 +2333,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         AbstractImageProviderWrapper createCopy(Image image) {
             return ((SwtImage) image.getImpl()).new PlainImageDataProviderWrapper(this.imageDataAtBaseZoom);
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return baseZoom;
+        }
     }
 
     private class MaskedImageDataProviderWrapper extends ImageFromImageDataProviderWrapper {
@@ -2275,6 +2371,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         @Override
         AbstractImageProviderWrapper createCopy(Image image) {
             return ((SwtImage) image.getImpl()).new MaskedImageDataProviderWrapper(this.srcAt100, this.maskAt100);
+        }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return 100;
         }
     }
 
@@ -2321,6 +2422,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
             return Optional.empty();
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            if (ImageDataLoader.isDynamicallySizable(new ByteArrayInputStream(this.inputStreamData))) {
+                return zoom;
+            }
+            return FileFormat.DEFAULT_ZOOM;
+        }
     }
 
     private class PlainImageProviderWrapper extends AbstractImageProviderWrapper {
@@ -2355,6 +2464,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
         @Override
         protected long configureGCData(GCData data) {
+            ((SwtGCData) data.getImpl()).reapplicable = true;
             return configureGC(data, new ZoomContext(DPIUtil.getDeviceZoom(), DPIUtil.getNativeDeviceZoom()));
         }
 
@@ -2387,6 +2497,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
 
         @Override
+        int nearestAvailableZoom(int zoom) {
+            if (imageHandleManager.isEmpty()) {
+                return 100;
+            }
+            return imageHandleManager.getNearestAvailableZoom(zoom);
+        }
+
+        @Override
         protected DestroyableImageHandle newImageHandle(ZoomContext zoomContext) {
             int targetZoom = zoomContext.targetZoom();
             if (imageHandleManager.isEmpty()) {
@@ -2396,7 +2514,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 GC currentGC = memGC;
                 memGC = null;
                 DestroyableImageHandle imageHandle = createHandle(targetZoom);
-                ((SwtGC) currentGC.getImpl()).refreshFor(new DrawableWrapper(SwtImage.this.getApi(), zoomContext), imageHandle);
+                ((SwtGC) currentGC.getImpl()).reapplyTo(new DrawableWrapper(SwtImage.this.getApi(), zoomContext), imageHandle);
                 return imageHandle;
             }
             ImageData resizedData = newImageData(targetZoom);
@@ -2564,6 +2682,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 }
             }
             return adaptImageDataIfDisabledOrGray(imageDataAtZoom);
+        }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            if (provider instanceof ImageDataAtSizeProvider) {
+                return zoom;
+            }
+            return DPIUtil.validateAndGetImagePathAtZoom(provider, zoom).zoom();
         }
 
         @Override
@@ -2831,6 +2957,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
             return Optional.empty();
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            if (provider instanceof ImageDataAtSizeProvider) {
+                return zoom;
+            }
+            return DPIUtil.validateAndGetImageDataAtZoom(provider, zoom).zoom();
+        }
     }
 
     private class ImageGcDrawerWrapper extends DynamicImageProviderWrapper {
@@ -2874,6 +3008,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
             return new ElementAtZoom<>(loadImageData(new ZoomContext(zoom)), zoom);
+        }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return zoom;
         }
 
         private ImageData loadImageData(ZoomContext zoomContext) {

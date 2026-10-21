@@ -2090,6 +2090,9 @@ public class DartTable extends DartComposite implements ITable {
     void setCheckboxImageList(int width, int height, boolean fixScroll) {
         if ((getApi().style & SWT.CHECK) == 0)
             return;
+        Control control = findBackgroundControl();
+        if (control == null)
+            control = this.getApi();
         /*
 	* Bug in Windows.  Making any change to an item that
 	* changes the item height of a table while the table

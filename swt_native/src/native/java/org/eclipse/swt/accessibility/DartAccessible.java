@@ -110,7 +110,7 @@ public class DartAccessible implements IAccessible {
      * @since 3.5
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     protected DartAccessible(Accessible api) {
         setApi(api);
     }

@@ -66,11 +66,11 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     static final long DateTimeProc;
 
-    static final TCHAR DateTimeClass = new TCHAR(0, OS.DATETIMEPICK_CLASS, true);
+    static final TCHAR DateTimeClass = new TCHAR(OS.DATETIMEPICK_CLASS, true);
 
     static final long CalendarProc;
 
-    static final TCHAR CalendarClass = new TCHAR(0, OS.MONTHCAL_CLASS, true);
+    static final TCHAR CalendarClass = new TCHAR(OS.MONTHCAL_CLASS, true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -189,7 +189,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         super(parent, checkStyle(style), api);
         if ((this.getApi().style & SWT.SHORT) != 0) {
             String buffer = ((this.getApi().style & SWT.DATE) != 0) ? getCustomShortDateFormat() : getCustomShortTimeFormat();
-            TCHAR lpszFormat = new TCHAR(0, buffer, true);
+            TCHAR lpszFormat = new TCHAR(buffer, true);
             OS.SendMessage(getApi().handle, OS.DTM_SETFORMAT, 0, lpszFormat);
         }
     }
@@ -309,7 +309,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     String getCustomShortDateFormat() {
-        TCHAR tchar = new TCHAR(getCodePage(), 80);
+        TCHAR tchar = new TCHAR(80);
         int size = OS.GetLocaleInfo(OS.LOCALE_USER_DEFAULT, OS.LOCALE_SYEARMONTH, tchar, 80);
         //$NON-NLS-1$
         return size != 0 ? tchar.toString(0, size - 1) : "M/yyyy";
@@ -340,7 +340,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     String getTimeFormat() {
-        TCHAR tchar = new TCHAR(getCodePage(), 80);
+        TCHAR tchar = new TCHAR(80);
         int size = OS.GetLocaleInfo(OS.LOCALE_USER_DEFAULT, OS.LOCALE_STIMEFORMAT, tchar, 80);
         //$NON-NLS-1$
         return size > 0 ? tchar.toString(0, size - 1) : "h:mm:ss tt";
