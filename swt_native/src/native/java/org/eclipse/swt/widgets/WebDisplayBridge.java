@@ -223,15 +223,6 @@ public class WebDisplayBridge extends DisplayBridge {
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
         dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
-        armClientGeometryWait();
-    }
-
-    /**
-     * The browser was only opened now, so the viewport it will report is not known yet. Not for a
-     * window this thread has to pump: holding the thread would stop the page that reports it.
-     */
-    protected void armClientGeometryWait() {
-        awaitsClientGeometry = !needsPump();
     }
 
     /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */

@@ -407,7 +407,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final offset = resolvedOffset();
 
-    void sendBoundsToJava() {
+    void sendBoundsToJava({bool initial = false}) {
       // Back to SCREEN space, where Java keeps a shell's bounds: reporting the drawn offset would
       // have the window's origin taken off a second time on the next update.
       final drawn = (isFullScreen || _maximized) ? Offset.zero : (_offset ?? offset);
@@ -420,14 +420,17 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
           ..width =
               (isFullScreen || _maximized) ? viewport.maxWidth.round() : bodyW.round()
           ..height =
-              (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round(),
+              (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round()
+          // Java ignores this one for a shell it moved after this frame's bounds were sent
+          // (DisplayBridge.INITIAL_CLIENT_BOUNDS).
+          ..detail = initial ? 1 : null,
       );
     }
 
     if (!_initialBoundsSent) {
       _initialBoundsSent = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) sendBoundsToJava();
+        if (mounted) sendBoundsToJava(initial: true);
       });
     }
 

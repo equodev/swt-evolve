@@ -2027,6 +2027,8 @@ public class DartShell extends DartDecorations implements IShell {
                     return;
                 if (e == null)
                     return;
+                if (getBridge() instanceof DisplayBridge && ((DisplayBridge) getBridge()).ignoresClientBounds(getApi(), e.detail))
+                    return;
                 org.eclipse.swt.graphics.Rectangle _before = getApi().getBounds();
                 getApi().setBounds(e.x, e.y, e.width, e.height);
                 if (_before != null && _before.x == e.x && _before.y == e.y && _before.width == e.width && _before.height == e.height)

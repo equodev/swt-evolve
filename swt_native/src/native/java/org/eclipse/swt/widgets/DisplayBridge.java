@@ -63,15 +63,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private final java.util.LinkedHashMap<Shell, ShellWindow> shellWindows =
             new java.util.LinkedHashMap<>();
 
-    /**
-     * Whether the Display's first geometry query waits for the client's report. Set by a surface whose
-     * client is not there when the Display is created; read and cleared on the Display thread.
-     */
-    protected boolean awaitsClientGeometry;
+    /** Whether a client has reported its viewport yet; until then the Display's bounds are a default.
+     *  Display thread only. */
+    private boolean clientViewportApplied;
 
-    /** What applies the first client report to the Display; it is also posted to the Display thread. */
-    private final java.util.concurrent.CompletableFuture<Runnable> firstClientReport =
-            new java.util.concurrent.CompletableFuture<>();
+    /** {@code Event.detail} of the bounds a client reports once it has first drawn a shell. */
+    public static final int INITIAL_CLIENT_BOUNDS = 1;
+
+    /** Shells moved by {@link #replaceShells} whose initial client bounds have not arrived yet.
+     *  Display thread only. */
+    private final java.util.Set<Shell> replacedShells =
+            java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 
     protected DisplayBridge(DartDisplay display) {
         this.forDisplay = display;
@@ -240,7 +242,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             onDisplayClientReady(first);
 
             Display api = display.getApi();
-            Runnable apply = once(() -> {
+            Runnable apply = () -> {
                 int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
                 // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
@@ -258,8 +260,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // Only for a client that holds nothing (first ClientReady, or a page refresh): a
                 // viewport change resizes shells, which travel on their own; the Display has no bounds.
                 if (first || p.isFirst) sendDisplayUpdate(display);
-            });
-            firstClientReport.complete(apply);
+            };
             // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
             // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
             // until the Display thread services the runnable, but the idle E4 workbench parks the Display
@@ -271,48 +272,6 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.getThread() == Thread.currentThread()) apply.run();
             else api.asyncExec(apply);
         });
-    }
-
-    /**
-     * Holds the Display thread, on its first query of the Display's or a Monitor's geometry, until
-     * the client has reported its viewport. An application places its first window from those values
-     * before any client has connected, and until then they are only a default. Applies the report on
-     * the spot, since the Display thread is the one its posted copy is waiting for.
-     */
-    public void awaitClientGeometry(DartDisplay display) {
-        if (!awaitsClientGeometry) return;
-        Display api = display.getApi();
-        if (api == null || api.getThread() != Thread.currentThread()) return;
-        awaitsClientGeometry = false;
-        Runnable apply;
-        try {
-            apply = firstClientReport.get(clientGeometryWaitMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
-        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-            return;
-        }
-        apply.run();
-    }
-
-    /** Bounds the hold in {@link #awaitClientGeometry}: past it the Display keeps reporting its default. */
-    protected long clientGeometryWaitMs() {
-        return 30_000;
-    }
-
-    /** {@code task}, run at most once however many times the result is run. Display thread only. */
-    private static Runnable once(Runnable task) {
-        return new Runnable() {
-            private boolean ran;
-
-            @Override
-            public void run() {
-                if (ran) return;
-                ran = true;
-                task.run();
-            }
-        };
     }
 
     public void writeClipboardText(String text) {
@@ -419,9 +378,67 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (!isFirst && display.bounds.equals(viewport)) {
             return false; // idempotent: same viewport as before — no churn, no echo
         }
+        java.util.Map<Shell, Rectangle> placedOnDefault = clientViewportApplied ? null : shellBounds(display);
+        Rectangle defaultBounds = display.bounds;
+        clientViewportApplied = true;
         display.bounds = viewport;
         applyClientBounds(() -> resizeMainShells(display, viewport));
+        if (placedOnDefault != null) replaceShells(display, placedOnDefault, defaultBounds);
         return true;
+    }
+
+    private static java.util.Map<Shell, Rectangle> shellBounds(DartDisplay display) {
+        java.util.Map<Shell, Rectangle> bounds = new java.util.LinkedHashMap<>();
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed()) bounds.put(shell, shell.getBounds());
+        }
+        return bounds;
+    }
+
+    /**
+     * Corrects the shells placed before any client reported its viewport, so against the Display's
+     * default bounds. One centered on what it was placed in is centered on it again: its parent shell,
+     * or the Display when there is none or the parent still has the bounds a shell inherits from the
+     * Display. Any other keeps its position, moved only as far as needed to stay inside the viewport.
+     * A shell placed outside its reference is left alone.
+     */
+    private void replaceShells(DartDisplay display, java.util.Map<Shell, Rectangle> placed, Rectangle defaultBounds) {
+        Shell main = mainShell(display);
+        Rectangle viewport = display.bounds;
+        for (java.util.Map.Entry<Shell, Rectangle> entry : placed.entrySet()) {
+            Shell shell = entry.getKey();
+            if (shell.isDisposed() || shell == main || shellWindows.containsKey(shell)) continue;
+            Rectangle at = entry.getValue();
+            Shell parent = shell.getParent() instanceof Shell ? (Shell) shell.getParent() : null;
+            boolean inParent = parent != null && !parent.isDisposed() && placed.containsKey(parent)
+                    && !placed.get(parent).equals(defaultBounds);
+            Rectangle before = inParent ? placed.get(parent) : defaultBounds;
+            Rectangle after = inParent ? parent.getBounds() : viewport;
+            if (before.equals(after) || !before.contains(at.x, at.y)) continue;
+            int x = replaced(at.x, at.width, before.x, before.width, after.x, after.width, viewport.x, viewport.width);
+            int y = replaced(at.y, at.height, before.y, before.height, after.y, after.height, viewport.y, viewport.height);
+            if (x == at.x && y == at.y) continue;
+            shell.setLocation(x, y);
+            replacedShells.add(shell);
+        }
+    }
+
+    /**
+     * Whether a client's report of {@code shell}'s bounds is to be ignored: the one it makes once it
+     * has first drawn a shell {@link #replaceShells} moved, which it may have drawn from the bounds
+     * the shell had before.
+     */
+    public boolean ignoresClientBounds(Shell shell, int detail) {
+        return detail == INITIAL_CLIENT_BOUNDS && replacedShells.remove(shell);
+    }
+
+    /** One axis of {@link #replaceShells}: re-centered on {@code [newStart, newStart+newLength)} if it was
+     *  centered on {@code [start, start+length)}, then kept within {@code [min, min+span)}. */
+    private static int replaced(int pos, int size, int start, int length, int newStart, int newLength, int min, int span) {
+        int lead = pos - start;
+        int trail = start + length - pos - size;
+        int moved = Math.abs(lead - trail) <= 1 ? newStart + (newLength - size) / 2 : pos;
+        return Math.max(min, Math.min(moved, min + span - size));
     }
 
     /** Runs {@code apply} (which resizes shells) with the window-echo suppressed. */
