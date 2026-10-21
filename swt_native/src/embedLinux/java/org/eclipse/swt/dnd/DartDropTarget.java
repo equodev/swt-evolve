@@ -767,8 +767,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.time = e.time;
-        event.x = e.x;
-        event.y = e.y;
+        setDisplayLocation(event, e);
         event.item = e.item != null ? e.item : resolveItem(e);
         event.operations = getStyle();
         event.dataTypes = computeMutualDataTypes(matchingDragSource());
@@ -802,12 +801,17 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return mutual.toArray(new TransferData[0]);
     }
 
+    private void setDisplayLocation(DNDEvent event, Event e) {
+        org.eclipse.swt.graphics.Point onDisplay = control.toDisplay(e.x, e.y);
+        event.x = onDisplay.x;
+        event.y = onDisplay.y;
+    }
+
     private DNDEvent toDropEvent(Event e) {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.time = e.time;
-        event.x = e.x;
-        event.y = e.y;
+        setDisplayLocation(event, e);
         event.doit = true;
         int detail = e.detail != DND.DROP_NONE ? e.detail : selectedOperation;
         event.detail = detail == DND.DROP_DEFAULT ? resolveDefaultOperation() : detail;

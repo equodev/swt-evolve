@@ -5,7 +5,6 @@ import '../../gen/droptarget.dart';
 import '../../gen/event.dart';
 import '../../gen/widget.dart';
 import 'dnd_session.dart';
-import 'swt_zoom_scale.dart';
 
 class DndDragPayload {
   final int sourceControlId;
@@ -231,6 +230,9 @@ Widget wrapDraggable<T extends Object>({
   required ControlSwt widget,
   required VControl state,
   VoidCallback? onDragStarted,
+  // What native SWT does on the mouse down that starts the drag, so DragStart listeners see it:
+  // a Tree or Table selects the item under the pointer before DragDetect is raised.
+  VoidCallback? beforeDragDetect,
   Widget Function(Widget child)? feedbackBuilder,
   Widget Function(Widget child)? childWhenDraggingBuilder,
   bool useLongPress = false,
@@ -265,6 +267,7 @@ Widget wrapDraggable<T extends Object>({
     // Before whatever this control does about the drag, because the far side handles the two in the
     // order they arrive: a CTabFolder selects the dragged tab, and selecting one a workbench has
     // not rendered makes it render the view, which takes seconds of a busy UI thread.
+    beforeDragDetect?.call();
     if (dragDetectGate == null) sendDragDetect();
     onDragStarted?.call();
   }
@@ -421,8 +424,15 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     super.deactivate();
   }
 
-  Offset _resolvePosition(DragTargetDetails<T> details) =>
-      widget.resolvePosition?.call(details) ?? logicalToSwt(details.offset);
+  /// The drop position local to the control, which Java maps to display coordinates. The global
+  /// offset is in the window's logical pixels, which match SWT coordinates only at a UI scale of 1
+  /// in a window at the screen's origin.
+  Offset _resolvePosition(DragTargetDetails<T> details) {
+    final resolved = widget.resolvePosition?.call(details);
+    if (resolved != null) return resolved;
+    final box = context.findRenderObject();
+    return box is RenderBox ? box.globalToLocal(details.offset) : Offset.zero;
+  }
 
   void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;

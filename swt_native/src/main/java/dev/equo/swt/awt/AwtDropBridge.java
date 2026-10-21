@@ -16,11 +16,15 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +43,7 @@ import org.eclipse.swt.dnd.HTMLTransfer;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.dnd.TransferData;
+import org.eclipse.swt.dnd.TransferHelper;
 import org.eclipse.swt.dnd.URLTransfer;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
@@ -55,10 +60,14 @@ import sun.awt.AWTAccessor;
  * the AWT event the native peer would have dispatched: to the deepest component under the pointer
  * that has a drop target, with enter/exit as that component changes.
  *
- * <p>The drag offers the SWT transfers of the {@link DragSource} it started from, each mapped to the
- * AWT flavors the native clipboard formats map to; an application-defined transfer reaches AWT
- * through the flavors {@link SystemFlavorMap} associates with its type name. Only the transfer the
- * drop negotiated carries data, and only at the drop: the SWT side hands over nothing earlier.
+ * <p>The drag offers the SWT transfers of the {@link DragSource} it started from, read when the drag
+ * reaches the canvas, since a source may set them in its own {@code DragStart} listener. Each is
+ * mapped to the AWT flavors the native clipboard formats map to; an application-defined transfer
+ * reaches AWT through the flavors {@link SystemFlavorMap} associates with its type name, looked up
+ * on every query as the native peer does, so a target that registers that mapping during the drag
+ * sees it at once. The drag is delivered whether or not any flavor maps: the AWT target decides.
+ * Only the transfer the drop negotiated carries data, and only at the drop: the SWT side hands over
+ * nothing earlier.
  */
 final class AwtDropBridge {
 
@@ -66,11 +75,32 @@ final class AwtDropBridge {
 
     private static final String DRAG_STATE_KEY = AwtDropBridge.class.getName() + ".dragState";
 
-    /** One per {@link Display}: what the drag in progress offers, and the bridges that can take it. */
+    /** One per {@link Display}: the drag in progress, every bridge, and the ones that can take it. */
     private static final class DragState {
+        final Set<AwtDropBridge> all = ConcurrentHashMap.newKeySet();
         final Set<AwtDropBridge> active = ConcurrentHashMap.newKeySet();
-        volatile Transfer[] transfers = new Transfer[0];
-        volatile int operations = SWT_OPERATIONS;
+        volatile WeakReference<DragSource> source = new WeakReference<>(null);
+
+        DragSource source() {
+            DragSource s = source.get();
+            return s == null || s.isDisposed() ? null : s;
+        }
+
+        Transfer[] transfers() {
+            DragSource s = source();
+            Transfer[] transfers = s == null ? null : s.getTransfer();
+            if (transfers == null) return new Transfer[0];
+            List<Transfer> present = new ArrayList<>();
+            for (Transfer transfer : transfers) {
+                if (transfer != null) present.add(transfer);
+            }
+            return present.toArray(new Transfer[0]);
+        }
+
+        int operations() {
+            DragSource s = source();
+            return s == null ? SWT_OPERATIONS : s.getStyle() & SWT_OPERATIONS;
+        }
     }
 
     private final Canvas canvas;
@@ -85,6 +115,7 @@ final class AwtDropBridge {
         this.canvas = canvas;
         this.display = canvas.getDisplay();
         this.drag = dragState(display);
+        drag.all.add(this);
     }
 
     void bind(Container root) {
@@ -100,13 +131,14 @@ final class AwtDropBridge {
     }
 
     void dispose() {
+        drag.all.remove(this);
         drag.active.remove(this);
     }
 
     /**
-     * Records what the drag that is starting offers. {@code SWT.DragDetect} is the only point where
-     * the source is known to a party other than the source itself, and it is raised before the drag
-     * reaches any drop target.
+     * Records which source the drag that is starting comes from. {@code SWT.DragDetect} is the only
+     * point where the source is known to a party other than the source itself, and it is raised
+     * before the drag reaches any drop target.
      */
     private static DragState dragState(Display display) {
         Object existing = display.getData(DRAG_STATE_KEY);
@@ -116,10 +148,8 @@ final class AwtDropBridge {
         display.addFilter(SWT.DragDetect, e -> {
             Object source = e.widget == null ? null : e.widget.getData(DND.DRAG_SOURCE_KEY);
             if (!(source instanceof DragSource) || ((DragSource) source).isDisposed()) return;
-            DragSource dragSource = (DragSource) source;
-            Transfer[] transfers = dragSource.getTransfer();
-            state.transfers = transfers == null ? new Transfer[0] : transfers;
-            state.operations = dragSource.getStyle() & SWT_OPERATIONS;
+            state.source = new WeakReference<>((DragSource) source);
+            for (AwtDropBridge bridge : state.all) bridge.sync();
             for (AwtDropBridge bridge : state.active) bridge.offerDragTransfers();
         });
         return state;
@@ -133,14 +163,20 @@ final class AwtDropBridge {
         }
     }
 
+    /**
+     * Gives the canvas an SWT drop target while the frame holds any AWT one. The frame only reports
+     * those of lightweight components; a heavyweight one (an OpenGL canvas) registers with its own
+     * peer, so the tree is searched for it too, when a drag starts.
+     */
     private void sync() {
         if (canvas.isDisposed()) return;
-        if (!registered.isEmpty() && swtTarget == null) {
+        boolean wanted = !registered.isEmpty() || hasDropTarget(root);
+        if (wanted && swtTarget == null) {
             swtTarget = new DropTarget(canvas, SWT_OPERATIONS);
             swtTarget.addDropListener(new Listener());
             drag.active.add(this);
             offerDragTransfers();
-        } else if (registered.isEmpty() && swtTarget != null) {
+        } else if (!wanted && swtTarget != null) {
             drag.active.remove(this);
             swtTarget.dispose();
             swtTarget = null;
@@ -149,16 +185,13 @@ final class AwtDropBridge {
 
     private void offerDragTransfers() {
         if (swtTarget == null || swtTarget.isDisposed()) return;
-        List<Transfer> mappable = new ArrayList<>();
-        for (Transfer transfer : drag.transfers) {
-            if (transfer != null && flavorsFor(transfer).length > 0) mappable.add(transfer);
-        }
-        swtTarget.setTransfer(mappable.toArray(new Transfer[0]));
+        swtTarget.setTransfer(drag.transfers());
     }
 
     private final class Listener implements DropTargetListener {
         @Override
         public void dragEnter(DropTargetEvent e) {
+            offerDragTransfers();
             answer(e, false);
         }
 
@@ -187,13 +220,13 @@ final class AwtDropBridge {
         @Override
         public void drop(DropTargetEvent e) {
             Container frame = root;
-            Transfer transfer = transferFor(e.currentDataType);
-            if (frame == null || transfer == null) {
+            Transfer[] offered = drag.transfers();
+            if (frame == null || offered.length == 0) {
                 e.detail = DND.DROP_NONE;
                 return;
             }
             Point p = toFrame(e.x, e.y);
-            Transferable data = new SwtTransferable(transfer, e.data);
+            Transferable data = new SwtTransferable(offered, transferFor(offered, e.currentDataType), e.data);
             int action = awtAction(() -> session.drop(frame, p, userAction(), sourceActions(), data));
             e.detail = toSwt(action);
         }
@@ -201,8 +234,8 @@ final class AwtDropBridge {
 
     private void answer(DropTargetEvent e, boolean operationChanged) {
         Container frame = root;
-        TransferData type = firstMappable(e.dataTypes);
-        if (frame == null || type == null) {
+        Transfer[] offered = drag.transfers();
+        if (frame == null || offered.length == 0) {
             onAwt(() -> {
                 session.exit();
                 return null;
@@ -210,11 +243,29 @@ final class AwtDropBridge {
             e.detail = DND.DROP_NONE;
             return;
         }
-        e.currentDataType = type;
+        TransferData type = negotiatedType(offered);
+        if (type != null) e.currentDataType = type;
         Point p = toFrame(e.x, e.y);
-        Transferable offered = new SwtTransferable(transferFor(type), null);
-        int action = awtAction(() -> session.motion(frame, p, userAction(), sourceActions(), offered, operationChanged));
+        Transferable transferable = new SwtTransferable(offered, null, null);
+        int action = awtAction(() -> session.motion(frame, p, userAction(), sourceActions(), transferable, operationChanged));
         e.detail = toSwt(action);
+    }
+
+    /**
+     * The type whose data the drop will carry: the first transfer AWT has a flavor for, or the first
+     * offered while none has one yet. Re-chosen on every event, because the target may map a native
+     * to a flavor while the drag is over it.
+     */
+    private static TransferData negotiatedType(Transfer[] offered) {
+        Transfer chosen = offered[0];
+        for (Transfer transfer : offered) {
+            if (flavorsFor(transfer).length > 0) {
+                chosen = transfer;
+                break;
+            }
+        }
+        TransferData[] types = chosen.getSupportedTypes();
+        return types.length > 0 ? types[0] : null;
     }
 
     /** Drop events carry display coordinates; the frame sits exactly over the canvas. */
@@ -223,18 +274,10 @@ final class AwtDropBridge {
         return new Point(local.x, local.y);
     }
 
-    private TransferData firstMappable(TransferData[] types) {
-        if (types == null) return null;
-        for (TransferData type : types) {
-            if (transferFor(type) != null) return type;
-        }
-        return null;
-    }
-
-    private Transfer transferFor(TransferData type) {
+    private static Transfer transferFor(Transfer[] offered, TransferData type) {
         if (type == null) return null;
-        for (Transfer transfer : drag.transfers) {
-            if (transfer != null && transfer.isSupportedType(type) && flavorsFor(transfer).length > 0) return transfer;
+        for (Transfer transfer : offered) {
+            if (transfer.isSupportedType(type)) return transfer;
         }
         return null;
     }
@@ -249,7 +292,7 @@ final class AwtDropBridge {
     }
 
     private int sourceActions() {
-        return toAwt(drag.operations);
+        return toAwt(drag.operations());
     }
 
     static int toAwt(int swtOperations) {
@@ -277,15 +320,22 @@ final class AwtDropBridge {
         }
     }
 
-    /** The AWT flavors the native clipboard formats of {@code transfer} map to. */
-    static DataFlavor[] flavorsFor(Transfer transfer) {
+    /** The flavors a transfer whose data is handed over as a Java object maps to, else null. */
+    private static DataFlavor[] fixedFlavors(Transfer transfer) {
         if (transfer instanceof TextTransfer) return new DataFlavor[] {DataFlavor.stringFlavor};
         if (transfer instanceof FileTransfer) return new DataFlavor[] {DataFlavor.javaFileListFlavor};
         if (transfer instanceof URLTransfer) return new DataFlavor[] {urlFlavor(), DataFlavor.stringFlavor};
         if (transfer instanceof HTMLTransfer) return new DataFlavor[] {DataFlavor.allHtmlFlavor};
+        return null;
+    }
+
+    /** The AWT flavors the native clipboard formats of {@code transfer} map to. */
+    static DataFlavor[] flavorsFor(Transfer transfer) {
+        DataFlavor[] fixed = fixedFlavors(transfer);
+        if (fixed != null) return fixed;
         Set<DataFlavor> flavors = new LinkedHashSet<>();
         SystemFlavorMap map = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
-        String[] names = typeNames(transfer);
+        String[] names = TransferHelper.typeNames(transfer);
         if (names != null) {
             for (String name : names) {
                 if (name != null) flavors.addAll(map.getFlavorsForNative(name));
@@ -294,56 +344,118 @@ final class AwtDropBridge {
         return flavors.toArray(new DataFlavor[0]);
     }
 
-    /** {@code Transfer.getTypeNames()} is protected: only subclasses are meant to call it. */
-    private static String[] typeNames(Transfer transfer) {
+    /**
+     * Under Evolve a {@code ByteArrayTransfer} leaves its native bytes in {@code TransferData.data};
+     * the embedded backends' class has no such field, and this source set compiles against them too.
+     */
+    private static Object nativeData(TransferData type) {
         try {
-            Method typeNames = Transfer.class.getDeclaredMethod("getTypeNames");
-            typeNames.setAccessible(true);
-            return (String[]) typeNames.invoke(transfer);
+            return TransferData.class.getField("data").get(type);
         } catch (ReflectiveOperationException | RuntimeException unavailable) {
             return null;
         }
     }
 
-    /** One SWT transfer seen from AWT. {@code data} is null until the drop. */
+    /**
+     * The SWT transfers of one drag seen from AWT. Flavors are looked up on every call; {@code data},
+     * the drop's data for {@code dataTransfer}, is null until the drop.
+     */
     static final class SwtTransferable implements Transferable {
+        private final Transfer[] transfers;
+        private final Transfer dataTransfer;
         private final Object data;
-        private final DataFlavor[] flavors;
 
-        SwtTransferable(Transfer transfer, Object data) {
+        SwtTransferable(Transfer[] transfers, Transfer dataTransfer, Object data) {
+            this.transfers = transfers;
+            this.dataTransfer = dataTransfer;
             this.data = data;
-            this.flavors = flavorsFor(transfer);
         }
 
         @Override
         public DataFlavor[] getTransferDataFlavors() {
-            return flavors.clone();
+            Set<DataFlavor> flavors = new LinkedHashSet<>();
+            for (Transfer transfer : transfers) flavors.addAll(Arrays.asList(flavorsFor(transfer)));
+            return flavors.toArray(new DataFlavor[0]);
         }
 
         @Override
         public boolean isDataFlavorSupported(DataFlavor flavor) {
-            for (DataFlavor f : flavors) {
-                if (f.equals(flavor)) return true;
-            }
-            return false;
+            return Arrays.asList(getTransferDataFlavors()).contains(flavor);
         }
 
         @Override
         public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
             if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
             if (data == null) throw new IOException("The drag's data is only available on drop");
+            if (dataTransfer == null || !Arrays.asList(flavorsFor(dataTransfer)).contains(flavor)) {
+                throw new IOException("The drop carries data for another flavor than " + flavor);
+            }
             if (DataFlavor.javaFileListFlavor.equals(flavor) && data instanceof String[]) {
                 List<File> files = new ArrayList<>();
                 for (String path : (String[]) data) files.add(new File(path));
                 return files;
             }
             if (urlFlavor().equals(flavor) && data instanceof String) return new URL((String) data);
+            if (fixedFlavors(dataTransfer) == null) {
+                byte[] bytes = nativeBytes(dataTransfer, data);
+                if (bytes != null) {
+                    try {
+                        return fromNativeBytes(bytes, flavor);
+                    } catch (IOException | UnsupportedFlavorException notInThatFormat) {
+                    }
+                }
+            }
             Class<?> representation = flavor.getRepresentationClass();
             if (representation.isInstance(data)) return data;
             if (representation == InputStream.class && data instanceof byte[]) {
                 return new ByteArrayInputStream((byte[]) data);
             }
             throw new UnsupportedFlavorException(flavor);
+        }
+    }
+
+    /**
+     * The bytes {@code transfer} hands the platform for {@code data}: what a native AWT drop target
+     * reads for that clipboard format.
+     */
+    private static byte[] nativeBytes(Transfer transfer, Object data) {
+        TransferData type;
+        try {
+            type = TransferHelper.toNative(transfer, data);
+        } catch (RuntimeException notConvertible) {
+            return null;
+        }
+        Object bytes = type == null ? null : nativeData(type);
+        return bytes instanceof byte[] ? (byte[]) bytes : null;
+    }
+
+    /**
+     * Builds {@code flavor}'s representation from a non-text native format's bytes, as AWT's
+     * {@code DataTransferer.translateBytes} does for a native drop.
+     */
+    static Object fromNativeBytes(byte[] bytes, DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+        if (flavor.getRepresentationClass() == byte[].class) return bytes;
+        if (flavor.isRepresentationClassByteBuffer()) return construct(ByteBuffer.wrap(bytes), flavor, ByteBuffer.class);
+        if (flavor.isRepresentationClassInputStream()) {
+            return construct(new ByteArrayInputStream(bytes), flavor, InputStream.class);
+        }
+        if (flavor.isRepresentationClassSerializable()) {
+            try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
+                return in.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException(e.getMessage(), e);
+            }
+        }
+        throw new UnsupportedFlavorException(flavor);
+    }
+
+    private static Object construct(Object arg, DataFlavor flavor, Class<?> argType) throws IOException {
+        Class<?> representation = flavor.getRepresentationClass();
+        if (representation == argType) return arg;
+        try {
+            return representation.getConstructor(argType).newInstance(arg);
+        } catch (ReflectiveOperationException e) {
+            throw new IOException("No public " + representation.getName() + "(" + argType.getName() + ")", e);
         }
     }
 
@@ -373,6 +485,17 @@ final class AwtDropBridge {
             e.printStackTrace();
             return null;
         }
+    }
+
+    static boolean hasDropTarget(Component c) {
+        if (c == null) return false;
+        if (c.getDropTarget() != null) return true;
+        if (c instanceof Container) {
+            for (Component child : ((Container) c).getComponents()) {
+                if (hasDropTarget(child)) return true;
+            }
+        }
+        return false;
     }
 
     /** Finds the deepest visible component at {@code (x, y)} of {@code c} that has a drop target. */

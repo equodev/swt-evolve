@@ -22,6 +22,7 @@ import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../gen/color.dart';
 import '../gen/image.dart';
+import '../gen/rectangle.dart';
 import '../custom/toolbar_composite.dart';
 import 'composite_evolve.dart';
 import 'widget_config.dart';
@@ -202,6 +203,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onStripLayout: _handleStripLayout,
             onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
+            folderPointFor: _folderPointFor,
           ),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
         // shrinks computeSize, it never hides the selected control. A collapsed folder
@@ -244,6 +246,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onStripLayout: _handleStripLayout,
             onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
+            folderPointFor: _folderPointFor,
           ),
       ],
     );
@@ -453,6 +456,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return press != null && drawn.contains(press) ? press : drawn.center;
   }
 
+  /// [global] in the folder's own coordinates, which Java maps to the display for a drop event.
+  Offset? _folderPointFor(Offset global) {
+    final box = context.findRenderObject();
+    return box is RenderBox && box.hasSize ? box.globalToLocal(global) : null;
+  }
+
   static Rect _toLocal(RenderBox box, Rect global) =>
       Rect.fromPoints(box.globalToLocal(global.topLeft), box.globalToLocal(global.bottomRight));
 
@@ -562,6 +571,9 @@ class _CTabBar extends StatefulWidget {
   /// went down.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
+  /// A global point in the folder's own coordinates.
+  final Offset? Function(Offset global)? folderPointFor;
+
   const _CTabBar({
     required this.state,
     required this.folderWidget,
@@ -582,6 +594,7 @@ class _CTabBar extends StatefulWidget {
     this.onStripLayout,
     this.onStripPointerDown,
     this.dragPointFor,
+    this.folderPointFor,
   });
 
   @override
@@ -786,6 +799,7 @@ class _CTabBarState extends State<_CTabBar> {
       key: _rowState,
       onStripLayout: widget.onStripLayout,
       dragPointFor: widget.dragPointFor,
+      folderPointFor: widget.folderPointFor,
       children: tabChildren,
       tabs: displayTabs,
       folderState: widget.state,
@@ -809,10 +823,13 @@ class _CTabBarState extends State<_CTabBar> {
 
     final scrollableTabs = Expanded(child: _stripPresses(tabRowWithDrag));
 
+    final wrappedBounds =
+        height == null ? null : _wrappedTopRightBounds(topRightComposite, topRightAlignment, height);
+
     final topRightControls = _buildTopRightControls(
       context: context,
       widgetTheme: widgetTheme,
-      topRightComposite: topRightComposite,
+      topRightComposite: wrappedBounds == null ? topRightComposite : null,
       showMinimizeButton: showMinimizeButton,
       showMaximizeButton: showMaximizeButton,
       isMinimized: isMinimized,
@@ -836,16 +853,82 @@ class _CTabBarState extends State<_CTabBar> {
             ],
           );
 
+    Widget bar = header;
+    double? barHeight = height;
+    if (wrappedBounds != null) {
+      final (row, rowHeight) = _buildWrappedTopRightRow(
+        topRightComposite!,
+        wrappedBounds,
+        height!,
+        isTabBottom,
+        widgetTheme.tabBarBackgroundColor,
+      );
+      final tabRow = SizedBox(height: height, child: header);
+      bar = Column(children: isTabBottom ? [row, tabRow] : [tabRow, row]);
+      barHeight = height + rowHeight;
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hoveringTopBar = true),
       onExit: (_) => setState(() => _hoveringTopBar = false),
       child: _buildTabBarContainer(
         widgetTheme: widgetTheme,
-        height: height,
-        child: header,
+        height: barHeight,
+        child: bar,
         isTabBottom: isTabBottom,
       ),
     );
+  }
+
+  /// Java's bounds for a SWT.WRAP topRight control it moved off the tab row onto a row of its own,
+  /// or null while the control sits in the tab row.
+  VRectangle? _wrappedTopRightBounds(VComposite? composite, int alignment, double tabRowHeight) {
+    final bounds = composite?.bounds;
+    if (bounds == null || (alignment & SWT.WRAP) == 0) return null;
+    if (widget.state.tabPosition == SWT.BOTTOM) {
+      final folder = widget.state.bounds;
+      if (folder == null) return null;
+      return bounds.y + bounds.height <= folder.height - tabRowHeight ? bounds : null;
+    }
+    return bounds.y >= tabRowHeight ? bounds : null;
+  }
+
+  /// The row a native CTabFolder wraps the topRight control onto, beside the tab row, with the
+  /// control drawn at Java's bounds so what Java opens under it lands under it. Returns the row and
+  /// its height.
+  (Widget, double) _buildWrappedTopRightRow(
+    VComposite composite,
+    VRectangle bounds,
+    double tabRowHeight,
+    bool isTabBottom,
+    Color backgroundColor,
+  ) {
+    final controlHeight = bounds.height.toDouble();
+    final double top;
+    final double rowHeight;
+    if (isTabBottom) {
+      final folderHeight = widget.state.bounds!.height.toDouble();
+      top = 0;
+      rowHeight = math.max(controlHeight, folderHeight - tabRowHeight - bounds.y);
+    } else {
+      top = math.max(0, bounds.y - tabRowHeight);
+      rowHeight = top + controlHeight;
+    }
+    final row = SizedBox(
+      height: rowHeight,
+      child: Stack(
+        children: [
+          Positioned(
+            left: bounds.x.toDouble(),
+            top: top,
+            width: bounds.width.toDouble(),
+            height: controlHeight,
+            child: _buildTopRightComposite(composite, backgroundColor: backgroundColor),
+          ),
+        ],
+      ),
+    );
+    return (row, rowHeight);
   }
 
   Widget _buildSimpleTab({
@@ -1811,6 +1894,10 @@ class TabDragRow extends StatefulWidget {
   /// went down, both in global coordinates.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
+  /// A global point in the folder's own coordinates: drop events report positions in those, not
+  /// in the row's, which the strip offsets and scrolls.
+  final Offset? Function(Offset global)? folderPointFor;
+
   const TabDragRow({
     super.key,
     required this.children,
@@ -1825,6 +1912,7 @@ class TabDragRow extends StatefulWidget {
     this.onDragStart,
     this.onStripLayout,
     this.dragPointFor,
+    this.folderPointFor,
   });
 
   @override
@@ -2050,7 +2138,7 @@ class _TabDragRowState extends State<TabDragRow> {
         return index;
       },
       resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
-      resolvePosition: (details) => _row?.globalToLocal(details.offset),
+      resolvePosition: (details) => widget.folderPointFor?.call(details.offset),
       onDrop: _handleDrop,
       builder: (context, child, negotiation, isHovering) {
         if (!isHovering) _insertHover.update(null);

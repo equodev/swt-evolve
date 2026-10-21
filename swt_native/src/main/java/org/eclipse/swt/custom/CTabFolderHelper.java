@@ -37,6 +37,16 @@ public class CTabFolderHelper {
     private static final int FLAGS = SWT.DRAW_TRANSPARENT | SWT.DRAW_MNEMONIC | SWT.DRAW_DELIMITER;
     private static final String CHEVRON_ELLIPSIS = "99+";
 
+    /** Height of the tab strip as drawn, where a wrapped SWT.WRAP topRight row starts. */
+    public static int tabStripHeight() {
+        return dev.equo.swt.size.CTabFolderSizes.TAB_STRIP_HEIGHT;
+    }
+
+    /** Height of the row(s) SWT.WRAP topRight controls wrap onto when the folder is {@code size}. */
+    public static int wrappedHeight(DartCTabFolder folder, Point size) {
+        return folder.getWrappedHeight(size);
+    }
+
     /**
      * The repaint upstream does on Activate/Deactivate. A whole-tree render side gets only the flag:
      * a redraw would re-send the folder with the whole view nested in it, twice per focus change.
