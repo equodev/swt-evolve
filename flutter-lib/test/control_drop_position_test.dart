@@ -1,6 +1,7 @@
-// A drop on a Control reports where it landed, and Java hands that point to the application's
-// DropTargetListener as the event's x/y. The point is read off the drag in the view's pixels, and
-// SWT works in its own units: the two coincide at 1.0 only, so the drop is checked at another scale.
+// A drop on a Control reports where it landed relative to that control, in SWT units, and Java maps
+// it to the display coordinates the application's DropTargetListener gets as the event's x/y. The
+// point is read off the drag in the view's pixels, and SWT works in its own units: the two coincide
+// at 1.0 only, so the drop is checked at another scale.
 
 import 'dart:convert';
 
@@ -88,8 +89,9 @@ void main() {
 
       final dropped = _lastDrop();
       expect(dropped, isNotNull, reason: 'the drop must reach Java');
-      expect((dropped! - end / scale).distance, lessThan(1),
-          reason: 'the point the pointer was released at, in the units Java works in');
+      final targetOrigin = Offset(target.bounds!.x.toDouble(), target.bounds!.y.toDouble());
+      expect((dropped! - (end / scale - targetOrigin)).distance, lessThan(1),
+          reason: 'the point the pointer was released at, relative to the target, in SWT units');
     });
   }
 }

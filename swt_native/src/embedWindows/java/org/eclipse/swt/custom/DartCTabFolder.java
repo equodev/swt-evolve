@@ -635,11 +635,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
                     } else {
                         if ((alignment & (SWT.WRAP)) != 0) {
-                            x -= ctrlSize.x;
-                            rects[i].width = ctrlSize.x;
-                            rects[i].height = getControlHeight(ctrlSize);
-                            rects[i].x = x;
-                            rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
+                            overflow[i] = true;
                         }
                     }
                 }
@@ -677,7 +673,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         int bodyLeft = -bodyTrim.x;
         int bodyWidth = size.x - bodyLeft - bodyRight;
         x = size.x - bodyRight;
-        int y = onBottom ? this.getSize().y - getTabHeight() + 2 * bodyTrim.y : -bodyTrim.y;
+        int y = onBottom ? size.y - CTabFolderHelper.tabStripHeight() : CTabFolderHelper.tabStripHeight();
         availableWidth = bodyWidth;
         int maxHeight = 0;
         for (int i = 0; i < controls.length; i++) {
@@ -1174,7 +1170,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         int width = 0;
         for (int i = 0; i < controls.length; i++) {
             int align = controlAlignments[i];
-            if ((align & SWT.LEAD) == 0 && !controls[i].isDisposed() && controls[i].getVisible()) {
+            if ((align & SWT.WRAP) == 0 && (align & SWT.LEAD) == 0 && !controls[i].isDisposed() && controls[i].getVisible()) {
                 Point rightSize = controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT);
                 width += rightSize.x;
             }

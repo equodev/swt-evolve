@@ -829,7 +829,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       widget: widget,
       state: state,
       dragDetectEvent: dragDetectPayload,
-      onDragStarted: () => handleRowTap(rowIndex, item),
+      beforeDragDetect: () => handleRowTap(rowIndex, item),
       // A cell's content can include a flex Row (Expanded text/padding) — fine within the
       // table's own bounded layout, but the feedback overlay renders inside Flutter's Overlay,
       // which gives unbounded width. Without an explicit width here, that flex Row throws
