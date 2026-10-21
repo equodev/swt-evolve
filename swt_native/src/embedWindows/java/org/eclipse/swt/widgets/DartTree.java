@@ -2230,6 +2230,9 @@ public class DartTree extends DartComposite implements ITree {
     void setCheckboxImageList() {
         if ((getApi().style & SWT.CHECK) == 0)
             return;
+        Control control = findBackgroundControl();
+        if (control == null)
+            control = this.getApi();
     }
 
     @Override

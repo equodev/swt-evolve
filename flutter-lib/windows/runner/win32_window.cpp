@@ -437,7 +437,7 @@ void Win32Window::SetChildContent(HWND content) {
 }
 
 void Win32Window::Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize) {
-  // Values from Java are in SWT points (logical pixels). Convert to physical
+  // Values from Java are in logical pixels, converted from SWT units there. Convert to physical
   // pixels for MoveWindow, which expects physical pixels in a DPI-aware process.
   // scale_factor_ is set in Create() and updated on WM_DPICHANGED.
   int px = Scale(origin.x, scale_factor_);

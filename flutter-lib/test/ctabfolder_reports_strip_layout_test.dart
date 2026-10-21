@@ -61,7 +61,8 @@ void main() {
 
     expect(reports, isNotEmpty, reason: 'a laid-out strip says where its tabs are');
 
-    final reported = reports.last.split(',').map(int.parse).toList();
+    // The strip comes first; the close buttons follow after a ';'.
+    final reported = reports.last.split(';').first.split(',').map(int.parse).toList();
     expect(reported, hasLength(labels.length * 2));
 
     final folder = tester.getRect(

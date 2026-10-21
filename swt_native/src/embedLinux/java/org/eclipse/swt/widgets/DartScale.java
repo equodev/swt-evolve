@@ -385,8 +385,7 @@ public class DartScale extends DartControl implements IScale {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                setSelection(e.index);
-                sendEvent(SWT.Selection, e);
+                ScaleHelper.selected(this, e);
             });
         });
     }

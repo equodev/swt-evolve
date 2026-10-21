@@ -13,6 +13,7 @@ import '../gen/event.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import 'browser_app_base.dart';
+import 'browser_inline_documents.dart';
 import 'widget_config.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
@@ -59,8 +60,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // is unconditionally unsupported, so DOM-level eval is the only option, and it
   // only works when the content is same-origin (or served through the proxy).
   PlatformWebViewControllerCreationParams? _params;
-  // Web: the same-origin blob: URL the current setText document is served from (see _loadText).
-  String? _inlineDocumentUrl;
+  // Web: the same-origin URLs setText documents are served from (see _loadText).
+  late final InlineDocuments _inlineDocuments = InlineDocuments(browserInlineDocumentUrl,
+      browserRevokeInlineDocumentUrl, browserInlineDocumentEndpoint());
   // Names of registered BrowserFunctions. Each is exposed in the iframe page as
   // a JS shim that round-trips to Java; they must be re-injected after every
   // navigation (a fresh document loses the previous window's globals).
@@ -188,6 +190,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         if (uri != null && uri.hasScheme) {
           _loadedUrl = url;
           _loadedText = null;
+          _inlineDocuments.cancel();
           final postData = m["postData"] as String?;
           if (postData != null) {
             _loadedLocalFile = false;
@@ -363,33 +366,26 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     await _controller.loadRequest(uri, method: method, headers: headers, body: body);
   }
 
-  /// Loads a `setText` document. On web it is served from a same-origin `blob:` URL so the page
-  /// is scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
+  /// Loads a `setText` document. On web it is served from a same-origin URL so the page is
+  /// scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
   /// webviews render the string directly.
-  void _loadText(String html, {String? baseUrl}) {
-    final url = browserInlineDocumentUrl(html, baseUrl);
+  Future<void> _loadText(String html, {String? baseUrl}) async {
+    // False when a later setText or setUrl replaced this document while its URL was being made.
+    if (!await _inlineDocuments.make(html, baseUrl)) return;
+    final url = _inlineDocuments.current;
     if (url == null) {
       _expectSameOrigin = false;
       _controller.loadHtmlString(html, baseUrl: baseUrl);
       return;
     }
-    _releaseInlineDocument();
-    _inlineDocumentUrl = url;
     _expectSameOrigin = true;
     _load(Uri.parse(url));
-  }
-
-  void _releaseInlineDocument() {
-    final url = _inlineDocumentUrl;
-    if (url == null) return;
-    _inlineDocumentUrl = null;
-    browserRevokeInlineDocumentUrl(url);
   }
 
   @override
   void dispose() {
     appScaleNotifier.removeListener(_applyContentZoom);
-    _releaseInlineDocument();
+    _inlineDocuments.dispose();
     browserReleaseWebView(_controller);
     super.dispose();
   }
@@ -416,12 +412,14 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// still coming. A genuinely cross-origin page is never readable and must
   /// still report, so it is not gated.
   bool _documentIsLive() {
+    // A load reported while a setText document has no URL yet is the document it replaces.
+    if (_inlineDocuments.pending) return false;
     if (!_expectSameOrigin || _params == null) return true;
     try {
       final href = browserEvalInFrame(_params, 'location.href');
       // The placeholder about:blank shares our origin, so being readable does
       // not make it the setText document.
-      final inline = _loadedText != null ? _inlineDocumentUrl : null;
+      final inline = _loadedText != null ? _inlineDocuments.current : null;
       return inline == null || href == inline;
     } catch (_) {
       return false;
@@ -432,9 +430,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (!_navigationRequested) return true;
     // A late placeholder load can still land just after a real navigation
     // started. The native webviews report a setText document under
-    // about:blank too; on web it has its own blob: URL instead.
+    // about:blank too; on web it has its own URL instead.
     return reportedUrl == 'about:blank' &&
-        (_loadedText == null || _inlineDocumentUrl != null) &&
+        (_loadedText == null || _inlineDocuments.current != null || _inlineDocuments.pending) &&
         _loadedUrl != 'about:blank';
   }
 
@@ -493,6 +491,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       try {
         final b = browserEvalInFrame(_params, 'document.baseURI');
         if (b is String &&
+            !_inlineDocuments.isDocument(b) &&
             (b.startsWith('http://') || b.startsWith('https://')) &&
             !b.contains('/proxy?url=')) {
           return b;
@@ -546,14 +545,14 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// Reverses [_resolveLoadUri]: if [url] is one of our `/proxy?url=<orig>`
   /// URLs, returns the original target so Location events report the real URL
   /// rather than the proxy wrapper. A `setText` document is reported as
-  /// `about:blank`, as native SWT does, not as the blob: URL it is served from,
+  /// `about:blank`, as native SWT does, not as the URL it is served from,
   /// and a `file:` document as its `file:` URL, not its `/local-file/` path —
   /// a LocationListener that opens http(s) locations externally would otherwise
   /// cancel the local page and launch it in a new browser tab.
   /// Pass-through otherwise.
   String? _unproxyUrl(String? url) {
     if (url == null) return null;
-    if (url == _inlineDocumentUrl) return 'about:blank';
+    if (_inlineDocuments.isDocument(url)) return 'about:blank';
     final local = _localFileUrl(url);
     if (local != null) return local;
     final uri = Uri.tryParse(url);
@@ -657,6 +656,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (uri != null && uri.hasScheme && url != _loadedUrl) {
       _loadedUrl = url;
       _loadedText = null;
+      _inlineDocuments.cancel();
       final resolved = _resolveLoadUri(url!, uri);
       _expectSameOrigin = resolved.toString() != url;
       _load(resolved);

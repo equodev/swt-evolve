@@ -319,7 +319,7 @@ public class SwtSash extends SwtControl implements ISash {
                         int xChange = 0, yChange = 0;
                         int stepSize = PAGE_INCREMENT;
                         long modifiers = nsEvent.modifierFlags();
-                        if ((modifiers & OS.NSControlKeyMask) != 0)
+                        if ((modifiers & OS.NSEventModifierFlagControl) != 0)
                             stepSize = INCREMENT;
                         if ((getApi().style & SWT.VERTICAL) != 0) {
                             if (keyCode == 126 || keyCode == 125)

@@ -555,7 +555,15 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
 
     private void drawDirtyIndicator(GC gc, Rectangle closeRect, boolean selected) {
         int diameter = 8;
-        if (!selected) {
+        /*
+		 * Alpha and anti-aliasing switch the GC to GDI+ on Windows. All tabs share one
+		 * GC, so tabs painted afterwards would use different text metrics and lose
+		 * their clipping. Leaving the advanced mode resets the clipping, hence the save
+		 * and restore.
+		 */
+        Region clipping = null;
+        if (clipping != null) {
+            clipping.dispose();
         }
     }
 

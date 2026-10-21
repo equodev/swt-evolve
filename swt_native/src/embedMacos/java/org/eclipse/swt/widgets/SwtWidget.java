@@ -1595,7 +1595,7 @@ public abstract class SwtWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -1961,11 +1961,11 @@ public abstract class SwtWidget implements IWidget {
         long modifierFlags = nsEvent.modifierFlags();
         if ((modifierFlags & OS.NSAlternateKeyMask) != 0)
             event.stateMask |= SWT.ALT;
-        if ((modifierFlags & OS.NSShiftKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagShift) != 0)
             event.stateMask |= SWT.SHIFT;
-        if ((modifierFlags & OS.NSControlKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagControl) != 0)
             event.stateMask |= SWT.CONTROL;
-        if ((modifierFlags & OS.NSCommandKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0)
             event.stateMask |= SWT.COMMAND;
         long state = NSEvent.pressedMouseButtons();
         if ((state & 0x1) != 0)

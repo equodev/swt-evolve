@@ -1,7 +1,6 @@
 package dev.equo.swt;
 
-import dev.equo.swt.harness.RecordingComm;
-import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.NoopBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartControl;
@@ -310,25 +309,4 @@ class WindowPolicyNativeTest {
         return new Shell(display, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
     }
 
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
-    }
 }

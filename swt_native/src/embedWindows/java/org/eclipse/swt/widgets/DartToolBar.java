@@ -513,6 +513,65 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     void layoutItems() {
         clearSizeCache(true);
+        /*
+	* Feature in Windows.  When a tool bar has the style
+	* TBSTYLE_LIST and has a drop down item, Window leaves
+	* too much padding around the button.  This affects
+	* every button in the tool bar and makes the preferred
+	* height too big.  The fix is to set the TBSTYLE_LIST
+	* when the tool bar contains both text and images.
+	*
+	* NOTE: Tool bars with CCS_VERT must have TBSTYLE_LIST
+	* set before any item is added or the tool bar does
+	* not lay out properly.  The work around does not run
+	* in this case.
+	*/
+        if ((getApi().style & SWT.RIGHT) != 0 && (getApi().style & SWT.VERTICAL) == 0) {
+            boolean hasText = false, hasImage = false;
+            for (ToolItem item : items) {
+                if (item != null) {
+                    if (!hasText)
+                        hasText = ((DartItem) item.getImpl()).text.length() != 0;
+                    if (!hasImage)
+                        hasImage = ((DartItem) item.getImpl()).image != null;
+                    if (hasText && hasImage)
+                        break;
+                }
+            }
+            if (hasText && hasImage) {
+            } else {
+            }
+        }
+        /*
+	 * Feature in Windows. When a tool bar is not flagged TBSTYLE_LIST already (SWT.RIGHT)
+	 * and contains both text and images, but not text + image in a single item,
+	 * Window leaves too much padding around the button.
+	 * This affects every button in the tool bar and makes the preferred height too big.
+	 * The fix is to set the TBSTYLE_LIST, so that Windows can condense the unused space.
+	 */
+        if ((getApi().style & SWT.RIGHT) == 0 && (getApi().style & SWT.HORIZONTAL) != 0) {
+            boolean hasText = false, hasImage = false, hasTextAndImageInSingleItem = false;
+            for (ToolItem item : items) {
+                if (item != null) {
+                    boolean itemHasText = false, itemHasImage = false;
+                    itemHasText = ((DartItem) item.getImpl()).text.length() != 0;
+                    itemHasImage = ((DartItem) item.getImpl()).image != null;
+                    if (!hasText) {
+                        hasText = itemHasText;
+                    }
+                    if (!hasImage) {
+                        hasImage = itemHasImage;
+                    }
+                    if (itemHasText && itemHasImage) {
+                        hasTextAndImageInSingleItem = true;
+                        break;
+                    }
+                }
+            }
+            if (hasText && hasImage && !hasTextAndImageInSingleItem) {
+            } else {
+            }
+        }
         if ((getApi().style & SWT.WRAP) != 0) {
         }
         /*
@@ -627,19 +686,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     void setBackgroundTransparent(boolean transparent) {
-        /*
-	* Feature in Windows.  When TBSTYLE_TRANSPARENT is set
-	* in a tool bar that is drawing a background, images in
-	* the image list that include transparency information
-	* do not draw correctly.  The fix is to clear and set
-	* TBSTYLE_TRANSPARENT depending on the background color.
-	*
-	* NOTE:  This work around is unnecessary on XP.  The
-	* TBSTYLE_TRANSPARENT style is never cleared on that
-	* platform.
-	*/
-        if ((getApi().style & SWT.FLAT) != 0) {
-        }
     }
 
     @Override
@@ -653,6 +699,37 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     void setDropDownItems(boolean set) {
+        /*
+	* Feature in Windows.  When the first button in a tool bar
+	* is a drop down item, Window leaves too much padding around
+	* the button.  This affects every button in the tool bar and
+	* makes the preferred height too big.  The fix is clear the
+	* BTNS_DROPDOWN before Windows lays out the tool bar and set
+	* the bit afterwards.
+	*
+	* NOTE:  This work around only runs when the tool bar contains
+	* only images.
+	*/
+        boolean hasText = false, hasImage = false;
+        for (ToolItem item : items) {
+            if (item != null) {
+                if (!hasText)
+                    hasText = ((DartItem) item.getImpl()).text.length() != 0;
+                if (!hasImage)
+                    hasImage = ((DartItem) item.getImpl()).image != null;
+                if (hasText && hasImage)
+                    break;
+            }
+        }
+        if (hasImage && !hasText) {
+            for (ToolItem item : items) {
+                if (item != null && (item.style & SWT.DROP_DOWN) != 0) {
+                    if (set) {
+                    } else {
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -808,7 +885,12 @@ public class DartToolBar extends DartComposite implements IToolBar {
                 seperatorWidth[i] = item.getWidth();
             }
             item.notifyListeners(SWT.ZoomChanged, event);
+            // Capture the button data AFTER handling the zoom change. The zoom refresh
+            // may update the item's image-list slot (iBitmap), so capturing the button
+            // beforehand could re-add it with a stale image index, resulting in the
+            // wrong (or a blank) icon being shown. Reading the button here ensures the
         }
+        boolean toolBarEnabled = getApi().getEnabled();
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = toolItems[i];
             // If the separator is used with a control, we must reset the size to the cached value,
@@ -816,6 +898,8 @@ public class DartToolBar extends DartComposite implements IToolBar {
             if ((item.style & SWT.SEPARATOR) != 0 && item.getControl() != null) {
                 item.setWidth(seperatorWidth[i]);
             }
+            // Make sure the tool item is resized with the new image and font size
+            ((DartToolItem) toolItems[i].getImpl()).updateImages(toolItems[i].getEnabled() && toolBarEnabled);
         }
         clearSizeCache(true);
     }

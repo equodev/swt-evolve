@@ -502,5 +502,7 @@ extension LabelThemeExtensionBuildContextProps on BuildContext {
   TextDecoration get hoverTextDecoration =>
       labelThemeExtension.hoverTextDecoration;
   double get decorationThickness => labelThemeExtension.decorationThickness;
+
+  /// The thickness of the box a separator takes, across its line.
   double get separatorThickness => labelThemeExtension.separatorThickness;
 }

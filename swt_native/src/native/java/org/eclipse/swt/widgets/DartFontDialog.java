@@ -118,7 +118,7 @@ public class DartFontDialog extends DartDialog implements IFontDialog {
      * @return the FontData for the selected font, or null
      * @deprecated use #getFontList ()
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public FontData getFontData() {
         return fontData;
     }
@@ -203,7 +203,7 @@ public class DartFontDialog extends DartDialog implements IFontDialog {
      * @param fontData the FontData to use initially, or null
      * @deprecated use #setFontList (FontData [])
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void setFontData(FontData fontData) {
         this.fontData = fontData;
     }

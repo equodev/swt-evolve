@@ -15,7 +15,9 @@ public class ControlHelper {
 
     public static int inPaintDepth;
 
-    // The control each Shell last announced as activated, so the next announcement can end it.
+    // The control each native Shell last announced as activated, so the next announcement can end it.
+    // Only an embedded Dart control in a native Shell lands here: a Dart Shell tracks its own active
+    // control (FlutterBridge.setActiveControl). Keyed by Shell, which belongs to one Display.
     private static final Map<Shell, Control> lastActivated =
             Collections.synchronizedMap(new WeakHashMap<>());
 
@@ -29,6 +31,8 @@ public class ControlHelper {
     }
 
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
+        if (widget instanceof DartControl && AcceleratorHelper.translate(((DartControl) widget).getApi(), event))
+            return;
         widget.sendEvent(SWT.KeyDown, event);
         translateTraversal(widget, event);
     }
@@ -117,11 +121,14 @@ public class ControlHelper {
     }
 
     /**
-     * Offers a traversal key as {@link SWT#Traverse} before the KeyDown, as every platform's
-     * {@code translateTraversal} does. The client performs a Tab traversal itself.
+     * Offers a key to the menu accelerators, then a traversal key as {@link SWT#Traverse}, before
+     * the KeyDown, in the order every platform's key dispatch does. The client performs a Tab
+     * traversal itself.
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        if (AcceleratorHelper.translate(control.getApi(), key))
+            return new RoutedKey(false, false, false);
         int detail = traverseDetail(key.keyCode, key.stateMask);
         boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(key);
         if (mnemonic)
@@ -145,9 +152,12 @@ public class ControlHelper {
                 switch (e.detail) {
                     // A listener that consumed the key clears the detail; Control.traverse counts it as done.
                     case SWT.TRAVERSE_NONE:
+                        traversed = true;
+                        break;
+                    // A Tab with nowhere to go is not a traversal: natively the key is delivered.
                     case SWT.TRAVERSE_TAB_NEXT:
                     case SWT.TRAVERSE_TAB_PREVIOUS:
-                        traversed = true;
+                        traversed = hasTabStop(control.getApi().getShell());
                         break;
                     case SWT.TRAVERSE_MNEMONIC:
                         traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
@@ -160,7 +170,53 @@ public class ControlHelper {
         if (traversed || control.isDisposed())
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
+        rememberTypingKey(control, key);
+        if (key.doit && !control.isDisposed())
+            applyPlatformKey(control, key);
         return new RoutedKey(true, key.doit, traverseDoit);
+    }
+
+    /**
+     * What the platform does with a key no listener vetoed: an item view moves its selection, a
+     * spinner or scale steps its value.
+     */
+    private static void applyPlatformKey(DartControl control, Event key) {
+        if (control instanceof DartTable)
+            TableHelper.moveSelectionByKey((DartTable) control, key);
+        else if (control instanceof DartList)
+            ListHelper.moveSelectionByKey((DartList) control, key);
+        else if (control instanceof DartSpinner)
+            SpinnerHelper.stepByKey((DartSpinner) control, key);
+        else if (control instanceof DartScale)
+            ScaleHelper.stepByKey((DartScale) control, key);
+    }
+
+    /** Keeps the last KeyDown a control let through, for the edit it types; see {@link #takeTypingKey}. */
+    private static void rememberTypingKey(DartControl control, Event key) {
+        if (!key.doit || control.isDisposed()) {
+            control.typingKey = null;
+            return;
+        }
+        Event copy = new Event();
+        copy.character = key.character;
+        copy.keyCode = key.keyCode;
+        copy.stateMask = key.stateMask;
+        control.typingKey = copy;
+    }
+
+    /**
+     * The KeyDown that typed the edit {@code control} is applying, or null when the edit came from
+     * elsewhere (a paste, an input method). Natively a typed edit's Verify carries its key: the
+     * typed character for an insertion, Backspace or Delete for a removal. Consumed once read.
+     */
+    static Event takeTypingKey(DartControl control, String inserted) {
+        Event key = control.typingKey;
+        control.typingKey = null;
+        if (key == null)
+            return null;
+        boolean types = inserted.length() == 1 && key.character == inserted.charAt(0);
+        boolean removes = inserted.isEmpty() && (key.character == SWT.BS || key.character == SWT.DEL);
+        return types || removes ? key : null;
     }
 
     /**
@@ -177,6 +233,50 @@ public class ControlHelper {
                 return false;
         }
         return true;
+    }
+
+    /** Whether {@code control} or a control inside it takes the focus from Tab, as natively. */
+    static boolean hasTabStop(Control control) {
+        if (control == null || control.isDisposed() || !control.getVisible() || !control.getEnabled())
+            return false;
+        if (isTabStop(control))
+            return true;
+        if (control instanceof Composite) {
+            for (Control child : ((Composite) control).getChildren()) {
+                if (hasTabStop(child))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
+    private static boolean isTabStop(Control control) {
+        if ((control.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        if (control instanceof Button || control instanceof Combo || control instanceof DateTime
+                || control instanceof org.eclipse.swt.widgets.List || control instanceof Scale || control instanceof Spinner
+                || control instanceof TabFolder || control instanceof Table || control instanceof Tree
+                || control instanceof Text || control instanceof org.eclipse.swt.custom.CCombo
+                || control instanceof org.eclipse.swt.custom.StyledText)
+            return true;
+        if (control instanceof Link)
+            return holdsLink(((Link) control).getText());
+        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
+            DartWidget impl = (DartWidget) control.getImpl();
+            return impl.hooks(SWT.KeyDown) || impl.hooks(SWT.KeyUp);
+        }
+        return false;
+    }
+
+    /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
+    static boolean holdsLink(String text) {
+        String lower = text.toLowerCase();
+        for (int i = lower.indexOf("<a"); i >= 0; i = lower.indexOf("<a", i + 1)) {
+            if (i + 2 < lower.length() && (lower.charAt(i + 2) == '>' || Character.isWhitespace(lower.charAt(i + 2))))
+                return true;
+        }
+        return false;
     }
 
     public static boolean isModifierKey(int keyCode) {
@@ -198,17 +298,31 @@ public class ControlHelper {
     }
 
     /**
-     * {@code count} is lines, positive up; a pixel scroll arrives in {@code detail}, positive down,
-     * and moves the bar by those pixels. Listeners always see {@code detail} as SCROLL_LINE.
+     * The controls the client scrolls itself, reporting the scroll: an item view's rows, a
+     * ScrolledComposite's content. Moving their bar here as well would scroll them twice.
+     */
+    static boolean scrollsInClient(Widget api) {
+        return api instanceof Table || api instanceof Tree || api instanceof org.eclipse.swt.widgets.List
+                || api instanceof org.eclipse.swt.custom.ScrolledComposite;
+    }
+
+    /**
+     * {@code count} is lines, positive up, or left when {@code type} is SWT.MouseHorizontalWheel; a
+     * pixel scroll arrives in {@code detail}, positive down, and moves the bar by those pixels.
+     * Listeners always see {@code detail} as SCROLL_LINE.
      */
     public static void handleMouseWheel(DartControl control, Event e) {
         int pixels = e.detail;
+        boolean horizontal = e.type == SWT.MouseHorizontalWheel;
         e.detail = SWT.SCROLL_LINE;
         e.doit = true;
-        control.sendEvent(SWT.MouseWheel, e);
+        control.sendEvent(horizontal ? SWT.MouseHorizontalWheel : SWT.MouseWheel, e);
         if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
             return;
-        ScrollBar bar = ((Scrollable) control.getApi()).getVerticalBar();
+        if (scrollsInClient(control.getApi()))
+            return;
+        Scrollable scrollable = (Scrollable) control.getApi();
+        ScrollBar bar = horizontal ? scrollable.getHorizontalBar() : scrollable.getVerticalBar();
         if (bar == null || !bar.getEnabled())
             return;
         int max = bar.getMaximum() - bar.getThumb();
@@ -670,6 +784,48 @@ public class ControlHelper {
     }
 
     /**
+     * What a native press does before SWT.MouseDown reaches listeners: Shell.setActiveControl(control,
+     * SWT.MouseDown) announces the activation, and a control that takes the focus on a click takes it
+     * -- Shell.FocusOut and FocusIn -- so a MouseDown listener already finds the control focused.
+     * Win32 and GTK agree on that order for every control; Flutter would otherwise report the focus
+     * a microtask after the press, behind the MouseDown it caused.
+     */
+    public static void pressed(DartControl control, Event event) {
+        sendActivateToAncestors(control, SWT.MouseDown);
+        if (control.isDisposed() || event == null)
+            return;
+        boolean focuses = takesFocusOnPress(control, event.button);
+        if (!focuses || control.isFocusControl())
+            return;
+        if (control.forceFocus() && !control.isDisposed())
+            control.getBridge().focusClient(control);
+    }
+
+    /**
+     * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
+     * <p>
+     * Button 1 focuses the controls Win32 and GTK agree on. A Canvas is left to its own press
+     * handling, since natively it takes the focus only while it hooks key events. A TabFolder takes
+     * it only from a click that switches tabs (its client sends it), not from one on its strip or on
+     * the selected tab, as on GTK.
+     * <p>
+     * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
+     * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
+     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out.
+     */
+    static boolean takesFocusOnPress(DartControl control, int button) {
+        Control api = control.getApi();
+        if ((api.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
+                || api instanceof Tree || api instanceof Text;
+        if (button == 3)
+            return fieldOrItemView;
+        return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
+                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale);
+    }
+
+    /**
      * Takes the focus and announces the activation that goes with it, so a control that focuses
      * itself programmatically still reaches an embedding workbench's active-part tracking — there is
      * no OS focus here to generate it. Deliberately does NOT send SWT.FocusIn: a control that
@@ -714,6 +870,10 @@ public class ControlHelper {
         Control now = control.getApi();
         Shell shell = now.getShell();
         if (shell == null || shell.isDisposed())
+            return;
+        // A Dart Shell already tracks its active control: Shell.setActiveControl, which focus changes
+        // drive too. A second tracker here announced every focus change twice, once from each.
+        if (control.getBridge().setActiveControl(control, detail))
             return;
         Control previous = lastActivated.put(shell, now);
         // An open shell is the active control of itself until something inside it takes over -- what

@@ -103,6 +103,53 @@ class SashSelectionMovesSashTest {
     }
 
     @Test
+    @DisplayName("a sash its Selection listener disposes is not moved")
+    void aSashDisposedBySelectionIsNotMoved() {
+        Sash sash = sash();
+        sash.addListener(SWT.Selection, e -> sash.dispose());
+
+        assertThatCode(() -> fireSelectionFromFlutter(255, 0, 10, 260)).doesNotThrowAnyException();
+        assertThat(sash.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("a press activates the sash's ancestors, then reports the Selection and moves it")
+    void aPressActivatesThenMoves() {
+        Sash sash = sash();
+        List<String> heard = new ArrayList<>();
+        sash.getParent().addListener(SWT.Activate, e -> heard.add("Activate"));
+        sash.addListener(SWT.Selection, e -> heard.add("Selection"));
+        Event press = new Event();
+        press.x = 255;
+        press.width = 10;
+        press.height = 260;
+        press.stateMask = SWT.BUTTON1;
+
+        SashHelper.selected((DartSash) sash.getImpl(), press);
+
+        assertThat(heard).containsExactly("Activate", "Selection");
+        assertThat(sash.getBounds().x).isEqualTo(255);
+    }
+
+    @Test
+    @DisplayName("a press whose activation disposes the sash reports no Selection")
+    void aPressWhoseActivationDisposesTheSashGoesNoFurther() {
+        Sash sash = sash();
+        List<Event> selections = new ArrayList<>();
+        sash.addListener(SWT.Selection, selections::add);
+        sash.getParent().addListener(SWT.Activate, e -> sash.dispose());
+        Event press = new Event();
+        press.x = 255;
+        press.width = 10;
+        press.height = 260;
+        press.stateMask = SWT.BUTTON1;
+
+        assertThatCode(() -> SashHelper.selected((DartSash) sash.getImpl(), press)).doesNotThrowAnyException();
+        assertThat(sash.isDisposed()).as("the press activated the sash's parent, whose listener disposed it").isTrue();
+        assertThat(selections).isEmpty();
+    }
+
+    @Test
     @DisplayName("a listener setting doit=false vetoes the move")
     void vetoedSelectionDoesNotMove() {
         Sash sash = sash();
