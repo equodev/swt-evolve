@@ -4337,6 +4337,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     PaintState paintState;
 
+    Event typingKey;
+
     public boolean getDragSource() {
         Widget w = getApi();
         Object ds = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
@@ -4389,6 +4391,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
                     return;
                 sendEvent(SWT.DragDetect, e);
             });
@@ -4476,6 +4480,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
                     return;
                 sendEvent(SWT.MouseDown, e);
             });

@@ -46,6 +46,83 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
+    @DisplayName("a Verify listener that sets the text to null rejects the edit, as Win32's verifyText does")
+    void verifyTextNullRejectsTheEdit() {
+        Text text = text(SWT.SINGLE, "old");
+        text.addVerifyListener(e -> e.text = null);
+
+        fromFlutter(text, "Modify/Modify", event("oldX", 4, 4));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("old");
+    }
+
+    @Test
+    @DisplayName("a field its Verify listener disposes takes no edit")
+    void aFieldDisposedByVerifyTakesNoEdit() {
+        Text text = text(SWT.SINGLE, "old");
+        text.addVerifyListener(e -> text.dispose());
+
+        assertThatCode(() -> {
+            fromFlutter(text, "Modify/Modify", event("oldX", 4, 4));
+            runQueued();
+        }).doesNotThrowAnyException();
+        assertThat(text.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("a field its Modify listener disposes ends the edit there")
+    void aFieldDisposedByModifyEndsTheEdit() {
+        Text text = text(SWT.SINGLE, "old");
+        text.addModifyListener(e -> text.dispose());
+
+        assertThatCode(() -> {
+            fromFlutter(text, "Modify/Modify", event("oldX", 4, 4));
+            runQueued();
+        }).doesNotThrowAnyException();
+        assertThat(text.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("typing into a field at its limit changes nothing, and reports no Modify")
+    void typingIntoAFullFieldChangesNothing() {
+        Text text = text(SWT.SINGLE, "abc");
+        text.setTextLimit(3);
+        List<Event> modifies = record(text, SWT.Modify);
+
+        fromFlutter(text, "Modify/Modify", event("abcd", 4, 4));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("abc");
+        assertThat(modifies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Modify listener of a typed edit reads the caret after what was typed")
+    void modifyReadsTheCaretAfterTheTypedText() {
+        Text text = text(SWT.SINGLE, "ab");
+        List<Integer> carets = new ArrayList<>();
+        text.addModifyListener(e -> carets.add(text.getCaretPosition()));
+
+        fromFlutter(text, "Modify/Modify", event("aXb", 2, 2));
+        runQueued();
+
+        assertThat(carets).containsExactly(2);
+    }
+
+    @Test
+    @DisplayName("a deletion in a field at its limit still applies")
+    void aDeletionInAFullFieldApplies() {
+        Text text = text(SWT.SINGLE, "abc");
+        text.setTextLimit(3);
+
+        fromFlutter(text, "Modify/Modify", event("ab", 2, 2));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("ab");
+    }
+
+    @Test
     @DisplayName("an edit from Flutter sets the text and puts the caret where the field says")
     void editSetsTheTextAndTheCaret() {
         Text text = text(SWT.SINGLE, "old");
@@ -149,16 +226,18 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
-    @DisplayName("an edit that reports no caret leaves it at the start, where setText puts it")
-    void editWithoutACaretLeavesItAtTheStart() {
+    @DisplayName("an edit that reports no caret leaves it after what the edit inserted")
+    void editWithoutACaretLeavesItAfterTheInsertion() {
         Text text = text(SWT.SINGLE, "old");
         text.setSelection(2);
 
         fromFlutter(text, "Modify/Modify", event("typed", -1, -1));
         runQueued();
 
+        // The edit replaces what lies between the common prefix and suffix ("ol" by "type"), as a
+        // typed one does, and a typed edit leaves the caret after its text.
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(text.getSelection()).isEqualTo(new Point(0, 0));
+        assertThat(text.getSelection()).isEqualTo(new Point(4, 4));
     }
 
     @Test

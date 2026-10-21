@@ -1273,7 +1273,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public int getDoubleClickTime() {
         checkDevice();
-        return 500;
+        return dev.equo.swt.Config.doubleClickTime();
     }
 
     /**
@@ -1882,8 +1882,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     int getToolTipTime() {
         checkDevice();
-        //TODO get OS value (NSTooltipManager?)
-        return 560;
+        return dev.equo.swt.Config.hoverDelay();
     }
 
     Widget getWidget(long id) {

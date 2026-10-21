@@ -39,6 +39,9 @@ class _MoreRows {
 }
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
+  @override
+  bool get keepsWheel => true;
+
   final Map<dynamic, String> treeItemExpanders = {};
   final List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;

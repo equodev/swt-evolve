@@ -374,7 +374,8 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
       height: size?.height.toInt() ?? 720,
       displayWidth: monitor?.width.toInt() ?? 0,
       displayHeight: monitor?.height.toInt() ?? 0,
-      zoom: monitorZoomPercent());
+      zoom: monitorZoomPercent(),
+      insetTop: csdContentInsetTop().round());
 }
 
 Future<void> initSwtEvolveProperties() async {

@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart' show mapEquals;
 
 import '../comm/comm.dart';
 
-/// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on
-/// and that monitor's zoom.
+/// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on,
+/// that monitor's zoom, and the height of the title strip the client draws above the shell.
 ///
 /// A report equal to the last one on its channel is not sent again: a change that moves the scale
 /// reaches here from both the scale's listener and the config's.
@@ -26,7 +26,8 @@ class ClientReadyReporter {
       required int height,
       required int displayWidth,
       required int displayHeight,
-      required int zoom}) {
+      required int zoom,
+      int insetTop = 0}) {
     final isFirst = !_firstSent;
     _firstSent = true;
     final channel = '$widgetName/$widgetId/ClientReady';
@@ -37,6 +38,7 @@ class ClientReadyReporter {
       'displayWidth': displayWidth,
       'displayHeight': displayHeight,
       'zoom': zoom,
+      'insetTop': insetTop,
     };
     if (!isFirst && mapEquals(payload, _lastSent[channel])) return;
     _lastSent[channel] = payload;

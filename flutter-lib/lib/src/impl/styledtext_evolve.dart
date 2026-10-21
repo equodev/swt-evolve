@@ -14,6 +14,7 @@ import '../comm/delivery_gate.dart' show deliveryGate, widgetRefreshChannel;
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
+import 'control_evolve.dart' show ControlImpl;
 import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/stylerange.dart';
@@ -39,6 +40,9 @@ import 'utils/wheel_input.dart';
 /// selection and scroll offset are Java's and nothing here edits them.
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> implements RenderFactsSource {
+  @override
+  bool get forwardsWheelFromWrap => false;
+
   // Keys are forwarded from [_onKeyEvent], which also keeps them away from Flutter's shortcuts.
   @override
   bool get forwardsKeysFromWrap => false;
@@ -321,21 +325,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (scrollBarPointers.contains(event.pointer)) return;
     widget.sendFocusFocusIn(state, null);
     _focusNode.requestFocus();
-    // The second press of a double click also delivers MouseDoubleClick, after its MouseDown. The
-    // MouseDown is sent by the same pointer dispatch, once this handler returns.
-    final position = event.localPosition;
-    scheduleMicrotask(() {
-      if (!mounted || swtClickCount != 2) return;
-      widget.sendMouseMouseDoubleClick(
-        state,
-        VEvent()
-          ..button = swtButton
-          ..count = 2
-          ..x = position.dx.round()
-          ..y = position.dy.round()
-          ..stateMask = moveStateMask(0),
-      );
-    });
   }
 
   /// Line count and longest line in one pass, over code units — `text[i]` allocates a
@@ -965,6 +954,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Vertical ticks go through SWT.MouseWheel (a listener may veto), horizontal ones move the bar.
   /// An unmodified vertical tick sends pixels rather than lines, so a trackpad does not jump.
   void _onWheel(PointerScrollEvent event) {
+    // A StyledText scrolls by the wheel, so it keeps it: its parents do not report it again.
+    if (ControlImpl.wheelKeptBelow(event)) return;
+    ControlImpl.markWheelKept(event);
     final dy = event.scrollDelta.dy;
     final dx = event.scrollDelta.dx;
     if (dy != 0) {

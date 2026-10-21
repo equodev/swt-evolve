@@ -252,6 +252,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
                     broadcastSwtEvolveProperties();
                 }
+                applyClientInsetTop(p.insetTop);
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
                 // Only for a client that holds nothing (first ClientReady, or a page refresh): a
@@ -398,6 +399,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return (p.displayWidth > 0 && p.displayHeight > 0)
                 ? new Rectangle(0, 0, p.displayWidth, p.displayHeight)
                 : null;
+    }
+
+    /** The chrome the client draws above the app content, as it reports it. Only a surface whose
+     *  window has its own screen position needs it. */
+    protected void applyClientInsetTop(int insetTop) {
     }
 
     /**
@@ -1187,8 +1193,56 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         if (reportPrecedesPendingRequest(widget))
             return;
+        if (api != null && !api.isDisposed() && declinesClientFocus(api))
+            return;
         focusRequested = widget;
         setFocus(widget);
+    }
+
+    @Override
+    public boolean setActiveControl(DartControl control, int detail) {
+        Shell shell = control.getApi().getShell();
+        if (!(shell.getImpl() instanceof DartShell))
+            return false;
+        ((DartShell) shell.getImpl()).setActiveControl(control.getApi(), detail);
+        return true;
+    }
+
+    @Override
+    public void focusClient(DartControl widget) {
+        requestClientFocus(widget, true);
+    }
+
+    /**
+     * Whether a bare Canvas or Composite turns down the focus the client gave it. The client focuses
+     * any empty surface it is pressed or tabbed onto; natively one takes the focus only while it hooks
+     * key events (Composite's button-press and traversal both check hooksKeys), so one with no key
+     * listener leaves it where it was, and none takes it with NO_FOCUS. A shell is a Canvas too, and
+     * keeps its own; the native controls that extend Composite (Table, Spinner, TabFolder...) take
+     * theirs regardless.
+     */
+    static boolean declinesClientFocus(Control api) {
+        if (!isPaintedSurface(api) || api instanceof Decorations)
+            return false;
+        if (((Composite) api).getChildren().length > 0 || (api.getStyle() & org.eclipse.swt.SWT.EMBEDDED) != 0)
+            return false;
+        if ((api.getStyle() & org.eclipse.swt.SWT.NO_FOCUS) != 0)
+            return true;
+        return !api.isListening(org.eclipse.swt.SWT.KeyDown) && !api.isListening(org.eclipse.swt.SWT.KeyUp);
+    }
+
+    /**
+     * Whether the control is a Canvas or a plain Composite, natively a bare surface rather than one of
+     * the native controls. Decided by the implementation, which an application subclass of the API
+     * class does not change. SashForm, ScrolledComposite, ViewForm and CBanner are plain Composites
+     * natively too, but stay out: declining leaves the client's own focus on the surface, and for them
+     * that strands the keyboard.
+     */
+    private static boolean isPaintedSurface(Control api) {
+        if (!(api instanceof Composite))
+            return false;
+        Class<?> impl = ((Composite) api).getImpl().getClass();
+        return impl == DartCanvas.class || impl == DartComposite.class;
     }
 
     /** For each shell, the shell that was active when it became active. */
