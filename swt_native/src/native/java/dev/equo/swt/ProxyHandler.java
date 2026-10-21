@@ -289,12 +289,6 @@ class ProxyHandler implements HttpHandler {
      * the hop that redirects to the identity provider and checks it on the one coming back.
      */
     static Fetched fetch(String target, String method, byte[] requestBody, Map<String, String> forwardedHeaders,
-            List<String> headerLines, ProxyCookieJar cookies) throws IOException {
-        return fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies,
-                CONNECT_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS);
-    }
-
-    static Fetched fetch(String target, String method, byte[] requestBody, Map<String, String> forwardedHeaders,
             List<String> headerLines, ProxyCookieJar cookies, int connectTimeoutMillis, int readTimeoutMillis)
             throws IOException {
         String url = target;

@@ -130,13 +130,14 @@ public class ProxyHandlerNativeTest {
         ProxyCookieJar jar = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
 
         ProxyHandler.Fetched form = ProxyHandler.fetch(base + "/start", "GET", new byte[0],
-                Collections.<String, String>emptyMap(), Collections.<String>emptyList(), jar);
+                Collections.<String, String>emptyMap(), Collections.<String>emptyList(), jar,
+                ProxyHandler.CONNECT_TIMEOUT_MILLIS, ProxyHandler.READ_TIMEOUT_MILLIS);
         assertThat(new String(form.body, StandardCharsets.UTF_8)).isEqualTo("form");
 
         ProxyHandler.Fetched done = ProxyHandler.fetch(base + "/idp/authenticate", "POST",
                 "user=u".getBytes(StandardCharsets.UTF_8),
                 Collections.singletonMap("Content-Type", "application/x-www-form-urlencoded"),
-                Collections.<String>emptyList(), jar);
+                Collections.<String>emptyList(), jar, ProxyHandler.CONNECT_TIMEOUT_MILLIS, ProxyHandler.READ_TIMEOUT_MILLIS);
         assertThat(done.finalUrl).isEqualTo(base + "/done");
         assertThat(new String(done.body, StandardCharsets.UTF_8)).isEqualTo("SESSION=s2");
         assertThat(jar.get("SESSION", base + "/")).isEqualTo("s2");
@@ -193,10 +194,13 @@ public class ProxyHandlerNativeTest {
         proxy.start();
         proxies.add(proxy);
 
+        long start = System.nanoTime();
         HttpResponse<String> page = get(proxy.getAddress().getPort(),
                 "/proxy?url=" + URLEncoder.encode(target, StandardCharsets.UTF_8));
+        long elapsedMillis = (System.nanoTime() - start) / 1_000_000;
 
         assertThat(page.statusCode()).isEqualTo(502);
+        assertThat(elapsedMillis).as("answered by the 500 ms read timeout").isBetween(400L, 5_000L);
     }
 
     @Test
@@ -431,7 +435,8 @@ public class ProxyHandlerNativeTest {
     private static String fetchBody(String url, Map<String, String> pageHeaders, List<String> setUrlHeaders)
             throws IOException {
         ProxyHandler.Fetched page = ProxyHandler.fetch(url, "GET", new byte[0], pageHeaders, setUrlHeaders,
-                new ProxyCookieJar(WebFlutterServer::proxyAllowed));
+                new ProxyCookieJar(WebFlutterServer::proxyAllowed),
+                ProxyHandler.CONNECT_TIMEOUT_MILLIS, ProxyHandler.READ_TIMEOUT_MILLIS);
         return new String(page.body, StandardCharsets.UTF_8);
     }
 
