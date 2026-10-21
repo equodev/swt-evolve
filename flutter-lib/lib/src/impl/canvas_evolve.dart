@@ -109,9 +109,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  final int _alpha = 255;
-  Rect? clipRect;
-
   // Keyboard focus for a childless Canvas so it can be typed into (e.g. an FXCanvas
   // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
   // it on pointer-down and forward keystrokes to SWT below.
@@ -151,11 +148,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // window rather than a surface the application paints content onto: its children are ordinary
   // widgets and keep the theme. Only a plain Canvas hands its own colors to what is hosted over it.
   bool get hostsAppColoredContent => true;
-
-  Color applyAlpha(Color color) {
-    if (_alpha == 255) return color;
-    return color.withOpacity(_alpha / 255.0);
-  }
 
   @override
   void initState() {
