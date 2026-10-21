@@ -124,6 +124,13 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     final windowId = (decoded['windowId'] as num?)?.toInt();
     final port = (decoded['port'] as num?)?.toInt();
     if (windowId == null || port == null || !mounted) return;
+    // Which region holds which window. Java says which island answers for a window and where its
+    // box is; the mirror says which window it attached to. Neither names the region, so when two
+    // panes drew the same window there was no way to tell which pane was asking for what — the
+    // chain region -> window -> pane could not be followed through a re-parent, which is exactly
+    // where it breaks.
+    debugPrint('[swing-island] region ${widget.id} holds window $windowId'
+        '${decoded['surface'] == true ? ' (a Shell)' : ''}');
     setState(() {
       _windowId = windowId;
       _port = port;

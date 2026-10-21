@@ -39,6 +39,9 @@ class _MoreRows {
 }
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
+  @override
+  bool get keepsWheel => true;
+
   final Map<dynamic, String> treeItemExpanders = {};
   final List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;
@@ -1506,8 +1509,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return id ?? 0;
     }
 
-    Offset resolvePosition(DragTargetDetails<DndDragPayload> details) =>
-        localOffset(details) ?? details.offset;
+    Offset? resolvePosition(DragTargetDetails<DndDragPayload> details) => localOffset(details);
 
     return wrapDropTarget<DndDragPayload>(
       child: content,

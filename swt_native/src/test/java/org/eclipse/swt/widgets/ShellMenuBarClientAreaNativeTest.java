@@ -32,6 +32,7 @@ class ShellMenuBarClientAreaNativeTest {
 
     private static final Rectangle SHELL_BOUNDS = new Rectangle(0, 0, 800, 600);
     private static final String OWN_MENU_STRIP = "ownMenuStrip";
+    private static final String SYSTEM_MENU_BAR = "dev.equo.swt.systemMenuBar";
 
     private Shell shell;
     private DartShell dartShell;
@@ -85,9 +86,13 @@ class ShellMenuBarClientAreaNativeTest {
     void the_strip_keeps_the_monitor_scale_when_the_zoom_keeps_text_at_its_true_size() {
         int savedZoom = DPIUtil.getDeviceZoom();
         String savedMode = ConfigFlags.mode();
+        String savedSystemMenuBar = System.getProperty(SYSTEM_MENU_BAR);
         try {
             // SWT laying out at 100 on a 150% monitor: text is painted 1.5 times larger than boxes.
             ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
+            // The strip drawn in the window: on a macOS host the desktop mode puts the menu bar in the
+            // OS menu bar instead, and the Shell draws none.
+            System.setProperty(SYSTEM_MENU_BAR, "false");
             DPIUtil.setDeviceZoom(100);
             Config.setClientDeviceZoom(150);
 
@@ -96,6 +101,8 @@ class ShellMenuBarClientAreaNativeTest {
         } finally {
             Config.setClientDeviceZoom(100);
             DPIUtil.setDeviceZoom(savedZoom);
+            if (savedSystemMenuBar == null) System.clearProperty(SYSTEM_MENU_BAR);
+            else System.setProperty(SYSTEM_MENU_BAR, savedSystemMenuBar);
             if (savedMode == null) System.clearProperty(ConfigFlags.MODE_PROPERTY);
             else ConfigFlags.setMode(savedMode);
         }

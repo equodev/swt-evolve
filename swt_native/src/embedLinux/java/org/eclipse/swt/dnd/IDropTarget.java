@@ -1,8 +1,10 @@
 package org.eclipse.swt.dnd;
 
+import java.lang.reflect.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.GAsyncReadyCallbackHelper.*;
 import org.eclipse.swt.widgets.*;
 
 public interface IDropTarget extends IWidget, ImplDropTarget {

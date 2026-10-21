@@ -1,8 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.NoopBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.junit.jupiter.api.AfterEach;
@@ -62,6 +61,8 @@ class ShellDeactivateFocusFlutterTest {
         part.addListener(SWT.Activate, e -> log.add("Activate part " + name));
         part.addListener(SWT.Deactivate, e -> log.add("Deactivate part " + name));
         Canvas canvas = new Canvas(part, SWT.BORDER);
+        // A part's control hears keys, which is what lets a bare Canvas take the focus natively.
+        canvas.addListener(SWT.KeyDown, e -> { });
         canvas.addListener(SWT.FocusIn, e -> log.add("FocusIn " + name));
         canvas.addListener(SWT.FocusOut, e -> log.add("FocusOut " + name));
         return canvas;
@@ -141,45 +142,4 @@ class ShellDeactivateFocusFlutterTest {
         return bridge;
     }
 
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
-    }
-
-    private static final class TestWebBridge extends WebDisplayBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        TestWebBridge(DartDisplay display) {
-            super(display);
-            // Stands in for the client having connected: update() defers every pending send until then.
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        protected void start(DartDisplay display) {
-            registerDisplayClientReady(display);
-        }
-    }
 }

@@ -109,7 +109,7 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
             NSRect rect = new NSRect();
             rect.width = size.width;
             rect.height = size.height;
-            nsImage.drawInRect(rect, new NSRect(), OS.NSCompositeCopy, 1);
+            nsImage.drawInRect(rect, new NSRect(), OS.NSCompositingOperationCopy, 1);
             newImage.unlockFocus();
             nsImage.release();
             nsImage = newImage;

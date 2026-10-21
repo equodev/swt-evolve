@@ -153,7 +153,8 @@ void main() {
 
     await _swipe(tester, const Offset(-60, 0));
 
-    expect(wheels, isEmpty);
+    // Fingers moving left scroll the content right, which SWT counts negative.
+    expect(wheels.map((e) => (e.type, e.count)), List.filled(3, (SWT.MouseHorizontalWheel, -1)));
   });
 
   testWidgets('a two-finger swipe over a StyledText scrolls by the distance the fingers moved',
@@ -187,14 +188,15 @@ void main() {
     expect(wheels.map((e) => e.count), [-3]);
   });
 
-  testWidgets('a swipe over a Composite\'s child is the child\'s, not the Composite\'s',
+  testWidgets('a swipe over a Composite\'s child reaches the Composite too, as a wheel does',
       (tester) async {
     final wheels = <VEvent>[];
     await _pump(tester, _WheelCompositeSwt(value: _composite(), wheels: wheels));
 
     await _swipeUp(tester, at: const Offset(250, 160));
 
-    expect(wheels, isEmpty);
+    // Only a List, Table or Tree keeps the wheel; any other control passes it to its parents.
+    expect(wheels.map((e) => e.count), [-1, -1, -1]);
   });
 
   testWidgets('a pinch with no pan does not scroll', (tester) async {

@@ -892,7 +892,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
      * @since 3.3
      * @deprecated SWT.MOZILLA is deprecated and XULRunner as a browser renderer is no longer supported.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public Object getWebBrowser() {
         checkWidget();
         return webBrowser.getWebBrowser();

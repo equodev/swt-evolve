@@ -54,26 +54,24 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       separator = Divider(color: separatorColor, indent: 0, endIndent: 0);
     }
 
-    return MouseRegion(
-      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.sendFocusFocusIn(state, null);
-          } else {
-            widget.sendFocusFocusOut(state, null);
-          }
-        },
-        child: wrap(
-          constraints != null
-              ? SizedBox(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  child: separator,
-                )
-              : separator,
-        ),
+    return Focus(
+      // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          widget.sendFocusFocusIn(state, null);
+        } else {
+          widget.sendFocusFocusOut(state, null);
+        }
+      },
+      child: wrap(
+        constraints != null
+            ? SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: separator,
+              )
+            : separator,
       ),
     );
   }
@@ -146,6 +144,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     );
 
     return Focus(
+      // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+      skipTraversal: true,
       onFocusChange: (hasFocus) {
         if (hasFocus) {
           widget.sendFocusFocusIn(state, null);

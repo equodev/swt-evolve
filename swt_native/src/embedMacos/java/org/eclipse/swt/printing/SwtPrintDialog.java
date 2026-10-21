@@ -220,7 +220,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
             response = (int) panel.runModalWithPrintInfo(printInfo);
         }
         display.setData(SET_MODAL_DIALOG, null);
-        if (response != OS.NSCancelButton) {
+        if (response != OS.NSModalResponseCancel) {
             NSPrinter printer = printInfo.printer();
             NSString str = printer.name();
             data = new PrinterData(SwtPrinter.DRIVER, str.getString());

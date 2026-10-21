@@ -9,6 +9,7 @@ import '../gen/canvas.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/event.dart';
+import 'control_evolve.dart' show ControlImpl;
 import '../gen/gc.dart';
 import '../gen/image.dart';
 import '../gen/scrollbar.dart';
@@ -32,6 +33,9 @@ const double _kBarSize = 17.0;
 
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
+  @override
+  bool get forwardsWheelFromWrap => false;
+
   /// A canvas is whatever the application painted on it -- an icon here has no label, no image and
   /// no item, so its tooltip is the only thing that can name it. Everywhere, not only in the main
   /// toolbar: a canvas in a view has the same problem.
@@ -107,7 +111,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   final int _alpha = 255;
   Rect? clipRect;
-  final DoubleTapDetector _dblTap = DoubleTapDetector();
 
   // Keyboard focus for a childless Canvas so it can be typed into (e.g. an FXCanvas
   // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
@@ -148,15 +151,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // window rather than a surface the application paints content onto: its children are ordinary
   // widgets and keep the theme. Only a plain Canvas hands its own colors to what is hosted over it.
   bool get hostsAppColoredContent => true;
-
-  // Canvas forwards its own MouseDoubleClick from build()'s Listener, so the
-  // shared composite interaction chrome must not also forward it.
-  @override
-  bool get forwardsCompositeDoubleClick => false;
-
-  /// [wrapWithScrollbars] reports the wheel.
-  @override
-  bool get forwardsWheel => false;
 
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
@@ -222,6 +216,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChildren = children != null && children.isNotEmpty;
+    // A Canvas hosting children -- a Shell is one -- is no Tab stop of its own: Tab moves between its
+    // children, and stays on the last one when there is nowhere else to go.
+    _keyboardFocus.skipTraversal = hasActiveChildren;
 
     final content = Listener(
       behavior: HitTestBehavior.translucent,
@@ -230,23 +227,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // the Canvas hosts child widgets — they manage their own focus and stealing
         // it on every click would break them.
         if (!hasActiveChildren) _keyboardFocus.requestFocus();
-        final pos = e.localPosition;
-        if (_dblTap.registerTap(position: pos) == 2) {
-          // Nested Canvases (the editor's ruler columns sit inside a ruler container
-          // inside the text Canvas) each receive a pointer as it propagates to the
-          // ancestors. Only the deepest Canvas under the pointer may forward the gesture;
-          // otherwise the SWT double-click action (e.g. toggle breakpoint) runs once per
-          // ancestor, duplicating breakpoints.
-          if (_pointerHitsChild(pos)) return;
-          widget.sendMouseMouseDoubleClick(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = 1
-              ..count = 2,
-          );
-        }
       },
       child: wrapWithScrollbars(base),
     );
@@ -282,24 +262,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       },
       child: content,
     );
-  }
-
-  bool _pointerHitsChild(Offset pos) {
-    final kids = state.children;
-    if (kids == null) return false;
-    for (final child in kids) {
-      if (child.visible == false) continue;
-      final b = child.bounds;
-      if (b == null) continue;
-      final rect = Rect.fromLTWH(
-        b.x.toDouble(),
-        b.y.toDouble(),
-        b.width.toDouble(),
-        b.height.toDouble(),
-      );
-      if (rect.contains(pos)) return true;
-    }
-    return false;
   }
 
   // From Flutter 3.41 a semantics node with no action of its own is unreliable in the web DOM:
@@ -413,14 +375,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       void onSignal(PointerSignalEvent event) {
         if (event is PointerScrollEvent && onWheel != null) {
           onWheel(event);
-        } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
-          widget.sendMouseWheelMouseWheel(
-            state,
-            VEvent()
-              ..x = event.localPosition.dx.round()
-              ..y = event.localPosition.dy.round()
-              ..count = -wheelLines(event.scrollDelta.dy),
-          );
+        } else {
+          reportWheel(event, event.localPosition);
         }
       }
 
@@ -452,10 +408,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     void onSignal(PointerSignalEvent event) {
       if (event is PointerScrollEvent && onWheel != null) {
         onWheel(event);
-      } else if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+      } else if (event is PointerScrollEvent && event.scrollDelta != Offset.zero) {
         final now = DateTime.now().millisecondsSinceEpoch;
         if (!_scrollbarDragging && !hasActiveChild && now - _dragEndMs > 300) {
-          _handleMouseWheel(event);
+          _sendWheel(event);
         }
       }
     }
@@ -558,17 +514,13 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  void _handleMouseWheel(PointerScrollEvent event) {
-    final vBar = state.verticalBar;
-    if (vBar != null && vBar.visible != false && vBar.enabled != false) {
-      final increment = vBar.increment ?? 1;
-      final minimum = vBar.minimum ?? 0;
-      final maximum = vBar.maximum ?? 100;
-      final thumb = vBar.thumb ?? 0;
-      final selection = vBar.selection ?? minimum;
-      final delta = event.scrollDelta.dy > 0 ? increment : -increment;
-      final newSel = (selection + delta).clamp(minimum, maximum - thumb);
-      _sendSelection(vBar, newSel, 0);
+  /// Java runs the wheel listeners, which may veto, then scrolls the bar of each axis.
+  void _sendWheel(PointerScrollEvent event) {
+    if (ControlImpl.wheelKeptBelow(event)) return;
+    // The Canvas scrolls by the wheel, so it keeps it: its parents do not report it again.
+    ControlImpl.markWheelKept(event);
+    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0))) {
+      widget.sendMouseWheelMouseWheel(state, wheel);
     }
   }
 

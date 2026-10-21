@@ -150,7 +150,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     static final long DialogProc;
 
-    static final TCHAR DialogClass = new TCHAR(0, "#32770", true);
+    static final TCHAR DialogClass = new TCHAR("#32770", true);
 
     final static int[] SYSTEM_COLORS = { OS.COLOR_BTNFACE, OS.COLOR_WINDOW, OS.COLOR_BTNTEXT, OS.COLOR_WINDOWTEXT, OS.COLOR_HIGHLIGHT, OS.COLOR_SCROLLBAR };
 
@@ -572,7 +572,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     void createBalloonTipHandle() {
-        balloonTipHandle = OS.CreateWindowEx(0, new TCHAR(0, OS.TOOLTIPS_CLASS, true), null, OS.TTS_ALWAYSTIP | OS.TTS_NOPREFIX | OS.TTS_BALLOON, OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0, getApi().handle, 0, OS.GetModuleHandle(null), null);
+        balloonTipHandle = OS.CreateWindowEx(0, new TCHAR(OS.TOOLTIPS_CLASS, true), null, OS.TTS_ALWAYSTIP | OS.TTS_NOPREFIX | OS.TTS_BALLOON, OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0, getApi().handle, 0, OS.GetModuleHandle(null), null);
         if (balloonTipHandle == 0)
             error(SWT.ERROR_NO_HANDLES);
         if (ToolTipProc == 0) {
@@ -724,7 +724,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     long createToolTipHandle(long parent) {
-        long toolTipHandle = OS.CreateWindowEx(0, new TCHAR(0, OS.TOOLTIPS_CLASS, true), null, OS.TTS_ALWAYSTIP | OS.TTS_NOPREFIX, OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0, parent, 0, OS.GetModuleHandle(null), null);
+        long toolTipHandle = OS.CreateWindowEx(0, new TCHAR(OS.TOOLTIPS_CLASS, true), null, OS.TTS_ALWAYSTIP | OS.TTS_NOPREFIX, OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0, parent, 0, OS.GetModuleHandle(null), null);
         if (toolTipHandle == 0)
             error(SWT.ERROR_NO_HANDLES);
         if (ToolTipProc == 0) {
@@ -1336,7 +1336,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     long hwndMDIClient() {
         if (hwndMDIClient == 0) {
             int widgetStyle = OS.MDIS_ALLCHILDSTYLES | OS.WS_CHILD | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS;
-            hwndMDIClient = OS.CreateWindowEx(0, new TCHAR(0, "MDICLIENT", true), null, widgetStyle, 0, 0, 0, 0, getApi().handle, 0, OS.GetModuleHandle(null), new CREATESTRUCT());
+            hwndMDIClient = OS.CreateWindowEx(0, new TCHAR("MDICLIENT", true), null, widgetStyle, 0, 0, 0, 0, getApi().handle, 0, OS.GetModuleHandle(null), new CREATESTRUCT());
             //		OS.ShowWindow (hwndMDIClient, OS.SW_SHOW);
         }
         return hwndMDIClient;
@@ -2212,7 +2212,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 		*/
             if (text.length() > 99)
                 text = text.substring(0, 99);
-            TCHAR pszTitle = new TCHAR(getCodePage(), text, true);
+            TCHAR pszTitle = new TCHAR(text, true);
             OS.SendMessage(hwndToolTip, OS.TTM_SETTITLE, icon, pszTitle);
         } else {
             OS.SendMessage(hwndToolTip, OS.TTM_SETTITLE, 0, 0);

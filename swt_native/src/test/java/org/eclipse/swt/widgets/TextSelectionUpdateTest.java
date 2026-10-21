@@ -98,6 +98,48 @@ class TextSelectionUpdateTest {
     }
 
     @Test
+    @DisplayName("a word the user selects reaches Java, with the caret at its end")
+    void clientSelectionIsRecordedWithItsCaret() {
+        Text field = openedDialogField();
+        DartText impl = (DartText) field.getImpl();
+
+        TextHelper.clientCaretMoved(impl, 3, 0);
+
+        assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(0, 3));
+        assertThat(field.getCaretPosition())
+                .as("Win32 and GTK put the caret where the selection ends, after a double-click")
+                .isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("a range the application selects keeps the caret at its start")
+    void programmaticSelectionKeepsTheCaretAtItsStart() {
+        Text field = openedDialogField();
+
+        field.setSelection(2, 5);
+
+        assertThat(field.getCaretPosition()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("selecting again the range the client last heard, after the user moved off it, is sent")
+    void reselectingAfterTheUserMovedIsNamed() {
+        Text field = openedDialogField();
+        DartText impl = (DartText) field.getImpl();
+        field.setSelection(2, 5);
+        serializer.toDiff(impl);
+        Serializer.markDelivered();
+
+        TextHelper.clientCaretMoved(impl, 0, 0);
+        field.setSelection(2, 5);
+
+        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
+                .as("the client's caret moved on from the range it was last sent; naming that range "
+                        + "again is a change for it, not a repeat")
+                .contains("\"selection\"");
+    }
+
+    @Test
     @DisplayName("replacing the text names the selection it leaves behind")
     void setTextNamesTheSelectionItLeaves() {
         Text field = openedDialogField();
