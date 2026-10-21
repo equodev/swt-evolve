@@ -475,6 +475,37 @@ public class TableHelper {
         }
     }
 
+    /**
+     * Selects the first {@code count} of {@code indices}, replacing the selection when {@code clear}
+     * is set and adding to it otherwise. The cocoa-derived callers pass the receiver's own selection
+     * array after rewriting it in place, so the old value is gone and the change is always recorded.
+     */
+    public static void select(DartTable table, int[] indices, int count, boolean clear) {
+        int[] selected = Arrays.copyOf(indices, count);
+        if (!clear && table.selection != null) {
+            int[] combined = Arrays.copyOf(table.selection, table.selection.length + count);
+            System.arraycopy(selected, 0, combined, table.selection.length, count);
+            selected = Arrays.stream(combined).sorted().distinct().toArray();
+        }
+        table.getValue().markDirty(VTable.SELECTION);
+        table.selection = selected;
+    }
+
+    /**
+     * Drops the selected rows at or past {@code itemCount}, as a native table does whenever its row
+     * count shrinks: removing the last row, or every row, never shifts the selection otherwise.
+     */
+    public static void dropSelectionPast(DartTable table, int itemCount) {
+        int[] selection = table.selection;
+        if (selection == null)
+            return;
+        int[] kept = Arrays.stream(selection).filter(index -> index < itemCount).toArray();
+        if (kept.length == selection.length)
+            return;
+        table.getValue().markDirty(VTable.SELECTION);
+        table.selection = kept;
+    }
+
     public static void fixSelectionRange(DartTable table, int start, int end) {
         int[] selection = table.selection != null ? table.selection : new int[0];
         if (selection.length == 0) return;

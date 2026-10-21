@@ -1660,13 +1660,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void select(int[] indices, int count, boolean clear) {
-        int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            getValue().markDirty(VTable.SELECTION);
-        }
-        ;
-        ;
-        this.selection = newValue;
+        TableHelper.select(this, indices, count, clear);
     }
 
     /**
@@ -2409,6 +2403,7 @@ public class DartTable extends DartComposite implements ITable {
     void updateRowCount() {
         getValue().markDirty(VTable.ITEM_COUNT);
         getValue().markDirty(VTable.ITEMS);
+        TableHelper.dropSelectionPast(this, itemCount);
         setRedraw(false);
         ;
         ;
