@@ -277,6 +277,9 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       ],
       onChanged: _handleTextChanged,
       onSubmitted: _handleSubmitted,
+      // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
+      // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
+      contextMenuBuilder: null,
     );
   }
 

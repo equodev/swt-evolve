@@ -298,6 +298,9 @@ class TextImpl<T extends TextSwt, V extends VText>
       onSubmitted: _handleSubmitted,
       onTapOutside: (_) {},
       cursorColor: cursorColor,
+      // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
+      // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
+      contextMenuBuilder: null,
     );
     return DoubleClickWordSelector(
       controller: _controller,
