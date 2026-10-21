@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
+import '../gen/event.dart';
 import '../gen/menu.dart';
 import '../gen/widget.dart';
 import '../gen/shell.dart';
@@ -98,6 +99,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (OpenMenus.any) return false;
     final int id = widget.value.id ?? 0;
     if (openListClaimsKey(event)) return false;
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.contextMenu) {
+      EquoCommService.sendPayload('Display/$id/MenuKey', VEvent());
+      return false;
+    }
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
       if (compositionOwnsKey(event.character ?? '')) return false;

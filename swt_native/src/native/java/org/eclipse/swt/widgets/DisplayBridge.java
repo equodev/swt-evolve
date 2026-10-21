@@ -398,6 +398,20 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyDown, ev));
         comm().on("Display/" + displayId + "/Key/KeyUp", Event.class,
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyUp, ev));
+        // The Menu key has no SWT key code: natively it reaches the control as a context-menu
+        // request, never as a KeyDown.
+        comm().on("Display/" + displayId + "/MenuKey", Event.class, ev -> {
+            Display api = display.getApi();
+            if (api == null || api.isDisposed())
+                return;
+            api.asyncExec(() -> {
+                if (api.isDisposed())
+                    return;
+                Control focus = api.getFocusControl();
+                if (focus != null && !focus.isDisposed() && focus.getImpl() instanceof DartControl)
+                    ControlHelper.showMenuFromKeyboard((DartControl) focus.getImpl());
+            });
+        });
     }
 
     private void routeKeyToFocused(DartDisplay display, int type, Event ev) {
