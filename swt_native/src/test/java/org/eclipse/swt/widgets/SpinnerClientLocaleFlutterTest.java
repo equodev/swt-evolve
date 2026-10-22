@@ -102,6 +102,7 @@ class SpinnerClientLocaleFlutterTest {
     private Spinner spinner() {
         Shell shell = new Shell(display);
         Composite group = new Composite(shell, SWT.NONE);
+        new Label(group, SWT.NONE).setText("Amount");
         Spinner spinner = new Spinner(group, SWT.NONE);
         spinner.setValues(123, 0, 1000, 2, 1, 10);
         return spinner;

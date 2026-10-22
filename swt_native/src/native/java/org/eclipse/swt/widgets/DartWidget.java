@@ -1299,6 +1299,9 @@ public abstract class DartWidget implements IWidget {
         return jniRef;
     }
 
+    void clientLocaleChanged() {
+    }
+
     static String _webClipboard = null;
 
     protected FlutterBridge bridge;

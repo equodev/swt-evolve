@@ -60,7 +60,8 @@ VSpinner _$VSpinnerFromJson(Map<String, dynamic> json) => VSpinner()
   ..pageIncrement = (json['pageIncrement'] as num?)?.toInt()
   ..selection = (json['selection'] as num?)?.toInt()
   ..textLimit = (json['textLimit'] as num?)?.toInt()
-  ..decimalSeparator = json['decimalSeparator'] as String?;
+  ..decimalSeparator = json['decimalSeparator'] as String?
+  ..keptText = json['keptText'] as String?;
 
 Map<String, dynamic> _$VSpinnerToJson(VSpinner instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -94,4 +95,5 @@ Map<String, dynamic> _$VSpinnerToJson(VSpinner instance) => <String, dynamic>{
   'selection': ?instance.selection,
   'textLimit': ?instance.textLimit,
   'decimalSeparator': ?instance.decimalSeparator,
+  'keptText': ?instance.keptText,
 };

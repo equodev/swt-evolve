@@ -46,8 +46,14 @@ abstract class KeyRoutingTestBase {
 
     /** A KeyDown for {@code keyCode} routed into the control, as the client delivers one. */
     static void press(Control control, int keyCode) {
+        press(control, keyCode, 0);
+    }
+
+    /** The same, with {@code stateMask} held. */
+    static void press(Control control, int keyCode, int stateMask) {
         Event key = new Event();
         key.keyCode = keyCode;
+        key.stateMask = stateMask;
         ControlHelper.routeKeyDown((DartControl) control.getImpl(), key);
     }
 }
