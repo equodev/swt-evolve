@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../theme_extensions/label_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
@@ -99,5 +100,7 @@ LabelThemeExtension _getLabelTheme({
 
     // Separator properties
     separatorThickness: 2.0,
+
+    minTextContrast: kMinTextContrast,
   );
 }

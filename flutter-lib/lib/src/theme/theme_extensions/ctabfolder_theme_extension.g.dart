@@ -130,6 +130,7 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   chevronMenuItemPadding: const EdgeInsetsConverter().fromJson(
     json['chevronMenuItemPadding'] as Map<String, dynamic>,
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
@@ -239,4 +240,5 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   'chevronMenuItemPadding': const EdgeInsetsConverter().toJson(
     instance.chevronMenuItemPadding,
   ),
+  'minTextContrast': instance.minTextContrast,
 };

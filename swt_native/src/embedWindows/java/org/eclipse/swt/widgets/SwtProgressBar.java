@@ -51,7 +51,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
 
     static final long ProgressBarProc;
 
-    static final TCHAR ProgressBarClass = new TCHAR(0, OS.PROGRESS_CLASS, true);
+    static final TCHAR ProgressBarClass = new TCHAR(OS.PROGRESS_CLASS, true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -429,36 +429,6 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
         LRESULT result = super.WM_SIZE(wParam, lParam);
         if (result != null)
             return result;
-        /*
-	* Feature in Windows.  When a progress bar with the style
-	* PBS_MARQUEE becomes too small, the animation (currently
-	* a small bar moving from right to left) does not have
-	* enough space to draw.  The result is that the progress
-	* bar does not appear to be moving.  The fix is to detect
-	* this case, clear the PBS_MARQUEE style and emulate the
-	* animation using PBM_STEPIT.
-	*
-	* NOTE:  This only happens on Window XP.
-	*/
-        if ((getApi().style & SWT.INDETERMINATE) != 0) {
-            if (!OS.IsAppThemed()) {
-                forceResize();
-                RECT rect = new RECT();
-                OS.GetClientRect(getApi().handle, rect);
-                int oldBits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
-                int newBits = oldBits;
-                if (rect.right - rect.left < MINIMUM_WIDTH) {
-                    newBits &= ~OS.PBS_MARQUEE;
-                } else {
-                    newBits |= OS.PBS_MARQUEE;
-                }
-                if (newBits != oldBits) {
-                    stopTimer();
-                    OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, newBits);
-                    startTimer();
-                }
-            }
-        }
         return result;
     }
 

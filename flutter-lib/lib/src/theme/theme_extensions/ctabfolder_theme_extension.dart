@@ -116,6 +116,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   final double chevronMenuItemHeight;
   final EdgeInsets chevronMenuItemPadding;
 
+  final double minTextContrast;
+
   const CTabFolderThemeExtension({
     required this.tabBarBackgroundColor,
     required this.tabBarBorderColor,
@@ -173,6 +175,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.tabDragThreshold,
     required this.chevronMenuItemHeight,
     required this.chevronMenuItemPadding,
+    required this.minTextContrast,
   });
 
   factory CTabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>

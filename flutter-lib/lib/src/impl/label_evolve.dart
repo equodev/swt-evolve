@@ -6,6 +6,7 @@ import '../impl/color_utils.dart';
 import '../impl/widget_config.dart';
 import './utils/image_utils.dart';
 import './utils/font_utils.dart';
+import './utils/mnemonic_text.dart';
 import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import '../theme/theme_extensions/label_theme_extension.dart';
@@ -54,26 +55,24 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       separator = Divider(color: separatorColor, indent: 0, endIndent: 0);
     }
 
-    return MouseRegion(
-      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.sendFocusFocusIn(state, null);
-          } else {
-            widget.sendFocusFocusOut(state, null);
-          }
-        },
-        child: wrap(
-          constraints != null
-              ? SizedBox(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  child: separator,
-                )
-              : separator,
-        ),
+    return Focus(
+      // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          widget.sendFocusFocusIn(state, null);
+        } else {
+          widget.sendFocusFocusOut(state, null);
+        }
+      },
+      child: wrap(
+        constraints != null
+            ? SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: separator,
+              )
+            : separator,
       ),
     );
   }
@@ -87,8 +86,15 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
     // state.background already resolves inheritance (DartControl.getExplicitBackground(), Java
     // side); ParentBackgroundScope would unconditionally shadow it with a stale ancestor value.
-    final backgroundColor = getBackgroundColor(
-        background: state.background, defaultColor: null, context: context);
+    // An ancestor's background image is already painted behind this label; an inherited colour
+    // would cover it, so only a colour the label set itself is painted over it.
+    final stayTransparentForImage = state.backgroundImage == null &&
+        !(state.hasOwnBackground ?? false) &&
+        ParentBackgroundScope.backgroundImageOf(context) != null;
+    final backgroundColor = stayTransparentForImage
+        ? null
+        : getBackgroundColor(
+            background: state.background, defaultColor: null, context: context);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -109,18 +115,21 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         !hasLineDelimiter(text) &&
         text.isNotEmpty &&
         state.image == null) {
-      final painter = TextPainter(
-        text: TextSpan(text: text, style: textStyle),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final textSize = FontUtils.measureTextWidget(text, textStyle);
+      final textWidth = textSize.width;
       final boundsWidth = state.bounds!.width.toDouble();
-      if (painter.width > boundsWidth - padding.horizontal) {
+      if (textWidth > boundsWidth - padding.horizontal) {
         padding = EdgeInsets.only(top: padding.top, bottom: padding.bottom);
-        if (painter.width > boundsWidth &&
-            painter.width <= boundsWidth * 1.4) {
+        if (textWidth > boundsWidth &&
+            textWidth <= boundsWidth * 1.4) {
           fitTextToBounds = true;
         }
+      }
+      // A label laid out at its font's line height (a common GridData.heightHint, taken from
+      // GC.getFontMetrics()) has no room for the theme's vertical padding; native SWT draws the
+      // line in exactly that height, so give up the padding rather than clip the glyphs.
+      if (textSize.height > state.bounds!.height - padding.vertical) {
+        padding = EdgeInsets.only(left: padding.left, right: padding.right);
       }
     }
 
@@ -136,6 +145,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     );
 
     return Focus(
+      // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+      skipTraversal: true,
       onFocusChange: (hasFocus) {
         if (hasFocus) {
           widget.sendFocusFocusIn(state, null);
@@ -186,6 +197,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
             context: context,
+            minContrast: widgetTheme.minTextContrast,
           )
         : widgetTheme.disabledTextColor;
 
@@ -222,8 +234,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     // would drop every line after the first.
     final isMultiLine = hasLineDelimiter(text);
 
-    Widget textWidget = Text(
-      text,
+    Widget textWidget = MnemonicText(
+      state.text,
       textAlign: textAlign,
       softWrap: shouldWrap,
       overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,

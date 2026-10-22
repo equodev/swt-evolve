@@ -34,7 +34,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
 
-    static final TCHAR DialogClass = new TCHAR(0, "#32770", true);
+    static final TCHAR DialogClass = new TCHAR("#32770", true);
 
     PrinterData printerData = new PrinterData();
 
@@ -89,7 +89,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
      */
     public SwtPrintDialog(Shell parent, int style, PrintDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     static int checkBits(int style, int int0, int int1, int int2, int int3, int int4, int int5) {
@@ -338,7 +338,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
             }
             if (success) {
                 /* Initialize PRINTDLG DEVNAMES for the specified printer. */
-                TCHAR buffer = new TCHAR(0, printerData.name, true);
+                TCHAR buffer = new TCHAR(printerData.name, true);
                 int size = buffer.length() * TCHAR.sizeof;
                 // DEVNAMES (4 offsets)
                 short[] offsets = new short[4];

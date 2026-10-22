@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show BoxHitTestResult;
 import '../gen/button.dart';
 import '../gen/color.dart';
 import '../gen/swt.dart';
@@ -6,7 +10,9 @@ import '../impl/composite_evolve.dart';
 import '../impl/control_evolve.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
@@ -75,17 +81,63 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
 
     // Push and toggle buttons draw their focus ring themselves, around the surface inside the
     // bezel margin rather than around the whole frame.
+    final Widget button;
     if (hasStyle(state.style, SWT.CHECK)) {
-      return _withFocusRing(widgetTheme, _buildCheckBox(context, widgetTheme, enabled, text));
+      button = _withFocusRing(widgetTheme, _buildCheckBox(context, widgetTheme, enabled, text));
     } else if (hasStyle(state.style, SWT.RADIO)) {
-      return _withFocusRing(widgetTheme, _buildRadioButton(context, widgetTheme, enabled, text));
+      button = _withFocusRing(widgetTheme, _buildRadioButton(context, widgetTheme, enabled, text));
     } else if (hasStyle(state.style, SWT.TOGGLE)) {
-      return _buildToggleButton(context, widgetTheme, enabled, text);
+      button = _buildToggleButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.ARROW)) {
-      return _withFocusRing(widgetTheme, _buildArrowButton(context, widgetTheme, enabled, text));
+      button = _withFocusRing(widgetTheme, _buildArrowButton(context, widgetTheme, enabled, text));
+    } else {
+      button = _buildPushButton(context, widgetTheme, enabled, text);
     }
-    return _buildPushButton(context, widgetTheme, enabled, text);
+    return _selectOnReleaseInside(button);
   }
+
+  bool _primaryPressed = false;
+  /// Whether the button was selected during this press, by Flutter's tap or by the keyboard.
+  bool _selectedThisPress = false;
+
+  /// A check box's or radio's box, the gap after it and its label: the part of it that is the
+  /// button, as on GTK, whose check button is exactly that wide.
+  final GlobalKey _indicatorRowKey = GlobalKey();
+
+  bool get _selectsOverIndicatorRow => hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO);
+
+  /// Whether [e] is over the button: anywhere in its bounds, or for a check box or radio over its
+  /// indicator row's content -- box, gap and label, not the row's empty end -- at any height of the
+  /// row, above or below a label shorter than the box too.
+  bool _isOverButton(PointerEvent e) {
+    if (!_selectsOverIndicatorRow) return isOverSelf(e);
+    final row = _indicatorRowKey.currentContext?.findRenderObject();
+    if (row is! RenderBox || !row.hasSize) return false;
+    final local = row.globalToLocal(e.position);
+    if (local.dy < 0 || local.dy >= row.size.height) return false;
+    return row.hitTest(BoxHitTestResult(), position: Offset(local.dx, row.size.height / 2));
+  }
+
+  /// A native button is selected by a primary release over it after a press on it, however far the
+  /// pointer travelled while held; Flutter's tap gives up once it moves past its slop.
+  Widget _selectOnReleaseInside(Widget button) => Listener(
+        onPointerDown: (e) {
+          _primaryPressed = e.buttons == kPrimaryButton && (state.enabled ?? false)
+              && _isOverButton(e);
+          _selectedThisPress = false;
+        },
+        onPointerUp: (e) {
+          if (!_primaryPressed) return;
+          _primaryPressed = false;
+          if (!_isOverButton(e)) return;
+          // After the gesture arena, which delivers a tap within its slop on this same release.
+          scheduleMicrotask(() {
+            if (mounted && !_selectedThisPress && (state.enabled ?? false)) _onPressed();
+          });
+        },
+        onPointerCancel: (_) => _primaryPressed = false,
+        child: button,
+      );
 
   // Always a DecoratedBox, so gaining focus never remounts the button and drops that focus.
   Widget _withFocusRing(ButtonThemeExtension widgetTheme, Widget button) => DecoratedBox(
@@ -186,7 +238,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ),
       widgetTheme: widgetTheme,
       onPressed: enabled ? _onPressed : null,
-      onHover: _onHover,
       onFocusChange: _onFocusChange,
       isPrimary: isPrimary,
       child: _buildButtonContent(
@@ -218,20 +269,15 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       width += imageData.width?.toDouble() ?? 0;
     }
     if (text != null && text.isNotEmpty) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: getTextStyle(
-            context: context,
-            font: state.font,
-            textColor: textColor,
-            baseTextStyle: baseTextStyle,
-          ),
+      width += FontUtils.measureTextWidget(
+        text,
+        getTextStyle(
+          context: context,
+          font: state.font,
+          textColor: textColor,
+          baseTextStyle: baseTextStyle,
         ),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
-      width += painter.width;
+      ).width;
     }
     return width;
   }
@@ -282,7 +328,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
         onTap: enabled ? _onPressed : null,
-        onHover: _onHover,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         splashColor: widgetTheme.splashColor,
@@ -382,7 +427,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       grayedBorderRadius: widgetTheme.checkboxGrayedBorderRadius,
       duration: widgetTheme.buttonPressDelay,
       onTap: enabled ? _onPressed : null,
-      onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
 
@@ -474,7 +518,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           : widgetTheme.disabledForegroundColor,
       duration: widgetTheme.buttonPressDelay,
       onTap: enabled ? _onPressed : null,
-      onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
 
@@ -520,7 +563,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
         onTap: enabled ? _onPressed : null,
-        onHover: _onHover,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         child: AnimatedContainer(
@@ -546,6 +588,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
                     foreground: _ownForeground,
                     defaultColor: widgetTheme.pushButtonTextColor,
                     context: context,
+                    minContrast: widgetTheme.minTextContrast,
                   )
                 : widgetTheme.disabledForegroundColor,
           ),
@@ -609,6 +652,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       foreground: _ownForeground,
       defaultColor: defaultTextColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textStyle = getTextStyle(
@@ -631,14 +675,19 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       children: [
         if (leadingWidget != null) ...[
           leadingWidget,
-          if (hasText || imageWidget != null) SizedBox(width: leadingSpacing),
+          // The gap between a check box or radio and its label is part of the button, as on GTK.
+          if (hasText || imageWidget != null)
+            MetaData(
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(width: leadingSpacing, height: double.infinity),
+            ),
         ],
         if (imageWidget != null) imageWidget,
 
         if (hasText)
           Flexible(
-            child: Text(
-              text!,
+            child: MnemonicText(
+              state.text,
               style: textStyle,
               overflow: shouldWrap
                   ? TextOverflow.visible
@@ -656,13 +705,14 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     );
 
     if (leadingWidget != null) {
-      return IntrinsicHeight(child: rowContent);
+      return IntrinsicHeight(key: _indicatorRowKey, child: rowContent);
     }
 
     return rowContent;
   }
 
   void _onPressed() {
+    _selectedThisPress = true;
     final isRadio = hasStyle(state.style, SWT.RADIO);
     if (isRadio ||
         hasStyle(state.style, SWT.CHECK) ||
@@ -721,14 +771,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
-  void _onHover(bool isHovering) {
-    if (isHovering) {
-      widget.sendMouseTrackMouseEnter(state, null);
-    } else {
-      widget.sendMouseTrackMouseExit(state, null);
-    }
-  }
-
   void _onFocusChange(bool hasFocus) {
     if (mounted && _hasFocus != hasFocus) setState(() => _hasFocus = hasFocus);
     if (hasFocus) {
@@ -751,7 +793,6 @@ class _HoverableButton extends StatefulWidget {
   final EdgeInsets padding;
   final ButtonThemeExtension widgetTheme;
   final VoidCallback? onPressed;
-  final ValueChanged<bool> onHover;
   final ValueChanged<bool> onFocusChange;
   final bool isPrimary;
   final Widget child;
@@ -768,7 +809,6 @@ class _HoverableButton extends StatefulWidget {
     required this.padding,
     required this.widgetTheme,
     this.onPressed,
-    required this.onHover,
     required this.onFocusChange,
     required this.isPrimary,
     required this.child,
@@ -794,11 +834,9 @@ class _HoverableButtonState extends State<_HoverableButton> {
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovering = true);
-        widget.onHover(true);
       },
       onExit: (_) {
         setState(() => _isHovering = false);
-        widget.onHover(false);
       },
       child: Material(
         color: backgroundColor,
@@ -854,7 +892,6 @@ class _HoverableCheckboxRadio extends StatefulWidget {
   final Color? innerColor;
   final Duration duration;
   final VoidCallback? onTap;
-  final ValueChanged<bool> onHover;
   final ValueChanged<bool> onFocusChange;
 
   const _HoverableCheckboxRadio({
@@ -877,7 +914,6 @@ class _HoverableCheckboxRadio extends StatefulWidget {
     this.innerColor,
     required this.duration,
     this.onTap,
-    required this.onHover,
     required this.onFocusChange,
   });
 
@@ -972,11 +1008,9 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovering = true);
-        widget.onHover(true);
       },
       onExit: (_) {
         setState(() => _isHovering = false);
-        widget.onHover(false);
       },
       child: GestureDetector(
         onTap: widget.onTap,

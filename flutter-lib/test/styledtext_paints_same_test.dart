@@ -28,7 +28,6 @@ TextShape _shape({
       off,
       _default,
       null,
-      null,
       caret,
       false,
       canvas,

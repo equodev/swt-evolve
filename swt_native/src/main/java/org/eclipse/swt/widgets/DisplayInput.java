@@ -17,11 +17,11 @@ public final class DisplayInput {
     /** The deepest visible control at a point in display coordinates, topmost shell first. */
     public static Control controlAt(Display display, int x, int y) {
         Shell active = display.getActiveShell();
-        if (active != null && contains(display, active, x, y))
+        if (active != null && contains(active, x, y))
             return deepestAt(display, active, x, y);
         Shell[] shells = display.getShells();
         for (int i = shells.length - 1; i >= 0; i--) {
-            if (contains(display, shells[i], x, y))
+            if (contains(shells[i], x, y))
                 return deepestAt(display, shells[i], x, y);
         }
         return null;
@@ -31,19 +31,24 @@ public final class DisplayInput {
         if (control instanceof Composite) {
             // Children come topmost first.
             for (Control child : ((Composite) control).getChildren()) {
-                if (contains(display, child, x, y))
+                if (contains(child, x, y))
                     return deepestAt(display, child, x, y);
             }
         }
         return control;
     }
 
-    private static boolean contains(Display display, Control control, int x, int y) {
+    private static boolean contains(Control control, int x, int y) {
         if (control.isDisposed() || !control.isVisible())
             return false;
-        Rectangle bounds = control instanceof Shell ? control.getBounds()
-                : display.map(control.getParent(), null, control.getBounds());
-        return bounds.contains(x, y);
+        if (control instanceof Shell)
+            return control.getBounds().contains(x, y);
+        // The control's own corners, not its bounds mapped from the parent: a panel of the main
+        // workbench area is painted inset and scaled inside the bounds it was given.
+        Point size = control.getSize();
+        Point origin = control.toDisplay(0, 0);
+        Point far = control.toDisplay(size.x, size.y);
+        return new Rectangle(origin.x, origin.y, far.x - origin.x, far.y - origin.y).contains(x, y);
     }
 
     /** Queues a synthetic event where the platform would deliver one; false for what cannot be posted. */

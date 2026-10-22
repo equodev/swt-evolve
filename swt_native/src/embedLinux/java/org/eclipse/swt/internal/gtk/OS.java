@@ -609,6 +609,8 @@ public class OS extends C {
 
     public static final byte[] dpi_changed = ascii("notify::scale-factor");
 
+    public static final byte[] accept = ascii("accept");
+
     public static final byte[] drag_begin = ascii("drag-begin");
 
     public static final byte[] drag_data_delete = ascii("drag-data-delete");
@@ -621,9 +623,13 @@ public class OS extends C {
 
     public static final byte[] drag_end = ascii("drag-end");
 
+    public static final byte[] drag_enter = ascii("drag-enter");
+
     public static final byte[] drag_leave = ascii("drag-leave");
 
     public static final byte[] drag_motion = ascii("drag-motion");
+
+    public static final byte[] drop = ascii("drop");
 
     public static final byte[] prepare = ascii("prepare");
 
@@ -658,6 +664,8 @@ public class OS extends C {
     public static final byte[] icon_release = ascii("icon-release");
 
     public static final byte[] insert_text = ascii("insert-text");
+
+    public static final byte[] items_changed = ascii("items-changed");
 
     public static final byte[] key_press_event = ascii("key-press-event");
 
@@ -778,6 +786,8 @@ public class OS extends C {
     public static final byte[] response = ascii("response");
 
     public static final byte[] compute_size = ascii("compute-size");
+
+    public static final byte[] layout = ascii("layout");
 
     /**
      * Properties
@@ -948,6 +958,12 @@ public class OS extends C {
      * @category custom
      */
     public static final native long swt_fixed_get_type();
+
+    /**
+     * @param texture cast=(GdkTexture*)
+     * @category custom
+     */
+    public static final native long swt_scaled_paintable_new(long texture, int width, int height);
 
     /**
      * @category custom

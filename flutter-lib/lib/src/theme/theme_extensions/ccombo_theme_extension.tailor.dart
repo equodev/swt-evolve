@@ -33,6 +33,7 @@ mixin _$CComboThemeExtensionTailorMixin
   Color get dividerColor;
   double get dividerHeight;
   double get dividerThickness;
+  double get minTextContrast;
 
   @override
   CComboThemeExtension copyWith({
@@ -58,6 +59,7 @@ mixin _$CComboThemeExtensionTailorMixin
     Color? dividerColor,
     double? dividerHeight,
     double? dividerThickness,
+    double? minTextContrast,
   }) {
     return CComboThemeExtension(
       animationDuration: animationDuration ?? this.animationDuration,
@@ -85,6 +87,7 @@ mixin _$CComboThemeExtensionTailorMixin
       dividerColor: dividerColor ?? this.dividerColor,
       dividerHeight: dividerHeight ?? this.dividerHeight,
       dividerThickness: dividerThickness ?? this.dividerThickness,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -149,6 +152,7 @@ mixin _$CComboThemeExtensionTailorMixin
       dividerColor: Color.lerp(dividerColor, other.dividerColor, t)!,
       dividerHeight: t < 0.5 ? dividerHeight : other.dividerHeight,
       dividerThickness: t < 0.5 ? dividerThickness : other.dividerThickness,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -232,6 +236,10 @@ mixin _$CComboThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               dividerThickness,
               other.dividerThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -261,6 +269,7 @@ mixin _$CComboThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(dividerColor),
       const DeepCollectionEquality().hash(dividerHeight),
       const DeepCollectionEquality().hash(dividerThickness),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -293,4 +302,5 @@ extension CComboThemeExtensionBuildContextProps on BuildContext {
   Color get dividerColor => cComboThemeExtension.dividerColor;
   double get dividerHeight => cComboThemeExtension.dividerHeight;
   double get dividerThickness => cComboThemeExtension.dividerThickness;
+  double get minTextContrast => cComboThemeExtension.minTextContrast;
 }

@@ -28,6 +28,11 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   final Color rowHoverBackgroundColor;
   final Color rowSelectedBorderColor;
   final double rowSelectedBorderWidth;
+
+  // Drag and drop
+  final double dropFeedbackLineWidth;
+  final int dropFeedbackHighlightAlpha;
+  final double dragImageOpacity;
   
   // Header colors
   final Color headerBackgroundColor;
@@ -95,7 +100,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   final int eventDefaultX;
   final int eventDefaultY;
   final int eventDefaultDetail;
-  
+
+  final double minTextContrast;
+
   const TableThemeExtension({
     required this.backgroundColor,
     required this.disabledBackgroundColor,
@@ -108,6 +115,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.rowHoverBackgroundColor,
     required this.rowSelectedBorderColor,
     required this.rowSelectedBorderWidth,
+    required this.dropFeedbackLineWidth,
+    required this.dropFeedbackHighlightAlpha,
+    required this.dragImageOpacity,
     required this.headerBackgroundColor,
     required this.headerTextColor,
     required this.headerBorderColor,
@@ -151,6 +161,7 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.eventDefaultX,
     required this.eventDefaultY,
     required this.eventDefaultDetail,
+    required this.minTextContrast,
   });
 
   factory TableThemeExtension.fromJson(Map<String, dynamic> json) =>

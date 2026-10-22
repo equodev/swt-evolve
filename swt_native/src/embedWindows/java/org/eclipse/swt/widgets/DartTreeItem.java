@@ -886,10 +886,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VTreeItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -969,10 +969,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setChecked(boolean checked) {
         boolean newValue = checked;
+        checkWidget();
         if (!java.util.Objects.equals(this.checked, newValue)) {
             getValue().markDirty(VTreeItem.CHECKED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (checked) {
@@ -1003,10 +1003,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setExpanded(boolean expanded) {
         boolean newValue = expanded;
+        checkWidget();
         if (!java.util.Objects.equals(this.expanded, newValue)) {
             getValue().markDirty(VTreeItem.EXPANDED);
         }
-        checkWidget();
         /* Expand or collapse the item */
         ((DartTree) parent.getImpl()).ignoreExpand = true;
         ((DartTree) parent.getImpl()).ignoreExpand = false;
@@ -1145,10 +1145,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VTreeItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -1229,10 +1229,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setGrayed(boolean grayed) {
         boolean newValue = grayed;
+        checkWidget();
         if (!java.util.Objects.equals(this.grayed, newValue)) {
             getValue().markDirty(VTreeItem.GRAYED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (grayed) {

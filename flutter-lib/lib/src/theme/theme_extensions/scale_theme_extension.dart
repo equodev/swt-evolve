@@ -60,6 +60,8 @@ class ScaleThemeExtension extends ThemeExtension<ScaleThemeExtension> with _$Sca
   final int defaultIncrement;
   final int defaultPageIncrement;
 
+  final double minTextContrast;
+
   const ScaleThemeExtension({
     required this.animationDuration,
     required this.activeTrackColor,
@@ -88,6 +90,7 @@ class ScaleThemeExtension extends ThemeExtension<ScaleThemeExtension> with _$Sca
     required this.defaultSelection,
     required this.defaultIncrement,
     required this.defaultPageIncrement,
+    required this.minTextContrast,
   });
 
   factory ScaleThemeExtension.fromJson(Map<String, dynamic> json) =>

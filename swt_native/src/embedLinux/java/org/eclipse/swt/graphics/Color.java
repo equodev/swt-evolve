@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -52,9 +52,9 @@ public final class Color extends Resource {
      */
     public GdkRGBA handle;
 
-    Color(Device device) {
+    Color() {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, this) : new SwtColor(device, this));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(this) : new SwtColor(this));
     }
 
     /**
