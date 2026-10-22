@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../theme_extensions/ctabitem_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -60,6 +61,8 @@ CTabItemThemeExtension _getCTabItemTheme({
     
     // Tab item image spacing
     tabItemImageTextSpacing: 3.0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

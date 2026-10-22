@@ -100,7 +100,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   final int eventDefaultX;
   final int eventDefaultY;
   final int eventDefaultDetail;
-  
+
+  final double minTextContrast;
+
   const TableThemeExtension({
     required this.backgroundColor,
     required this.disabledBackgroundColor,
@@ -159,6 +161,7 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.eventDefaultX,
     required this.eventDefaultY,
     required this.eventDefaultDetail,
+    required this.minTextContrast,
   });
 
   factory TableThemeExtension.fromJson(Map<String, dynamic> json) =>

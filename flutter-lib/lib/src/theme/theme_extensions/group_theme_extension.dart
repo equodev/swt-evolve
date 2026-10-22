@@ -36,6 +36,8 @@ class GroupThemeExtension extends ThemeExtension<GroupThemeExtension> with _$Gro
   final double shadowInBorderFactor;
   final double shadowInBgFactor;
 
+  final double minTextContrast;
+
   const GroupThemeExtension({
     required this.backgroundColor,
     required this.borderColor,
@@ -59,6 +61,7 @@ class GroupThemeExtension extends ThemeExtension<GroupThemeExtension> with _$Gro
     required this.shadowEtchedBlurRadius,
     required this.shadowInBorderFactor,
     required this.shadowInBgFactor,
+    required this.minTextContrast,
   });
 
   factory GroupThemeExtension.fromJson(Map<String, dynamic> json) =>

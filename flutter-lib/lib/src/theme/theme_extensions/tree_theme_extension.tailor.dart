@@ -109,6 +109,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   int get eventDefaultX;
   int get eventDefaultY;
   int get eventDefaultDetail;
+  double get minTextContrast;
 
   @override
   TreeThemeExtension copyWith({
@@ -211,6 +212,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     int? eventDefaultX,
     int? eventDefaultY,
     int? eventDefaultDetail,
+    double? minTextContrast,
   }) {
     return TreeThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -352,6 +354,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       eventDefaultX: eventDefaultX ?? this.eventDefaultX,
       eventDefaultY: eventDefaultY ?? this.eventDefaultY,
       eventDefaultDetail: eventDefaultDetail ?? this.eventDefaultDetail,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -645,6 +648,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       eventDefaultDetail: t < 0.5
           ? eventDefaultDetail
           : other.eventDefaultDetail,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -1045,6 +1049,10 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
             const DeepCollectionEquality().equals(
               eventDefaultDetail,
               other.eventDefaultDetail,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -1151,6 +1159,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(eventDefaultX),
       const DeepCollectionEquality().hash(eventDefaultY),
       const DeepCollectionEquality().hash(eventDefaultDetail),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -1284,4 +1293,5 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
   int get eventDefaultX => treeThemeExtension.eventDefaultX;
   int get eventDefaultY => treeThemeExtension.eventDefaultY;
   int get eventDefaultDetail => treeThemeExtension.eventDefaultDetail;
+  double get minTextContrast => treeThemeExtension.minTextContrast;
 }
