@@ -39,21 +39,26 @@ public class ControlHelper {
         boolean key(int type, Event event);
     }
 
-    private static final Map<Display, KeyCapture> keyCaptures = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final String KEY_CAPTURE = "dev.equo.swt.keyCapture";
 
     /** Makes {@code capture} take the keys of {@code display}, or stops capturing them with null; answers the one it replaces. */
     public static KeyCapture captureKeys(Display display, KeyCapture capture) {
-        return capture == null ? keyCaptures.remove(display) : keyCaptures.put(display, capture);
+        if (display.isDisposed())
+            return null;
+        KeyCapture before = (KeyCapture) display.getData(KEY_CAPTURE);
+        display.setData(KEY_CAPTURE, capture);
+        return before;
     }
 
     /** Hands a key from the client to the capture of {@code display}; false when there is none to take it. */
     public static boolean capturedKey(Display display, int type, Event event) {
-        KeyCapture capture = display == null ? null : keyCaptures.get(display);
-        if (capture == null)
+        if (display == null || display.isDisposed() || !(display.getData(KEY_CAPTURE) instanceof KeyCapture))
             return false;
+        KeyCapture capture = (KeyCapture) display.getData(KEY_CAPTURE);
         if (capture.key(type, event))
             return true;
-        keyCaptures.remove(display, capture);
+        if (!display.isDisposed() && display.getData(KEY_CAPTURE) == capture)
+            display.setData(KEY_CAPTURE, null);
         return false;
     }
 
