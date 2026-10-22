@@ -15,12 +15,50 @@ import java.lang.reflect.Array;
 public class TableHelper {
 
     /**
-     * The width of the one cell of a table without columns, which holds {@code content} and has {@code room}
-     * left in the table: stretched across the table, as on Win32 and GTK. Cocoa makes it as wide as what it
-     * holds.
+     * A row of a table without columns was given what it shows: the one cell grows to hold it, as Win32 and
+     * Cocoa grow their one column to the widest row. GTK stretches it across the table.
      */
-    static int columnlessCellWidth(int content, int room) {
-        return Math.max(content, room);
+    static boolean growColumnlessWidth(DartTable table, TableItem item) {
+        if (!holdsData(table, item)) return false;
+        int width = dev.equo.swt.size.TableSizes.getCellContentWidth(item);
+        if (width <= table.columnlessWidth) return false;
+        table.columnlessWidth = width;
+        return true;
+    }
+
+    /**
+     * The one cell of a table without columns is measured again over {@code items}: {@code set} takes the widest
+     * row even when it is narrower than before, otherwise the cell only grows. A virtual row that holds no data
+     * yet is not asked for it.
+     */
+    static boolean measureColumnlessWidth(DartTable table, TableItem[] items, boolean set) {
+        int width = widestRow(table, items);
+        if (!set && width <= table.columnlessWidth) return false;
+        table.columnlessWidth = width;
+        return true;
+    }
+
+    /**
+     * The width of the one cell of a table without columns. A backend generated from a platform that keeps no
+     * such width measures its rows each time it is asked.
+     */
+    static int columnlessWidth(DartTable table) {
+        return table.columnlessWidth > 0 ? table.columnlessWidth : widestRow(table, table.items);
+    }
+
+    private static int widestRow(DartTable table, TableItem[] items) {
+        if (items == null) return 0;
+        int width = 0;
+        for (TableItem item : items) {
+            if (item == null || !holdsData(table, item)) continue;
+            width = Math.max(width, dev.equo.swt.size.TableSizes.getCellContentWidth(item));
+        }
+        return width;
+    }
+
+    /** Whether a row can be measured without asking SetData for it: a virtual row that holds no data yet cannot. */
+    private static boolean holdsData(DartTable table, TableItem item) {
+        return (table.getStyle() & SWT.VIRTUAL) == 0 || ((DartTableItem) item.getImpl()).cached;
     }
 
     /**
@@ -46,12 +84,14 @@ public class TableHelper {
      * computed from.
      */
     public static int scrollOffsetY(DartTable table) {
+        // A table never scrolled is not measured: measuring a row asks a virtual table for its data.
+        if (table.scrollOffset == 0) return 0;
         return Math.min(table.scrollOffset, maxScrollOffset(table, Math.max(1, table.getItemHeight())));
     }
 
     /** The rows changed: a scroll past where they now end stops at their end. */
     public static void keepScrollInRows(DartTable table) {
-        table.scrollOffset = scrollOffsetY(table);
+        if (table.scrollOffset > 0) table.scrollOffset = scrollOffsetY(table);
     }
 
     /** The index of the row at the top; 0 for an empty table. */

@@ -1727,7 +1727,7 @@ public class DartTable extends DartComposite implements ITable {
         for (int i = 0; i < order.length; i++) {
             int index = order[i];
             if (index < 0 || index >= columnCount)
-                error(SWT.ERROR_INVALID_ARGUMENT);
+                error(SWT.ERROR_INVALID_RANGE);
             if (seen[index])
                 error(SWT.ERROR_INVALID_ARGUMENT);
             seen[index] = true;
@@ -1973,7 +1973,7 @@ public class DartTable extends DartComposite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        return false;
+        return TableHelper.growColumnlessWidth(this, item);
     }
 
     boolean setScrollWidth(TableItem[] items, boolean set) {
@@ -1987,14 +1987,7 @@ public class DartTable extends DartComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        for (int i = 0; i < items.length; i++) {
-            TableItem item = items[i];
-            if (item != null) {
-            }
-        }
-        if (!set) {
-        }
-        return true;
+        return TableHelper.measureColumnlessWidth(this, items, set);
     }
 
     /**
@@ -2540,6 +2533,8 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     int scrollOffset;
+
+    int columnlessWidth;
 
     boolean loadingVirtualData = false;
 

@@ -755,12 +755,9 @@ public class Sizes {
         int y = headerHeight + (itemIndex * itemHeight) - TableHelper.scrollOffsetY(dartTable);
         // The first cell's content starts after its inset (and checkbox); the others fill their column.
         int inset = dev.equo.swt.size.TableSizes.getLeadingInset(dartTable);
-        // Without columns the one cell fills the table, and is as wide as what it holds when that does not fit;
-        // on Cocoa it is only as wide as what it holds.
-        if (columnCount == 0) {
-            int content = dev.equo.swt.size.TableSizes.getCellContentWidth(item.getApi());
-            return new Rectangle(inset, y, TableHelper.columnlessCellWidth(content, dartTable.getClientArea().width - inset), itemHeight);
-        }
+        // Without columns the one cell is as wide as the widest row.
+        if (columnCount == 0)
+            return new Rectangle(inset, y, TableHelper.columnlessWidth(dartTable), itemHeight);
         TableColumn[] columns = dartTable.getColumns();
         int x = tableColumnLeft(dartTable, index);
         int width = index < columns.length ? columns[index].getWidth() : 0;

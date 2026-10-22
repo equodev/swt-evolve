@@ -121,13 +121,12 @@ class TableItemImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("the one cell of a table without columns is as wide as its content on Cocoa; elsewhere it fills the table, and holds its content where the table has no room")
+    @DisplayName("the one cell of a table without columns is as wide as its widest row, as on Win32 and Cocoa, whatever the table's size")
     void theCellOfAColumnlessTable() {
         Table plain = new Table(DartMocks.dartShell(), SWT.NONE);
         TableItem item = new TableItem(plain, SWT.NONE);
         item.setText("hello");
 
-        assertThat(plain.getClientArea().width).isZero();
         assertThat(item.getBounds(0).width).isPositive();
         assertThat(item.getBounds().width).isEqualTo(item.getBounds(0).width);
 
@@ -136,8 +135,14 @@ class TableItemImplementationNativeTest {
         item.setImage(image);
         assertThat(item.getBounds(0).width).isGreaterThan(withoutImage);
 
+        int oneRow = item.getBounds(0).width;
         plain.setBounds(0, 0, 400, 300);
-        assertThat(item.getBounds(0).width).as("stretched across the table, as on Win32 and GTK").isGreaterThan(300);
+        assertThat(item.getBounds(0).width).as("the table's size does not stretch it").isEqualTo(oneRow);
+
+        TableItem wider = new TableItem(plain, SWT.NONE);
+        wider.setText("a row much longer than the first one");
+        assertThat(item.getBounds(0).width).as("a wider row widens the cell of every row")
+            .isEqualTo(wider.getBounds(0).width).isGreaterThan(oneRow);
         assertThat(item.getBounds().width).isLessThan(item.getBounds(0).width);
     }
 }
