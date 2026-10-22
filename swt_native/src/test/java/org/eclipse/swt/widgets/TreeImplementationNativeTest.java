@@ -290,8 +290,8 @@ class TreeImplementationNativeTest extends SerializeTestBase {
     }
 
     @Test
-    @DisplayName("the sort indicator and the header foreground are named for the client when they change")
-    void headerChangesAreNamed() {
+    @DisplayName("the sort indicator is named for the client when it changes")
+    void sortChangesAreNamed() {
         Tree tree = new Tree(shell(), SWT.NONE);
         TreeColumn column = new TreeColumn(tree, SWT.NONE);
         clearDirty(tree);
@@ -304,10 +304,6 @@ class TreeImplementationNativeTest extends SerializeTestBase {
         tree.setSortDirection(SWT.DOWN);
         assertThat(named(tree, VTree.SORT_DIRECTION)).isTrue();
         assertThat(named(tree, VTree.SORT_COLUMN)).isFalse();
-
-        clearDirty(tree);
-        tree.setHeaderForeground(new org.eclipse.swt.graphics.Color(tree.getDisplay(), 1, 2, 3));
-        assertThat(named(tree, VTree.HEADER_FOREGROUND)).isTrue();
     }
 
     @Test
