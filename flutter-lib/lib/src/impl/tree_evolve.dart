@@ -60,6 +60,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
   final FocusNode _focusNode = FocusNode();
+  /// Selects the item a context-menu press landed on. Run between MouseDown and MenuDetect,
+  /// the order Win32 and GTK deliver them in, so MenuDetect listeners read that item.
+  VoidCallback? selectBeforeMenuDetect;
+
+  @override
+  void handleMenuDetect(int pointer, Offset localPosition) {
+    final select = selectBeforeMenuDetect;
+    selectBeforeMenuDetect = null;
+    select?.call();
+    super.handleMenuDetect(pointer, localPosition);
+  }
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
