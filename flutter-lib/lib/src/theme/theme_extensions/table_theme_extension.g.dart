@@ -129,6 +129,7 @@ TableThemeExtension _$TableThemeExtensionFromJson(
   eventDefaultX: (json['eventDefaultX'] as num).toInt(),
   eventDefaultY: (json['eventDefaultY'] as num).toInt(),
   eventDefaultDetail: (json['eventDefaultDetail'] as num).toInt(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$TableThemeExtensionToJson(
@@ -232,4 +233,5 @@ Map<String, dynamic> _$TableThemeExtensionToJson(
   'eventDefaultX': instance.eventDefaultX,
   'eventDefaultY': instance.eventDefaultY,
   'eventDefaultDetail': instance.eventDefaultDetail,
+  'minTextContrast': instance.minTextContrast,
 };

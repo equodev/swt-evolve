@@ -27,6 +27,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   TreeItemContext? _context;
 
   bool _isHovered = false;
+
+  /// What is painted behind this row's text in the current build: its own background over the
+  /// tree's.
+  Color? _rowGround;
   Offset? _lastTapPosition;
   Offset? _lastTapGlobalPosition;
   int? _secondaryPressPointer;
@@ -297,6 +301,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool nextItemSelected =
         _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
+    final bgColor = getTreeItemBackgroundColor(
+      state,
+      widgetTheme,
+      selected,
+      _isHovered && !selected,
+      enabled,
+    );
+    final rowGround = Color.alphaBlend(
+        bgColor, enabled ? widgetTheme.backgroundColor : widgetTheme.disabledBackgroundColor);
+    _rowGround = rowGround;
     final textColor = getTreeItemTextColor(
       context,
       state,
@@ -304,13 +318,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       selected,
       enabled,
       parentForeground: ParentForegroundScope.of(context),
-    );
-    final bgColor = getTreeItemBackgroundColor(
-      state,
-      widgetTheme,
-      selected,
-      _isHovered && !selected,
-      enabled,
+      background: rowGround,
     );
 
     double? totalTreeWidth = _context?.treeWidth;
@@ -1188,6 +1196,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             context: context,
             foreground: cellValue(state.foregrounds, columnIndex) ?? state.foreground,
             defaultColor: textColor,
+            minContrast: theme.minTextContrast,
+            background: _rowGround ?? theme.backgroundColor,
           );
     final TextStyle baseStyle = hasMultiColumn
         ? (theme.itemTextStyleWithCols ?? theme.itemTextStyle ?? const TextStyle())

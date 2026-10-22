@@ -149,6 +149,7 @@ class _StyledGroup extends StatelessWidget {
       context: context,
       foreground: textColor,
       defaultColor: widgetTheme.foregroundColor,
+      minContrast: widgetTheme.minTextContrast,
     );
     final titleStyle = getTextStyle(
       context: context,

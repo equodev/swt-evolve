@@ -51,6 +51,8 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
   // Animation
   final Duration animationDuration;
 
+  final double minTextContrast;
+
   const ComboThemeExtension({
     required this.backgroundColor,
     required this.textColor,
@@ -74,6 +76,7 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
     required this.dividerColor,
     required this.dividerHeight,
     required this.animationDuration,
+    required this.minTextContrast,
   });
 
   factory ComboThemeExtension.fromJson(Map<String, dynamic> json) =>

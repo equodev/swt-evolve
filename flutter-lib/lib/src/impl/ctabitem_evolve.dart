@@ -84,6 +84,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
           : state.foreground ?? ParentForegroundScope.of(context),
       defaultColor: themeTextColor,
       context: context,
+      minContrast: itemTheme.minTextContrast,
     );
     final baseStyle = isSelected
         ? folderTheme.tabSelectedTextStyle

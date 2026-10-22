@@ -52,6 +52,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         foreground: state.foreground,
         defaultColor: fallback,
         context: context,
+        minContrast: Theme.of(context).extension<SpinnerThemeExtension>()!.minTextContrast,
       );
 
   // The palette a CALENDAR-style DateTime paints with: it is a Control in the tree, so it follows

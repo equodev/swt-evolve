@@ -85,6 +85,8 @@ SpinnerThemeExtension _getSpinnerTheme({
     defaultPageIncrement: 10,
     defaultDigits: 0,
     defaultTextLimit: 10,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -121,6 +123,7 @@ Color getSpinnerTextColor(
     foreground: state.foreground,
     defaultColor: widgetTheme.textColor,
     context: context,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

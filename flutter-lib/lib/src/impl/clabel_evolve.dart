@@ -58,6 +58,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       context: context,
       foreground: state.foreground,
       defaultColor: clabelTheme.primaryTextColor,
+      minContrast: clabelTheme.minTextContrast,
     );
     final textStyle = getTextStyle(
       context: context,
@@ -178,6 +179,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
             context: context,
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
+            minContrast: widgetTheme.minTextContrast,
           )
         : widgetTheme.disabledTextColor;
 

@@ -66,6 +66,8 @@ ListThemeExtension _getListTheme({
     
     // Animation
     animationDuration: const Duration(milliseconds: 150),
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -76,5 +78,8 @@ Color getListItemTextColor(BuildContext context, ListThemeExtension widgetTheme,
   final defaultColor =
       isSelected ? widgetTheme.selectedItemTextColor : widgetTheme.textColor;
   return getForegroundColor(
-      context: context, foreground: foreground, defaultColor: defaultColor);
+      context: context,
+      foreground: foreground,
+      defaultColor: defaultColor,
+      minContrast: widgetTheme.minTextContrast);
 }

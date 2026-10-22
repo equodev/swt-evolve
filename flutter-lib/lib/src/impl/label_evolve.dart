@@ -196,6 +196,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
             context: context,
+            minContrast: widgetTheme.minTextContrast,
           )
         : widgetTheme.disabledTextColor;
 

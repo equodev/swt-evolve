@@ -40,6 +40,7 @@ mixin _$SpinnerThemeExtensionTailorMixin
   int get defaultPageIncrement;
   int get defaultDigits;
   int get defaultTextLimit;
+  double get minTextContrast;
 
   @override
   SpinnerThemeExtension copyWith({
@@ -72,6 +73,7 @@ mixin _$SpinnerThemeExtensionTailorMixin
     int? defaultPageIncrement,
     int? defaultDigits,
     int? defaultTextLimit,
+    double? minTextContrast,
   }) {
     return SpinnerThemeExtension(
       animationDuration: animationDuration ?? this.animationDuration,
@@ -105,6 +107,7 @@ mixin _$SpinnerThemeExtensionTailorMixin
       defaultPageIncrement: defaultPageIncrement ?? this.defaultPageIncrement,
       defaultDigits: defaultDigits ?? this.defaultDigits,
       defaultTextLimit: defaultTextLimit ?? this.defaultTextLimit,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -178,6 +181,7 @@ mixin _$SpinnerThemeExtensionTailorMixin
           : other.defaultPageIncrement,
       defaultDigits: t < 0.5 ? defaultDigits : other.defaultDigits,
       defaultTextLimit: t < 0.5 ? defaultTextLimit : other.defaultTextLimit,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -283,6 +287,10 @@ mixin _$SpinnerThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               defaultTextLimit,
               other.defaultTextLimit,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -319,6 +327,7 @@ mixin _$SpinnerThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(defaultPageIncrement),
       const DeepCollectionEquality().hash(defaultDigits),
       const DeepCollectionEquality().hash(defaultTextLimit),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -357,4 +366,5 @@ extension SpinnerThemeExtensionBuildContextProps on BuildContext {
   int get defaultPageIncrement => spinnerThemeExtension.defaultPageIncrement;
   int get defaultDigits => spinnerThemeExtension.defaultDigits;
   int get defaultTextLimit => spinnerThemeExtension.defaultTextLimit;
+  double get minTextContrast => spinnerThemeExtension.minTextContrast;
 }
