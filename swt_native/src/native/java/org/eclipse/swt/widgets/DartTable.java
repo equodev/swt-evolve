@@ -1009,7 +1009,7 @@ public class DartTable extends DartComposite implements ITable {
         int y = point.y - headerH;
         // point is in viewport coordinates; the rows are laid out and scrolled on the
         // Dart side, so the scroll distance has to be added back before indexing.
-        int index = y >= 0 ? (y + TableHelper.scrollOffsetY(this)) / itemHeight : -1;
+        int index = y >= 0 ? (y + scrollOffsetY) / itemHeight : -1;
         boolean valid = y >= 0 && index >= 0 && index < getItemCount() && items[index] != null;
         if (!valid)
             return null;
@@ -2537,6 +2537,8 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    int scrollOffsetY;
+
     public void _dirty() {
         getValue().markDirty(VTable.EDITORS);
     }
@@ -2583,7 +2585,7 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                TableHelper.recordScrollOffset(this, e);
+                scrollOffsetY = Math.max(0, e.y);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

@@ -2870,6 +2870,8 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
+    int scrollOffsetY;
+
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
@@ -2916,7 +2918,7 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                TableHelper.recordScrollOffset(this, e);
+                scrollOffsetY = Math.max(0, e.y);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

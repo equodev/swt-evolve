@@ -13,22 +13,6 @@ import java.lang.reflect.Array;
 
 public class TableHelper {
 
-    // How far Flutter has scrolled the table, in pixels. A Table's rows are laid out and scrolled on
-    // the Dart side, so Java has no other way to know: without it every coordinate-to-row lookup
-    // counts from the first item and resolves the wrong row on a scrolled table.
-    // Weak keys so a disposed Table does not hold its entry.
-    private static final java.util.Map<DartTable, Integer> SCROLL_OFFSETS =
-        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
-    public static void recordScrollOffset(DartTable table, Event event) {
-        SCROLL_OFFSETS.put(table, Math.max(0, event.y));
-    }
-
-    public static int scrollOffsetY(DartTable table) {
-        Integer offset = SCROLL_OFFSETS.get(table);
-        return offset == null ? 0 : offset;
-    }
-
     public static void selectAll(DartTable table, int itemCount) {
         table.selection = new int[itemCount];
         for (int i = 0; i < itemCount; i++) {

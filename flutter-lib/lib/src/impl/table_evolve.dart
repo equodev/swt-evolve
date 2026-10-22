@@ -700,8 +700,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     final viewport =
         constraints.maxHeight.isFinite ? constraints.maxHeight : totalRows * rowHeight;
-    final offset =
-        _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+    final offset = _scrollOffset;
     final visibleRows = (viewport / rowHeight).ceil() + 1;
     // Half a screenful each side: enough that a small scroll shows no blank frame, and proportional
     // so the window stays inside SWT's budget of three times the visible rows of SetData.
@@ -998,10 +997,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       // which row is selected. Java's editor list is the source of truth for
       // which editors exist.
 
-      final scrollOffset = _verticalScrollController.hasClients
-          ? _verticalScrollController.offset
-          : 0.0;
-      final editorY = headerOffset + (itemIndex * rowHeight) - scrollOffset;
+      final editorY = headerOffset + (itemIndex * rowHeight) - _scrollOffset;
 
       double editorX = borderWidth;
       double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
