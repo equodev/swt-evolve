@@ -3901,15 +3901,8 @@ public class CoolBarSizes {
         buffer.writeln(
           '    private static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
         );
-        // A multi-column cell and header add their insets, the alignment inset the row and header
-        // builders apply to left-aligned text, and the gap before the next column.
+        // The alignment inset the row builder applies to left-aligned text.
         const alignmentInset = 4.0;
-        buffer.writeln(
-          '    private static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
-        );
-        buffer.writeln(
-          '    private static final int HEADER_PADDING = ${(row.columnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
-        );
         buffer.writeln(
           '    private static final int CELL_INSET = ${row.cellMultiColumnPadding.left.round()};',
         );
@@ -4049,46 +4042,6 @@ public class CoolBarSizes {
         '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
       );
       buffer.writeln('        return width + TEXT_PADDING;');
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    /** The width a multi-column cell needs to show its text whole. */',
-      );
-      buffer.writeln(
-        '    public static int getPackedCellWidth($itemType item, int index) {',
-      );
-      buffer.writeln(
-        '        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;',
-      );
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    /** The width a column\'s header needs to show its title whole: a multi-column header shows it in capitals. */',
-      );
-      buffer.writeln(
-        '    public static int getPackedHeaderWidth(${widgetType}Column column) {',
-      );
-      buffer.writeln('        String text = column.getText();');
-      buffer.writeln(
-        '        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);',
-      );
-      buffer.writeln(
-        '        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;',
-      );
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    private static int measure(String text, org.eclipse.swt.graphics.Font font) {',
-      );
-      buffer.writeln(
-        '        if (text == null || text.isEmpty()) return 0;',
-      );
-      buffer.writeln(
-        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(font);',
-      );
-      buffer.writeln(
-        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln('    static int levelOf($itemType item) {');
