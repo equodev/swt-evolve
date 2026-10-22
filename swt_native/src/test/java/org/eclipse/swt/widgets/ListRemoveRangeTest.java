@@ -14,7 +14,7 @@ class ListRemoveRangeTest extends SerializeTestBase {
 
     private static List list(int style, int... selected) {
         List list = new List(shell(), style);
-        list.setItems("a", "b", "c", "d", "e", "f");
+        list.setItems(new String[] {"a", "b", "c", "d", "e", "f"});
         list.select(selected);
         return list;
     }

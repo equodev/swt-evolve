@@ -71,7 +71,7 @@ class ComboImplementationNativeTest {
         assertThat(impl._listVisible()).isFalse();
         assertThat(impl._visibleItemCount()).isPositive();
 
-        combo.setItems("a", "bb", "ccc");
+        combo.setItems(new String[] {"a", "bb", "ccc"});
         combo.setTextLimit(9);
         combo.setVisibleItemCount(4);
         combo.setText("bb");
@@ -170,7 +170,7 @@ class ComboImplementationNativeTest {
     void updateItemsKeepsTheItems() {
         for (int style : new int[] {SWT.NONE, SWT.READ_ONLY}) {
             Combo combo = new Combo(shell, style);
-            combo.setItems("a", "bb");
+            combo.setItems(new String[] {"a", "bb"});
             combo.select(1);
             DartCombo impl = (DartCombo) combo.getImpl();
 
@@ -186,7 +186,7 @@ class ComboImplementationNativeTest {
     void foregroundLeavesTheItems() {
         for (int style : new int[] {SWT.NONE, SWT.READ_ONLY}) {
             Combo combo = new Combo(shell, style);
-            combo.setItems("a", "bb");
+            combo.setItems(new String[] {"a", "bb"});
             combo.select(1);
             DartCombo impl = (DartCombo) combo.getImpl();
 

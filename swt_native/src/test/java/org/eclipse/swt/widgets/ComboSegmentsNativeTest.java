@@ -65,7 +65,7 @@ class ComboSegmentsNativeTest {
         combo.add("one");
         combo.add("zero", 0);
         combo.setText("typed");
-        combo.setItems("x", "y");
+        combo.setItems(new String[] {"x", "y"});
 
         assertThat(asked).containsExactly("one", "zero", "typed", "x", "y");
     }
@@ -153,7 +153,7 @@ class ComboSegmentsNativeTest {
             combo.dispose();
         });
 
-        combo.setItems("a", "b");
+        combo.setItems(new String[] {"a", "b"});
 
         assertThat(asked).hasSize(1);
         assertThat(combo.isDisposed()).isTrue();

@@ -53,7 +53,7 @@ class ComboSameOnEveryOsTest {
 
     private Combo abc(int style, int selected) {
         Combo combo = new Combo(shell, style);
-        combo.setItems("a", "bb", "ccc");
+        combo.setItems(new String[] {"a", "bb", "ccc"});
         if (selected != -1)
             combo.select(selected);
         return combo;
@@ -80,7 +80,7 @@ class ComboSameOnEveryOsTest {
     void removeOfAnEmptySelectedItemSaysNothing() {
         for (int style : new int[] {SWT.NONE, SWT.READ_ONLY}) {
             Combo combo = new Combo(shell, style);
-            combo.setItems("", "a");
+            combo.setItems(new String[] {"", "a"});
             combo.select(0);
             List<Event> modified = new ArrayList<>();
             combo.addListener(SWT.Modify, modified::add);
@@ -154,16 +154,16 @@ class ComboSameOnEveryOsTest {
     void replacingTheListDeselects() {
         for (int style : new int[] {SWT.NONE, SWT.SIMPLE, SWT.READ_ONLY}) {
             Combo combo = abc(style, 1);
-            combo.setItems("m", "n", "o");
+            combo.setItems(new String[] {"m", "n", "o"});
             assertThat(combo.getSelectionIndex()).as("style %d replaced", style).isEqualTo(-1);
 
             combo = abc(style, 2);
             combo.removeAll();
-            combo.setItems("p", "q", "r");
+            combo.setItems(new String[] {"p", "q", "r"});
             assertThat(combo.getSelectionIndex()).as("style %d emptied", style).isEqualTo(-1);
 
             combo = abc(style, 2);
-            combo.setItems("x");
+            combo.setItems(new String[] {"x"});
             combo.add("y");
             combo.add("z");
             assertThat(combo.getSelectionIndex()).as("style %d grown again", style).isEqualTo(-1);
@@ -273,7 +273,7 @@ class ComboSameOnEveryOsTest {
     void readOnlyComboKeepsItsVisibleItemCount() {
         Combo combo = new Combo(shell, SWT.READ_ONLY);
         assertThat(combo.getVisibleItemCount()).isEqualTo(5);
-        combo.setItems("a", "b", "c");
+        combo.setItems(new String[] {"a", "b", "c"});
         assertThat(combo.getVisibleItemCount()).isEqualTo(5);
         combo.setVisibleItemCount(2);
         assertThat(combo.getVisibleItemCount()).isEqualTo(2);
