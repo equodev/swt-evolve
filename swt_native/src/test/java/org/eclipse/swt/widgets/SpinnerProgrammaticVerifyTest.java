@@ -74,7 +74,7 @@ class SpinnerProgrammaticVerifyTest {
 
         spinner.setSelection(1234);
 
-        assertThat(heard.get(0)).isEqualTo("Verify 12" + SpinnerHelper.decimalSeparator() + "34 0-4");
+        assertThat(heard.get(0)).isEqualTo("Verify 12" + SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl()) + "34 0-4");
     }
 
     @Test

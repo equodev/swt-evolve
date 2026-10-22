@@ -259,6 +259,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
                     broadcastSwtEvolveProperties();
                 }
+                display.applyClientLocale(p.locale);
                 applyClientInsetTop(p.insetTop);
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);

@@ -1,17 +1,24 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart' show mapEquals;
 
 import '../comm/comm.dart';
 
 /// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on,
-/// that monitor's zoom, and the height of the title strip the client draws above the shell.
+/// that monitor's zoom, the height of the title strip the client draws above the shell, and the
+/// user's locale (the browser's on web, the system's on desktop), which Java formats numbers in.
 ///
 /// A report equal to the last one on its channel is not sent again: a change that moves the scale
 /// reaches here from both the scale's listener and the config's.
 class ClientReadyReporter {
-  ClientReadyReporter([Future Function(String channel, Object payload)? send])
-      : _send = send ?? EquoCommService.sendPayload;
+  ClientReadyReporter([Future Function(String channel, Object payload)? send, String Function()? locale])
+      : _send = send ?? EquoCommService.sendPayload,
+        _locale = locale ?? _platformLocale;
 
   final Future Function(String channel, Object payload) _send;
+  final String Function() _locale;
+
+  static String _platformLocale() => PlatformDispatcher.instance.locale.toLanguageTag();
   bool _firstSent = false;
   final Map<String, Map<String, Object>> _lastSent = {};
 
@@ -39,6 +46,7 @@ class ClientReadyReporter {
       'displayHeight': displayHeight,
       'zoom': zoom,
       'insetTop': insetTop,
+      'locale': _locale(),
     };
     if (!isFirst && mapEquals(payload, _lastSent[channel])) return;
     _lastSent[channel] = payload;
