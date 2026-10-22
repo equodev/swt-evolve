@@ -52,9 +52,12 @@ public class ControlHelper {
 
     /** Hands a key from the client to the capture of {@code display}; false when there is none to take it. */
     public static boolean capturedKey(Display display, int type, Event event) {
-        if (display == null || display.isDisposed() || !(display.getData(KEY_CAPTURE) instanceof KeyCapture))
+        if (display == null || display.isDisposed())
             return false;
-        KeyCapture capture = (KeyCapture) display.getData(KEY_CAPTURE);
+        Object data = display.getData(KEY_CAPTURE);
+        if (!(data instanceof KeyCapture))
+            return false;
+        KeyCapture capture = (KeyCapture) data;
         if (capture.key(type, event))
             return true;
         if (!display.isDisposed() && display.getData(KEY_CAPTURE) == capture)

@@ -84,19 +84,27 @@ class TrackerLoopFlutterTest {
         tracker.addListener(SWT.Resize, listener);
     }
 
-    /** Opens {@code tracker} with {@code client} queued to run inside its loop; a timer ends a loop left open. */
+    /**
+     * Opens {@code tracker} with {@code client} queued to run inside its loop. A timer ends a loop left open, and
+     * the test fails when it had to.
+     */
     private boolean open(Tracker tracker, Runnable client) {
         display.asyncExec(client);
+        boolean[] gaveUp = {false};
         Runnable giveUp = () -> {
+            gaveUp[0] = true;
             if (!tracker.isDisposed())
                 tracker.close();
         };
         display.timerExec(5000, giveUp);
+        boolean result;
         try {
-            return tracker.open();
+            result = tracker.open();
         } finally {
             display.timerExec(-1, giveUp);
         }
+        assertThat(gaveUp[0]).as("the loop ended without the timer closing it").isFalse();
+        return result;
     }
 
     private static String rects(Rectangle... rectangles) {

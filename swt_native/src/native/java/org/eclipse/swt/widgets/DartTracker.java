@@ -445,35 +445,38 @@ public class DartTracker extends DartWidget implements ITracker {
         Control oldTrackingControl = ((DartDisplay) display.getImpl()).trackingControl;
         ((DartDisplay) display.getImpl()).trackingControl = null;
         openOnFlutter();
-        /* Tracker behaves like a Dialog with its own OS event loop. */
-        while (tracking && !cancelled) {
-            ((DartDisplay) display.getImpl()).addPool();
-            try {
-                inLoop = true;
-                if (isDisposed())
-                    break;
-                if (parent != null && parent.isDisposed())
-                    break;
-                ((DartDisplay) display.getImpl()).runSkin();
-                ((DartDisplay) display.getImpl()).runDeferredLayouts();
-                if (!display.readAndDispatch()) {
-                    try {
-                        clientInput.tryAcquire(16, java.util.concurrent.TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException interrupted) {
-                        Thread.currentThread().interrupt();
+        try {
+            /* Tracker behaves like a Dialog with its own OS event loop. */
+            while (tracking && !cancelled) {
+                ((DartDisplay) display.getImpl()).addPool();
+                try {
+                    inLoop = true;
+                    if (isDisposed())
+                        break;
+                    if (parent != null && parent.isDisposed())
+                        break;
+                    ((DartDisplay) display.getImpl()).runSkin();
+                    ((DartDisplay) display.getImpl()).runDeferredLayouts();
+                    if (!display.readAndDispatch()) {
+                        try {
+                            clientInput.tryAcquire(16, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
+                    if (clientCursor != null && resizeCursor == null) {
+                        ((DartDisplay) display.getImpl()).lockCursor = false;
+                        ((DartDisplay) display.getImpl()).lockCursor = true;
+                    }
+                    ((DartDisplay) display.getImpl()).runAsyncMessages(false);
+                } finally {
+                    ((DartDisplay) display.getImpl()).removePool();
+                    inLoop = false;
                 }
-                if (clientCursor != null && resizeCursor == null) {
-                    ((DartDisplay) display.getImpl()).lockCursor = false;
-                    ((DartDisplay) display.getImpl()).lockCursor = true;
-                }
-                ((DartDisplay) display.getImpl()).runAsyncMessages(false);
-            } finally {
-                ((DartDisplay) display.getImpl()).removePool();
-                inLoop = false;
             }
+        } finally {
+            closeOnFlutter();
         }
-        closeOnFlutter();
         /*
 	* Cleanup: If this tracker was resizing then the last cursor that it created
 	* needs to be destroyed.
@@ -803,46 +806,19 @@ public class DartTracker extends DartWidget implements ITracker {
 
     private DartWidget announcedOn;
 
-    private boolean pointerSeen;
+    boolean pointerSeen;
 
-    private boolean inLoop;
+    boolean inLoop;
 
     private Display keysDisplay;
 
     private ControlHelper.KeyCapture keysBefore;
 
-    private DartWidget flutterHost() {
-        if (parent == null)
-            return displayHost();
-        if (parent.isDisposed())
-            return null;
-        // The Shell rather than the immediate parent: the Shell is what subscribes to the
-        // Tracker channel and what knows how to convert a pointer position into display
-        // coordinates. A Tracker opened on a plain Composite -- an application dragging a
-        // toolbar out of its own dock does exactly that -- would otherwise announce itself
-        // on a channel nothing is listening to, and the loop would never see the pointer.
-        Shell shell = parent.getShell();
-        if (shell != null && !shell.isDisposed() && shell.getImpl() instanceof DartWidget)
-            return (DartWidget) shell.getImpl();
-        return parent.getImpl() instanceof DartWidget ? (DartWidget) parent.getImpl() : null;
-    }
-
-    private DartWidget displayHost() {
-        Shell active = display.getActiveShell();
-        if (active != null && active.isVisible() && active.getImpl() instanceof DartWidget)
-            return (DartWidget) active.getImpl();
-        for (Shell shell : display.getShells()) {
-            if (shell.isVisible() && shell.getImpl() instanceof DartWidget)
-                return (DartWidget) shell.getImpl();
-        }
-        return null;
-    }
-
     void openOnFlutter() {
         pointerSeen = false;
         keysDisplay = display;
         keysBefore = ControlHelper.captureKeys(display, this::key);
-        DartWidget host = flutterHost();
+        DartWidget host = TrackerHelper.host(parent, display);
         announcedOn = host;
         if (host == null)
             return;
@@ -899,108 +875,11 @@ public class DartTracker extends DartWidget implements ITracker {
     }
 
     void mouse(Event e) {
-        int newX = e.x, newY = e.y;
-        if (!pointerSeen) {
-            pointerSeen = true;
-            oldX = newX;
-            oldY = newY;
-        }
-        boolean moved = newX != oldX || newY != oldY;
-        Event event = new Event();
-        event.x = newX;
-        event.y = newY;
-        if ((getApi().style & SWT.RESIZE) != 0) {
-            boolean orientationInit = moved && resizeRectangles(newX - oldX, newY - oldY);
-            inEvent = true;
-            sendEvent(SWT.Resize, event);
-            inEvent = false;
-            if (isDisposed()) {
-                cancelled = true;
-                return;
-            }
-            Point cursorPos = moved ? adjustResizeCursor(orientationInit) : null;
-            if (cursorPos != null) {
-                newX = cursorPos.x;
-                newY = cursorPos.y;
-            }
-        } else {
-            moveRectangles(newX - oldX, newY - oldY);
-            inEvent = true;
-            sendEvent(SWT.Move, event);
-            inEvent = false;
-            if (isDisposed()) {
-                cancelled = true;
-                return;
-            }
-        }
-        oldX = newX;
-        oldY = newY;
+        TrackerHelper.mouse(this, e);
     }
 
     boolean key(int type, Event event) {
-        if (!tracking || !inLoop || isDisposed())
-            return false;
-        event.doit = true;
-        if (!sendKeyEvent(type, event))
-            return true;
-        if (type == SWT.KeyUp)
-            return true;
-        int stepSize = (event.stateMask & SWT.CTRL) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
-        int xChange = 0, yChange = 0;
-        switch(event.keyCode) {
-            case SWT.ESC:
-                cancelled = true;
-                tracking = false;
-                break;
-            case SWT.KEYPAD_CR:
-            case SWT.CR:
-                tracking = false;
-                break;
-            case SWT.ARROW_LEFT:
-                xChange = -stepSize;
-                break;
-            case SWT.ARROW_RIGHT:
-                xChange = stepSize;
-                break;
-            case SWT.ARROW_UP:
-                yChange = -stepSize;
-                break;
-            case SWT.ARROW_DOWN:
-                yChange = stepSize;
-                break;
-        }
-        if (xChange == 0 && yChange == 0)
-            return true;
-        Event moved = new Event();
-        moved.x = oldX + xChange;
-        moved.y = oldY + yChange;
-        Point cursorPos;
-        if ((getApi().style & SWT.RESIZE) != 0) {
-            resizeRectangles(xChange, yChange);
-            inEvent = true;
-            sendEvent(SWT.Resize, moved);
-            inEvent = false;
-            if (isDisposed()) {
-                cancelled = true;
-                return true;
-            }
-            cursorPos = adjustResizeCursor(true);
-        } else {
-            moveRectangles(xChange, yChange);
-            inEvent = true;
-            sendEvent(SWT.Move, moved);
-            inEvent = false;
-            if (isDisposed()) {
-                cancelled = true;
-                return true;
-            }
-            cursorPos = adjustMoveCursor();
-        }
-        if (cursorPos != null) {
-            oldX = cursorPos.x;
-            oldY = cursorPos.y;
-        }
-        return true;
+        return TrackerHelper.key(this, type, event);
     }
 
     @Override
