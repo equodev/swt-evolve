@@ -157,21 +157,13 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         onChanged: isEnabled ? onChanged : null,
         onTextChanged: onTextChanged,
         onTextSubmitted: onTextSubmitted,
-        onMouseEnter: handleMouseEnter,
-        onMouseExit: handleMouseExit,
         controlHeight: height,
       );
     } else {
       // Dropdown mode
       result = MouseRegion(
-        onEnter: (_) => setState(() {
-          _isHovered = true;
-          handleMouseEnter();
-        }),
-        onExit: (_) => setState(() {
-          _isHovered = false;
-          handleMouseExit();
-        }),
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedContainer(
           duration: widgetTheme.animationDuration,
           decoration: BoxDecoration(
@@ -209,19 +201,19 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       child: result,
     );
 
+    // Its own pointer events, through the hover arbiter like every other control: SWT's CCombo
+    // forwards its field's and its arrow's mouse events as its own.
+    result = trackPointer(result);
+
     final wrapped = DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
       text: _controller.text,
       onWordSelected: (start, end) {
+        // The MouseDoubleClick itself is trackPointer's, sent on the second press.
         state.selection = VPoint()
           ..x = start
           ..y = end;
-        widget.sendMouseMouseDoubleClick(
-          state,
-          VEvent()..button = 1..count = 2..start = start..end = end,
-        );
-        _focusNode?.requestFocus();
       },
       child: result,
     );
@@ -231,6 +223,14 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     }
 
     return tagSemantics(wrapped);
+  }
+
+  /// A press in an editable field focuses the field itself, as SWT's CCombo gives its Text the
+  /// focus: the composite's own surface would take it from the field on every press. A read-only
+  /// field takes no focus, so there the surface does.
+  @override
+  void takeFocusOnPress() {
+    if ((state.style & SWT.READ_ONLY) != 0) super.takeFocusOnPress();
   }
 
   void onChanged(String? value) {
@@ -288,9 +288,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     widget.sendSelectionDefaultSelection(state, VEvent()..text = text);
     widget.sendVerifyVerify(state, VEvent()..text = text);
   }
-
-  void handleMouseEnter() => widget.sendMouseTrackMouseEnter(state, null);
-  void handleMouseExit() => widget.sendMouseTrackMouseExit(state, null);
 
   void _handleFocusChange(bool hasFocus) {
     if (!mounted) return;
@@ -538,8 +535,6 @@ class _StyledSimpleCCombo extends StatelessWidget {
   final ValueChanged<String?>? onChanged;
   final ValueChanged<String>? onTextChanged;
   final ValueChanged<String>? onTextSubmitted;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
   final double? controlHeight;
 
   const _StyledSimpleCCombo({
@@ -557,17 +552,12 @@ class _StyledSimpleCCombo extends StatelessWidget {
     this.onChanged,
     this.onTextChanged,
     this.onTextSubmitted,
-    this.onMouseEnter,
-    this.onMouseExit,
     this.controlHeight,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => onMouseEnter?.call(),
-      onExit: (_) => onMouseExit?.call(),
-      child: Container(
+    return Container(
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
@@ -622,7 +612,6 @@ class _StyledSimpleCCombo extends StatelessWidget {
             }),
           ],
         ),
-      ),
     );
   }
 

@@ -25,6 +25,7 @@ import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../custom/toolbar_composite.dart';
 import 'composite_evolve.dart';
+import 'control_evolve.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
@@ -42,6 +43,10 @@ double ctabFolderBodyBorderWidth(int? style) =>
 
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
+  /// A click on a tab or on the folder focuses no CTabFolder, on any native.
+  @override
+  void takeFocusOnPress() {}
+
   // The tab row raises DragDetect from its own Draggable, with the dragged tab's coordinates.
   @override
   bool get raisesDragDetectFromPointer => false;
@@ -141,28 +146,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendMenuDetectMenuDetect(state, e);
   }
 
-  /// A native CTabFolder reports a double-click anywhere on its tab strip. The folder answers it
-  /// with DefaultSelection for the tab under the point, and a workbench maximizes the stack on it.
-  void _handleStripPointerDown(PointerDownEvent e) {
-    if (state.enabled != true) return;
-    if (e.buttons != kPrimaryMouseButton) {
-      dblTap.reset();
-      return;
-    }
-    if (dblTap.registerTap(position: e.position) != 2) return;
-    final box = context.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) return;
-    final local = box.globalToLocal(e.position);
-    widget.sendMouseMouseDoubleClick(
-      state,
-      VEvent()
-        ..x = local.dx.round()
-        ..y = local.dy.round()
-        ..button = 1
-        ..count = 2,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final tabItems = getTabItems();
@@ -201,8 +184,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
             onStripLayout: _handleStripLayout,
-            onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
+            folderPointFor: _folderPointFor,
           ),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
         // shrinks computeSize, it never hides the selected control. A collapsed folder
@@ -243,19 +226,20 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
             onStripLayout: _handleStripLayout,
-            onStripPointerDown: _handleStripPointerDown,
             dragPointFor: _dragPointFor,
+            folderPointFor: _folderPointFor,
           ),
       ],
     );
 
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
-    // through `wrap()`, so it owes them that answer itself.
+    // through `wrap()`, so it owes them that answer itself, and the folder's own pointer events:
+    // SWT's CTabFolder draws its tabs and reports the mouse over them as its own.
     if (constraints != null) {
       return SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+          child: tagSemantics(trackPointer(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             selectionForeground: state.selectionForeground,
@@ -266,7 +250,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // The tabs letter and colour in the folder's own font/foreground when they carry none.
     return SwtControlScope(
         swt: state.swt,
-        child: tagSemantics(blockWhenDisabled(ParentForegroundScope(
+        child: tagSemantics(trackPointer(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           selectionForeground: state.selectionForeground,
@@ -454,6 +438,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return press != null && drawn.contains(press) ? press : drawn.center;
   }
 
+  /// [global] in the folder's own coordinates, which Java maps to the display for a drop event.
+  Offset? _folderPointFor(Offset global) {
+    final box = context.findRenderObject();
+    return box is RenderBox && box.hasSize ? box.globalToLocal(global) : null;
+  }
+
   static Rect _toLocal(RenderBox box, Rect global) =>
       Rect.fromPoints(box.globalToLocal(global.topLeft), box.globalToLocal(global.bottomRight));
 
@@ -556,12 +546,12 @@ class _CTabBar extends StatefulWidget {
   /// Where each tab and its close button are drawn, for the side that answers hit tests.
   final void Function(List<DrawnTab> tabs)? onStripLayout;
 
-  /// Every press on the tabs or on the empty strip beside them.
-  final ValueChanged<PointerDownEvent>? onStripPointerDown;
-
   /// The point to report for a drag on a tab, given where that tab is drawn and where the press
   /// went down.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
+
+  /// A global point in the folder's own coordinates.
+  final Offset? Function(Offset global)? folderPointFor;
 
   const _CTabBar({
     required this.state,
@@ -581,8 +571,8 @@ class _CTabBar extends StatefulWidget {
     this.onTabDragStarted,
     this.onChevronShowList,
     this.onStripLayout,
-    this.onStripPointerDown,
     this.dragPointFor,
+    this.folderPointFor,
   });
 
   @override
@@ -695,7 +685,7 @@ class _CTabBarState extends State<_CTabBar> {
     Widget tabBarContent = Row(
       children: [
         Expanded(
-          child: _stripPresses(_buildHorizontalScrollableTabs(
+          child: _buildHorizontalScrollableTabs(
             widgetTheme: widgetTheme,
             child: Row(
               children: tabs.asMap().entries.map((entry) {
@@ -722,7 +712,7 @@ class _CTabBarState extends State<_CTabBar> {
                 );
               }).toList(),
             ),
-          )),
+          ),
         ),
       ],
     );
@@ -735,15 +725,16 @@ class _CTabBarState extends State<_CTabBar> {
     );
   }
 
-  /// The strip's own area: the tabs and the empty space beside them, not the controls at its end,
-  /// which a native CTabFolder draws as a separate toolbar.
-  Widget _stripPresses(Widget strip) {
-    final onPress = widget.onStripPointerDown;
-    if (onPress == null) return strip;
+  /// A native CTabFolder draws its chevron, minimize and maximize buttons as a ToolBar of its own,
+  /// which takes the pointer there: the folder reports no press, release, move or double click over
+  /// them.
+  Widget _ownToolbarPointer(Widget buttons) {
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: onPress,
-      child: strip,
+      onPointerDown: ControlImpl.pointerTakenBelow,
+      onPointerUp: ControlImpl.pointerTakenBelow,
+      onPointerMove: ControlImpl.pointerTakenBelow,
+      child: buttons,
     );
   }
 
@@ -787,6 +778,7 @@ class _CTabBarState extends State<_CTabBar> {
       key: _rowState,
       onStripLayout: widget.onStripLayout,
       dragPointFor: widget.dragPointFor,
+      folderPointFor: widget.folderPointFor,
       children: tabChildren,
       tabs: displayTabs,
       folderState: widget.state,
@@ -808,7 +800,7 @@ class _CTabBarState extends State<_CTabBar> {
       onDragStart: () => setState(() => _hoveredTabIndex = null),
     );
 
-    final scrollableTabs = Expanded(child: _stripPresses(tabRowWithDrag));
+    final scrollableTabs = Expanded(child: tabRowWithDrag);
 
     final wrappedBounds =
         height == null ? null : _wrappedTopRightBounds(topRightComposite, topRightAlignment, height);
@@ -1652,7 +1644,7 @@ class _CTabBarState extends State<_CTabBar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showChevron)
-          _buildChevronButton(widgetTheme),
+          _ownToolbarPointer(_buildChevronButton(widgetTheme)),
         if (topRightComposite != null)
           _buildTopRightComposite(
             topRightComposite,
@@ -1661,7 +1653,7 @@ class _CTabBarState extends State<_CTabBar> {
         // Java packs the folder's own buttons to the right of the topRight control and places the
         // control from that edge; the buttons take the same room here, so the control is drawn where
         // toDisplay() says it is.
-        ConstrainedBox(
+        _ownToolbarPointer(ConstrainedBox(
           constraints: BoxConstraints(minWidth: _javaTrailingWidth(topRightComposite, alignment)),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1708,7 +1700,7 @@ class _CTabBarState extends State<_CTabBar> {
               ),
             ],
           ),
-        ),
+        )),
       ],
     );
 
@@ -1881,6 +1873,10 @@ class TabDragRow extends StatefulWidget {
   /// went down, both in global coordinates.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
 
+  /// A global point in the folder's own coordinates: drop events report positions in those, not
+  /// in the row's, which the strip offsets and scrolls.
+  final Offset? Function(Offset global)? folderPointFor;
+
   const TabDragRow({
     super.key,
     required this.children,
@@ -1895,6 +1891,7 @@ class TabDragRow extends StatefulWidget {
     this.onDragStart,
     this.onStripLayout,
     this.dragPointFor,
+    this.folderPointFor,
   });
 
   @override
@@ -2120,7 +2117,7 @@ class _TabDragRowState extends State<TabDragRow> {
         return index;
       },
       resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
-      resolvePosition: (details) => _row?.globalToLocal(details.offset),
+      resolvePosition: (details) => widget.folderPointFor?.call(details.offset),
       onDrop: _handleDrop,
       builder: (context, child, negotiation, isHovering) {
         if (!isHovering) _insertHover.update(null);

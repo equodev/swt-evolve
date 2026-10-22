@@ -1286,13 +1286,6 @@ public class StyledTextHelper {
             this.averageCharWidth = averageCharWidth;
             this.tabWidth = tabWidth;
         }
-
-        /**
-         * Returns the line height (ascent + descent).
-         */
-        public int getLineHeight() {
-            return ascent + descent;
-        }
     }
 
     /**
@@ -1325,8 +1318,10 @@ public class StyledTextHelper {
         }
 
         if (metrics == null) {
+            // The descent is what the ascent leaves of computeLineHeight's line, so a line laid out from
+            // these metrics is as high as the line height StyledText estimates for the same font.
             int defaultAscent = (int) Math.round(fontSizePixels * 1.1);
-            int defaultDescent = (int) Math.round(fontSizePixels * 0.25);
+            int defaultDescent = (int) Math.round(fontSizePixels * 1.35) - defaultAscent;
             int defaultAvgCharWidth = (int) Math.round(fontSizePixels * 0.5);
             return new RendererFontMetrics(defaultAscent, defaultDescent, defaultAvgCharWidth,
                     defaultAvgCharWidth * tabLength);
@@ -1364,6 +1359,17 @@ public class StyledTextHelper {
         renderer.descent = metrics.descent;
         renderer.averageCharWidth = metrics.averageCharWidth;
         renderer.tabWidth = metrics.tabWidth;
+        renderer.fixedPitch = isFixedPitch(font);
+    }
+
+    /** Whether "l" and "W" are as wide as each other in the font, which is how SWT tells a fixed pitch font. */
+    static boolean isFixedPitch(Font font) {
+        if (font == null || font.isDisposed()) {
+            return false;
+        }
+        double scale = dpiScale();
+        return Math.round(FontMetricsUtil.getFontSize("l", font).x() * scale)
+                == Math.round(FontMetricsUtil.getFontSize("W", font).x() * scale);
     }
 
     /**
@@ -1645,13 +1651,30 @@ public class StyledTextHelper {
         int singleLineHeight = getLineHeightAtOffset(renderer, content, lineOffset);
 
         if (wrapWidth <= 0 || lineLength == 0) {
-            return singleLineHeight;
+            return singleLineHeight * (1 + segmentLineBreaks(renderer, lineOffset, lineText));
         }
 
-        int textWidth = computeTextWidth(lineText, renderer.regularFont);
-        int visualLines = Math.max(1, (textWidth + wrapWidth - 1) / wrapWidth);
+        // The rows the renderer's own layout breaks the line into: word wrap in the width the indent,
+        // the bullet and the wrap indent leave, and the breaks among the segment characters.
+        org.eclipse.swt.graphics.TextLayout layout = renderer.getTextLayout(lineIndex);
+        try {
+            return singleLineHeight * layout.getLineCount();
+        } finally {
+            renderer.disposeTextLayout(layout);
+        }
+    }
 
-        return singleLineHeight * visualLines;
+    /** The rows a BidiSegmentListener's line breaks among its segment characters add to the line. */
+    private static int segmentLineBreaks(DartStyledTextRenderer renderer, int lineOffset, String lineText) {
+        DartStyledText styledText = widgetOf(renderer);
+        if (styledText == null || !styledText.visualWrap) return 0;
+        StyledTextEvent event = styledText.getBidiSegments(lineOffset, lineText);
+        if (event == null || event.segmentsChars == null) return 0;
+        int breaks = 0;
+        for (char c : event.segmentsChars) {
+            if (c == '\n' || c == '\r') breaks++;
+        }
+        return breaks;
     }
 
     /**

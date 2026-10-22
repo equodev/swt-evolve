@@ -97,26 +97,26 @@ class TextLayoutDrawNativeTest {
         GC gc = freshGc();
         // A link styled with its control's font, smaller than the layout's own, which sizes the line.
         Font small = new Font(gc.getDevice(), "System", 8, SWT.NORMAL);
-        Font gcFont = gc.getFont();
-        gc.setFont(small);
-        int ascent = gc.getFontMetrics().getAscent();
-        gc.setFont(gcFont);
+        Font big = new Font(gc.getDevice(), "System", 24, SWT.NORMAL);
         TextLayout layout = new TextLayout(gc.getDevice());
-        layout.setText("appointment_id");
+        layout.setFont(big);
+        layout.setText("id appointment_id");
         TextStyle link = new TextStyle(small, null, null);
         link.underline = true;
-        layout.setStyle(link, 0, layout.getText().length());
+        layout.setStyle(link, 3, layout.getText().length() - 1);
+        int baseline = layout.getLineMetrics(0).getAscent();
         int lineHeight = layout.getLineBounds(0).height;
         layout.draw(gc, 0, 0);
         layout.dispose();
         gc.dispose();
         small.dispose();
+        big.dispose();
 
         java.util.regex.Matcher line = java.util.regex.Pattern
                 .compile("drawLineintintintint\",\\[-?\\d+,(-?\\d+)").matcher(wire());
         assertThat(line.find()).as("the underline reached the wire").isTrue();
-        assertThat(ascent + 1).as("sanity: the line has room below the run's baseline").isLessThan(lineHeight - 1);
-        assertThat(Integer.parseInt(line.group(1))).isEqualTo(ascent + 1);
+        assertThat(baseline + 1).as("sanity: the line has room below the run's baseline").isLessThan(lineHeight - 1);
+        assertThat(Integer.parseInt(line.group(1))).isEqualTo(baseline + 1);
     }
 
     @Test
@@ -124,26 +124,32 @@ class TextLayoutDrawNativeTest {
     void strikeoutCrossesItsRun() {
         GC gc = freshGc();
         Font small = new Font(gc.getDevice(), "System", 8, SWT.NORMAL);
-        Font gcFont = gc.getFont();
-        gc.setFont(small);
-        int runHeight = gc.getFontMetrics().getHeight();
-        gc.setFont(gcFont);
+        TextLayout alone = new TextLayout(gc.getDevice());
+        alone.setFont(small);
+        alone.setText("dropped");
+        FontMetrics run = alone.getLineMetrics(0);
+        alone.dispose();
+        // A layout font much taller than the run, so the run's middle sits well below the line's.
+        Font big = new Font(gc.getDevice(), "System", 24, SWT.NORMAL);
         TextLayout layout = new TextLayout(gc.getDevice());
-        layout.setText("dropped");
+        layout.setFont(big);
+        layout.setText("kept dropped");
         TextStyle struck = new TextStyle(small, null, null);
         struck.strikeout = true;
-        layout.setStyle(struck, 0, layout.getText().length());
+        layout.setStyle(struck, 5, layout.getText().length() - 1);
+        int runTop = layout.getLineMetrics(0).getAscent() - run.getAscent();
         int lineHeight = layout.getLineBounds(0).height;
         layout.draw(gc, 0, 0);
         layout.dispose();
         gc.dispose();
         small.dispose();
+        big.dispose();
 
         java.util.regex.Matcher line = java.util.regex.Pattern
                 .compile("drawLineintintintint\",\\[-?\\d+,(-?\\d+)").matcher(wire());
         assertThat(line.find()).as("the strikeout reached the wire").isTrue();
-        assertThat(runHeight / 2).as("sanity: the run is shorter than the line").isLessThan(lineHeight / 2);
-        assertThat(Integer.parseInt(line.group(1))).isEqualTo(runHeight / 2);
+        assertThat(runTop + run.getHeight() / 2).as("sanity: the run's middle is below the line's").isGreaterThan(lineHeight / 2);
+        assertThat(Integer.parseInt(line.group(1))).isEqualTo(runTop + run.getHeight() / 2);
     }
 
     /** The distinct foreground colours the GC state carried over this paint. */

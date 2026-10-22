@@ -20,7 +20,6 @@ TextShape _shape({required bool wordWrap}) => TextShape(
   _text,
   Offset.zero,
   const TextStyle(fontSize: 10, height: 1.0),
-  null, // clipRect
   null, // textSpan
   null, // caretInfo
   wordWrap,
