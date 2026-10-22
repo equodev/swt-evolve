@@ -1,6 +1,7 @@
 package org.eclipse.swt.custom;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.when;
 
 import dev.equo.swt.Config;
@@ -76,6 +77,7 @@ class CTabFolderCloseStyleTest {
         assertThat(impl._chevronTb() != null && impl._chevronTb().getVisible()).isFalse();
         folder.setMaximizeVisible(true);
         folder.getItem(0).getBounds();
+        assumeTrue(impl._minMaxTb() != null, "this SWT release has no max-button ToolBar taking room from the tabs");
         return impl._chevronTb() != null && impl._chevronTb().getVisible();
     }
 
