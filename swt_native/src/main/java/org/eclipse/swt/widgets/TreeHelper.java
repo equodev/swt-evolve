@@ -15,11 +15,13 @@ public class TreeHelper {
     private TreeHelper() {
     }
 
-    // How far Flutter has scrolled the tree, in pixels. A Tree's rows are laid out and scrolled on
+    // How far Flutter has scrolled the tree, in pixels: down as y, and sideways as x, which a tree
+    // whose columns are wider than it does with H_SCROLL. A Tree's rows are laid out and scrolled on
     // the Dart side, so Java has no other way to know: without it every coordinate-to-row lookup
-    // counts from the first item of the model and resolves the wrong row on a scrolled tree.
+    // counts from the first item of the model and resolves the wrong row on a scrolled tree, and a
+    // click after scrolling sideways maps to the column that was there before.
     // Weak keys so a disposed Tree does not hold its entry.
-    private static final java.util.Map<DartTree, Integer> SCROLL_OFFSETS =
+    private static final java.util.Map<DartTree, org.eclipse.swt.graphics.Point> SCROLL_OFFSETS =
         java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     /**
@@ -28,28 +30,26 @@ public class TreeHelper {
      * put it.
      */
     public static void recordScrollOffset(DartTree tree, Event event) {
-        SCROLL_OFFSETS_X.put(tree, Math.max(0, event.x));
         int offset = Math.max(0, event.y);
-        SCROLL_OFFSETS.put(tree, offset);
+        SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(Math.max(0, event.x), offset));
         java.util.List<TreeItem> rows = visibleItems(tree);
         int row = offset / Math.max(1, tree.getItemHeight());
         tree.topItem = row < rows.size() ? rows.get(row) : null;
     }
 
     public static int scrollOffsetY(DartTree tree) {
-        Integer offset = SCROLL_OFFSETS.get(tree);
-        return offset == null ? 0 : offset;
+        org.eclipse.swt.graphics.Point offset = SCROLL_OFFSETS.get(tree);
+        return offset == null ? 0 : offset.y;
     }
 
-    // How far Flutter has scrolled the rows sideways, which a tree whose columns are wider than it
-    // does with H_SCROLL. Cell bounds are in the tree's client area, as natively, so they move left
-    // by it; a click after scrolling sideways otherwise maps to the column that was there before.
-    private static final java.util.Map<DartTree, Integer> SCROLL_OFFSETS_X =
-        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
+    /** Cell bounds are in the tree's client area, as natively, so they move left by this much. */
     public static int scrollOffsetX(DartTree tree) {
-        Integer offset = SCROLL_OFFSETS_X.get(tree);
-        return offset == null ? 0 : offset;
+        org.eclipse.swt.graphics.Point offset = SCROLL_OFFSETS.get(tree);
+        return offset == null ? 0 : offset.x;
+    }
+
+    private static void setScrollOffsetY(DartTree tree, int offset) {
+        SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(scrollOffsetX(tree), offset));
     }
 
     /** The row at the top of the tree, null when it has no rows. */
@@ -58,7 +58,7 @@ public class TreeHelper {
         if (rows.isEmpty()) return null;
         int itemHeight = Math.max(1, tree.getItemHeight());
         int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
-        SCROLL_OFFSETS.put(tree, offset);
+        setScrollOffsetY(tree, offset);
         return rows.get(Math.min(offset / itemHeight, rows.size() - 1));
     }
 
@@ -87,7 +87,6 @@ public class TreeHelper {
     /** The tree was emptied: whatever comes next starts at the top. */
     public static void resetScroll(DartTree tree) {
         SCROLL_OFFSETS.remove(tree);
-        SCROLL_OFFSETS_X.remove(tree);
         tree.topItem = null;
     }
 
@@ -97,7 +96,7 @@ public class TreeHelper {
      */
     private static void scrollToRow(DartTree tree, java.util.List<TreeItem> rows, int row) {
         int itemHeight = Math.max(1, tree.getItemHeight());
-        SCROLL_OFFSETS.put(tree, Math.min(row * itemHeight, maxScrollOffset(tree, rows.size(), itemHeight)));
+        setScrollOffsetY(tree, Math.min(row * itemHeight, maxScrollOffset(tree, rows.size(), itemHeight)));
         tree.topItem = rows.get(row);
         tree.getValue().markDirty(VTree.TOP_ITEM);
     }
