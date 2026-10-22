@@ -918,10 +918,13 @@ public class Sizes {
         return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
-    /** A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already. */
+    /**
+     * A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already.
+     * Callers have checked {@code index} with isTreeCell, so a non-zero index is a live column.
+     */
     private static Rectangle contentCell(DartTreeItem item, int index, Rectangle cell) {
+        if (index == 0) return cell;
         DartTree tree = (DartTree) item._parent().getImpl();
-        if (index == 0 || index >= tree.columnCount) return cell;
         return insetCell(cell, dev.equo.swt.size.TreeSizes.getCellInset(tree.columns[index].getAlignment()));
     }
 
