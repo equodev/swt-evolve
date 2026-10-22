@@ -170,17 +170,12 @@ class GCDrawer extends GCDrawerBase {
   /// full-area Paint, which collapses them back into one display list.
   final void Function()? onFullRepaintNeeded;
 
-  // The ceiling for a control that only ever invalidates disjoint areas: a full-area Paint, which
-  // arrives on nearly every Canvas rebuild, collapses the layers anyway.
+  // Layers inside a later damage are dropped, so only damage that keeps shifting by less than its
+  // own size (a drag) stacks this deep. Every layer is replayed on every frame, so it stays low.
   static const int _maxRegionLayers = 16;
 
-  // Rect.contains excludes the right and bottom edges, so it never reports a rectangle as holding
-  // itself — the case that matters here, a cell repainted on hover and again on unhover.
-  static bool _covers(Rect outer, Rect inner) =>
-      inner.left >= outer.left &&
-      inner.top >= outer.top &&
-      inner.right <= outer.right &&
-      inner.bottom <= outer.bottom;
+  // Set once the full-area Paint is asked for, so the cycles before it arrives don't ask again.
+  bool _fullRepaintRequested = false;
 
   /// The rectangle a Paint was scoped to, or null when it covered the whole client area.
   static Rect? _damageOf(Object? payload) {
@@ -234,21 +229,24 @@ class GCDrawer extends GCDrawerBase {
         final damage = _damageOf(payload);
         if (damage != null) {
           // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
-          // stays and this cycle becomes a layer over it, superseding any layer it covers.
-          shapes.removeWhere((s) {
-            if (s is! RegionShape || !_covers(damage, s.rect)) return false;
-            disposeShapeImages(s.ops, keep: keep);
-            return true;
-          });
+          // stays and this cycle becomes a layer over it. It erases its rectangle first, so
+          // whatever was painted entirely inside it is gone; anything whose area is unknown stays.
+          _dropShapes((s) {
+            final area = s.paintedBounds;
+            return area != null && _containsRect(damage, area);
+          }, keep);
           shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
           _lateLoadedImages.clear();
-          if (shapes.whereType<RegionShape>().length > _maxRegionLayers) {
+          if (!_fullRepaintRequested &&
+              shapes.whereType<RegionShape>().length > _maxRegionLayers) {
+            _fullRepaintRequested = true;
             onFullRepaintNeeded?.call();
           }
         } else {
           // A full-area Paint repaints the whole client area, so nothing the previous cycle left
           // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
           if (fullRepaint) {
+            _fullRepaintRequested = false;
             disposeShapeImages(shapes, keep: keep);
             shapes.clear();
           } else {
@@ -294,13 +292,29 @@ class GCDrawer extends GCDrawerBase {
       if (area != null && !area.isEmpty) covered.add(area);
     }
     if (covered.isEmpty) return;
-    shapes.removeWhere((s) {
+    _dropShapes((s) {
       final area = s.paintedBounds;
-      if (area == null) return false;
-      if (!covered.any((c) => _containsRect(c, area))) return false;
-      disposeShapeImages([s], keep: keep);
-      return true;
-    });
+      return area != null && covered.any((c) => _containsRect(c, area));
+    }, keep);
+  }
+
+  /// Removes the shapes [hidden] selects and releases their images, except those a surviving shape
+  /// still draws: copyArea gives its copy the original's image.
+  void _dropShapes(bool Function(Shape) hidden, Set<ui.Image> keep) {
+    final dropped = <Shape>[];
+    final kept = <Shape>[];
+    for (final s in shapes) {
+      (hidden(s) ? dropped : kept).add(s);
+    }
+    if (dropped.isEmpty) return;
+    shapes
+      ..clear()
+      ..addAll(kept);
+    final droppedImages = <ui.Image>{};
+    collectShapeImages(dropped, droppedImages);
+    if (droppedImages.isEmpty) return;
+    collectShapeImages(shapes, keep);
+    disposeShapeImages(dropped, keep: keep);
   }
 
   /// Called by GCImpl.build() to provide context for text style resolution.
@@ -330,7 +344,7 @@ class GCDrawer extends GCDrawerBase {
   // Drawing keeps the colors the application painted with. disable_swt_canvas_colors drops them
   // for the Canvas theme's, the rule getBackgroundColor applies to widgets; use_swt_colors, which
   // asks for the application's colors everywhere, wins over it.
-  bool get _useThemeColors => canvasUsesThemeColors;
+  bool get _useThemeColors => gcUsesThemeColors(state.themedCanvas);
 
   Color _themed(VColor? swtColor, Color? themeColor, Color fallback) {
     if (_useThemeColors) return themeColor ?? fallback;
@@ -1423,7 +1437,7 @@ class GCDrawer extends GCDrawerBase {
       VImage vImage, VGCDrawImageImageintintintintintintintint opArgs) {
     _stageAsync(ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
         tint: imageTintColor, glyphLimits: glyphTintLimits,
-        alpha: state.alpha ?? 255));
+        alpha: state.alpha ?? 255, useThemeColors: _useThemeColors));
   }
 
   /// Stages a shape that resolves after its op, in that op's slot.
@@ -2062,7 +2076,7 @@ class RegionShape extends Shape {
     c.restore();
   }
 
-  // Headless image rendering, which never scopes a Paint and has no canvas background to erase to.
+  // Headless rendering (copyArea snapshots) has no canvas background to erase to.
   @override
   void draw(ui.Canvas c) {
     c.save();
@@ -2330,10 +2344,7 @@ class _TextLayouts {
   static bool _watchingFonts = false;
 
   static TextPainter of(String text, TextStyle style) {
-    if (!_watchingFonts) {
-      _watchingFonts = true;
-      PaintingBinding.instance.systemFonts.addListener(_clear);
-    }
+    if (!_watchingFonts) _watchingFonts = FontUtils.listenToSystemFonts(_clear);
     final key = (text, style);
     final held = _layouts.remove(key);
     if (held != null) {
@@ -2439,8 +2450,9 @@ class RectShape extends Shape {
   @override
   final Rect? clipRect;
 
+  // A hairline still covers a pixel, on the centres past the rectangle's right and bottom edges.
   @override
-  Rect? get paintedBounds => isFilled ? rect : rect.inflate(strokeWidth);
+  Rect? get paintedBounds => isFilled ? rect : rect.inflate(math.max(strokeWidth, 1));
 
   @override
   Rect? get opaqueCoverage =>
@@ -3139,7 +3151,8 @@ class ImageShape extends Shape {
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
-      {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255}) async {
+      {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255,
+      required bool useThemeColors}) async {
     final preserveColors = preserveIconColors;
     final colorFilter = preserveColors
         ? null
@@ -3179,7 +3192,7 @@ class ImageShape extends Shape {
 
       // Plain blits only: a tint, an alpha or a bundled-icon replacement needs a real image.
       final remoteRef = vImage.remoteRef;
-      if (replacement == null && remoteRef != null && !canvasUsesThemeColors) {
+      if (replacement == null && remoteRef != null && !useThemeColors) {
         final render = ImageUtils.remoteRender(remoteRef);
         // Once rasterised, blit the texture: replaying the list re-runs every op on every frame.
         final asPicture = render != null && !render.hasPixels ? render.picture : null;
@@ -3238,7 +3251,7 @@ class ImageShape extends Shape {
 
       // A resolved icon is tinted; an already-rendered bitmap keeps its colors, unless the Canvas
       // itself is themed and the bitmap is a monochrome glyph.
-      final glyphTone = replacement == null && canvasUsesThemeColors
+      final glyphTone = replacement == null && useThemeColors
           ? await _monochromeGlyphTone(uiImage, vImage, glyphLimits ?? GlyphTintLimits.fallback)
           : null;
       final rasterFilter = replacement != null

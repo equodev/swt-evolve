@@ -34,6 +34,9 @@ class VCLabel extends VCanvas {
   int? alignment;
   VImage? backgroundImage;
   int? bottomMargin;
+  List<VColor>? gradientColors;
+  List<int>? gradientPercents;
+  bool? gradientVertical;
   VImage? image;
   int? leftMargin;
   int? rightMargin;
@@ -47,6 +50,9 @@ class VCLabel extends VCanvas {
       alignment = other.alignment;
       backgroundImage = other.backgroundImage;
       bottomMargin = other.bottomMargin;
+      gradientColors = other.gradientColors;
+      gradientPercents = other.gradientPercents;
+      gradientVertical = other.gradientVertical;
       image = other.image;
       leftMargin = other.leftMargin;
       rightMargin = other.rightMargin;
@@ -66,6 +72,16 @@ class VCLabel extends VCanvas {
             : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>);
       case 'bottomMargin':
         bottomMargin = (json['bottomMargin'] as num?)?.toInt();
+      case 'gradientColors':
+        gradientColors = (json['gradientColors'] as List<dynamic>?)
+            ?.map((e) => VColor.read(e)!)
+            .toList();
+      case 'gradientPercents':
+        gradientPercents = (json['gradientPercents'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      case 'gradientVertical':
+        gradientVertical = json['gradientVertical'] as bool?;
       case 'image':
         image = json['image'] == null
             ? null

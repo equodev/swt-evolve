@@ -106,7 +106,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
      */
     public SwtMessageBox(Shell parent, int style, MessageBox api) {
         super(parent, checkStyle(parent, checkStyle(style)), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     long CBTProc(long nCode, long wParam, long lParam) {
@@ -145,7 +145,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
         if (labels.get(style) != null) {
             long hwnd = OS.GetDlgItem(wParam, id);
             if (hwnd != 0) {
-                OS.SetWindowText(hwnd, new TCHAR(0, labels.get(style), true));
+                OS.SetWindowText(hwnd, new TCHAR(labels.get(style), true));
             }
         }
     }
@@ -281,8 +281,8 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
         }
         /* Open the message box */
         display.sendPreExternalEventDispatchEvent();
-        TCHAR buffer1 = new TCHAR(0, message, true);
-        TCHAR buffer2 = new TCHAR(0, title, true);
+        TCHAR buffer1 = new TCHAR(message, true);
+        TCHAR buffer2 = new TCHAR(title, true);
         ((SwtDisplay) display.getImpl()).externalEventLoop = true;
         Callback cbtCallback = null;
         if (hasCustomLabels()) {

@@ -280,7 +280,7 @@ final class MacMenuBar {
                 child.ns.release();
                 mirror.children.add(child.ns.id);
             } else {
-                nsItem.setState(item.getSelection() ? OS.NSOnState : OS.NSOffState);
+                nsItem.setState(item.getSelection() ? AppKitValues.CONTROL_STATE_ON : AppKitValues.CONTROL_STATE_OFF);
                 accelerator(nsItem, item.getAccelerator());
                 mirror.tags.add(bind(nsItem, item));
             }
@@ -365,13 +365,13 @@ final class MacMenuBar {
         nsItem.setKeyEquivalent(NSString.stringWith(String.valueOf(equivalent)).lowercaseString());
         int mask = 0;
         if ((accelerator & SWT.SHIFT) != 0)
-            mask |= OS.NSShiftKeyMask;
+            mask |= AppKitValues.SHIFT_KEY_MASK;
         if ((accelerator & SWT.CONTROL) != 0)
-            mask |= OS.NSControlKeyMask;
+            mask |= AppKitValues.CONTROL_KEY_MASK;
         if ((accelerator & SWT.COMMAND) != 0)
-            mask |= OS.NSCommandKeyMask;
+            mask |= AppKitValues.COMMAND_KEY_MASK;
         if ((accelerator & SWT.ALT) != 0)
-            mask |= OS.NSAlternateKeyMask;
+            mask |= AppKitValues.ALTERNATE_KEY_MASK;
         nsItem.setKeyEquivalentModifierMask(mask);
     }
 

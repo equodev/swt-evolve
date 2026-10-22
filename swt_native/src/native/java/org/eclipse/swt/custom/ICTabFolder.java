@@ -625,6 +625,33 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
     void setInsertMark(int index, boolean after);
 
     /**
+     * Moves the item at the <code>from</code> index to the <code>to</code> index.
+     * The items between the two indices shift by one position to fill the gap; all
+     * other items keep their relative order. This is a convenience for the common
+     * single-item reorder gesture, such as dragging a tab.
+     * <p>
+     * If <code>from</code> and <code>to</code> are equal this method has no effect.
+     * The currently selected item remains selected after the move.
+     * </p>
+     *
+     * @param from the zero-relative index of the item to move
+     * @param to the zero-relative index the item should be moved to
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_RANGE - if either <code>from</code> or <code>to</code> is
+     *    not between 0 and the number of items minus 1 (inclusive)</li>
+     * </ul>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.135
+     */
+    void moveItem(int from, int to);
+
+    /**
      * Marks the receiver's maximize button as visible if the argument is <code>true</code>,
      * and marks it invisible otherwise.
      *

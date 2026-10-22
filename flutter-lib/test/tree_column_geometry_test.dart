@@ -1,8 +1,9 @@
 // Drift guard. JFace's ColumnViewer maps a click to a column with `TreeItem.getBounds(int)`, which
-// Java answers on its own (`Sizes.treeCell`): column i starts at the sum of the widths of the
-// columns before it, and column 0's indent, expander and checkbox sit inside column 0's width. A
-// cell drawn anywhere else sends a click on it to another column: an inline editor on the first
-// column has to open for a click on the right half of that cell.
+// Java answers on its own (`Sizes.treeCell`): the columns start past the tree's edge gap and the
+// row's padding (`TreeSizes.getCellsLeft`), column i at the sum of the widths of the columns before
+// it, and column 0's indent, expander and checkbox sit inside column 0's width. A cell drawn
+// anywhere else sends a click on it to another column: an inline editor on the first column has to
+// open for a click on the right half of that cell.
 //
 // These tests pin the drawn cells to those numbers.
 
@@ -20,11 +21,17 @@ import 'delivery/support/deliver.dart';
 
 const double _treeWidth = 400;
 
-// TreeSizes' constants for a tree with more than one column, mirrored from
-// theme_settings/tree_theme_settings.dart.
+// TreeSizes' constants, mirrored from theme_settings/tree_theme_settings.dart.
 const double _edgeGapFractionWithCols = 0.005;
 const double _itemPaddingLeftWithCols = 12.0;
+const double _edgeGapFraction = 0.0275;
+const double _itemPaddingLeft = 8.0;
 const double _itemIndent = 16.0;
+
+/// Where the first column starts, as `TreeSizes.getCellsLeft` has it.
+double _cellsLeft(int columnCount) => columnCount > 1
+    ? _treeWidth * _edgeGapFractionWithCols + _itemPaddingLeftWithCols
+    : _treeWidth * _edgeGapFraction + _itemPaddingLeft;
 
 VTreeColumn _column(int id, String text, int width) => VTreeColumn()
   ..id = id
@@ -82,10 +89,11 @@ Rect _header(WidgetTester tester, int column) => tester
     .getRect(find.byWidgetPredicate((w) => w is TreeColumnSwt).at(column))
     .translate(-_treeRect.left, -_treeRect.top);
 
-/// The left of each column as `TreeItem.getBounds(i)` gives it: the sum of the widths before it.
+/// The left of each column as `TreeItem.getBounds(i)` gives it: past the cells' start, the sum of
+/// the widths before it.
 List<double> _lefts(List<int> widths) {
   final lefts = <double>[];
-  var x = 0.0;
+  var x = _cellsLeft(widths.length);
   for (final w in widths) {
     lefts.add(x);
     x += w;
@@ -130,9 +138,10 @@ void main() {
         .translate(-_treeRect.left, -_treeRect.top);
     expect(childText.left, greaterThan(gap + _itemPaddingLeftWithCols + _itemIndent),
         reason: 'one level in, the text is indented');
-    expect(childText.right, lessThanOrEqualTo(150),
+    final cellsLeft = _cellsLeft(2);
+    expect(childText.right, lessThanOrEqualTo(cellsLeft + 150),
         reason: 'the indented text still ends inside column 0');
-    expect(_cell(tester, 20, 1).left, moreOrLessEquals(150),
+    expect(_cell(tester, 20, 1).left, moreOrLessEquals(cellsLeft + 150),
         reason: 'the indent does not push the next column right');
   });
 
@@ -140,8 +149,9 @@ void main() {
     const widths = [150, 120];
     await _pump(tester, _tree([_column(2, 'Name', widths[0]), _column(3, 'Value', widths[1])]));
 
-    expect(_header(tester, 0).right, moreOrLessEquals(150));
-    expect(_header(tester, 1).left, moreOrLessEquals(150));
+    final cellsLeft = _cellsLeft(2);
+    expect(_header(tester, 0).right, moreOrLessEquals(cellsLeft + 150));
+    expect(_header(tester, 1).left, moreOrLessEquals(cellsLeft + 150));
     expect(_header(tester, 1).width, moreOrLessEquals(120));
   });
 
@@ -149,7 +159,7 @@ void main() {
     await _pump(tester, _tree([_column(2, 'Name', 180)]));
 
     final cell = _cell(tester, 10, 0);
-    expect(cell.left, moreOrLessEquals(0));
+    expect(cell.left, moreOrLessEquals(_cellsLeft(1)));
     expect(cell.width, moreOrLessEquals(180));
   });
 
@@ -162,9 +172,10 @@ void main() {
             style: SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL));
 
     expect(tester.takeException(), isNull);
-    expect(_cell(tester, 10, 1).left, moreOrLessEquals(300));
+    final cellsLeft = _cellsLeft(2);
+    expect(_cell(tester, 10, 1).left, moreOrLessEquals(cellsLeft + 300));
     expect(_cell(tester, 10, 1).width, moreOrLessEquals(250));
-    expect(_header(tester, 1).left, moreOrLessEquals(300));
+    expect(_header(tester, 1).left, moreOrLessEquals(cellsLeft + 300));
   });
 
   testWidgets('a column narrower than its own indent clips instead of overflowing', (tester) async {
@@ -172,6 +183,6 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(_cell(tester, 20, 0).width, moreOrLessEquals(10));
-    expect(_cell(tester, 20, 2).left, moreOrLessEquals(10));
+    expect(_cell(tester, 20, 2).left, moreOrLessEquals(_cellsLeft(3) + 10));
   });
 }

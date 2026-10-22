@@ -4,6 +4,7 @@ import '../gen/decorations.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/menu_evolve.dart';
 import '../impl/decorations_align.dart';
@@ -17,11 +18,15 @@ class DecorationsMenuData extends InheritedWidget {
   final bool isAtStart;
   final bool isHorizontal;
 
+  /// The menu strip's height wherever it is drawn, as Java lays it out (`Sizes.menuStripHeight`).
+  final int? stripHeight;
+
   const DecorationsMenuData({
     super.key,
     required this.menuBar,
     required this.isAtStart,
     required this.isHorizontal,
+    this.stripHeight,
     required super.child,
   });
 
@@ -43,7 +48,10 @@ class DecorationsMenuData extends InheritedWidget {
 
   @override
   bool updateShouldNotify(DecorationsMenuData old) =>
-      menuBar != old.menuBar || isAtStart != old.isAtStart || isHorizontal != old.isHorizontal;
+      menuBar != old.menuBar ||
+      isAtStart != old.isAtStart ||
+      isHorizontal != old.isHorizontal ||
+      stripHeight != old.stripHeight;
 }
 
 class VerticalMenuIcon extends StatelessWidget {
@@ -148,15 +156,30 @@ class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
   Color get themeSurfaceColor =>
       Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
 
+  /// Keeps the content's state when the menu strip comes or goes above it.
+  final GlobalKey _contentKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
+    final content = KeyedSubtree(key: _contentKey, child: super.build(context));
 
     return DecorationsMenuData(
       menuBar: state.menuBar,
       isAtStart: align.isAtStart,
       isHorizontal: !align.isVertical,
-      child: super.build(context),
+      stripHeight: state.menuStripHeight,
+      // Java decides when the Shell draws the strip itself (`Sizes.ownMenuStripHeight`): no visible
+      // main toolbar hosts it, so it goes above the client area.
+      child: state.ownMenuStrip == true && state.menuBar != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                mapWidgetFromValue(state.menuBar!),
+                Expanded(child: content),
+              ],
+            )
+          : content,
     );
   }
 }

@@ -20,6 +20,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   Color get itemHoverBackgroundColor;
   Color get itemSelectedBorderColor;
   double get itemSelectedBorderWidth;
+  double get dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha;
+  double get dragImageOpacity;
   Color get headerBackgroundColor;
   Color get headerTextColor;
   Color get headerBorderColor;
@@ -119,6 +122,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     Color? itemHoverBackgroundColor,
     Color? itemSelectedBorderColor,
     double? itemSelectedBorderWidth,
+    double? dropFeedbackLineWidth,
+    int? dropFeedbackHighlightAlpha,
+    double? dragImageOpacity,
     Color? headerBackgroundColor,
     Color? headerTextColor,
     Color? headerBorderColor,
@@ -224,6 +230,11 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
           itemSelectedBorderColor ?? this.itemSelectedBorderColor,
       itemSelectedBorderWidth:
           itemSelectedBorderWidth ?? this.itemSelectedBorderWidth,
+      dropFeedbackLineWidth:
+          dropFeedbackLineWidth ?? this.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha:
+          dropFeedbackHighlightAlpha ?? this.dropFeedbackHighlightAlpha,
+      dragImageOpacity: dragImageOpacity ?? this.dragImageOpacity,
       headerBackgroundColor:
           headerBackgroundColor ?? this.headerBackgroundColor,
       headerTextColor: headerTextColor ?? this.headerTextColor,
@@ -391,6 +402,13 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       itemSelectedBorderWidth: t < 0.5
           ? itemSelectedBorderWidth
           : other.itemSelectedBorderWidth,
+      dropFeedbackLineWidth: t < 0.5
+          ? dropFeedbackLineWidth
+          : other.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha: t < 0.5
+          ? dropFeedbackHighlightAlpha
+          : other.dropFeedbackHighlightAlpha,
+      dragImageOpacity: t < 0.5 ? dragImageOpacity : other.dragImageOpacity,
       headerBackgroundColor: Color.lerp(
         headerBackgroundColor,
         other.headerBackgroundColor,
@@ -674,6 +692,18 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
             const DeepCollectionEquality().equals(
               itemSelectedBorderWidth,
               other.itemSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackLineWidth,
+              other.dropFeedbackLineWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackHighlightAlpha,
+              other.dropFeedbackHighlightAlpha,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dragImageOpacity,
+              other.dragImageOpacity,
             ) &&
             const DeepCollectionEquality().equals(
               headerBackgroundColor,
@@ -1032,6 +1062,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(itemHoverBackgroundColor),
       const DeepCollectionEquality().hash(itemSelectedBorderColor),
       const DeepCollectionEquality().hash(itemSelectedBorderWidth),
+      const DeepCollectionEquality().hash(dropFeedbackLineWidth),
+      const DeepCollectionEquality().hash(dropFeedbackHighlightAlpha),
+      const DeepCollectionEquality().hash(dragImageOpacity),
       const DeepCollectionEquality().hash(headerBackgroundColor),
       const DeepCollectionEquality().hash(headerTextColor),
       const DeepCollectionEquality().hash(headerBorderColor),
@@ -1140,6 +1173,10 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
       treeThemeExtension.itemSelectedBorderColor;
   double get itemSelectedBorderWidth =>
       treeThemeExtension.itemSelectedBorderWidth;
+  double get dropFeedbackLineWidth => treeThemeExtension.dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha =>
+      treeThemeExtension.dropFeedbackHighlightAlpha;
+  double get dragImageOpacity => treeThemeExtension.dragImageOpacity;
   Color get headerBackgroundColor => treeThemeExtension.headerBackgroundColor;
   Color get headerTextColor => treeThemeExtension.headerTextColor;
   Color get headerBorderColor => treeThemeExtension.headerBorderColor;

@@ -2,6 +2,7 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <cmath>
 #include <string>
 #include <iostream>
 #include <memory>
@@ -158,7 +159,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 }
 
 // Creates a visible top-level window hosting the whole Display (desktop-native, 100% Flutter).
-FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled) {
+FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled) {
     std::cout << "FlutterNative.createDisplayWindow port:" << port << " id:" << displayId
               << " name:" << widgetName << " " << width << "x" << height << std::endl;
 
@@ -188,8 +189,10 @@ FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widg
     // embedded views have no chrome to begin with. With CSD off nothing would draw a replacement,
     // so the OS frame has to stay.
     window->SetFrameless(csdEnabled);
-    // parentWnd = nullptr, headless = false -> a visible top-level window (WS_OVERLAPPEDWINDOW). The
-    // window shows itself once Flutter's first frame is ready (FlutterWindow::OnCreate -> Show()).
+    window->SetOwner(owner);
+    // parentWnd = nullptr, headless = false -> a visible top-level window (WS_OVERLAPPEDWINDOW), owned
+    // by |owner| when there is one. The window shows itself once Flutter's first frame is ready
+    // (FlutterWindow::OnCreate -> Show()).
     if (!window->Create(Utf16FromUtf8(widgetName), origin, size, nullptr, false)) {
         std::cout << "createDisplayWindow - failed to create window" << std::endl;
         return nullptr;
@@ -230,7 +233,10 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, 
     FlutterWindow* window;
     bool isWindow;
     if (width > 0 && height > 0) {
-        window = createDisplayWindow(port, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE);
+        // For a window, |parent| is the surface of the window that owns this one, or 0 for none.
+        Surface* owner = reinterpret_cast<Surface*>(parent);
+        HWND ownerWnd = (owner && owner->window) ? owner->window->GetHandle() : nullptr;
+        window = createDisplayWindow(port, ownerWnd, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE);
         isWindow = true;
     } else {
         window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color));
@@ -342,7 +348,8 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jcl
 
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen (approximated as maximized).
 // The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
-// LLONG_MIN when there is no window.
+// LLONG_MIN when there is no window. In logical pixels, the units SetBounds takes, so a position
+// read back can be set again unchanged.
 JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, jclass cls, jlong context) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return LLONG_MIN;
@@ -350,8 +357,11 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, j
     if (!hwnd) return LLONG_MIN;
     POINT origin = {0, 0};
     if (!::ClientToScreen(hwnd, &origin)) return LLONG_MIN;
-    return (static_cast<jlong>(origin.x) << 32)
-            | (static_cast<jlong>(static_cast<uint32_t>(origin.y)));
+    const double scale = s->window->scale_factor();
+    const LONG x = static_cast<LONG>(std::lround(origin.x / scale));
+    const LONG y = static_cast<LONG>(std::lround(origin.y / scale));
+    return (static_cast<jlong>(x) << 32)
+            | (static_cast<jlong>(static_cast<uint32_t>(y)));
 }
 
 // Whether this window is the one the OS gives keyboard input to. The foreground window is the
@@ -374,6 +384,14 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, j
     // Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding
     // the window each time would cost a new engine and lose the window's position.
     ::ShowWindow(hwnd, visible ? SW_SHOW : SW_HIDE);
+}
+
+// |owner| is the surface of the window that now owns this one, or 0 for none.
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv* env, jclass cls, jlong context, jlong owner) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window || !s->isWindow) return;
+    Surface* o = reinterpret_cast<Surface*>(owner);
+    s->window->SetOwner((o && o->window) ? o->window->GetHandle() : nullptr);
 }
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state) {

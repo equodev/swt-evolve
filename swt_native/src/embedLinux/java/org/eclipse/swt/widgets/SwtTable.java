@@ -769,6 +769,13 @@ public class SwtTable extends SwtComposite implements ITable {
         if (!searchEnabled()) {
             GTK.gtk_tree_view_set_search_column(getApi().handle, -1);
         }
+        if (GTK.GTK4) {
+            // Required before TableDropTargetEffect may use
+            // gtk_tree_view_set_drag_dest_row(), see Tree.createHandle() for details.
+            long formats = GTK4.gdk_content_formats_builder_free_to_formats(GTK4.gdk_content_formats_builder_new());
+            GTK4.gtk_tree_view_enable_model_drag_dest(getApi().handle, formats, 0);
+            GTK4.gdk_content_formats_unref(formats);
+        }
     }
 
     void createItem(TableColumn column, int index) {
@@ -2582,7 +2589,10 @@ public class SwtTable extends SwtComposite implements ITable {
     @Override
     long paintWindow() {
         GTK.gtk_widget_realize(getApi().handle);
-        // TODO: this function has been removed on GTK4
+        if (GTK.GTK4) {
+            // gtk_tree_view_get_bin_window was removed in GTK4; fall back to the widget surface
+            return gtk_widget_get_surface(getApi().handle);
+        }
         return GTK3.gtk_tree_view_get_bin_window(getApi().handle);
     }
 

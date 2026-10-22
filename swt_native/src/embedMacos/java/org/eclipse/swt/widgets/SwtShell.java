@@ -290,7 +290,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     SwtShell(Display display, Shell parent, int style, long handle, boolean embedded, Shell api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null)
             display = SwtDisplay.getCurrent();
         if (display == null)
@@ -2661,7 +2661,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                  * swallowed to handle native traversal. If we find that, force the key event to
                  * the first responder.
                  */
-                if ((nsEvent.modifierFlags() & OS.NSControlKeyMask) != 0) {
+                if ((nsEvent.modifierFlags() & OS.NSEventModifierFlagControl) != 0) {
                     NSString chars = nsEvent.characters();
                     if (chars != null && chars.length() == 1) {
                         int firstChar = (int) chars.characterAtIndex(0);

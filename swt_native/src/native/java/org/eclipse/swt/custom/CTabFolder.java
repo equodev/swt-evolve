@@ -91,7 +91,7 @@ public class CTabFolder extends Composite {
      *
      * @deprecated drop shadow border is no longer drawn in 3.0
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public static RGB borderInsideRGB = new RGB(132, 130, 132);
 
     /**
@@ -102,7 +102,7 @@ public class CTabFolder extends Composite {
      *
      * @deprecated drop shadow border is no longer drawn in 3.0
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public static RGB borderMiddleRGB = new RGB(143, 141, 138);
 
     /**
@@ -113,7 +113,7 @@ public class CTabFolder extends Composite {
      *
      * @deprecated drop shadow border is no longer drawn in 3.0
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public static RGB borderOutsideRGB = new RGB(171, 168, 165);
 
     /* External Listener management */
@@ -893,6 +893,13 @@ public class CTabFolder extends Composite {
 
     /**
      * Reorder the items of the receiver.
+     * <p>
+     * <code>indices[i]</code> is the index of the item that should be moved to
+     * position <code>i</code>. The argument must contain every index of the
+     * receiver's items exactly once. The currently selected item remains selected
+     * after the reorder.
+     * </p>
+     *
      * @param indices an array containing the new indices for all items
      *
      * @exception IllegalArgumentException <ul>
@@ -906,6 +913,35 @@ public class CTabFolder extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    /**
+     * Moves the item at the <code>from</code> index to the <code>to</code> index.
+     * The items between the two indices shift by one position to fill the gap; all
+     * other items keep their relative order. This is a convenience for the common
+     * single-item reorder gesture, such as dragging a tab.
+     * <p>
+     * If <code>from</code> and <code>to</code> are equal this method has no effect.
+     * The currently selected item remains selected after the move.
+     * </p>
+     *
+     * @param from the zero-relative index of the item to move
+     * @param to the zero-relative index the item should be moved to
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_RANGE - if either <code>from</code> or <code>to</code> is
+     *    not between 0 and the number of items minus 1 (inclusive)</li>
+     * </ul>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.135
+     */
+    public void moveItem(int from, int to) {
+        getImpl().moveItem(from, to);
+    }
+
     /**
      * Marks the receiver's maximize button as visible if the argument is <code>true</code>,
      * and marks it invisible otherwise.

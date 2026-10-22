@@ -1,12 +1,8 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,58 +12,21 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * What an edit, a selection change, a segment request or a default selection arriving from Flutter does
- * to a Text. Every one hops through {@code asyncExec}, so by the time it runs the text may be gone or a
- * modal shell may have opened; a vetoed edit is answered so the field can drop what it held back.
+ * to a Text. A modal shell may have opened by the time it runs, and a vetoed edit is answered so the field
+ * can drop what it held back.
  */
 @Tag("native-unit")
-class TextEventsFromFlutterNativeTest {
-
-    private RecordingBridge bridge;
-    private Display display;
-    /** The runnables a hook queued with asyncExec, run when the test says so. */
-    private final List<Runnable> queued = new ArrayList<>();
-
-    @BeforeEach
-    void setUp() {
-        bridge = new RecordingBridge();
-        FlutterBridge.set(bridge);
-        display = DartMocks.dartDisplay();
-        doAnswer(invocation -> queued.add(invocation.getArgument(0))).when(display).asyncExec(any(Runnable.class));
-        // The mock display would swallow every event; its real dispatch only needs the listener table.
-        DartDisplay impl = dartDisplay();
-        doCallRealMethod().when(impl).sendEvent(any(EventTable.class), any(Event.class));
-    }
-
-    @AfterEach
-    void tearDown() {
-        // The display mock is shared by the whole suite: hand it back as the other tests expect it.
-        doNothing().when(display).asyncExec(any(Runnable.class));
-        DartDisplay impl = dartDisplay();
-        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
-        FlutterBridge.set(null);
-    }
-
-    private DartDisplay dartDisplay() {
-        return (DartDisplay) display.getImpl();
-    }
+class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
     private Text text(int style, String content) {
         Text text = new Text(DartMocks.dartShell(display), style);
         text.setText(content);
         return text;
-    }
-
-    private void fromFlutter(Text text, String channel, Event event) {
-        bridge.comm.fireContaining("Text/" + text.hashCode() + "/" + channel, event);
     }
 
     private static Event event(String text, int start, int end) {
@@ -78,24 +37,89 @@ class TextEventsFromFlutterNativeTest {
         return event;
     }
 
-    private void runQueued() {
-        List<Runnable> now = new ArrayList<>(queued);
-        queued.clear();
-        now.forEach(Runnable::run);
-    }
-
-    private static List<Event> record(Text text, int type) {
-        List<Event> events = new ArrayList<>();
-        text.addListener(type, events::add);
-        return events;
-    }
-
     private List<String> verdicts() {
         List<String> verdicts = new ArrayList<>();
         for (RecordingComm.Frame frame : bridge.comm.sent) {
             if (frame.event.contains("modify/verdict")) verdicts.add(frame.json);
         }
         return verdicts;
+    }
+
+    @Test
+    @DisplayName("a Verify listener that sets the text to null rejects the edit, as Win32's verifyText does")
+    void verifyTextNullRejectsTheEdit() {
+        Text text = text(SWT.SINGLE, "old");
+        text.addVerifyListener(e -> e.text = null);
+
+        fromFlutter(text, "Modify/Modify", event("oldX", 4, 4));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("old");
+    }
+
+    @Test
+    @DisplayName("a field its Verify listener disposes takes no edit")
+    void aFieldDisposedByVerifyTakesNoEdit() {
+        Text text = text(SWT.SINGLE, "old");
+        text.addVerifyListener(e -> text.dispose());
+
+        assertThatCode(() -> {
+            fromFlutter(text, "Modify/Modify", event("oldX", 4, 4));
+            runQueued();
+        }).doesNotThrowAnyException();
+        assertThat(text.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("a field its Modify listener disposes ends the edit there")
+    void aFieldDisposedByModifyEndsTheEdit() {
+        Text text = text(SWT.SINGLE, "old");
+        text.addModifyListener(e -> text.dispose());
+
+        assertThatCode(() -> {
+            fromFlutter(text, "Modify/Modify", event("oldX", 4, 4));
+            runQueued();
+        }).doesNotThrowAnyException();
+        assertThat(text.isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("typing into a field at its limit changes nothing, and reports no Modify")
+    void typingIntoAFullFieldChangesNothing() {
+        Text text = text(SWT.SINGLE, "abc");
+        text.setTextLimit(3);
+        List<Event> modifies = record(text, SWT.Modify);
+
+        fromFlutter(text, "Modify/Modify", event("abcd", 4, 4));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("abc");
+        assertThat(modifies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Modify listener of a typed edit reads the caret after what was typed")
+    void modifyReadsTheCaretAfterTheTypedText() {
+        Text text = text(SWT.SINGLE, "ab");
+        List<Integer> carets = new ArrayList<>();
+        text.addModifyListener(e -> carets.add(text.getCaretPosition()));
+
+        fromFlutter(text, "Modify/Modify", event("aXb", 2, 2));
+        runQueued();
+
+        assertThat(carets).containsExactly(2);
+    }
+
+    @Test
+    @DisplayName("a deletion in a field at its limit still applies")
+    void aDeletionInAFullFieldApplies() {
+        Text text = text(SWT.SINGLE, "abc");
+        text.setTextLimit(3);
+
+        fromFlutter(text, "Modify/Modify", event("ab", 2, 2));
+        runQueued();
+
+        assertThat(text.getText()).isEqualTo("ab");
     }
 
     @Test
@@ -202,16 +226,18 @@ class TextEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("an edit that reports no caret leaves it at the start, where setText puts it")
-    void editWithoutACaretLeavesItAtTheStart() {
+    @DisplayName("an edit that reports no caret leaves it after what the edit inserted")
+    void editWithoutACaretLeavesItAfterTheInsertion() {
         Text text = text(SWT.SINGLE, "old");
         text.setSelection(2);
 
         fromFlutter(text, "Modify/Modify", event("typed", -1, -1));
         runQueued();
 
+        // The edit replaces what lies between the common prefix and suffix ("ol" by "type"), as a
+        // typed one does, and a typed edit leaves the caret after its text.
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(text.getSelection()).isEqualTo(new Point(0, 0));
+        assertThat(text.getSelection()).isEqualTo(new Point(4, 4));
     }
 
     @Test

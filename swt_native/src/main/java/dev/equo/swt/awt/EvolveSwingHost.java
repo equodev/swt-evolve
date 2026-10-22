@@ -4,14 +4,18 @@ import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.PaintEvent;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
@@ -21,6 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.MenuSelectionManager;
+import javax.swing.PopupFactory;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.WindowBridge;
@@ -30,7 +38,6 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartControl;
@@ -39,7 +46,9 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import sun.awt.AWTAccessor;
+import sun.awt.FwDispatcher;
 import sun.awt.NullComponentPeer;
 import sun.swing.JLightweightFrame;
 import sun.swing.LightweightContent;
@@ -87,28 +96,37 @@ public final class EvolveSwingHost {
      * with {@code IllegalAccessError}. Merely loading this host — which {@link dev.equo.swt.Jdk9}
      * does to find {@code newFrame} — does not reach that definition, so it is not proof the bridge
      * can run. This asks {@link #openSwingInternals()} to open the packages itself and then forces
-     * the content class to be defined; if it still cannot, the bridge degrades to {@code SWT_AWT}'s
-     * stock path instead of letting the error reach the host application's editor.</p>
+     * both classes that implement a JDK-internal interface to be defined. When either cannot be,
+     * {@code SWT_AWT.new_Frame} fails for a Dart-backed composite with {@code ERROR_NOT_IMPLEMENTED},
+     * as SWT_AWT does on a JRE that cannot embed, instead of an {@code IllegalAccessError} reaching
+     * the host application's editor.</p>
      */
     public static boolean canHost() {
+        return hostFailure() == null;
+    }
+
+    /** Why the bridge cannot host Swing on this JVM, or null when it can (see {@link #canHost()}). */
+    public static Throwable hostFailure() {
         openSwingInternals();
         try {
             Class.forName("dev.equo.swt.awt.EvolveSwingHost$Host$EvolveContent");
-            return true;
+            Class.forName("dev.equo.swt.awt.EvolveSwingHost$EvolveDispatcherWrapper");
+            return null;
         } catch (ClassNotFoundException | LinkageError cannotDefine) {
             warnUnavailable(cannotDefine);
-            return false;
+            return cannotDefine;
         }
     }
 
     /**
-     * Exports the JDK internals the bridge is built on — {@code java.desktop/sun.swing},
-     * {@code java.desktop/sun.awt} and {@code jdk.unsupported.desktop/jdk.swing.interop} — to this
-     * module, so that defining {@code EvolveContent implements sun.swing.LightweightContent} and
-     * using {@code JLightweightFrame}, {@code AWTAccessor} and the AWT dispatcher pass the JVM's
-     * access check. The command-line {@code --add-exports} for the same packages also works (all
-     * three live in boot-layer modules), so an app that already carries those flags needs none of
-     * this — it is the path for one that carries only {@code --add-opens=java.base/java.lang=ALL-UNNAMED}.
+     * Exports the JDK internals the bridge is built on — {@code java.desktop/sun.swing} and
+     * {@code java.desktop/sun.awt} — to this module, so that defining
+     * {@code EvolveContent implements sun.swing.LightweightContent} and
+     * {@code EvolveDispatcherWrapper implements sun.awt.FwDispatcher}, and using
+     * {@code JLightweightFrame} and {@code AWTAccessor}, pass the JVM's access check. The
+     * command-line {@code --add-exports} for the same packages also works ({@code java.desktop} is
+     * a boot-layer module), so an app that already carries those flags needs none of this — it is
+     * the path for one that carries only {@code --add-opens=java.base/java.lang=ALL-UNNAMED}.
      *
      * <p>{@code Module.addExports} is caller-sensitive, so it goes through {@code implAddExports},
      * which needs {@code java.lang} opened to us; that one flag works from the command line because
@@ -122,9 +140,8 @@ public final class EvolveSwingHost {
             implAddExports.setAccessible(true);
             Module self = EvolveSwingHost.class.getModule();
             selfExport(implAddExports, self, "java.desktop", "sun.swing", "sun.awt");
-            selfExport(implAddExports, self, "jdk.unsupported.desktop", "jdk.swing.interop");
         } catch (Throwable notOpenable) {
-            // Left closed: canHost() reports it and SWT_AWT falls back. Enable with
+            // Left closed: canHost() reports it and SWT_AWT.new_Frame fails. Enable with
             // --add-opens=java.base/java.lang=ALL-UNNAMED.
         }
     }
@@ -142,11 +159,11 @@ public final class EvolveSwingHost {
         }
     }
 
-    /** Explains the degraded (stock-path) Swing bridge once per JVM — otherwise it is undiagnosable. */
+    /** Explains once per JVM why the Swing bridge cannot host, which is otherwise undiagnosable. */
     private static void warnUnavailable(Throwable cause) {
         if (UNAVAILABLE_WARNED.compareAndSet(false, true)) {
-            System.err.println("[EvolveSwingHost] Swing embedding disabled — SWT_AWT falls back to its "
-                    + "stock path. The JDK internals the bridge needs (sun.swing, sun.awt) are not "
+            System.err.println("[EvolveSwingHost] Swing embedding disabled: SWT_AWT.new_Frame will fail with "
+                    + "ERROR_NOT_IMPLEMENTED. The JDK internals the bridge needs (sun.swing, sun.awt) are not "
                     + "reachable from this module. Add either "
                     + "--add-exports=java.desktop/sun.swing=ALL-UNNAMED and "
                     + "--add-exports=java.desktop/sun.awt=ALL-UNNAMED, or "
@@ -164,6 +181,11 @@ public final class EvolveSwingHost {
 
     private static final AtomicBoolean OUTSIDE_CLICK_FILTER_INSTALLED = new AtomicBoolean(false);
 
+    private static final AtomicBoolean MENU_CLOSE_FILTER_INSTALLED = new AtomicBoolean(false);
+
+    /** The host of each active embedding, by its frame. */
+    private static final Map<Window, Host> EMBEDDINGS = new ConcurrentHashMap<>();
+
     /**
      * Evolve reimplementation of {@code SWT_AWT.new_Frame}. Returns a Swing
      * {@link Frame} whose content is rendered off-screen and presented on the
@@ -179,12 +201,11 @@ public final class EvolveSwingHost {
         openSwingInternals();
         startToolkit();
         installOutsideClickRepaintFilter(parent.getDisplay());
+        installMenuCloseFilter(parent.getDisplay());
 
         // A single full-bleed Canvas child is the paint surface (Evolve pipes its
-        // PaintListener + GC.drawImage to Flutter). FillLayout keeps it sized to
-        // the EMBEDDED composite.
-        parent.setLayout(new FillLayout());
-        final Canvas canvas = new Canvas(parent, SWT.NO_BACKGROUND);
+        // PaintListener + GC.drawImage to Flutter).
+        final Canvas canvas = newPaintSurface(parent);
 
         final Host host = new Host(canvas);
 
@@ -196,16 +217,98 @@ public final class EvolveSwingHost {
         // happens on the EDT (Java2D, no main thread needed).
         final JLightweightFrame frame = new JLightweightFrame();
         frame.setContent(host.content);
+        EMBEDDINGS.put(frame, host);
         host.bind(frame);
 
-        // Initial size + realize so the first frame renders. Pre-open the canvas may
-        // report 0×0; the Resize listener re-sizes the frame once it's laid out.
-        Rectangle area = canvas.getClientArea();
-        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+        // Pre-open the canvas reports 0x0; the Resize listener sizes the frame once it is laid out.
+        sizeBlitFrame(frame, host.contentRoot, canvas.getClientArea());
         syncFrameLocation(canvas, frame);
         frame.setVisible(true);
         host.syncOwner();
         return frame;
+    }
+
+    /**
+     * Sizes an island's frame to its host control's client area, 0x0 included, as native
+     * {@code SWT_AWT} leaves its frame until the composite has its real size. At any positive size
+     * the frame paints, and some content keeps what it painted at: a {@code JSplitPane} stops placing
+     * its divider from its children's preferred sizes once painted, so a placeholder 1x1 collapses
+     * its top component for good.
+     */
+    static void sizeFrame(Component frame, Rectangle area) {
+        frame.setSize(Math.max(0, area.width), Math.max(0, area.height));
+    }
+
+    /**
+     * Never below 1x1: a component added to a 0x0 frame is never laid out. {@code root} paints only
+     * once the area is real.
+     */
+    static void sizeBlitFrame(Component frame, ContentRoot root, Rectangle area) {
+        if (area.width > 0 && area.height > 0) root.place();
+        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+    }
+
+    /**
+     * The canvas the frame is drawn into, kept at the composite's whole client area as a native
+     * embedded window is.
+     */
+    static Canvas newPaintSurface(Composite parent) {
+        PaintSurface canvas = new PaintSurface(parent);
+        Listener fill = e -> canvas.fill();
+        parent.addListener(SWT.Resize, fill);
+        canvas.addListener(SWT.Dispose, e -> parent.removeListener(SWT.Resize, fill));
+        canvas.fill();
+        return canvas;
+    }
+
+    /**
+     * Stands for the native window SWT_AWT embeds, which no SWT layout places: whatever bounds,
+     * size or location it is given, it takes the composite's client area. That area comes from the
+     * implementation, because SWT/Swing integration libraries override the composite's
+     * {@code getClientArea()}, some answering with the Swing component's preferred size.
+     * {@code SwingIsland} does the same for swing-evolve's engine.
+     */
+    static final class PaintSurface extends Canvas {
+        PaintSurface(Composite parent) {
+            super(parent, SWT.NO_BACKGROUND);
+        }
+
+        // Straight to the implementation: on some platforms the API setters call one another, and
+        // each of them lands back here.
+        void fill() {
+            Rectangle area = getParent().getImpl().getClientArea();
+            getImpl().setBounds(area.x, area.y, area.width, area.height);
+        }
+
+        @Override
+        public void setBounds(int x, int y, int width, int height) {
+            fill();
+        }
+
+        @Override
+        public void setBounds(Rectangle rect) {
+            fill();
+        }
+
+        @Override
+        public void setSize(int width, int height) {
+            fill();
+        }
+
+        @Override
+        public void setSize(Point size) {
+            fill();
+        }
+
+        @Override
+        public void setLocation(int x, int y) {
+            fill();
+        }
+
+        @Override
+        public void setLocation(Point location) {
+            fill();
+        }
     }
 
     /**
@@ -266,6 +369,29 @@ public final class EvolveSwingHost {
     }
 
     /**
+     * Closes an open Swing menu on a click on SWT outside every embedding, installed once per
+     * process. Swing closes it on a click anywhere in AWT, but a click on SWT never reaches AWT,
+     * and a menu in a shell of its own has no native window whose loss of focus would close it.
+     */
+    private static void installMenuCloseFilter(Display display) {
+        if (!MENU_CLOSE_FILTER_INSTALLED.compareAndSet(false, true)) return;
+        display.addFilter(SWT.MouseDown, ev -> {
+            if (ConfigFlags.isDesktopMode() || isEmbeddingCanvas(ev.widget)) return;
+            EventQueue.invokeLater(() -> {
+                MenuSelectionManager menus = MenuSelectionManager.defaultManager();
+                if (menus.getSelectedPath().length > 0) menus.clearSelectedPath();
+            });
+        });
+    }
+
+    private static boolean isEmbeddingCanvas(Object widget) {
+        for (Host host : EMBEDDINGS.values()) {
+            if (host.canvas == widget) return true;
+        }
+        return false;
+    }
+
+    /**
      * Fires {@code forceRepaint} a few times, staggered, instead of once immediately after some
      * change (an initial paint, a resize, an input-driven update). A hosted app's own rendering
      * is often asynchronous — it updates its model synchronously but recomputes what it actually
@@ -288,14 +414,62 @@ public final class EvolveSwingHost {
         // no Dock icon / app menu, so bringing up AppKit alongside Flutter is quiet.
         setIfAbsent("java.awt.headless", "false");
         setIfAbsent("apple.awt.UIElement", "true");
-        // Keep menus/tooltips/popups inside the off-screen frame (lightweight) rather
-        // than spawning real OS windows over the Flutter surface.
-        javax.swing.JPopupMenu.setDefaultLightWeightPopupEnabled(true);
+        installPopupFactory();
         shareFrameBuffer();
         Toolkit.getDefaultToolkit();
         installEvolveDispatcher();
         installHeavyweightRepaintListener();
         installDispatcherReinstateListener();
+        installStalledFocusRepair();
+    }
+
+    /**
+     * Puts {@link ShellPopupFactory} in front of whatever popup factory Swing would use. A look and
+     * feel may install its own factory when it initializes (Aqua does), replacing ours, so the
+     * current one is initialized first and every later look-and-feel change is wrapped again.
+     */
+    private static void installPopupFactory() {
+        UIManager.getLookAndFeel();
+        wrapSharedPopupFactory();
+        UIManager.addPropertyChangeListener(e -> {
+            if ("lookAndFeel".equals(e.getPropertyName())) wrapSharedPopupFactory();
+        });
+    }
+
+    static void wrapSharedPopupFactory() {
+        PopupFactory current = PopupFactory.getSharedInstance();
+        if (current instanceof ShellPopupFactory) return;
+        PopupFactory.setSharedInstance(
+                new ShellPopupFactory(current, EvolveSwingHost::popupEmbeddingOf, EvolveSwingHost::hostInShell));
+    }
+
+    /**
+     * The canvas of the embedding {@code owner} is shown in, when its popups belong in an SWT
+     * shell; {@code null} otherwise. Under the desktop surface a native popup window lands where a
+     * native {@code SWT_AWT} one does, so it is left to Swing there.
+     */
+    static Canvas popupEmbeddingOf(Component owner) {
+        if (ConfigFlags.isDesktopMode()) return null;
+        Window window = owner instanceof Window ? (Window) owner : SwingUtilities.getWindowAncestor(owner);
+        Host host = window == null ? null : EMBEDDINGS.get(window);
+        return host == null ? null : host.canvas;
+    }
+
+    /**
+     * Hosts {@code contents} in {@code shell} through an embedding of its own, added straight to
+     * the content root: a popup can be hidden before the move {@code frame.add} defers would run.
+     */
+    static void hostInShell(Shell shell, Component contents) {
+        Frame frame = newFrame(shell);
+        Host host = EMBEDDINGS.get(frame);
+        if (host == null) {
+            frame.add(contents);
+            return;
+        }
+        hostAsLightweight(contents);
+        host.contentRoot.add(contents);
+        host.contentRoot.revalidate();
+        host.contentRoot.repaint();
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -310,7 +484,8 @@ public final class EvolveSwingHost {
      * component that repaints itself while painting — feeds itself without bound.
      */
     /** Drops every reference this class holds to a disposed embedding's component tree. */
-    private static void forgetEmbed(Container root) {
+    private static void forgetEmbed(Container root, Window frame) {
+        EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
         REPAINT_PENDING.remove(root);
         LAST_REPAINT.remove(root);
@@ -371,6 +546,24 @@ public final class EvolveSwingHost {
         }, AWTEvent.WINDOW_EVENT_MASK);
     }
 
+    /** Redelivers WINDOW_GAINED_FOCUS to a modal dialog left active but unfocused by a modal loop run from WINDOW_ACTIVATED. */
+    private static void installStalledFocusRepair() {
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        kfm.addPropertyChangeListener("activeWindow", ev -> {
+            if (ev.getNewValue() instanceof Window) {
+                Window active = (Window) ev.getNewValue();
+                EventQueue.invokeLater(() -> completeStalledFocus(kfm, active));
+            }
+        });
+    }
+
+    static void completeStalledFocus(KeyboardFocusManager kfm, Window active) {
+        if (!(active instanceof Dialog) || !((Dialog) active).isModal()) return;
+        if (kfm.getActiveWindow() != active || kfm.getFocusedWindow() != null) return;
+        if (!active.isShowing() || !active.isFocusableWindow()) return;
+        active.dispatchEvent(new WindowEvent(active, WindowEvent.WINDOW_GAINED_FOCUS));
+    }
+
     /**
      * Puts this host's dispatcher back on the AWT event queue if the queue has stopped holding it.
      *
@@ -389,19 +582,17 @@ public final class EvolveSwingHost {
         try {
             EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(Display.getDefault());
             if (wrapper.isDispatchThread() == EventQueue.isDispatchThread()) return;
-            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(
-                    Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
+            setFwDispatcher(Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
         } catch (Throwable notInstallable) {
         }
     }
 
     /**
      * Installs {@link EvolveDispatcherWrapper} on the system {@link EventQueue} — see the
-     * class-level "AWT/Swing dispatch" section for why. Requires
-     * {@code --add-exports jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED} on the
-     * actual runtime JVM command line, not just at compile time; if that export is missing
-     * this fails closed (logged, caught) and dispatch falls back to whatever the host's own
-     * JavaFX/AWT bridge does by default.
+     * class-level "AWT/Swing dispatch" section for why. Needs {@code java.desktop/sun.awt}
+     * reachable from this module, as the rest of the bridge does ({@link #openSwingInternals()});
+     * without it this fails closed and dispatch falls back to whatever the host's own JavaFX/AWT
+     * bridge does by default.
      *
      * <p>Installs the first time any Evolve Swing embedding happens in the process. A host
      * that constructs its own {@code JFXPanel} (unrelated to Evolve) before that point installs
@@ -412,15 +603,25 @@ public final class EvolveSwingHost {
         try {
             Display display = Display.getDefault();
             EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
-            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
+            setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
         } catch (Throwable ignored) {
             // Falls back to default AWT/JavaFX dispatch behavior.
         }
     }
 
+    /**
+     * Puts {@code dispatcher} in the queue's forwarding-dispatcher slot. This is the call
+     * {@code jdk.swing.interop.DispatcherWrapper} wraps, made directly: that class lives in
+     * {@code jdk.unsupported.desktop}, a module a trimmed runtime image can leave out, and any
+     * reference to it stops this whole class from loading on such a runtime.
+     */
+    static void setFwDispatcher(EventQueue queue, FwDispatcher dispatcher) {
+        AWTAccessor.getEventQueueAccessor().setFwDispatcher(queue, dispatcher);
+    }
+
     // Package-private (not private) so EvolveDispatcherWrapperTest can construct and exercise
     // these directly instead of only through the full JavaFX/AWT dispatch-merge trigger.
-    static final class EvolveDispatcherWrapper extends jdk.swing.interop.DispatcherWrapper {
+    static final class EvolveDispatcherWrapper implements FwDispatcher {
         private final Display display;
 
         EvolveDispatcherWrapper(Display display) {
@@ -592,10 +793,32 @@ public final class EvolveSwingHost {
      */
     static final class ContentRoot extends JPanel {
         private final Runnable drawn;
+        private volatile boolean placed;
 
         ContentRoot(Runnable drawn) {
             super(new BorderLayout());
             this.drawn = drawn;
+        }
+
+        /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
+        void place() {
+            placed = true;
+        }
+
+        @Override
+        protected void paintChildren(Graphics g) {
+            if (placed) super.paintChildren(g);
+        }
+
+        // Until placed, a descendant's own repaint starts from here, so it goes through paintChildren.
+        @Override
+        public boolean isOptimizedDrawingEnabled() {
+            return placed && super.isOptimizedDrawingEnabled();
+        }
+
+        @Override
+        public boolean isPaintingOrigin() {
+            return !placed;
         }
 
         @Override
@@ -634,11 +857,12 @@ public final class EvolveSwingHost {
         // Cached at construction so the EDT never calls canvas.getDisplay() (which throws once the
         // canvas is disposed during shutdown). Display.isDisposed()/asyncExec are thread-safe.
         private final Display display;
-        private final JPanel contentRoot = new ContentRoot(this::pushSoon);
+        private final ContentRoot contentRoot = new ContentRoot(this::pushSoon);
         private final EvolveContent content = new EvolveContent();
         private volatile JLightweightFrame frame;
         private volatile Runnable forceRepaint;
         private volatile EmbedCursor cursor;
+        private final AwtDropBridge drops;
         // Guards the container-listener reentrancy while we relocate app-added children.
         private boolean relocating;
 
@@ -655,6 +879,7 @@ public final class EvolveSwingHost {
         Host(Canvas canvas) {
             this.canvas = canvas;
             this.display = canvas.getDisplay();
+            this.drops = new AwtDropBridge(canvas);
         }
 
         /**
@@ -674,6 +899,7 @@ public final class EvolveSwingHost {
          */
         void bind(JLightweightFrame frame) {
             this.frame = frame;
+            drops.bind(frame);
             interceptAdds(frame);
             canvas.addPaintListener(this::paint);
             Runnable forceRepaint = () -> content.imageUpdated(0, 0, 0, 0);
@@ -685,9 +911,9 @@ public final class EvolveSwingHost {
             cursor = embedCursor;
             canvas.addListener(SWT.Resize, e -> {
                 Rectangle a = canvas.getClientArea();
-                final int w = Math.max(1, a.width), h = Math.max(1, a.height);
                 EventQueue.invokeLater(() -> {
-                    frame.setSize(w, h);
+                    sizeBlitFrame(frame, contentRoot, a);
+                    final int w = frame.getWidth(), h = frame.getHeight();
                     // JLightweightFrame.reshape() reallocates the off-screen buffer and repaints
                     // immediately, but the content tree is still laid out for the old size, so that
                     // repaint fills the new buffer with background and drops the components — they
@@ -721,7 +947,8 @@ public final class EvolveSwingHost {
             shell.addListener(SWT.Move, shellMoved);
             canvas.addListener(SWT.Dispose, e -> {
                 if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
-                forgetEmbed(contentRoot);
+                forgetEmbed(contentRoot, frame);
+                drops.dispose();
                 disposeFrame(frame);
             });
             scheduleStaggeredRepaints(forceRepaint, 300, 900, 2000);
@@ -998,6 +1225,16 @@ public final class EvolveSwingHost {
             public void setCursor(java.awt.Cursor ignored) {
                 EmbedCursor c = cursor;
                 if (c != null) c.refresh();
+            }
+
+            @Override
+            public void addDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.register(dt);
+            }
+
+            @Override
+            public void removeDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.unregister(dt);
             }
 
             @Override public void focusGrabbed() {}

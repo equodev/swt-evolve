@@ -73,6 +73,26 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         return DartMocks.dartDisplay();
     }
 
+    /** Undoes {@link #deliverEvents}. */
+    public interface Delivery extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    /**
+     * Makes the shared mock display deliver sent events to the widget's listeners, as the real
+     * display does, until the returned handle is closed.
+     */
+    public static Delivery deliverEvents(Display display) {
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        doAnswer(inv -> {
+            EventTable table = inv.getArgument(0);
+            if (table != null) table.sendEvent(inv.getArgument(1));
+            return null;
+        }).when(impl).sendEvent(any(EventTable.class), any(Event.class));
+        return () -> doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
+    }
+
     public static Device device() {
         return display();
     }

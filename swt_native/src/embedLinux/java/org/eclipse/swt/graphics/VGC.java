@@ -591,6 +591,13 @@ public class VGC extends VResource {
     public void setBufferScale(float value) {
     }
 
+    public Boolean getThemedCanvas() {
+        return ((DartGC) impl).wireThemedCanvas();
+    }
+
+    public void setThemedCanvas(Boolean value) {
+    }
+
     public static final String XORMODE = "XORMode";
 
     public static final String ALPHA = "alpha";
@@ -628,6 +635,8 @@ public class VGC extends VResource {
     public static final String LINE_WIDTH = "lineWidth";
 
     public static final String STYLE = "style";
+
+    public static final String THEMED_CANVAS = "themedCanvas";
 
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
@@ -688,6 +697,9 @@ public class VGC extends VResource {
                 return;
             case "bufferScale":
                 Serializer.writeKeyValue(writer, "bufferScale", getBufferScale());
+                return;
+            case "themedCanvas":
+                Serializer.writeKeyValue(writer, "themedCanvas", getThemedCanvas());
                 return;
         }
         super.writeProperty(writer, key);

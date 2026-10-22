@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -290,6 +290,9 @@ public class DartTableItem extends DartItem implements ITableItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         ((DartTable) parent.getImpl()).ignoreSize = true;
         ((DartTable) parent.getImpl()).ignoreSize = false;
+        int horizontalSeparator;
+        int[] buffer = new int[1];
+        horizontalSeparator = buffer[0];
         if (((DartTable) parent.getImpl()).columnCount > 0) {
         }
         return null;
@@ -633,6 +636,9 @@ public class DartTableItem extends DartItem implements ITableItem {
         int[] x = new int[1];
         ((DartTable) parent.getImpl()).ignoreSize = true;
         ((DartTable) parent.getImpl()).ignoreSize = false;
+        int horizontalSeparator;
+        int[] buffer = new int[1];
+        horizontalSeparator = buffer[0];
         /*
 	 * Fix for Eclipse bug 476562, we need to re-adjust the bounds for the text
 	 * when the separator value is less than the width of the image. Previously
@@ -688,10 +694,10 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this.background, newValue)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -767,10 +773,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setChecked(boolean checked) {
         boolean newValue = checked;
+        checkWidget();
         if (!java.util.Objects.equals(this.checked, newValue)) {
             getValue().markDirty(VTableItem.CHECKED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (_getChecked() == checked)
@@ -898,10 +904,10 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
