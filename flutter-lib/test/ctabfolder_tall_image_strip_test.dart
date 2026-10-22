@@ -1,6 +1,6 @@
-// A tab image taller than the drawn icon makes the tab strip taller by the difference, as native SWT
-// sizes the header to its tallest tab. Java grows the folder's client area by the same amount, so
-// the page starts where the strip ends.
+// A tab image taller than the drawn icon makes the tab strip taller, as native SWT sizes the header
+// to its tallest tab. Java computes that height for its client area and sends it, so the strip is
+// drawn exactly as tall as Java says and the page starts where the strip ends.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,11 +17,12 @@ import 'package:swtflutter/src/impl/widget_config.dart';
 
 const _folderWidth = 380;
 const _folderHeight = 300;
-const _tabStripHeight = 32;
-const _iconSize = 16.0;
+const _imageHeight = 40;
+const _sentStripHeight = 56;
 
-VCTabFolder _folder(int? imageHeight, int tabPosition) => VCTabFolder()
+VCTabFolder _folder(int? imageHeight, int? stripHeight, int tabPosition) => VCTabFolder()
   ..id = 1000
+  ..tabHeight = stripHeight
   ..style = SWT.NONE
   ..tabPosition = tabPosition
   ..selection = 0
@@ -48,7 +49,8 @@ VCTabFolder _folder(int? imageHeight, int tabPosition) => VCTabFolder()
   ];
 
 /// Where the page area starts below the top of the folder, or ends above its bottom.
-Future<double> _stripHeight(WidgetTester tester, int? imageHeight, {int tabPosition = SWT.TOP}) async {
+Future<double> _stripHeight(WidgetTester tester, int? imageHeight, int? stripHeight,
+    {int tabPosition = SWT.TOP}) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
@@ -56,7 +58,7 @@ Future<double> _stripHeight(WidgetTester tester, int? imageHeight, {int tabPosit
       child: SizedBox(
         width: _folderWidth.toDouble(),
         height: _folderHeight.toDouble(),
-        child: CTabFolderSwt<VCTabFolder>(value: _folder(imageHeight, tabPosition)),
+        child: CTabFolderSwt<VCTabFolder>(value: _folder(imageHeight, stripHeight, tabPosition)),
       ),
     ),
   ));
@@ -71,30 +73,23 @@ Future<double> _stripHeight(WidgetTester tester, int? imageHeight, {int tabPosit
 void main() {
   setUp(resetConfigFlags);
 
-  testWidgets('without images the strip keeps its height', (tester) async {
-    expect(await _stripHeight(tester, null), _tabStripHeight);
+  testWidgets('a tall image does not grow the strip on its own', (tester) async {
+    expect(await _stripHeight(tester, _imageHeight, null), await _stripHeight(tester, null, null));
   });
 
-  testWidgets('an image no taller than the icon leaves the strip as it is', (tester) async {
-    expect(await _stripHeight(tester, _iconSize.toInt()), _tabStripHeight);
+  testWidgets('the strip is as tall as the height Java sends', (tester) async {
+    expect(await _stripHeight(tester, _imageHeight, _sentStripHeight), _sentStripHeight);
   });
 
-  testWidgets('a tall image grows the strip by what it overshoots the icon', (tester) async {
-    expect(await _stripHeight(tester, 40), _tabStripHeight + 40 - _iconSize);
+  testWidgets('tabs at the bottom take the sent height the same way', (tester) async {
+    expect(await _stripHeight(tester, _imageHeight, _sentStripHeight, tabPosition: SWT.BOTTOM),
+        _sentStripHeight);
   });
 
-  testWidgets('tabs at the bottom grow the same way', (tester) async {
-    expect(await _stripHeight(tester, 40, tabPosition: SWT.BOTTOM), _tabStripHeight + 40 - _iconSize);
-  });
-
-  test('the strip height follows the tallest image', () {
-    final items = [
-      VCTabItem()..image = (VImage()..height = 24),
-      VCTabItem()..image = (VImage()..height = 40),
-      VCTabItem(),
-    ];
-    expect(ctabStripHeight(items, _iconSize), _tabStripHeight + 40 - _iconSize);
-    expect(ctabIconSize(items[1].image, _iconSize), 40);
-    expect(ctabIconSize(null, _iconSize), _iconSize);
+  test('a tab image is drawn in a square as tall as the image, never smaller than the icon', () {
+    const iconSize = 16.0;
+    expect(ctabIconSize(VImage()..height = _imageHeight, iconSize), _imageHeight);
+    expect(ctabIconSize(VImage()..height = 8, iconSize), iconSize);
+    expect(ctabIconSize(null, iconSize), iconSize);
   });
 }

@@ -773,36 +773,37 @@ public class Sizes {
             ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
     }
 
-    public static Rectangle getBounds(DartTableItem item) {
+    /** The row an item is shown in, in viewport coordinates; null when the item is not in the table. */
+    private static Rectangle tableRow(DartTableItem item) {
         Table parent = item._parent();
         int itemIndex = parent.indexOf(item.getApi());
         if (itemIndex == -1)
-            return new Rectangle(0, 0, 0, 0);
+            return null;
         DartTable dartTable = (DartTable) parent.getImpl();
         int itemHeight = dartTable.getItemHeight();
         if (itemHeight <= 0)
             itemHeight = 20;
-        int headerHeight = dartTable.getHeaderHeight();
-        int y = headerHeight + (itemIndex * itemHeight);
+        // The row index counts from the top of the model; take off however far Flutter has scrolled.
+        int y = dartTable.getHeaderHeight() + itemIndex * itemHeight - dartTable.scrollOffsetY;
         Rectangle parentBounds = parent.getBounds();
-        int width = parentBounds != null ? parentBounds.width : 100;
-        return new Rectangle(0, y, width, itemHeight);
+        return new Rectangle(0, y, parentBounds != null ? parentBounds.width : 100, itemHeight);
+    }
+
+    public static Rectangle getBounds(DartTableItem item) {
+        Rectangle row = tableRow(item);
+        return row != null ? row : new Rectangle(0, 0, 0, 0);
     }
 
     public static Rectangle getBounds(DartTableItem item, int index) {
-        Table parent = item._parent();
-        DartTable dartTable = (DartTable) parent.getImpl();
+        DartTable dartTable = (DartTable) item._parent().getImpl();
         int columnCount = dartTable.columnCount;
         if (!(0 <= index && index < Math.max(1, columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        int itemIndex = parent.indexOf(item.getApi());
-        if (itemIndex == -1)
+        Rectangle row = tableRow(item);
+        if (row == null)
             return new Rectangle(0, 0, 0, 0);
-        int itemHeight = dartTable.getItemHeight();
-        if (itemHeight <= 0)
-            itemHeight = 20;
-        int headerHeight = dartTable.getHeaderHeight();
-        int y = headerHeight + (itemIndex * itemHeight);
+        int y = row.y;
+        int itemHeight = row.height;
         // The first cell's content starts after its inset (and checkbox); the others fill their column.
         int inset = dev.equo.swt.size.TableSizes.getLeadingInset(dartTable);
         if (columnCount == 0)
@@ -1024,11 +1025,49 @@ public class Sizes {
                 : CTabFolderSizes.BODY_BORDER;
     }
 
+    /**
+     * The tab height upstream computes for the default font. Tabs keep it while no height is fixed,
+     * so a point taken from a tab's bounds lands where it would natively, although the strip drawn
+     * around them is taller.
+     */
+    private static final int CTABFOLDER_DEFAULT_TAB_HEIGHT = 25;
+
+    /**
+     * Height of a tab, which places the tabs and decides what a point on them hits. {@code setTabHeight}
+     * fixes it as natively: {@code h + 1} (the line across the top of the tabs), and 0 for 0. With no
+     * fixed height, a tab image taller than the drawn icon grows it by the difference.
+     */
+    public static int cTabFolderTabHeight(DartCTabFolder widget) {
+        int fixed = widget._fixedTabHeight();
+        if (fixed == SWT.DEFAULT) return CTABFOLDER_DEFAULT_TAB_HEIGHT + CTabFolderHelper.imageGrowth(widget);
+        return fixed == 0 ? 0 : fixed + 1;
+    }
+
+    /**
+     * Height of the strip the render side draws and the page is laid out below: the measured
+     * default grown by a tall tab image, or the tab height {@code setTabHeight} fixed. The render
+     * side receives it and draws exactly this.
+     */
+    public static int cTabFolderTabStripHeight(DartCTabFolder widget) {
+        return widget._fixedTabHeight() == SWT.DEFAULT
+                ? CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.imageGrowth(widget)
+                : cTabFolderTabHeight(widget);
+    }
+
+    /**
+     * The frame around the page. With no tab strip the folder draws none, so the page fills it.
+     * Read from the strip height {@code updateTabHeight} stores, so the deferred update sees the
+     * client area move and lays the page out again.
+     */
+    private static int cTabFolderFrame(DartCTabFolder widget) {
+        return widget._displayedTabHeight() == 0 ? 0 : cTabFolderBodyBorder(widget);
+    }
+
     public static Rectangle getClientArea(DartCTabFolder widget) {
         Rectangle b = widget.getBounds();
-        int border = cTabFolderBodyBorder(widget);
+        int border = cTabFolderFrame(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int tabs = CTabFolderHelper.tabStripHeight(widget) + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
+        int tabs = widget._displayedTabHeight() + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
         if (widget._minimized()) return new Rectangle(border, top, 0, 0);
@@ -1039,9 +1078,9 @@ public class Sizes {
 
     // Inverse of getClientArea(DartCTabFolder): adds the tab strip and the frame back on.
     public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
-        int border = cTabFolderBodyBorder(widget);
+        int border = cTabFolderFrame(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int tabs = CTabFolderHelper.tabStripHeight(widget) + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
+        int tabs = widget._displayedTabHeight() + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
         return new Rectangle(x - border, y - top,

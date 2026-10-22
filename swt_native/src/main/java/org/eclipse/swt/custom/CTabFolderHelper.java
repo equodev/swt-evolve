@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Sizes;
 
 public class CTabFolderHelper {
     // Constants from CTabFolderRenderer
@@ -37,9 +38,21 @@ public class CTabFolderHelper {
     private static final int FLAGS = SWT.DRAW_TRANSPARENT | SWT.DRAW_MNEMONIC | SWT.DRAW_DELIMITER;
     private static final String CHEVRON_ELLIPSIS = "99+";
 
-    /** Height of the tab strip as drawn, where a wrapped SWT.WRAP topRight row starts. */
-    public static int tabStripHeight(DartCTabFolder folder) {
-        return CTabFolderSizes.TAB_STRIP_HEIGHT + imageGrowth(folder);
+    /**
+     * Upstream's {@code updateTabHeight}, with the heights from {@link Sizes}: the render side draws
+     * the strip from its theme, so no GC or renderer is asked. The strip height goes to the render
+     * side, which draws exactly that.
+     */
+    static boolean updateTabHeight(DartCTabFolder folder, boolean force) {
+        int oldHeight = folder.tabHeight;
+        int oldStripHeight = folder.stripHeight;
+        folder.tabHeight = Sizes.cTabFolderTabHeight(folder);
+        folder.stripHeight = Sizes.cTabFolderTabStripHeight(folder);
+        if (!force && folder.tabHeight == oldHeight && folder.stripHeight == oldStripHeight)
+            return false;
+        folder.oldSize = null;
+        folder.getValue().markDirty(VCTabFolder.TAB_HEIGHT);
+        return true;
     }
 
     /**
@@ -47,7 +60,7 @@ public class CTabFolderHelper {
      * at least that tall and grows the whole strip by the difference, as upstream sizes the header
      * to its tallest tab.
      */
-    static int imageGrowth(DartCTabFolder folder) {
+    public static int imageGrowth(DartCTabFolder folder) {
         int growth = 0;
         for (CTabItem item : folder.items)
             if (!item.isDisposed()) growth = Math.max(growth, imageGrowth(item.getImage()));

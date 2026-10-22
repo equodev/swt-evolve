@@ -41,6 +41,9 @@ import 'color_utils.dart';
 double ctabFolderBodyBorderWidth(int? style) =>
     (style != null && (style & SWT.BORDER) != 0) ? 3 : 2;
 
+/// Java sends the strip height it reserves, and leaves it out at this default.
+const double _defaultTabStripHeight = 32;
+
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
   /// A click on a tab or on the folder focuses no CTabFolder, on any native.
@@ -150,6 +153,24 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendMenuDetectMenuDetect(state, e);
   }
 
+  /// A strip whose height the application fixed keeps exactly that height: the tabs and buttons
+  /// are laid out as usual and cut to it, and a height of 0 leaves no strip at all.
+  Widget _fitTabStrip(double height, bool isTabBottom, Widget strip) {
+    if (height == _defaultTabStripHeight) return strip;
+    if (height == 0) return const SizedBox.shrink();
+    return SizedBox(
+      height: height,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: isTabBottom ? Alignment.bottomCenter : Alignment.topCenter,
+          minHeight: 0,
+          maxHeight: math.max(height, _defaultTabStripHeight),
+          child: strip,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabItems = getTabItems();
@@ -157,24 +178,29 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final isTabBottom = state.tabPosition == SWT.BOTTOM;
 
+    // Java sends the strip height it reserves: a fixed height, or the default grown by a tall image.
+    final double stripHeight = state.tabHeight?.toDouble() ?? _defaultTabStripHeight;
+    final double tabRowHeight = math.max(stripHeight, _defaultTabStripHeight);
     final constraints = getConstraintsFromBounds(state.bounds);
 
     final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
-    final double? tabHeight = ctabStripHeight(state.items, widgetTheme.tabIconSize);
-    final bodyFrame = BorderSide(
-      color: widgetTheme.tabContentBorderColor,
-      width: ctabFolderBodyBorderWidth(state.style),
-    );
+    // With no strip the folder draws no frame either, as Java's client area assumes.
+    final bodyFrame = stripHeight == 0
+        ? BorderSide.none
+        : BorderSide(
+            color: widgetTheme.tabContentBorderColor,
+            width: ctabFolderBodyBorderWidth(state.style),
+          );
 
     Widget column = Column(
       children: [
         if (!isTabBottom)
-          _CTabBar(
+          _fitTabStrip(stripHeight, isTabBottom, _CTabBar(
             state: state,
             folderWidget: widget,
             selectedIndex: _selectedIndex,
             tabItems: tabItems,
-            tabHeight: tabHeight,
+            tabHeight: tabRowHeight,
             useSimpleStyle: false,
             topRightComposite: getTopRightComposite(),
             onTabSelected: _handleTabSelection,
@@ -189,7 +215,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onStripLayout: _handleStripLayout,
             dragPointFor: _dragPointFor,
             folderPointFor: _folderPointFor,
-          ),
+          )),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
         // shrinks computeSize, it never hides the selected control. A collapsed folder
         // gets a tab-strip-height bounds (Expanded → ~0 height); an E4 minimized-stack
@@ -211,12 +237,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           ),
         ),
         if (isTabBottom)
-          _CTabBar(
+          _fitTabStrip(stripHeight, isTabBottom, _CTabBar(
             state: state,
             folderWidget: widget,
             selectedIndex: _selectedIndex,
             tabItems: tabItems,
-            tabHeight: tabHeight,
+            tabHeight: tabRowHeight,
             useSimpleStyle: false,
             topRightComposite: getTopRightComposite(),
             onTabSelected: _handleTabSelection,
@@ -231,7 +257,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onStripLayout: _handleStripLayout,
             dragPointFor: _dragPointFor,
             folderPointFor: _folderPointFor,
-          ),
+          )),
       ],
     );
 
@@ -2231,17 +2257,6 @@ class _TabDragRowState extends State<TabDragRow> {
 
   /// Enough to read as "this row", not enough to fight the tabs drawn on it.
   static const double _receivingStripTint = 0.12;
-}
-
-/// Height of the tab strip, which keeps CTabFolderSizes.TAB_STRIP_HEIGHT on the Java side unless a tab
-/// image is taller than the drawn icon: then the strip grows by the difference, as Java's client area
-/// does.
-double ctabStripHeight(List<VCTabItem>? items, double iconSize) {
-  var tallest = iconSize;
-  for (final item in items ?? const <VCTabItem>[]) {
-    tallest = math.max(tallest, ctabIconSize(item.image, iconSize));
-  }
-  return 32 + tallest - iconSize;
 }
 
 /// Side of the square a tab image is drawn in: the theme's icon size, or the image's own height when
