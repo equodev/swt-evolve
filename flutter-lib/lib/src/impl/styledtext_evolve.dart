@@ -94,6 +94,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         context: context,
         foreground: state.foreground,
         defaultColor: _styledTextTheme.foregroundColor,
+        minContrast: _styledTextTheme.minTextContrast,
       );
 
   /// The editor fill marks a place to type. A read-only StyledText is text to read, so it sits on the

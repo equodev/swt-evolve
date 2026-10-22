@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../../impl/widget_config.dart';
 import '../theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -142,6 +143,8 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     // Chevron overflow menu
     chevronMenuItemHeight: 28.0,
     chevronMenuItemPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

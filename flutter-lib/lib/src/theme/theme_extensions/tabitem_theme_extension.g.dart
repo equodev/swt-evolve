@@ -30,6 +30,7 @@ TabItemThemeExtension _$TabItemThemeExtensionFromJson(
   textStyle: const TextStyleConverter().fromJson(
     json['textStyle'] as Map<String, dynamic>?,
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$TabItemThemeExtensionToJson(
@@ -50,4 +51,5 @@ Map<String, dynamic> _$TabItemThemeExtensionToJson(
   'textPadding': const EdgeInsetsConverter().toJson(instance.textPadding),
   'imageTextSpacing': instance.imageTextSpacing,
   'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
+  'minTextContrast': instance.minTextContrast,
 };

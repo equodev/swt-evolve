@@ -12,29 +12,48 @@ public class SpinnerHelper {
 
     public static String getText(DartSpinner c) {
         c.checkWidget();
-        return format(c.selection, c.digits);
+        return format(c, c.selection);
     }
 
     /**
-     * The decimal separator of the host's locale, which is what the text of a native spinner shows (the number
-     * formatter's on Cocoa, the user locale's on Win32, the C library's on GTK).
+     * The decimal separator of the user's locale, which is what the text of a native spinner shows (the number
+     * formatter's on Cocoa, the user locale's on Win32, the C library's on GTK). The user is the session's client.
      */
-    public static String decimalSeparator() {
-        return String.valueOf(DecimalFormatSymbols.getInstance(Locale.getDefault(Locale.Category.FORMAT)).getDecimalSeparator());
+    public static String decimalSeparator(DartSpinner c) {
+        Locale locale = c.textLocale();
+        return String.valueOf(DecimalFormatSymbols.getInstance(locale == null ? Locale.ROOT : locale).getDecimalSeparator());
+    }
+
+    /** A client that reports another locale changes the separator of every open spinner, so each is sent again. */
+    static void clientLocaleChanged(Display display) {
+        for (Shell shell : display.getShells())
+            resendSeparator(shell);
+    }
+
+    private static void resendSeparator(Control control) {
+        if (control.getImpl() instanceof DartSpinner)
+            ((DartSpinner) control.getImpl()).getValue().markDirty(VSpinner.DECIMAL_SEPARATOR);
+        if (control instanceof Composite)
+            for (Control child : ((Composite) control).getChildren())
+                resendSeparator(child);
+    }
+
+    /** {@code value} as the spinner's text field shows it. */
+    static String format(DartSpinner c, int value) {
+        return format(value, c.digits, decimalSeparator(c));
     }
 
     /**
      * Renders a spinner value the way its text field shows it: {@code digits} decimal places, and the sign of a
      * negative value in front of them, as Win32 and GTK write it ("-0.05").
      */
-    static String format(int value, int digits) {
+    static String format(int value, int digits, String separator) {
         if (digits <= 0) {
             return String.valueOf(value);
         }
         String string = String.valueOf(Math.abs((long) value));
         int index = string.length() - digits;
         StringBuilder buffer = new StringBuilder(value < 0 ? "-" : "");
-        String separator = decimalSeparator();
         if (index > 0) {
             buffer.append(string, 0, index);
             buffer.append(separator);
@@ -83,7 +102,7 @@ public class SpinnerHelper {
         if (value == c.selection)
             return;
         Event verify = new Event();
-        verify.text = format(value, c.digits);
+        verify.text = format(c, value);
         verify.start = 0;
         verify.end = getText(c).length();
         c.sendEvent(SWT.Verify, verify);
@@ -103,9 +122,9 @@ public class SpinnerHelper {
         }
         if (setText && (c.hooks(SWT.Verify) || c.filters(SWT.Verify))) {
             Event verify = new Event();
-            verify.text = format(value, c.digits);
+            verify.text = format(c, value);
             verify.start = 0;
-            verify.end = format(c.selection, c.digits).length();
+            verify.end = format(c, c.selection).length();
             c.selection = value;
             c.sendEvent(SWT.Verify, verify);
             if (!verify.doit || c.isDisposed()) {
@@ -238,7 +257,7 @@ public class SpinnerHelper {
                 text = text.substring(0, e.start) + verified + text.substring(e.start + count);
             }
         }
-        Integer value = parseText(text, c.digits, c.minimum, c.maximum, decimalSeparator());
+        Integer value = parseText(text, c.digits, c.minimum, c.maximum, decimalSeparator(c));
         if (value != null && value != c.selection) {
             c.getValue().markDirty(VSpinner.SELECTION);
             c.selection = value;
@@ -260,7 +279,7 @@ public class SpinnerHelper {
         String digitsOnly = string;
         int index = 0;
         if (c.digits > 0) {
-            String separator = decimalSeparator();
+            String separator = decimalSeparator(c);
             int point = digitsOnly.indexOf(separator);
             if (point != -1) {
                 digitsOnly = digitsOnly.substring(0, point) + digitsOnly.substring(point + separator.length());

@@ -44,6 +44,8 @@ class SliderThemeExtension extends ThemeExtension<SliderThemeExtension> with _$S
   final int pageIncrement;
   final int thumb;
 
+  final double minTextContrast;
+
   const SliderThemeExtension({
     required this.activeTrackColor,
     required this.inactiveTrackColor,
@@ -65,6 +67,7 @@ class SliderThemeExtension extends ThemeExtension<SliderThemeExtension> with _$S
     required this.increment,
     required this.pageIncrement,
     required this.thumb,
+    required this.minTextContrast,
   });
 
   factory SliderThemeExtension.fromJson(Map<String, dynamic> json) =>

@@ -12,6 +12,7 @@ import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
@@ -587,6 +588,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
                     foreground: _ownForeground,
                     defaultColor: widgetTheme.pushButtonTextColor,
                     context: context,
+                    minContrast: widgetTheme.minTextContrast,
                   )
                 : widgetTheme.disabledForegroundColor,
           ),
@@ -650,6 +652,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       foreground: _ownForeground,
       defaultColor: defaultTextColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textStyle = getTextStyle(
@@ -683,8 +686,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
 
         if (hasText)
           Flexible(
-            child: Text(
-              text!,
+            child: MnemonicText(
+              state.text,
               style: textStyle,
               overflow: shouldWrap
                   ? TextOverflow.visible

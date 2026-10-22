@@ -1,5 +1,5 @@
-// The text of a Spinner with digits shows its decimal places with the separator of the host's locale, as every
-// native spinner does, and getText() on the Java side answers the same text. Java sends the separator it uses;
+// The text of a Spinner with digits shows its decimal places with the separator of the user's locale, as every
+// native spinner does, and getText() on the Java side answers the same text. Java sends the separator it uses, and
 // this side writes it into the field and reads it back out of what is typed.
 
 import 'package:flutter/material.dart';

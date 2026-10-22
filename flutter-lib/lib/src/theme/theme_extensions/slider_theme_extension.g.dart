@@ -39,6 +39,7 @@ SliderThemeExtension _$SliderThemeExtensionFromJson(
   increment: (json['increment'] as num).toInt(),
   pageIncrement: (json['pageIncrement'] as num).toInt(),
   thumb: (json['thumb'] as num).toInt(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$SliderThemeExtensionToJson(
@@ -72,4 +73,5 @@ Map<String, dynamic> _$SliderThemeExtensionToJson(
   'increment': instance.increment,
   'pageIncrement': instance.pageIncrement,
   'thumb': instance.thumb,
+  'minTextContrast': instance.minTextContrast,
 };

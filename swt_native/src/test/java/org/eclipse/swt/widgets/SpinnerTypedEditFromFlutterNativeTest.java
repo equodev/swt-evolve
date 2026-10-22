@@ -205,12 +205,12 @@ class SpinnerTypedEditFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("the decimals of the text are scaled by the digits, read with the host's separator")
+    @DisplayName("the decimals of the text are scaled by the digits, read with the spinner's separator")
     void decimalText() {
         Spinner spinner = spinner(0);
         spinner.setDigits(2);
         spinner.setMaximum(100000);
-        String separator = SpinnerHelper.decimalSeparator();
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
 
         fromFlutter(spinner, typedOver(4, "1" + separator + "5"));
         assertThat(spinner.getSelection()).isEqualTo(150);
@@ -372,7 +372,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
         List<String> byText = new ArrayList<>();
         spinner.addListener(SWT.Verify, e -> byText.add(e.text + "=" + e.doit));
         DartSpinner impl = (DartSpinner) spinner.getImpl();
-        String separator = SpinnerHelper.decimalSeparator();
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
 
         SpinnerHelper.editedInFlutter(impl, edit("5", 0, 0, 1));
         SpinnerHelper.editedInFlutter(impl, edit("-", 0, 0, 1));
@@ -389,7 +389,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
         spinner.setDigits(1);
         spinner.setMinimum(-1000);
         spinner.setMaximum(1000);
-        String separator = SpinnerHelper.decimalSeparator();
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
 
         fromFlutter(spinner, typedOver(3, "+1" + separator + "5"));
         assertThat(spinner.getSelection()).isEqualTo(15);
@@ -473,7 +473,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
         spinner.addListener(SWT.Verify, e -> byText.add(e.text + "=" + e.doit));
         DartSpinner impl = (DartSpinner) spinner.getImpl();
 
-        String separator = SpinnerHelper.decimalSeparator();
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
 
         SpinnerHelper.editedInFlutter(impl, edit("-", 0, 0, 1));
         SpinnerHelper.editedInFlutter(impl, edit(separator, 0, 0, 1));

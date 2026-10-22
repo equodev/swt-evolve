@@ -35,6 +35,22 @@ void main() {
     expect(sent.last.$2['isFirst'], isFalse);
   });
 
+  test('the report carries the locale the user formats numbers in', () {
+    reporter = ClientReadyReporter(
+        (channel, payload) async => sent.add((channel, payload as Map<String, Object>)), () => 'de-AT');
+
+    report(1280, 800);
+
+    expect(sent.single.$2['locale'], 'de-AT');
+  });
+
+  test('without a locale of its own the reporter sends the platform\'s', () {
+    report(1280, 800);
+
+    expect(sent.single.$2['locale'], isA<String>());
+    expect(sent.single.$2['locale'], isNotEmpty);
+  });
+
   test('after a restart the same area is reported again, as a fresh client', () {
     report(1280, 800);
     reporter.restart();

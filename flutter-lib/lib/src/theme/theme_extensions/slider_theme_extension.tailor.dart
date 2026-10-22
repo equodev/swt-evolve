@@ -31,6 +31,7 @@ mixin _$SliderThemeExtensionTailorMixin
   int get increment;
   int get pageIncrement;
   int get thumb;
+  double get minTextContrast;
 
   @override
   SliderThemeExtension copyWith({
@@ -54,6 +55,7 @@ mixin _$SliderThemeExtensionTailorMixin
     int? increment,
     int? pageIncrement,
     int? thumb,
+    double? minTextContrast,
   }) {
     return SliderThemeExtension(
       activeTrackColor: activeTrackColor ?? this.activeTrackColor,
@@ -78,6 +80,7 @@ mixin _$SliderThemeExtensionTailorMixin
       increment: increment ?? this.increment,
       pageIncrement: pageIncrement ?? this.pageIncrement,
       thumb: thumb ?? this.thumb,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -128,6 +131,7 @@ mixin _$SliderThemeExtensionTailorMixin
       increment: t < 0.5 ? increment : other.increment,
       pageIncrement: t < 0.5 ? pageIncrement : other.pageIncrement,
       thumb: t < 0.5 ? thumb : other.thumb,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -194,7 +198,11 @@ mixin _$SliderThemeExtensionTailorMixin
               pageIncrement,
               other.pageIncrement,
             ) &&
-            const DeepCollectionEquality().equals(thumb, other.thumb));
+            const DeepCollectionEquality().equals(thumb, other.thumb) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
+            ));
   }
 
   @override
@@ -221,6 +229,7 @@ mixin _$SliderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(increment),
       const DeepCollectionEquality().hash(pageIncrement),
       const DeepCollectionEquality().hash(thumb),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -250,4 +259,5 @@ extension SliderThemeExtensionBuildContextProps on BuildContext {
   int get increment => sliderThemeExtension.increment;
   int get pageIncrement => sliderThemeExtension.pageIncrement;
   int get thumb => sliderThemeExtension.thumb;
+  double get minTextContrast => sliderThemeExtension.minTextContrast;
 }

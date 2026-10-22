@@ -111,6 +111,7 @@ Color getSliderActiveTrackColor(
     context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.activeTrackColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -142,6 +143,7 @@ Color getSliderThumbColor(
     context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.thumbColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

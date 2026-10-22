@@ -3,10 +3,11 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -14,26 +15,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
- * The text of a spinner with digits writes its decimal places with the separator of the host's locale, as every
- * native spinner does, and the client is told which separator that is so that it writes and reads the same one.
+ * The text of a spinner with digits writes its decimal places with the separator of the user's locale, as every
+ * native spinner does. The user is the session's client, whose locale its display holds, and the client is told
+ * which separator that is so that it writes and reads the same one.
  */
 class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
 
-    private Locale format;
-
-    @BeforeEach
-    void rememberLocale() {
-        format = Locale.getDefault(Locale.Category.FORMAT);
-    }
+    private final List<DartDisplay> localized = new ArrayList<>();
 
     @AfterEach
-    void restoreLocale() {
-        Locale.setDefault(Locale.Category.FORMAT, format);
+    void forgetLocales() {
+        localized.forEach(display -> display.clientLocale = null);
+    }
+
+    private Shell shellOfAClientIn(Locale locale) {
+        Shell shell = shell();
+        DartDisplay display = (DartDisplay) shell.getDisplay().getImpl();
+        display.clientLocale = locale;
+        localized.add(display);
+        return shell;
     }
 
     private Spinner spinner(Locale locale) {
-        Locale.setDefault(Locale.Category.FORMAT, locale);
-        Spinner spinner = new Spinner(shell(), SWT.NONE);
+        Spinner spinner = new Spinner(shellOfAClientIn(locale), SWT.NONE);
         spinner.setMaximum(100000);
         spinner.setDigits(2);
         spinner.setSelection(123);
@@ -41,7 +45,7 @@ class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
     }
 
     @Test
-    void theTextUsesTheSeparatorOfTheDefaultLocale() {
+    void theTextUsesTheSeparatorOfTheClientsLocale() {
         assertThat(spinner(Locale.US).getText()).isEqualTo("1.23");
         assertThat(spinner(Locale.GERMANY).getText()).isEqualTo("1,23");
         assertThat(spinner(Locale.FRANCE).getText()).isEqualTo("1,23");
@@ -71,6 +75,12 @@ class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
     }
 
     @Test
+    void aClientThatHasNotReportedItsLocaleGetsAPoint() {
+        assertThat(spinner(null).getText()).isEqualTo("1.23");
+        assertThat(spinner(Locale.ROOT).getText()).isEqualTo("1.23");
+    }
+
+    @Test
     void theClientIsToldTheSeparator() {
         assertThatJson(serialize(spinner(Locale.GERMANY))).node("decimalSeparator").isEqualTo(",");
         assertThatJson(serialize(spinner(Locale.US))).node("decimalSeparator").isEqualTo(".");
@@ -78,8 +88,7 @@ class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
 
     @Test
     void aSpinnerWithoutDigitsHasNoSeparatorInItsText() {
-        Locale.setDefault(Locale.Category.FORMAT, Locale.GERMANY);
-        Spinner spinner = new Spinner(shell(), SWT.NONE);
+        Spinner spinner = new Spinner(shellOfAClientIn(Locale.GERMANY), SWT.NONE);
         spinner.setSelection(42);
 
         assertThat(spinner.getText()).isEqualTo("42");

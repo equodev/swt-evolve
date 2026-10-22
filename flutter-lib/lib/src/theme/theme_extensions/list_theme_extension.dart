@@ -41,7 +41,9 @@ class ListThemeExtension extends ThemeExtension<ListThemeExtension> with _$ListT
   
   // Animation
   final Duration animationDuration;
-  
+
+  final double minTextContrast;
+
   const ListThemeExtension({
     required this.backgroundColor,
     required this.selectedItemBackgroundColor,
@@ -58,6 +60,7 @@ class ListThemeExtension extends ThemeExtension<ListThemeExtension> with _$ListT
     required this.itemPadding,
     this.textStyle,
     required this.animationDuration,
+    required this.minTextContrast,
   });
 
   factory ListThemeExtension.fromJson(Map<String, dynamic> json) =>

@@ -67,6 +67,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   int get eventDefaultX;
   int get eventDefaultY;
   int get eventDefaultDetail;
+  double get minTextContrast;
 
   @override
   TableThemeExtension copyWith({
@@ -127,6 +128,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     int? eventDefaultX,
     int? eventDefaultY,
     int? eventDefaultDetail,
+    double? minTextContrast,
   }) {
     return TableThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -205,6 +207,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       eventDefaultX: eventDefaultX ?? this.eventDefaultX,
       eventDefaultY: eventDefaultY ?? this.eventDefaultY,
       eventDefaultDetail: eventDefaultDetail ?? this.eventDefaultDetail,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -372,6 +375,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       eventDefaultDetail: t < 0.5
           ? eventDefaultDetail
           : other.eventDefaultDetail,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -604,6 +608,10 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
             const DeepCollectionEquality().equals(
               eventDefaultDetail,
               other.eventDefaultDetail,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -668,6 +676,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(eventDefaultX),
       const DeepCollectionEquality().hash(eventDefaultY),
       const DeepCollectionEquality().hash(eventDefaultDetail),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -750,4 +759,5 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
   int get eventDefaultX => tableThemeExtension.eventDefaultX;
   int get eventDefaultY => tableThemeExtension.eventDefaultY;
   int get eventDefaultDetail => tableThemeExtension.eventDefaultDetail;
+  double get minTextContrast => tableThemeExtension.minTextContrast;
 }
