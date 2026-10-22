@@ -82,8 +82,6 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
         // the drag-end onWeightsChanged commit stays authoritative.
         onWeightsDragged: (newWeights) => _sendWeights(
             _mergeVisibleWeights(allWeights, visibleIndices, newWeights)),
-        onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
-        onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
         onFocusIn: () => widget.sendFocusFocusIn(state, null),
         onFocusOut: () => widget.sendFocusFocusOut(state, null),
       ),
@@ -133,8 +131,6 @@ class _SashFormLayout extends StatefulWidget {
   final SashThemeExtension sashTheme;
   final Function(List<int>) onWeightsChanged;
   final Function(List<int>) onWeightsDragged;
-  final VoidCallback onMouseEnter;
-  final VoidCallback onMouseExit;
   final VoidCallback onFocusIn;
   final VoidCallback onFocusOut;
 
@@ -147,8 +143,6 @@ class _SashFormLayout extends StatefulWidget {
     required this.sashTheme,
     required this.onWeightsChanged,
     required this.onWeightsDragged,
-    required this.onMouseEnter,
-    required this.onMouseExit,
     required this.onFocusIn,
     required this.onFocusOut,
   }) : super(key: key);
@@ -227,7 +221,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        widget.onMouseEnter();
         if (_draggingSashIndex != null && _isDragPaused) {
           setState(() {
             _isDragPaused = false;
@@ -235,7 +228,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
         }
       },
       onExit: (_) {
-        widget.onMouseExit();
         if (_draggingSashIndex != null) {
           setState(() {
             _isDragPaused = true;

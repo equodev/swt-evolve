@@ -114,6 +114,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // it on pointer-down and forward keystrokes to SWT below.
   final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
 
+  /// Whether a press gives this Canvas the keyboard focus; false for a Canvas that only paints, which
+  /// no native focuses on a click.
+  bool get focusesOnPress => true;
+
   // The Canvas grabs Flutter keyboard focus on tap (build's onPointerDown) so a childless Canvas can
   // be typed into. In whole-tree/web mode nothing forwards its keys directly (onKeyEvent stays
   // silent while displayLevelKeyForwardingActive): keystrokes are captured once at the Display root
@@ -218,7 +222,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
         // the Canvas hosts child widgets — they manage their own focus and stealing
         // it on every click would break them.
-        if (!hasActiveChildren) _keyboardFocus.requestFocus();
+        if (!hasActiveChildren && focusesOnPress) _keyboardFocus.requestFocus();
       },
       child: wrapWithScrollbars(base),
     );
