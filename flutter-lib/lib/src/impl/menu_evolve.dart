@@ -13,6 +13,7 @@ import 'decorations_align.dart';
 import 'decorations_evolve.dart';
 import 'widget_config.dart';
 import 'utils/hosted_context_menu.dart';
+import 'utils/menu_mnemonics.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
@@ -61,6 +62,11 @@ class OpenMenus {
   static final Set<MenuController> _controllers = {};
 
   static bool get any => _controllers.any((controller) => controller.isOpen);
+
+  /// Counts [controller]'s menu from its anchor's mount to its [remove].
+  static void add(MenuController controller) => _controllers.add(controller);
+
+  static void remove(MenuController controller) => _controllers.remove(controller);
 }
 
 class MenuChangeNotifier extends InheritedWidget {
@@ -151,7 +157,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   @override
   void initState() {
     super.initState();
-    OpenMenus._controllers.add(_menuController);
+    OpenMenus.add(_menuController);
     _subscribeRawChannels();
   }
 
@@ -198,11 +204,10 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
   @override
   void dispose() {
-    HardwareKeyboard.instance.removeHandler(_handleKeyWhileFocusParked);
     if (identical(OpenPopupMenuTracker._current, this)) {
       OpenPopupMenuTracker._current = null;
     }
-    OpenMenus._controllers.remove(_menuController);
+    OpenMenus.remove(_menuController);
     _unsubscribeRawChannels();
     _popupAnchorFocusNode.dispose();
     _firstItemFocusNode.dispose();
@@ -422,13 +427,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       consumeOutsideTap: true,
       onOpen: () {
         OpenPopupMenuTracker._current = this;
-        HardwareKeyboard.instance.addHandler(_handleKeyWhileFocusParked);
         if (_showSent) return;
         _showSent = true;
         widget.sendMenuShow(state, null);
       },
       onClose: () {
-        HardwareKeyboard.instance.removeHandler(_handleKeyWhileFocusParked);
         if (identical(OpenPopupMenuTracker._current, this)) {
           OpenPopupMenuTracker._current = null;
         }
@@ -462,9 +465,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           // No extra Semantics wrapper: with the anchor untagged, each item's own tagSemantics
           // materializes on its own (a tagged anchor merges them away; an added wrapper here
           // duplicates every item node instead).
-          child: Focus(
+          child: MenuMnemonics(
             focusNode: _itemsFocusNode,
-            canRequestFocus: false,
+            close: _menuController.close,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: menuItems
@@ -480,28 +483,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       builder: (context, controller, child) =>
           Focus(focusNode: _popupAnchorFocusNode, child: const SizedBox.shrink()),
     );
-  }
-
-  // The web engine parks the focus at the root scope when it moves the semantics DOM holding the
-  // focused item, as another overlay appearing over the menu does. The menu is still open, and like
-  // the platform's menu loop it keeps answering Escape and the arrow keys.
-  bool _handleKeyWhileFocusParked(KeyEvent event) {
-    if (event is! KeyDownEvent || !_menuController.isOpen) return false;
-    if (!identical(OpenPopupMenuTracker._current, this)) return false;
-    final focusManager = FocusManager.instance;
-    if (focusManager.primaryFocus != focusManager.rootScope) return false;
-    final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.escape) {
-      _menuController.close();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.arrowUp) {
-      final items = _itemsFocusNode.traversalDescendants.toList();
-      if (items.isEmpty) return false;
-      (key == LogicalKeyboardKey.arrowDown ? items.first : items.last).requestFocus();
-      return true;
-    }
-    return false;
   }
 
   void _registerPendingChange(void Function() callback) {
@@ -601,11 +582,15 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   bool _pendingOpen = false;
   List<Widget> _menuChildren = const [SizedBox.shrink()];
   final MenuController _subMenuController = MenuController();
+  final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'MenuBar.items');
+  // Opened by Alt+letter: the keyboard moves onto the first item once the menu is up.
+  bool _focusFirstItemWhenOpen = false;
 
   @override
   void initState() {
     super.initState();
-    OpenMenus._controllers.add(_subMenuController);
+    OpenMenus.add(_subMenuController);
+    if (widget.item.menu != null) MenuBarOpeners.add(widget.item, _openFromMnemonic);
     final preItems = widget.item.menu?.items;
     if (preItems != null && preItems.isNotEmpty) {
       _itemsLoaded = true;
@@ -616,8 +601,20 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   }
 
   @override
+  void didUpdateWidget(_MenuBarItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.id == widget.item.id && (oldWidget.item.menu == null) == (widget.item.menu == null)) {
+      return;
+    }
+    if (oldWidget.item.menu != null) MenuBarOpeners.remove(oldWidget.item, _openFromMnemonic);
+    if (widget.item.menu != null) MenuBarOpeners.add(widget.item, _openFromMnemonic);
+  }
+
+  @override
   void dispose() {
-    OpenMenus._controllers.remove(_subMenuController);
+    OpenMenus.remove(_subMenuController);
+    if (widget.item.menu != null) MenuBarOpeners.remove(widget.item, _openFromMnemonic);
+    _itemsFocusNode.dispose();
     if (widget.item.menu != null) {
       EquoCommService.remove("Menu/${widget.item.menu!.id}");
     }
@@ -643,11 +640,34 @@ class _MenuBarItemState extends State<_MenuBarItem> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && !_subMenuController.isOpen) {
             _subMenuController.open();
+            _focusFirstItemNextFrame();
           }
         });
       }
     });
     MenuSwt<VMenu>(value: subMenu).sendMenuShow(subMenu, null);
+  }
+
+  // Alt+letter on this title, resolved by Java: the menu opens with its first item current, as natively.
+  void _openFromMnemonic() {
+    if (!mounted || !(widget.item.enabled ?? false) || _subMenuController.isOpen) return;
+    _focusFirstItemWhenOpen = true;
+    if (_itemsLoaded) {
+      _subMenuController.open();
+      _focusFirstItemNextFrame();
+    } else {
+      _pendingOpen = true;
+      _requestItems();
+    }
+  }
+
+  void _focusFirstItemNextFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_focusFirstItemWhenOpen || !_subMenuController.isOpen) return;
+      _focusFirstItemWhenOpen = false;
+      final items = _itemsFocusNode.traversalDescendants;
+      if (items.isNotEmpty) items.first.requestFocus();
+    });
   }
 
   @override
@@ -682,15 +702,22 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           ),
         ),
         onOpen: widget.onMenuShow,
-        onClose: widget.onMenuHide,
+        onClose: () {
+          _focusFirstItemWhenOpen = false;
+          widget.onMenuHide();
+        },
         menuChildren: [
           pointerInterceptor(MenuChangeNotifier(
             registerPendingChange: widget.registerPendingChange,
             menuState: widget.menuState,
             closeMenu: _subMenuController.close,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: _menuChildren,
+            child: MenuMnemonics(
+              focusNode: _itemsFocusNode,
+              close: _subMenuController.close,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _menuChildren,
+              ),
             ),
           )),
         ],

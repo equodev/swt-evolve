@@ -15,6 +15,7 @@ import '../theme/theme_extensions/menuitem_theme_extension.dart';
 import '../theme/theme_settings/menuitem_theme_settings.dart';
 import 'menu_evolve.dart';
 import 'utils/image_utils.dart';
+import 'utils/menu_mnemonics.dart';
 import 'utils/pointer.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
@@ -124,6 +125,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         isEnabled: isEnabled,
       ),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
+      label: split.label,
       child: MnemonicText(split.label, style: textStyle),
     );
   }
@@ -170,6 +172,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         isEnabled: isEnabled,
       ),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
+      label: split.label,
       child: MnemonicText(split.label, style: textStyle),
     );
   }
@@ -205,6 +208,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       } : null,
       leading: _buildMenuIcon(widgetTheme, isEnabled),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
+      label: split.label,
       child: MnemonicText(split.label, style: textStyle),
     );
   }
@@ -288,6 +292,8 @@ class _MenuItemRow extends StatefulWidget {
   final Widget? leading;
   final Widget child;
   final Widget? trailing;
+  /// The item's text, `&` marker included, for [MenuMnemonics].
+  final String label;
   final bool autofocus;
   // Externally-supplied so the owning MenuImpl can explicitly requestFocus() on this exact item
   // a frame after the menu opens (see MenuImpl._focusFirstItemNextFrame) instead of relying
@@ -303,6 +309,7 @@ class _MenuItemRow extends StatefulWidget {
     this.leading,
     required this.child,
     this.trailing,
+    required this.label,
     this.autofocus = false,
     this.focusNode,
   });
@@ -311,7 +318,7 @@ class _MenuItemRow extends StatefulWidget {
   State<_MenuItemRow> createState() => _MenuItemRowState();
 }
 
-class _MenuItemRowState extends State<_MenuItemRow> {
+class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
   FocusNode? _ownFocusNode;
   bool _isFocused = false;
 
@@ -356,6 +363,7 @@ class _MenuItemRowState extends State<_MenuItemRow> {
 
   @override
   Widget build(BuildContext context) {
+    registerMnemonic(_focusNode, widget.label, widget.isEnabled ? widget.onTap : null);
     return Opacity(
       opacity: widget.isEnabled ? 1.0 : widget.widgetTheme.disabledOpacity,
       child: Focus(
@@ -422,9 +430,10 @@ class _CascadeMenuController extends MenuController {
 
   final bool Function() _mayOpen;
 
+  /// [force] opens it whatever [_mayOpen] says, for an opening the user asked for by key.
   @override
-  void open({Offset? position}) {
-    if (_mayOpen()) super.open(position: position);
+  void open({Offset? position, bool force = false}) {
+    if (force || _mayOpen()) super.open(position: position);
   }
 }
 
@@ -453,8 +462,8 @@ class _CascadeMenuItemRow extends StatefulWidget {
   State<_CascadeMenuItemRow> createState() => _CascadeMenuItemRowState();
 }
 
-class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
-  late final MenuController _menuController = _CascadeMenuController(() =>
+class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemonicItem {
+  late final _CascadeMenuController _menuController = _CascadeMenuController(() =>
       _isHovered ||
       _isPressed ||
       HardwareKeyboard.instance.logicalKeysPressed.any(_cascadeOpenKeys.contains));
@@ -467,6 +476,8 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
   // A touch has no hover, so the press itself has to let the tap open the submenu.
   bool _isPressed = false;
   bool _shown = false;
+  // Opened by its mnemonic: the keyboard moves onto the first item as soon as the submenu has one.
+  bool _focusFirstItemWhenFilled = false;
 
   @override
   void initState() {
@@ -569,7 +580,25 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
     if (status == AnimationStatus.reverse || status.isDismissed) _sendHide();
   }
 
+  void _openFromMnemonic() {
+    _buttonFocusNode.requestFocus();
+    _menuController.open(force: true);
+    _focusFirstItemWhenFilled = true;
+    _focusFirstItemNextFrame();
+  }
+
+  void _focusFirstItemNextFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_focusFirstItemWhenFilled || !_menuController.isOpen) return;
+      final items = _submenuFocusNode.traversalDescendants;
+      if (items.isEmpty) return;
+      _focusFirstItemWhenFilled = false;
+      items.first.requestFocus();
+    });
+  }
+
   void _sendHide() {
+    _focusFirstItemWhenFilled = false;
     if (!_shown) return;
     _shown = false;
     MenuSwt<VMenu>(value: widget.subMenu).sendMenuHide(widget.subMenu, null);
@@ -587,12 +616,14 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
       setState(() {
         _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
       });
+      if (_focusFirstItemWhenFilled) _focusFirstItemNextFrame();
     });
     MenuSwt<VMenu>(value: widget.subMenu).sendMenuShow(widget.subMenu, null);
   }
 
   @override
   Widget build(BuildContext context) {
+    registerMnemonic(_buttonFocusNode, widget.text, widget.isEnabled ? _openFromMnemonic : null);
     final textStyle = getMenuItemTextStyle(widget.widgetTheme, isEnabled: widget.isEnabled);
     return Opacity(
       opacity: widget.isEnabled ? 1.0 : widget.widgetTheme.disabledOpacity,
@@ -648,9 +679,9 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
           ),
           menuChildren: [
             pointerInterceptor(
-              Focus(
+              MenuMnemonics(
                 focusNode: _submenuFocusNode,
-                canRequestFocus: false,
+                close: _menuController.close,
                 onFocusChange: (_) => _closeSubmenuIfFocusLeft(),
                 child: Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
               ),
