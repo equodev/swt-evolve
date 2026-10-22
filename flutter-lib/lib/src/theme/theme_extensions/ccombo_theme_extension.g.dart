@@ -55,6 +55,7 @@ CComboThemeExtension _$CComboThemeExtensionFromJson(
   dividerColor: const ColorConverter().fromJson(json['dividerColor'] as String),
   dividerHeight: (json['dividerHeight'] as num).toDouble(),
   dividerThickness: (json['dividerThickness'] as num).toDouble(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$CComboThemeExtensionToJson(
@@ -100,4 +101,5 @@ Map<String, dynamic> _$CComboThemeExtensionToJson(
   'dividerColor': const ColorConverter().toJson(instance.dividerColor),
   'dividerHeight': instance.dividerHeight,
   'dividerThickness': instance.dividerThickness,
+  'minTextContrast': instance.minTextContrast,
 };

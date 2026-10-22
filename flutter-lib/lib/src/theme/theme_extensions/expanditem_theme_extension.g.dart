@@ -60,6 +60,7 @@ ExpandItemThemeExtension _$ExpandItemThemeExtensionFromJson(
   ),
   iconSize: (json['iconSize'] as num).toDouble(),
   imageTextSpacing: (json['imageTextSpacing'] as num).toDouble(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$ExpandItemThemeExtensionToJson(
@@ -104,4 +105,5 @@ Map<String, dynamic> _$ExpandItemThemeExtensionToJson(
   'animationCurve': const CurveConverter().toJson(instance.animationCurve),
   'iconSize': instance.iconSize,
   'imageTextSpacing': instance.imageTextSpacing,
+  'minTextContrast': instance.minTextContrast,
 };

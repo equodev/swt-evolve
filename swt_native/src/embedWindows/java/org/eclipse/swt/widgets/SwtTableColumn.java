@@ -403,10 +403,8 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             return;
         long hwnd = parent.handle;
         int oldWidth = (int) OS.SendMessage(hwnd, OS.LVM_GETCOLUMNWIDTH, index, 0);
-        TCHAR buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), text, true);
-        int headerWidth = (int) (OS.SendMessage(hwnd, OS.LVM_GETSTRINGWIDTH, 0, buffer) + Win32DPIUtils.pointToPixel(SwtTable.HEADER_MARGIN, getAutoscalingZoom()));
-        if (OS.IsAppThemed())
-            headerWidth += Win32DPIUtils.pointToPixel(SwtTable.HEADER_EXTRA, getAutoscalingZoom());
+        TCHAR buffer = new TCHAR(text, true);
+        int headerWidth = (int) (OS.SendMessage(hwnd, OS.LVM_GETSTRINGWIDTH, 0, buffer) + Win32DPIUtils.pointToPixel(SwtTable.HEADER_MARGIN + SwtTable.HEADER_EXTRA, getAutoscalingZoom()));
         boolean hasHeaderImage = false;
         if (image != null) {
             hasHeaderImage = true;

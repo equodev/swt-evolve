@@ -109,6 +109,7 @@ LabelThemeExtension _$LabelThemeExtensionFromJson(Map<String, dynamic> json) =>
       ),
       decorationThickness: (json['decorationThickness'] as num).toDouble(),
       separatorThickness: (json['separatorThickness'] as num).toDouble(),
+      minTextContrast: (json['minTextContrast'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$LabelThemeExtensionToJson(
@@ -193,6 +194,7 @@ Map<String, dynamic> _$LabelThemeExtensionToJson(
   ),
   'decorationThickness': instance.decorationThickness,
   'separatorThickness': instance.separatorThickness,
+  'minTextContrast': instance.minTextContrast,
 };
 
 Value? _$JsonConverterFromJson<Json, Value>(

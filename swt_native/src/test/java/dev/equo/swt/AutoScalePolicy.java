@@ -10,8 +10,10 @@ import java.lang.reflect.Method;
  *
  * <p>{@code DPIUtil.runWithAutoScaleValue} only exists in the newer releases. The older ones read
  * the policy once, into a static String, when {@code DPIUtil} loads, so the system property cannot
- * change it afterwards; the field is swapped instead. Either way, a {@code DPIUtil.setDeviceZoom}
- * inside the block applies the policy.
+ * change it afterwards; the field is swapped instead. The oldest have no such field and read the
+ * system property on every {@code DPIUtil.setDeviceZoom}, so the property is swapped there, except
+ * for "integer", which they already apply when it is unset. In every case
+ * a {@code DPIUtil.setDeviceZoom} inside the block applies the policy.
  */
 public final class AutoScalePolicy {
 
@@ -25,6 +27,10 @@ public final class AutoScalePolicy {
             return;
         }
         Field field = autoScaleField();
+        if (field == null) {
+            runWithProperty(policy, action);
+            return;
+        }
         Object saved = get(field);
         set(field, policy);
         try {
@@ -64,7 +70,24 @@ public final class AutoScalePolicy {
             field.setAccessible(true);
             return field;
         } catch (NoSuchFieldException e) {
-            throw new IllegalStateException("this SWT version keeps the autoscale policy elsewhere", e);
+            return null;
+        }
+    }
+
+    private static void runWithProperty(String policy, Runnable action) {
+        String saved = System.getProperty("swt.autoScale");
+        // Unset, these releases already round to whole multiples of 100 (capped at 200), and an
+        // unset property is how an application that chose no policy looks to Config.
+        if (saved == null && "integer".equals(policy)) {
+            action.run();
+            return;
+        }
+        System.setProperty("swt.autoScale", policy);
+        try {
+            action.run();
+        } finally {
+            if (saved == null) System.clearProperty("swt.autoScale");
+            else System.setProperty("swt.autoScale", saved);
         }
     }
 

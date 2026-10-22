@@ -112,6 +112,7 @@ ToolItemThemeExtension _$ToolItemThemeExtensionFromJson(
   fontStyle: const TextStyleConverter().fromJson(
     json['fontStyle'] as Map<String, dynamic>?,
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$ToolItemThemeExtensionToJson(
@@ -197,4 +198,5 @@ Map<String, dynamic> _$ToolItemThemeExtensionToJson(
     instance.specialDropdownPadding,
   ),
   'specialDropdownItemSpacing': instance.specialDropdownItemSpacing,
+  'minTextContrast': instance.minTextContrast,
 };

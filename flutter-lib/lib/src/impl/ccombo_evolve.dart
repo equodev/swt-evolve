@@ -12,6 +12,7 @@ import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/ccombo_theme_extension.dart';
 import '../theme/theme_settings/ccombo_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
@@ -117,6 +118,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             foreground: state.foreground,
             defaultColor: widgetTheme.textColor,
             context: context,
+            minContrast: widgetTheme.minTextContrast,
           );
 
     final textStyle = getTextStyle(
@@ -156,21 +158,13 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         onChanged: isEnabled ? onChanged : null,
         onTextChanged: onTextChanged,
         onTextSubmitted: onTextSubmitted,
-        onMouseEnter: handleMouseEnter,
-        onMouseExit: handleMouseExit,
         controlHeight: height,
       );
     } else {
       // Dropdown mode
       result = MouseRegion(
-        onEnter: (_) => setState(() {
-          _isHovered = true;
-          handleMouseEnter();
-        }),
-        onExit: (_) => setState(() {
-          _isHovered = false;
-          handleMouseExit();
-        }),
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedContainer(
           duration: widgetTheme.animationDuration,
           decoration: BoxDecoration(
@@ -208,19 +202,19 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       child: result,
     );
 
+    // Its own pointer events, through the hover arbiter like every other control: SWT's CCombo
+    // forwards its field's and its arrow's mouse events as its own.
+    result = trackPointer(result);
+
     final wrapped = DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
       text: _controller.text,
       onWordSelected: (start, end) {
+        // The MouseDoubleClick itself is trackPointer's, sent on the second press.
         state.selection = VPoint()
           ..x = start
           ..y = end;
-        widget.sendMouseMouseDoubleClick(
-          state,
-          VEvent()..button = 1..count = 2..start = start..end = end,
-        );
-        _focusNode?.requestFocus();
       },
       child: result,
     );
@@ -230,6 +224,14 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     }
 
     return tagSemantics(wrapped);
+  }
+
+  /// A press in an editable field focuses the field itself, as SWT's CCombo gives its Text the
+  /// focus: the composite's own surface would take it from the field on every press. A read-only
+  /// field takes no focus, so there the surface does.
+  @override
+  void takeFocusOnPress() {
+    if ((state.style & SWT.READ_ONLY) != 0) super.takeFocusOnPress();
   }
 
   void onChanged(String? value) {
@@ -287,9 +289,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     widget.sendSelectionDefaultSelection(state, VEvent()..text = text);
     widget.sendVerifyVerify(state, VEvent()..text = text);
   }
-
-  void handleMouseEnter() => widget.sendMouseTrackMouseEnter(state, null);
-  void handleMouseExit() => widget.sendMouseTrackMouseExit(state, null);
 
   void _handleFocusChange(bool hasFocus) {
     if (!mounted) return;
@@ -350,27 +349,17 @@ class _StyledDropdownCCombo extends StatelessWidget {
   });
 
   /// The width of the value on display, with a pixel of slack either side.
-  double _selectedTextWidth() {
-    final painter = TextPainter(
-      text: TextSpan(text: state.text ?? '', style: textStyle),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    )..layout();
-    return painter.width + 2;
-  }
+  double _selectedTextWidth() =>
+      FontUtils.measureTextWidget(state.text ?? '', textStyle).width + 2;
 
   double _calculateMinWidth() {
     double maxTextWidth = 0;
     final textToMeasure = [state.text ?? '', ...items];
 
     for (final text in textToMeasure) {
-      final textPainter = TextPainter(
-        text: TextSpan(text: text, style: textStyle),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
-      if (textPainter.width > maxTextWidth) {
-        maxTextWidth = textPainter.width;
+      final width = FontUtils.measureTextWidget(text, textStyle).width;
+      if (width > maxTextWidth) {
+        maxTextWidth = width;
       }
     }
 
@@ -425,7 +414,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
       focusNode: focusNode,
       controller: controller,
       menuController: menuController,
-      width: width,
+      expandedInsets: EdgeInsets.zero,
       initialSelection: state.text,
       requestFocusOnTap: !isReadOnly,
       enableSearch: !isReadOnly,
@@ -488,7 +477,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     final arrowAreaWidth = widgetTheme.iconSize + 24.0;
     return Stack(
       children: [
-        dropdown,
+        SizedBox(width: width, child: dropdown),
         Positioned.fill(
           child: Row(
             children: [
@@ -547,8 +536,6 @@ class _StyledSimpleCCombo extends StatelessWidget {
   final ValueChanged<String?>? onChanged;
   final ValueChanged<String>? onTextChanged;
   final ValueChanged<String>? onTextSubmitted;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
   final double? controlHeight;
 
   const _StyledSimpleCCombo({
@@ -566,17 +553,12 @@ class _StyledSimpleCCombo extends StatelessWidget {
     this.onChanged,
     this.onTextChanged,
     this.onTextSubmitted,
-    this.onMouseEnter,
-    this.onMouseExit,
     this.controlHeight,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => onMouseEnter?.call(),
-      onExit: (_) => onMouseExit?.call(),
-      child: Container(
+    return Container(
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
@@ -602,6 +584,9 @@ class _StyledSimpleCCombo extends StatelessWidget {
                 maxLines: 1,
                 onChanged: readOnly ? null : onTextChanged,
                 onSubmitted: readOnly ? null : onTextSubmitted,
+                // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
+                // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
+                contextMenuBuilder: null,
               ),
             ),
             // Divider
@@ -628,7 +613,6 @@ class _StyledSimpleCCombo extends StatelessWidget {
             }),
           ],
         ),
-      ),
     );
   }
 

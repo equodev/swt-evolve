@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -34,6 +36,7 @@ import 'src/impl/window_commands_native.dart'
 import 'src/comm/comm.dart';
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
+import 'src/impl/client_ready.dart';
 import 'src/impl/display_evolve.dart';
 import 'src/impl/focus_requests.dart';
 import 'fontSize.dart' as font_size;
@@ -47,6 +50,15 @@ import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
+
+/// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
+Future<void> _loadWebFallbackFonts() async {
+  if (!kIsWeb) return;
+  await (FontLoader('Roboto')
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Bold.ttf')))
+      .load();
+}
 
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
@@ -80,6 +92,7 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  await _loadWebFallbackFonts();
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
@@ -257,6 +270,8 @@ class _WindowMetricsReporter {
     // Config flags land after the first frame, so the first report is made before
     // csd_placement is known. Re-report when they arrive, or the inset above is missed.
     configFlagsVersion.addListener(_sendCurrentSize);
+    // The area SWT lays out in is the view over the scale, so a new scale is a new area.
+    appScaleNotifier.addListener(_sendCurrentSize);
   }
 
   final String widgetName;
@@ -269,7 +284,7 @@ class _WindowMetricsReporter {
   // properties and re-serialize the whole Display — the same resync a page refresh gets —
   // and cancels any tab-close it had deferred.
   void _resyncAfterReconnect() {
-    _displayClientReadySent = false;
+    _clientReady.restart();
     _sendWindowSizedClientReady(widgetName, widgetId);
   }
 
@@ -287,7 +302,10 @@ class _WindowMetricsReporter {
   }
 
   void _sendCurrentSize() {
-    final rounded = _currentLogicalViewSize();
+    // A metrics change can be a move to a monitor at another zoom. When the scale moves, its
+    // listener above has already reported the area it leaves.
+    if (refreshAppScale()) return;
+    final rounded = currentSwtViewSize();
     if (rounded == null) return;
     _sendWindowSizedClientReady(widgetName, widgetId, sizeOverride: rounded);
   }
@@ -310,15 +328,15 @@ Size _withoutCsdChrome(double width, double height) {
   return Size(width.roundToDouble(), (h > 0 ? h : height).roundToDouble());
 }
 
-/// The area the app lays out in, which is what SWT is told. [swtUiScale] is applied first, so the
-/// result is in the units the app draws in rather than the view's own: SWT measures at the zoom
-/// `swt.autoScale` picked, and the whole tree is scaled by that over the monitor's zoom.
-Size? _currentLogicalViewSize() {
-  final scale = swtUiScale();
+/// The area the app lays out in, which is what SWT is told. In SWT units rather than the view's
+/// own: the whole tree is drawn at [appScaleNotifier]'s factor, so it lays out in the view over it.
+@visibleForTesting
+Size? currentSwtViewSize() {
   final viewportSize = getViewportSize();
   if (viewportSize != null &&
       _isFinitePositiveSize(viewportSize.width, viewportSize.height)) {
-    return _withoutCsdChrome(viewportSize.width / scale, viewportSize.height / scale);
+    final size = logicalToSwtSize(viewportSize);
+    return _withoutCsdChrome(size.width, size.height);
   }
   final dispatcher = WidgetsBinding.instance.platformDispatcher;
   if (dispatcher.views.isEmpty) {
@@ -328,7 +346,7 @@ Size? _currentLogicalViewSize() {
   if (view.devicePixelRatio <= 0) {
     return null;
   }
-  final size = view.physicalSize / view.devicePixelRatio / scale;
+  final size = logicalToSwtSize(view.physicalSize / view.devicePixelRatio);
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
@@ -350,35 +368,26 @@ Size? _currentLogicalMonitorSize() {
   if (display.devicePixelRatio <= 0) {
     return null;
   }
-  final size = display.size / display.devicePixelRatio / swtUiScale();
+  final size = logicalToSwtSize(display.size / display.devicePixelRatio);
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
 }
 
-bool _displayClientReadySent = false;
+final _clientReady = ClientReadyReporter();
 
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
-  final size = sizeOverride ?? _currentLogicalViewSize();
-  final bool isFirst = !_displayClientReadySent;
-  _displayClientReadySent = true;
-  final int w = size?.width.toInt() ?? 1280;
-  final int h = size?.height.toInt() ?? 720;
+  final size = sizeOverride ?? currentSwtViewSize();
   // The monitor the window is on (0 when unknown → Java keeps its default/viewport).
   final monitor = _currentLogicalMonitorSize();
-  final int mw = monitor?.width.toInt() ?? 0;
-  final int mh = monitor?.height.toInt() ?? 0;
-  final int zoom = monitorZoomPercent();
-  print('[ClientReady] $widgetName/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
-  EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
-    'width': w,
-    'height': h,
-    'isFirst': isFirst,
-    'displayWidth': mw,
-    'displayHeight': mh,
-    'zoom': zoom,
-  });
+  _clientReady.report(widgetName, widgetId,
+      width: size?.width.toInt() ?? 1280,
+      height: size?.height.toInt() ?? 720,
+      displayWidth: monitor?.width.toInt() ?? 0,
+      displayHeight: monitor?.height.toInt() ?? 0,
+      zoom: monitorZoomPercent(),
+      insetTop: csdContentInsetTop().round());
 }
 
 Future<void> initSwtEvolveProperties() async {

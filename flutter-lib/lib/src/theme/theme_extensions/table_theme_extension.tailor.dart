@@ -21,6 +21,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   Color get rowHoverBackgroundColor;
   Color get rowSelectedBorderColor;
   double get rowSelectedBorderWidth;
+  double get dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha;
+  double get dragImageOpacity;
   Color get headerBackgroundColor;
   Color get headerTextColor;
   Color get headerBorderColor;
@@ -64,6 +67,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   int get eventDefaultX;
   int get eventDefaultY;
   int get eventDefaultDetail;
+  double get minTextContrast;
 
   @override
   TableThemeExtension copyWith({
@@ -78,6 +82,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     Color? rowHoverBackgroundColor,
     Color? rowSelectedBorderColor,
     double? rowSelectedBorderWidth,
+    double? dropFeedbackLineWidth,
+    int? dropFeedbackHighlightAlpha,
+    double? dragImageOpacity,
     Color? headerBackgroundColor,
     Color? headerTextColor,
     Color? headerBorderColor,
@@ -121,6 +128,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     int? eventDefaultX,
     int? eventDefaultY,
     int? eventDefaultDetail,
+    double? minTextContrast,
   }) {
     return TableThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -140,6 +148,11 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
           rowSelectedBorderColor ?? this.rowSelectedBorderColor,
       rowSelectedBorderWidth:
           rowSelectedBorderWidth ?? this.rowSelectedBorderWidth,
+      dropFeedbackLineWidth:
+          dropFeedbackLineWidth ?? this.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha:
+          dropFeedbackHighlightAlpha ?? this.dropFeedbackHighlightAlpha,
+      dragImageOpacity: dragImageOpacity ?? this.dragImageOpacity,
       headerBackgroundColor:
           headerBackgroundColor ?? this.headerBackgroundColor,
       headerTextColor: headerTextColor ?? this.headerTextColor,
@@ -194,6 +207,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       eventDefaultX: eventDefaultX ?? this.eventDefaultX,
       eventDefaultY: eventDefaultY ?? this.eventDefaultY,
       eventDefaultDetail: eventDefaultDetail ?? this.eventDefaultDetail,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -249,6 +263,13 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       rowSelectedBorderWidth: t < 0.5
           ? rowSelectedBorderWidth
           : other.rowSelectedBorderWidth,
+      dropFeedbackLineWidth: t < 0.5
+          ? dropFeedbackLineWidth
+          : other.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha: t < 0.5
+          ? dropFeedbackHighlightAlpha
+          : other.dropFeedbackHighlightAlpha,
+      dragImageOpacity: t < 0.5 ? dragImageOpacity : other.dragImageOpacity,
       headerBackgroundColor: Color.lerp(
         headerBackgroundColor,
         other.headerBackgroundColor,
@@ -354,6 +375,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       eventDefaultDetail: t < 0.5
           ? eventDefaultDetail
           : other.eventDefaultDetail,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -405,6 +427,18 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
             const DeepCollectionEquality().equals(
               rowSelectedBorderWidth,
               other.rowSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackLineWidth,
+              other.dropFeedbackLineWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackHighlightAlpha,
+              other.dropFeedbackHighlightAlpha,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dragImageOpacity,
+              other.dragImageOpacity,
             ) &&
             const DeepCollectionEquality().equals(
               headerBackgroundColor,
@@ -574,6 +608,10 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
             const DeepCollectionEquality().equals(
               eventDefaultDetail,
               other.eventDefaultDetail,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -592,6 +630,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(rowHoverBackgroundColor),
       const DeepCollectionEquality().hash(rowSelectedBorderColor),
       const DeepCollectionEquality().hash(rowSelectedBorderWidth),
+      const DeepCollectionEquality().hash(dropFeedbackLineWidth),
+      const DeepCollectionEquality().hash(dropFeedbackHighlightAlpha),
+      const DeepCollectionEquality().hash(dragImageOpacity),
       const DeepCollectionEquality().hash(headerBackgroundColor),
       const DeepCollectionEquality().hash(headerTextColor),
       const DeepCollectionEquality().hash(headerBorderColor),
@@ -635,6 +676,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(eventDefaultX),
       const DeepCollectionEquality().hash(eventDefaultY),
       const DeepCollectionEquality().hash(eventDefaultDetail),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -659,6 +701,10 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
       tableThemeExtension.rowSelectedBorderColor;
   double get rowSelectedBorderWidth =>
       tableThemeExtension.rowSelectedBorderWidth;
+  double get dropFeedbackLineWidth => tableThemeExtension.dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha =>
+      tableThemeExtension.dropFeedbackHighlightAlpha;
+  double get dragImageOpacity => tableThemeExtension.dragImageOpacity;
   Color get headerBackgroundColor => tableThemeExtension.headerBackgroundColor;
   Color get headerTextColor => tableThemeExtension.headerTextColor;
   Color get headerBorderColor => tableThemeExtension.headerBorderColor;
@@ -713,4 +759,5 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
   int get eventDefaultX => tableThemeExtension.eventDefaultX;
   int get eventDefaultY => tableThemeExtension.eventDefaultY;
   int get eventDefaultDetail => tableThemeExtension.eventDefaultDetail;
+  double get minTextContrast => tableThemeExtension.minTextContrast;
 }

@@ -166,4 +166,24 @@ void main() {
     expect(body['y'], 600,
         reason: 'and up by the title bar and whatever else is above the window');
   });
+
+  // Java may move a shell after its bounds were sent and before this report arrives, so it has to
+  // be able to tell this report from one of a move the user made.
+  testWidgets('the report made once the shell is drawn is marked as such', (tester) async {
+    sizeViewport(tester);
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() => EquoCommBase.recordSentFrames = false);
+    EquoCommService.commForTesting.clearSentFrames();
+
+    await pumpDisplay(tester, [_workbench(), _detached(x: 300, y: 200)]);
+    await tester.pump();
+
+    final setBounds = EquoCommService.commForTesting.sentFrames
+        .map(EquoCommBase.decodeFrame)
+        .where((f) => f.$1.startsWith('Shell/') && f.$1.endsWith('/SetBounds'))
+        .toList();
+    expect(setBounds, hasLength(1));
+    final body = jsonDecode(setBounds.single.$2) as Map<String, dynamic>;
+    expect(body['detail'], initialClientBounds);
+  });
 }

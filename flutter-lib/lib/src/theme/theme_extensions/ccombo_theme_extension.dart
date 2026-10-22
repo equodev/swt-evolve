@@ -55,7 +55,9 @@ class CComboThemeExtension extends ThemeExtension<CComboThemeExtension> with _$C
   final Color dividerColor;
   final double dividerHeight;
   final double dividerThickness;
-  
+
+  final double minTextContrast;
+
   const CComboThemeExtension({
     required this.animationDuration,
     required this.backgroundColor,
@@ -79,6 +81,7 @@ class CComboThemeExtension extends ThemeExtension<CComboThemeExtension> with _$C
     required this.dividerColor,
     required this.dividerHeight,
     required this.dividerThickness,
+    required this.minTextContrast,
   });
 
   factory CComboThemeExtension.fromJson(Map<String, dynamic> json) =>

@@ -122,29 +122,18 @@ public class DartGroup extends DartComposite implements IGroup {
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
-        /*
-	* Bug in Windows.  When a group control is right-to-left and
-	* is disabled, the first pixel of the text is clipped.  The
-	* fix is to add a space to both sides of the text.
-	*/
-        String string = fixText(enabled);
+        String string = fixText();
         if (string != null) {
         }
         if (enabled && hasCustomForeground()) {
         }
     }
 
-    String fixText(boolean enabled) {
-        /*
-	* Bug in Windows.  When a group control is right-to-left and
-	* is disabled, the first pixel of the text is clipped.  The
-	* fix is to add a space to both sides of the text.
-	*/
+    String fixText() {
         if (text.length() == 0)
             return null;
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
-            String string = null;
-            return (getApi().style & SWT.FLIP_TEXT_DIRECTION) == 0 ? string : string != null ? LRE + string : LRE + text;
+            return (getApi().style & SWT.FLIP_TEXT_DIRECTION) == 0 ? null : LRE + text;
         } else if ((getApi().style & SWT.FLIP_TEXT_DIRECTION) != 0) {
             return RLE + text;
         }
@@ -250,6 +239,7 @@ public class DartGroup extends DartComposite implements IGroup {
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
         if ((getApi().state & HAS_AUTO_DIRECTION) == 0 || !updateTextDirection(AUTO_TEXT_DIRECTION)) {
+            string = fixText();
         }
     }
 

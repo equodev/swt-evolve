@@ -55,6 +55,7 @@ ScaleThemeExtension _$ScaleThemeExtensionFromJson(Map<String, dynamic> json) =>
       defaultSelection: (json['defaultSelection'] as num).toInt(),
       defaultIncrement: (json['defaultIncrement'] as num).toInt(),
       defaultPageIncrement: (json['defaultPageIncrement'] as num).toInt(),
+      minTextContrast: (json['minTextContrast'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$ScaleThemeExtensionToJson(
@@ -97,4 +98,5 @@ Map<String, dynamic> _$ScaleThemeExtensionToJson(
   'defaultSelection': instance.defaultSelection,
   'defaultIncrement': instance.defaultIncrement,
   'defaultPageIncrement': instance.defaultPageIncrement,
+  'minTextContrast': instance.minTextContrast,
 };

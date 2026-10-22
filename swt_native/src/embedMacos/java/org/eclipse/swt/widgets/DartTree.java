@@ -509,6 +509,7 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -580,6 +581,7 @@ public class DartTree extends DartComposite implements ITree {
         super.createWidget();
         items = new TreeItem[4];
         columns = new TreeColumn[4];
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -729,6 +731,7 @@ public class DartTree extends DartComposite implements ITree {
             if (index == 0) {
             }
         }
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item) {
@@ -1744,10 +1747,10 @@ public class DartTree extends DartComposite implements ITree {
     public void setHeaderBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1817,10 +1820,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.headerVisible, newValue)) {
             getValue().markDirty(VTree.HEADER_VISIBLE);
         }
-        checkWidget();
         this.headerVisible = newValue;
     }
 
@@ -1950,10 +1953,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 

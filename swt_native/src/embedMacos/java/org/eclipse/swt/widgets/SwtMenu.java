@@ -125,7 +125,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public SwtMenu(Decorations parent, int style, Menu api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = checkStyle(style);
         if (parent != null) {
@@ -407,7 +407,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             long keyEquiv = 0;
             if (keyEquivString != null) {
                 keyEquiv = keyEquivString.characterAtIndex(0);
-                if ((keyMask & OS.NSCommandKeyMask) != 0)
+                if ((keyMask & OS.NSEventModifierFlagCommand) != 0)
                     keyEquiv |= SWT.COMMAND;
                 if ((keyMask & OS.NSAlternateKeyMask) != 0)
                     keyEquiv |= SWT.ALT;

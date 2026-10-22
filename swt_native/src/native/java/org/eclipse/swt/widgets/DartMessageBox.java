@@ -110,7 +110,7 @@ public class DartMessageBox extends DartDialog implements IMessageBox {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     static int checkStyle(int style) {

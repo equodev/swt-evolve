@@ -89,7 +89,7 @@ public class DartControlEditor implements IControlEditor {
     public DartControlEditor(Composite parent, ControlEditor api) {
         setApi(api);
         this.parent = parent;
-        controlListener = e -> layout();
+        controlListener = e -> getApi().layout();
         for (int event : EVENTS) {
             parent.addListener(event, controlListener);
         }
@@ -193,7 +193,7 @@ public class DartControlEditor implements IControlEditor {
     void scroll(Event e) {
         if (editor == null || editor.isDisposed())
             return;
-        layout();
+        getApi().layout();
     }
 
     /**
@@ -219,7 +219,7 @@ public class DartControlEditor implements IControlEditor {
             return;
         }
         this.editor = editor;
-        layout();
+        getApi().layout();
         if (this.editor == null || this.editor.isDisposed())
             return;
         editor.setVisible(true);

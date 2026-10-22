@@ -101,10 +101,20 @@ public class StyledTextHelper {
         return rows == null ? null : (int) Math.round(rows[0].y);
     }
 
-    /** The width of the widest row the render side laid out, or null. */
-    static Integer measuredContentWidth(DartStyledText styledText) {
+    /**
+     * The width of the widest row the render side laid out, or null. As upstream, with fixed line
+     * heights only the lines {@code renderer} has calculated count, so a long line not yet shown does
+     * not widen the range; with variable ones every line counts, as upstream's idle pass measures them.
+     */
+    static Integer measuredContentWidth(DartStyledTextRenderer renderer, DartStyledText styledText) {
         TextGeometry g = freshGeometry(styledText);
-        return g == null ? null : (int) Math.ceil(g.contentWidth);
+        if (g == null) return null;
+        boolean everyLine = !styledText.isFixedLineHeight();
+        double widest = 0;
+        for (VisualLine row : g.lines) {
+            if (everyLine || renderer._isWidthCalculated(row.logicalLine)) widest = Math.max(widest, row.x + row.w);
+        }
+        return (int) Math.ceil(widest);
     }
 
     /** The height the render side gave {@code lineIndex}, below its vertical indent, or null. */
@@ -312,7 +322,12 @@ public class StyledTextHelper {
                 int count = changedLines == null || changedLines[0] < 0
                         ? lineCount
                         : Math.min(changedLines[1] - changedLines[0] + 1, lineCount - from);
-                ((DartStyledTextRenderer) styledText.renderer.getImpl()).reset(from, Math.max(1, count));
+                DartStyledTextRenderer renderer = (DartStyledTextRenderer) styledText.renderer.getImpl();
+                int widestLine = renderer.maxWidthLineIndex;
+                renderer.reset(from, Math.max(1, count));
+                // As resetCache() does: the horizontal range counts calculated lines only.
+                renderer.calculateClientArea();
+                if (widestLine >= 0 && widestLine < lineCount) renderer.calculate(widestLine, 1);
                 styledText.setScrollBars(true);
             }
             repaintRulerSiblings(styledText);
@@ -1211,15 +1226,7 @@ public class StyledTextHelper {
 
         int contentLineCount = renderer.content.getLineCount();
         if (contentLineCount > renderer.lineCount) {
-            // Resize lineSizes array if needed
-            if (renderer.lineSizes == null || renderer.lineSizes.length < contentLineCount) {
-                DartStyledTextRenderer.LineSizeInfo[] newLineSizes =
-                    new DartStyledTextRenderer.LineSizeInfo[contentLineCount];
-                if (renderer.lineSizes != null) {
-                    System.arraycopy(renderer.lineSizes, 0, newLineSizes, 0, renderer.lineCount);
-                }
-                renderer.lineSizes = newLineSizes;
-            }
+            renderer._growLineSizes(contentLineCount);
             // Resize lines array if it exists and is too small
             if (renderer.lines != null && renderer.lines.length < contentLineCount) {
                 DartStyledTextRenderer.LineInfo[] newLines =
@@ -1279,13 +1286,6 @@ public class StyledTextHelper {
             this.averageCharWidth = averageCharWidth;
             this.tabWidth = tabWidth;
         }
-
-        /**
-         * Returns the line height (ascent + descent).
-         */
-        public int getLineHeight() {
-            return ascent + descent;
-        }
     }
 
     /**
@@ -1296,6 +1296,22 @@ public class StyledTextHelper {
      * @param tabLength the number of spaces per tab
      * @return RendererFontMetrics with calculated values
      */
+    /** The ascent a run in {@code font} is drawn with: a family without metrics is drawn in the system font. */
+    public static int drawnAscent(Font font) {
+        FontData[] fontDatas = font == null || font.isDisposed() ? null : font.getFontData();
+        if (fontDatas == null || fontDatas.length == 0)
+            return calculateFontMetrics(font, 1).ascent;
+        FontData fd = fontDatas[0];
+        Metrics metrics = FontMetricsUtil.metrics(FontMetricsUtil.getId(fd));
+        if (metrics == null)
+            metrics = FontMetricsUtil.metrics(fd.getName() + "-0-3");
+        if (metrics == null)
+            metrics = FontMetricsUtil.metrics(FontMetricsUtil.getId("System", FontMetricsUtil.isItalic(fd), FontMetricsUtil.isBold(fd)));
+        if (metrics == null)
+            return calculateFontMetrics(font, 1).ascent;
+        return Math.max(1, (int) Math.round(metrics.ascent() * fd.getHeight() * dpiScale()));
+    }
+
     public static RendererFontMetrics calculateFontMetrics(Font font, int tabLength) {
         if (font == null) {
             return new RendererFontMetrics(11, 4, 8, 8 * tabLength);
@@ -1318,8 +1334,10 @@ public class StyledTextHelper {
         }
 
         if (metrics == null) {
+            // The descent is what the ascent leaves of computeLineHeight's line, so a line laid out from
+            // these metrics is as high as the line height StyledText estimates for the same font.
             int defaultAscent = (int) Math.round(fontSizePixels * 1.1);
-            int defaultDescent = (int) Math.round(fontSizePixels * 0.25);
+            int defaultDescent = (int) Math.round(fontSizePixels * 1.35) - defaultAscent;
             int defaultAvgCharWidth = (int) Math.round(fontSizePixels * 0.5);
             return new RendererFontMetrics(defaultAscent, defaultDescent, defaultAvgCharWidth,
                     defaultAvgCharWidth * tabLength);
@@ -1357,6 +1375,17 @@ public class StyledTextHelper {
         renderer.descent = metrics.descent;
         renderer.averageCharWidth = metrics.averageCharWidth;
         renderer.tabWidth = metrics.tabWidth;
+        renderer.fixedPitch = isFixedPitch(font);
+    }
+
+    /** Whether "l" and "W" are as wide as each other in the font, which is how SWT tells a fixed pitch font. */
+    static boolean isFixedPitch(Font font) {
+        if (font == null || font.isDisposed()) {
+            return false;
+        }
+        double scale = dpiScale();
+        return Math.round(FontMetricsUtil.getFontSize("l", font).x() * scale)
+                == Math.round(FontMetricsUtil.getFontSize("W", font).x() * scale);
     }
 
     /**
@@ -1638,13 +1667,30 @@ public class StyledTextHelper {
         int singleLineHeight = getLineHeightAtOffset(renderer, content, lineOffset);
 
         if (wrapWidth <= 0 || lineLength == 0) {
-            return singleLineHeight;
+            return singleLineHeight * (1 + segmentLineBreaks(renderer, lineOffset, lineText));
         }
 
-        int textWidth = computeTextWidth(lineText, renderer.regularFont);
-        int visualLines = Math.max(1, (textWidth + wrapWidth - 1) / wrapWidth);
+        // The rows the renderer's own layout breaks the line into: word wrap in the width the indent,
+        // the bullet and the wrap indent leave, and the breaks among the segment characters.
+        org.eclipse.swt.graphics.TextLayout layout = renderer.getTextLayout(lineIndex);
+        try {
+            return singleLineHeight * layout.getLineCount();
+        } finally {
+            renderer.disposeTextLayout(layout);
+        }
+    }
 
-        return singleLineHeight * visualLines;
+    /** The rows a BidiSegmentListener's line breaks among its segment characters add to the line. */
+    private static int segmentLineBreaks(DartStyledTextRenderer renderer, int lineOffset, String lineText) {
+        DartStyledText styledText = widgetOf(renderer);
+        if (styledText == null || !styledText.visualWrap) return 0;
+        StyledTextEvent event = styledText.getBidiSegments(lineOffset, lineText);
+        if (event == null || event.segmentsChars == null) return 0;
+        int breaks = 0;
+        for (char c : event.segmentsChars) {
+            if (c == '\n' || c == '\r') breaks++;
+        }
+        return breaks;
     }
 
     /**

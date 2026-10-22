@@ -5,6 +5,7 @@ import '../theme_extensions/color_scheme_extension.dart';
 import '../../gen/ccombo.dart';
 import '../../gen/swt.dart';
 import '../../impl/color_utils.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../../styles.dart';
 
 CComboThemeExtension getCComboLightTheme({
@@ -81,6 +82,8 @@ CComboThemeExtension _getCComboTheme({
     dividerColor: colorScheme.outline,
     dividerHeight: 1.0,
     dividerThickness: 1.0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
