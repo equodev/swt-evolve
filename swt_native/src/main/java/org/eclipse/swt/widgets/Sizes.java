@@ -69,6 +69,32 @@ public class Sizes {
         return TableColumnHelper.packWidth(column);
     }
 
+    /**
+     * The width that shows a Tree column's header and every visible cell whole, measured the way
+     * Flutter lays the row out: the first column also holds the indent, the expander and the image.
+     * Never 0, which Flutter would read as a hidden column.
+     */
+    public static int packWidth(DartTreeColumn column) {
+        DartTree tree = (DartTree) column.parent.getImpl();
+        int index = tree.indexOf(column.getApi());
+        if (index < 0)
+            return 0;
+        int width = dev.equo.swt.size.TreeSizes.getPackedHeaderWidth(column.getApi());
+        Image headerImage = column.getImage();
+        if (headerImage != null) {
+            width += headerImage.getBounds().width;
+        }
+        int cellsLeft = dev.equo.swt.size.TreeSizes.getCellsLeft(tree);
+        for (TreeItem item : flattenVisibleTreeItems(tree)) {
+            int cellWidth = dev.equo.swt.size.TreeSizes.getPackedCellWidth(item, index);
+            Image image = index == 0 ? item.getImage() : item.getImage(index);
+            if (image != null) cellWidth += dev.equo.swt.size.TreeSizes.getIconSpace();
+            if (index == 0) cellWidth += dev.equo.swt.size.TreeSizes.getContentLeft(tree, item) - cellsLeft;
+            width = Math.max(width, cellWidth);
+        }
+        return width;
+    }
+
     public static Point computeSize(DartCCombo c, int wHint, int hHint, boolean changed) {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
@@ -841,18 +867,20 @@ public class Sizes {
      */
     private static Rectangle treeCell(DartTreeItem item, int index, Rectangle row) {
         DartTree dartTree = (DartTree) item._parent().getImpl();
-        int left = dev.equo.swt.size.TreeSizes.getContentLeft(dartTree, item.getApi());
         int scrolled = TreeHelper.scrollOffsetX(dartTree);
+        int left = dev.equo.swt.size.TreeSizes.getContentLeft(dartTree, item.getApi()) - scrolled;
         TreeColumn[] columns = dartTree.columnCount > 0 ? dartTree.columns : null;
         if (columns == null) {
             Image image = item.getImage();
             int width = (image != null ? dev.equo.swt.size.TreeSizes.getIconSpace() : 0)
                     + dev.equo.swt.size.TreeSizes.getTextWidth(item.getApi(), 0);
-            return new Rectangle(left - scrolled, row.y, width, row.height);
+            return new Rectangle(left, row.y, width, row.height);
         }
-        int x = treeColumnLeft(dartTree, index) - scrolled;
+        // Flutter starts a row's cells after the tree's edge gap and the row's padding, each where the
+        // column order shows its column.
+        int x = dev.equo.swt.size.TreeSizes.getCellsLeft(dartTree) - treeColumnLeft(dartTree, 0) + treeColumnLeft(dartTree, index) - scrolled;
         int width = index < columns.length ? columns[index].getWidth() : 0;
-        if (index == 0) return new Rectangle(left - scrolled, row.y, Math.max(0, x + width - (left - scrolled)), row.height);
+        if (index == 0) return new Rectangle(left, row.y, Math.max(0, x + width - left), row.height);
         return new Rectangle(x, row.y, width, row.height);
     }
 

@@ -54,17 +54,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   TreeThemeExtension? _cachedWidgetTheme;
   List<double>? _cachedEffectiveWidths;
   double? _measuredContentWidth;
-  // The width rows are laid out at inside the horizontal scroll: a columned tree's column total
-  // (at least the viewport), or a columnless tree's widest row while it scrolls horizontally. Laid
-  // out at the viewport width instead, they clip their own text again inside the scrollable.
+  // Set only while a columnless tree is actually scrolling horizontally: its rows must be
+  // laid out at the content width, not at the viewport width, or they clip their own text
+  // again inside the scrollable.
   double? _hScrollContentWidth;
+  // A row's width when its columns keep the widths Java set: their sum and the row's padding.
+  double? _columnsContentWidth;
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
   List<VTreeItem>? _pendingSelection;
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
-  // The header's own position, kept at the rows' horizontal one.
-  final ScrollController _headerHorizontalController = ScrollController();
   ScrollController? _verticalController;
   // The rows' list moves between parents when a columnless tree starts or stops scrolling
   // horizontally; keyed, it keeps its scroll position instead of starting again at the top.
@@ -72,9 +72,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final FocusNode _focusNode = FocusNode();
   // The width of the column whose divider is being dragged, as the drag has made it so far.
   double? _resizeStartWidth;
-  // The header row and the widths its cells were drawn at, where a dragged header is dropped.
-  final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');
-  List<double>? _headerColumnWidths;
   /// Selects the item a context-menu press landed on. Run between MouseDown and MenuDetect,
   /// the order Win32 and GTK deliver them in, so MenuDetect listeners read that item.
   VoidCallback? selectBeforeMenuDetect;
@@ -86,6 +83,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     select?.call();
     super.handleMenuDetect(pointer, localPosition);
   }
+  // The header row and the widths its cells were drawn at, where a dragged header is dropped.
+  final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');
+  List<double>? _headerColumnWidths;
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -93,9 +93,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   void initState() {
     super.initState();
-    _horizontalController = ScrollController()
-      ..addListener(_followRowsWithHeader)
-      ..addListener(_reportScrollOffset);
+    _horizontalController = ScrollController()..addListener(_reportScrollOffset);
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
     _verticalController!.addListener(_requestVisibleChildren);
@@ -207,14 +205,20 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final y = headerOffset + (itemIndex * itemHeight);
 
     final treeWidth = state.bounds?.width?.toDouble() ?? 0.0;
+    final hasMultiColumn = columns.length > 1;
+    final gapFraction = hasMultiColumn
+        ? theme.itemEdgeGapFractionWithCols
+        : theme.itemEdgeGapFraction;
+    final leftGap = treeWidth * gapFraction;
     if (columns.isEmpty || _cachedEffectiveWidths == null) {
-      final leftGap = treeWidth * theme.itemEdgeGapFraction;
       return Rect.fromLTWH(leftGap, y, treeWidth, itemHeight);
     }
-    // A cell is where it is drawn: at the sum of the widths of the columns shown before it.
+    // A cell is where it is drawn: past the edge gap and the row's padding, at the sum of the widths
+    // of the columns shown before it.
+    final rowPadding = hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding;
     final widths = _cachedEffectiveWidths!;
     if (columnIndex >= widths.length) return Rect.fromLTWH(0, y, 0, itemHeight);
-    final x = columnLefts(widths, displayOrder)[columnIndex];
+    final x = leftGap + rowPadding.left + columnLefts(widths, displayOrder)[columnIndex];
     return Rect.fromLTWH(x, y, widths[columnIndex], itemHeight);
   }
 
@@ -289,6 +293,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             if (mounted) _requestVisibleChildren();
           });
         }
+        final allItems = _collectAllTreeItems(state.items);
         final hasMultiColumn = columns.length > 1;
         _cachedHeaderHeight = hasMultiColumn
             ? widgetTheme!.headerHeightWithCols
@@ -308,13 +313,32 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             ? constraints.maxHeight.clamp(0.0, screenHeight)
             : contentHeight;
 
-        final effectiveWidths =
-            columns.isEmpty ? null : _columnWidths(columns, widgetTheme!);
+        final preferredWidths = columns.isEmpty
+            ? <double>[]
+            : _computePreferredColumnWidths(
+                context,
+                columns,
+                allItems,
+                widgetTheme!,
+              );
+        final boundsWidth = state.bounds?.width?.toDouble();
+        final layoutWidth =
+            constraints.maxWidth.isFinite && constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : null;
+        final availableWidth = (boundsWidth != null && boundsWidth > 0)
+            ? boundsWidth
+            : layoutWidth;
+        _columnsContentWidth = null;
+        final effectiveWidths = columns.isEmpty
+            ? null
+            : _computeEffectiveColumnWidths(
+                columns,
+                preferredWidths,
+                availableWidth,
+                widgetTheme!,
+              );
         _cachedEffectiveWidths = effectiveWidths;
-        final edgeGap = maxWidth *
-            (hasMultiColumn
-                ? widgetTheme!.itemEdgeGapFractionWithCols
-                : widgetTheme!.itemEdgeGapFraction);
 
         final enabled = state.enabled ?? true;
         final themeBackground = enabled
@@ -381,7 +405,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                   color: backgroundColor,
                   child: TreeEffectiveColumnWidthsProvider(
                     effectiveWidths: effectiveWidths,
-                    edgeGap: edgeGap,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -392,7 +415,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                             widgetTheme!,
                             hasMultiColumn,
                             maxWidth,
-                            edgeGap,
+                            backgroundColor,
                           ),
                         Expanded(
                           child: Listener(
@@ -449,6 +472,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return uniqueColumns;
   }
 
+  List<VTreeItem> _collectAllTreeItems(List<VWidget>? items) {
+    if (items == null) return [];
+    final List<VTreeItem> result = [];
+    for (final item in items) {
+      if (item is VTreeItem) {
+        result.add(item);
+        result.addAll(_collectAllTreeItems(item.items));
+      }
+    }
+    return result;
+  }
   /// The column indexes in the order the columns are shown.
   List<int> get displayOrder => columnDisplayOrder(state.columnOrder, getTreeColumns().length);
 
@@ -511,6 +545,119 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
     return result;
   }
+
+  List<double> _computePreferredColumnWidths(
+    BuildContext context,
+    List<VTreeColumn> columns,
+    List<VTreeItem> allItems,
+    TreeThemeExtension theme,
+  ) {
+    if (columns.isEmpty) return [];
+    final isCheckMode = StyleBits(state.style).has(SWT.CHECK);
+    // What the widths are measured from; see [_computeContentWidthWithoutColumns].
+    final inputs = <Object?>[
+      isCheckMode, theme, Theme.of(context), state.font, state.foreground,
+      for (final column in columns) column.width,
+    ];
+    void collect(List<VWidget>? items, int level) {
+      if (items == null) return;
+      for (final w in items) {
+        if (w is! VTreeItem) continue;
+        inputs
+          ..add(level)
+          ..add(w.text)
+          ..add(w.font)
+          ..add(w.foreground)
+          ..add(w.image != null);
+        final texts = w.texts;
+        for (int col = 0; col < columns.length; col++) {
+          inputs.add(texts != null && col < texts.length ? texts[col] : null);
+        }
+        collect(w.items, level + 1);
+      }
+    }
+    collect(state.items, 0);
+    final cached = _preferredColumnWidths;
+    if (cached != null && listEquals(cached.inputs, inputs)) return List.of(cached.widths);
+    final checkboxWidth = isCheckMode
+        ? (theme.checkboxSize + theme.checkboxSpacing)
+        : 0.0;
+    final paddingH = theme.cellMultiColumnPadding.horizontal;
+    final prefixBase = theme.expandIconSize + theme.expandIconSpacing;
+    final iconSpace = theme.itemIconSize + theme.itemIconSpacing;
+
+    final List<double> maxWidths = List.filled(columns.length, 0.0);
+
+    void visit(List<VWidget>? items, int level) {
+      if (items == null) return;
+      for (final w in items) {
+        if (w is! VTreeItem) continue;
+        final item = w;
+        final texts = item.texts ?? [];
+        final firstText = item.text ?? (texts.isNotEmpty ? texts[0] ?? '' : '');
+        final itemFont = item.font ?? state.font;
+        final textStyle = getTextStyle(
+          context: context,
+          font: itemFont,
+          // The item's own colour, else the Tree's -- the same cascade the font above uses.
+          textColor: getForegroundColor(
+            foreground: item.foreground ?? state.foreground,
+            defaultColor: theme.itemTextColor,
+            context: context,
+          ),
+          baseTextStyle: theme.itemTextStyle,
+        );
+
+        for (int col = 0; col < columns.length; col++) {
+          final String cellText = col == 0
+              ? firstText
+              : (col < texts.length ? texts[col] ?? '' : '');
+          final cellFont = cellValue(item.fonts, col);
+          final painter = TextPainter(
+            text: TextSpan(
+              text: cellText,
+              style: cellFont == null
+                  ? textStyle
+                  : getTextStyle(
+                      context: context,
+                      font: cellFont,
+                      textColor: theme.itemTextColor,
+                      baseTextStyle: theme.itemTextStyle,
+                    ),
+            ),
+            textDirection: TextDirection.ltr,
+            textScaler: FontUtils.textWidgetScaler,
+            maxLines: 1,
+          );
+          painter.layout();
+          double w = painter.width + paddingH;
+          if (col == 0) {
+            w += theme.itemIndent * level + prefixBase;
+            if (isCheckMode) w += checkboxWidth;
+            if (columns.length == 1 && item.image != null) w += iconSpace;
+          }
+          if (w > maxWidths[col]) maxWidths[col] = w;
+        }
+        visit(item.items, level + 1);
+      }
+    }
+
+    visit(state.items, 0);
+
+    final defaultW = theme.columnDefaultWidth.toDouble();
+    final minW = theme.columnMinWidth;
+    final dividerGap = theme.columnDividerGap;
+    for (int i = 0; i < maxWidths.length; i++) {
+      if (maxWidths[i] < minW) maxWidths[i] = minW;
+      final colMin = columns[i].width?.toDouble() ?? defaultW;
+      if (maxWidths[i] < colMin) maxWidths[i] = colMin;
+      if (i < maxWidths.length - 1) maxWidths[i] += dividerGap;
+    }
+    _preferredColumnWidths = (inputs: inputs, widths: List.of(maxWidths));
+    return maxWidths;
+  }
+
+  ({List<Object?> inputs, List<double> widths})? _preferredColumnWidths;
 
   /// Natural width of the widest visible row. A tree with no columns has no column widths
   /// to sum, so this is the only thing a horizontal scroll range can be derived from.
@@ -577,13 +724,48 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   ({List<Object?> inputs, double width})? _contentWidth;
 
-  /// The widths Java gives the columns, which is what `TreeItem.getBounds(int)` lays the cells out
-  /// by: column i starts at the sum of the widths before it. A cell drawn at any other width takes a
-  /// click into a different column for JFace's ColumnViewer than the one it shows under the mouse.
-  List<double> _columnWidths(List<VTreeColumn> columns, TreeThemeExtension theme) => [
-    for (final column in columns)
-      (column.width ?? theme.columnDefaultWidth.round()).toDouble(),
-  ];
+  List<double> _computeEffectiveColumnWidths(
+    List<VTreeColumn> columns,
+    List<double> preferred,
+    double? availableWidth,
+    TreeThemeExtension theme,
+  ) {
+    if (columns.isEmpty || preferred.isEmpty) return [];
+    final prefix = theme.expandIconSize + theme.expandIconSpacing;
+    if (availableWidth == null || availableWidth <= prefix) {
+      return List.from(preferred);
+    }
+    final available = availableWidth - prefix;
+    // Java places cells (getBounds, owner-draw events) at the widths it set, so they are kept as
+    // given, as in SWT: past the tree's width they scroll, or are clipped on a NO_SCROLL tree.
+    // A width of 0 is not sent: a column without one is a hidden column.
+    if (columns.any((c) => (c.width ?? 0) > 0)) {
+      final hasMultiColumn = columns.length > 1;
+      final gapFraction = hasMultiColumn
+          ? theme.itemEdgeGapFractionWithCols
+          : theme.itemEdgeGapFraction;
+      final rowPadding =
+          (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).horizontal;
+      final inner = availableWidth * (1 - 2 * gapFraction) - rowPadding;
+      final result = columns.map((c) => (c.width ?? 0).toDouble()).toList();
+      final sum = result.reduce((a, b) => a + b);
+      _columnsContentWidth = rowPadding + (sum > inner ? sum : inner);
+      return result;
+    }
+    if (columns.length > 1 && available > 0) {
+      final n = columns.length;
+      final widthPerColumn = available / n;
+      return List.filled(n, widthPerColumn);
+    }
+    final sum = preferred.reduce((a, b) => a + b);
+    if (sum <= available) {
+      final result = List<double>.from(preferred);
+      result[result.length - 1] += available - sum;
+      return result;
+    }
+    final scale = available / sum;
+    return preferred.map((w) => w * scale).toList();
+  }
 
   Widget _buildContentWithEdgeGaps(
     List<_FlatTreeItem> flatItems,
@@ -597,13 +779,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     bool hasMultiColumn,
     Color backgroundColor,
   ) {
-    // A tree with columns draws its edge gap inside column 0, so its cells start at the tree's left
-    // edge, where TreeItem.getBounds(int) starts them.
     final gapFraction = hasMultiColumn
         ? widgetTheme.itemEdgeGapFractionWithCols
         : widgetTheme.itemEdgeGapFraction;
-    final leftGap = columns.isEmpty ? maxWidth * gapFraction : 0.0;
-    final rightGap = leftGap;
+    final leftGap = maxWidth * gapFraction;
+    final rightGap = maxWidth * gapFraction;
 
     Widget listViewWithLines = _buildListViewWithColumnLines(
       flatItems,
@@ -619,30 +799,35 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       effectiveWidths,
       maxWidth - leftGap - rightGap,
     );
-    _hScrollContentWidth = totalWidth;
+    _hScrollContentWidth = columns.isEmpty ? totalWidth : _columnsContentWidth;
 
-    final scrollsHorizontally = totalWidth != null;
+    final scrollsHorizontally = hasHScroll && totalWidth != null;
     Widget scrollableContent;
-    if (totalWidth != null) {
-      // Columns keep their widths when they add up to more than the tree shows: a tree without
-      // H_SCROLL clips them, as natively.
-      final Widget horizontal = ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: SingleChildScrollView(
-          controller: _horizontalController,
-          scrollDirection: Axis.horizontal,
-          physics: hasHScroll ? null : const NeverScrollableScrollPhysics(),
-          child: SizedBox(width: totalWidth, child: listViewWithLines),
+    if (scrollsHorizontally) {
+      scrollableContent = Scrollbar(
+        controller: _horizontalController,
+        thumbVisibility: true,
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            controller: _horizontalController,
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(width: totalWidth, child: listViewWithLines),
+          ),
         ),
       );
-      scrollableContent = hasHScroll
-          ? Scrollbar(
-              controller: _horizontalController,
-              thumbVisibility: true,
-              child: horizontal,
-            )
-          : horizontal;
     } else {
+      final contentWidth = _columnsContentWidth;
+      if (contentWidth != null && contentWidth > maxWidth - leftGap - rightGap) {
+        listViewWithLines = ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: contentWidth,
+            maxWidth: contentWidth,
+            child: listViewWithLines,
+          ),
+        );
+      }
       scrollableContent = ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: listViewWithLines,
@@ -681,9 +866,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
   }
 
-  /// The width the rows are laid out at inside the horizontal scroll, or null when they take the
-  /// viewport's: a tree with columns always lays them out at the columns' total, at least the
-  /// viewport; a columnless one only once its widest row is wider than the viewport.
   double? _calculateTotalWidth(
     bool hasHScroll,
     List<VTreeColumn> columns,
@@ -691,15 +873,27 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     List<double>? effectiveWidths,
     double viewportWidth,
   ) {
-    if (columns.isNotEmpty) {
-      final widths = effectiveWidths ?? _columnWidths(columns, widgetTheme);
-      final total = widths.fold(0.0, (sum, w) => sum + w);
-      return total > viewportWidth ? total : viewportWidth;
-    }
     if (!hasHScroll) return null;
-    final contentWidth = _measuredContentWidth;
-    if (contentWidth == null || contentWidth <= viewportWidth) return null;
-    return contentWidth;
+    if (columns.isEmpty) {
+      final contentWidth = _measuredContentWidth;
+      if (contentWidth == null || contentWidth <= viewportWidth) return null;
+      return contentWidth;
+    }
+    if (_columnsContentWidth != null) return _columnsContentWidth;
+    final boundsW = state.bounds?.width?.toDouble();
+    if (boundsW != null && boundsW > 0) return boundsW;
+    if (effectiveWidths != null && effectiveWidths.length == columns.length) {
+      final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
+      return prefix + effectiveWidths.reduce((a, b) => a + b);
+    }
+    double calculatedWidth = 0.0;
+    for (final column in columns) {
+      calculatedWidth +=
+          (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+    }
+    return widgetTheme.expandIconSize +
+        widgetTheme.expandIconSpacing +
+        calculatedWidth;
   }
 
   Widget _buildListViewWithColumnLines(
@@ -767,12 +961,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     TreeThemeExtension widgetTheme,
     bool hasMultiColumn,
     double maxWidth,
-    double edgeGap,
+    Color itemsBackgroundColor,
   ) {
     final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
-    // Column 0's label keeps its place past the expander; with more than one column the tree's edge
-    // gap is inside column 0 too, as it is in the rows.
-    final firstLabelInset = prefix + (hasMultiColumn ? edgeGap : 0.0);
     final defaultWidth = widgetTheme.columnDefaultWidth.round();
     final borderWidth = widgetTheme.columnBorderWidth;
 
@@ -833,10 +1024,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                       if (columnIndex == 0) {
                         return TreeCellBox(
                           width: width,
-                          minContentWidth: firstLabelInset,
+                          minContentWidth: prefix,
                           child: Row(
                             children: [
-                              SizedBox(width: firstLabelInset),
+                              SizedBox(width: prefix),
                               Expanded(
                                 child: getWidgetForTreeColumn(
                                   column,
@@ -886,15 +1077,62 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       ],
     );
 
-    // The header lays its columns on the rows' boundaries, and follows them when they scroll
-    // sideways.
-    final double contentWidth = cumulativeWidth > maxWidth ? cumulativeWidth : maxWidth;
-    return SingleChildScrollView(
-      controller: _headerHorizontalController,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: SizedBox(width: contentWidth, child: headerContent),
-    );
+    final contentWidth = _columnsContentWidth;
+    if (contentWidth != null) {
+      // Columns at Java's widths can be wider than the tree: the header then scrolls with the
+      // rows, and is inset by the rows' padding so each title sits over its own column.
+      final rowPadding =
+          hasMultiColumn ? widgetTheme.itemPaddingWithCols : widgetTheme.itemPadding;
+      final columnsHeader = headerContent;
+      final controller = _horizontalController!;
+      headerContent = SizedBox(
+        height: headerHeight,
+        child: ClipRect(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) => Transform.translate(
+            offset: Offset(controller.hasClients ? -controller.offset : 0, 0),
+            child: child,
+          ),
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            minWidth: contentWidth,
+            maxWidth: contentWidth,
+            minHeight: headerHeight,
+            maxHeight: headerHeight,
+            child: Container(
+              color: headerBgColor,
+              padding: EdgeInsets.only(left: rowPadding.left, right: rowPadding.right),
+              child: columnsHeader,
+            ),
+          ),
+        ),
+        ),
+      );
+    }
+
+    if (hasMultiColumn) {
+      final gapFraction = widgetTheme.itemEdgeGapFractionWithCols;
+      final leftGap = maxWidth * gapFraction;
+      final rightGap = maxWidth * gapFraction;
+      headerContent = Row(
+        children: [
+          Container(
+            width: leftGap,
+            height: headerHeight,
+            color: itemsBackgroundColor,
+          ),
+          Expanded(child: headerContent),
+          Container(
+            width: rightGap,
+            height: headerHeight,
+            color: itemsBackgroundColor,
+          ),
+        ],
+      );
+    }
+
+    return headerContent;
   }
 
   /// Native SWT has no sash on a column boundary: the header itself switches to the resize cursor a
@@ -1912,19 +2150,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     widget.sendEvent(state, "Scroll/Scroll", VEvent()..x = across..y = offset);
   }
 
-  void _followRowsWithHeader() {
-    final rows = _horizontalController;
-    if (rows == null || !rows.hasClients || !_headerHorizontalController.hasClients) return;
-    final header = _headerHorizontalController.position;
-    final offset = rows.offset.clamp(header.minScrollExtent, header.maxScrollExtent);
-    if (offset != header.pixels) header.jumpTo(offset);
-  }
-
   @override
   void dispose() {
     unregisterTestTree(_testTreeKey, _testTreeHandle);
     _horizontalController?.dispose();
-    _headerHorizontalController.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();
     dropFeedback.dispose();
@@ -2094,14 +2323,9 @@ class TreeHasMultiColumnProvider extends InheritedWidget {
 class TreeEffectiveColumnWidthsProvider extends InheritedWidget {
   final List<double>? effectiveWidths;
 
-  /// The tree's gap at its left edge. A tree with columns draws it inside column 0, ahead of the
-  /// row's own padding, so the column still starts at the tree's left edge.
-  final double edgeGap;
-
   const TreeEffectiveColumnWidthsProvider({
     super.key,
     required this.effectiveWidths,
-    this.edgeGap = 0.0,
     required super.child,
   });
 
@@ -2113,15 +2337,8 @@ class TreeEffectiveColumnWidthsProvider extends InheritedWidget {
     return provider?.effectiveWidths;
   }
 
-  static double edgeGapOf(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<TreeEffectiveColumnWidthsProvider>()
-          ?.edgeGap ??
-      0.0;
-
   @override
   bool updateShouldNotify(TreeEffectiveColumnWidthsProvider oldWidget) {
-    if (edgeGap != oldWidget.edgeGap) return true;
     if (effectiveWidths == null && oldWidget.effectiveWidths == null) {
       return false;
     }
@@ -2180,6 +2397,27 @@ class TreeLinesVisibleProvider extends InheritedWidget {
   }
 }
 
+class TreeColumnIsLastProvider extends InheritedWidget {
+  final bool isLastColumn;
+
+  const TreeColumnIsLastProvider({
+    super.key,
+    required this.isLastColumn,
+    required super.child,
+  });
+
+  static bool of(BuildContext context) {
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<TreeColumnIsLastProvider>();
+    return provider?.isLastColumn ?? false;
+  }
+
+  @override
+  bool updateShouldNotify(TreeColumnIsLastProvider oldWidget) {
+    return isLastColumn != oldWidget.isLastColumn;
+  }
+}
+
 /// What the Tree decides about one header cell: the sort indicator it shows and the colour of its text.
 class TreeHeaderCellProvider extends InheritedWidget {
   final int sortDirection;
@@ -2202,27 +2440,6 @@ class TreeHeaderCellProvider extends InheritedWidget {
   @override
   bool updateShouldNotify(TreeHeaderCellProvider oldWidget) =>
       sortDirection != oldWidget.sortDirection || foreground != oldWidget.foreground;
-}
-
-class TreeColumnIsLastProvider extends InheritedWidget {
-  final bool isLastColumn;
-
-  const TreeColumnIsLastProvider({
-    super.key,
-    required this.isLastColumn,
-    required super.child,
-  });
-
-  static bool of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<TreeColumnIsLastProvider>();
-    return provider?.isLastColumn ?? false;
-  }
-
-  @override
-  bool updateShouldNotify(TreeColumnIsLastProvider oldWidget) {
-    return isLastColumn != oldWidget.isLastColumn;
-  }
 }
 
 /// A cell [width] wide, as a tree column lays it out. Its [child] is laid out at least
