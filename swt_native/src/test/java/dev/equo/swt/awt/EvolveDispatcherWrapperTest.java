@@ -158,6 +158,26 @@ class EvolveDispatcherWrapperTest {
         verify(display).asyncExec(org.mockito.ArgumentMatchers.any());
     }
 
+    /** A wrapper left bound to a disposed Display is replaced by one for the live Display. */
+    @Test
+    void ensureDispatcherInstalledReplacesAWrapperBoundToADisposedDisplay() {
+        Display disposed = Mocks.display();
+        when(disposed.isDisposed()).thenReturn(true);
+        Display live = org.mockito.Mockito.mock(Display.class);
+        when(live.getThread()).thenReturn(Thread.currentThread());
+        EventQueue queue = java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue();
+        try {
+            EvolveSwingHost.setFwDispatcher(queue, new EvolveSwingHost.EvolveDispatcherWrapper(disposed));
+            assertThat(EventQueue.isDispatchThread()).isFalse();
+
+            EvolveSwingHost.ensureDispatcherInstalled(live);
+
+            assertThat(EventQueue.isDispatchThread()).isTrue();
+        } finally {
+            EvolveSwingHost.setFwDispatcher(queue, null);
+        }
+    }
+
     private static final class ForwardingQueue extends EventQueue {
         void dispatch(AWTEvent event) {
             dispatchEvent(event);
