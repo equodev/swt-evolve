@@ -63,6 +63,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
   Color get specialDropdownArrowColor;
   EdgeInsets get specialDropdownPadding;
   double get specialDropdownItemSpacing;
+  double get minTextContrast;
 
   @override
   ToolItemThemeExtension copyWith({
@@ -118,6 +119,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
     Color? specialDropdownArrowColor,
     EdgeInsets? specialDropdownPadding,
     double? specialDropdownItemSpacing,
+    double? minTextContrast,
   }) {
     return ToolItemThemeExtension(
       enabledColor: enabledColor ?? this.enabledColor,
@@ -190,6 +192,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
           specialDropdownPadding ?? this.specialDropdownPadding,
       specialDropdownItemSpacing:
           specialDropdownItemSpacing ?? this.specialDropdownItemSpacing,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -330,6 +333,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
       specialDropdownItemSpacing: t < 0.5
           ? specialDropdownItemSpacing
           : other.specialDropdownItemSpacing,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -539,6 +543,10 @@ mixin _$ToolItemThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               specialDropdownItemSpacing,
               other.specialDropdownItemSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -598,6 +606,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(specialDropdownArrowColor),
       const DeepCollectionEquality().hash(specialDropdownPadding),
       const DeepCollectionEquality().hash(specialDropdownItemSpacing),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -676,4 +685,5 @@ extension ToolItemThemeExtensionBuildContextProps on BuildContext {
       toolItemThemeExtension.specialDropdownPadding;
   double get specialDropdownItemSpacing =>
       toolItemThemeExtension.specialDropdownItemSpacing;
+  double get minTextContrast => toolItemThemeExtension.minTextContrast;
 }

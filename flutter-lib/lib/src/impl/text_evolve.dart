@@ -270,6 +270,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       foreground: state.foreground,
       defaultColor: widgetTheme.textColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textField = TextField(

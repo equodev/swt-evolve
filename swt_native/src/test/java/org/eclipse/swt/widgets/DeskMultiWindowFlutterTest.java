@@ -9,6 +9,7 @@ import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -123,6 +125,22 @@ class DeskMultiWindowFlutterTest {
             assertThat(window.width).isEqualTo(400);
             assertThat(window.height).isEqualTo(300);
         });
+    }
+
+    @Test
+    @DisplayName("a detached window that reports while it is still opening is sent its configuration")
+    void answersAReportMadeWhileTheWindowOpens() {
+        TestDeskBridge desk = install();
+        desk.clientReportsWhileOpening();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+
+        assertThat(desk.unansweredReports)
+                .as("the client's first report arrives before the engine has finished starting; "
+                        + "nobody listening then means it is never sent its scale or window chrome")
+                .isEmpty();
+        assertThat(desk.comm.sent).extracting(f -> f.event)
+                .contains("swt.evolve.properties", "Shell/" + detached.hashCode());
     }
 
     @Test
@@ -395,7 +413,7 @@ class DeskMultiWindowFlutterTest {
         assertThat(desk.states.get(handle)).containsExactly(ShellWindow.STATE_MAXIMIZED);
         assertThat(detached.getLocation())
                 .as("a maximized shell sits at the screen origin; it is not cascaded like an unplaced one")
-                .isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+                .isEqualTo(new Point(0, 0));
     }
 
     @Test
@@ -425,7 +443,7 @@ class DeskMultiWindowFlutterTest {
         assertThat(desk.states.get(handleOf(desk, detached))).containsExactly(ShellWindow.STATE_FULLSCREEN);
         assertThat(detached.getLocation())
                 .as("a full-screen shell is not moved to a cascaded spot")
-                .isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
+                .isEqualTo(new Point(0, 0));
     }
 
     @Test
@@ -743,6 +761,22 @@ class DeskMultiWindowFlutterTest {
         assertThat(desk.windowedShells()).contains(late);
     }
 
+    @Test
+    @DisplayName("a shell in a window of its own maps to the screen from its bounds, with no title bar")
+    void windowedShellMapsWithoutATitleBar() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        openShell("Workbench");
+        Shell second = openShell("Second workbench window");
+        assertThat(desk.windowedShells()).contains(second);
+        second.setBounds(1760, 332, 1100, 868);
+
+        assertThat(second.toDisplay(0, 0))
+                .as("its window draws the shell without a Flutter title bar, so a point mapped through "
+                        + "one lands that much below what is painted")
+                .isEqualTo(new Point(1760, 332));
+    }
+
     // ---- harness ---------------------------------------------------------------------------------------
 
     /** The windowed shell ids the last Display frame told the client, as sent. */
@@ -866,7 +900,7 @@ class DeskMultiWindowFlutterTest {
         }
 
         @Override
-        protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
+        protected Point shellWindowOrigin(long context) {
             return null; // a stood-in window sits nowhere; only a real one has a screen position
         }
 
@@ -938,6 +972,24 @@ class DeskMultiWindowFlutterTest {
         protected long openNativeWindow(long owner, long widgetId, String widgetName, int width, int height) {
             long handle = ++nextHandle;
             opened.add(new OpenedWindow(handle, owner, widgetId, widgetName, width, height));
+            if (clientReportsWhileOpening) {
+                // The client runs on its own thread and reports as soon as its view has metrics,
+                // which happens while the engine is still being created here.
+                Shell opening = null;
+                for (Shell s : forDisplay._shells()) if (s != null && s.hashCode() == widgetId) opening = s;
+                String channel = shellClientReadyChannel(opening);
+                @SuppressWarnings("unchecked")
+                Consumer<ClientReadyPayload> handler = (Consumer<ClientReadyPayload>) comm.handlers.get(channel);
+                if (handler == null) {
+                    unansweredReports.add(channel);
+                } else {
+                    ClientReadyPayload report = new ClientReadyPayload();
+                    report.width = width;
+                    report.height = height;
+                    report.isFirst = true;
+                    handler.accept(report);
+                }
+            }
             if (reenterOnOpen) {
                 // What the real bridge does here: opening a window pumps, and a pump dispatches
                 // whatever is queued -- including another update for this same Display.
@@ -948,6 +1000,13 @@ class DeskMultiWindowFlutterTest {
         }
 
         private boolean reenterOnOpen;
+
+        private boolean clientReportsWhileOpening;
+        final List<String> unansweredReports = new ArrayList<>();
+
+        void clientReportsWhileOpening() {
+            clientReportsWhileOpening = true;
+        }
 
         void reenterOnNextOpen() {
             reenterOnOpen = true;

@@ -25,6 +25,7 @@ mixin _$ListThemeExtensionTailorMixin on ThemeExtension<ListThemeExtension> {
   EdgeInsets get itemPadding;
   TextStyle? get textStyle;
   Duration get animationDuration;
+  double get minTextContrast;
 
   @override
   ListThemeExtension copyWith({
@@ -43,6 +44,7 @@ mixin _$ListThemeExtensionTailorMixin on ThemeExtension<ListThemeExtension> {
     EdgeInsets? itemPadding,
     TextStyle? textStyle,
     Duration? animationDuration,
+    double? minTextContrast,
   }) {
     return ListThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -64,6 +66,7 @@ mixin _$ListThemeExtensionTailorMixin on ThemeExtension<ListThemeExtension> {
       itemPadding: itemPadding ?? this.itemPadding,
       textStyle: textStyle ?? this.textStyle,
       animationDuration: animationDuration ?? this.animationDuration,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -113,6 +116,7 @@ mixin _$ListThemeExtensionTailorMixin on ThemeExtension<ListThemeExtension> {
       itemPadding: t < 0.5 ? itemPadding : other.itemPadding,
       textStyle: TextStyle.lerp(textStyle, other.textStyle, t),
       animationDuration: t < 0.5 ? animationDuration : other.animationDuration,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -174,6 +178,10 @@ mixin _$ListThemeExtensionTailorMixin on ThemeExtension<ListThemeExtension> {
             const DeepCollectionEquality().equals(
               animationDuration,
               other.animationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -196,6 +204,7 @@ mixin _$ListThemeExtensionTailorMixin on ThemeExtension<ListThemeExtension> {
       const DeepCollectionEquality().hash(itemPadding),
       const DeepCollectionEquality().hash(textStyle),
       const DeepCollectionEquality().hash(animationDuration),
+      const DeepCollectionEquality().hash(minTextContrast),
     );
   }
 }
@@ -221,4 +230,5 @@ extension ListThemeExtensionBuildContextProps on BuildContext {
   EdgeInsets get itemPadding => listThemeExtension.itemPadding;
   TextStyle? get textStyle => listThemeExtension.textStyle;
   Duration get animationDuration => listThemeExtension.animationDuration;
+  double get minTextContrast => listThemeExtension.minTextContrast;
 }

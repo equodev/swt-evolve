@@ -11,6 +11,7 @@ import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import 'utils/focus_report.dart';
 import 'utils/widget_utils.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 
 const int _shadowIn = 1 << 2;
@@ -34,7 +35,6 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<GroupThemeExtension>()!;
     final children = state.children;
-    final text = stripAccelerators(state.text);
 
     return SwtControlScope(
       swt: state.swt,
@@ -44,7 +44,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
         skipTraversal: true,
         child: _StyledGroup(
           widgetTheme: widgetTheme,
-          text: text,
+          text: state.text ?? '',
           composite: state,
           children: children,
           vFont: state.font,
@@ -75,6 +75,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
 
 class _StyledGroup extends StatelessWidget {
   final GroupThemeExtension widgetTheme;
+  /// The title, `&` mnemonic marker included.
   final String text;
   final List<VControl>? children;
   final VFont? vFont;
@@ -130,6 +131,7 @@ class _StyledGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = stripAccelerators(text);
     final backgroundColor = getBackgroundColor(
           background: composite.background,
           defaultColor: widgetTheme.backgroundColor,
@@ -149,6 +151,7 @@ class _StyledGroup extends StatelessWidget {
       context: context,
       foreground: textColor,
       defaultColor: widgetTheme.foregroundColor,
+      minContrast: widgetTheme.minTextContrast,
     );
     final titleStyle = getTextStyle(
       context: context,
@@ -158,7 +161,7 @@ class _StyledGroup extends StatelessWidget {
     );
 
     final titleFontSize = titleStyle?.fontSize ?? widgetTheme.textStyle?.fontSize ?? 12.0;
-    final titleTopOffset = text.isNotEmpty ? titleFontSize / 2 : 0.0;
+    final titleTopOffset = title.isNotEmpty ? titleFontSize / 2 : 0.0;
 
     final borderWidth = _noShadow ? 0.0 : widgetTheme.borderWidth;
     final borderDecoration = BoxDecoration(
@@ -210,12 +213,12 @@ class _StyledGroup extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (text.isNotEmpty)
+            if (title.isNotEmpty)
               Opacity(
                 opacity: 0,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(text, style: titleStyle),
+                  child: Text(title, style: titleStyle),
                 ),
               ),
             if (children != null)
@@ -225,7 +228,7 @@ class _StyledGroup extends StatelessWidget {
               ),
           ],
         ),
-        if (text.isNotEmpty)
+        if (title.isNotEmpty)
           Positioned(
             top: 0,
             left: widgetTheme.titleHorizontalOffset,
@@ -239,7 +242,7 @@ class _StyledGroup extends StatelessWidget {
                       : null,
                   borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
                 ),
-                child: Text(text, style: titleStyle),
+                child: MnemonicText(text, style: titleStyle),
               ),
             ),
           ),

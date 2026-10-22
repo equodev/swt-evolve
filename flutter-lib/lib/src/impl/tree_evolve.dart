@@ -601,6 +601,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             foreground: item.foreground ?? state.foreground,
             defaultColor: theme.itemTextColor,
             context: context,
+            minContrast: theme.minTextContrast,
           ),
           baseTextStyle: theme.itemTextStyle,
         );
@@ -697,6 +698,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             foreground: item.foreground ?? state.foreground,
             defaultColor: theme.itemTextColor,
             context: context,
+            minContrast: theme.minTextContrast,
           ),
             baseTextStyle: theme.itemTextStyle,
           ),

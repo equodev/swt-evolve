@@ -34,6 +34,7 @@ CTabItemThemeExtension _$CTabItemThemeExtensionFromJson(
       .toDouble(),
   tabItemVerticalPadding: (json['tabItemVerticalPadding'] as num).toDouble(),
   tabItemImageTextSpacing: (json['tabItemImageTextSpacing'] as num).toDouble(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$CTabItemThemeExtensionToJson(
@@ -61,4 +62,5 @@ Map<String, dynamic> _$CTabItemThemeExtensionToJson(
   'tabItemHorizontalPadding': instance.tabItemHorizontalPadding,
   'tabItemVerticalPadding': instance.tabItemVerticalPadding,
   'tabItemImageTextSpacing': instance.tabItemImageTextSpacing,
+  'minTextContrast': instance.minTextContrast,
 };
