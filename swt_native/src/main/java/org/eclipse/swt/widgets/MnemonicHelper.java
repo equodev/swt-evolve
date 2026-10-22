@@ -1,6 +1,8 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
 
 /**
  * Alt+letter mnemonic activation for the whole-tree (Flutter) model.
@@ -10,7 +12,8 @@ import org.eclipse.swt.SWT;
  * is stubbed for the Dart-backed widgets. Rather than override {@code traverseMnemonic} on every
  * generated {@code Dart*.java}, this helper walks the focused control's shell over the <em>public</em>
  * SWT widget tree, finds the control/item whose mnemonic matches, and activates it — Button clicks,
- * Label moves focus to the following control, Group focuses its first child, TabItem selects its tab.
+ * Label moves focus to the following control, Group focuses its first child, TabItem and CTabItem
+ * select their tab.
  *
  * <p>Invoked from {@link ControlHelper#routeKeyDown} after a {@code TRAVERSE_MNEMONIC} event
  * is fired and not vetoed. Uses only public API, so it is backend-agnostic and needs no generator
@@ -77,6 +80,19 @@ public final class MnemonicHelper {
                 Event e = new Event();
                 e.item = item;
                 tf.notifyListeners(SWT.Selection, e);
+                return true;
+            }
+        }
+        if (c instanceof CTabFolder) { CTabFolder tf = (CTabFolder) c;
+            // CTabFolder.onMnemonic: select the tab, notify, and take the focus.
+            for (CTabItem item : tf.getItems()) {
+                if (item == null || item.isDisposed() || !matches(item.getText(), target))
+                    continue;
+                tf.setSelection(item);
+                Event e = new Event();
+                e.item = item;
+                tf.notifyListeners(SWT.Selection, e);
+                tf.forceFocus();
                 return true;
             }
         }

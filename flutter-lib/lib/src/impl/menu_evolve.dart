@@ -13,6 +13,7 @@ import 'decorations_align.dart';
 import 'decorations_evolve.dart';
 import 'widget_config.dart';
 import 'utils/hosted_context_menu.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
 
@@ -721,8 +722,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
                 child: GestureDetector(
                   child: Padding(
                     padding: widget.widgetTheme.menuBarItemPadding,
-                    child: Text(
-                      stripAccelerators(widget.item.text),
+                    child: MnemonicText(
+                      widget.item.text,
                       style: widget.textStyle.copyWith(
                         color: enabled
                             ? widget.textColor
@@ -751,8 +752,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           child: GestureDetector(
             child: Padding(
               padding: widget.widgetTheme.menuBarItemPadding,
-              child: Text(
-                stripAccelerators(widget.item.text),
+              child: MnemonicText(
+                widget.item.text,
                 style: widget.textStyle.copyWith(
                   color: enabled
                       ? widget.textColor

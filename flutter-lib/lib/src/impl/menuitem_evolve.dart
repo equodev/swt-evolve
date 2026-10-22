@@ -16,6 +16,7 @@ import '../theme/theme_settings/menuitem_theme_settings.dart';
 import 'menu_evolve.dart';
 import 'utils/image_utils.dart';
 import 'utils/pointer.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
@@ -123,7 +124,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         isEnabled: isEnabled,
       ),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
-      child: Text(split.label, style: textStyle),
+      child: MnemonicText(split.label, style: textStyle),
     );
   }
 
@@ -169,7 +170,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         isEnabled: isEnabled,
       ),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
-      child: Text(split.label, style: textStyle),
+      child: MnemonicText(split.label, style: textStyle),
     );
   }
 
@@ -204,7 +205,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       } : null,
       leading: _buildMenuIcon(widgetTheme, isEnabled),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
-      child: Text(split.label, style: textStyle),
+      child: MnemonicText(split.label, style: textStyle),
     );
   }
 
@@ -662,7 +663,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
                 SizedBox(width: widget.widgetTheme.iconTextSpacing),
               ],
               Expanded(
-                child: Text(widget.text, style: textStyle),
+                child: MnemonicText(widget.text, style: textStyle),
               ),
               if (widget.trailing != null) ...[
                 SizedBox(width: widget.widgetTheme.textAcceleratorSpacing),
