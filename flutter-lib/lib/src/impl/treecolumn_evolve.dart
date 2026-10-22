@@ -164,7 +164,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final bool isLastColumn = TreeColumnIsLastProvider.of(context);
 
     // A single & marks the header's mnemonic and is not drawn; && draws one.
-    final String text = fixMnemonic(state.text);
+    final String text = stripAccelerators(state.text);
     final int? alignment = state.alignment;
     final bool moveable = state.moveable ?? false;
     final int width = state.width ?? widgetTheme.columnDefaultWidth.round();

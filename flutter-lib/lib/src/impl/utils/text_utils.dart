@@ -27,24 +27,6 @@ String stripAccelerators(String? text) {
   return drawn.toString();
 }
 
-/// The text SWT shows for [text] where it fixes mnemonics (an item's header, a column's title): a single
-/// `&` is not drawn, `&&` draws one, and a `&` that ends the text is drawn.
-String fixMnemonic(String? text) {
-  if (text == null || text.isEmpty) return text ?? '';
-  final shown = StringBuffer();
-  for (var i = 0; i < text.length; i++) {
-    final c = text[i];
-    final last = i == text.length - 1;
-    if (c != '&' || last) {
-      shown.write(c);
-    } else if (text[i + 1] == '&') {
-      shown.write('&');
-      i++;
-    }
-  }
-  return shown.toString();
-}
-
 /// The text a CLabel draws: its text without the mnemonic markers, and nothing for the placeholder
 /// `<none>`.
 String clabelDrawnText(String? text) => text == '<none>' ? '' : stripAccelerators(text);

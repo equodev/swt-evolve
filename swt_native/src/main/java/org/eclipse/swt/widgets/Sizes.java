@@ -107,32 +107,6 @@ public class Sizes {
         return width;
     }
 
-    /**
-     * The width that shows a Tree column's header and every visible cell whole, measured the way
-     * Flutter lays the row out: the first column also holds the indent, the expander and the image.
-     * Never 0, which Flutter would read as a hidden column.
-     */
-    public static int packWidth(DartTreeColumn column) {
-        DartTree tree = (DartTree) column.parent.getImpl();
-        int index = tree.indexOf(column.getApi());
-        if (index < 0)
-            return 0;
-        int width = dev.equo.swt.size.TreeSizes.getPackedHeaderWidth(column.getApi());
-        Image headerImage = column.getImage();
-        if (headerImage != null) {
-            width += headerImage.getBounds().width;
-        }
-        int cellsLeft = dev.equo.swt.size.TreeSizes.getCellsLeft(tree);
-        for (TreeItem item : flattenVisibleTreeItems(tree)) {
-            int cellWidth = dev.equo.swt.size.TreeSizes.getPackedCellWidth(item, index);
-            Image image = index == 0 ? item.getImage() : item.getImage(index);
-            if (image != null) cellWidth += dev.equo.swt.size.TreeSizes.getIconSpace();
-            if (index == 0) cellWidth += dev.equo.swt.size.TreeSizes.getContentLeft(tree, item) - cellsLeft;
-            width = Math.max(width, cellWidth);
-        }
-        return width;
-    }
-
     private static int measureCellText(String text, Font font) {
         TextStyle style = Config.getConfigFlags().use_swt_fonts
             ? TextStyle.from(font)

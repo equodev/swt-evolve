@@ -62,13 +62,13 @@ void main() {
     expect(_inHeader(find.textContaining('&N')), findsNothing);
   });
 
-  testWidgets('a & that ends the header text is drawn', (tester) async {
+  testWidgets('a & that ends the header text is not drawn, as on Win32 and GTK', (tester) async {
     await _pump(tester, VTreeColumn()
       ..id = 2
       ..text = 'R&D &'
       ..width = 120);
 
-    expect(_inHeader(find.text('RD &')), findsOneWidget);
+    expect(_inHeader(find.text('RD ')), findsOneWidget);
   });
 
   testWidgets('a header shows its image before its text', (tester) async {
