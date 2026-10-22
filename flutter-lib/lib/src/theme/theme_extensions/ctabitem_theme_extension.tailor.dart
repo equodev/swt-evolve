@@ -21,6 +21,7 @@ mixin _$CTabItemThemeExtensionTailorMixin
   double get tabItemHorizontalPadding;
   double get tabItemVerticalPadding;
   double get tabItemImageTextSpacing;
+  double get minTextContrast;
 
   @override
   CTabItemThemeExtension copyWith({
@@ -34,6 +35,7 @@ mixin _$CTabItemThemeExtensionTailorMixin
     double? tabItemHorizontalPadding,
     double? tabItemVerticalPadding,
     double? tabItemImageTextSpacing,
+    double? minTextContrast,
   }) {
     return CTabItemThemeExtension(
       tabItemTextColor: tabItemTextColor ?? this.tabItemTextColor,
@@ -54,6 +56,7 @@ mixin _$CTabItemThemeExtensionTailorMixin
           tabItemVerticalPadding ?? this.tabItemVerticalPadding,
       tabItemImageTextSpacing:
           tabItemImageTextSpacing ?? this.tabItemImageTextSpacing,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -106,6 +109,7 @@ mixin _$CTabItemThemeExtensionTailorMixin
       tabItemImageTextSpacing: t < 0.5
           ? tabItemImageTextSpacing
           : other.tabItemImageTextSpacing,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -153,6 +157,10 @@ mixin _$CTabItemThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               tabItemImageTextSpacing,
               other.tabItemImageTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -170,6 +178,7 @@ mixin _$CTabItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabItemHorizontalPadding),
       const DeepCollectionEquality().hash(tabItemVerticalPadding),
       const DeepCollectionEquality().hash(tabItemImageTextSpacing),
+      const DeepCollectionEquality().hash(minTextContrast),
     );
   }
 }
@@ -195,4 +204,5 @@ extension CTabItemThemeExtensionBuildContextProps on BuildContext {
       cTabItemThemeExtension.tabItemVerticalPadding;
   double get tabItemImageTextSpacing =>
       cTabItemThemeExtension.tabItemImageTextSpacing;
+  double get minTextContrast => cTabItemThemeExtension.minTextContrast;
 }

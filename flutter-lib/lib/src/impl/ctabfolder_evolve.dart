@@ -980,15 +980,17 @@ class _CTabBarState extends State<_CTabBar> {
   }) {
     final enabled = widget.state.enabled ?? false;
 
-    final resolvedSelectionForeground = getForegroundColor(
-      context: context,
-      foreground: widget.state.selectionForeground,
-      defaultColor: widgetTheme.tabSelectedTextColor,
-    );
     final resolvedSelectionBackground = getBackgroundColor(
       background: widget.state.selectionBackground,
       defaultColor: widgetTheme.tabSelectedBackgroundColor,
     ) ?? widgetTheme.tabSelectedBackgroundColor;
+    final resolvedSelectionForeground = getForegroundColor(
+      context: context,
+      foreground: widget.state.selectionForeground,
+      defaultColor: widgetTheme.tabSelectedTextColor,
+      minContrast: widgetTheme.minTextContrast,
+      background: resolvedSelectionBackground,
+    );
 
     final themeTextColor = getCTabTextColor(
       widgetTheme,
@@ -1002,6 +1004,7 @@ class _CTabBarState extends State<_CTabBar> {
       foreground: widget.state.foreground,
       defaultColor: themeTextColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
     final themeBackground = getCTabBackgroundColor(
       widgetTheme,
@@ -1154,15 +1157,17 @@ class _CTabBarState extends State<_CTabBar> {
     final useDefaultTheme = getConfigFlags().theme_name == null;
     final active = showHighlight && (widget.state.highlight ?? false);
 
-    final resolvedSelectionForeground = getForegroundColor(
-      context: context,
-      foreground: widget.state.selectionForeground,
-      defaultColor: widgetTheme.tabSelectedTextColor,
-    );
     final resolvedSelectionBackground = getBackgroundColor(
       background: widget.state.selectionBackground,
       defaultColor: widgetTheme.tabSelectedBackgroundColor,
     ) ?? widgetTheme.tabSelectedBackgroundColor;
+    final resolvedSelectionForeground = getForegroundColor(
+      context: context,
+      foreground: widget.state.selectionForeground,
+      defaultColor: widgetTheme.tabSelectedTextColor,
+      minContrast: widgetTheme.minTextContrast,
+      background: resolvedSelectionBackground,
+    );
 
     final themeTextColor = getCTabTextColor(
       widgetTheme,
@@ -1176,6 +1181,7 @@ class _CTabBarState extends State<_CTabBar> {
       foreground: widget.state.foreground,
       defaultColor: themeTextColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
     final themeBackground = getCTabBackgroundColor(
       widgetTheme,

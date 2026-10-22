@@ -25,6 +25,7 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
   TextDecoration get linkDecoration;
   TextDecoration get linkHoverDecoration;
   TextAlign get textAlign;
+  double get minTextContrast;
 
   @override
   LinkThemeExtension copyWith({
@@ -43,6 +44,7 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
     TextDecoration? linkDecoration,
     TextDecoration? linkHoverDecoration,
     TextAlign? textAlign,
+    double? minTextContrast,
   }) {
     return LinkThemeExtension(
       textColor: textColor ?? this.textColor,
@@ -61,6 +63,7 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
       linkDecoration: linkDecoration ?? this.linkDecoration,
       linkHoverDecoration: linkHoverDecoration ?? this.linkHoverDecoration,
       textAlign: textAlign ?? this.textAlign,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -106,6 +109,7 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
           ? linkHoverDecoration
           : other.linkHoverDecoration,
       textAlign: t < 0.5 ? textAlign : other.textAlign,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -161,7 +165,11 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
               linkHoverDecoration,
               other.linkHoverDecoration,
             ) &&
-            const DeepCollectionEquality().equals(textAlign, other.textAlign));
+            const DeepCollectionEquality().equals(textAlign, other.textAlign) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
+            ));
   }
 
   @override
@@ -183,6 +191,7 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
       const DeepCollectionEquality().hash(linkDecoration),
       const DeepCollectionEquality().hash(linkHoverDecoration),
       const DeepCollectionEquality().hash(textAlign),
+      const DeepCollectionEquality().hash(minTextContrast),
     );
   }
 }
@@ -207,4 +216,5 @@ extension LinkThemeExtensionBuildContextProps on BuildContext {
   TextDecoration get linkHoverDecoration =>
       linkThemeExtension.linkHoverDecoration;
   TextAlign get textAlign => linkThemeExtension.textAlign;
+  double get minTextContrast => linkThemeExtension.minTextContrast;
 }

@@ -332,6 +332,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           ? widgetTheme.enabledColor
           : widgetTheme.disabledColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
@@ -532,6 +533,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           ? widgetTheme.enabledColor
           : widgetTheme.disabledColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textStyle = getTextStyle(

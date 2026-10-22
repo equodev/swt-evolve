@@ -222,6 +222,7 @@ TreeThemeExtension _$TreeThemeExtensionFromJson(
   eventDefaultX: (json['eventDefaultX'] as num).toInt(),
   eventDefaultY: (json['eventDefaultY'] as num).toInt(),
   eventDefaultDetail: (json['eventDefaultDetail'] as num).toInt(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$TreeThemeExtensionToJson(
@@ -399,4 +400,5 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   'eventDefaultX': instance.eventDefaultX,
   'eventDefaultY': instance.eventDefaultY,
   'eventDefaultDetail': instance.eventDefaultDetail,
+  'minTextContrast': instance.minTextContrast,
 };

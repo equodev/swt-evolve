@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../theme_extensions/toolitem_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
@@ -100,6 +101,7 @@ ToolItemThemeExtension _getToolItemTheme({
     ),
     specialDropdownItemSpacing: 2.0,
     fontStyle: textTheme.bodyMedium?.copyWith(fontSize: 20.0),
+    minTextContrast: kMinTextContrast,
   );
 }
 

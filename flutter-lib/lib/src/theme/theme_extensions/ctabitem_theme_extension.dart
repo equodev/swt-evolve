@@ -32,7 +32,9 @@ class CTabItemThemeExtension extends ThemeExtension<CTabItemThemeExtension> with
   
   // Tab item image spacing
   final double tabItemImageTextSpacing;
-  
+
+  final double minTextContrast;
+
   const CTabItemThemeExtension({
     required this.tabItemTextColor,
     required this.tabItemSelectedTextColor,
@@ -44,6 +46,7 @@ class CTabItemThemeExtension extends ThemeExtension<CTabItemThemeExtension> with
     required this.tabItemHorizontalPadding,
     required this.tabItemVerticalPadding,
     required this.tabItemImageTextSpacing,
+    required this.minTextContrast,
   });
 
   factory CTabItemThemeExtension.fromJson(Map<String, dynamic> json) =>
