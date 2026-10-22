@@ -600,9 +600,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // opened it keeps focus and can drive the popup from its own VerifyKeyListener.
     if (!_autoFocusRequested && scope.activeShellId == state.id) {
       _autoFocusRequested = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focusScopeNode.nextFocus();
-      });
+      // Two frames: a control Java focused lands at the end of the first, and nextFocus would skip it.
+      WidgetsBinding.instance.addPostFrameCallback((_) => afterNextFrame(() {
+            // Only when no control in the shell holds the keyboard: the scope itself or nothing.
+            final noControlFocused = !_focusScopeNode.hasFocus || _focusScopeNode.hasPrimaryFocus;
+            if (mounted && noControlFocused) _focusScopeNode.nextFocus();
+          }));
     }
 
     // Always wrap in Opacity, never conditionally on opacity < 1.0 -- branching the widget

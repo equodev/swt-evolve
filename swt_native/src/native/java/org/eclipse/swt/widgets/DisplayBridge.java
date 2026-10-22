@@ -1157,11 +1157,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <em>after</em> the display update that introduced it — without this the client would never hear
      * that the shell became active.
      */
-    private void publishActiveShell() {
+    private boolean publishActiveShell() {
         if (forDisplay == null || activeShellId() == publishedActiveShell)
-            return;
+            return false;
         sendDisplayUpdate(forDisplay);
         publishMenuBar();
+        return true;
     }
 
     /**
@@ -1346,9 +1347,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             sendDisplayGate(forDisplay, "traverse/vetoable", "value",
                     live && api.isListening(org.eclipse.swt.SWT.Traverse));
         }
-        publishActiveShell();
+        long previousActiveShellId = publishedActiveShell;
+        boolean activeShellChanged = publishActiveShell();
         // Flutter's focus would otherwise stay on the CCombo, whose field reopens its list on an arrow key.
-        requestClientFocus(widget, leavesCCombo);
+        // The client cannot tell which field a shell Java opened over the active one landed on (a popup's filter).
+        if (activeShellChanged && live && api instanceof Text && !leavesCCombo
+                && opensOver(api.getShell(), previousActiveShellId))
+            requestActivatedShellFocus(widget);
+        else
+            requestClientFocus(widget, leavesCCombo);
         if (forDisplay != null)
             forDisplay.checkFocus();
         return true;
@@ -1382,6 +1389,24 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return api != null && !api.isDisposed();
     }
 
+    /**
+     * Like {@link #requestClientFocus}, without the stale-report guard: a client already on the field
+     * reports nothing, so the guard would drop the user's next move instead.
+     */
+    private void requestActivatedShellFocus(DartControl widget) {
+        if (widget == focusRequested)
+            return;
+        focusRequested = widget;
+        sendFocusRequest(widget);
+    }
+
+    /** Whether {@code shell} is a child of the shell that was active, as a popup opened from it is. */
+    private static boolean opensOver(Shell shell, long previousActiveShellId) {
+        Composite parent = shell.getParent();
+        return previousActiveShellId != 0 && parent != null && !parent.isDisposed()
+                && parent.getShell().hashCode() == previousActiveShellId;
+    }
+
     private void requestClientFocus(DartControl widget, boolean always) {
         Control api = widget == null ? null : widget.getApi();
         if (api == null || api.isDisposed())
@@ -1392,6 +1417,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         focusRequested = widget;
         pendingClientFocus = widget;
+        sendFocusRequest(widget);
+    }
+
+    private void sendFocusRequest(DartControl widget) {
         long id = FlutterBridge.id(widget);
         FlutterBridge.update().whenComplete((result, error) -> {
             try {
@@ -1417,7 +1446,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * resolve on its own -- it is created, placed and focused inside one event-loop pass, with no user
      * gesture anywhere -- so it is the one that is honoured until the general case is understood. A
      * StyledText is honoured too: an editor is focused by its part's activation, and without the
-     * client's focus it shows no caret and composes no input.
+     * client's focus it shows no caret and composes no input. A Text that a shell activation lands on
+     * is honoured too (a popup's filter): the client hears which shell became active, never which field.
      */
     private static boolean isCellEditorControl(Control control) {
         Composite parent = control.getParent();
