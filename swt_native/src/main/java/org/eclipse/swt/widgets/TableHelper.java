@@ -34,27 +34,9 @@ public class TableHelper {
         return true;
     }
 
-    /**
-     * The width of the one cell of a table without columns. A backend generated from a platform that keeps no
-     * such width measures its rows each time it is asked.
-     */
-    static int columnlessWidth(DartTable table) {
-        return table.columnlessWidth > 0 ? table.columnlessWidth : widestRow(table, table.items);
-    }
-
-    private static int widestRow(DartTable table, TableItem[] items) {
-        if (items == null) return 0;
-        int width = 0;
-        for (TableItem item : items) {
-            if (item == null || !holdsData(table, item)) continue;
-            width = Math.max(width, dev.equo.swt.size.TableSizes.getCellContentWidth(item));
-        }
-        return width;
-    }
-
-    /** Whether a row can be measured without asking SetData for it: a virtual row that holds no data yet cannot. */
-    private static boolean holdsData(DartTable table, TableItem item) {
-        return (table.getStyle() & SWT.VIRTUAL) == 0 || ((DartTableItem) item.getImpl()).cached;
+    /** The width the first cell's image and text take in a row. */
+    static int contentWidth(TableItem item) {
+        return dev.equo.swt.size.TableSizes.getCellContentWidth(item);
     }
 
     /**

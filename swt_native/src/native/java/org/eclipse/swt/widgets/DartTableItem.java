@@ -1136,7 +1136,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         if ((parent.getStyle() & SWT.VIRTUAL) != 0 && !cached)
             return 0;
         if (width == -1)
-            width = dev.equo.swt.size.TableSizes.getCellContentWidth(getApi());
+            width = TableHelper.contentWidth(getApi());
         return width;
     }
 
