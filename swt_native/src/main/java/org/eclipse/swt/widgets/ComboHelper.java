@@ -45,9 +45,10 @@ public class ComboHelper {
      * Sets the text of an editable combo, or selects the item a read-only combo has under that name. The Verify
      * listeners have already ruled on an editable combo's text: {@code DartCombo.setText(String, boolean)} asks
      * them, and a text the user typed was asked about by the client. A read-only combo asks none, as on Win32 and
-     * GTK. A new text deselects the item, as on Win32 and GTK, unless it is the text of the item being selected.
+     * GTK. A new text deselects the item, as on Win32 and GTK, unless {@code selecting}: it is the text of the item
+     * being selected.
      */
-    public static void setText(DartCombo combo, String string, boolean notify) {
+    public static void setText(DartCombo combo, String string, boolean notify, boolean selecting) {
         if (readOnly(combo)) {
             int index = combo.indexOf(string);
             if (index != -1)
@@ -60,7 +61,7 @@ public class ComboHelper {
         combo.text = text;
         // The old selection belonged to the old text.
         combo.selection = new Point(0, 0);
-        if (!combo.ignoreSelection)
+        if (!selecting)
             combo.selectedIndex = -1;
         if (notify)
             combo.sendEvent(SWT.Modify);
@@ -70,7 +71,7 @@ public class ComboHelper {
     public static void handleModify(DartCombo combo, Event e) {
         if (e.text == null)
             combo.error(SWT.ERROR_NULL_ARGUMENT);
-        setText(combo, e.text, true);
+        setText(combo, e.text, true, false);
         sendSegments(combo);
     }
 
@@ -133,8 +134,8 @@ public class ComboHelper {
     }
 
     /**
-     * The item at {@code index} was replaced. When it is the selected one it stays selected and the combo shows its
-     * new text, as {@code select} would show it: Win32's behaviour, where the three platforms differ.
+     * The item at {@code index} was replaced. When it is the selected one it is selected again, so the combo shows its
+     * new text: Win32's behaviour, where the three platforms differ.
      */
     public static void itemReplaced(DartCombo combo, int index) {
         if (readOnly(combo)) {
@@ -143,10 +144,8 @@ public class ComboHelper {
         }
         if (index != combo.selectedIndex)
             return;
-        boolean ignoring = combo.ignoreSelection;
-        combo.ignoreSelection = true;
-        combo.setText(combo.items[index], true);
-        combo.ignoreSelection = ignoring;
+        combo.selectedIndex = -1;
+        combo.select(index);
     }
 
     /**
