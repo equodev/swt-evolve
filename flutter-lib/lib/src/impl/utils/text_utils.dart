@@ -9,12 +9,22 @@ const _ampersand = 0x26;
 
 /// The text a widget draws for an SWT string in which '&' marks a mnemonic, by the rule Java measures
 /// it with (`Mnemonics.display`): every single '&' is dropped, the one at the end too, and "&&" draws
-/// one '&'. This is the only copy of that rule on this side.
-String stripAccelerators(String? text) {
-  if (text == null) return '';
+/// one '&'.
+String stripAccelerators(String? text) => parseMnemonic(text).text;
+
+/// The text a CLabel draws: its text without the mnemonic markers, and nothing for the placeholder
+/// `<none>`.
+String clabelDrawnText(String? text) => text == '<none>' ? '' : stripAccelerators(text);
+
+/// [stripAccelerators]'s text plus where the mnemonic landed: [index] is the offset in [text] of the
+/// character after the first single '&', or -1 when there is none. This is the only copy of the rule
+/// on this side; `MnemonicHelper.findMnemonic` is its Java twin, which decides what Alt+letter activates.
+({String text, int index}) parseMnemonic(String? text) {
+  if (text == null) return (text: '', index: -1);
   final first = text.indexOf('&');
-  if (first < 0) return text;
+  if (first < 0) return (text: text, index: -1);
   final drawn = StringBuffer(text.substring(0, first));
+  var index = -1;
   for (var i = first; i < text.length; i++) {
     final c = text.codeUnitAt(i);
     if (c != _ampersand) {
@@ -22,32 +32,12 @@ String stripAccelerators(String? text) {
     } else if (i + 1 < text.length && text.codeUnitAt(i + 1) == _ampersand) {
       drawn.write('&');
       i++;
+    } else if (index < 0 && i + 1 < text.length) {
+      index = drawn.length;
     }
   }
-  return drawn.toString();
+  return (text: drawn.toString(), index: index);
 }
-
-/// The text SWT shows for [text] where it fixes mnemonics (an item's header, a column's title): a single
-/// `&` is not drawn, `&&` draws one, and a `&` that ends the text is drawn.
-String fixMnemonic(String? text) {
-  if (text == null || text.isEmpty) return text ?? '';
-  final shown = StringBuffer();
-  for (var i = 0; i < text.length; i++) {
-    final c = text[i];
-    final last = i == text.length - 1;
-    if (c != '&' || last) {
-      shown.write(c);
-    } else if (text[i + 1] == '&') {
-      shown.write('&');
-      i++;
-    }
-  }
-  return shown.toString();
-}
-
-/// The text a CLabel draws: its text without the mnemonic markers, and nothing for the placeholder
-/// `<none>`.
-String clabelDrawnText(String? text) => text == '<none>' ? '' : stripAccelerators(text);
 
 (int start, int end) getWordBoundaries(String text, int offset) {
   if (text.isEmpty) return (0, 0);
@@ -221,14 +211,11 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
       Listener(onPointerDown: _trackTap, child: widget.child);
 }
 
-/// Splits "Label\tShortcut" into (label, shortcut).
-/// If no \t, shortcut is null and label is the full stripped text.
+/// Splits "Label\tShortcut" into (label, shortcut). [label] keeps its `&` marker, for a
+/// [MnemonicText]; with no \t, shortcut is null and label is the whole text.
 ({String label, String? shortcut}) splitMenuItemText(String? text) {
   if (text == null) return (label: '', shortcut: null);
   final idx = text.indexOf('\t');
-  if (idx < 0) return (label: stripAccelerators(text), shortcut: null);
-  return (
-    label: stripAccelerators(text.substring(0, idx)),
-    shortcut: text.substring(idx + 1),
-  );
+  if (idx < 0) return (label: text, shortcut: null);
+  return (label: text.substring(0, idx), shortcut: text.substring(idx + 1));
 }

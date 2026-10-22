@@ -118,6 +118,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             foreground: state.foreground,
             defaultColor: widgetTheme.textColor,
             context: context,
+            minContrast: widgetTheme.minTextContrast,
           );
 
     final textStyle = getTextStyle(

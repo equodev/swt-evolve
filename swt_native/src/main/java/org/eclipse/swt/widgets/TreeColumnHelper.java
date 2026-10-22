@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.size.Mnemonics;
 import dev.equo.swt.size.TextStyle;
 import dev.equo.swt.size.TreeItemTheme;
 import dev.equo.swt.size.TreeSizes;
@@ -56,7 +57,7 @@ public final class TreeColumnHelper {
 
     static int headerWidth(DartTreeColumn column, DartTree tree, int index) {
         int width = 0;
-        String text = stripMnemonic(column.getText());
+        String text = Mnemonics.display(column.getText());
         if (!text.isEmpty()) {
             // A tree with several columns draws its headers in capitals.
             if (tree.columnCount > 1) text = text.toUpperCase();
@@ -106,8 +107,8 @@ public final class TreeColumnHelper {
             width = event.width;
         }
         if (index == 0) {
-            // Column 0 starts at the tree's edge and holds the edge gap, row padding, indent and expander.
-            width += TreeSizes.getContentLeft(tree, cell.getApi());
+            // Column 0 starts after the edge gap and the row padding, and holds the indent and the expander.
+            width += TreeSizes.getContentLeft(tree, cell.getApi()) - TreeSizes.getCellsLeft(tree);
         }
         return width;
     }
@@ -117,24 +118,5 @@ public final class TreeColumnHelper {
             ? TextStyle.from(font)
             : TreeItemTheme.get().textStyle().withStyleFrom(font);
         return (int) Math.ceil(FontMetricsUtil.getFontSize(text, style).x());
-    }
-
-    /**
-     * The text a header shows, as SWT's fixMnemonic makes it: a single {@code &} marks a mnemonic and
-     * is not drawn, {@code &&} draws one, and a {@code &} that ends the text is drawn.
-     */
-    static String stripMnemonic(String text) {
-        StringBuilder shown = new StringBuilder(text.length());
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            boolean last = i == text.length() - 1;
-            if (c != '&' || last) {
-                shown.append(c);
-            } else if (text.charAt(i + 1) == '&') {
-                shown.append('&');
-                i++;
-            }
-        }
-        return shown.toString();
     }
 }

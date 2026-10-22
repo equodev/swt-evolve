@@ -92,6 +92,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
     final columns = _context?.parentTableValue.columns ?? [];
+    final rowGround = Color.alphaBlend(
+        _context?.tableImpl?.rowBackgroundColor(rowIndex, state, theme) ?? Colors.transparent,
+        enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
 
     return List.generate(effectiveColumnCount, (columnIndex) {
       final cellText = columnIndex < cellTexts.length
@@ -103,6 +106,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         theme,
         isSelected,
         enabled,
+        background: rowGround,
       );
       // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
       // painted twice.
@@ -445,8 +449,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     int columnIndex,
     TableThemeExtension theme,
     bool isSelected,
-    bool enabled,
-  ) {
+    bool enabled, {
+    Color? background,
+  }) {
     final defaultColor = getTableCellDefaultTextColor(theme, isSelected, enabled);
 
     final cellForeground = getCellForeground(columnIndex);
@@ -455,6 +460,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // Cell, else row, else the Table's own -- the cascade SWT resolves.
       foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
       defaultColor: defaultColor,
+      minContrast: theme.minTextContrast,
+      background: background,
     );
   }
 

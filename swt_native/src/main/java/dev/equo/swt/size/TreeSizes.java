@@ -35,8 +35,6 @@ public class TreeSizes {
     private static final int ICON_SIZE = 16;
     private static final int ICON_SPACE = ICON_SIZE + 8;
     private static final int TEXT_PADDING = 8;
-    private static final int CELL_PADDING = 20;
-    private static final int HEADER_PADDING = 20;
     private static final int CELL_INSET = 4;
     private static final int ALIGNMENT_INSET = 4;
 
@@ -150,24 +148,6 @@ public class TreeSizes {
         TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
         int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
         return width + TEXT_PADDING;
-    }
-
-    /** The width a multi-column cell needs to show its text whole. */
-    public static int getPackedCellWidth(TreeItem item, int index) {
-        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;
-    }
-
-    /** The width a column's header needs to show its title whole: a multi-column header shows it in capitals. */
-    public static int getPackedHeaderWidth(TreeColumn column) {
-        String text = column.getText();
-        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);
-        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;
-    }
-
-    private static int measure(String text, org.eclipse.swt.graphics.Font font) {
-        if (text == null || text.isEmpty()) return 0;
-        TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(font);
-        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
     }
 
     static int levelOf(TreeItem item) {

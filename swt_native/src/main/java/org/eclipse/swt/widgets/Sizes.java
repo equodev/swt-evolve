@@ -69,32 +69,6 @@ public class Sizes {
         return TableColumnHelper.packWidth(column);
     }
 
-    /**
-     * The width that shows a Tree column's header and every visible cell whole, measured the way
-     * Flutter lays the row out: the first column also holds the indent, the expander and the image.
-     * Never 0, which Flutter would read as a hidden column.
-     */
-    public static int packWidth(DartTreeColumn column) {
-        DartTree tree = (DartTree) column.parent.getImpl();
-        int index = tree.indexOf(column.getApi());
-        if (index < 0)
-            return 0;
-        int width = dev.equo.swt.size.TreeSizes.getPackedHeaderWidth(column.getApi());
-        Image headerImage = column.getImage();
-        if (headerImage != null) {
-            width += headerImage.getBounds().width;
-        }
-        int cellsLeft = dev.equo.swt.size.TreeSizes.getCellsLeft(tree);
-        for (TreeItem item : flattenVisibleTreeItems(tree)) {
-            int cellWidth = dev.equo.swt.size.TreeSizes.getPackedCellWidth(item, index);
-            Image image = index == 0 ? item.getImage() : item.getImage(index);
-            if (image != null) cellWidth += dev.equo.swt.size.TreeSizes.getIconSpace();
-            if (index == 0) cellWidth += dev.equo.swt.size.TreeSizes.getContentLeft(tree, item) - cellsLeft;
-            width = Math.max(width, cellWidth);
-        }
-        return width;
-    }
-
     public static Point computeSize(DartCCombo c, int wHint, int hHint, boolean changed) {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
@@ -916,10 +890,13 @@ public class Sizes {
         return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
-    /** A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already. */
+    /**
+     * A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already.
+     * Callers have checked {@code index} with isTreeCell, so a non-zero index is a live column.
+     */
     private static Rectangle contentCell(DartTreeItem item, int index, Rectangle cell) {
+        if (index == 0) return cell;
         DartTree tree = (DartTree) item._parent().getImpl();
-        if (index == 0 || index >= tree.columnCount) return cell;
         return insetCell(cell, dev.equo.swt.size.TreeSizes.getCellInset(tree.columns[index].getAlignment()));
     }
 
@@ -1006,11 +983,47 @@ public class Sizes {
                 : CTabFolderSizes.BODY_BORDER;
     }
 
+    /**
+     * The tab height upstream computes for the default font. Tabs keep it while no height is fixed,
+     * so a point taken from a tab's bounds lands where it would natively, although the strip drawn
+     * around them is taller.
+     */
+    private static final int CTABFOLDER_DEFAULT_TAB_HEIGHT = 25;
+
+    /**
+     * Height of a tab, which places the tabs and decides what a point on them hits. {@code setTabHeight}
+     * fixes it as natively: {@code h + 1} (the line across the top of the tabs), and 0 for 0.
+     */
+    public static int cTabFolderTabHeight(DartCTabFolder widget) {
+        int fixed = widget._fixedTabHeight();
+        if (fixed == SWT.DEFAULT) return CTABFOLDER_DEFAULT_TAB_HEIGHT;
+        return fixed == 0 ? 0 : fixed + 1;
+    }
+
+    /**
+     * Height of the strip the render side draws and the page is laid out below: the measured
+     * default, or the tab height {@code setTabHeight} fixed.
+     */
+    public static int cTabFolderTabStripHeight(DartCTabFolder widget) {
+        return widget._fixedTabHeight() == SWT.DEFAULT
+                ? CTabFolderSizes.TAB_STRIP_HEIGHT
+                : cTabFolderTabHeight(widget);
+    }
+
+    /**
+     * The frame around the page. With no tab strip the folder draws none, so the page fills it.
+     * Read from the strip height {@code updateTabHeight} stores, so the deferred update sees the
+     * client area move and lays the page out again.
+     */
+    private static int cTabFolderFrame(DartCTabFolder widget) {
+        return widget._displayedTabHeight() == 0 ? 0 : cTabFolderBodyBorder(widget);
+    }
+
     public static Rectangle getClientArea(DartCTabFolder widget) {
         Rectangle b = widget.getBounds();
-        int border = cTabFolderBodyBorder(widget);
+        int border = cTabFolderFrame(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
+        int tabs = widget._displayedTabHeight() + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
         return new Rectangle(border, top,
@@ -1020,9 +1033,9 @@ public class Sizes {
 
     // Inverse of getClientArea(DartCTabFolder): adds the tab strip and the frame back on.
     public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
-        int border = cTabFolderBodyBorder(widget);
+        int border = cTabFolderFrame(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
+        int tabs = widget._displayedTabHeight() + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
         return new Rectangle(x - border, y - top,

@@ -1,6 +1,7 @@
 import 'dart:async' show scheduleMicrotask;
 
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
@@ -392,7 +393,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               if (hasFocus == _reportedHasFocus) return;
               _reportedHasFocus = hasFocus;
               if (hasFocus) {
-                if (!_focusInSentOnPress) widget.sendFocusFocusIn(state, null);
+                if (!_focusedByPress) widget.sendFocusFocusIn(state, null);
               } else {
                 widget.sendFocusFocusOut(state, null);
               }
@@ -419,7 +420,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                           ),
                         Expanded(
                           child: Listener(
-                            onPointerDown: (_) => _takeFocusOnRowsPress(),
+                            onPointerDown: _takeFocusOnRowsPress,
                             child: _buildContentWithEdgeGaps(
                               flatItems,
                               columns,
@@ -604,6 +605,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             foreground: item.foreground ?? state.foreground,
             defaultColor: theme.itemTextColor,
             context: context,
+            minContrast: theme.minTextContrast,
           ),
           baseTextStyle: theme.itemTextStyle,
         );
@@ -700,6 +702,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             foreground: item.foreground ?? state.foreground,
             defaultColor: theme.itemTextColor,
             context: context,
+            minContrast: theme.minTextContrast,
           ),
             baseTextStyle: theme.itemTextStyle,
           ),
@@ -1352,32 +1355,27 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return event;
   }
 
-  /// Set by a press that focused the tree until Flutter applies that focus, so the focus change it
-  /// causes is not reported a second time.
-  bool _focusInSentOnPress = false;
+  /// Set by a press that focused the tree until Flutter applies that focus: Java already focused it
+  /// on that press's MouseDown, so the focus change is not reported.
+  bool _focusedByPress = false;
 
   /// Whether the focus was in the tree, its child controls included, when last reported.
   bool _reportedHasFocus = false;
 
-  /// A press on the rows focuses the tree before its MouseDown goes out, as natively: a cell editor
-  /// that MouseDown opens takes the focus from the tree, and nothing on the release takes it back.
-  ///
-  /// The focus is reported on every press, not only on a Flutter focus change. Java owns the SWT
-  /// focus holder and moves it on its own — activating an editor part focuses that part's
-  /// control — while this tree keeps its Flutter focus, so a later click produces no focus change
-  /// here and Java would never learn the tree is focused again. The workbench picks the active
-  /// part from the SWT focus holder, so leaving it stale makes every action bound to this tree's
-  /// part (opening the double-clicked file) silently do nothing.
-  void _takeFocusOnRowsPress() {
+  /// A press on the rows focuses the tree. Java gives it the SWT focus, and announces the activation
+  /// the press causes, ahead of delivering the MouseDown (ControlHelper.pressed), so a cell editor
+  /// that MouseDown opens keeps the focus: the Flutter focus change that follows is not reported,
+  /// since reporting it would hand the focus back to the tree. Java also focuses the tree again when
+  /// its SWT focus moved elsewhere while this tree kept its Flutter focus.
+  void _takeFocusOnRowsPress(PointerDownEvent event) {
     if (state.enabled != true) return;
-    final bool hadFocus = _focusNode.hasFocus;
+    if ((state.style & SWT.NO_FOCUS) != 0) return;
+    if (event.buttons & (kPrimaryButton | kSecondaryButton) == 0) return;
+    if (_focusNode.hasFocus) return;
     _focusNode.requestFocus();
-    widget.sendFocusFocusIn(state, null);
-    if (!hadFocus) {
-      _focusInSentOnPress = true;
-      // Flutter applies the focus in a microtask requestFocus queued; this one runs after it.
-      scheduleMicrotask(() => _focusInSentOnPress = false);
-    }
+    _focusedByPress = true;
+    // Flutter applies the focus in a microtask requestFocus queued; this one runs after it.
+    scheduleMicrotask(() => _focusedByPress = false);
   }
 
   /// A tree is not a childless composite surface: its focus is [_focusNode], which a press on the

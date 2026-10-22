@@ -72,6 +72,8 @@ CLabelThemeExtension _getCLabelTheme({
     textAlign: TextAlign.left,
     mainAxisAlignment: MainAxisAlignment.start,
     crossAxisAlignment: CrossAxisAlignment.center,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

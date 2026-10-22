@@ -8,6 +8,7 @@ import '../gen/widgets.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/menu_evolve.dart';
 import '../impl/decorations_align.dart';
+import '../impl/utils/menu_mnemonics.dart';
 import '../impl/utils/pointer.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
@@ -82,6 +83,55 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
   final MenuController _controller = MenuController();
   final MenuState _menuState = MenuState();
   final List<void Function()> _pendingChanges = [];
+  final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'VerticalMenu.items');
+  final MenuMnemonicItems _items = MenuMnemonicItems();
+  // The menu bar titles this button opens on Alt+letter, by channel, while it is the one drawing the bar.
+  final Map<String, ({VMenuItem item, VoidCallback open})> _openers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    OpenMenus.add(_controller);
+  }
+
+  @override
+  void dispose() {
+    OpenMenus.remove(_controller);
+    _syncOpeners(const []);
+    _itemsFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _syncOpeners(List<VMenuItem> items) {
+    final wanted = {
+      for (final item in items)
+        if (item.menu != null) '${item.swt}/${item.id}': item,
+    };
+    for (final key in _openers.keys.toList()) {
+      if (wanted.containsKey(key)) continue;
+      final opener = _openers.remove(key)!;
+      MenuBarOpeners.remove(opener.item, opener.open);
+    }
+    for (final MapEntry(:key, value: item) in wanted.entries) {
+      if (_openers.containsKey(key)) continue;
+      void open() => _openFromMnemonic(item.id);
+      _openers[key] = (item: item, open: open);
+      MenuBarOpeners.add(item, open);
+    }
+  }
+
+  // Alt+letter on a menu bar title, resolved by Java: the collapsed bar opens, and that title's menu in it.
+  void _openFromMnemonic(int id) {
+    if (!mounted) return;
+    if (!_controller.isOpen) _controller.open();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_controller.isOpen) return;
+      final items = DecorationsMenuData.of(context)?.items ?? const <VMenuItem>[];
+      final item = items.where((item) => item.id == id).firstOrNull;
+      if (item != null) _items.activate(item.text ?? '');
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
 
   void _flushChanges() {
     for (final cb in _pendingChanges) {
@@ -97,8 +147,10 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
         data.isHorizontal ||
         data.isAtStart != widget.atStart ||
         !data.hasItems) {
+      _syncOpeners(const []);
       return const SizedBox.shrink();
     }
+    _syncOpeners(data.items);
     final menuTheme = Theme.of(context).extension<MenuThemeExtension>()!;
     return MenuAnchor(
       controller: _controller,
@@ -121,11 +173,16 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
           registerPendingChange: (cb) => _pendingChanges.add(cb),
           menuState: _menuState,
           closeMenu: _controller.close,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: data.items
-                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                .toList(),
+          child: MenuMnemonics(
+            focusNode: _itemsFocusNode,
+            close: _controller.close,
+            items: _items,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: data.items
+                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                  .toList(),
+            ),
           ),
         )),
       ],

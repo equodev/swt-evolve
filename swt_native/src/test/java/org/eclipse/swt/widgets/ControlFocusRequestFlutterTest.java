@@ -120,6 +120,83 @@ class ControlFocusRequestFlutterTest {
                 .containsExactly(String.valueOf(second.hashCode()));
     }
 
+    @Test
+    void theFieldAPopupDialogFocusesAsItOpensAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        web.comm.sent.clear();
+
+        // The shape of Eclipse's Quick Access: a JFace PopupDialog that opens its shell, then focuses
+        // the filter field in its title area.
+        Text[] filter = new Text[1];
+        new org.eclipse.jface.dialogs.PopupDialog(main, SWT.RESIZE, true, true, false, true, true, null, null) {
+            @Override
+            protected Control createTitleControl(Composite parent) {
+                filter[0] = new Text(parent, SWT.NONE);
+                return filter[0];
+            }
+
+            @Override
+            protected Control getFocusControl() {
+                return filter[0];
+            }
+        }.open();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the field the new shell opened on")
+                .containsExactly(String.valueOf(filter[0].hashCode()));
+    }
+
+    @Test
+    void theFirstShellOpeningOnAFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = new Shell(display);
+        Text field = new Text(shell, SWT.SINGLE);
+        shell.setSize(400, 300);
+
+        shell.open();
+
+        assertThat(display.getFocusControl()).as("sanity: the shell opened on its field").isSameAs(field);
+        assertThat(focusRequests(web))
+                .as("only a shell activated over another active one is pushed")
+                .isEmpty();
+    }
+
+    @Test
+    void aSecondTopLevelShellOpeningOnAFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        web.comm.sent.clear();
+
+        Shell other = new Shell(display);
+        Text field = new Text(other, SWT.SINGLE);
+        other.setSize(400, 300);
+        other.open();
+
+        assertThat(display.getFocusControl()).as("sanity: the new shell opened on its field").isSameAs(field);
+        assertThat(focusRequests(web))
+                .as("a top-level shell is not a popup of the active one")
+                .isEmpty();
+    }
+
+    @Test
+    void aFieldFocusedLaterInTheSameShellIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        Text second = new Text(shell, SWT.SINGLE);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        second.setFocus();
+
+        assertThat(focusRequests(web))
+                .as("only a move that activates a shell is pushed")
+                .isEmpty();
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     /** The control ids named by every {@code swt.evolve.focus} frame sent so far, in order. */

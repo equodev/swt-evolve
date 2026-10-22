@@ -6,6 +6,7 @@ import '../impl/color_utils.dart';
 import '../impl/widget_config.dart';
 import './utils/image_utils.dart';
 import './utils/font_utils.dart';
+import './utils/mnemonic_text.dart';
 import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import '../theme/theme_extensions/label_theme_extension.dart';
@@ -196,6 +197,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
             context: context,
+            minContrast: widgetTheme.minTextContrast,
           )
         : widgetTheme.disabledTextColor;
 
@@ -232,8 +234,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     // would drop every line after the first.
     final isMultiLine = hasLineDelimiter(text);
 
-    Widget textWidget = Text(
-      text,
+    Widget textWidget = MnemonicText(
+      state.text,
       textAlign: textAlign,
       softWrap: shouldWrap,
       overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,

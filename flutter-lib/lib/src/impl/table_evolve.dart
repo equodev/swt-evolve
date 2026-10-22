@@ -297,6 +297,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: widgetTheme.rowTextColor,
         context: context,
+        minContrast: widgetTheme.minTextContrast,
       ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
@@ -634,6 +635,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -1003,6 +1005,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -1305,6 +1308,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -1344,6 +1348,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );

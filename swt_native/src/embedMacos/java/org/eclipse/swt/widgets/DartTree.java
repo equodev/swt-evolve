@@ -1674,7 +1674,7 @@ public class DartTree extends DartComposite implements ITree {
         for (int i = 0; i < order.length; i++) {
             int index = order[i];
             if (index < 0 || index >= columnCount)
-                error(SWT.ERROR_INVALID_ARGUMENT);
+                error(SWT.ERROR_INVALID_RANGE);
             if (seen[index])
                 error(SWT.ERROR_INVALID_ARGUMENT);
             seen[index] = true;
