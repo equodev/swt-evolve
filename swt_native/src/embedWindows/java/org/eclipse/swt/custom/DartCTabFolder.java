@@ -3775,6 +3775,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setTabHeight(int height) {
         checkWidget();
+        if (!java.util.Objects.equals(this.fixedTabHeight, height)) {
+            getValue().markDirty(VCTabFolder.TAB_HEIGHT);
+        }
         if (height < -1) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -4132,8 +4135,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean updateTabHeight(boolean force) {
-        tabHeight = 25;
-        return false;
+        int oldHeight = tabHeight;
+        int oldStripHeight = stripHeight;
+        tabHeight = Sizes.cTabFolderTabHeight(this);
+        stripHeight = Sizes.cTabFolderTabStripHeight(this);
+        if (!force && tabHeight == oldHeight && stripHeight == oldStripHeight)
+            return false;
+        getValue().markDirty(VCTabFolder.TAB_HEIGHT);
+        return true;
     }
 
     void updateFolder(int flags) {
@@ -4782,6 +4791,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     int showListPopupSeq = 0;
 
     int[] drawnCloseButtons;
+
+    int stripHeight;
+
+    public int _displayedTabHeight() {
+        return stripHeight;
+    }
 
     private void paintChildrenRecursively(Control control) {
         if (control instanceof Composite) {
