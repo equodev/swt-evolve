@@ -61,4 +61,30 @@ class CTabFolderCloseStyleTest {
         assertThat(widthOfTheTab(SWT.CLOSE, SWT.NONE) - plain).isEqualTo(CTabFolderSizes.TAB_CLOSE_EXTRA);
         assertThat(widthOfTheTab(SWT.NONE, SWT.CLOSE)).isEqualTo(widthOfTheTab(SWT.CLOSE, SWT.NONE));
     }
+
+    private boolean chevronShownByTheMaxButton(int folderStyle, int folderWidth) {
+        Shell shell = Mocks.shell();
+        when(shell.getDisplay().getBounds()).thenReturn(new Rectangle(0, 0, 1920, 1080));
+        CTabFolder folder = new CTabFolder(shell, folderStyle);
+        for (String text : new String[] {"One", "Second tab", "Three"}) {
+            new CTabItem(folder, SWT.NONE).setText(text);
+        }
+        folder.setBounds(20, 20, folderWidth, 100);
+        DartCTabFolder impl = (DartCTabFolder) folder.getImpl();
+        // A tab's bounds run the strip's queued layout.
+        folder.getItem(0).getBounds();
+        assertThat(impl._chevronTb() != null && impl._chevronTb().getVisible()).isFalse();
+        folder.setMaximizeVisible(true);
+        folder.getItem(0).getBounds();
+        return impl._chevronTb() != null && impl._chevronTb().getVisible();
+    }
+
+    @Test
+    @DisplayName("the max button shows the chevron only when the tabs no longer fit beside it")
+    void theMaxButtonShowsTheChevronOnlyOnOverflow() {
+        // At 300 px the close buttons leave the three tabs too little room beside the max button.
+        assertThat(chevronShownByTheMaxButton(SWT.NONE, 300)).isFalse();
+        assertThat(chevronShownByTheMaxButton(SWT.CLOSE, 300)).isTrue();
+        assertThat(chevronShownByTheMaxButton(SWT.CLOSE, 400)).isFalse();
+    }
 }
