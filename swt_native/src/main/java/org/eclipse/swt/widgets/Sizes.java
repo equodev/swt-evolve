@@ -1028,9 +1028,10 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
+        int tabs = CTabFolderHelper.tabStripHeight(widget) + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
+        if (widget._minimized()) return new Rectangle(border, top, 0, 0);
         return new Rectangle(border, top,
                 Math.max(0, b.width - border * 2),
                 Math.max(0, b.height - top - bottom));
@@ -1040,7 +1041,7 @@ public class Sizes {
     public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
+        int tabs = CTabFolderHelper.tabStripHeight(widget) + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
         return new Rectangle(x - border, y - top,

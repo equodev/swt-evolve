@@ -673,7 +673,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         int bodyLeft = -bodyTrim.x;
         int bodyWidth = size.x - bodyLeft - bodyRight;
         x = size.x - bodyRight;
-        int y = onBottom ? size.y - CTabFolderHelper.tabStripHeight() : CTabFolderHelper.tabStripHeight();
+        int y = onBottom ? size.y - CTabFolderHelper.tabStripHeight(this) : CTabFolderHelper.tabStripHeight(this);
         availableWidth = bodyWidth;
         int maxHeight = 0;
         for (int i = 0; i < controls.length; i++) {
@@ -4127,7 +4127,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     boolean updateTabHeight(boolean force) {
         int oldHeight = tabHeight;
-        tabHeight = fixedTabHeight == SWT.DEFAULT ? 25 : (fixedTabHeight == 0 ? 0 : fixedTabHeight + 1);
+        tabHeight = fixedTabHeight == SWT.DEFAULT ? 25 + CTabFolderHelper.imageGrowth(this) : (fixedTabHeight == 0 ? 0 : fixedTabHeight + 1);
         if (!force && tabHeight == oldHeight)
             return false;
         oldSize = null;

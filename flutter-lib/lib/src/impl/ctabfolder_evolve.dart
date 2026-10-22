@@ -157,11 +157,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final isTabBottom = state.tabPosition == SWT.BOTTOM;
 
-    final double? tabHeight = 32;
-
     final constraints = getConstraintsFromBounds(state.bounds);
 
     final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
+    final double? tabHeight = ctabStripHeight(state.items, widgetTheme.tabIconSize);
     final bodyFrame = BorderSide(
       color: widgetTheme.tabContentBorderColor,
       width: ctabFolderBodyBorderWidth(state.style),
@@ -2227,6 +2226,22 @@ class _TabDragRowState extends State<TabDragRow> {
   /// Enough to read as "this row", not enough to fight the tabs drawn on it.
   static const double _receivingStripTint = 0.12;
 }
+
+/// Height of the tab strip, which keeps CTabFolderSizes.TAB_STRIP_HEIGHT on the Java side unless a tab
+/// image is taller than the drawn icon: then the strip grows by the difference, as Java's client area
+/// does.
+double ctabStripHeight(List<VCTabItem>? items, double iconSize) {
+  var tallest = iconSize;
+  for (final item in items ?? const <VCTabItem>[]) {
+    tallest = math.max(tallest, ctabIconSize(item.image, iconSize));
+  }
+  return 32 + tallest - iconSize;
+}
+
+/// Side of the square a tab image is drawn in: the theme's icon size, or the image's own height when
+/// it is taller.
+double ctabIconSize(VImage? image, double iconSize) =>
+    math.max(iconSize, (image?.height ?? 0).toDouble());
 
 class CTabItem {
   final String label;

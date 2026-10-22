@@ -38,8 +38,25 @@ public class CTabFolderHelper {
     private static final String CHEVRON_ELLIPSIS = "99+";
 
     /** Height of the tab strip as drawn, where a wrapped SWT.WRAP topRight row starts. */
-    public static int tabStripHeight() {
-        return dev.equo.swt.size.CTabFolderSizes.TAB_STRIP_HEIGHT;
+    public static int tabStripHeight(DartCTabFolder folder) {
+        return CTabFolderSizes.TAB_STRIP_HEIGHT + imageGrowth(folder);
+    }
+
+    /**
+     * How much taller than the drawn icon the tallest tab image is. The render side draws an icon
+     * at least that tall and grows the whole strip by the difference, as upstream sizes the header
+     * to its tallest tab.
+     */
+    static int imageGrowth(DartCTabFolder folder) {
+        int growth = 0;
+        for (CTabItem item : folder.items)
+            if (!item.isDisposed()) growth = Math.max(growth, imageGrowth(item.getImage()));
+        return growth;
+    }
+
+    private static int imageGrowth(Image image) {
+        if (image == null || image.isDisposed()) return 0;
+        return Math.max(0, image.getBounds().height - CTabFolderSizes.TAB_IMAGE_HEIGHT);
     }
 
     /** Height of the row(s) SWT.WRAP topRight controls wrap onto when the folder is {@code size}. */
@@ -462,11 +479,13 @@ public class CTabFolderHelper {
         int width = 0, height = 0;
         Image image = item.getImage();
         if (image != null && !image.isDisposed()) {
+            // A taller image is drawn in a square as high as it is.
+            int growth = imageGrowth(image);
             if (((state & SWT.SELECTED) != 0 && parent.showSelectedImage)
                     || ((state & SWT.SELECTED) == 0 && parent.showUnselectedImage)) {
-                width += CTabFolderSizes.TAB_IMAGE_EXTRA;
+                width += CTabFolderSizes.TAB_IMAGE_EXTRA + growth;
             }
-            height = CTabFolderSizes.TAB_IMAGE_HEIGHT;
+            height = CTabFolderSizes.TAB_IMAGE_HEIGHT + growth;
         }
         String text = item.getText();
         if (text != null) {

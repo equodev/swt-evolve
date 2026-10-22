@@ -5,8 +5,12 @@ import static org.mockito.Mockito.when;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.size.CTabFolderSizes;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Shell;
@@ -20,7 +24,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * A height the application fixes with {@code setTabHeight} is the height the tabs are laid out at
- * (upstream adds one line for the top edge), not the render side's default.
+ * (upstream adds one line for the top edge), not the render side's default. Without one, an image
+ * taller than the drawn icon makes the tabs, and the strip above the page, taller by the difference.
  */
 @ExtendWith(Mocks.class)
 class CTabFolderTabHeightTest {
@@ -101,5 +106,62 @@ class CTabFolderTabHeightTest {
         folder.setTabHeight(SWT.DEFAULT);
 
         assertThat(item.getBounds().height).isEqualTo(natural);
+    }
+
+    private static Image image(Shell shell, int size) {
+        return new Image(shell.getDisplay(), new ImageData(size, size, 24, new PaletteData(0xFF0000, 0xFF00, 0xFF)));
+    }
+
+    @Test
+    @DisplayName("an image taller than the drawn icon makes the tabs taller")
+    void aTallImageMakesTheTabsTaller() {
+        CTabFolder folder = folder(SWT.NONE);
+        CTabItem item = tab(folder);
+        int natural = item.getBounds().height;
+
+        item.setImage(image(folder.getShell(), 40));
+
+        assertThat(item.getBounds().height).isEqualTo(natural + 40 - CTabFolderSizes.TAB_IMAGE_HEIGHT);
+        assertThat(folder.getTabHeight()).isGreaterThanOrEqualTo(40);
+    }
+
+    @Test
+    @DisplayName("the page starts below the taller strip")
+    void aTallImagePushesThePageDown() {
+        CTabFolder folder = folder(SWT.NONE);
+        CTabItem item = tab(folder);
+        Rectangle before = folder.getClientArea();
+
+        item.setImage(image(folder.getShell(), 40));
+        item.getBounds();
+
+        Rectangle after = folder.getClientArea();
+        int growth = 40 - CTabFolderSizes.TAB_IMAGE_HEIGHT;
+        assertThat(after.y).isEqualTo(before.y + growth);
+        assertThat(after.height).isEqualTo(before.height - growth);
+    }
+
+    @Test
+    @DisplayName("an image no taller than the drawn icon leaves the tabs as they are")
+    void aSmallImageLeavesTheHeight() {
+        CTabFolder folder = folder(SWT.NONE);
+        CTabItem item = tab(folder);
+        int natural = item.getBounds().height;
+
+        item.setImage(image(folder.getShell(), CTabFolderSizes.TAB_IMAGE_HEIGHT));
+
+        assertThat(item.getBounds().height).isEqualTo(natural);
+    }
+
+    @Test
+    @DisplayName("a fixed height stands whatever the image")
+    void aFixedHeightIgnoresATallImage() {
+        CTabFolder folder = folder(SWT.NONE);
+        folder.setTabHeight(20);
+        CTabItem item = tab(folder);
+
+        item.setImage(image(folder.getShell(), 40));
+
+        assertThat(item.getBounds().height).isEqualTo(21);
     }
 }
