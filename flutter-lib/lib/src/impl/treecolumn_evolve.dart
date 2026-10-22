@@ -111,6 +111,8 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       context: context,
       foreground: cell?.foreground,
       defaultColor: effectiveStyle.color ?? textColor,
+      minContrast: theme.minTextContrast,
+      background: bgColor,
     );
     effectiveStyle = effectiveStyle.copyWith(color: headerColor);
     final int sortDirection = cell?.sortDirection ?? SWT.NONE;
