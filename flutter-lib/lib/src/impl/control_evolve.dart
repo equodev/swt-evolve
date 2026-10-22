@@ -138,10 +138,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     if (!FocusRequests.instance.claim(state.id)) return;
     // After the next frame: Java often creates or moves the control in the same pass that focuses it,
     // and focusing a text field opens the platform input connection at its current layout position.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    afterNextFrame(() {
       if (mounted) swtFocusNode?.requestFocus();
     });
-    WidgetsBinding.instance.scheduleFrame();
   }
 
   @override

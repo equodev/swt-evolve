@@ -1296,6 +1296,22 @@ public class StyledTextHelper {
      * @param tabLength the number of spaces per tab
      * @return RendererFontMetrics with calculated values
      */
+    /** The ascent a run in {@code font} is drawn with: a family without metrics is drawn in the system font. */
+    public static int drawnAscent(Font font) {
+        FontData[] fontDatas = font == null || font.isDisposed() ? null : font.getFontData();
+        if (fontDatas == null || fontDatas.length == 0)
+            return calculateFontMetrics(font, 1).ascent;
+        FontData fd = fontDatas[0];
+        Metrics metrics = FontMetricsUtil.metrics(FontMetricsUtil.getId(fd));
+        if (metrics == null)
+            metrics = FontMetricsUtil.metrics(fd.getName() + "-0-3");
+        if (metrics == null)
+            metrics = FontMetricsUtil.metrics(FontMetricsUtil.getId("System", FontMetricsUtil.isItalic(fd), FontMetricsUtil.isBold(fd)));
+        if (metrics == null)
+            return calculateFontMetrics(font, 1).ascent;
+        return Math.max(1, (int) Math.round(metrics.ascent() * fd.getHeight() * dpiScale()));
+    }
+
     public static RendererFontMetrics calculateFontMetrics(Font font, int tabLength) {
         if (font == null) {
             return new RendererFontMetrics(11, 4, 8, 8 * tabLength);

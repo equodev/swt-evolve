@@ -12,6 +12,12 @@ import '../../impl/color_utils.dart';
 import '../../impl/widget_config.dart';
 import 'font_utils.dart';
 
+/// Runs [callback] once the next frame has been laid out, scheduling that frame if none is pending.
+void afterNextFrame(VoidCallback callback) {
+  WidgetsBinding.instance.addPostFrameCallback((_) => callback());
+  WidgetsBinding.instance.scheduleFrame();
+}
+
 /// Checks if a style flag is set in the given style value
 bool hasStyle(int style, int flag) {
   return (style & flag) != 0;
