@@ -536,6 +536,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         if (drop == listVisible)
             return;
         getValue().markDirty(VCCombo.ITEMS);
+        getValue().markDirty(VCCombo.LIST_VISIBLE);
         listVisible = drop;
         Display display = getDisplay();
         display.removeFilter(SWT.Selection, filter);

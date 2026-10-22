@@ -56,7 +56,6 @@ public class CComboHelper {
             combo.dropDown(false);
             if (combo.isDisposed())
                 return true;
-            combo.getValue().markDirty(VCCombo.LIST_VISIBLE);
             Event e = new Event();
             e.time = event.time;
             e.character = event.character;
