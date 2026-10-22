@@ -416,6 +416,7 @@ public abstract class DartWidget implements IWidget {
         display = parent.getImpl()._display();
         reskinWidget();
         notifyCreationTracker();
+        _extra_init();
     }
 
     void _addListener(int eventType, Listener listener) {

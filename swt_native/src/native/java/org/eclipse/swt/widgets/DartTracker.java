@@ -943,7 +943,7 @@ public class DartTracker extends DartWidget implements ITracker {
         event.doit = true;
         if (!sendKeyEvent(type, event))
             return true;
-        if (type == SWT.KeyUp && !"cocoa".equals(SWT.getPlatform()))
+        if (type == SWT.KeyUp)
             return true;
         int stepSize = (event.stateMask & SWT.CTRL) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
         int xChange = 0, yChange = 0;

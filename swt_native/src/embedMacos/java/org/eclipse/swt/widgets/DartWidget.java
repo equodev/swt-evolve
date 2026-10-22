@@ -173,6 +173,8 @@ public abstract class DartWidget implements IWidget {
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();
+        if (parent.getImpl() instanceof DynWidget)
+            ((DynWidget) parent.getImpl()).convert();
         reskinWidget();
         notifyCreationTracker();
     }
