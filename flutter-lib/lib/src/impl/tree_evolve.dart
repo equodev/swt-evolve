@@ -46,6 +46,9 @@ class _MoreRows {
 }
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
+  @override
+  bool get keepsWheel => true;
+
   final Map<dynamic, String> treeItemExpanders = {};
   final List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;
@@ -72,6 +75,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   // The header row and the widths its cells were drawn at, where a dragged header is dropped.
   final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');
   List<double>? _headerColumnWidths;
+  /// Selects the item a context-menu press landed on. Run between MouseDown and MenuDetect,
+  /// the order Win32 and GTK deliver them in, so MenuDetect listeners read that item.
+  VoidCallback? selectBeforeMenuDetect;
+
+  @override
+  void handleMenuDetect(int pointer, Offset localPosition) {
+    final select = selectBeforeMenuDetect;
+    selectBeforeMenuDetect = null;
+    select?.call();
+    super.handleMenuDetect(pointer, localPosition);
+  }
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -607,6 +621,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
     _hScrollContentWidth = totalWidth;
 
+    final scrollsHorizontally = totalWidth != null;
     Widget scrollableContent;
     if (totalWidth != null) {
       // Columns keep their widths when they add up to more than the tree shows: a tree without
@@ -643,6 +658,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               ? Scrollbar(
                   controller: _verticalController,
                   thumbVisibility: true,
+                  // The horizontal viewport, when there is one, sits between this bar and the list.
+                  notificationPredicate: (notification) =>
+                      notification.metrics.axis == Axis.vertical &&
+                      notification.depth == (scrollsHorizontally ? 1 : 0),
                   child: ScrollConfiguration(
                     behavior: ScrollConfiguration.of(
                       context,
@@ -1402,6 +1421,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   final HoverTracker<int> dragHover = HoverTracker<int>();
 
+  /// The DND.FEEDBACK_* bits the drop target's listener answered for [dragHover]'s item.
+  final ValueNotifier<int> dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+
   Widget wrapTreeForDrop(Widget content) {
     Offset? localOffset(DragTargetDetails<DndDragPayload> details) {
       final box = context.findRenderObject();
@@ -1419,8 +1441,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return id ?? 0;
     }
 
-    Offset resolvePosition(DragTargetDetails<DndDragPayload> details) =>
-        localOffset(details) ?? details.offset;
+    Offset? resolvePosition(DragTargetDetails<DndDragPayload> details) => localOffset(details);
 
     return wrapDropTarget<DndDragPayload>(
       child: content,
@@ -1429,7 +1450,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       resolvePosition: resolvePosition,
       onDrop: (_, __, targetItemId, position) => sendItemDrop(targetItemId, position),
       builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) dragHover.update(null);
+        if (!isHovering) {
+          dragHover.update(null);
+        } else {
+          dropFeedback.value = negotiation.feedback;
+        }
         return child;
       },
     );
@@ -1902,6 +1927,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _headerHorizontalController.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();
+    dropFeedback.dispose();
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }

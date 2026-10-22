@@ -64,6 +64,11 @@ TableThemeExtension _getTableTheme({
     rowHoverBackgroundColor: colorScheme.surfaceVariant,
     rowSelectedBorderColor: colorScheme.primary,
     rowSelectedBorderWidth: 2.0,
+
+    // Drag and drop
+    dropFeedbackLineWidth: 2.0,
+    dropFeedbackHighlightAlpha: 90,
+    dragImageOpacity: 0.85,
     
     // Header colors
     headerBackgroundColor: colorScheme.surfaceVariant,

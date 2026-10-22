@@ -413,7 +413,7 @@ public interface IWidget extends ImplWidget {
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
-    void removeListener(int eventType, SWTEventListener listener);
+    void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener);
 
     /**
      * Removes the listener from the collection of listeners who will

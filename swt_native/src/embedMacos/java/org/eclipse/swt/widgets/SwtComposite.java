@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.ExceptionStash;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 
 /**
@@ -227,7 +227,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }

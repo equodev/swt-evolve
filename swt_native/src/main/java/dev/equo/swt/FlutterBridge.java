@@ -67,7 +67,7 @@ public abstract class FlutterBridge {
     protected static CommService newComm() {
         String impl = System.getProperty("comm.impl", "java-websocket");
         CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
-        comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
+        comm.on(PROPERTY_SET_CHANNEL, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
         // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
@@ -123,6 +123,11 @@ public abstract class FlutterBridge {
      * for the live state, which is authoritative either way.
      */
     public static final String WIDGET_REFRESH_CHANNEL = "swt.evolve.widget.refresh";
+
+    /** Flutter sets properties the user changed (the theme picker); Java echoes them on {@link #PROPERTIES_CHANNEL}. */
+    static final String PROPERTY_SET_CHANNEL = "swt.evolve.property.set";
+    /** Java pushes the properties on it whenever a client needs them: when it connects, and after a property set. */
+    static final String PROPERTIES_CHANNEL = "swt.evolve.properties";
 
     /** Widgets/resources by {@link #id}, so a refresh request can find its target. */
     private static final java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.WeakReference<Object>> widgetsById =
@@ -238,7 +243,7 @@ public abstract class FlutterBridge {
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
-    private static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
+    static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
         if (parsed == null) return;
         boolean changed = false;
         ConfigFlags current = getConfigFlags();
@@ -248,7 +253,7 @@ public abstract class FlutterBridge {
         if (changed) {
             // Echo the updated properties back on the comm they arrived on.
             try {
-                serializeAndSend(comm, "swt.evolve.properties", getConfigFlags());
+                serializeAndSend(comm, PROPERTIES_CHANNEL, getConfigFlags());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1636,6 +1641,19 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /**
+     * Makes {@code control} its shell's active control, announcing SWT.Activate/Deactivate with
+     * {@code detail}, when the shell tracks that itself. False when it does not -- a native shell --
+     * and the caller has to announce the change on its own.
+     */
+    public boolean setActiveControl(DartControl control, int detail) {
+        return false;
+    }
+
+    /** Moves the client's keyboard focus onto {@code control}, which Java has just focused itself. */
+    public void focusClient(DartControl control) {
+    }
+
     /** The client moved its focus to {@code control}: tracked like {@link #setFocus}, without echoing it back. */
     public void clientFocused(DartControl control) {
         setFocus(control);
@@ -1703,7 +1721,7 @@ public abstract class FlutterBridge {
 
     protected void broadcastSwtEvolveProperties() {
         try {
-            serializeAndSend("swt.evolve.properties", getConfigFlags());
+            serializeAndSend(PROPERTIES_CHANNEL, getConfigFlags());
         } catch (Exception e) {
             e.printStackTrace();
         }

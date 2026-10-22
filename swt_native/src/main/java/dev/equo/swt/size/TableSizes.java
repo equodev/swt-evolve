@@ -99,6 +99,11 @@ public class TableSizes {
         return getIconSize(item) + CELL_PADDING_LEFT;
     }
 
+    /** Where a cell's content starts, from its column's left edge. */
+    public static int getCellInset() {
+        return CELL_PADDING_LEFT;
+    }
+
     private static TextStyle cellTextStyle(TableItem item) {
         if (!org.eclipse.swt.widgets.TableHelper.usesApplicationFont((DartTableItem) item.getImpl())) {
             return TableItemTheme.get().textStyle().withStyleFrom(item.getFont());

@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
@@ -167,24 +166,4 @@ class ControlFocusRequestFlutterTest {
         return bridge;
     }
 
-    private static final class TestWebBridge extends WebDisplayBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        TestWebBridge(DartDisplay display) {
-            super(display);
-            // Stands in for the client having connected: update() defers every pending send until
-            // then, and the focus request is queued behind it.
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        protected void start(DartDisplay display) {
-            registerDisplayClientReady(display);
-        }
-    }
 }

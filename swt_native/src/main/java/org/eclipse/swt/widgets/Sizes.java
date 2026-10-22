@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
+import org.eclipse.swt.custom.CTabFolderHelper;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
@@ -42,40 +43,6 @@ public class Sizes {
         return new Point(trim.width, trim.height);
     }
 
-    public static Point compute(DartMenu c) {
-        int style = c.getApi().style;
-        boolean isBar = (style & org.eclipse.swt.SWT.BAR) != 0;
-        boolean isDropDown = (style & org.eclipse.swt.SWT.DROP_DOWN) != 0;
-        boolean isPopUp = (style & org.eclipse.swt.SWT.POP_UP) != 0;
-
-        if (isBar) {
-            return new Point(300, 28);
-        } else if (isDropDown || isPopUp) {
-            MenuItem[] items = c._items();
-            int itemCount = items != null ? items.length : 1;
-
-            int maxWidth = 150;
-            if (items != null) {
-                for (MenuItem item : items) {
-                    if (item != null) {
-                        String text = item.getText();
-                        if (text != null && !text.isEmpty()) {
-                            int textWidth = (int)(text.length() * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
-                            maxWidth = Math.max(maxWidth, textWidth + 40);
-                        }
-                    }
-                }
-            }
-
-            int itemHeight = 24;
-            int height = Math.max(50, itemCount * itemHeight + 16);
-
-            return new Point(maxWidth, height);
-        }
-
-        return new Point(150, 50);
-    }
-
     public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
         Point size = ButtonSizes.computeSize(c, wHint, hHint, changed);
         if (wHint == SWT.DEFAULT)
@@ -106,8 +73,17 @@ public class Sizes {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    /**
+     * CLabelSizes is measured with the default margin on each side; the label's own margins take its place.
+     * A hint stands as given.
+     */
     public static Point computeSize(DartCLabel c, int wHint, int hHint, boolean changed) {
-        return CLabelSizes.computeSize(c, wHint, hHint, changed);
+        Point size = CLabelSizes.computeSize(c, wHint, hHint, changed);
+        int width = wHint != SWT.DEFAULT ? size.x
+                : Math.max(0, size.x + c.getLeftMargin() + c.getRightMargin() - 2 * DartCLabel.DEFAULT_MARGIN);
+        int height = hHint != SWT.DEFAULT ? size.y
+                : Math.max(0, size.y + c.getTopMargin() + c.getBottomMargin() - 2 * DartCLabel.DEFAULT_MARGIN);
+        return new Point(width, height);
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {
@@ -662,7 +638,68 @@ public class Sizes {
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
         // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
         if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
-        return new Rectangle(x, y, width, height);
+        int menuBar = menuStripOutsideClientArea(widget);
+        return new Rectangle(x, y - menuBar, width, height + menuBar);
+    }
+
+    /** A Decorations that draws its own menu strip has it outside its client area, as a native one does. */
+    private static int menuStripOutsideClientArea(DartScrollable widget) {
+        Scrollable api = widget.getApi();
+        return api instanceof Decorations ? ownMenuStripHeight((Decorations) api) : 0;
+    }
+
+    /**
+     * Height of the menu strip a Decorations draws above its client area, as a native menu bar is
+     * drawn: only when its menu bar has something in it and no visible main toolbar hosts it. The
+     * client draws the strip on this answer, which it receives as {@code ownMenuStrip}.
+     */
+    public static int ownMenuStripHeight(Decorations decorations) {
+        if (!DartMainToolbar.hasMenuBarItems(decorations)) return 0;
+        Menu bar = decorations.getMenuBar();
+        if (bar == null || bar.isDisposed()) return 0;
+        for (Control child : decorations.getChildren()) {
+            if (child.getImpl() instanceof DartMainToolbar && child.getVisible()) return 0;
+        }
+        return menuStripHeight();
+    }
+
+    /**
+     * The menu strip's height in layout units, wherever it is drawn. The zoom leaves its text at its
+     * true size, so the strip is sized at the monitor's scale, as a native menu bar is: it grows by
+     * what the zoom takes off. The client draws it at this height, received as {@code menuStripHeight}.
+     */
+    public static int menuStripHeight() {
+        return Config.logicalToSwt(MenuSizes.MENU_BAR_HEIGHT);
+    }
+
+    /**
+     * Follows a change that may have given a Dart-backed Decorations its own menu strip or taken it
+     * away, given its {@link #ownMenuStripHeight} from before the change. The strip is re-sent, and
+     * the client area it comes out of is resized and laid out again, as a native menu bar's
+     * appearing does.
+     */
+    static void menuStripChanged(Decorations decorations, int before) {
+        if (decorations == null || decorations.isDisposed()) return;
+        if (!(decorations.getImpl() instanceof DartComposite)) return;
+        if (ownMenuStripHeight(decorations) == before) return;
+        DartComposite impl = (DartComposite) decorations.getImpl();
+        impl.getValue().markDirty("ownMenuStrip");
+        impl.sendEvent(SWT.Resize);
+        if (decorations.isDisposed()) return;
+        if (impl.layout != null) {
+            impl.markLayout(false, false);
+            impl.updateLayout(false);
+        }
+    }
+
+    /**
+     * Re-sends whether a Dart-backed Decorations draws its own menu strip; an unchanged answer is not
+     * sent. Without menu items there is no strip for a main toolbar's coming or going to move.
+     */
+    static void resendMenuStrip(Decorations decorations) {
+        if (!DartMainToolbar.hasMenuBarItems(decorations)) return;
+        if (decorations.getImpl() instanceof DartWidget)
+            ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
     }
 
     /** Where the text of the first cell is: after the image, as wide as the text, and no wider than the cell. */
@@ -670,7 +707,7 @@ public class Sizes {
         Table parent = item._parent();
         if (parent.indexOf(item.getApi()) == -1)
             return new Rectangle(0, 0, 0, 0);
-        Rectangle text = getTextBounds(item, 0);
+        Rectangle text = textCell(item, 0);
         int width = Math.min(dev.equo.swt.size.TableSizes.getTextWidth(item.getApi()), text.width);
         return new Rectangle(text.x, text.y, width, text.height);
     }
@@ -717,7 +754,7 @@ public class Sizes {
 
     /** Where a cell's image is drawn: at the start of the cell, on the item's row, in the icon's square. */
     public static Rectangle getImageBounds(DartTableItem item, int index) {
-        Rectangle cell = getBounds(item, index);
+        Rectangle cell = tableContentCell(item, index, getBounds(item, index));
         if (cell.width == 0 && cell.height == 0)
             return cell;
         Image[] images = item._images();
@@ -727,18 +764,39 @@ public class Sizes {
     }
 
     public static Rectangle getTextBounds(DartTableItem item, int index) {
-        Table parent = item._parent();
-        DartTable dartTable = (DartTable) parent.getImpl();
-        int columnCount = dartTable.columnCount;
-        if (!(0 <= index && index < Math.max(1, columnCount)))
+        DartTable dartTable = (DartTable) item._parent().getImpl();
+        if (!(0 <= index && index < Math.max(1, dartTable.columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        Rectangle cellBounds = getBounds(item, index);
-        if (cellBounds == null)
-            return new Rectangle(0, 0, 0, 0);
+        return centredTextLine(textCell(item, index), item.getFont(index));
+    }
+
+    /** The part of a cell its text takes, after the image, on the whole row. */
+    private static Rectangle textCell(DartTableItem item, int index) {
+        Rectangle cellBounds = tableContentCell(item, index, getBounds(item, index));
         Image[] images = item._images();
         Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
         int shift = image != null ? dev.equo.swt.size.TableSizes.getIconSpace(item.getApi()) : 0;
         return new Rectangle(cellBounds.x + shift, cellBounds.y, Math.max(0, cellBounds.width - shift), cellBounds.height);
+    }
+
+    /** A column's cell past the padding Flutter starts its content at; the first cell's bounds include it already. */
+    private static Rectangle tableContentCell(DartTableItem item, int index, Rectangle cell) {
+        if (index == 0 || ((DartTable) item._parent().getImpl()).columnCount == 0) return cell;
+        return insetCell(cell, dev.equo.swt.size.TableSizes.getCellInset());
+    }
+
+    private static Rectangle insetCell(Rectangle cell, int inset) {
+        int shift = Math.min(cell.width, inset);
+        return new Rectangle(cell.x + shift, cell.y, cell.width - shift, cell.height);
+    }
+
+    /**
+     * A line of {@code font} as the GC draws it, centred in {@code cell} as Flutter centres a cell's
+     * text: where an owner-drawing listener draws its text through a GC in that font.
+     */
+    private static Rectangle centredTextLine(Rectangle cell, Font font) {
+        int line = Math.min(cell.height, GCHelper.textExtent("Ag", 0, font).y);
+        return new Rectangle(cell.x, cell.y + (cell.height - line) / 2, cell.width, line);
     }
 
     public static List<TreeItem> flattenVisibleTreeItems(DartTree tree) {
@@ -813,7 +871,7 @@ public class Sizes {
 
     /** The first cell's text, as SWT reports an item's bounds. */
     public static Rectangle getBounds(DartTreeItem item) {
-        return getTextBounds(item, 0);
+        return textCell(item, 0);
     }
 
     public static Rectangle getBounds(DartTreeItem item, int index) {
@@ -824,16 +882,31 @@ public class Sizes {
     public static Rectangle getImageBounds(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = treeCell(item, index, row);
+        Rectangle cell = contentCell(item, index, treeCell(item, index, row));
         Image image = index == 0 ? item.getImage() : item.getImage(index);
         int width = image != null ? dev.equo.swt.size.TreeSizes.getIconSize() : 0;
         return new Rectangle(cell.x, cell.y, width, cell.height);
     }
 
+    /** A column's cell past the inset Flutter starts its content at; the first cell starts after its indent already. */
+    private static Rectangle contentCell(DartTreeItem item, int index, Rectangle cell) {
+        DartTree tree = (DartTree) item._parent().getImpl();
+        if (index == 0 || index >= tree.columnCount) return cell;
+        return insetCell(cell, dev.equo.swt.size.TreeSizes.getCellInset(tree.columns[index].getAlignment()));
+    }
+
+    /** A line of the item's font, centred in the row as Flutter centres its own text. */
     public static Rectangle getTextBounds(DartTreeItem item, int index) {
+        Rectangle cell = textCell(item, index);
+        if (cell.height == 0) return cell;
+        return centredTextLine(cell, item.getFont(index));
+    }
+
+    /** A cell's text area: the cell after its image, the full height of the row. */
+    private static Rectangle textCell(DartTreeItem item, int index) {
         Rectangle row = isTreeCell(item, index) ? treeRow(item) : null;
         if (row == null) return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = treeCell(item, index, row);
+        Rectangle cell = contentCell(item, index, treeCell(item, index, row));
         Image image = index == 0 ? item.getImage() : item.getImage(index);
         int shift = image != null ? dev.equo.swt.size.TreeSizes.getIconSpace() : 0;
         int width = ((DartTree) item._parent().getImpl()).columnCount > 0
@@ -909,8 +982,9 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int top = onBottom ? border : CTabFolderSizes.TAB_STRIP_HEIGHT;
-        int bottom = onBottom ? CTabFolderSizes.TAB_STRIP_HEIGHT : border;
+        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
+        int top = onBottom ? border : tabs;
+        int bottom = onBottom ? tabs : border;
         return new Rectangle(border, top,
                 Math.max(0, b.width - border * 2),
                 Math.max(0, b.height - top - bottom));
@@ -920,8 +994,9 @@ public class Sizes {
     public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
         int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        int top = onBottom ? border : CTabFolderSizes.TAB_STRIP_HEIGHT;
-        int bottom = onBottom ? CTabFolderSizes.TAB_STRIP_HEIGHT : border;
+        int tabs = CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.wrappedHeight(widget, new Point(width, height));
+        int top = onBottom ? border : tabs;
+        int bottom = onBottom ? tabs : border;
         return new Rectangle(x - border, y - top,
                 width + border * 2, height + top + bottom);
     }
@@ -967,7 +1042,8 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
-        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight));
+        int menuBar = menuStripOutsideClientArea(widget);
+        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
     }
 
     public static Point getSize(DartScrollBar scrollBar) {

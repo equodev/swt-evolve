@@ -42,6 +42,12 @@ class Win32Window {
   // snapping and the maximize animation keep working. Must be called before |Create|.
   void SetFrameless(bool frameless);
 
+  // Makes the top-level window an owned one: it stays above |owner|, minimizes and restores with it
+  // and has no taskbar or Alt+Tab entry of its own; nullptr makes it unowned. Before |Create| it is
+  // the owner the window is created with; after, it re-owns the live window. Ignored for an
+  // embedded (child) window.
+  void SetOwner(HWND owner);
+
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
 
@@ -55,6 +61,9 @@ class Win32Window {
   void SetChildContent(HWND content);
 
   void Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize);
+
+  // Physical pixels per logical pixel, the factor Move scales by.
+  double scale_factor() const { return scale_factor_; }
 
   // Returns the backing Window handle to enable clients to set icon and other
   // window properties. Returns nullptr if the window has been destroyed.
@@ -125,6 +134,8 @@ class Win32Window {
 
   // True for the desktop-native Display window, whose title bar is drawn by Flutter (CSD).
   bool frameless_ = false;
+
+  HWND owner_ = nullptr;
 
   // DPI of the monitor this window is on. Set in Create(), updated on
   // WM_DPICHANGED. Used in Move() to scale logical pixels to physical pixels.

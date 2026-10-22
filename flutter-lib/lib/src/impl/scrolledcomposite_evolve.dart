@@ -13,6 +13,10 @@ class ScrolledCompositeImpl<
   V extends VScrolledComposite
 >
     extends CompositeImpl<T, V> {
+  /// A click focuses no ScrolledComposite natively, empty or not: the focus belongs to its content.
+  @override
+  void takeFocusOnPress() {}
+
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
 
@@ -68,7 +72,7 @@ class ScrolledCompositeImpl<
     final expandVertical = shouldExpandVertical(state);
 
     if (state.content == null) {
-      return _buildEmptyContainer(widgetTheme, minContentSize, backgroundColor);
+      return wrap(_buildEmptyContainer(widgetTheme, minContentSize, backgroundColor));
     }
 
     Widget contentWidget = mapWidgetFromValue(state.content!);

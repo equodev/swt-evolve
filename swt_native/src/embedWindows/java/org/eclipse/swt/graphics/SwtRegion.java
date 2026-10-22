@@ -253,6 +253,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
         ((SwtDevice) device.getImpl()).deregisterResourceWithZoomSupport(this.getApi());
         zoomToHandle.values().forEach(RegionHandle::destroy);
         zoomToHandle.clear();
+        operations.forEach(Operation::dereference);
         operations.clear();
         this.isDestroyed = true;
     }
@@ -500,18 +501,49 @@ public final class SwtRegion extends SwtResource implements IRegion {
         });
     }
 
+    static class ZoomToRegionMap {
+
+        private boolean disposed;
+
+        private Map<Integer, Long> zoomToRegionHandleMap = new HashMap<>();
+
+        void register(int zoom, Supplier<Long> handleSupplier) {
+            if (disposed) {
+                return;
+            }
+            zoomToRegionHandleMap.computeIfAbsent(zoom, __ -> handleSupplier.get());
+        }
+
+        private long get(int zoom) {
+            if (!zoomToRegionHandleMap.containsKey(zoom)) {
+                System.err.println("No handle for " + zoom + " has been created");
+                return zoomToRegionHandleMap.values().iterator().next();
+            }
+            return zoomToRegionHandleMap.get(zoom);
+        }
+
+        void dispose() {
+            if (!disposed) {
+                zoomToRegionHandleMap.values().forEach(handle -> OS.DeleteObject(handle));
+                zoomToRegionHandleMap.clear();
+                disposed = true;
+            }
+        }
+    }
+
     /**
      * Specific method for {@link GC#getClipping(Region)} because the current GC
      * clipping settings at that specific point in time of executing the getClipping
-     * method need to be stored.
+     * method need to be stored. The responsibility for managing the map (including
+     * disposal of added handles) is handed over with the call of this method.
      * <p>
      * The context zoom is used as a hint for the case of creating temporary
      * handles, such that they can be created for a zoom for which we know that the
      * supplier is capable of providing a proper handle.
      */
-    void set(Function<Integer, Long> handleForZoomSupplier, int contextZoom) {
+    void set(ZoomToRegionMap zoomToRegionHandleMap, int contextZoom) {
         this.temporaryHandleZoomHint = contextZoom;
-        final Operation operation = new OperationWithRegionHandle(Operation::set, handleForZoomSupplier);
+        final Operation operation = new OperationWithRegionHandle(Operation::set, zoomToRegionHandleMap);
         storeAndApplyOperationForAllHandles(operation);
     }
 
@@ -705,6 +737,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
         Region region = new Region();
         ((SwtRegion) region.getImpl()).temporaryHandleZoomHint = temporaryHandleZoomHint;
         ((SwtRegion) region.getImpl()).operations.addAll(operations);
+        ((SwtRegion) region.getImpl()).operations.forEach(Operation::reference);
         return region;
     }
 
@@ -759,6 +792,8 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         private final OperationStrategy operationStrategy;
 
+        private int referenceCount = 1;
+
         Operation(OperationStrategy operationStrategy) {
             this.operationStrategy = operationStrategy;
         }
@@ -776,6 +811,20 @@ public final class SwtRegion extends SwtResource implements IRegion {
         abstract void intersect(long handle, int zoom);
 
         abstract void translate(long handle, int zoom);
+
+        void reference() {
+            referenceCount++;
+        }
+
+        void dereference() {
+            referenceCount--;
+            if (referenceCount == 0) {
+                destroy();
+            }
+        }
+
+        void destroy() {
+        }
     }
 
     private static class OperationWithRectangle extends Operation {
@@ -946,16 +995,16 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
     private static class OperationWithRegionHandle extends Operation {
 
-        private final Function<Integer, Long> handleForZoomProvider;
+        private final ZoomToRegionMap zoomToRegionHandleMap;
 
-        OperationWithRegionHandle(OperationStrategy operationStrategy, Function<Integer, Long> handleForZoomSupplier) {
+        OperationWithRegionHandle(OperationStrategy operationStrategy, ZoomToRegionMap zoomToRegionHandleMap) {
             super(operationStrategy);
-            this.handleForZoomProvider = handleForZoomSupplier;
+            this.zoomToRegionHandleMap = zoomToRegionHandleMap;
         }
 
         @Override
         void set(long handle, int zoom) {
-            OS.CombineRgn(handle, handleForZoomProvider.apply(zoom), 0, OS.RGN_COPY);
+            OS.CombineRgn(handle, zoomToRegionHandleMap.get(zoom), 0, OS.RGN_COPY);
         }
 
         @Override
@@ -976,6 +1025,11 @@ public final class SwtRegion extends SwtResource implements IRegion {
         @Override
         void add(long handle, int zoom) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        void destroy() {
+            zoomToRegionHandleMap.dispose();
         }
     }
 

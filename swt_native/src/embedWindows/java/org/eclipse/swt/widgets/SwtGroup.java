@@ -52,7 +52,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     static final long GroupProc;
 
-    static final TCHAR GroupClass = new TCHAR(0, "SWT_GROUP", true);
+    static final TCHAR GroupClass = new TCHAR("SWT_GROUP", true);
 
     static {
         /*
@@ -64,7 +64,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
 		* implement special code that damages only the control.
 		*/
         WNDCLASS lpWndClass = new WNDCLASS();
-        TCHAR WC_BUTTON = new TCHAR(0, "BUTTON", true);
+        TCHAR WC_BUTTON = new TCHAR("BUTTON", true);
         OS.GetClassInfo(0, WC_BUTTON, lpWndClass);
         GroupProc = lpWndClass.lpfnWndProc;
         long hInstance = OS.GetModuleHandle(null);
@@ -152,7 +152,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
         Point size = super.computeSizeInPixels(hintInPoints, zoom, changed);
         int length = text.length();
         if (length != 0) {
-            String string = fixText(false);
+            String string = fixText();
             /*
 		* If the group has text, and the text is wider than the
 		* client area, pad the width so the text is not clipped.
@@ -169,8 +169,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
             if (newFont != 0)
                 OS.SelectObject(hDC, oldFont);
             OS.ReleaseDC(getApi().handle, hDC);
-            int offsetY = OS.IsAppThemed() ? 0 : 1;
-            size.x = Math.max(size.x, rect.right - rect.left + CLIENT_INSET * 6 + offsetY);
+            size.x = Math.max(size.x, rect.right - rect.left + CLIENT_INSET * 6);
         }
         return size;
     }
@@ -189,11 +188,10 @@ public class SwtGroup extends SwtComposite implements IGroup {
         if (newFont != 0)
             OS.SelectObject(hDC, oldFont);
         OS.ReleaseDC(getApi().handle, hDC);
-        int offsetY = OS.IsAppThemed() ? 0 : 1;
         trim.x -= CLIENT_INSET;
-        trim.y -= tm.tmHeight + offsetY;
+        trim.y -= tm.tmHeight;
         trim.width += CLIENT_INSET * 2;
-        trim.height += tm.tmHeight + CLIENT_INSET + offsetY;
+        trim.height += tm.tmHeight + CLIENT_INSET;
         return trim;
     }
 
@@ -218,14 +216,9 @@ public class SwtGroup extends SwtComposite implements IGroup {
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
-        /*
-	* Bug in Windows.  When a group control is right-to-left and
-	* is disabled, the first pixel of the text is clipped.  The
-	* fix is to add a space to both sides of the text.
-	*/
-        String string = fixText(enabled);
+        String string = fixText();
         if (string != null) {
-            TCHAR buffer = new TCHAR(getCodePage(), string, true);
+            TCHAR buffer = new TCHAR(string, true);
             OS.SetWindowText(getApi().handle, buffer);
         }
         if (enabled && hasCustomForeground()) {
@@ -233,20 +226,11 @@ public class SwtGroup extends SwtComposite implements IGroup {
         }
     }
 
-    String fixText(boolean enabled) {
-        /*
-	* Bug in Windows.  When a group control is right-to-left and
-	* is disabled, the first pixel of the text is clipped.  The
-	* fix is to add a space to both sides of the text.
-	*/
+    String fixText() {
         if (text.length() == 0)
             return null;
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
-            String string = null;
-            if (!enabled && !OS.IsAppThemed()) {
-                string = " " + text + " ";
-            }
-            return (getApi().style & SWT.FLIP_TEXT_DIRECTION) == 0 ? string : string != null ? LRE + string : LRE + text;
+            return (getApi().style & SWT.FLIP_TEXT_DIRECTION) == 0 ? null : LRE + text;
         } else if ((getApi().style & SWT.FLIP_TEXT_DIRECTION) != 0) {
             return RLE + text;
         }
@@ -269,8 +253,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
         if (newFont != 0)
             OS.SelectObject(hDC, oldFont);
         OS.ReleaseDC(getApi().handle, hDC);
-        int offsetY = OS.IsAppThemed() ? 0 : 1;
-        int x = CLIENT_INSET, y = tm.tmHeight + offsetY;
+        int x = CLIENT_INSET, y = tm.tmHeight;
         int width = Math.max(0, rect.right - CLIENT_INSET * 2);
         int height = Math.max(0, rect.bottom - y - CLIENT_INSET);
         return new Rectangle(x, y, width, height);
@@ -436,8 +419,8 @@ public class SwtGroup extends SwtComposite implements IGroup {
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
         if ((getApi().state & HAS_AUTO_DIRECTION) == 0 || !updateTextDirection(AUTO_TEXT_DIRECTION)) {
-            string = fixText(OS.IsWindowEnabled(getApi().handle));
-            TCHAR buffer = new TCHAR(getCodePage(), string == null ? text : string, true);
+            string = fixText();
+            TCHAR buffer = new TCHAR(string == null ? text : string, true);
             OS.SetWindowText(getApi().handle, buffer);
         }
     }
@@ -445,8 +428,8 @@ public class SwtGroup extends SwtComposite implements IGroup {
     @Override
     boolean updateTextDirection(int textDirection) {
         if (super.updateTextDirection(textDirection)) {
-            String string = fixText(OS.IsWindowEnabled(getApi().handle));
-            TCHAR buffer = new TCHAR(getCodePage(), string == null ? text : string, true);
+            String string = fixText();
+            TCHAR buffer = new TCHAR(string == null ? text : string, true);
             OS.SetWindowText(getApi().handle, buffer);
             return true;
         }
@@ -531,7 +514,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
     LRESULT WM_PAINT(long wParam, long lParam) {
         LRESULT result = super.WM_PAINT(wParam, lParam);
         if (hasCustomForeground() && text.length() != 0) {
-            String string = fixText(false);
+            String string = fixText();
             char[] buffer = (string == null ? text : string).toCharArray();
             // We cannot use BeginPaint and EndPaint, because that removes the group border
             long hDC = OS.GetDC(getApi().handle);
@@ -573,13 +556,10 @@ public class SwtGroup extends SwtComposite implements IGroup {
 	* BS_GROUP, there is no problem.  The fix is to save
 	* and restore the current font.
 	*/
-        if (OS.IsAppThemed()) {
-            int nSavedDC = OS.SaveDC(wParam);
-            long code = callWindowProc(getApi().handle, OS.WM_PRINTCLIENT, wParam, lParam);
-            OS.RestoreDC(wParam, nSavedDC);
-            return new LRESULT(code);
-        }
-        return result;
+        int nSavedDC = OS.SaveDC(wParam);
+        long code = callWindowProc(getApi().handle, OS.WM_PRINTCLIENT, wParam, lParam);
+        OS.RestoreDC(wParam, nSavedDC);
+        return new LRESULT(code);
     }
 
     @Override
@@ -598,9 +578,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
         boolean redraw = findImageControl() != null;
         if (!redraw) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
-                if (OS.IsAppThemed()) {
-                    redraw = findThemeControl() != null;
-                }
+                redraw = findThemeControl() != null;
             }
             if (!redraw)
                 redraw = findBackgroundControl() != null;
