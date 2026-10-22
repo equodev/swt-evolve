@@ -203,7 +203,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      *
      * @deprecated the disabled image is not used
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public Image getDisabledImage() {
         checkWidget();
         return disabledImage;

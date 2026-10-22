@@ -859,10 +859,10 @@ public class DartList extends DartScrollable implements IList {
      */
     public void select(int[] indices) {
         int[] newValue = indices;
+        checkWidget();
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VList.SELECTION);
         }
-        checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;

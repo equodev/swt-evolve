@@ -19,7 +19,6 @@ void main() {
     text,
     Offset.zero,
     style,
-    null, // clipRect
     null, // textSpan
     CaretInfo(
       offset: caretOffset,

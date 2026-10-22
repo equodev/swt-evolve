@@ -124,7 +124,7 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public DartMenu(Decorations parent, int style, Menu api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = checkStyle(style);
         if (parent != null) {
@@ -322,6 +322,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void createItem(MenuItem item, int index) {
+        int menuStripBefore = menuBarStripHeight();
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         ;
@@ -336,12 +337,14 @@ public class DartMenu extends DartWidget implements IMenu {
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         ;
+        menuBarItemsChanged(menuStripBefore);
         getValue().markDirty(VMenu.ITEMS);
     }
 
     @Override
     void createWidget() {
         checkOrientation(parent);
+        ((DartDisplay) display.getImpl()).addMenu(this.getApi());
         super.createWidget();
         items = new MenuItem[4];
         getValue().markDirty(VMenu.ITEMS);
@@ -353,6 +356,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void destroyItem(MenuItem item) {
+        int menuStripBefore = menuBarStripHeight();
         int index = 0;
         while (index < itemCount) {
             if (items[index] == item)
@@ -367,6 +371,7 @@ public class DartMenu extends DartWidget implements IMenu {
             items = new MenuItem[4];
         if (((DartDisplay) display.getImpl()).menuBar == this.getApi()) {
         }
+        menuBarItemsChanged(menuStripBefore);
         getValue().markDirty(VMenu.ITEMS);
     }
 
@@ -610,6 +615,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public boolean getVisible() {
         checkWidget();
         if ((getApi().style & SWT.BAR) != 0) {
+            return parent != null && this.getApi() == ((DartDecorations) parent.getImpl()).menuBar;
         }
         if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((DartDisplay) display.getImpl()).popups;
@@ -821,6 +827,8 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
+        if (item != null && ((DartMenuItem) item.getImpl()).parent != this.getApi())
+            return;
         defaultItem = item;
     }
 
@@ -839,10 +847,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VMenu.ENABLED);
         }
-        checkWidget();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -916,10 +924,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setLocation(Point location) {
         Point newValue = location;
+        checkWidget();
         if (!java.util.Objects.equals(this.location, newValue)) {
             getValue().markDirty(VMenu.LOCATION);
         }
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.location = newValue;
@@ -940,12 +948,8 @@ public class DartMenu extends DartWidget implements IMenu {
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        int newValue = orientation;
-        if (!java.util.Objects.equals(this.orientation, newValue)) {
-            getValue().markDirty(VMenu.ORIENTATION);
-        }
-        this.orientation = newValue;
         checkWidget();
+        MenuHelper.applyOrientation(this, orientation);
     }
 
     /**
@@ -966,10 +970,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(this.visible, newValue)) {
             getValue().markDirty(VMenu.VISIBLE);
         }
-        checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         if (visible) {
@@ -1063,6 +1067,22 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     Control ownerControl;
+
+    /**
+     * The menu strip of the Decorations this menu is the bar of; 0 when it is no bar.
+     */
+    int menuBarStripHeight() {
+        return isParentMenuBar() ? Sizes.ownMenuStripHeight(parent) : 0;
+    }
+
+    void menuBarItemsChanged(int menuStripBefore) {
+        if (isParentMenuBar())
+            Sizes.menuStripChanged(parent, menuStripBefore);
+    }
+
+    private boolean isParentMenuBar() {
+        return parent != null && ((DartDecorations) parent.getImpl()).menuBar == getApi();
+    }
 
     public Control findOwnerControl() {
         if (ownerControl != null) {

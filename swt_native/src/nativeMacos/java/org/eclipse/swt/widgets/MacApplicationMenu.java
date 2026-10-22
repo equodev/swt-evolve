@@ -104,7 +104,7 @@ final class MacApplicationMenu {
                 OS.sel_hide_, NSString.stringWith("h"), SWT.ID_HIDE);
         NSMenuItem hideOthers = add(appMenu, AppMenuMessages.label("SWT_HideOthers"),
                 OS.sel_hideOtherApplications_, NSString.stringWith("h"), SWT.ID_HIDE_OTHERS);
-        hideOthers.setKeyEquivalentModifierMask(OS.NSCommandKeyMask | OS.NSAlternateKeyMask);
+        hideOthers.setKeyEquivalentModifierMask(AppKitValues.COMMAND_KEY_MASK | AppKitValues.ALTERNATE_KEY_MASK);
         add(appMenu, AppMenuMessages.label("SWT_ShowAll"),
                 OS.sel_unhideAllApplications_, empty, SWT.ID_SHOW_ALL);
         appMenu.addItem(NSMenuItem.separatorItem());
@@ -168,7 +168,8 @@ final class MacApplicationMenu {
     private static void action(Menu menu, String text, int id, Runnable onSelection) {
         MenuItem item = new MenuItem(menu, SWT.PUSH);
         item.setText(text);
-        item.setID(id);
+        // The ids are negative, which MenuItem#setID refuses; native SWT puts them in the item's tag.
+        ((DartMenuItem) item.getImpl()).ID = id;
         if (onSelection != null)
             item.addListener(SWT.Selection, event -> onSelection.run());
     }

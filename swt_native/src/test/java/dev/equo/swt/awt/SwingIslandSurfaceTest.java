@@ -112,6 +112,9 @@ class SwingIslandSurfaceTest {
         String channel = FlutterBridge.eventName(island.getImpl(), SwingIslandHost.ISLAND_EVENT);
         bridge.comm.sent.clear();
         bridge.comm.fireContaining(channel, new byte[0]);
+        // The answer also says where the island is, deferred onto the Display; drained here so a
+        // throw on that path is a failing test rather than a line nobody ever runs.
+        drain();
         return lastSentOn(channel);
     }
 
@@ -244,6 +247,93 @@ class SwingIslandSurfaceTest {
         assertThat(dialog.getParent()).isSameAs(host);
         assertThat(dialog.getStyle() & SWT.DIALOG_TRIM).isEqualTo(SWT.DIALOG_TRIM);
         assertThat(dialog.getStyle() & SWT.RESIZE).as("the dialog is resizable").isNotZero();
+    }
+
+    @Test
+    @DisplayName("a window already mirrored by a live island is not mounted on a second one")
+    void oneWindowOneIsland() {
+        // Measured on an application with three editor parts, each hosting an island: three
+        // SwingIsland widgets, two registered windows, and one view drawn LIVE in two panes at
+        // once — the application's own toolbar buttons still driving the right view while its
+        // pixels appeared in someone else's pane. The registry is keyed by windowId, so the second
+        // mount overwrote the first entry while BOTH regions had already been told the same id.
+        Shell first = new Shell(display);
+        first.setLayout(new FillLayout());
+        SwingIsland islandOfFirst = new SwingIsland(first, SWT.NONE);
+        SwingIslandHost.mount(islandOfFirst, 3, PORT, false);
+
+        Shell second = new Shell(display);
+        second.setLayout(new FillLayout());
+        SwingIsland islandOfSecond = new SwingIsland(second, SWT.NONE);
+        SwingIslandHost.mount(islandOfSecond, 3, PORT, false);
+
+        Shell dialog = open(request(5, "dialog", 3));
+
+        assertThat(dialog.getParent()).as("window 3 still belongs to the island that took it")
+                .isSameAs(first);
+    }
+
+    @Test
+    @DisplayName("no Shell is built for a window a live island already mirrors")
+    void noShellForAWindowAnIslandHas() {
+        // Refusing the mount was half a fix. The Shell, its island and its region were already
+        // built, parented and opened by then, and the region was never told which window it
+        // mirrors: measured on the application, one
+        // "No handler for: SwingIsland/<id>/swingIsland" per refused island, naming exactly the
+        // ids the refusal lines named.
+        Shell host = new Shell(display);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+        SwingIslandHost.mount(island, 3, PORT, false);
+        int before = display.getShells().length;
+
+        bridge.comm.fireContaining(SwingIslandHost.SURFACE_EVENT, request(3, "frame", 0));
+        drain();
+
+        assertThat(SwingIslandHost.surfaceShell(display, 3))
+                .as("no Shell for a window that already has an island").isNull();
+        assertThat(display.getShells().length)
+                .as("and none was built and left behind either").isEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("and the client is told the window is an island, not left to time out")
+    void theRefusalIsAnswered() {
+        // Silence was the bug. The client gives a Shell request a deadline and *declines* an
+        // unanswered one — and a declined window is drawn in-view, inside whichever island is
+        // live. Measured in a snippet with four islands in two tab stacks: three windows whose
+        // regions had not mounted were refused here, and five seconds later all three were drawn
+        // in the one visible pane, stacked, all answering input together.
+        Shell host = new Shell(display);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+        SwingIslandHost.mount(island, 3, PORT, false);
+        bridge.comm.sent.clear();
+
+        bridge.comm.fireContaining(SwingIslandHost.SURFACE_EVENT, request(3, "frame", 0));
+        drain();
+
+        assertThat(bridge.comm.sent.stream().map(f -> f.event))
+                .as("the refusal says the window is an island")
+                .contains(SwingIslandHost.IS_ISLAND_EVENT);
+        assertThat(lastSentOn(SwingIslandHost.IS_ISLAND_EVENT)).containsEntry("windowId", "3");
+    }
+
+    @Test
+    @DisplayName("an island is not mounted on windowId 0, which is not a window")
+    void noIslandOnANonWindow() {
+        // WindowIds.of answers 0, never a valid id, for a window swing-evolve's toolkit has not
+        // peered — and describe() passed whatever it got straight into mount(). A region told 0
+        // asks the engine to mirror a window that does not exist.
+        Shell host = new Shell(display);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+
+        SwingIslandHost.mount(island, 0, PORT, false);
+        Shell dialog = open(request(5, "dialog", 0));
+
+        assertThat(dialog.getParent()).as("nothing was registered under 0, so nothing owns it")
+                .isNotSameAs(host);
     }
 
     @Test

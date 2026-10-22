@@ -9,6 +9,7 @@ import '../gen/group.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import 'utils/focus_report.dart';
 import 'utils/widget_utils.dart';
 import 'utils/text_utils.dart';
 
@@ -37,38 +38,31 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
 
     return SwtControlScope(
       swt: state.swt,
-      child: tagSemantics(MouseRegion(
-        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-        child: Focus(
-          focusNode: _focusNode,
-          child: _StyledGroup(
-            widgetTheme: widgetTheme,
-            text: text,
-            composite: state,
-            children: children,
-            vFont: state.font,
-            textColor: state.foreground,
-            hasBounds: hasBounds(state.bounds),
-            style: state.style,
-          ),
+      child: tagSemantics(trackPointer(Focus(
+        focusNode: _focusNode,
+        // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+        skipTraversal: true,
+        child: _StyledGroup(
+          widgetTheme: widgetTheme,
+          text: text,
+          composite: state,
+          children: children,
+          vFont: state.font,
+          textColor: state.foreground,
+          hasBounds: hasBounds(state.bounds),
+          style: state.style,
         ),
-      )),
+      ))),
     );
   }
 
-  bool _focusReported = false;
+  final FocusReport _focusReport = FocusReport();
 
   // hasFocus is true for any focused descendant; SWT gives a Group focus only when it holds it itself.
   void _handleFocusChange() {
-    final own = _focusNode!.hasPrimaryFocus;
-    if (own == _focusReported) return;
-    _focusReported = own;
-    if (own) {
-      widget.sendFocusFocusIn(state, null);
-    } else {
-      widget.sendFocusFocusOut(state, null);
-    }
+    _focusReport.update(_focusNode!.hasPrimaryFocus,
+        focusIn: () => widget.sendFocusFocusIn(state, null),
+        focusOut: () => widget.sendFocusFocusOut(state, null));
   }
 
   @override

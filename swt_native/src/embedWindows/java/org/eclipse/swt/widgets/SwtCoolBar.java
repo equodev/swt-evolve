@@ -60,7 +60,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 
     static final long ReBarProc;
 
-    static final TCHAR ReBarClass = new TCHAR(0, OS.REBARCLASSNAME, true);
+    static final TCHAR ReBarClass = new TCHAR(OS.REBARCLASSNAME, true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();
@@ -375,13 +375,11 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 
     @Override
     void drawThemeBackground(long hDC, long hwnd, RECT rect) {
-        if (OS.IsAppThemed()) {
-            if (background == -1 && (getApi().style & SWT.FLAT) != 0) {
-                Control control = findBackgroundControl();
-                if (control != null && ((SwtControl) control.getImpl()).backgroundImage != null) {
-                    fillBackground(hDC, control.getImpl().getBackgroundPixel(), rect);
-                    return;
-                }
+        if (background == -1 && (getApi().style & SWT.FLAT) != 0) {
+            Control control = findBackgroundControl();
+            if (control != null && ((SwtControl) control.getImpl()).backgroundImage != null) {
+                fillBackground(hDC, control.getImpl().getBackgroundPixel(), rect);
+                return;
             }
         }
         RECT rect2 = new RECT();
@@ -1064,29 +1062,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     @Override
-    LRESULT WM_ERASEBKGND(long wParam, long lParam) {
-        LRESULT result = super.WM_ERASEBKGND(wParam, lParam);
-        /*
-	* Feature in Windows.  For some reason, Windows
-	* does not fully erase the area that the cool bar
-	* occupies when the size of the cool bar is larger
-	* than the space occupied by the cool bar items.
-	* The fix is to erase the cool bar background.
-	*
-	* NOTE: On versions of Windows prior to XP, for
-	* some reason, the cool bar draws separators in
-	* WM_ERASEBKGND.  Therefore it is essential to run
-	* the cool bar window proc after the background has
-	* been erased.
-	*/
-        if (!OS.IsAppThemed()) {
-            drawBackground(wParam);
-            return null;
-        }
-        return result;
-    }
-
-    @Override
     LRESULT WM_NOTIFY(long wParam, long lParam) {
         /*
 	* Feature in Windows.  When the cool bar window
@@ -1147,12 +1122,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                 return LRESULT.ZERO;
             return new LRESULT(code);
         }
-        //TEMPORARY CODE
-        //	if (OS.IsAppThemed ()) {
-        //		if (background == -1 && (style & SWT.FLAT) == 0) {
-        //			OS.InvalidateRect (handle, null, true);
-        //		}
-        //	}
         return super.WM_SIZE(wParam, lParam);
     }
 

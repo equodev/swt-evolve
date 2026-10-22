@@ -647,10 +647,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VToolItem.ENABLED);
         }
-        checkWidget();
         if ((getApi().state & DISABLED) == 0 && enabled)
             return;
         if (enabled) {

@@ -7,6 +7,33 @@ import '../widget_config.dart';
 
 /// Utility class to convert SWT Font/FontData to Flutter TextStyle
 class FontUtils {
+  /// Where a glyph the requested font lacks is looked for first. The fonts SWT asks for are mapped
+  /// to the bundled Liberation faces, which have no symbols such as the Mac key glyphs (⌘ ⌥ ⇧ ↩);
+  /// Inter is bundled too and has them, so they draw without a network font.
+  static const List<String> fallbackFamilies = ['Inter'];
+
+  /// The bundled faces (pubspec.yaml) that WebFontSubstitutions.java maps fonts to and that lack
+  /// the key symbols. A new substitution target without them belongs here too.
+  static const Set<String> _withoutSymbols = {'Liberation Sans', 'Liberation Serif', 'Liberation Mono'};
+
+  /// [fallbackFamilies] behind a bundled face that lacks the symbols, else none. A family this side
+  /// does not have resolves to the engine's default font, which Java's measurements assume; a
+  /// fallback list would take its place.
+  static List<String>? fallbackFor(String? family) =>
+      _withoutSymbols.contains(family) ? fallbackFamilies : null;
+
+  /// Calls [onChange] whenever the system fonts change: a font that finishes loading changes how
+  /// text lays out, so a cache of laid-out text has to be dropped. Returns false when there is no
+  /// binding yet (a bare test laying text out), so the caller asks again next time.
+  static bool listenToSystemFonts(VoidCallback onChange) {
+    try {
+      PaintingBinding.instance.systemFonts.addListener(onChange);
+      return true;
+    } on FlutterError {
+      return false;
+    }
+  }
+
   /// A typographic point is 1/72", the unit an SWT FontData height is given in.
   static const double _pointsPerInch = 72;
 
@@ -39,6 +66,28 @@ class FontUtils {
   static double get uiScale {
     final scale = appScaleNotifier.value;
     return scale > 0 ? scale : 1.0;
+  }
+
+  /// The scaler `SwtZoomScale` gives every Text widget. A TextPainter that sizes a row or a column
+  /// for text a Text widget paints has to measure through it, or the box and its text disagree by
+  /// the zoom.
+  static TextScaler get textWidgetScaler {
+    final scale = uiScale;
+    return scale != 1.0 ? TextScaler.linear(1 / scale) : TextScaler.noScaling;
+  }
+
+  /// The size [text] takes when a Text widget paints it in [style], measured through
+  /// [textWidgetScaler].
+  static Size measureTextWidget(String text, TextStyle? style, {int? maxLines = 1}) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: textWidgetScaler,
+      maxLines: maxLines,
+    )..layout();
+    final size = painter.size;
+    painter.dispose();
+    return size;
   }
 
   /// Convert SWT font style to Flutter FontWeight and FontStyle
@@ -114,6 +163,7 @@ class FontUtils {
     return TextStyle(
       inherit: inherit,
       fontFamily: fontName,
+      fontFamilyFallback: fallbackFor(fontName),
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,

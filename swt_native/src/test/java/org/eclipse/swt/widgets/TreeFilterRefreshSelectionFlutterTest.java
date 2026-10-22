@@ -55,17 +55,6 @@ class TreeFilterRefreshSelectionFlutterTest {
         flutter.teardown();
     }
 
-    private void settle() {
-        int quiet = 0;
-        for (int round = 0; round < 40 && quiet < 3; round++) {
-            long before = flutter.dispatched();
-            flutter.drain();
-            flutter.flush();
-            flutter.drain();
-            quiet = flutter.dispatched() == before ? quiet + 1 : 0;
-        }
-    }
-
     @Test
     void the_picked_row_stays_selected_through_a_filter_refresh() {
         TreeViewer viewer = new TreeViewer(shell, SWT.SINGLE | SWT.BORDER);
@@ -93,7 +82,7 @@ class TreeFilterRefreshSelectionFlutterTest {
         viewer.setLabelProvider(new LabelProvider());
         viewer.setInput(CATEGORIES);
         viewer.expandToLevel("General", 1);
-        settle();
+        flutter.settle();
 
         List<String> selectionEvents = new ArrayList<>();
         viewer.getTree().addListener(SWT.Selection, e -> selectionEvents.add(((TreeItem) e.item).getText()));
@@ -113,7 +102,7 @@ class TreeFilterRefreshSelectionFlutterTest {
             }
         });
         viewer.expandAll();
-        settle();
+        flutter.settle();
 
         assertThat(((IStructuredSelection) viewer.getSelection()).toList()).containsExactly("Project");
         assertThat(Arrays.stream(viewer.getTree().getSelection()).map(TreeItem::getText)).containsExactly("Project");

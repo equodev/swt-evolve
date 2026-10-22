@@ -15,9 +15,11 @@
  */
 package org.eclipse.swt.dnd;
 
+import java.lang.reflect.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.GAsyncReadyCallbackHelper.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
@@ -266,6 +268,7 @@ public class DropTarget extends Widget {
         getImpl().setDropTargetEffect(effect);
     }
 
+    /* GTK4 drop target handlers */
     protected DropTarget(IDropTarget impl) {
         super(impl);
     }

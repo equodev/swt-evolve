@@ -195,10 +195,7 @@ public class DartSash extends DartControl implements ISash {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Selection, e);
-                if (!isDisposed() && e.doit) {
-                    setBounds(e.x, e.y, bounds.width, bounds.height);
-                }
+                SashHelper.selected(this, e);
             });
         });
     }
