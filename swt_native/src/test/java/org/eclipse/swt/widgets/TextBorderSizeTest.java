@@ -4,18 +4,18 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * An ARROW button usually sits beside a single-line field (a date picker, a spinner-like control),
- * and on every native platform it is no taller than that field. A taller arrow stretches the
- * composite around both, which then stands out of a top-aligned row of single-line controls.
+ * On every native platform the frame of a Text, and the room around the text it brings, is part of
+ * its trim only with SWT.BORDER. A borderless single-line Text is as tall as its line.
  */
 @ExtendWith(Mocks.class)
-class ArrowButtonHeightTest {
+class TextBorderSizeTest {
 
     @BeforeAll
     static void useEquo() {
@@ -38,13 +38,17 @@ class ArrowButtonHeightTest {
     }
 
     @Test
-    void arrowButtonIsNoTallerThanASingleLineText() {
+    void borderlessTextIsSmallerThanABorderedOne() {
         Shell shell = Mocks.shell();
-        Text text = new Text(shell, SWT.SINGLE);
-        text.setText("21.10.2026");
-        Button arrow = new Button(shell, SWT.ARROW | SWT.DOWN);
+        Point borderless = sizeOf(new Text(shell, SWT.SINGLE));
+        Point bordered = sizeOf(new Text(shell, SWT.SINGLE | SWT.BORDER));
 
-        assertThat(arrow.computeSize(SWT.DEFAULT, SWT.DEFAULT).y)
-                .isLessThanOrEqualTo(text.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+        assertThat(borderless.y).isLessThan(bordered.y);
+        assertThat(borderless.x).isLessThan(bordered.x);
+    }
+
+    private static Point sizeOf(Text text) {
+        text.setText("21.10.2026");
+        return text.computeSize(SWT.DEFAULT, SWT.DEFAULT);
     }
 }

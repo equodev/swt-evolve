@@ -247,7 +247,7 @@ class TextImpl<T extends TextSwt, V extends VText>
             (!isSearch && b is OutlineInputBorder) ? b.copyWith(gapPadding: 0.0) : b!;
         decoration = decoration.copyWith(
           isDense: false,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 3.0),
+          contentPadding: singleLineTextInset,
           border: noGap(decoration.border),
           enabledBorder: noGap(decoration.enabledBorder),
           focusedBorder: noGap(decoration.focusedBorder),

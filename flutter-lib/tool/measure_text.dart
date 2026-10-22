@@ -73,6 +73,9 @@ void setupCases(WidgetMeasurer measurer) {
     ('SINGLE|RIGHT|READ_ONLY', SWT.SINGLE | SWT.RIGHT | SWT.READ_ONLY),
     ('SINGLE|RIGHT|WRAP', SWT.SINGLE | SWT.RIGHT | SWT.WRAP),
   ];
+  styles.addAll([
+    for (final (name, flags) in List.of(styles)) ('$name|BORDER', flags | SWT.BORDER),
+  ]);
 
   for (final style in styles) {
     for (final text in Texts) {
