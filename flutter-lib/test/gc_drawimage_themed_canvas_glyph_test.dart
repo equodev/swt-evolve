@@ -56,7 +56,7 @@ VGCDrawImageImageintintintintintintintint get _naturalSizeBlit =>
 
 Future<ImageShape> _blit(String png, {GlyphTintLimits? limits}) =>
     ImageShape.fromVImageDetailed(_blittedImage(png), _naturalSizeBlit, null,
-        tint: _tint, glyphLimits: limits);
+        tint: _tint, glyphLimits: limits, useThemeColors: canvasUsesThemeColors);
 
 const _darkCanvas = Color(0xFF202020);
 
@@ -109,7 +109,8 @@ void main() {
             destX: 0, destY: 0, destWidth: -1, destHeight: -1,
             srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1),
         null,
-        tint: _tint);
+        tint: _tint,
+        useThemeColors: canvasUsesThemeColors);
     final pixels = await _paintOnDarkCanvas(shape);
 
     expect(pixels[3 * 16 + 3], _tint.toARGB32(), reason: 'the outline takes the tint');

@@ -2,10 +2,14 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.comm.MessageBatch;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,8 +21,13 @@ import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +50,8 @@ class CanvasPaintOpBatchingTest {
 
     private RecordingBridge bridge;
     private final Deque<Runnable> asyncQueue = new ArrayDeque<>();
+    /** The display mock is shared by every test in the JVM, so its stubs must go quiet after this one. */
+    private boolean dispatching;
 
     @BeforeAll
     static void useEquo() {
@@ -61,6 +72,7 @@ class CanvasPaintOpBatchingTest {
     @AfterEach
     void tearDown() {
         FlutterBridge.set(null);
+        dispatching = false;
         asyncQueue.clear();
     }
 
@@ -68,9 +80,10 @@ class CanvasPaintOpBatchingTest {
         Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         DartDisplay displayImpl = (DartDisplay) display.getImpl();
+        dispatching = true;
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
-            if (ev != null && (ev.type == SWT.Paint || ev.type == SWT.Resize)) {
+            if (dispatching && ev != null && (ev.type == SWT.Paint || ev.type == SWT.Resize)) {
                 return inv.callRealMethod();
             }
             return null;
@@ -157,6 +170,188 @@ class CanvasPaintOpBatchingTest {
         assertThat(wire).as("the paint's wire traffic").contains("gcDispose");
         assertThat(wire.indexOf("drawLineintintintint")).as("ops precede gcDispose")
                 .isLessThan(wire.indexOf("gcDispose"));
+    }
+
+    @Test
+    @DisplayName("another Display's event-loop flush leaves this thread's buffered ops alone")
+    void flushOnAnotherThreadLeavesBufferedOps() throws Exception {
+        Canvas canvas = canvas();
+        GC gc = new GC(canvas);
+        try {
+            gc.drawLine(0, 0, 5, 10);
+            bridge.comm.sent.clear();
+
+            Throwable[] failure = { null };
+            Thread otherDisplay = new Thread(() -> {
+                try {
+                    FlutterBridge.updateFrame();
+                } catch (Throwable t) {
+                    failure[0] = t;
+                }
+            });
+            otherDisplay.start();
+            otherDisplay.join();
+
+            assertThat(failure[0]).as("the other thread's flush").isNull();
+            assertThat(gcFrames())
+                    .as("frames another thread sent from a batch this thread is still writing")
+                    .isEmpty();
+
+            FlutterBridge.updateFrame();
+            assertThat(gcFrames()).as("frames this thread's own flush sends").hasSize(1);
+        } finally {
+            gc.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("a GC disposed on another thread still sends its ops before gcDispose")
+    void gcHandedToAnotherThreadKeepsItsOrder() throws Exception {
+        Canvas canvas = canvas();
+        GC gc = new GC(canvas);
+        gc.drawLine(0, 0, 5, 10);
+        bridge.comm.sent.clear();
+
+        Throwable[] failure = { null };
+        Thread worker = new Thread(() -> {
+            try {
+                gc.dispose();
+            } catch (Throwable t) {
+                failure[0] = t;
+            }
+        });
+        worker.start();
+        worker.join();
+        FlutterBridge.updateFrame();
+
+        assertThat(failure[0]).as("disposing on the other thread").isNull();
+        // A frame sent on its own carries its channel as the event, not in the payload.
+        String wire = gcFrames().stream().map(f -> f.event + f.json).reduce("", String::concat);
+        assertThat(wire).as("the paint's wire traffic").contains("drawLineintintintint", "gcDispose");
+        assertThat(wire.indexOf("drawLineintintintint")).as("the op drawn before the hand-over precedes gcDispose")
+                .isLessThan(wire.indexOf("gcDispose"));
+    }
+
+    @Test
+    @DisplayName("a batch that fills up right after a hand-over goes out in order, every op once")
+    void capFlushAfterHandOverKeepsEveryOpInOrder() throws Exception {
+        // Enough ops to pass FlutterBridge's 1 MB cap on one batch.
+        int ops = 100_000;
+        Canvas canvas = canvas();
+        GC gc = new GC(canvas);
+        gc.drawLine(0, 7, 5, 12345);
+        bridge.comm.sent.clear();
+
+        Throwable[] failure = { null };
+        int[] framesBeforeDispose = { 0 };
+        Thread worker = new Thread(() -> {
+            try {
+                for (int i = 1; i <= ops; i++) gc.drawLine(i, 0, i, 10);
+                framesBeforeDispose[0] = gcFrames().size();
+                gc.dispose();
+            } catch (Throwable t) {
+                failure[0] = t;
+            }
+        });
+        worker.start();
+        worker.join();
+
+        assertThat(failure[0]).as("drawing on the other thread").isNull();
+        assertThat(framesBeforeDispose[0])
+                .as("frames sent before gcDispose, the hand-over's then the full batch's: fewer means "
+                        + "the scenario never reached the cap right after a hand-over")
+                .isGreaterThanOrEqualTo(2);
+        List<JsonArray> lines = drawLines();
+        assertThat(lines).as("draw ops on the wire").hasSize(ops + 1);
+        assertThat(lines.get(0).get(3).getAsInt()).as("the op drawn before the hand-over goes first")
+                .isEqualTo(12345);
+        List<Integer> x1 = new ArrayList<>();
+        for (JsonArray line : lines.subList(1, lines.size())) x1.add(line.get(0).getAsInt());
+        assertThat(x1).as("the other thread's ops, each once and in order").isEqualTo(sequence(ops));
+        List<String[]> entries = BatchEntries.of(gcFrames());
+        assertThat(entries.get(entries.size() - 1)[0]).as("the last frame").endsWith("/gcDispose");
+    }
+
+    @Test
+    @DisplayName("threads painting while other event loops flush get every op through once, in order")
+    void concurrentPaintsAndFlushesLoseNothing() throws Exception {
+        int painters = 3;
+        int paints = 150;
+        int opsPerPaint = 40;
+        List<Canvas> canvases = new ArrayList<>();
+        for (int t = 0; t < painters; t++) canvases.add(canvas());
+        bridge.comm.sent.clear();
+
+        ConcurrentLinkedQueue<Throwable> failures = new ConcurrentLinkedQueue<>();
+        AtomicBoolean painting = new AtomicBoolean(true);
+        List<Thread> otherLoops = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            otherLoops.add(new Thread(() -> {
+                try {
+                    while (painting.get()) FlutterBridge.updateFrame();
+                } catch (Throwable t) {
+                    failures.add(t);
+                }
+            }));
+        }
+        List<Thread> painterThreads = new ArrayList<>();
+        for (int t = 0; t < painters; t++) {
+            Canvas canvas = canvases.get(t);
+            // y1 says which painter drew the op.
+            int painter = t;
+            painterThreads.add(new Thread(() -> {
+                try {
+                    int seq = 0;
+                    for (int p = 0; p < paints; p++) {
+                        GC gc = new GC(canvas);
+                        for (int k = 0; k < opsPerPaint; k++) {
+                            gc.drawLine(++seq, painter, 1, 1);
+                            // This thread's own loop turning mid-paint, as a nested event loop does.
+                            if (k == opsPerPaint / 2 && p % 3 == 0) FlutterBridge.updateFrame();
+                        }
+                        gc.dispose();
+                    }
+                } catch (Throwable e) {
+                    failures.add(e);
+                }
+            }));
+        }
+        otherLoops.forEach(Thread::start);
+        painterThreads.forEach(Thread::start);
+        for (Thread t : painterThreads) t.join();
+        painting.set(false);
+        for (Thread t : otherLoops) t.join();
+
+        assertThat(failures).as("exceptions thrown while painting or flushing").isEmpty();
+        Map<Integer, List<Integer>> drawnBy = new TreeMap<>();
+        for (JsonArray line : drawLines()) {
+            drawnBy.computeIfAbsent(line.get(1).getAsInt(), k -> new ArrayList<>()).add(line.get(0).getAsInt());
+        }
+        assertThat(drawnBy.keySet()).as("painters whose ops reached the wire").hasSize(painters);
+        for (Map.Entry<Integer, List<Integer>> painter : drawnBy.entrySet()) {
+            assertThat(painter.getValue()).as("painter %d's ops, each once and in order", painter.getKey())
+                    .isEqualTo(sequence(paints * opsPerPaint));
+        }
+    }
+
+    /**
+     * Every drawLine on the wire in send order, as its arguments: drawLine(x1, y1, x2, y2) travels as
+     * [x1,y1,x2,y2]. Parsing each frame also fails on a torn one.
+     */
+    private List<JsonArray> drawLines() {
+        List<JsonArray> lines = new ArrayList<>();
+        for (String[] entry : BatchEntries.of(gcFrames())) {
+            if (entry[0].endsWith("/drawLineintintintint")) {
+                lines.add(JsonParser.parseString(entry[1]).getAsJsonArray());
+            }
+        }
+        return lines;
+    }
+
+    private static List<Integer> sequence(int count) {
+        List<Integer> out = new ArrayList<>(count);
+        for (int i = 1; i <= count; i++) out.add(i);
+        return out;
     }
 
     private static int countOccurrences(String haystack, String needle) {

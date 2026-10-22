@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../comm/comm.dart';
 import '../../gen/event.dart';
@@ -32,7 +33,11 @@ class ActiveDragTracker {
       _pointerDown = true;
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
       _pointerDown = false;
-      HoverExclusivityArbiter.instance.settle();
+      // Settled once the frame the release is in has been laid out and hit-tested again: a drag's
+      // last step (a sash, a scroll) moves what is under the pointer only in that frame.
+      final scheduler = SchedulerBinding.instance;
+      scheduler.addPostFrameCallback((_) => HoverExclusivityArbiter.instance.settle());
+      scheduler.scheduleFrame();
     }
   }
 }
@@ -78,6 +83,8 @@ class DndSession {
       }
     });
   }
+
+  static void clear(int dropTargetId) => _state.remove(dropTargetId);
 
   static void unlisten(int dropTargetId, void Function(DndNegotiationState) onUpdate) {
     _listeners[dropTargetId]?.remove(onUpdate);

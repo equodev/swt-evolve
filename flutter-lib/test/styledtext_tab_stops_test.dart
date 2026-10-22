@@ -18,7 +18,6 @@ void main() {
     text,
     Offset.zero,
     style,
-    null, // clipRect
     null, // textSpan
     null, // caretInfo
     false, // wordWrap

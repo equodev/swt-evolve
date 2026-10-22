@@ -442,7 +442,7 @@ public class DartSlider extends DartControl implements ISlider {
     @Override
     void setSmallSize() {
         /* This code is intentionally comment */
-        //	((NSScroller)view).setControlSize (OS.NSSmallControlSize);
+        //	((NSScroller)view).setControlSize (OS.NSControlSizeSmall);
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {

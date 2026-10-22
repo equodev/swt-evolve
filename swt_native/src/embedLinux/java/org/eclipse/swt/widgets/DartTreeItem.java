@@ -849,6 +849,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         int[] x = new int[1];
         ((DartTree) parent.getImpl()).ignoreSize = true;
         ((DartTree) parent.getImpl()).ignoreSize = false;
+        int[] buffer = new int[1];
+        int horizontalSeparator;
+        horizontalSeparator = buffer[0];
         /*
 	 * Fix for Eclipse bug 476562, we need to re-adjust the bounds for the text
 	 * when the separator value is less than the width of the image. Previously
@@ -974,10 +977,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this.background, newValue)) {
             getValue().markDirty(VTreeItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -1053,10 +1056,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setChecked(boolean checked) {
         boolean newValue = checked;
+        checkWidget();
         if (!java.util.Objects.equals(this.checked, newValue)) {
             getValue().markDirty(VTreeItem.CHECKED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (_getChecked() == checked)
@@ -1201,10 +1204,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             getValue().markDirty(VTreeItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }

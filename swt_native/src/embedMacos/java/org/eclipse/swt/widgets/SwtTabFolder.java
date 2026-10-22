@@ -663,7 +663,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 
     @Override
     void setSmallSize() {
-        ((NSTabView) getApi().view).setControlSize(OS.NSSmallControlSize);
+        ((NSTabView) getApi().view).setControlSize(OS.NSControlSizeSmall);
     }
 
     @Override

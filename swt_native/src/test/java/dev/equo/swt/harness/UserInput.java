@@ -100,20 +100,12 @@ public final class UserInput {
 
     /** Presses and releases {@code key} with the SWT modifier mask {@code swtModifiers} held. */
     public void press(Key key, int swtModifiers) {
-        int cdp = 0;
-        for (Key m : modifierKeys(swtModifiers)) {
-            cdp |= cdpBit(m);
-            keyEvent("rawKeyDown", m, cdp, null);
-        }
+        int cdp = holdModifiers(swtModifiers);
         String text = key.text;
         if ((cdp & (CDP_CTRL | CDP_META | CDP_ALT)) != 0) text = null;
         keyEvent(text == null ? "rawKeyDown" : "keyDown", key, cdp, text);
         keyEvent("keyUp", key, cdp, null);
-        Key[] held = modifierKeys(swtModifiers);
-        for (int i = held.length - 1; i >= 0; i--) {
-            cdp &= ~cdpBit(held[i]);
-            keyEvent("keyUp", held[i], cdp, null);
-        }
+        releaseModifiers(swtModifiers);
     }
 
     public void press(Key key) {
@@ -146,6 +138,26 @@ public final class UserInput {
             p.addProperty("unmodifiedText", text);
         }
         devTools.send("Input.dispatchKeyEvent", p);
+    }
+
+    /** Presses the keys of {@code swtModifiers} in order; returns the CDP mask they leave held. */
+    private int holdModifiers(int swtModifiers) {
+        int cdp = 0;
+        for (Key m : modifierKeys(swtModifiers)) {
+            cdp |= cdpBit(m);
+            keyEvent("rawKeyDown", m, cdp, null);
+        }
+        return cdp;
+    }
+
+    /** Releases what {@link #holdModifiers} pressed, in reverse order. */
+    private void releaseModifiers(int swtModifiers) {
+        Key[] held = modifierKeys(swtModifiers);
+        int cdp = cdpModifiers(swtModifiers);
+        for (int i = held.length - 1; i >= 0; i--) {
+            cdp &= ~cdpBit(held[i]);
+            keyEvent("keyUp", held[i], cdp, null);
+        }
     }
 
     private static Key[] modifierKeys(int swt) {
@@ -200,13 +212,18 @@ public final class UserInput {
         mouse("mouseReleased", x, y, "right", 1, 0);
     }
 
-    /** One wheel event; positive {@code deltaY} scrolls down, positive {@code deltaX} right. */
+    /**
+     * One wheel event; positive {@code deltaY} scrolls down, positive {@code deltaX} right. The
+     * modifiers are held as keys around it, since the client reads them from the keyboard.
+     */
     public void wheel(double x, double y, double deltaX, double deltaY, int swtModifiers) {
         mouse("mouseMoved", x, y, "none", 0, 0);
+        holdModifiers(swtModifiers);
         JsonObject p = mouseParams("mouseWheel", x, y, "none", 0, swtModifiers);
         p.addProperty("deltaX", deltaX);
         p.addProperty("deltaY", deltaY);
         devTools.send("Input.dispatchMouseEvent", p);
+        releaseModifiers(swtModifiers);
     }
 
     private void mouse(String type, double x, double y, String button, int clickCount, int swtModifiers) {

@@ -116,6 +116,7 @@ class VStyledText extends VCanvas {
   List<int>? caretOffsets;
   List<VStyleRange?>? styles;
   List<int>? styleIndex;
+  bool? fixedLineHeight;
 
   @override
   void copyFrom(VWidget other) {
@@ -151,6 +152,7 @@ class VStyledText extends VCanvas {
       caretOffsets = other.caretOffsets;
       styles = other.styles;
       styleIndex = other.styleIndex;
+      fixedLineHeight = other.fixedLineHeight;
     }
   }
 
@@ -241,6 +243,8 @@ class VStyledText extends VCanvas {
         styleIndex = (json['styleIndex'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
             .toList();
+      case 'fixedLineHeight':
+        fixedLineHeight = json['fixedLineHeight'] as bool?;
       default:
         super.readProperty(key, json);
     }

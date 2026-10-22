@@ -851,19 +851,15 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if (((SwtMenu) parent.getImpl()).needsMenuCallback()) {
             info.hbmpItem = OS.HBMMENU_CALLBACK;
         } else {
-            if (OS.IsAppThemed()) {
-                if (hBitmap != 0)
-                    OS.DeleteObject(hBitmap);
-                hBitmap = getMenuItemIconBitmapHandle(image);
-                if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0 && CUSTOM_SELECTION_IMAGE > 0) {
-                    info.fMask |= OS.MIIM_CHECKMARKS;
-                    info.hbmpUnchecked = hBitmap;
-                    info.hbmpChecked = getMenuItemIconSelectedBitmapHandle();
-                } else {
-                    info.hbmpItem = hBitmap;
-                }
+            if (hBitmap != 0)
+                OS.DeleteObject(hBitmap);
+            hBitmap = getMenuItemIconBitmapHandle(image);
+            if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0 && CUSTOM_SELECTION_IMAGE > 0) {
+                info.fMask |= OS.MIIM_CHECKMARKS;
+                info.hbmpUnchecked = hBitmap;
+                info.hbmpChecked = getMenuItemIconSelectedBitmapHandle();
             } else {
-                info.hbmpItem = image != null ? OS.HBMMENU_CALLBACK : 0;
+                info.hbmpItem = hBitmap;
             }
         }
         long hMenu = parent.handle;
@@ -1223,7 +1219,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         MENUITEMINFO info = new MENUITEMINFO();
         info.cbSize = MENUITEMINFO.sizeof;
         long hMenu = parent.handle;
-        TCHAR buffer = new TCHAR(0, string, true);
+        TCHAR buffer = new TCHAR(string, true);
         int byteCount = buffer.length() * TCHAR.sizeof;
         pszText = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
         OS.MoveMemory(pszText, buffer, byteCount);
