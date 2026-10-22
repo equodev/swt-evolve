@@ -49,6 +49,8 @@ class ExpandItemThemeExtension extends ThemeExtension<ExpandItemThemeExtension> 
   // Image spacing
   final double imageTextSpacing;
 
+  final double minTextContrast;
+
   const ExpandItemThemeExtension({
     required this.backgroundColor,
     required this.borderColor,
@@ -71,6 +73,7 @@ class ExpandItemThemeExtension extends ThemeExtension<ExpandItemThemeExtension> 
     required this.animationCurve,
     required this.iconSize,
     required this.imageTextSpacing,
+    required this.minTextContrast,
   });
 
   factory ExpandItemThemeExtension.fromJson(Map<String, dynamic> json) =>

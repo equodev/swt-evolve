@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../gen/rectangle.dart';
 import '../../gen/swt.dart';
@@ -62,16 +64,18 @@ TextAlign getTextAlignFromStyle(int style, TextAlign defaultAlign) {
   return defaultAlign;
 }
 
+/// Whether the application's own backgrounds are painted: `use_swt_colors`, or a [SwtColorScope].
+bool _appPaintsColors(BuildContext? context) =>
+    (getConfigFlags().use_swt_colors ?? false) ||
+    (context != null && SwtColorScope.isActive(context));
+
 /// Gets background color with SWT color support
 Color? getBackgroundColor({
   required VColor? background,
   required Color? defaultColor,
   BuildContext? context,
 }) {
-  final useSwtColors = (getConfigFlags().use_swt_colors ?? false) ||
-      (context != null && SwtColorScope.isActive(context));
-
-  if (useSwtColors && background != null) {
+  if (_appPaintsColors(context) && background != null) {
     return colorFromVColor(background, defaultColor: defaultColor);
   }
 
@@ -83,18 +87,65 @@ Color? getBackgroundColor({
 T? cellValue<T>(List<T?>? cells, int column) =>
     cells != null && column >= 0 && column < cells.length ? cells[column] : null;
 
+/// The WCAG 2 contrast ratio between two opaque colours, from 1 to 21.
+double contrastRatio(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+}
+
+/// The default minimum contrast for application text on the theme's ground: WCAG AA for body text.
+const double kMinTextContrast = 4.5;
+
+/// [color] when it reads on [ground] at [minRatio], else the same hue and saturation at the
+/// lightness nearest to it that does, on the side of the ground with more room. A colour on the
+/// wrong side is mirrored first, so black on a dark ground turns white, not grey.
+Color legibleOn(Color color, Color ground, {required double minRatio}) {
+  if (contrastRatio(color, ground) >= minRatio) return color;
+  final hsl = HSLColor.fromColor(color);
+  final lighten = contrastRatio(Colors.white, ground) >= contrastRatio(Colors.black, ground);
+  final extreme = lighten ? 1.0 : 0.0;
+  Color at(double lightness) => hsl.withLightness(lightness).toColor();
+
+  final mirrored = 1 - hsl.lightness;
+  final start = lighten ? math.max(hsl.lightness, mirrored) : math.min(hsl.lightness, mirrored);
+  if (contrastRatio(at(start), ground) >= minRatio) return at(start);
+  if (contrastRatio(at(extreme), ground) < minRatio) return at(extreme);
+  var reads = extreme;
+  var fails = start;
+  for (var i = 0; i < 16; i++) {
+    final mid = (reads + fails) / 2;
+    if (contrastRatio(at(mid), ground) >= minRatio) {
+      reads = mid;
+    } else {
+      fails = mid;
+    }
+  }
+  return at(reads);
+}
+
 /// The text colour: [foreground] when the control [context] builds for honours the application's
 /// (see `useSwtFontColors`), else [defaultColor].
+///
+/// The application picked its colour against its own ground, so on the theme's -- [background],
+/// what is painted behind the text, else the theme's surface -- it is kept legible at the widget
+/// theme's [minContrast] ([legibleOn]). Where the application's backgrounds are painted too
+/// (use_swt_colors, a [SwtColorScope]) the pair is its own choice and the colour is drawn as given.
 Color getForegroundColor({
   required BuildContext context,
   required VColor? foreground,
   required Color defaultColor,
+  required double minContrast,
+  Color? background,
 }) {
-  final useSwtForeground = useSwtFontColors(SwtControlScope.nameOf(context)) ||
-      SwtColorScope.isActive(context);
+  final useSwtForeground =
+      useSwtFontColors(SwtControlScope.nameOf(context)) || SwtColorScope.isActive(context);
 
   if (useSwtForeground && foreground != null) {
-    return colorFromVColor(foreground, defaultColor: defaultColor);
+    final color = colorFromVColor(foreground, defaultColor: defaultColor);
+    if (_appPaintsColors(context)) return color;
+    return legibleOn(color, background ?? Theme.of(context).colorScheme.surface,
+        minRatio: minContrast);
   }
 
   return defaultColor;

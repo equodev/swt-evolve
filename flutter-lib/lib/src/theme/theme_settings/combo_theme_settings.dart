@@ -64,6 +64,7 @@ ComboThemeExtension _getComboTheme({
     itemTextStyle: textTheme.bodyMedium,
     dividerColor: colorScheme.outline,
     animationDuration: const Duration(milliseconds: 150),
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -102,6 +103,7 @@ Color getComboTextColor(
     foreground: state.foreground,
     defaultColor: widgetTheme.textColor,
     context: context,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

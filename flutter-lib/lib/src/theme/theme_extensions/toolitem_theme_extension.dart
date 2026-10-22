@@ -65,7 +65,9 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
   final Color specialDropdownArrowColor;
   final EdgeInsets specialDropdownPadding;
   final double specialDropdownItemSpacing;
-  
+
+  final double minTextContrast;
+
   const ToolItemThemeExtension({
     required this.enabledColor,
     required this.disabledColor,
@@ -119,6 +121,7 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
     required this.specialDropdownPadding,
     required this.specialDropdownItemSpacing,
     this.fontStyle,
+    required this.minTextContrast,
   });
 
   factory ToolItemThemeExtension.fromJson(Map<String, dynamic> json) =>

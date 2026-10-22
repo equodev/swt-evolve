@@ -159,6 +159,7 @@ ButtonThemeExtension _$ButtonThemeExtensionFromJson(
     json['focusRingColor'] as String,
   ),
   focusRingWidth: (json['focusRingWidth'] as num).toDouble(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$ButtonThemeExtensionToJson(
@@ -298,4 +299,5 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
   ),
   'focusRingColor': const ColorConverter().toJson(instance.focusRingColor),
   'focusRingWidth': instance.focusRingWidth,
+  'minTextContrast': instance.minTextContrast,
 };

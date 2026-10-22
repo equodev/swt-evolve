@@ -42,6 +42,7 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
           ? widgetTheme.disabledTextColor
           : (isSelected ? widgetTheme.selectedTextColor : widgetTheme.textColor),
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
     final textStyle = getTextStyle(
       context: context,

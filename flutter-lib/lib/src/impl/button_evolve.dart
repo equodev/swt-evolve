@@ -587,6 +587,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
                     foreground: _ownForeground,
                     defaultColor: widgetTheme.pushButtonTextColor,
                     context: context,
+                    minContrast: widgetTheme.minTextContrast,
                   )
                 : widgetTheme.disabledForegroundColor,
           ),
@@ -650,6 +651,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       foreground: _ownForeground,
       defaultColor: defaultTextColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textStyle = getTextStyle(

@@ -60,6 +60,8 @@ class SpinnerThemeExtension extends ThemeExtension<SpinnerThemeExtension> with _
   final int defaultDigits;
   final int defaultTextLimit;
 
+  final double minTextContrast;
+
   const SpinnerThemeExtension({
     required this.animationDuration,
     required this.backgroundColor,
@@ -90,6 +92,7 @@ class SpinnerThemeExtension extends ThemeExtension<SpinnerThemeExtension> with _
     required this.defaultPageIncrement,
     required this.defaultDigits,
     required this.defaultTextLimit,
+    required this.minTextContrast,
   });
 
   factory SpinnerThemeExtension.fromJson(Map<String, dynamic> json) =>

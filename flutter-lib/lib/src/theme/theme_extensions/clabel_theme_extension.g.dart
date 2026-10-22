@@ -38,6 +38,7 @@ CLabelThemeExtension _$CLabelThemeExtensionFromJson(
   crossAxisAlignment: const CrossAxisAlignmentConverter().fromJson(
     (json['crossAxisAlignment'] as num).toInt(),
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$CLabelThemeExtensionToJson(
@@ -68,6 +69,7 @@ Map<String, dynamic> _$CLabelThemeExtensionToJson(
   'crossAxisAlignment': const CrossAxisAlignmentConverter().toJson(
     instance.crossAxisAlignment,
   ),
+  'minTextContrast': instance.minTextContrast,
 };
 
 Value? _$JsonConverterFromJson<Json, Value>(

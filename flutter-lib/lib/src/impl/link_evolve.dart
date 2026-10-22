@@ -139,6 +139,7 @@ class _StyledLinkState extends State<StyledLink> {
             context: context,
             foreground: widget.foreground,
             defaultColor: widget.widgetTheme.textColor,
+            minContrast: widget.widgetTheme.minTextContrast,
           )
         : widget.widgetTheme.disabledTextColor;
 
@@ -175,6 +176,7 @@ class _StyledLinkState extends State<StyledLink> {
             defaultColor: (_isHovered || _isFocused)
                 ? widget.widgetTheme.linkHoverTextColor
                 : widget.widgetTheme.linkTextColor,
+            minContrast: widget.widgetTheme.minTextContrast,
           )
         : widget.widgetTheme.disabledTextColor;
 

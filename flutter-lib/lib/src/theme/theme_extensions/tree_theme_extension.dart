@@ -148,7 +148,9 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final int eventDefaultX;
   final int eventDefaultY;
   final int eventDefaultDetail;
-  
+
+  final double minTextContrast;
+
   const TreeThemeExtension({
     required this.backgroundColor,
     required this.disabledBackgroundColor,
@@ -249,6 +251,7 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.eventDefaultX,
     required this.eventDefaultY,
     required this.eventDefaultDetail,
+    required this.minTextContrast,
   });
 
   factory TreeThemeExtension.fromJson(Map<String, dynamic> json) =>
