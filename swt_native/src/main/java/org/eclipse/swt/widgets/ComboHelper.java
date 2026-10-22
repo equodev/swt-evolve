@@ -35,10 +35,17 @@ public class ComboHelper {
         return combo.selection.x;
     }
 
+    /** Collapses the selection in the text onto its end, as Win32 and GTK do; a read-only combo has none. */
+    public static void clearSelection(DartCombo combo) {
+        if (!readOnly(combo))
+            combo.selection = new Point(combo.selection.y, combo.selection.y);
+    }
+
     /**
      * Sets the text of an editable combo, or selects the item a read-only combo has under that name. The Verify
-     * listeners have already ruled on {@code string}: {@code DartCombo.setText(String, boolean)} asks them, and a
-     * text the user typed was asked about by the client.
+     * listeners have already ruled on an editable combo's text: {@code DartCombo.setText(String, boolean)} asks
+     * them, and a text the user typed was asked about by the client. A read-only combo asks none, as on Win32 and
+     * GTK. A new text deselects the item, as on Win32 and GTK, unless it is the text of the item being selected.
      */
     public static void setText(DartCombo combo, String string, boolean notify) {
         if (readOnly(combo)) {
@@ -53,6 +60,8 @@ public class ComboHelper {
         combo.text = text;
         // The old selection belonged to the old text.
         combo.selection = new Point(0, 0);
+        if (!combo.ignoreSelection)
+            combo.selectedIndex = -1;
         if (notify)
             combo.sendEvent(SWT.Modify);
     }
@@ -118,10 +127,26 @@ public class ComboHelper {
         combo.getValue().markDirty(VCombo.TEXT);
     }
 
-    /** An item went in at {@code index}: a read-only combo keeps its item selected, wherever it moved to. */
+    /** An item went in at {@code index}: the selected item stays selected, wherever it moved to. */
     public static void itemInserted(DartCombo combo, int index) {
-        if (readOnly(combo))
-            combo.selectedIndex = ListItemsHelper.indexAfterInsert(combo.selectedIndex, index);
+        combo.selectedIndex = ListItemsHelper.indexAfterInsert(combo.selectedIndex, index);
+    }
+
+    /**
+     * The item at {@code index} was replaced. When it is the selected one it stays selected and the combo shows its
+     * new text, as {@code select} would show it: Win32's behaviour, where the three platforms differ.
+     */
+    public static void itemReplaced(DartCombo combo, int index) {
+        if (readOnly(combo)) {
+            syncReadOnlyText(combo);
+            return;
+        }
+        if (index != combo.selectedIndex)
+            return;
+        boolean ignoring = combo.ignoreSelection;
+        combo.ignoreSelection = true;
+        combo.setText(combo.items[index], true);
+        combo.ignoreSelection = ignoring;
     }
 
     /**

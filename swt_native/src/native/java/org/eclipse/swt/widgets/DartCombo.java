@@ -339,11 +339,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void clearSelection() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            Point selection = getSelection();
-            selection.y = selection.x;
-            setSelection(selection);
-        }
+        ComboHelper.clearSelection(this);
     }
 
     @Override
@@ -1199,7 +1195,7 @@ public class DartCombo extends DartComposite implements ICombo {
         getValue().markDirty(VCombo.ITEMS);
         items[index] = string;
         getValue().markDirty(VCombo.ITEMS);
-        ComboHelper.syncReadOnlyText(this);
+        ComboHelper.itemReplaced(this, index);
         int selection = getSelectionIndex();
         ignoreSelection = true;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1365,6 +1361,10 @@ public class DartCombo extends DartComposite implements ICombo {
     }
 
     void setText(String string, boolean notify) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            ComboHelper.setText(this, string, notify);
+            return;
+        }
         if (notify) {
             if (hooks(SWT.Verify) || filters(SWT.Verify)) {
                 string = verifyText(string, 0, getCharCount());
