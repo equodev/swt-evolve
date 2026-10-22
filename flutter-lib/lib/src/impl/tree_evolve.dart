@@ -1030,7 +1030,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                           ),
                         );
                       }
-                      return TreeCellBox(
+                      return SizedBox(
                         width: width,
                         child: getWidgetForTreeColumn(column, columnIndex),
                       );
