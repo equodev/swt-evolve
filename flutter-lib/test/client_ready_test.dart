@@ -50,6 +50,13 @@ void main() {
     expect(sent.single.$2.containsKey('locale'), isFalse);
   });
 
+  test('the client reports whether its shortcut modifier is Cmd', () {
+    reporter.report('Display', 1,
+        width: 1, height: 1, displayWidth: 1, displayHeight: 1, zoom: 100, isMacClient: true);
+
+    expect(sent.single.$2['isMacClient'], isTrue);
+  });
+
   test('after a restart the same area is reported again, as a fresh client', () {
     report(1280, 800);
     reporter.restart();

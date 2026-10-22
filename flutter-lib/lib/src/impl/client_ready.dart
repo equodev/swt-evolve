@@ -1,6 +1,6 @@
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/foundation.dart' show kIsWeb, mapEquals;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb, mapEquals;
 
 import '../comm/comm.dart';
 
@@ -34,7 +34,8 @@ class ClientReadyReporter {
       required int displayWidth,
       required int displayHeight,
       required int zoom,
-      int insetTop = 0}) {
+      int insetTop = 0,
+      bool? isMacClient}) {
     final isFirst = !_firstSent;
     _firstSent = true;
     final channel = '$widgetName/$widgetId/ClientReady';
@@ -48,6 +49,7 @@ class ClientReadyReporter {
       'zoom': zoom,
       'insetTop': insetTop,
       if (locale != null) 'locale': locale,
+      'isMacClient': isMacClient ?? clientUsesCommandKey,
     };
     if (!isFirst && mapEquals(payload, _lastSent[channel])) return;
     _lastSent[channel] = payload;
@@ -56,3 +58,7 @@ class ClientReadyReporter {
     _send(channel, payload);
   }
 }
+
+/// Whether the client's primary shortcut modifier is Cmd: a Mac, or an iPad with a keyboard.
+bool get clientUsesCommandKey =>
+    defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.iOS;

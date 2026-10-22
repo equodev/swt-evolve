@@ -4160,6 +4160,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     static volatile long WEB_PARK_CAP_MS = 16;
 
+    volatile Boolean clientIsMac;
+
+    boolean isMacWebClient() {
+        return "web".equals(org.eclipse.swt.SWT.getPlatform()) && Boolean.TRUE.equals(clientIsMac);
+    }
+
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();
 
     public void _addActiveTooltip(ToolTip tip) {

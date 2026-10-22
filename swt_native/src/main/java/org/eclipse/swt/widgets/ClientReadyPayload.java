@@ -26,4 +26,6 @@ public class ClientReadyPayload {
      * client that does not report it.
      */
     public String locale;
+    /** Whether the client's shortcut modifier is Cmd (a Mac browser or window). */
+    public boolean isMacClient;
 }
