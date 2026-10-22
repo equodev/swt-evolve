@@ -367,8 +367,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       _chevronButtonRect = null;
     }
     // The chevron is CTabFolder2Listener.showList, with the chevron's bounds in the folder's own
-    // coordinates. A listener that shows its own list (the workbench's part list) sets doit=false;
-    // otherwise Java bumps showListPopupSeq and the folder's list opens from extraSetState.
+    // coordinates. A listener that shows its own list (the workbench's part list) sets doit=false.
+    // Otherwise Java bumps showListPopupSeq and the folder's list opens from extraSetState.
     final e = VEvent();
     final folderBox = context.findRenderObject();
     if (box != null && box.hasSize && folderBox is RenderBox && folderBox.hasSize) {
