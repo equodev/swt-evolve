@@ -35,5 +35,7 @@ public interface ImplMenuItem extends ImplItem {
 
     long _shortcutHandle();
 
+    String _actionId();
+
     String _actionName();
 }

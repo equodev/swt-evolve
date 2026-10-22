@@ -137,48 +137,20 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     void computeRuns() {
         if (lineOffsets != null)
             return;
-        if (measured != null && measured.fits(text) && getSegmentsText().length() == text.length()) {
+        // As upstream, the segments text is built first: it moves a segment past the text to its end.
+        boolean plain = getSegmentsText().length() == text.length();
+        _breaks = _segmentBreaks();
+        if (measured != null && measured.fits(text) && plain) {
             lineOffsets = measured.lineOffsets();
+            _lines = lineOffsets;
+            _layoutLines();
             return;
         }
-        String segText = getSegmentsText();
-        int segLen = segText.length();
-        if (segLen == 0) {
-            lineOffsets = new int[] { 0, 0 };
-            return;
-        }
-        // Split on '\n' into paragraphs; within each, break into visual lines that fit wrapWidth
-        // (greedy word wrap: break at the last space, or mid-word when a single run overflows).
-        java.util.List<Integer> offs = new java.util.ArrayList<>();
-        offs.add(0);
-        int paraStart = 0;
-        for (int i = 0; i <= segLen; i++) {
-            boolean nl = i < segLen && segText.charAt(i) == '\n';
-            if (nl || i == segLen) {
-                if (wrapWidth > 0) {
-                    int lineStart = paraStart, lastSpace = -1;
-                    for (int j = paraStart; j < i; j++) {
-                        if (j > lineStart && _measureRange(lineStart, j + 1) > wrapWidth) {
-                            int brk = (lastSpace > lineStart) ? lastSpace + 1 : j;
-                            offs.add(brk);
-                            lineStart = brk;
-                            lastSpace = -1;
-                        }
-                        if (segText.charAt(j) == ' ')
-                            lastSpace = j;
-                    }
-                }
-                if (nl) {
-                    offs.add(i + 1);
-                    paraStart = i + 1;
-                }
-            }
-        }
-        // A trailing newline starts an empty last line, so its offset appears twice.
-        offs.add(segLen);
-        int[] offsets = new int[offs.size()];
-        for (int k = 0; k < offsets.length; k++) offsets[k] = offs.get(k);
+        _lines = TextLayoutHelper.lineBreaks(text, wrapWidth, getIndent(), getWrapIndent(), this::_advance, _breaks);
+        int[] offsets = new int[_lines.length];
+        for (int i = 0; i < offsets.length; i++) offsets[i] = translateOffset(_lines[i]);
         lineOffsets = offsets;
+        _layoutLines();
     }
 
     @Override
@@ -264,6 +236,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         checkLayout();
         if (gc == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionForeground != null && selectionForeground.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionBackground != null && selectionBackground.isDisposed())
@@ -274,57 +248,93 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             return;
         }
         computeRuns();
-        if (text == null || text.length() == 0)
+        int length = text.length();
+        if (length == 0 && flags == 0)
             return;
         y += getVerticalIndent();
-        int lineHeight = _effLineHeight();
-        int[] offs = getLineOffsets();
+        int count = _lines.length - 1;
         org.eclipse.swt.graphics.Font gcFont = gc.getFont();
         Color gcForeground = gc.getForeground();
         Color gcBackground = gc.getBackground();
-        for (int line = 0; line + 1 < offs.length; line++) {
-            int ls = offs[line];
-            int le = offs[line + 1];
-            while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-            if (le <= ls)
-                continue;
-            int lineX = x + _alignShift(ls, le);
-            int lineY = y + line * lineHeight;
+        boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
+        boolean lastLineSelection = (flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0;
+        if (hasSelection || lastLineSelection) {
+            gc.setBackground(selectionBackground != null ? selectionBackground : getDevice().getSystemColor(SWT.COLOR_LIST_SELECTION));
+            for (int line = 0; line < count; line++) {
+                Rectangle part = hasSelection ? _rangeOnLine(line, selectionStart, selectionEnd) : null;
+                if (part != null)
+                    gc.fillRectangle(x + part.x, y + part.y, part.width, part.height);
+                if (TextLayoutHelper.selectionExtends(text, _lines[line], _lines[line + 1], line == count - 1, flags, hasSelection, selectionStart, selectionEnd)) {
+                    int height = _lineHeight[line] + getSpacing();
+                    int width = (flags & SWT.FULL_SELECTION) != 0 ? 0x3FFFFFFF : height / 3;
+                    gc.fillRectangle(x + _lineX[line] + (int) Math.ceil(_lineWidth[line]), y + _lineTop[line], width, height);
+                }
+            }
+            gc.setBackground(gcBackground);
+        }
+        boolean selectionForegrounds = hasSelection && selectionForeground != null;
+        org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics base = org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(font, 1);
+        for (int line = 0; line < count; line++) {
+            int ls = _lines[line];
+            int le = TextLayoutHelper.contentEnd(text, ls, _lines[line + 1]);
+            boolean justified = _lineSpaceExtra[line] > 0;
+            int lineY = y + _lineTop[line];
             int runStart = ls;
             while (runStart < le) {
-                if (text.charAt(runStart) == '\t') {
+                char first = text.charAt(runStart);
+                if (first == '\t' || (justified && first == ' ')) {
                     runStart++;
                     continue;
                 }
                 TextStyle style = _styleFor(runStart);
+                boolean selected = selectionForegrounds && runStart >= selectionStart && runStart <= selectionEnd;
                 int runEnd = runStart + 1;
-                while (runEnd < le && text.charAt(runEnd) != '\t' && _styleFor(runEnd) == style) runEnd++;
-                int runX = lineX + (int) Math.round(_measureRange(ls, runStart));
+                while (runEnd < le) {
+                    char c = text.charAt(runEnd);
+                    if (c == '\t' || (justified && c == ' ') || _styleFor(runEnd) != style)
+                        break;
+                    if (selectionForegrounds && (runEnd >= selectionStart && runEnd <= selectionEnd) != selected)
+                        break;
+                    runEnd++;
+                }
+                if (style != null && style.metrics != null) {
+                    runStart = runEnd;
+                    continue;
+                }
+                double[] span = _span(line, runStart, runEnd);
+                int runX = x + (int) Math.round(span[0]);
+                int runWidth = (int) Math.round(span[1] - span[0]);
                 org.eclipse.swt.graphics.Font runFont = _fontFor(runStart);
+                org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics runMetrics = style != null && style.font != null && !style.font.isDisposed() ? org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(style.font, 1) : base;
+                int rise = style != null ? style.rise : 0;
+                int runY = lineY + _lineAscent[line] - runMetrics.ascent - rise;
                 gc.setFont(runFont != null ? runFont : gcFont);
-                gc.setForeground(style != null && style.foreground != null ? style.foreground : gcForeground);
+                gc.setForeground(selected ? selectionForeground : style != null && style.foreground != null ? style.foreground : gcForeground);
                 boolean opaque = style != null && style.background != null;
                 if (opaque)
                     gc.setBackground(style.background);
-                gc.drawString(text.substring(runStart, runEnd), runX, lineY, !opaque);
+                gc.drawString(text.substring(runStart, runEnd), runX, runY, !opaque);
+                if (opaque)
+                    gc.setBackground(gcBackground);
                 if (style != null && (style.underline || style.strikeout || style.borderStyle != SWT.NONE)) {
-                    int runWidth = (int) Math.round(_measureRange(runStart, runEnd));
+                    int lineHeight = _lineHeight[line];
                     Color runForeground = gc.getForeground();
+                    int runHeight = Math.max(1, Math.min(lineHeight, runMetrics.ascent + runMetrics.descent));
                     if (style.underline) {
                         gc.setForeground(style.underlineColor != null ? style.underlineColor : runForeground);
-                        int underlineY = lineY + lineHeight - 1;
+                        int underlineY = Math.min(lineY + lineHeight - 1, runY + runMetrics.ascent + 1);
                         gc.drawLine(runX, underlineY, runX + runWidth, underlineY);
                     }
                     if (style.strikeout) {
                         gc.setForeground(style.strikeoutColor != null ? style.strikeoutColor : runForeground);
-                        int strikeoutY = lineY + lineHeight / 2;
+                        int strikeoutY = runY + runHeight / 2;
                         gc.drawLine(runX, strikeoutY, runX + runWidth, strikeoutY);
                     }
                     if (style.borderStyle != SWT.NONE) {
                         int lineStyle = gc.getLineStyle();
                         gc.setForeground(style.borderColor != null ? style.borderColor : runForeground);
                         gc.setLineStyle(style.borderStyle == SWT.BORDER_DOT ? SWT.LINE_DOT : style.borderStyle == SWT.BORDER_DASH ? SWT.LINE_DASH : SWT.LINE_SOLID);
-                        gc.drawRectangle(runX, lineY, Math.max(0, runWidth - 1), lineHeight - 1);
+                        gc.drawRectangle(runX, runY, Math.max(0, runWidth - 1), runHeight - 1);
                         gc.setLineStyle(lineStyle);
                     }
                     gc.setForeground(runForeground);
@@ -397,17 +407,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         checkLayout();
         if (_measured() != null)
             return measured.bounds(wrapWidth);
-        int lineH = _effLineHeight();
-        int lineCount = getLineCount();
-        int[] offs = getLineOffsets();
-        double maxW = 0;
-        for (int i = 0; i < lineCount; i++) {
-            int ls = offs[i], le = offs[i + 1];
-            while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-            maxW = Math.max(maxW, _measureRange(ls, le));
-        }
-        int w = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(maxW);
-        return new Rectangle(0, 0, w, lineH * lineCount + getVerticalIndent());
+        double widest = 0;
+        for (int line = 0; line < _lineWidth.length; line++) widest = Math.max(widest, _lineX[line] + _lineWidth[line]);
+        int last = _lines.length - 2;
+        int width = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(widest);
+        return new Rectangle(0, 0, width, _lineTop[last] + _lineHeight[last] + getSpacing() + getVerticalIndent());
     }
 
     /**
@@ -434,14 +438,13 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             return new Rectangle(0, 0, 0, 0);
         start = Math.min(Math.max(0, start), length - 1);
         end = Math.min(Math.max(0, end), length - 1);
-        int ts = translateOffset(start);
-        int te = translateOffset(end);
-        int lineH = _effLineHeight();
-        int lineIndex = _lineOf(ts);
-        int ls = getLineOffsets()[lineIndex];
-        int x = (int) Math.round(_measureRange(ls, ts));
-        int width = (int) Math.ceil(_measureRange(ts, te + 1));
-        return new Rectangle(x, lineIndex * lineH, width, lineH + getVerticalIndent());
+        int first = _lineAt(start);
+        Rectangle bounds = _rangeOnLine(first, start, end);
+        for (int line = first + 1; line < _lines.length - 1 && _lines[line] <= end; line++) {
+            bounds = bounds.union(_rangeOnLine(line, start, end));
+        }
+        bounds.height += getVerticalIndent();
+        return bounds;
     }
 
     /**
@@ -584,14 +587,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         computeRuns();
         int length = text.length();
         if (!(0 <= offset && offset <= length))
-            SWT.error(SWT.ERROR_INVALID_RANGE);
-        int t = translateOffset(offset);
-        int[] offs = getLineOffsets();
-        for (int line = 0; line < offs.length - 1; line++) {
-            if (offs[line + 1] > t)
-                return line;
-        }
-        return Math.max(0, offs.length - 2);
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        return _lineAt(offset);
     }
 
     /**
@@ -608,20 +605,14 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      * </ul>
      */
     public Rectangle getLineBounds(int lineIndex) {
+        checkLayout();
         computeRuns();
         int lineCount = getLineCount();
         if (!(0 <= lineIndex && lineIndex < lineCount))
             SWT.error(SWT.ERROR_INVALID_RANGE);
         if (_measured() != null)
             return measured.lineBounds(lineIndex);
-        int lineHeight = getLineMetrics(lineIndex).getHeight();
-        int[] offs = getLineOffsets();
-        int ls = offs[lineIndex], le = offs[lineIndex + 1];
-        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-        int lineWidth = (int) Math.ceil(_measureRange(ls, le));
-        // Horizontal alignment shifts the line within the layout width when wrapWidth exceeds it.
-        int x = _alignShift(ls, le);
-        return new Rectangle(x, lineIndex * lineHeight, lineWidth, lineHeight);
+        return new Rectangle(_lineX[lineIndex], _lineTop[lineIndex], (int) Math.ceil(_lineWidth[lineIndex]), _lineHeight[lineIndex]);
     }
 
     /**
@@ -670,7 +661,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             }
         } finally {
         }
-        return TextLayoutHelper.lineMetrics(getFont(), getAscent(), getDescent());
+        return TextLayoutHelper.lineMetrics(_lineAscent[lineIndex], _lineHeight[lineIndex] - _lineAscent[lineIndex], 0);
     }
 
     /**
@@ -698,32 +689,26 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (_measured() != null)
             return measured.location(offset, trailing);
         if (length == 0)
-            return new Point(0, getVerticalIndent());
-        int lineIndex = _lineOf(translateOffset(offset < length ? offset : length - 1));
-        int[] offs = getLineOffsets();
-        int ls = offs[lineIndex], le = offs[lineIndex + 1];
-        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-        int lineLen = le - ls;
-        double totalWidth = _measureRange(ls, le);
-        boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
-        int idx = offset - ls;
+            return new Point(0, 0);
+        int line = _lineAt(offset);
+        int ls = _lines[line];
+        int le = TextLayoutHelper.contentEnd(text, ls, _lines[line + 1]);
+        double right = _lineX[line] + _lineWidth[line];
         double x;
-        if (idx < 0 || idx >= lineLen) {
-            x = baseRtl ? 0 : totalWidth;
+        if (offset >= le) {
+            x = (orientation & SWT.RIGHT_TO_LEFT) != 0 ? _lineX[line] : right;
+        } else if (_isLeftToRight(line)) {
+            x = _xAt(line, trailing ? _nextChar(offset, le) : offset);
         } else {
-            double[] left = new double[lineLen], right = new double[lineLen];
-            boolean[] rtl = new boolean[lineLen];
-            _bidiVisual(ls, le, left, right, rtl);
-            x = rtl[idx] ? (trailing ? left[idx] : right[idx]) : (trailing ? right[idx] : left[idx]);
+            double[][] boxes = _boxes(line);
+            int c = offset - ls;
+            boolean rtl = boxes[2][c] != 0;
+            x = rtl == trailing ? boxes[0][c] : boxes[1][c];
         }
-        // A location at the line's visual edge must equal getBounds()/getLineBounds() width
-        // exactly (the TextLayout contract): those ceil the same measure, while interior
-        // caret positions round — so snap edge positions onto the ceiled width instead of
-        // letting the two roundings split on the fraction.
-        int xi = Math.abs(x - totalWidth) < 0.75 ? (int) Math.ceil(totalWidth) : (int) Math.round(x);
-        // The vertical indent is blank space above the first line, inside the layout
-        // (setVerticalIndent): locations sit below it, exactly like the native layouts.
-        return new Point(xi + _alignShift(ls, le), lineIndex * _effLineHeight() + getVerticalIndent());
+        // A location at the line's right edge equals getLineBounds' right edge exactly: that one ceils
+        // the line's width, while the caret positions inside the line round.
+        int xi = Math.abs(x - right) < 0.75 ? _lineX[line] + (int) Math.ceil(_lineWidth[line]) : (int) Math.round(x);
+        return new Point(xi, _lineTop[line] + (offset == length ? 0 : getVerticalIndent()));
     }
 
     /**
@@ -765,23 +750,9 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int step = forward ? 1 : -1;
         if ((movement & SWT.MOVEMENT_CHAR) != 0)
             return offset + step;
-        switch(movement) {
-            case SWT.MOVEMENT_CLUSTER:
-                {
-                    // Grapheme clusters: a base with its combining and spacing marks is one step.
-                    java.text.BreakIterator clusters = java.text.BreakIterator.getCharacterInstance();
-                    clusters.setText(text);
-                    int next = forward ? clusters.following(offset) : clusters.preceding(offset);
-                    return next == java.text.BreakIterator.DONE ? (forward ? length : 0) : next;
-                }
-            case SWT.MOVEMENT_WORD:
-                return forward ? _fwdWordEnd(offset) : _bwdWordStart(offset);
-            case SWT.MOVEMENT_WORD_END:
-                return forward ? _fwdWordEnd(offset) : _bwdWordEnd(offset);
-            case SWT.MOVEMENT_WORD_START:
-                return forward ? _fwdWordStart(offset) : _bwdWordStart(offset);
-        }
-        return offset;
+        if (movement == SWT.MOVEMENT_CLUSTER)
+            return TextLayoutHelper.nextCluster(text, offset, forward);
+        return TextLayoutHelper.wordOffset(text, offset, movement, forward);
     }
 
     /**
@@ -843,52 +814,49 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (trailing != null && trailing.length < 1)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         int length = text.length();
-        if (trailing != null)
-            trailing[0] = 0;
         if (length == 0)
             return 0;
         if (_measured() != null)
             return measured.offset(x, y, trailing);
-        int lineH = _effLineHeight();
-        // Inverse of getLocation: y is measured below the vertical indent.
+        if (trailing != null)
+            trailing[0] = 0;
         y -= getVerticalIndent();
-        int lineCount = getLineCount();
-        int lineIndex = (y > 0 && lineH > 0) ? Math.min(lineCount - 1, y / lineH) : 0;
-        int[] offs = getLineOffsets();
-        int ls = offs[lineIndex], le = offs[lineIndex + 1];
-        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-        int lineLen = le - ls;
-        if (lineLen == 0)
+        int last = _lines.length - 2;
+        int line = 0;
+        while (line < last && y >= _lineTop[line + 1]) line++;
+        int ls = _lines[line];
+        int le = TextLayoutHelper.contentEnd(text, ls, _lines[line + 1]);
+        if (le == ls)
             return ls;
-        // Undo the horizontal alignment shift so the hit test runs in unaligned line coordinates.
-        x -= _alignShift(ls, le);
-        double[] left = new double[lineLen], right = new double[lineLen];
-        boolean[] rtl = new boolean[lineLen];
-        _bidiVisual(ls, le, left, right, rtl);
-        for (int c = 0; c < lineLen; c++) {
+        double[][] boxes = _boxes(line);
+        double[] left = boxes[0], right = boxes[1], rtl = boxes[2];
+        double maxRight = Double.NEGATIVE_INFINITY;
+        for (int c = 0; c < le - ls; c++) {
+            if (right[c] <= left[c])
+                continue;
             if (x >= left[c] && x < right[c]) {
-                double mid = (left[c] + right[c]) / 2;
-                boolean isTrailing = rtl[c] ? (x < mid) : (x >= mid);
-                if (trailing != null)
-                    trailing[0] = isTrailing ? 1 : 0;
+                boolean isTrailing = rtl[c] != 0 ? x < (left[c] + right[c]) / 2 : x >= (left[c] + right[c]) / 2;
+                if (trailing != null && isTrailing)
+                    trailing[0] = _nextChar(ls + c, le) - (ls + c);
                 return ls + c;
             }
+            maxRight = Math.max(maxRight, right[c]);
         }
-        // Beyond every glyph box: snap to the edge character. Past the visual right edge returns the
-        // rightmost glyph with trailing set (last logical char for LTR base, first for RTL); past the
-        // left edge returns the leftmost glyph leading. This matches SWT hit-testing past a line end.
+        // Beyond every glyph: past the right edge is the rightmost character trailing (the last
+        // one on a left-to-right line, the first on a right-to-left one), left of the text the
+        // leftmost one leading.
         boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
-        double maxRight = 0;
-        for (int c = 0; c < lineLen; c++) maxRight = Math.max(maxRight, right[c]);
-        boolean pastRight = x >= maxRight;
-        if (pastRight) {
-            if (trailing != null)
-                trailing[0] = baseRtl ? 0 : 1;
-            return baseRtl ? ls : le - 1;
+        if (x >= maxRight) {
+            if (baseRtl)
+                return ls;
+            return _hitEnd(le - 1, trailing);
         }
-        if (trailing != null)
-            trailing[0] = baseRtl ? 1 : 0;
-        return baseRtl ? le - 1 : ls;
+        if (baseRtl) {
+            if (trailing != null)
+                trailing[0] = 1;
+            return le - 1;
+        }
+        return ls;
     }
 
     /**
@@ -1158,9 +1126,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public int getTextDirection() {
         checkLayout();
-        if (textDirection != SWT.AUTO_TEXT_DIRECTION)
-            return textDirection;
-        return new java.text.Bidi(text, java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).baseIsLeftToRight() ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
+        return TextLayoutHelper.resolvedTextDirection(textDirection, text);
     }
 
     /**
@@ -1352,6 +1318,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
+        _fixedMetrics = metrics;
         if (metrics == null) {
             fixedLineMetrics = null;
             return;
@@ -1824,17 +1791,10 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public void setTextDirection(int textDirection) {
         checkLayout();
-        int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-        textDirection &= mask;
-        if (textDirection == 0)
+        int direction = TextLayoutHelper.textDirection(this.textDirection, textDirection);
+        if (direction == this.textDirection)
             return;
-        if (textDirection != SWT.AUTO_TEXT_DIRECTION) {
-            if ((textDirection & SWT.LEFT_TO_RIGHT) != 0)
-                textDirection = SWT.LEFT_TO_RIGHT;
-            if (this.textDirection == textDirection)
-                return;
-        }
-        this.textDirection = textDirection;
+        this.textDirection = direction;
         freeRuns();
     }
 
@@ -2055,6 +2015,18 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     org.eclipse.swt.graphics.TextLayoutMeasurement measured;
 
+    FontMetrics _fixedMetrics;
+
+    int[] _lines;
+
+    int[] _breaks;
+
+    int[] _lineTop, _lineHeight, _lineAscent;
+
+    int[] _lineX;
+
+    double[] _lineWidth, _lineSpaceExtra;
+
     public void setMeasurement(org.eclipse.swt.graphics.TextLayoutMeasurement measurement) {
         freeRuns();
         measured = measurement;
@@ -2065,94 +2037,237 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         return measured != null && measured.fits(text) && getSegmentsText().length() == text.length() ? measured : null;
     }
 
-    static boolean _isWordChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_';
-    }
-
-    int _fwdWordEnd(int o) {
-        int len = text.length();
-        while (o < len && !_isWordChar(text.charAt(o))) o++;
-        while (o < len && _isWordChar(text.charAt(o))) o++;
-        return o;
-    }
-
-    int _fwdWordStart(int o) {
-        int len = text.length();
-        for (int p = o + 1; p < len; p++) {
-            char c = text.charAt(p);
-            if (c == '\n')
-                return p;
-            if (_isWordChar(c) && !_isWordChar(text.charAt(p - 1)))
-                return p;
+    void _layoutLines() {
+        int count = _lines.length - 1;
+        _lineTop = new int[count];
+        _lineHeight = new int[count];
+        _lineAscent = new int[count];
+        _lineX = new int[count];
+        _lineWidth = new double[count];
+        _lineSpaceExtra = new double[count];
+        org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics base = org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(font, 1);
+        int length = text.length(), minAscent = getAscent(), minDescent = getDescent(), spacing = getSpacing();
+        int top = 0;
+        for (int line = 0; line < count; line++) {
+            int ls = _lines[line], next = _lines[line + 1];
+            int le = TextLayoutHelper.contentEnd(text, ls, next);
+            int ascent = 0, descent = 0;
+            if (_fixedMetrics != null) {
+                ascent = _fixedMetrics.getAscent() + _fixedMetrics.getLeading();
+                descent = _fixedMetrics.getHeight() - ascent;
+            } else {
+                // An empty line takes the glyphs of its delimiter.
+                int glyphsEnd = Math.max(le, Math.min(ls + 1, length));
+                if (glyphsEnd == ls) {
+                    ascent = base.ascent;
+                    descent = base.descent;
+                }
+                for (int i = ls; i < glyphsEnd; ) {
+                    TextStyle style = _styleFor(i);
+                    int j = i + 1;
+                    while (j < glyphsEnd && _styleFor(j) == style) j++;
+                    org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics m = style != null && style.font != null && !style.font.isDisposed() ? org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(style.font, 1) : base;
+                    int rise = style != null ? style.rise : 0;
+                    ascent = Math.max(ascent, m.ascent + rise);
+                    descent = Math.max(descent, m.descent - rise);
+                    if (style != null && style.metrics != null) {
+                        ascent = Math.max(ascent, style.metrics.ascent);
+                        descent = Math.max(descent, style.metrics.descent);
+                    }
+                    i = j;
+                }
+                ascent = Math.max(ascent, minAscent);
+                descent = Math.max(descent, minDescent);
+            }
+            _lineTop[line] = top;
+            _lineHeight[line] = ascent + descent;
+            _lineAscent[line] = ascent;
+            top += ascent + descent + spacing;
+            int lineIndent = _startsParagraph(ls) ? getIndent() : getWrapIndent();
+            boolean paragraphEnd = le < next || next == length || TextLayoutHelper.contains(_breaks, next);
+            int visibleEnd = paragraphEnd ? le : TextLayoutHelper.visibleEnd(text, ls, le);
+            double width = _advance(ls, ls, visibleEnd, lineIndent);
+            int x = lineIndent;
+            if (wrapWidth != -1) {
+                int extra = wrapWidth - lineIndent - (int) Math.ceil(width);
+                if (getJustify() && !paragraphEnd) {
+                    int spaces = 0;
+                    for (int i = ls; i < visibleEnd; i++) if (text.charAt(i) == ' ')
+                        spaces++;
+                    if (extra > 0 && spaces > 0 && _isLeftToRight(ls, le)) {
+                        _lineSpaceExtra[line] = extra / (double) spaces;
+                        width += extra;
+                    }
+                } else if (extra > 0) {
+                    if ((alignment & SWT.CENTER) != 0)
+                        x += extra / 2;
+                    else if ((alignment & SWT.RIGHT) != 0)
+                        x += extra;
+                }
+            }
+            _lineX[line] = x;
+            _lineWidth[line] = width;
         }
-        return len;
     }
 
-    int _bwdWordStart(int o) {
-        for (int p = o - 1; p >= 1; p--) {
-            char c = text.charAt(p);
-            if (c == '\n')
-                return p;
-            if (_isWordChar(c) && !_isWordChar(text.charAt(p - 1)))
-                return p;
+    int _lineAt(int offset) {
+        int last = _lines.length - 2;
+        for (int line = 0; line < last; line++) if (_lines[line + 1] > offset)
+            return line;
+        return last;
+    }
+
+    int[] _segmentBreaks() {
+        if (segments == null || segmentsChars == null)
+            return new int[0];
+        int[] breaks = new int[segments.length];
+        int count = 0;
+        for (int i = 0; i < segments.length && i < segmentsChars.length; i++) {
+            char c = segmentsChars[i];
+            if ((c == '\n' || c == '\r') && segments[i] > 0 && segments[i] < text.length())
+                breaks[count++] = segments[i];
         }
-        return 0;
+        return java.util.Arrays.copyOf(breaks, count);
     }
 
-    int _bwdWordEnd(int o) {
-        while (o > 0 && _isWordChar(text.charAt(o - 1))) o--;
-        while (o > 0 && !_isWordChar(text.charAt(o - 1))) o--;
-        return o;
+    boolean _startsParagraph(int offset) {
+        return TextLayoutHelper.startsParagraph(text, offset) || TextLayoutHelper.contains(_breaks, offset);
+    }
+
+    int _nextChar(int offset, int end) {
+        return offset + (offset + 1 < end && Character.isHighSurrogate(text.charAt(offset)) && Character.isLowSurrogate(text.charAt(offset + 1)) ? 2 : 1);
+    }
+
+    int _hitEnd(int end, int[] trailing) {
+        int offset = end > 0 && Character.isLowSurrogate(text.charAt(end)) && Character.isHighSurrogate(text.charAt(end - 1)) ? end - 1 : end;
+        if (trailing != null)
+            trailing[0] = end + 1 - offset;
+        return offset;
+    }
+
+    boolean _isLeftToRight(int ls, int le) {
+        return (orientation & SWT.RIGHT_TO_LEFT) == 0 && !java.text.Bidi.requiresBidi(text.toCharArray(), ls, le);
+    }
+
+    boolean _isLeftToRight(int line) {
+        return _isLeftToRight(_lines[line], TextLayoutHelper.contentEnd(text, _lines[line], _lines[line + 1]));
+    }
+
+    double _xAt(int line, int offset) {
+        int ls = _lines[line];
+        int indent = _startsParagraph(ls) ? getIndent() : getWrapIndent();
+        double x = _lineX[line] + _advance(ls, ls, offset, indent);
+        double extra = _lineSpaceExtra[line];
+        if (extra > 0) {
+            for (int i = ls; i < offset; i++) if (text.charAt(i) == ' ')
+                x += extra;
+        }
+        return x;
+    }
+
+    double[] _span(int line, int start, int end) {
+        if (_isLeftToRight(line))
+            return new double[] { _xAt(line, start), _xAt(line, end) };
+        double[][] boxes = _boxes(line);
+        int ls = _lines[line];
+        double left = Double.POSITIVE_INFINITY, right = Double.NEGATIVE_INFINITY;
+        for (int i = start; i < end; i++) {
+            left = Math.min(left, boxes[0][i - ls]);
+            right = Math.max(right, boxes[1][i - ls]);
+        }
+        return new double[] { left, right };
+    }
+
+    Rectangle _rangeOnLine(int line, int start, int end) {
+        int ls = _lines[line], next = _lines[line + 1];
+        int s = Math.max(start, ls), e = Math.min(end, next - 1);
+        if (s > e)
+            return null;
+        int le = TextLayoutHelper.contentEnd(text, ls, next);
+        double lineRight = _lineX[line] + Math.ceil(_lineWidth[line]);
+        double left = lineRight, right = lineRight;
+        if (s < le) {
+            double[] span = _span(line, s, _nextChar(Math.min(e, le - 1), le));
+            left = span[0];
+            right = e >= le ? Math.max(span[1], lineRight) : span[1];
+        }
+        int height = _lineHeight[line] + (line < _lines.length - 2 ? getSpacing() : 0);
+        return new Rectangle((int) Math.round(left), _lineTop[line], Math.max(0, (int) Math.ceil(right - left - 0.001)), height);
+    }
+
+    double[][] _boxes(int line) {
+        int ls = _lines[line];
+        int le = TextLayoutHelper.contentEnd(text, ls, _lines[line + 1]);
+        int n = le - ls;
+        double[] left = new double[n], right = new double[n], rtl = new double[n];
+        int indent = _startsParagraph(ls) ? getIndent() : getWrapIndent();
+        double extra = _lineSpaceExtra[line];
+        double[] width = new double[n];
+        for (int c = 0; c < n; c++) {
+            int after = _nextChar(ls + c, le);
+            width[c] = _advance(ls, ls + c, after, indent) + (text.charAt(ls + c) == ' ' ? extra : 0);
+            if (after - ls == c + 2)
+                c++;
+        }
+        boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
+        java.text.Bidi bidi = new java.text.Bidi(text.substring(ls, le), baseRtl ? java.text.Bidi.DIRECTION_RIGHT_TO_LEFT : java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        int runs = bidi.getRunCount();
+        byte[] levels = new byte[runs];
+        Integer[] order = new Integer[runs];
+        for (int r = 0; r < runs; r++) {
+            levels[r] = (byte) bidi.getRunLevel(r);
+            order[r] = r;
+        }
+        java.text.Bidi.reorderVisually(levels, 0, order, 0, runs);
+        double x = _lineX[line];
+        for (int v = 0; v < runs; v++) {
+            int r = order[v];
+            boolean isRtl = (levels[r] & 1) != 0;
+            int start = bidi.getRunStart(r), limit = bidi.getRunLimit(r);
+            for (int k = 0; k < limit - start; k++) {
+                int c = isRtl ? limit - 1 - k : start + k;
+                left[c] = x;
+                x += width[c];
+                right[c] = x;
+                rtl[c] = isRtl ? 1 : 0;
+            }
+        }
+        for (int c = 0; c + 1 < n; c++) {
+            if (Character.isHighSurrogate(text.charAt(ls + c)) && Character.isLowSurrogate(text.charAt(ls + c + 1))) {
+                left[c] = Math.min(left[c], left[c + 1]);
+                right[c] = Math.max(right[c], right[c + 1]);
+                left[c + 1] = right[c + 1] = rtl[c] != 0 ? left[c] : right[c];
+            }
+        }
+        return new double[][] { left, right, rtl };
     }
 
     TextStyle _styleFor(int offset) {
-        if (styles != null) {
-            for (int i = 0; i < stylesCount - 1; i++) {
-                if (styles[i] != null && offset >= styles[i].start && offset < styles[i + 1].start) {
-                    return styles[i].style;
-                }
-            }
-        }
-        return null;
+        int i = 1;
+        while (i < stylesCount - 1 && styles[i].start <= offset) i++;
+        return styles[i - 1].style;
     }
 
     org.eclipse.swt.graphics.Font _fontFor(int offset) {
-        if (styles != null) {
-            for (int i = 0; i < stylesCount - 1; i++) {
-                if (styles[i] != null && offset >= styles[i].start && offset < styles[i + 1].start) {
-                    if (styles[i].style != null && styles[i].style.font != null && !styles[i].style.font.isDisposed())
-                        return styles[i].style.font;
-                    break;
-                }
-            }
-        }
-        if (font != null && !font.isDisposed())
+        TextStyle style = _styleFor(offset);
+        if (style != null && style.font != null && !style.font.isDisposed())
+            return style.font;
+        if (font != null)
             return font;
         org.eclipse.swt.widgets.Display d = org.eclipse.swt.widgets.Display.getCurrent();
         return d != null ? d.getSystemFont() : null;
     }
 
-    double _measureRange(int start, int end) {
-        if (text == null)
-            return 0;
+    double _advance(int lineStart, int start, int end, double lineX) {
         int len = text.length();
         start = Math.max(0, Math.min(start, len));
         end = Math.max(0, Math.min(end, len));
         if (end <= start)
             return 0;
-        int lineStart = start;
-        if (text.lastIndexOf('\t', end - 1) >= start) {
-            while (lineStart > 0) {
-                char prev = text.charAt(lineStart - 1);
-                if (prev == '\n' || prev == '\r')
-                    break;
-                lineStart--;
-            }
-        }
         double px = dev.equo.swt.FontMetricsUtil.dpiScale();
-        double x = 0;
-        double atStart = 0;
-        int i = lineStart;
+        double x = lineX;
+        double atStart = lineX;
+        int i = text.lastIndexOf('\t', end - 1) >= start ? Math.min(lineStart, start) : start;
         while (i < end) {
             if (i == start)
                 atStart = x;
@@ -2162,32 +2277,14 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 i++;
                 continue;
             }
-            char c = text.charAt(i);
-            if (c == '\n' || c == '\r') {
-                x = 0;
-                i++;
-                continue;
-            }
-            if (c == '\t') {
+            if (text.charAt(i) == '\t') {
                 x = _nextTabStop(x);
                 i++;
                 continue;
             }
             org.eclipse.swt.graphics.Font f = _fontFor(i);
             int j = i + 1;
-            while (j < end) {
-                char cj = text.charAt(j);
-                if (cj == '\t' || cj == '\n' || cj == '\r')
-                    break;
-                if (_fontFor(j) != f)
-                    break;
-                TextStyle sj = _styleFor(j);
-                if (sj != null && sj.metrics != null)
-                    break;
-                j++;
-            }
-            if (i < start && j > start)
-                j = start;
+            while (j < end && text.charAt(j) != '\t' && _styleFor(j) == st) j++;
             if (f != null) {
                 x += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x() * px;
             }
@@ -2197,35 +2294,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     double _nextTabStop(double x) {
-        if (tabs != null && tabs.length > 0) {
-            for (int t = 0; t < tabs.length; t++) {
-                if (tabs[t] > x + 0.01)
-                    return tabs[t];
-            }
-            int last = tabs[tabs.length - 1];
-            int prev = tabs.length > 1 ? tabs[tabs.length - 2] : 0;
-            double interval = Math.max(1, last - prev);
-            double stop = last;
-            while (stop <= x + 0.01) stop += interval;
-            return stop;
-        }
-        double tw = defaultTabWidth;
-        if (tw <= 0) {
-            org.eclipse.swt.graphics.Font f = _fontFor(0);
-            if (f != null) {
-                tw = dev.equo.swt.FontMetricsUtil.getFontSize(" ", f).x() * 8 * dev.equo.swt.FontMetricsUtil.dpiScale();
-            }
-        }
-        if (tw <= 0)
-            return x;
-        return (Math.floor((x + 0.01) / tw) + 1) * tw;
-    }
-
-    int _effLineHeight() {
-        int fontH = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(font);
-        if (ascent >= 0 && descent >= 0)
-            fontH = Math.max(fontH, ascent + descent);
-        return Math.max(1, fontH);
+        return TextLayoutHelper.nextTabStop(x, tabs, defaultTabWidth);
     }
 
     byte[] _bidiLevels(String s, int paraLevel) {
@@ -2292,6 +2361,20 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 idx.add(k);
             _bidiResolveRun(types, lv, idx, lvl, paraLevel);
             i = j;
+        }
+        // L1: a segment or paragraph separator, and the whitespace before one or at the end of
+        // the text, go back to the paragraph level.
+        boolean reset = true;
+        for (int k = n - 1; k >= 0; k--) {
+            byte original = Character.getDirectionality(s.charAt(k));
+            if (original == Character.DIRECTIONALITY_SEGMENT_SEPARATOR || original == Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR) {
+                lv[k] = (byte) paraLevel;
+                reset = true;
+            } else if (reset && (original == Character.DIRECTIONALITY_WHITESPACE || removed[k])) {
+                lv[k] = (byte) paraLevel;
+            } else {
+                reset = false;
+            }
         }
         return lv;
     }
@@ -2385,84 +2468,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (c == Character.DIRECTIONALITY_EUROPEAN_NUMBER || c == Character.DIRECTIONALITY_ARABIC_NUMBER)
             return Character.DIRECTIONALITY_RIGHT_TO_LEFT;
         return c;
-    }
-
-    int _alignShift(int ls, int le) {
-        if (wrapWidth == -1)
-            return 0;
-        int lineWidth = (int) Math.ceil(_measureRange(ls, le));
-        int extra = wrapWidth - lineWidth;
-        if (extra <= 0)
-            return 0;
-        if ((alignment & SWT.CENTER) != 0)
-            return extra / 2;
-        if ((alignment & SWT.RIGHT) != 0)
-            return extra;
-        return 0;
-    }
-
-    void _bidiVisual(int ls, int le, double[] left, double[] right, boolean[] rtl) {
-        int lineLen = le - ls;
-        boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
-        // Hit-test/caret geometry works in the original (client) text coordinates: ls/le come from
-        // getLineOffsets() and _measureRange indexes text, so run detection must too. Segment
-        // separators are zero-width bidi controls and do not move visible glyph positions.
-        String lineText = text.substring(ls, le);
-        java.text.Bidi bidi = new java.text.Bidi(lineText, baseRtl ? java.text.Bidi.DIRECTION_RIGHT_TO_LEFT : java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
-        if (bidi.isLeftToRight()) {
-            double x = 0;
-            for (int c = 0; c < lineLen; c++) {
-                double cw = _measureRange(ls + c, ls + c + 1);
-                left[c] = x;
-                right[c] = x + cw;
-                rtl[c] = false;
-                x += cw;
-            }
-            return;
-        }
-        int n = bidi.getRunCount();
-        byte[] levels = new byte[n];
-        int[] rstart = new int[n], rlimit = new int[n];
-        for (int i = 0; i < n; i++) {
-            levels[i] = (byte) bidi.getRunLevel(i);
-            rstart[i] = bidi.getRunStart(i);
-            rlimit[i] = bidi.getRunLimit(i);
-        }
-        Integer[] order = new Integer[n];
-        for (int i = 0; i < n; i++) order[i] = i;
-        java.text.Bidi.reorderVisually(levels, 0, order, 0, n);
-        double x = 0;
-        for (int v = 0; v < n; v++) {
-            int r = order[v];
-            boolean isRtl = (levels[r] & 1) != 0;
-            double runWidth = _measureRange(ls + rstart[r], ls + rlimit[r]);
-            double cx = x;
-            if (isRtl) {
-                for (int c = rlimit[r] - 1; c >= rstart[r]; c--) {
-                    double cw = _measureRange(ls + c, ls + c + 1);
-                    left[c] = cx;
-                    right[c] = cx + cw;
-                    rtl[c] = true;
-                    cx += cw;
-                }
-            } else {
-                for (int c = rstart[r]; c < rlimit[r]; c++) {
-                    double cw = _measureRange(ls + c, ls + c + 1);
-                    left[c] = cx;
-                    right[c] = cx + cw;
-                    rtl[c] = false;
-                    cx += cw;
-                }
-            }
-            x += runWidth;
-        }
-    }
-
-    int _lineOf(int o) {
-        int[] offs = getLineOffsets();
-        for (int i = 0; i < offs.length - 1; i++) if (offs[i + 1] > o)
-            return i;
-        return Math.max(0, offs.length - 2);
     }
 
     public TextLayout getApi() {

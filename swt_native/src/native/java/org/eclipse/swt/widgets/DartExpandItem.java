@@ -262,6 +262,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
             width += DartExpandItem.TEXT_INSET + imageWidth;
         }
         if (text.length() > 0) {
+            width += gc.stringExtent(text).x;
         }
         return width;
     }

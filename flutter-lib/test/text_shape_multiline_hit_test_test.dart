@@ -12,7 +12,6 @@ void main() {
       'line one\nline two\nline three\nline four',
       Offset.zero,
       style,
-      null, // clipRect
       null, // textSpan
       null, // caretInfo
       false, // wordWrap

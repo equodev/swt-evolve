@@ -54,7 +54,7 @@ void main() {
         ..data = base64Decode(_indicatorPng));
 
     final shape = await ImageShape.fromVImageDetailed(
-        image, _naturalSizeBlitAt(529, 5), null);
+        image, _naturalSizeBlitAt(529, 5), null, useThemeColors: canvasUsesThemeColors);
 
     expect(shape.type, ImageType.raster,
         reason: 'the application bitmap must be drawn, not a bundled SVG icon');
@@ -77,7 +77,7 @@ void main() {
         ..data = base64Decode(_indicatorPng));
 
     final shape = await ImageShape.fromVImageDetailed(
-        image, _naturalSizeBlitAt(529, 5), null);
+        image, _naturalSizeBlitAt(529, 5), null, useThemeColors: canvasUsesThemeColors);
 
     expect(shape.type, ImageType.svg);
   });
@@ -92,7 +92,7 @@ void main() {
         ..data = base64Decode(_indicatorPng));
 
     final shape = await ImageShape.fromVImageDetailed(
-        image, _naturalSizeBlitAt(529, 5), null);
+        image, _naturalSizeBlitAt(529, 5), null, useThemeColors: canvasUsesThemeColors);
 
     expect(shape.type, ImageType.svg,
         reason: 'the application opted in, so assets/icons/left.svg draws');

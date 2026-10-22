@@ -83,7 +83,7 @@ public class SwtSlider extends SwtControl implements ISlider {
 
     static final long ScrollBarProc;
 
-    static final TCHAR ScrollBarClass = new TCHAR(0, "SCROLLBAR", true);
+    static final TCHAR ScrollBarClass = new TCHAR("SCROLLBAR", true);
 
     static {
         WNDCLASS lpWndClass = new WNDCLASS();

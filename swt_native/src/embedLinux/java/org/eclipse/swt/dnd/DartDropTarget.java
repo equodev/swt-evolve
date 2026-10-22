@@ -15,9 +15,11 @@
  */
 package org.eclipse.swt.dnd;
 
+import java.lang.reflect.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.GAsyncReadyCallbackHelper.*;
 import org.eclipse.swt.widgets.*;
 import dev.equo.swt.*;
 
@@ -159,6 +161,70 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
             this.bridge.dirty((DartWidget) control.getImpl());
         }
         _hookEvents();
+        // Dispose listeners
+        controlListener = event -> {
+            if (!DartDropTarget.this.getApi().isDisposed()) {
+                DartDropTarget.this.getApi().dispose();
+            }
+        };
+        control.addListener(SWT.Dispose, controlListener);
+        this.addListener(SWT.Dispose, event -> onDispose());
+        Object effect = control.getData(DEFAULT_DROP_TARGET_EFFECT);
+        if (effect instanceof DropTargetEffect) {
+            dropEffect = (DropTargetEffect) effect;
+        } else if (control instanceof Table) {
+            dropEffect = new TableDropTargetEffect((Table) control);
+        } else if (control instanceof Tree) {
+            dropEffect = new TreeDropTargetEffect((Tree) control);
+        }
+        dragOverHeartbeat = () -> {
+            Control control1 = DartDropTarget.this.control;
+            if (control1 == null || control1.isDisposed() || dragOverStart == 0)
+                return;
+            long time = System.currentTimeMillis();
+            int delay = DRAGOVER_HYSTERESIS;
+            if (time < dragOverStart) {
+                delay = (int) (dragOverStart - time);
+            } else {
+                dragOverEvent.time += DRAGOVER_HYSTERESIS;
+                int allowedOperations = dragOverEvent.operations;
+                TransferData[] allowedTypes = dragOverEvent.dataTypes;
+                //pass a copy of data types in to listeners in case application modifies it
+                TransferData[] dataTypes = new TransferData[allowedTypes.length];
+                System.arraycopy(allowedTypes, 0, dataTypes, 0, dataTypes.length);
+                DNDEvent event = new DNDEvent();
+                event.widget = dragOverEvent.widget;
+                event.x = dragOverEvent.x;
+                event.y = dragOverEvent.y;
+                event.time = dragOverEvent.time;
+                event.feedback = DND.FEEDBACK_SELECT;
+                event.dataTypes = dataTypes;
+                event.dataType = selectedDataType;
+                event.operations = dragOverEvent.operations;
+                event.detail = selectedOperation;
+                if (dropEffect != null) {
+                    event.item = dropEffect.getItem(dragOverEvent.x, dragOverEvent.y);
+                }
+                selectedDataType = null;
+                selectedOperation = DND.DROP_NONE;
+                notifyListeners(DND.DragOver, event);
+                if (event.dataType != null) {
+                    for (int i = 0; i < allowedTypes.length; i++) {
+                        if (allowedTypes[i].type == event.dataType.type) {
+                            selectedDataType = event.dataType;
+                            break;
+                        }
+                    }
+                }
+                if (selectedDataType != null && (event.detail & allowedOperations) != 0) {
+                    selectedOperation = event.detail;
+                }
+            }
+            control1 = DartDropTarget.this.control;
+            if (control1 == null || control1.isDisposed())
+                return;
+            control1.getDisplay().timerExec(delay, dragOverHeartbeat);
+        };
     }
 
     static int checkStyle(int style) {
@@ -207,6 +273,25 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return (DropTarget) widget.getData(DND.DROP_TARGET_KEY);
     }
 
+    static long DropAccept(long controller, long drop) {
+        return 0;
+    }
+
+    static long DropEnter(long controller, long drop, double x, double y) {
+        return 0;
+    }
+
+    static long DropMotion(long controller, long drop, double x, double y) {
+        return 0;
+    }
+
+    static void DropLeave(long controller, long drop) {
+    }
+
+    static long Drop(long controller, long drop, double x, double y) {
+        return 0;
+    }
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when a drag and drop operation is in progress, by sending
@@ -249,8 +334,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         addListener(DND.DragLeave, typedListener);
         addListener(DND.DragOver, typedListener);
         addListener(DND.DragOperationChanged, typedListener);
-        addListener(DND.Drop, typedListener);
-        addListener(DND.DropAccept, typedListener);
     }
 
     @Override
@@ -280,7 +363,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         event.dataType = transferData;
         event.data = object;
         selectedOperation = DND.DROP_NONE;
-        notifyListeners(DND.Drop, event);
         if ((allowedOperations & event.detail) == event.detail) {
             selectedOperation = event.detail;
         }
@@ -301,7 +383,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         event.detail = selectedOperation;
         selectedDataType = null;
         selectedOperation = DND.DROP_NONE;
-        notifyListeners(DND.DropAccept, event);
         if (event.dataType != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
                 if (allowedDataTypes[i].type == event.dataType.type) {
@@ -465,6 +546,9 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         if (controlListener != null)
             control.removeListener(SWT.Dispose, controlListener);
         control.setData(DND.DROP_TARGET_KEY, null);
+        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartWidget) {
+            this.bridge.dirty((DartWidget) control.getImpl());
+        }
         control = null;
         controlListener = null;
     }
@@ -504,8 +588,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         removeTypedListener(DND.DragLeave, listener);
         removeTypedListener(DND.DragOver, listener);
         removeTypedListener(DND.DragOperationChanged, listener);
-        removeTypedListener(DND.Drop, listener);
-        removeTypedListener(DND.DropAccept, listener);
     }
 
     /**
@@ -522,6 +604,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
      *  </ul>
      */
     public void setTransfer(Transfer... transferAgents) {
+        if (transferAgents == null)
+            DND.error(SWT.ERROR_NULL_ARGUMENT);
     }
 
     /**
@@ -588,6 +672,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         dragOverEvent.time = event.time;
     }
 
+    /* GTK4 drop target handlers */
     public Control _control() {
         return control;
     }
@@ -682,14 +767,13 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.time = e.time;
-        event.x = e.x;
-        event.y = e.y;
+        setDisplayLocation(event, e);
         event.item = e.item != null ? e.item : resolveItem(e);
         event.operations = getStyle();
         event.dataTypes = computeMutualDataTypes(matchingDragSource());
         event.dataType = selectedDataType != null ? selectedDataType : (event.dataTypes.length > 0 ? event.dataTypes[0] : null);
         event.detail = eventType == DND.DragEnter ? DND.DROP_DEFAULT : (selectedOperation != DND.DROP_NONE ? selectedOperation : DND.DROP_DEFAULT);
-        event.feedback = dndFeedback;
+        event.feedback = DND.FEEDBACK_SELECT;
         return event;
     }
 
@@ -717,12 +801,17 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return mutual.toArray(new TransferData[0]);
     }
 
+    private void setDisplayLocation(DNDEvent event, Event e) {
+        org.eclipse.swt.graphics.Point onDisplay = control.toDisplay(e.x, e.y);
+        event.x = onDisplay.x;
+        event.y = onDisplay.y;
+    }
+
     private DNDEvent toDropEvent(Event e) {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.time = e.time;
-        event.x = e.x;
-        event.y = e.y;
+        setDisplayLocation(event, e);
         event.doit = true;
         int detail = e.detail != DND.DROP_NONE ? e.detail : selectedOperation;
         event.detail = detail == DND.DROP_DEFAULT ? resolveDefaultOperation() : detail;

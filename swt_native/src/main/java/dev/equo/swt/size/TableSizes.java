@@ -97,6 +97,11 @@ public class TableSizes {
         return getIconSize(item) + CELL_PADDING_LEFT;
     }
 
+    /** Where a cell's content starts, from its column's left edge. */
+    public static int getCellInset() {
+        return CELL_PADDING_LEFT;
+    }
+
     private static TextStyle getTextStyle(TableItem item) {
         if (!Config.getConfigFlags().use_swt_fonts || ((DartTableItem) item.getImpl()).getExplicitFont() == null) {
             return TableItemTheme.get().textStyle().withStyleFrom(item.getFont());

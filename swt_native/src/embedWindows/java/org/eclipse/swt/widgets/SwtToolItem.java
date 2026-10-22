@@ -985,12 +985,12 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             if ((getApi().style & SWT.FLIP_TEXT_DIRECTION) != 0) {
                 int bits = OS.GetWindowLong(hwnd, OS.GWL_EXSTYLE);
                 if ((bits & OS.WS_EX_LAYOUTRTL) != 0) {
-                    buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), LRE + string, true);
+                    buffer = new TCHAR(LRE + string, true);
                 } else {
-                    buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), RLE + string, true);
+                    buffer = new TCHAR(RLE + string, true);
                 }
             } else {
-                buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), string, true);
+                buffer = new TCHAR(string, true);
             }
             int byteCount = buffer.length() * TCHAR.sizeof;
             pszText = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);

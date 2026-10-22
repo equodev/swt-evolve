@@ -394,8 +394,7 @@ public class DartScale extends DartControl implements IScale {
         FlutterBridge.on(this, "Selection", "Selection", sent -> dragSelection.post(getDisplay(), sent, e -> {
             if (isDisposed())
                 return;
-            setSelection(e.index);
-            sendSelectionEvent(SWT.Selection, null, true);
+            ScaleHelper.selected(this, e);
         }));
     }
 

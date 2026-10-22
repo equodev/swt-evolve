@@ -105,7 +105,7 @@ void main() {
             'microtask, which put the move first');
   });
 
-  testWidgets('a press reports FocusIn, ahead of the MouseDown', (tester) async {
+  testWidgets('a press reports the MouseDown, then FocusIn', (tester) async {
     final calls = await _pump(tester, <String>[]);
     final gesture = await _mouseOutside(tester);
     await gesture.moveTo(onSurface);
@@ -115,8 +115,10 @@ void main() {
     await gesture.down(onSurface);
     await tester.pump();
 
-    expect(calls, equals(['focusIn', 'down']),
-        reason: 'SWT focuses the control a press lands on and delivers FocusIn before the press');
+    expect(calls, equals(['down', 'focusIn']),
+        reason: 'a composite takes the focus after its own press is delivered -- Composite\'s '
+            'button-press handling calls super, which sends MouseDown, and only then setFocus -- and '
+            'Java orders a control\'s press focus ahead of the MouseDown itself');
   });
 
   testWidgets('a press on a NO_FOCUS surface does not take the focus', (tester) async {

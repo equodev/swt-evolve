@@ -506,10 +506,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCaretPosition() {
         checkWidget();
-        if (selection != null) {
-            return selection.x;
-        }
-        return 0;
+        return TextHelper.getCaretPosition(this);
     }
 
     /**
@@ -1324,10 +1321,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
+        checkWidget();
         if (!java.util.Objects.equals(this.editable, newValue)) {
             getValue().markDirty(VText.EDITABLE);
         }
-        checkWidget();
         if (editable) {
             getApi().style &= ~SWT.READ_ONLY;
         } else {
@@ -1577,11 +1574,11 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setText(String string) {
+        checkWidget();
         String newValue = string;
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VText.TEXT);
         }
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         TextHelper.setText(this, string);
@@ -1865,27 +1862,27 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed() && !isActive())
+                if (isDisposed())
                     return;
-                if (!isDisposed()) {
-                    if (e.detail == SWT.ICON_CANCEL) {
-                        if (getCharCount() != 0) {
-                            setText("");
-                        }
-                        if (!isDisposed()) {
-                            sendEvent(SWT.DefaultSelection, e);
-                        }
-                        return;
-                    }
-                    if (!traverse(SWT.TRAVERSE_RETURN)) {
-                        Event crEvent = new Event();
-                        crEvent.keyCode = SWT.CR;
-                        crEvent.character = '\r';
-                        sendEvent(SWT.KeyDown, crEvent);
+                if (!isActive())
+                    return;
+                if (e.detail == SWT.ICON_CANCEL) {
+                    if (getCharCount() != 0) {
+                        setText("");
                     }
                     if (!isDisposed()) {
                         sendEvent(SWT.DefaultSelection, e);
                     }
+                    return;
+                }
+                if (!traverse(SWT.TRAVERSE_RETURN)) {
+                    Event crEvent = new Event();
+                    crEvent.keyCode = SWT.CR;
+                    crEvent.character = '\r';
+                    sendEvent(SWT.KeyDown, crEvent);
+                }
+                if (!isDisposed()) {
+                    sendEvent(SWT.DefaultSelection, e);
                 }
             });
         });
@@ -1900,12 +1897,14 @@ public class DartText extends DartScrollable implements IText {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (!isDisposed() && !TextHelper.proposesNoChange(e)) {
-                    int textLen = getCharCount();
-                    e.start = Math.min(e.start, textLen);
-                    e.end = Math.min(e.end, textLen);
-                    sendEvent(SWT.Verify, e);
+                if (TextHelper.proposesNoChange(e)) {
+                    TextHelper.clientCaretMoved(this, e.start, e.index);
+                    return;
                 }
+                int textLen = getCharCount();
+                e.start = Math.min(e.start, textLen);
+                e.end = Math.min(e.end, textLen);
+                sendEvent(SWT.Verify, e);
             });
         });
     }

@@ -609,6 +609,18 @@ class DisplayResizeFlutterTest {
         }
 
         @Override
+        protected void setShellWindowTitle(long context, String title) {
+        }
+
+        @Override
+        protected void setShellWindowState(long context, int state) {
+        }
+
+        @Override
+        protected void setShellWindowVisible(long context, boolean visible) {
+        }
+
+        @Override
         protected void forwardWindowBounds(Rectangle bounds) {
             forwarded.add(bounds);
         }

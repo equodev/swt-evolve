@@ -747,11 +747,13 @@ public class Config {
     }
 
     /**
-     * Hosts a Swing scene on the Flutter surface, or null when this fragment was built without the
-     * Swing bridge (see {@link Jdk9}). SWT_AWT calls this and falls back to native reparenting.
+     * Hosts a Swing scene on the Flutter surface. SWT_AWT calls this for a Dart-backed composite,
+     * which has no native window for its own embedding to reparent a frame into — so when the bridge
+     * cannot run here (see {@link Jdk9}) this fails the way SWT_AWT does on a JRE that cannot embed,
+     * with the reason as the error's cause.
      */
     public static java.awt.Frame newSwingFrame(org.eclipse.swt.widgets.Composite parent) {
-        if (Jdk9.SWING_HOST_NEW_FRAME == null) return null;
+        if (Jdk9.SWING_HOST_NEW_FRAME == null) return swingUnavailable(Jdk9.swingHostFailure(false));
         try {
             return (java.awt.Frame) Jdk9.SWING_HOST_NEW_FRAME.invoke(null, parent);
         } catch (java.lang.reflect.InvocationTargetException e) {
@@ -760,8 +762,15 @@ public class Config {
             if (cause instanceof Error) throw (Error) cause;
             throw new RuntimeException(cause);
         } catch (IllegalAccessException e) {
-            return null;
+            return swingUnavailable(e);
         }
+    }
+
+    /** Throws SWT_AWT's error for a JRE that cannot embed; never returns. */
+    private static java.awt.Frame swingUnavailable(Throwable cause) {
+        SWT.error(SWT.ERROR_NOT_IMPLEMENTED, cause, " [Swing cannot be embedded here: the SWT Evolve "
+                + "Swing bridge is not in this build or cannot run on this Java runtime]");
+        return null;
     }
 
     private static boolean isInStackTrace(String className, String methodName) {
@@ -827,6 +836,24 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
+    /** The double-click time when none is configured: Win32's and Cocoa's default. */
+    public static final int DOUBLE_CLICK_TIME_MS = 500;
+
+    /** The hover and tooltip delay when none is configured: Cocoa SWT's getToolTipTime(). */
+    public static final int HOVER_DELAY_MS = 560;
+
+    /** How long the pointer rests before MouseHover and the tooltip, in milliseconds; Java and the client share it. */
+    public static int hoverDelay() {
+        int ms = getConfigFlags().hover_delay_ms;
+        return ms > 0 ? ms : HOVER_DELAY_MS;
+    }
+
+    /** The double-click time both Java and the client use, in milliseconds. */
+    public static int doubleClickTime() {
+        int ms = getConfigFlags().double_click_timeout_ms;
+        return ms > 0 ? ms : DOUBLE_CLICK_TIME_MS;
+    }
+
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
         return configFlags;
@@ -850,6 +877,7 @@ public class Config {
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
+            configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
             // Drops what an application paints over a control through its GC, keeping only what the
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
@@ -907,10 +935,13 @@ public class Config {
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
             //   -Ddev.equo.swt.csd.maximize=direct|bounds|native|fullscreen
             configFlags.csd_maximize = System.getProperty("dev.equo.swt.csd.maximize", "direct");
-            // Double-click pairing window (ms) for the Flutter-side DoubleTapDetector. Unset/0 keeps
-            // Flutter's kDoubleTapTimeout; a test harness whose synthetic click pairs land further
-            // apart than a real user's widens it without a rebuild.
-            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", 0);
+            // Double-click pairing window (ms): Display.getDoubleClickTime() answers it and the
+            // client's DoubleTapDetectors pair clicks with it, so both sides agree. A test harness
+            // whose synthetic click pairs land further apart than a real user's widens it.
+            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", DOUBLE_CLICK_TIME_MS);
+            // Hover and tooltip delay (ms): MouseHover fires, and the tooltip shows, once the pointer
+            // has rested this long. A test harness that waits for hovers shortens it.
+            configFlags.hover_delay_ms = Integer.getInteger("swt.evolve.hover_delay_ms", HOVER_DELAY_MS);
             // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).
@@ -1007,6 +1038,19 @@ public class Config {
     }
 
     /**
+     * An SWT coordinate in the render side's logical pixels, the units a native window is placed and
+     * sized in. Java-side conversions go through this pair, so the scale is read in one place.
+     */
+    public static int swtToLogical(int swt) {
+        return (int) Math.round(swt * uiScale());
+    }
+
+    /** A coordinate in the render side's logical pixels, in SWT units: the inverse of {@link #swtToLogical}. */
+    public static int logicalToSwt(int logical) {
+        return (int) Math.round(logical / uiScale());
+    }
+
+    /**
      * Device pixels per SWT coordinate — how many pixels an off-screen buffer needs per unit the
      * application draws in.
      *
@@ -1070,6 +1114,41 @@ public class Config {
 
     static final String USE_SWT_FONT_COLORS = "swt.use_swt_font_colors";
     static final String USE_SWT_FONT_COLORS_BY_WIDGET = "swt.evolve.use_swt_font_colors_";
+
+    static final String DISABLE_SWT_CANVAS_COLORS_BY_CLASS = "swt.evolve.disable_swt_canvas_colors_";
+
+    /**
+     * {@code -Dswt.evolve.disable_swt_canvas_colors_<fully.qualified.Class>=true|false}, keyed by the
+     * class name as written: unlike the per-widget flags, the key is the application's own class.
+     */
+    static Map<String, Boolean> canvasColorsByClassFromProperties() {
+        TreeMap<String, Boolean> byClass = new TreeMap<>();
+        for (String key : System.getProperties().stringPropertyNames()) {
+            if (!key.startsWith(DISABLE_SWT_CANVAS_COLORS_BY_CLASS)) continue;
+            String className = key.substring(DISABLE_SWT_CANVAS_COLORS_BY_CLASS.length()).trim();
+            Boolean value = optionalBoolean(System.getProperty(key));
+            if (!className.isEmpty() && value != null) byClass.put(className, value);
+        }
+        return byClass.isEmpty() ? null : byClass;
+    }
+
+    /**
+     * {@code disable_swt_canvas_colors} for what a GC draws on: as set for the control's class or a
+     * superclass of it or, failing that, for the nearest control containing it that is listed; null
+     * when none is, which leaves the global flag to decide. Containers are matched so that a bare
+     * Composite inside a listed control follows it. A GC on an Image has no control and gets null.
+     */
+    public static Boolean canvasColorsOverride(Drawable drawable) {
+        Map<String, Boolean> byClass = getConfigFlags().disable_swt_canvas_colors_by_class;
+        if (byClass == null || byClass.isEmpty() || !(drawable instanceof Control)) return null;
+        for (Control c = (Control) drawable; c != null && !c.isDisposed(); c = c.getParent()) {
+            for (Class<?> type = c.getClass(); type != null; type = type.getSuperclass()) {
+                Boolean value = byClass.get(type.getName());
+                if (value != null) return value;
+            }
+        }
+        return null;
+    }
 
     /** Null when unset or blank, so the flag can tell "not configured" from "false". */
     static Boolean optionalBoolean(String value) {

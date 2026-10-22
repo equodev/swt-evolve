@@ -156,6 +156,18 @@ public final class WebDisplayHarness {
         return worked;
     }
 
+    /** Drains and flushes until three rounds in a row run no Display work, or 40 rounds pass. */
+    public void settle() {
+        int quiet = 0;
+        for (int round = 0; round < 40 && quiet < 3; round++) {
+            long before = dispatched;
+            drain();
+            flush();
+            drain();
+            quiet = dispatched == before ? quiet + 1 : 0;
+        }
+    }
+
     /** Units of Display work run so far, to tell a quiet period. */
     public long dispatched() {
         return dispatched;
