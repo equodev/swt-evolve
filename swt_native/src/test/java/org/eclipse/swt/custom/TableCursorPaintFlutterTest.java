@@ -233,4 +233,31 @@ class TableCursorPaintFlutterTest {
         for (int x = 0; x < data.width; x += 3)
             assertThat(rgb(data, x, data.height / 2)).as("x " + x).isEqualTo(red);
     }
+
+    @Test
+    void drawsTheFocusRectangleOnlyWhileItHasTheFocus() {
+        Table table = table();
+        columns(table, 2);
+        rows(table, 3);
+        open();
+        TableCursor cursor = new TableCursor(table, SWT.NONE);
+        cursor.setBackground(display.getSystemColor(SWT.COLOR_RED));
+        cursor.setSelection(1, 1);
+        RGB red = display.getSystemColor(SWT.COLOR_RED).getRGB();
+        assertThat(edgeInk(paintInto(cursor), red)).as("without the focus, no rectangle").isZero();
+        cursor.setFocus();
+        flutter.settle();
+        assertThat(cursor.isFocusControl()).isTrue();
+        assertThat(edgeInk(paintInto(cursor), red)).as("the focus rectangle runs along the edge").isPositive();
+    }
+
+    /** How many pixels of the top and bottom rows are not the background. */
+    private static int edgeInk(ImageData data, RGB background) {
+        int ink = 0;
+        for (int x = 0; x < data.width; x++)
+            for (int y : new int[] {0, data.height - 1})
+                if (!rgb(data, x, y).equals(background))
+                    ink++;
+        return ink;
+    }
 }

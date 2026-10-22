@@ -258,4 +258,31 @@ class TreeCursorPaintFlutterTest {
                 found = rgb(data, x, y).equals(yellow);
         assertThat(found).as("the cell's image is drawn at its left").isTrue();
     }
+
+    @Test
+    void drawsTheFocusRectangleOnlyWhileItHasTheFocus() {
+        Tree tree = tree();
+        columns(tree, 2);
+        TreeItem[] rows = model(tree);
+        open();
+        TreeCursor cursor = new TreeCursor(tree, SWT.NONE);
+        cursor.setBackground(display.getSystemColor(SWT.COLOR_RED));
+        cursor.setSelection(rows[1], 1);
+        RGB red = display.getSystemColor(SWT.COLOR_RED).getRGB();
+        assertThat(edgeInk(paintInto(cursor), red)).as("without the focus, no rectangle").isZero();
+        cursor.setFocus();
+        flutter.settle();
+        assertThat(cursor.isFocusControl()).isTrue();
+        assertThat(edgeInk(paintInto(cursor), red)).as("the focus rectangle runs along the edge").isPositive();
+    }
+
+    /** How many pixels of the top and bottom rows are not the background. */
+    private static int edgeInk(ImageData data, RGB background) {
+        int ink = 0;
+        for (int x = 0; x < data.width; x++)
+            for (int y : new int[] {0, data.height - 1})
+                if (!rgb(data, x, y).equals(background))
+                    ink++;
+        return ink;
+    }
 }
