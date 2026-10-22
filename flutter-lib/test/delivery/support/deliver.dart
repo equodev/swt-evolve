@@ -13,6 +13,7 @@ import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/widget.dart';
+import 'package:swtflutter/src/impl/utils/dnd_utils.dart';
 
 /// Sends [value] to whoever is holding it, whole - the frame Java writes for a widget it has not
 /// described before, or has changed too much to describe by parts.
@@ -100,4 +101,5 @@ Future<void> deliverFrame(String channel, Map<String, dynamic> body) async {
 void freshClient() {
   VRegistry.instance.clear();
   deliveryGate.reset();
+  DndDropAnswer.reset();
 }

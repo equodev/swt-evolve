@@ -45,6 +45,51 @@ public class SpinnerHelper {
     }
 
     /**
+     * Up and Down step the value by the increment, Page Up and Page Down by the page increment, as
+     * the platform's spinner does for a key no listener vetoed: the new text is offered as a Verify
+     * over the old, then Modify and Selection. A WRAP spinner wraps past either end to the other.
+     */
+    public static void stepByKey(DartSpinner c, Event key) {
+        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+            return;
+        int delta;
+        switch (key.keyCode) {
+            case SWT.ARROW_UP:
+                delta = c.increment;
+                break;
+            case SWT.ARROW_DOWN:
+                delta = -c.increment;
+                break;
+            case SWT.PAGE_UP:
+                delta = c.pageIncrement;
+                break;
+            case SWT.PAGE_DOWN:
+                delta = -c.pageIncrement;
+                break;
+            default:
+                return;
+        }
+        int value = c.selection + delta;
+        if ((c.getApi().getStyle() & SWT.WRAP) != 0) {
+            if (value > c.maximum)
+                value = c.minimum;
+            else if (value < c.minimum)
+                value = c.maximum;
+        }
+        value = Math.max(c.minimum, Math.min(c.maximum, value));
+        if (value == c.selection)
+            return;
+        Event verify = new Event();
+        verify.text = format(value, c.digits);
+        verify.start = 0;
+        verify.end = getText(c).length();
+        c.sendEvent(SWT.Verify, verify);
+        if (!verify.doit || c.isDisposed())
+            return;
+        applySelection(c, value, true, true);
+    }
+
+    /**
      * Moves the spinner to {@code value}. With {@code setText} the text follows, as natively: a Verify listener
      * hears the new text first and may refuse it, which leaves the old text and sends no Modify; the position has
      * moved already, as the native stepper's has.
@@ -63,6 +108,13 @@ public class SpinnerHelper {
             if (!verify.doit || c.isDisposed()) {
                 return;
             }
+        }
+        applySelection(c, value, setText, notify);
+    }
+
+    private static void applySelection(DartSpinner c, int value, boolean setText, boolean notify) {
+        if (c.selection != value) {
+            c.getValue().markDirty(VSpinner.SELECTION);
         }
         c.selection = value;
         if (setText) {

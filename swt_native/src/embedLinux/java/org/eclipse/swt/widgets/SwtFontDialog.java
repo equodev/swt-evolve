@@ -88,7 +88,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      */
     public SwtFontDialog(Shell parent, int style, FontDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     /**
@@ -116,7 +116,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * @return the FontData for the selected font, or null
      * @deprecated use #getFontList ()
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public FontData getFontData() {
         return fontData;
     }
@@ -294,7 +294,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * @param fontData the FontData to use initially, or null
      * @deprecated use #setFontList (FontData [])
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void setFontData(FontData fontData) {
         this.fontData = fontData;
     }

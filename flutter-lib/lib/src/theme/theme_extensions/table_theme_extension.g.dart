@@ -38,6 +38,10 @@ TableThemeExtension _$TableThemeExtensionFromJson(
     json['rowSelectedBorderColor'] as String,
   ),
   rowSelectedBorderWidth: (json['rowSelectedBorderWidth'] as num).toDouble(),
+  dropFeedbackLineWidth: (json['dropFeedbackLineWidth'] as num).toDouble(),
+  dropFeedbackHighlightAlpha: (json['dropFeedbackHighlightAlpha'] as num)
+      .toInt(),
+  dragImageOpacity: (json['dragImageOpacity'] as num).toDouble(),
   headerBackgroundColor: const ColorConverter().fromJson(
     json['headerBackgroundColor'] as String,
   ),
@@ -157,6 +161,9 @@ Map<String, dynamic> _$TableThemeExtensionToJson(
     instance.rowSelectedBorderColor,
   ),
   'rowSelectedBorderWidth': instance.rowSelectedBorderWidth,
+  'dropFeedbackLineWidth': instance.dropFeedbackLineWidth,
+  'dropFeedbackHighlightAlpha': instance.dropFeedbackHighlightAlpha,
+  'dragImageOpacity': instance.dragImageOpacity,
   'headerBackgroundColor': const ColorConverter().toJson(
     instance.headerBackgroundColor,
   ),

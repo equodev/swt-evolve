@@ -343,17 +343,9 @@ public class SwtSlider extends SwtControl implements ISlider {
         int hitPart = (int) ((NSScroller) getApi().view).hitPart();
         int value = getSelection();
         switch(hitPart) {
-            case OS.NSScrollerDecrementLine:
-                event.detail = SWT.ARROW_UP;
-                value -= increment;
-                break;
             case OS.NSScrollerDecrementPage:
                 value -= pageIncrement;
                 event.detail = SWT.PAGE_UP;
-                break;
-            case OS.NSScrollerIncrementLine:
-                value += increment;
-                event.detail = SWT.ARROW_DOWN;
                 break;
             case OS.NSScrollerIncrementPage:
                 value += pageIncrement;
@@ -483,7 +475,7 @@ public class SwtSlider extends SwtControl implements ISlider {
     @Override
     void setSmallSize() {
         /* This code is intentionally comment */
-        //	((NSScroller)view).setControlSize (OS.NSSmallControlSize);
+        //	((NSScroller)view).setControlSize (OS.NSControlSizeSmall);
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {

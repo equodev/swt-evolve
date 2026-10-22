@@ -17,14 +17,20 @@ import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
+import '../impl/key_forwarding.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
 import '../impl/utils/region_clip.dart';
+import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/tracker_session.dart';
 import '../impl/utils/window_origin.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
+
+/// `VEvent.detail` of the bounds a shell reports once it is first drawn (Java's
+/// `DisplayBridge.INITIAL_CLIENT_BOUNDS`).
+const int initialClientBounds = 1;
 
 class FloatingShellChromeScope extends InheritedWidget {
   final BoxConstraints viewportConstraints;
@@ -112,15 +118,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   /// Where a window-global pointer position falls in the coordinate space Java works in: measured
   /// from this Shell's own top-left, then shifted by where this Shell sits. Read from the render
-  /// tree rather than derived from the frame's parts, so maximized state is already accounted for.
+  /// tree rather than derived from the frame's parts, so maximized state is already accounted for,
+  /// and through the Shell's own transform, so the result is in SWT units at any zoom.
   ///
   /// The top-left is the frame's, title bar included: Java's bounds for a shell start there too, and
   /// its toDisplay adds the title bar to reach the client area.
   Offset _toDisplay(Offset windowPosition) {
-    if (!mounted) return windowPosition;
+    if (!mounted) return logicalToSwt(windowPosition);
     final box = context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return windowPosition;
-    final local = windowPosition - box.localToGlobal(Offset.zero);
+    if (box == null || !box.hasSize) return logicalToSwt(windowPosition);
+    final local = box.globalToLocal(windowPosition);
     final b = state.bounds;
     if (b == null) return local;
     return Offset(local.dx + b.x.toDouble(), local.dy + b.y.toDouble());
@@ -159,9 +166,13 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   KeyEventResult _handleShellKey(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      widget.sendKeyKeyDown(state, VEvent()
-        ..keyCode = SWT.ESC
-        ..character = SWT.ESC);
+      // The Display already forwards every key in the whole-tree backend; a second KeyDown here
+      // would deliver the Escape to Java twice.
+      if (!displayLevelKeyForwardingActive) {
+        widget.sendKeyKeyDown(state, VEvent()
+          ..keyCode = SWT.ESC
+          ..character = SWT.ESC);
+      }
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -400,7 +411,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final offset = resolvedOffset();
 
-    void sendBoundsToJava() {
+    void sendBoundsToJava({bool initial = false}) {
       // Back to SCREEN space, where Java keeps a shell's bounds: reporting the drawn offset would
       // have the window's origin taken off a second time on the next update.
       final drawn = (isFullScreen || _maximized) ? Offset.zero : (_offset ?? offset);
@@ -413,14 +424,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
           ..width =
               (isFullScreen || _maximized) ? viewport.maxWidth.round() : bodyW.round()
           ..height =
-              (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round(),
+              (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round()
+          // Java ignores the position in this one for a shell it moved after this frame's bounds were sent.
+          ..detail = initial ? initialClientBounds : null,
       );
     }
 
     if (!_initialBoundsSent) {
       _initialBoundsSent = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) sendBoundsToJava();
+        if (mounted) sendBoundsToJava(initial: true);
       });
     }
 

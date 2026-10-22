@@ -43,6 +43,7 @@ class DoubleTapDetector {
 
   int _tapCount = 0;
   DateTime? _lastTime;
+  Duration? _lastStamp;
   Object? _lastKey;
   Offset? _lastPos;
 
@@ -51,19 +52,28 @@ class DoubleTapDetector {
   /// [timeout] and [slop] of the previous one to continue the sequence.
   /// After a triple (count == 3) the internal state is cleared so the next
   /// tap starts a fresh sequence.
-  int registerTap({Object? key, Offset? position}) {
+  ///
+  /// [at] is the pointer event's own timestamp. When both taps carry one, they
+  /// are aged by it rather than by when each was handled: a frame that runs
+  /// long between the two presses must not split a double-click.
+  int registerTap({Object? key, Offset? position, Duration? at}) {
     final now = clock();
     final prevTime = _lastTime;
+    final prevStamp = _lastStamp;
     final prevKey = _lastKey;
     final prevPos = _lastPos;
 
     _lastTime = now;
+    _lastStamp = at;
     _lastKey = key;
     _lastPos = position;
 
-    bool consecutive = prevTime != null &&
-        now.difference(prevTime) < timeout &&
-        prevKey == key;
+    final gap = at != null && prevStamp != null
+        ? at - prevStamp
+        : prevTime == null
+            ? null
+            : now.difference(prevTime);
+    bool consecutive = gap != null && gap < timeout && prevKey == key;
     if (consecutive && position != null && prevPos != null) {
       final dx = position.dx - prevPos.dx;
       final dy = position.dy - prevPos.dy;
@@ -87,6 +97,7 @@ class DoubleTapDetector {
   void reset() {
     _tapCount = 0;
     _lastTime = null;
+    _lastStamp = null;
     _lastKey = null;
     _lastPos = null;
   }

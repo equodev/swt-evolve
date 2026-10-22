@@ -169,7 +169,7 @@ public abstract class DartWidget implements IWidget {
      */
     public DartWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();
@@ -941,7 +941,7 @@ public abstract class DartWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
