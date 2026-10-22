@@ -450,7 +450,6 @@ public class DartTracker extends DartWidget implements ITracker {
             while (tracking && !cancelled) {
                 ((DartDisplay) display.getImpl()).addPool();
                 try {
-                    inLoop = true;
                     if (isDisposed())
                         break;
                     if (parent != null && parent.isDisposed())
@@ -471,7 +470,6 @@ public class DartTracker extends DartWidget implements ITracker {
                     ((DartDisplay) display.getImpl()).runAsyncMessages(false);
                 } finally {
                     ((DartDisplay) display.getImpl()).removePool();
-                    inLoop = false;
                 }
             }
         } finally {
@@ -807,8 +805,6 @@ public class DartTracker extends DartWidget implements ITracker {
     private DartWidget announcedOn;
 
     boolean pointerSeen;
-
-    boolean inLoop;
 
     private Display keysDisplay;
 

@@ -85,7 +85,7 @@ final class TrackerHelper {
      * the Tracker took the key.
      */
     static boolean key(DartTracker tracker, int type, Event event) {
-        if (!tracker.tracking || !tracker.inLoop || tracker.isDisposed())
+        if (!tracker.tracking || tracker.isDisposed())
             return false;
         event.doit = true;
         if (tracker.sendKeyEvent(type, event) && type != SWT.KeyUp)
