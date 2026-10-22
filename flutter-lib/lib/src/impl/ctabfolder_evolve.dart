@@ -392,19 +392,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     } else {
       _chevronButtonRect = null;
     }
-    // The chevron is CTabFolder2Listener.showList, with the chevron's bounds in the folder's own
-    // coordinates. A listener that shows its own list (the workbench's part list) sets doit=false.
-    // Otherwise Java bumps showListPopupSeq and the folder's list opens from extraSetState.
-    final e = VEvent();
+    // The chevron is CTabFolder2Listener.showList with its bounds in folder coordinates: a listener
+    // with its own list sets doit=false, otherwise Java bumps showListPopupSeq. An unmeasured chevron
+    // sends nothing, or a listener would anchor its list at the folder's origin.
     final folderBox = context.findRenderObject();
-    if (box != null && box.hasSize && folderBox is RenderBox && folderBox.hasSize) {
-      final origin = box.localToGlobal(Offset.zero, ancestor: folderBox);
-      e
-        ..x = origin.dx.round()
-        ..y = origin.dy.round()
-        ..width = box.size.width.round()
-        ..height = box.size.height.round();
-    }
+    if (box == null || !box.hasSize || folderBox is! RenderBox || !folderBox.hasSize) return;
+    final origin = box.localToGlobal(Offset.zero, ancestor: folderBox);
+    final e = VEvent()
+      ..x = origin.dx.round()
+      ..y = origin.dy.round()
+      ..width = box.size.width.round()
+      ..height = box.size.height.round();
     widget.sendCTabFolder2showList(state, e);
   }
 
