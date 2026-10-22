@@ -89,6 +89,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void initState() {
     super.initState();
     _verticalScrollController.addListener(() => setState(() {}));
+    _verticalScrollController.addListener(_reportScrollOffset);
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
     _registerGetItemHeightListener();
@@ -160,14 +161,31 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  /// Returns the VTableItem id at the given Flutter coordinates, or null.
+  double get _scrollOffset =>
+      _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+
+  /// Java lays out no rows of its own, so every coordinate-to-row lookup it makes -- the hit test
+  /// behind getItem(Point) and an item's bounds -- counts from the top of the model. Tell it how far
+  /// this table has scrolled so it can take that off. Rounded to whole pixels and skipped when
+  /// unchanged, which drops the notifications a ScrollController fires without movement.
+  int _reportedScrollOffset = 0;
+
+  void _reportScrollOffset() {
+    if (!_verticalScrollController.hasClients) return;
+    final offset = _verticalScrollController.offset.round();
+    if (offset == _reportedScrollOffset) return;
+    _reportedScrollOffset = offset;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+  }
+
+  /// Returns the VTableItem id at the given viewport coordinates, or null.
   Object? findItemIdAtPosition(double x, double y) {
     final rowHeight = _cachedRowHeight;
     if (rowHeight == null || rowHeight <= 0) return null;
     final headerOffset = _cachedHeaderOffset ?? 0.0;
-    final adjustedY = y - headerOffset;
-    if (adjustedY < 0) return null;
-    final itemIndex = (adjustedY / rowHeight).floor();
+    final bodyY = y - headerOffset;
+    if (bodyY < 0) return null;
+    final itemIndex = ((bodyY + _scrollOffset) / rowHeight).floor();
     final items = getItems();
     if (itemIndex < 0 || itemIndex >= items.length) return null;
     return items[itemIndex].id;
@@ -190,7 +208,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     if (itemIndex < 0) return Rect.zero;
 
-    final y = headerOffset + (itemIndex * rowHeight);
+    final y = headerOffset + itemIndex * rowHeight - _scrollOffset;
 
     final columns = getColumns();
     double x = 0.0;
@@ -234,6 +252,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   Widget build(BuildContext context) {
+    // A rebuild can remount the scroll view (a refresh that empties the table first), and the new
+    // position starts at the top without notifying the controller; Java is told where it landed.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reportScrollOffset();
+    });
     final widgetTheme = Theme.of(context).extension<TableThemeExtension>()!;
     final columns = getColumns();
     final items = getItems();

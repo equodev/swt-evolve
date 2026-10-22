@@ -1007,7 +1007,9 @@ public class DartTable extends DartComposite implements ITable {
             return null;
         int headerH = getHeaderHeight();
         int y = point.y - headerH;
-        int index = topIndex + (y >= 0 ? y / itemHeight : -1);
+        // point is in viewport coordinates; the rows are laid out and scrolled on the
+        // Dart side, so the scroll distance has to be added back before indexing.
+        int index = y >= 0 ? (y + TableHelper.scrollOffsetY(this)) / itemHeight : -1;
         boolean valid = y >= 0 && index >= 0 && index < getItemCount() && items[index] != null;
         if (!valid)
             return null;
@@ -2575,6 +2577,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

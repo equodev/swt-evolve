@@ -2912,6 +2912,13 @@ public class DartTable extends DartComposite implements ITable {
                 OwnerDrawOverlay.rowsListening(this, e.segments);
             });
         });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.recordScrollOffset(this, e);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
