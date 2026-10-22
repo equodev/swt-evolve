@@ -65,6 +65,45 @@ class SwingHostInitialSizeTest {
         assertTableAreaKept(split);
     }
 
+    @Test
+    void contentThatRepaintsFromItselfKeepsItsDividersWhenAddedBeforeTheFrameHasASize() {
+        JSplitPane inner = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JLabel("Selection"), new JLabel("Units"));
+        inner.setDividerLocation(200);
+        JSplitPane outer = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inner, new JPanel());
+        outer.setDividerLocation(600);
+        JPanel applet = new JPanel(new BorderLayout());
+        applet.add(outer);
+        EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
+        JPanel frame = new JPanel(new BorderLayout());
+        frame.add(root);
+
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 0, 0));
+        root.host(applet);
+        paintFromItselfIfInTree(applet, frame);
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 384, 820));
+        layOutAndPaint(frame);
+
+        int units = inner.getBottomComponent().getHeight();
+        assertTrue(units >= 300, "middle pane " + units + " px high, expected about 390");
+    }
+
+    /**
+     * An applet is its own repaint root: Swing paints it at its own bounds, with nothing above it
+     * consulted, as soon as it is part of a displayable tree. Here that tree is the frame's.
+     */
+    private static void paintFromItselfIfInTree(JPanel applet, JPanel frame) {
+        if (!javax.swing.SwingUtilities.isDescendingFrom(applet, frame)) return;
+        applet.setSize(applet.getPreferredSize());
+        layOut(applet);
+        BufferedImage buffer = new BufferedImage(applet.getWidth(), applet.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics g = buffer.getGraphics();
+        try {
+            applet.paint(g);
+        } finally {
+            g.dispose();
+        }
+    }
+
     private static JSplitPane splitWithEmptyTable() {
         JTable table = new JTable(new DefaultTableModel(new String[] {"Name", "Type", "Age", "Update Date"}, 0));
         table.setPreferredScrollableViewportSize(new Dimension(400, VIEWPORT_HEIGHT));

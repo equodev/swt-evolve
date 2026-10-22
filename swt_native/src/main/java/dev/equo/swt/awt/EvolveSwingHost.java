@@ -19,6 +19,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -805,6 +807,7 @@ public final class EvolveSwingHost {
      */
     static final class ContentRoot extends JPanel {
         private final Runnable drawn;
+        private final List<Component> held = new ArrayList<>();
         private volatile boolean placed;
 
         ContentRoot(Runnable drawn) {
@@ -815,6 +818,34 @@ public final class EvolveSwingHost {
         /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
         void place() {
             placed = true;
+            List<Component> attach;
+            synchronized (held) {
+                attach = new ArrayList<>(held);
+                held.clear();
+            }
+            attach.forEach(this::attach);
+        }
+
+        /**
+         * Adds application content, held out of the tree until {@link #place}: an applet repaints
+         * from itself rather than through {@link #paintChildren}, and a {@code JSplitPane} painted at
+         * the applet's own placeholder size keeps that layout when the frame grows.
+         */
+        void host(Component child) {
+            synchronized (held) {
+                if (!placed) {
+                    held.add(child);
+                    return;
+                }
+            }
+            attach(child);
+        }
+
+        private void attach(Component child) {
+            hostAsLightweight(child);
+            add(child);
+            revalidate();
+            repaint();
         }
 
         @Override
@@ -990,10 +1021,7 @@ public final class EvolveSwingHost {
                         try {
                             frame.remove(child);
                             frame.add(frame.getRootPane(), BorderLayout.CENTER);
-                            hostAsLightweight(child);
-                            contentRoot.add(child);
-                            contentRoot.revalidate();
-                            contentRoot.repaint();
+                            contentRoot.host(child);
                             frame.revalidate();
                         } finally {
                             relocating = false;
