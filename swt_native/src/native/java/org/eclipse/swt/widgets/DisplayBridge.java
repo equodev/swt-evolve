@@ -658,6 +658,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return forDisplay != null && isMainShell(forDisplay, shell);
     }
 
+    @Override
+    public boolean rootsAWindow(Object shell) {
+        if (!(shell instanceof Shell)) return false;
+        Shell s = (Shell) shell;
+        return hostsAsMainShell(s) || isShellWindowed(s);
+    }
+
     private static final int MODAL_MASK = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 
     /**
@@ -812,14 +819,21 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         for (Shell shell : forDisplay._shells()) {
             if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
             if (shellWindows.containsKey(shell) || !ownsWindow(shell)) continue;
-            ShellWindow window = createShellWindow(shell);
+            // Before the window opens: its client reports from its own thread as soon as its view has
+            // metrics, while the engine is still being created.
+            registerShellClientReady(shell);
+            ShellWindow window = null;
+            try {
+                window = createShellWindow(shell);
+            } finally {
+                if (window == null) offChannel(shellClientReadyChannel(shell));
+            }
             if (window == null) continue;
             shellWindows.put(shell, window);
             // setMaximized and friends only reach a window that exists, so a state set before open()
             // is applied here.
             int state = windowStateOf(shell);
             if (state != ShellWindow.STATE_NORMAL) window.setState(state);
-            registerShellClientReady(shell);
         }
         return leftOwnWindow;
     }
@@ -974,7 +988,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         lostWindows.remove(shell);
     }
 
-    private static String shellClientReadyChannel(Shell shell) {
+    static String shellClientReadyChannel(Shell shell) {
         return "Shell/" + shell.hashCode() + "/ClientReady";
     }
 
