@@ -13820,7 +13820,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN_empty_font10",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13845,7 +13845,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN_empty_font18",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13870,7 +13870,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN_small_font10",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13895,7 +13895,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN_small_font18",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13920,7 +13920,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN_large_font10",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13945,7 +13945,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN_large_font18",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13962,7 +13962,7 @@
               "Short"
             ]
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN_items_font10",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -13979,7 +13979,7 @@
               "Short"
             ]
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN_items_font18",
           "style": "DROP_DOWN",
           "useFontTheme": false,
@@ -14004,7 +14004,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_empty_font10",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14029,7 +14029,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_empty_font18",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14054,7 +14054,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_small_font10",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14079,7 +14079,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_small_font18",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14104,7 +14104,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_large_font10",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14129,7 +14129,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_large_font18",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14146,7 +14146,7 @@
               "Short"
             ]
           },
-          "height": 17.0,
+          "height": 30.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_items_font10",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14163,7 +14163,7 @@
               "Short"
             ]
           },
-          "height": 26.0,
+          "height": 39.0,
           "name": "Combo_DROP_DOWN|READ_ONLY_items_font18",
           "style": "DROP_DOWN|READ_ONLY",
           "useFontTheme": false,
@@ -14188,7 +14188,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 18.0,
+          "height": 31.0,
           "name": "Combo_SIMPLE_empty_font10",
           "style": "SIMPLE",
           "useFontTheme": false,
@@ -14213,7 +14213,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 27.0,
+          "height": 40.0,
           "name": "Combo_SIMPLE_empty_font18",
           "style": "SIMPLE",
           "useFontTheme": false,
@@ -14238,7 +14238,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 18.0,
+          "height": 31.0,
           "name": "Combo_SIMPLE_small_font10",
           "style": "SIMPLE",
           "useFontTheme": false,
@@ -14263,7 +14263,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 27.0,
+          "height": 40.0,
           "name": "Combo_SIMPLE_small_font18",
           "style": "SIMPLE",
           "useFontTheme": false,
@@ -14288,7 +14288,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 18.0,
+          "height": 31.0,
           "name": "Combo_SIMPLE_large_font10",
           "style": "SIMPLE",
           "useFontTheme": false,
@@ -14313,7 +14313,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 27.0,
+          "height": 40.0,
           "name": "Combo_SIMPLE_large_font18",
           "style": "SIMPLE",
           "useFontTheme": false,
@@ -14338,7 +14338,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 18.0,
+          "height": 31.0,
           "name": "Combo_SIMPLE|READ_ONLY_empty_font10",
           "style": "SIMPLE|READ_ONLY",
           "useFontTheme": false,
@@ -14363,7 +14363,7 @@
           "expectedComponents": {
             "text": ""
           },
-          "height": 27.0,
+          "height": 40.0,
           "name": "Combo_SIMPLE|READ_ONLY_empty_font18",
           "style": "SIMPLE|READ_ONLY",
           "useFontTheme": false,
@@ -14388,7 +14388,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 18.0,
+          "height": 31.0,
           "name": "Combo_SIMPLE|READ_ONLY_small_font10",
           "style": "SIMPLE|READ_ONLY",
           "useFontTheme": false,
@@ -14413,7 +14413,7 @@
           "expectedComponents": {
             "text": "Yes"
           },
-          "height": 27.0,
+          "height": 40.0,
           "name": "Combo_SIMPLE|READ_ONLY_small_font18",
           "style": "SIMPLE|READ_ONLY",
           "useFontTheme": false,
@@ -14438,7 +14438,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 18.0,
+          "height": 31.0,
           "name": "Combo_SIMPLE|READ_ONLY_large_font10",
           "style": "SIMPLE|READ_ONLY",
           "useFontTheme": false,
@@ -14463,7 +14463,7 @@
           "expectedComponents": {
             "text": "This is a long widget text"
           },
-          "height": 27.0,
+          "height": 40.0,
           "name": "Combo_SIMPLE|READ_ONLY_large_font18",
           "style": "SIMPLE|READ_ONLY",
           "useFontTheme": false,
