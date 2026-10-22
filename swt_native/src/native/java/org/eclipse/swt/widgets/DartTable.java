@@ -1968,7 +1968,7 @@ public class DartTable extends DartComposite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        return TableHelper.growColumnlessWidth(this, item);
+        return TableHelper.growColumnlessWidth(this, ((DartTableItem) item.getImpl()).contentWidth());
     }
 
     boolean setScrollWidth(TableItem[] items, boolean set) {
@@ -1982,7 +1982,12 @@ public class DartTable extends DartComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        return TableHelper.measureColumnlessWidth(this, items, set);
+        int widest = 0;
+        for (TableItem item : items) {
+            if (item != null)
+                widest = Math.max(widest, ((DartTableItem) item.getImpl()).contentWidth());
+        }
+        return TableHelper.setColumnlessWidth(this, widest, set);
     }
 
     /**

@@ -1131,6 +1131,14 @@ public class DartTableItem extends DartItem implements ITableItem {
         return font;
     }
 
+    int contentWidth() {
+        if ((parent.getStyle() & SWT.VIRTUAL) != 0 && !cached)
+            return 0;
+        if (width == -1)
+            width = dev.equo.swt.size.TableSizes.getCellContentWidth(getApi());
+        return width;
+    }
+
     public Image[] getImages() {
         return TableHelper.getImages(this);
     }

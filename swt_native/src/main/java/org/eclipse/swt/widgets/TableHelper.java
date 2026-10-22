@@ -15,26 +15,22 @@ import java.lang.reflect.Array;
 public class TableHelper {
 
     /**
-     * A row of a table without columns was given what it shows: the one cell grows to hold it, as Win32 and
-     * Cocoa grow their one column to the widest row. GTK stretches it across the table.
+     * A row of a table without columns was given what it shows, {@code width} wide: the one cell grows to hold
+     * it, as Win32 and Cocoa grow their one column to the widest row. GTK stretches it across the table.
      */
-    static boolean growColumnlessWidth(DartTable table, TableItem item) {
-        if (!holdsData(table, item)) return false;
-        int width = dev.equo.swt.size.TableSizes.getCellContentWidth(item);
+    static boolean growColumnlessWidth(DartTable table, int width) {
         if (width <= table.columnlessWidth) return false;
         table.columnlessWidth = width;
         return true;
     }
 
     /**
-     * The one cell of a table without columns is measured again over {@code items}: {@code set} takes the widest
-     * row even when it is narrower than before, otherwise the cell only grows. A virtual row that holds no data
-     * yet is not asked for it.
+     * The one cell of a table without columns was measured again, {@code widest} being its widest row: {@code set}
+     * takes it even when it is narrower than before, otherwise the cell only grows.
      */
-    static boolean measureColumnlessWidth(DartTable table, TableItem[] items, boolean set) {
-        int width = widestRow(table, items);
-        if (!set && width <= table.columnlessWidth) return false;
-        table.columnlessWidth = width;
+    static boolean setColumnlessWidth(DartTable table, int widest, boolean set) {
+        if (!set && widest <= table.columnlessWidth) return false;
+        table.columnlessWidth = widest;
         return true;
     }
 
