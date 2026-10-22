@@ -1,10 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -13,10 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doNothing;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -26,47 +19,12 @@ import static org.mockito.Mockito.when;
  * listeners ruled on it already, so it is not put to them again. A Selection is an item picked from the list.
  */
 @Tag("native-unit")
-class ComboEventsFromFlutterNativeTest {
-
-    private RecordingBridge bridge;
-    private Display display;
-    /** The runnables a hook queued with asyncExec, run when the test says so. */
-    private final List<Runnable> queued = new ArrayList<>();
-
-    @BeforeEach
-    void setUp() {
-        bridge = new RecordingBridge();
-        FlutterBridge.set(bridge);
-        display = DartMocks.dartDisplay();
-        doAnswer(invocation -> queued.add(invocation.getArgument(0))).when(display).asyncExec(any(Runnable.class));
-        // The mock display would swallow every event; its real dispatch only needs the listener table.
-        DartDisplay impl = dartDisplay();
-        doCallRealMethod().when(impl).sendEvent(any(EventTable.class), any(Event.class));
-    }
-
-    @AfterEach
-    void tearDown() {
-        // The display mock is shared by the whole suite: hand it back as the other tests expect it.
-        doNothing().when(display).asyncExec(any(Runnable.class));
-        DartDisplay impl = dartDisplay();
-        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
-        FlutterBridge.set(null);
-    }
-
-    private DartDisplay dartDisplay() {
-        return (DartDisplay) display.getImpl();
-    }
+class ComboEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
     private void fromFlutter(Combo combo, String name, String event, String text) {
         Event e = new Event();
         e.text = text;
-        bridge.comm.fireContaining("Combo/" + combo.hashCode() + "/" + name + "/" + event, e);
-    }
-
-    private void runQueued() {
-        List<Runnable> now = new ArrayList<>(queued);
-        queued.clear();
-        now.forEach(Runnable::run);
+        fromFlutter(combo, name + "/" + event, e);
     }
 
     private Combo combo(int style, String... items) {
@@ -74,12 +32,6 @@ class ComboEventsFromFlutterNativeTest {
         if (items.length > 0)
             combo.setItems(items);
         return combo;
-    }
-
-    private static List<Event> record(Combo combo, int type) {
-        List<Event> events = new ArrayList<>();
-        combo.addListener(type, events::add);
-        return events;
     }
 
     @Test
@@ -117,7 +69,7 @@ class ComboEventsFromFlutterNativeTest {
 
         fromFlutter(combo, "Modify", "Modify", null);
 
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, this::runQueued);
+        assertThatThrownBy(this::runQueued).isInstanceOf(IllegalArgumentException.class);
         assertThat(combo.getText()).isEqualTo("kept");
     }
 

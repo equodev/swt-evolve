@@ -75,24 +75,46 @@ public class ComboHelper {
         sendSegments(combo);
     }
 
+    /** Empties the list; the caller has already asked the Verify listeners about an editable combo's text. */
+    public static void removeAll(DartCombo combo) {
+        combo.getValue().markDirty(VCombo.ITEMS);
+        combo.items = new String[0];
+        listEmptied(combo);
+    }
+
+    /** Replaces the items, selecting none of them. */
+    public static void setItems(DartCombo combo, String[] items) {
+        if (items == null)
+            combo.error(SWT.ERROR_NULL_ARGUMENT);
+        for (String item : items) {
+            if (item == null)
+                combo.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        combo.removeAll();
+        if (items.length == 0)
+            return;
+        combo.getValue().markDirty(VCombo.ITEMS);
+        combo.items = items.clone();
+        for (String item : combo.items)
+            sendSegments(combo, item);
+    }
+
+    /** Selects a range of an editable combo's text, clamped to it; a read-only combo shows its whole item selected. */
+    public static void setSelection(DartCombo combo, Point selection) {
+        if (selection == null)
+            combo.error(SWT.ERROR_NULL_ARGUMENT);
+        if (readOnly(combo))
+            return;
+        int length = combo.getText().length();
+        int start = Math.min(Math.max(Math.min(selection.x, selection.y), 0), length);
+        int end = Math.min(Math.max(Math.max(selection.x, selection.y), 0), length);
+        combo.selection = new Point(start, end);
+    }
+
     /** All items are gone, and the selection with them. */
     public static void listEmptied(DartCombo combo) {
         combo.selectedIndex = -1;
         syncReadOnlyText(combo);
-    }
-
-    /**
-     * Deselects whatever is selected and empties the text that showed it, as GTK and Win32 do. A read-only combo
-     * says so, even when nothing was selected; an editable one does not.
-     */
-    public static void deselectAll(DartCombo combo) {
-        combo.selectedIndex = -1;
-        if (readOnly(combo)) {
-            syncReadOnlyText(combo);
-            combo.sendEvent(SWT.Modify);
-        } else {
-            clearText(combo);
-        }
     }
 
     /** A read-only combo shows its selected item, or nothing: its text follows whatever moved the selection. */
@@ -108,8 +130,8 @@ public class ComboHelper {
     }
 
     /**
-     * Deselects the selected item and empties the text that showed it. A read-only combo says so; an editable one
-     * does not.
+     * Deselects the selected item and empties the text that showed it, as GTK and Win32 do. A read-only combo says
+     * so, even when nothing was selected; an editable one does not.
      */
     public static void deselect(DartCombo combo) {
         combo.selectedIndex = -1;

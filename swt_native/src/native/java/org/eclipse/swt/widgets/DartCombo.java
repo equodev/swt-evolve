@@ -476,7 +476,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void deselectAll() {
         checkWidget();
-        ComboHelper.deselectAll(this);
+        ComboHelper.deselect(this);
     }
 
     @Override
@@ -1007,9 +1007,7 @@ public class DartCombo extends DartComposite implements ICombo {
         ignoreSelection = true;
         if ((getApi().style & SWT.READ_ONLY) == 0)
             setText("", true);
-        getValue().markDirty(VCombo.ITEMS);
-        items = new String[0];
-        ComboHelper.listEmptied(this);
+        ComboHelper.removeAll(this);
         ignoreSelection = false;
     }
 
@@ -1221,27 +1219,8 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setItems(String... items) {
-        getValue().markDirty(VCombo.ITEMS);
-        String[] newValue = items;
         checkWidget();
-        if (items == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        for (int i = 0; i < items.length; i++) {
-            if (items[i] == null)
-                error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        removeAll();
-        if (items.length == 0)
-            return;
-        ignoreSelection = true;
-        for (int i = 0; i < items.length; i++) {
-            if ((getApi().style & SWT.READ_ONLY) != 0) {
-            } else {
-            }
-        }
-        this.items = items.clone();
-        ignoreSelection = false;
-        for (String item : this.items) ComboHelper.sendSegments(this, item);
+        ComboHelper.setItems(this, items);
     }
 
     /**
@@ -1312,16 +1291,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setSelection(Point selection) {
         checkWidget();
-        if (selection == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().style & SWT.READ_ONLY) != 0)
-            return;
-        int start = Math.min(selection.x, selection.y);
-        int end = Math.max(selection.x, selection.y);
-        int length = getText().length();
-        start = Math.min(Math.max(start, 0), length);
-        end = Math.min(Math.max(end, 0), length);
-        this.selection = new Point(start, end);
+        ComboHelper.setSelection(this, selection);
     }
 
     /**
