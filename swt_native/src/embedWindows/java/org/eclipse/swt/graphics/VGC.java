@@ -695,6 +695,13 @@ public class VGC extends VResource {
     public void setThemedCanvas(Boolean value) {
     }
 
+    public String getFillRoles() {
+        return ((DartGC) impl).wireFillRoles();
+    }
+
+    public void setFillRoles(String value) {
+    }
+
     public static final String XORMODE = "XORMode";
 
     public static final String ALPHA = "alpha";
@@ -710,6 +717,8 @@ public class VGC extends VResource {
     public static final String CLIPPING_PATH = "clippingPath";
 
     public static final String CLIPPING_RECTS = "clippingRects";
+
+    public static final String FILL_ROLES = "fillRoles";
 
     public static final String FILL_RULE = "fillRule";
 
@@ -797,6 +806,9 @@ public class VGC extends VResource {
                 return;
             case "themedCanvas":
                 Serializer.writeKeyValue(writer, "themedCanvas", getThemedCanvas());
+                return;
+            case "fillRoles":
+                Serializer.writeKeyValue(writer, "fillRoles", getFillRoles());
                 return;
         }
         super.writeProperty(writer, key);

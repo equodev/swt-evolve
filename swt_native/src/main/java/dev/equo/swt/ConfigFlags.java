@@ -84,6 +84,16 @@ public class ConfigFlags {
     @JsonAttribute(ignore = true)
     public Map<String, Boolean> disable_swt_canvas_colors_by_class;
 
+    /**
+     * Which fill colors of a control class are a hover or a selection
+     * ({@code -Dswt.evolve.canvas_fill_roles_<fully.qualified.Class>=RRGGBB:role,...}), normalized
+     * and keyed by the class name as written; resolved like
+     * {@link #disable_swt_canvas_colors_by_class}. Java-only: the client gets the outcome per GC as
+     * {@code VGC.fillRoles}.
+     */
+    @JsonAttribute(ignore = true)
+    public Map<String, String> canvas_fill_roles_by_class;
+
     /** Drops what an application paints through a Control's own GC, leaving the control's own
      *  rendering alone. A control that draws itself and is then painted over -- a check box whose
      *  label the application redraws -- shows that drawing twice. Canvas and StyledText keep
@@ -217,6 +227,7 @@ public class ConfigFlags {
                 ", use_swt_colors=" + use_swt_colors +
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
                 ", disable_swt_canvas_colors_by_class=" + disable_swt_canvas_colors_by_class +
+                ", canvas_fill_roles_by_class=" + canvas_fill_roles_by_class +
                 ", disable_control_gc_overlay=" + disable_control_gc_overlay +
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +

@@ -27,6 +27,9 @@ mixin _$CanvasThemeExtensionTailorMixin
   Color get patternStartColor;
   Color get patternEndColor;
   Color get imageTintColor;
+  Color get highlightColor;
+  Color get hoverFillColor;
+  Color get selectionFillColor;
   int get glyphTintMaxSide;
   int get glyphTintChannelTolerance;
 
@@ -48,6 +51,9 @@ mixin _$CanvasThemeExtensionTailorMixin
     Color? patternStartColor,
     Color? patternEndColor,
     Color? imageTintColor,
+    Color? highlightColor,
+    Color? hoverFillColor,
+    Color? selectionFillColor,
     int? glyphTintMaxSide,
     int? glyphTintChannelTolerance,
   }) {
@@ -68,6 +74,9 @@ mixin _$CanvasThemeExtensionTailorMixin
       patternStartColor: patternStartColor ?? this.patternStartColor,
       patternEndColor: patternEndColor ?? this.patternEndColor,
       imageTintColor: imageTintColor ?? this.imageTintColor,
+      highlightColor: highlightColor ?? this.highlightColor,
+      hoverFillColor: hoverFillColor ?? this.hoverFillColor,
+      selectionFillColor: selectionFillColor ?? this.selectionFillColor,
       glyphTintMaxSide: glyphTintMaxSide ?? this.glyphTintMaxSide,
       glyphTintChannelTolerance:
           glyphTintChannelTolerance ?? this.glyphTintChannelTolerance,
@@ -113,6 +122,13 @@ mixin _$CanvasThemeExtensionTailorMixin
       )!,
       patternEndColor: Color.lerp(patternEndColor, other.patternEndColor, t)!,
       imageTintColor: Color.lerp(imageTintColor, other.imageTintColor, t)!,
+      highlightColor: Color.lerp(highlightColor, other.highlightColor, t)!,
+      hoverFillColor: Color.lerp(hoverFillColor, other.hoverFillColor, t)!,
+      selectionFillColor: Color.lerp(
+        selectionFillColor,
+        other.selectionFillColor,
+        t,
+      )!,
       glyphTintMaxSide: t < 0.5 ? glyphTintMaxSide : other.glyphTintMaxSide,
       glyphTintChannelTolerance: t < 0.5
           ? glyphTintChannelTolerance
@@ -181,6 +197,18 @@ mixin _$CanvasThemeExtensionTailorMixin
               other.imageTintColor,
             ) &&
             const DeepCollectionEquality().equals(
+              highlightColor,
+              other.highlightColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverFillColor,
+              other.hoverFillColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              selectionFillColor,
+              other.selectionFillColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               glyphTintMaxSide,
               other.glyphTintMaxSide,
             ) &&
@@ -192,7 +220,7 @@ mixin _$CanvasThemeExtensionTailorMixin
 
   @override
   int get hashCode {
-    return Object.hash(
+    return Object.hashAll([
       runtimeType.hashCode,
       const DeepCollectionEquality().hash(defaultWidth),
       const DeepCollectionEquality().hash(defaultHeight),
@@ -210,9 +238,12 @@ mixin _$CanvasThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(patternStartColor),
       const DeepCollectionEquality().hash(patternEndColor),
       const DeepCollectionEquality().hash(imageTintColor),
+      const DeepCollectionEquality().hash(highlightColor),
+      const DeepCollectionEquality().hash(hoverFillColor),
+      const DeepCollectionEquality().hash(selectionFillColor),
       const DeepCollectionEquality().hash(glyphTintMaxSide),
       const DeepCollectionEquality().hash(glyphTintChannelTolerance),
-    );
+    ]);
   }
 }
 
@@ -235,6 +266,9 @@ extension CanvasThemeExtensionBuildContextProps on BuildContext {
   Color get patternStartColor => canvasThemeExtension.patternStartColor;
   Color get patternEndColor => canvasThemeExtension.patternEndColor;
   Color get imageTintColor => canvasThemeExtension.imageTintColor;
+  Color get highlightColor => canvasThemeExtension.highlightColor;
+  Color get hoverFillColor => canvasThemeExtension.hoverFillColor;
+  Color get selectionFillColor => canvasThemeExtension.selectionFillColor;
   int get glyphTintMaxSide => canvasThemeExtension.glyphTintMaxSide;
   int get glyphTintChannelTolerance =>
       canvasThemeExtension.glyphTintChannelTolerance;

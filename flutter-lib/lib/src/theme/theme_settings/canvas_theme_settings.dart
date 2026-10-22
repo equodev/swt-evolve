@@ -64,6 +64,10 @@ CanvasThemeExtension _getCanvasTheme({
     patternStartColor: colorScheme.primaryContainer,
     patternEndColor: surface,
     imageTintColor: colorScheme.onSurface,
+    // Saturated, so a hover or highlight still shows at the fill's lightness.
+    highlightColor: colorSchemeExtension.surfaceBorderFocused,
+    hoverFillColor: colorScheme.surfaceContainerHighest,
+    selectionFillColor: colorScheme.primaryContainer,
     // Big enough for a 2x icon, far below any real picture; 4/255 admits a grey the encoder
     // rounded unevenly without admitting a desaturated color.
     glyphTintMaxSide: 64,

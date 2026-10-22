@@ -362,11 +362,112 @@ class GCDrawer extends GCDrawerBase {
   // drawing side a background or a foreground; the role says what it is being used for.
   Color get bg =>
       _themed(state.background, _canvasTheme?.backgroundColor, _swtBackground);
-  Color get fillColor =>
-      _themed(state.background, _canvasTheme?.fillColor, _swtBackground);
+  Color get fillColor => _keepingContrast(
+      _themed(state.background, _canvasTheme?.fillColor, _swtBackground));
   Color get textBackgroundColor =>
       _hostGround ??
-      _themed(state.background, _canvasTheme?.textBackgroundColor, _swtBackground);
+      _keepingContrast(_themed(
+          state.background, _canvasTheme?.textBackgroundColor, _swtBackground));
+
+  // L* a fill that differs from the normal one moves away from the theme's fill: a little more than
+  // its own L* distance to the normal fill while that is small, approaching the maximum as it grows.
+  static const double _maxOffset = 40;
+  static const double _offsetScale = 20;
+  // How far the most chromatic fill goes toward highlightColor.
+  static const double _maxHighlight = 0.6;
+  static const int _maxCountedFills = 256;
+
+  // Keeps a hover or selection apart from the normal fill under the theme, moving it toward the side
+  // with room (a light app darkens its highlights, which on a dark fill would sink into black). The
+  // hue it adds tints it toward highlightColor and its lightness, or a light fill shows a pastel.
+  Color _keepingContrast(Color themed) {
+    final highlight = _canvasTheme?.highlightColor;
+    final swtColor = state.background;
+    if (!_useThemeColors || highlight == null || swtColor == null) return themed;
+    final app = colorFromVColor(swtColor);
+    final declared = _declaredRoleFill(app);
+    if (declared != null) return declared;
+    final normal = _normalFill(app);
+    final difference = (_lstar(app) - _lstar(normal)).abs();
+    final tint = (_chroma(app) - _chroma(normal)).clamp(0.0, 1.0) * _maxHighlight;
+    if (difference < 1 && tint < 0.01) return themed;
+    final fill = _lstar(themed);
+    final offset = _maxOffset * (1 - math.exp(-difference / _offsetScale));
+    final apart = fill < 50 ? fill + offset : fill - offset;
+    return _withLstar(Color.lerp(themed, highlight, tint)!, apart + (_lstar(highlight) - apart) * tint);
+  }
+
+  // The theme's color for a fill the integrator declared a hover or a selection
+  // (`RRGGBB:role,...` in VGC.fillRoles), or null when the color has no declared role.
+  Color? _declaredRoleFill(Color app) {
+    final role = _fillRoles[app.toARGB32() & 0xFFFFFF];
+    return switch (role) {
+      'hover' => _canvasTheme?.hoverFillColor,
+      'selection' => _canvasTheme?.selectionFillColor,
+      _ => null,
+    };
+  }
+
+  String? _fillRolesSource;
+  Map<int, String> _parsedFillRoles = const {};
+
+  Map<int, String> get _fillRoles {
+    final source = state.fillRoles;
+    if (source == _fillRolesSource) return _parsedFillRoles;
+    _fillRolesSource = source;
+    _parsedFillRoles = {
+      for (final entry in (source ?? '').split(','))
+        if (entry.split(':') case [final color, final role])
+          if (int.tryParse(color, radix: 16) case final rgb?) rgb: role,
+    };
+    return _parsedFillRoles;
+  }
+
+  // The control's own background or, when it sets none (NatTable never does), the fill this GC
+  // has painted with most.
+  final Map<int, int> _fillCounts = {};
+  int? _commonestFill;
+
+  Color _normalFill(Color app) {
+    final ground = _controlBackground;
+    if (ground != null) return colorFromVColor(ground);
+    final key = app.toARGB32();
+    if (_fillCounts.length < _maxCountedFills || _fillCounts.containsKey(key)) {
+      final count = _fillCounts.update(key, (n) => n + 1, ifAbsent: () => 1);
+      if (count > (_fillCounts[_commonestFill] ?? 0)) _commonestFill = key;
+    }
+    return Color(_commonestFill ?? key);
+  }
+
+  VColor? get _controlBackground {
+    final host = widgetContext;
+    if (host is! StatefulElement || !host.mounted) return null;
+    final ground = host.state;
+    return ground is GCGround ? (ground as GCGround).swtGround : null;
+  }
+
+  static double _lstar(Color c) {
+    final y = c.computeLuminance();
+    return y > 0.008856 ? 116 * math.pow(y, 1 / 3) - 16 : 903.3 * y;
+  }
+
+  static double _chroma(Color c) =>
+      math.max(c.r, math.max(c.g, c.b)) - math.min(c.r, math.min(c.g, c.b));
+
+  // Same hue and saturation, with the HSL lightness that reaches [target] L*.
+  static Color _withLstar(Color c, double target) {
+    final hsl = HSLColor.fromColor(c);
+    var lo = 0.0, hi = 1.0;
+    for (var i = 0; i < 16; i++) {
+      final mid = (lo + hi) / 2;
+      if (_lstar(hsl.withLightness(mid).toColor()) < target) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    return hsl.withLightness((lo + hi) / 2).toColor();
+  }
 
   Color? get _hostGround {
     final host = widgetContext;

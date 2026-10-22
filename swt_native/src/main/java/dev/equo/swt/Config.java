@@ -14,8 +14,10 @@ import org.eclipse.swt.widgets.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
@@ -878,6 +880,7 @@ public class Config {
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
             configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
+            configFlags.canvas_fill_roles_by_class = canvasFillRolesByClassFromProperties();
             // Drops what an application paints over a control through its GC, keeping only what the
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
@@ -1139,11 +1142,56 @@ public class Config {
      * Composite inside a listed control follows it. A GC on an Image has no control and gets null.
      */
     public static Boolean canvasColorsOverride(Drawable drawable) {
-        Map<String, Boolean> byClass = getConfigFlags().disable_swt_canvas_colors_by_class;
+        return nearestListed(getConfigFlags().disable_swt_canvas_colors_by_class, drawable);
+    }
+
+    static final String CANVAS_FILL_ROLES_BY_CLASS = "swt.evolve.canvas_fill_roles_";
+
+    /**
+     * {@code -Dswt.evolve.canvas_fill_roles_<fully.qualified.Class>=RRGGBB:role,...}, keyed by the
+     * application's class name as written: which of the colors that class fills with are a hover or
+     * a selection, so a themed GC paints them with the theme's color for that role.
+     */
+    static Map<String, String> canvasFillRolesByClassFromProperties() {
+        TreeMap<String, String> byClass = new TreeMap<>();
+        for (String key : System.getProperties().stringPropertyNames()) {
+            if (!key.startsWith(CANVAS_FILL_ROLES_BY_CLASS)) continue;
+            String className = key.substring(CANVAS_FILL_ROLES_BY_CLASS.length()).trim();
+            String roles = normalizeFillRoles(System.getProperty(key));
+            if (!className.isEmpty() && roles != null) byClass.put(className, roles);
+        }
+        return byClass.isEmpty() ? null : byClass;
+    }
+
+    /**
+     * The entries of a fill-roles value that are a six-digit color and a known role, as
+     * {@code RRGGBB:role} in upper-case hex joined by commas; null when none is.
+     */
+    static String normalizeFillRoles(String value) {
+        if (value == null) return null;
+        StringJoiner roles = new StringJoiner(",");
+        for (String entry : value.split(",")) {
+            String[] parts = entry.split(":", 2);
+            if (parts.length != 2) continue;
+            String color = parts[0].trim();
+            if (color.startsWith("#")) color = color.substring(1);
+            String role = parts[1].trim().toLowerCase(Locale.ROOT);
+            if (color.matches("[0-9a-fA-F]{6}") && (role.equals("hover") || role.equals("selection")))
+                roles.add(color.toUpperCase(Locale.ROOT) + ":" + role);
+        }
+        return roles.length() == 0 ? null : roles.toString();
+    }
+
+    /** The fill roles for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static String canvasFillRoles(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
+    }
+
+    private static <T> T nearestListed(Map<String, T> byClass, Drawable drawable) {
         if (byClass == null || byClass.isEmpty() || !(drawable instanceof Control)) return null;
         for (Control c = (Control) drawable; c != null && !c.isDisposed(); c = c.getParent()) {
             for (Class<?> type = c.getClass(); type != null; type = type.getSuperclass()) {
-                Boolean value = byClass.get(type.getName());
+                T value = byClass.get(type.getName());
                 if (value != null) return value;
             }
         }
