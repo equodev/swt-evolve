@@ -504,7 +504,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final showCheckboxSpace = hasCheckStyle && columnIndex == 0;
     final headerHeight = calculateHeaderHeight(textStyle, theme);
 
-    final headerText = fixMnemonic(column.text);
+    final headerText = stripAccelerators(column.text);
     final double? columnWidth = _columnWidthAt(columnIndex);
     final EdgeInsets headerPadding = columnWidth == null
         ? theme.headerPadding
@@ -1268,7 +1268,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double checkboxWidth,
   ) {
     if ((column.width ?? 0) <= 0) return 0.0;
-    final headerText = fixMnemonic(column.text);
+    final headerText = stripAccelerators(column.text);
     if (headerText.isEmpty) return 0.0;
 
     double floor = measureTableText(headerText, headerTextStyle);
@@ -1385,7 +1385,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     TextStyle headerTextStyle,
     TableThemeExtension theme,
   ) {
-    final headerText = fixMnemonic(column.text);
+    final headerText = stripAccelerators(column.text);
     if (headerText.isEmpty) return 0.0;
 
     final headerPainter = TextPainter(

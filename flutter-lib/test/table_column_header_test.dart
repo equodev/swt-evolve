@@ -41,9 +41,9 @@ void main() {
     expect(find.textContaining('&N'), findsNothing);
   });
 
-  testWidgets('a & that ends the header text is drawn', (tester) async {
+  testWidgets('a & that ends the header text is not drawn either, as on Win32 and GTK', (tester) async {
     await _pump(tester, 'R&D &');
 
-    expect(find.text('RD &'), findsOneWidget);
+    expect(find.text('RD '), findsOneWidget);
   });
 }

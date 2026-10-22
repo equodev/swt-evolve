@@ -58,7 +58,7 @@ public final class TableColumnHelper {
 
     private static int headerWidth(DartTableColumn column, DartTable table) {
         int width = 0;
-        String text = TreeColumnHelper.stripMnemonic(column.getText());
+        String text = dev.equo.swt.size.Mnemonics.display(column.getText());
         if (!text.isEmpty())
             width = measure(text, table.getApi().getFont());
         Image image = column.getImage();
