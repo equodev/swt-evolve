@@ -1,4 +1,4 @@
-package dev.equo;
+package dev.equo.internal;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -8,20 +8,20 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.*;
 
 /**
- * A filter row as a RowLayout lays it out: each child top-aligned at its preferred height. Each date
- * field is a Text with an ARROW button beside it, so an arrow taller than the Text stretches the
- * field and the row no longer lines up.
+ * A row of single-line controls in a RowLayout, each top-aligned at its preferred height: two fields
+ * made of a borderless Text with an ARROW button beside it, two check boxes and a read-only Combo.
+ * The field is as tall as the taller of its Text and its arrow.
  */
-public class RowLayoutFilterRowSnippet {
+public class TextArrowRowSnippet {
 
-	static class DateField extends Composite {
+	static class ArrowField extends Composite {
 		final Text text;
 		final Button arrow;
 
-		DateField(Composite parent, int style) {
+		ArrowField(Composite parent, int style) {
 			super(parent, style);
 			text = new Text(this, SWT.SINGLE);
-			text.setText("21.10.2026");
+			text.setText("2026-01-01");
 			arrow = new Button(this, SWT.ARROW | SWT.DOWN);
 			addListener(SWT.Resize, e -> {
 				Rectangle area = getClientArea();
@@ -45,20 +45,20 @@ public class RowLayoutFilterRowSnippet {
 	public static void main(String[] args) {
 		Display display = new Display();
 		Shell shell = new Shell(display);
-		shell.setText("RowLayout filter row");
+		shell.setText("Text and ARROW row");
 		shell.setLayout(new FillLayout(SWT.VERTICAL));
 
 		Composite row = new Composite(shell, SWT.BORDER);
 		row.setLayout(new RowLayout());
-		DateField from = new DateField(row, SWT.BORDER);
-		DateField to = new DateField(row, SWT.BORDER);
-		Button open = new Button(row, SWT.CHECK);
-		open.setText("open");
-		Button billed = new Button(row, SWT.CHECK);
-		billed.setText("settlement");
-		Combo all = new Combo(row, SWT.READ_ONLY);
-		all.setItems("All", "KVG", "UVG");
-		all.select(0);
+		ArrowField from = new ArrowField(row, SWT.BORDER);
+		ArrowField to = new ArrowField(row, SWT.BORDER);
+		Button first = new Button(row, SWT.CHECK);
+		first.setText("first");
+		Button second = new Button(row, SWT.CHECK);
+		second.setText("second");
+		Combo choice = new Combo(row, SWT.READ_ONLY);
+		choice.setItems("All", "A", "B");
+		choice.select(0);
 
 		shell.setSize(700, 120);
 		shell.open();

@@ -12,8 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * An ARROW button is the size of a scroll bar arrow, as on Win32 (SM_CXVSCROLL x SM_CYVSCROLL); Cocoa
- * hardcodes a similar 14x14. Natively it is never taller than the single-line field it usually sits
- * beside, so the composite around both keeps the field's height.
+ * hardcodes a similar 14x14.
  */
 @ExtendWith(Mocks.class)
 class ArrowButtonSizeTest {
