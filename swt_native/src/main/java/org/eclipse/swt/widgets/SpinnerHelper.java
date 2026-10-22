@@ -23,14 +23,17 @@ public class SpinnerHelper {
         return String.valueOf(DecimalFormatSymbols.getInstance(Locale.getDefault(Locale.Category.FORMAT)).getDecimalSeparator());
     }
 
-    /** Renders a spinner value the way its text field shows it: {@code digits} decimal places. */
+    /**
+     * Renders a spinner value the way its text field shows it: {@code digits} decimal places, and the sign of a
+     * negative value in front of them, as Win32 and GTK write it ("-0.05").
+     */
     static String format(int value, int digits) {
         if (digits <= 0) {
             return String.valueOf(value);
         }
-        String string = String.valueOf(value);
+        String string = String.valueOf(Math.abs((long) value));
         int index = string.length() - digits;
-        StringBuilder buffer = new StringBuilder();
+        StringBuilder buffer = new StringBuilder(value < 0 ? "-" : "");
         String separator = decimalSeparator();
         if (index > 0) {
             buffer.append(string, 0, index);

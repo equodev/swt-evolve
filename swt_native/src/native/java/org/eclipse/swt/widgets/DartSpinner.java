@@ -711,12 +711,13 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, limit)) {
-            getValue().markDirty(VSpinner.TEXT_LIMIT);
-        }
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
-        textLimit = limit;
+        if (limit < 0)
+            limit = Spinner.LIMIT;
+        if (this.textLimit != limit)
+            getValue().markDirty(VSpinner.TEXT_LIMIT);
+        this.textLimit = limit;
     }
 
     /**
