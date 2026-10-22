@@ -2876,6 +2876,8 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
+    int scrollOffset;
+
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;

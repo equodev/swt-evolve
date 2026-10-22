@@ -14,12 +14,6 @@ import java.lang.reflect.Array;
 
 public class TableHelper {
 
-    // How far Flutter has scrolled the rows, in pixels. The rows are laid out and scrolled on the Dart side,
-    // so this is the only thing the row at the top, a row's bounds and API scrolling can be computed from.
-    // Weak keys so a disposed Table does not hold its entry.
-    private static final java.util.Map<DartTable, Integer> SCROLL_OFFSETS =
-        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
     /**
      * The width of the one cell of a table without columns, which holds {@code content} and has {@code room}
      * left in the table: stretched across the table, as on Win32 and GTK. Cocoa makes it as wide as what it
@@ -34,7 +28,7 @@ public class TableHelper {
      * again does not move it back to where the API last put it.
      */
     public static void recordScrollOffset(DartTable table, Event event) {
-        SCROLL_OFFSETS.put(table, Math.max(0, event.y));
+        table.scrollOffset = Math.max(0, event.y);
     }
 
     /**
@@ -46,17 +40,18 @@ public class TableHelper {
             && (item.getExplicitFont() != null || ((DartTable) item.getParent().getImpl()).getExplicitFont() != null);
     }
 
-    /** How far the rows are scrolled, never past the point where the last row is shown. */
+    /**
+     * How far the rows are scrolled, never past the point where the last row is shown. The rows are laid out
+     * and scrolled on the Dart side, so this is what the row at the top, a row's bounds and API scrolling are
+     * computed from.
+     */
     public static int scrollOffsetY(DartTable table) {
-        Integer offset = SCROLL_OFFSETS.get(table);
-        return offset == null ? 0 : Math.min(offset, maxScrollOffset(table, Math.max(1, table.getItemHeight())));
+        return Math.min(table.scrollOffset, maxScrollOffset(table, Math.max(1, table.getItemHeight())));
     }
 
     /** The rows changed: a scroll past where they now end stops at their end. */
     public static void keepScrollInRows(DartTable table) {
-        Integer offset = SCROLL_OFFSETS.get(table);
-        if (offset != null && offset > scrollOffsetY(table))
-            SCROLL_OFFSETS.put(table, scrollOffsetY(table));
+        table.scrollOffset = scrollOffsetY(table);
     }
 
     /** The index of the row at the top; 0 for an empty table. */
@@ -108,7 +103,7 @@ public class TableHelper {
      */
     private static void scrollToRow(DartTable table, int row) {
         int itemHeight = Math.max(1, table.getItemHeight());
-        SCROLL_OFFSETS.put(table, Math.min(row * itemHeight, maxScrollOffset(table, itemHeight)));
+        table.scrollOffset = Math.min(row * itemHeight, maxScrollOffset(table, itemHeight));
         table.getValue().markDirty(VTable.TOP_INDEX);
     }
 

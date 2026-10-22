@@ -2538,6 +2538,8 @@ public class DartTable extends DartComposite implements ITable {
         getValue().markDirty(VTable.EDITORS);
     }
 
+    int scrollOffset;
+
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
