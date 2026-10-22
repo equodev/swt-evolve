@@ -77,7 +77,7 @@ class TableEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("a click selects the row it names and tells the Selection listeners")
+    @DisplayName("a click selects the row it names and tells the Selection listeners which item, as native SWT does")
     void aClickSelectsTheRow() {
         Table table = table(SWT.MULTI, 3);
         List<Event> events = record(table, SWT.Selection);
@@ -88,7 +88,7 @@ class TableEventsFromFlutterNativeTest {
         assertThat(table.getSelectionIndices()).containsExactly(2);
         assertThat(events).hasSize(1);
         assertThat(events.get(0).item).isSameAs(table.getItem(2));
-        assertThat(events.get(0).index).isEqualTo(2);
+        assertThat(events.get(0).index).as("a native Selection names the row by its item alone").isZero();
     }
 
     @Test
