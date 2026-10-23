@@ -3563,7 +3563,7 @@ public class CoolBarSizes {
       buffer.writeln('    /** The width the first cell\'s text takes. */');
       buffer.writeln('    public static int getTextWidth($itemType item) {');
       buffer.writeln('        String text = item.getText();');
-      buffer.writeln('        if (text == null || text.isEmpty()) return 0;');
+      buffer.writeln('        if (text.isEmpty()) return 0;');
       buffer.writeln(
         '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());',
       );
@@ -3866,6 +3866,9 @@ public class CoolBarSizes {
       // reserves ahead of column 0 — both mirror what the row impl draws.
       buffer.writeln('    private static final int CELL_MARGIN = 2;');
       buffer.writeln('    private static final int CHECKBOX_WIDTH = 20;');
+      buffer.writeln();
+      buffer.writeln('    private ${widgetType}Sizes() {');
+      buffer.writeln('    }');
     }
     if (plain.hasExpander) {
       // Horizontal row geometry: the left edge gap is a fraction of the widget width, then a
