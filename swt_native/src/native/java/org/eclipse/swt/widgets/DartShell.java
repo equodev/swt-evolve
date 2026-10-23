@@ -494,7 +494,7 @@ public class DartShell extends DartDecorations implements IShell {
         } else {
             y = Math.max(y, monitorRect.y);
         }
-        getApi().setLocation(x, y);
+        setLocation(x, y);
     }
 
     /**
@@ -1171,8 +1171,6 @@ public class DartShell extends DartDecorations implements IShell {
      * @see Shell#setActive
      */
     public void setActive() {
-        if (isDisposed())
-            return;
         checkWidget();
         if (!getApi().isVisible())
             return;
@@ -1242,11 +1240,10 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.4
      */
     public void setAlpha(int alpha) {
-        if (isDisposed())
-            return;
         checkWidget();
         alpha &= 0xFF;
-        getValue().markDirty(VShell.ALPHA);
+        if (this.alpha != alpha)
+            getValue().markDirty(VShell.ALPHA);
         this.alpha = alpha;
     }
 
@@ -1558,8 +1555,9 @@ public class DartShell extends DartDecorations implements IShell {
         if (region != null) {
             if (region.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
+            Rectangle bounds = region.getBounds();
+            setSize(bounds.x + bounds.width, bounds.y + bounds.height);
         }
-        ShellHelper.fitToRegion(this.getApi(), region);
         this.region = region;
         if (region != null) {
         } else {

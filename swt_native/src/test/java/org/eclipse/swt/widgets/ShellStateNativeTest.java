@@ -1,11 +1,15 @@
 package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
@@ -15,15 +19,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-/** The minimum size, alpha, region and name of a shell answer as every platform's SWT does. The maximum size is in {@link ShellMaximumSizeNativeTest}. */
+/** The minimum size, alpha, region, print and name of a shell answer as every platform's SWT does. The maximum size is in {@link ShellMaximumSizeNativeTest}. */
 @Tag("native-unit")
 class ShellStateNativeTest {
 
+    private RecordingBridge bridge;
     private Shell shell;
 
     @BeforeEach
     void setUp() {
-        FlutterBridge.set(new RecordingBridge());
+        bridge = new RecordingBridge();
+        FlutterBridge.set(bridge);
         shell = shell(SWT.SHELL_TRIM);
     }
 
@@ -92,12 +98,33 @@ class ShellStateNativeTest {
     }
 
     @Test
-    @DisplayName("a disposed shell answers setAlpha and setActive silently")
-    void disposedShellIsSilent() {
+    @DisplayName("setting the alpha a shell already has schedules no send")
+    void sameAlphaIsNotSentAgain() {
+        shell.setAlpha(128);
+        bridge.dirtied.clear();
+        shell.setAlpha(128);
+        assertThat(bridge.dirtied).isEmpty();
+        shell.setAlpha(64);
+        assertThat(bridge.dirtied).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("a disposed shell refuses setAlpha and setActive, as on Win32 and GTK")
+    void disposedShellRefusesAlphaAndActive() {
         shell.dispose();
-        shell.setAlpha(10);
-        shell.setActive();
-        assertThat(shell.isDisposed()).isTrue();
+        assertThatThrownBy(() -> shell.setAlpha(10)).isInstanceOfSatisfying(SWTException.class,
+                e -> assertThat(e.code).isEqualTo(SWT.ERROR_WIDGET_DISPOSED));
+        assertThatThrownBy(shell::setActive).isInstanceOfSatisfying(SWTException.class,
+                e -> assertThat(e.code).isEqualTo(SWT.ERROR_WIDGET_DISPOSED));
+    }
+
+    @Test
+    @DisplayName("print refuses a disposed GC")
+    void printRefusesADisposedGC() {
+        GC gc = mock(GC.class);
+        when(gc.isDisposed()).thenReturn(true);
+        assertThatThrownBy(() -> shell.print(gc)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Argument not valid");
     }
 
     @Test
