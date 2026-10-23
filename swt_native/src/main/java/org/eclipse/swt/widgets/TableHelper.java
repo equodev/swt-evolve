@@ -24,12 +24,8 @@ public class TableHelper {
         return true;
     }
 
-    /**
-     * The one cell of a table without columns was measured again, {@code widest} being its widest row: {@code set}
-     * takes it even when it is narrower than before, otherwise the cell only grows.
-     */
-    static boolean setColumnlessWidth(DartTable table, int widest, boolean set) {
-        if (!set && widest <= table.columnlessWidth) return false;
+    /** The one cell of a table without columns was measured again, {@code widest} being its widest row. */
+    static boolean setColumnlessWidth(DartTable table, int widest) {
         table.columnlessWidth = widest;
         return true;
     }
@@ -195,18 +191,16 @@ public class TableHelper {
      * that count from 0 to 1 before JFace's listener sees it -- see {@link ClickSelection}.
      */
     public static void handleMouseDownSelection(DartTable table, Event event) {
-        if (table == null || table.isDisposed())
-            return;
-        if (event == null || (event.button != 1 && event.button != 3))
+        if (event.button != 1 && event.button != 3)
             return;
         if (event.segments == null || event.segments.length == 0)
             return;
         int index = event.segments[0];
-        if (table.items == null || index < 0 || index >= table.items.length)
+        if (index < 0 || index >= table.getItemCount())
             return;
         int[] current = table.selection;
-        boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
-        boolean hadExistingSelection = current != null && current.length > 0;
+        boolean sameSingleRow = current.length == 1 && current[0] == index;
+        boolean hadExistingSelection = current.length > 0;
         event.data = sameSingleRow;
         if (!sameSingleRow && hadExistingSelection) {
             table.setSelection(new int[] { index });
@@ -240,12 +234,12 @@ public class TableHelper {
         public void handleEvent(Event event) {
             if (table.isDisposed())
                 return;
-            if (event == null || (event.button != 1 && event.button != 3))
+            if (event.button != 1 && event.button != 3)
                 return;
             if (event.segments == null || event.segments.length == 0)
                 return;
             int index = event.segments[0];
-            if (table.items == null || index < 0 || index >= table.items.length)
+            if (index < 0 || index >= table.getItemCount())
                 return;
             if (Boolean.TRUE.equals(event.data))
                 return;
@@ -339,8 +333,8 @@ public class TableHelper {
         if (event.detail == SWT.CHECK) {
             if (event.segments != null && event.segments.length > 0) {
                 int index = event.segments[0];
-                if (table.items != null && index >= 0 && index < table.items.length) {
-                    TableItem item = table.items[index];
+                if (index >= 0 && index < table.getItemCount()) {
+                    TableItem item = table._getItem(index);
                     item.setChecked(!item.getChecked());
                     event.item = item;
                     event.index = index;
@@ -350,9 +344,9 @@ public class TableHelper {
             if (event.segments != null) {
                 table.setSelection(event.segments);
             }
-            if (event.item == null && event.segments != null && event.segments.length > 0) {
+            if (event.segments != null && event.segments.length > 0) {
                 int index = event.segments[0];
-                if (table.items != null && index >= 0 && index < table.items.length) {
+                if (index >= 0 && index < table.getItemCount()) {
                     event.item = table.items[index];
                     // A native Table's Selection names the row by its item alone; the index is only
                     // the cell edit's own (read below), which arrives carrying text.
@@ -368,9 +362,8 @@ public class TableHelper {
         if (event.text != null && event.index >= 0 && event.start >= 0) {
             int rowIndex = event.index;
             int columnIndex = event.start;
-            TableItem[] items = table.items;
-            if (items != null && rowIndex >= 0 && rowIndex < items.length) {
-                TableItem item = items[rowIndex];
+            if (rowIndex < table.getItemCount()) {
+                TableItem item = table.items[rowIndex];
                 if (item != null) {
                     item.setText(columnIndex, event.text);
                 }

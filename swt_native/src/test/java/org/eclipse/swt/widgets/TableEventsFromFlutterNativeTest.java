@@ -252,4 +252,219 @@ class TableEventsFromFlutterNativeTest {
 
         org.assertj.core.api.Assertions.assertThatCode(this::runQueued).doesNotThrowAnyException();
     }
+
+    private static Event check(int... rows) {
+        Event click = rows(rows);
+        click.detail = SWT.CHECK;
+        return click;
+    }
+
+    @Test
+    @DisplayName("a click on a check box past the last row, before the first or on no row toggles nothing")
+    void aCheckClickOnNoRowTogglesNothing() {
+        Table table = table(SWT.CHECK, 2);
+        List<Event> events = record(table, SWT.Selection);
+        Event noRow = new Event();
+        noRow.detail = SWT.CHECK;
+
+        fromFlutter(table, "Selection/Selection", check(2));
+        fromFlutter(table, "Selection/Selection", check(-1));
+        fromFlutter(table, "Selection/Selection", check());
+        fromFlutter(table, "Selection/Selection", noRow);
+        runQueued();
+
+        assertThat(table.getItem(0).getChecked()).isFalse();
+        assertThat(table.getItem(1).getChecked()).isFalse();
+        assertThat(events).hasSize(4).allSatisfy(e -> assertThat(e.item).isNull());
+    }
+
+    @Test
+    @DisplayName("a click on the check box of a virtual row not asked for yet makes the row and checks it; a second click unchecks it")
+    void aCheckClickOnARowNotMadeYet() {
+        Table table = table(SWT.CHECK | SWT.VIRTUAL, 0);
+        table.setItemCount(TableHelper.VIRTUAL_INITIAL_ROWS + 4);
+        int row = TableHelper.VIRTUAL_INITIAL_ROWS + 2;
+        assertThat(impl(table).items[row]).isNull();
+        List<Event> events = record(table, SWT.Selection);
+
+        fromFlutter(table, "Selection/Selection", check(row));
+        runQueued();
+        assertThat(table.getItem(row).getChecked()).isTrue();
+        assertThat(events.get(0).item).isSameAs(table.getItem(row));
+
+        fromFlutter(table, "Selection/Selection", check(row));
+        runQueued();
+        assertThat(table.getItem(row).getChecked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("a Selection that carries the text of a cell edit names the row by its index as well")
+    void aSelectionWithTextNamesTheIndex() {
+        Table table = table(SWT.SINGLE, 3);
+        List<Event> events = record(table, SWT.Selection);
+        Event edit = rows(2);
+        edit.text = "x";
+
+        fromFlutter(table, "Selection/Selection", edit);
+        fromFlutter(table, "Selection/Selection", rows(-1));
+        runQueued();
+
+        assertThat(events.get(0).item).isSameAs(table.getItem(2));
+        assertThat(events.get(0).index).isEqualTo(2);
+        assertThat(events.get(1).item).isNull();
+    }
+
+    @Test
+    @DisplayName("an edit of a row before the first, of no cell, or of a virtual row not made yet changes nothing")
+    void anEditOfARowNotThere() {
+        Table table = table(SWT.VIRTUAL, 0);
+        table.setItemCount(TableHelper.VIRTUAL_INITIAL_ROWS + 4);
+        int notMade = TableHelper.VIRTUAL_INITIAL_ROWS + 2;
+        Event before = new Event();
+        before.index = -1;
+        before.start = 0;
+        before.text = "x";
+        Event noCell = new Event();
+        noCell.index = 0;
+        noCell.start = -1;
+        noCell.text = "x";
+        Event virtual = new Event();
+        virtual.index = notMade;
+        virtual.start = 0;
+        virtual.text = "x";
+
+        fromFlutter(table, "Modify/Modify", before);
+        fromFlutter(table, "Modify/Modify", noCell);
+        fromFlutter(table, "Modify/Modify", virtual);
+        runQueued();
+
+        assertThat(impl(table).items[notMade]).isNull();
+        assertThat(table.getItem(0).getText()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("once a click selected a row, a press of another button, on no row, before the first or past the last fires no Selection")
+    void pressesAfterTheFirstClickThatNameNoRow() {
+        Table table = table(SWT.SINGLE, 2);
+        List<Event> events = record(table, SWT.Selection);
+        Event first = rows(0);
+        first.button = 1;
+        table.notifyListeners(SWT.MouseDown, first);
+        assertThat(events).hasSize(1);
+        Event middle = rows(1);
+        middle.button = 2;
+        Event empty = rows();
+        empty.button = 3;
+        Event noRow = new Event();
+        noRow.button = 1;
+        Event before = rows(-1);
+        before.button = 1;
+        Event past = rows(2);
+        past.button = 1;
+
+        for (Event press : List.of(middle, empty, noRow, before, past))
+            table.notifyListeners(SWT.MouseDown, press);
+
+        assertThat(events).hasSize(1);
+        assertThat(table.getSelectionIndices()).containsExactly(0);
+    }
+
+    @Test
+    @DisplayName("a right press selects the row as a left press does, and a press on the row already selected waits for nothing")
+    void aRightPressAndARepeatedPress() {
+        Table table = table(SWT.SINGLE, 2);
+        List<Event> events = record(table, SWT.Selection);
+        Event right = rows(1);
+        right.button = 3;
+        table.notifyListeners(SWT.MouseDown, right);
+        Event again = rows(1);
+        again.button = 1;
+        table.notifyListeners(SWT.MouseDown, again);
+
+        assertThat(table.getSelectionIndices()).containsExactly(1);
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).stateMask & SWT.BUTTON3).isNotZero();
+    }
+
+    @Test
+    @DisplayName("a MouseDown listener that disposes the table leaves the click no Selection to fire")
+    void aPressThatDisposesTheTable() {
+        Table table = table(SWT.SINGLE, 2);
+        List<Event> events = record(table, SWT.Selection);
+        boolean[] dispose = {false};
+        table.addListener(SWT.MouseDown, e -> {
+            if (dispose[0])
+                table.dispose();
+        });
+        Event first = rows(0);
+        first.button = 1;
+        table.notifyListeners(SWT.MouseDown, first);
+        assertThat(events).hasSize(1);
+        dispose[0] = true;
+        Event press = rows(1);
+        press.button = 1;
+
+        org.assertj.core.api.Assertions.assertThatCode(() -> table.notifyListeners(SWT.MouseDown, press))
+            .doesNotThrowAnyException();
+        assertThat(table.isDisposed()).isTrue();
+        assertThat(events).hasSize(1);
+    }
+
+    private static Event key(int keyCode, int stateMask) {
+        Event key = new Event();
+        key.keyCode = keyCode;
+        key.stateMask = stateMask;
+        return key;
+    }
+
+    @Test
+    @DisplayName("a key with a modifier, a key on an empty table and a key that does not move fire no Selection")
+    void keysThatMoveNothing() {
+        Table empty = table(SWT.SINGLE, 0);
+        List<Event> none = record(empty, SWT.Selection);
+        TableHelper.moveSelectionByKey(impl(empty), key(SWT.ARROW_DOWN, 0));
+        assertThat(none).isEmpty();
+
+        Table table = table(SWT.SINGLE, 3);
+        table.setSelection(0);
+        List<Event> events = record(table, SWT.Selection);
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.ARROW_DOWN, SWT.SHIFT));
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.HOME, 0));
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.ARROW_UP, 0));
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.PAGE_UP, 0));
+        TableHelper.moveSelectionByKey(impl(table), key('a', 0));
+
+        assertThat(events).isEmpty();
+        assertThat(table.getSelectionIndices()).containsExactly(0);
+    }
+
+    @Test
+    @DisplayName("Page Down in a table with its header shown counts only the rows below the header")
+    void pageDownBelowAHeader() {
+        Table table = table(SWT.SINGLE, 40);
+        table.setHeaderVisible(true);
+        table.setSize(200, table.getHeaderHeight() + 5 * table.getItemHeight());
+        table.setSelection(0);
+
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.PAGE_DOWN, 0));
+
+        assertThat(table.getSelectionIndices()).containsExactly(TableHelper.visibleRows(impl(table)) - 1);
+        assertThat(TableHelper.visibleRows(impl(table))).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("Up and Down with no row selected go to the first row")
+    void arrowsWithNoSelectionGoToTheFirstRow() {
+        Table table = table(SWT.SINGLE, 3);
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.ARROW_UP, 0));
+        assertThat(table.getSelectionIndices()).containsExactly(0);
+
+        table.deselectAll();
+        TableHelper.moveSelectionByKey(impl(table), key(SWT.ARROW_DOWN, 0));
+        assertThat(table.getSelectionIndices()).containsExactly(0);
+    }
+
+    private static DartTable impl(Table table) {
+        return (DartTable) table.getImpl();
+    }
 }

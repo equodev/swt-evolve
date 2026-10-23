@@ -1990,7 +1990,7 @@ public class DartTable extends DartComposite implements ITable {
             if (item != null && !item.isDisposed())
                 widest = Math.max(widest, ((DartTableItem) item.getImpl()).contentWidth());
         }
-        return TableHelper.setColumnlessWidth(this, widest, set);
+        return TableHelper.setColumnlessWidth(this, widest);
     }
 
     /**
