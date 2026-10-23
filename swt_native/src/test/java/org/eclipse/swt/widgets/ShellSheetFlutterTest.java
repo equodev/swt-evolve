@@ -80,4 +80,24 @@ class ShellSheetFlutterTest {
         dialog.open();
         assertThat(dialog.getLocation()).isEqualTo(before);
     }
+
+    @Test
+    void aSheetLargerThanTheMonitorIsKeptOnIt() {
+        Rectangle monitor = parent.getMonitor().getClientArea();
+        Shell sheet = new Shell(parent, SWT.SHEET);
+        sheet.setSize(monitor.width + 300, monitor.height + 200);
+        sheet.open();
+        assertThat(sheet.getLocation()).isEqualTo(new Point(monitor.x, monitor.y));
+    }
+
+    @Test
+    void aSheetOfAParentNearTheMonitorsEdgeIsKeptOnIt() {
+        Rectangle monitor = parent.getMonitor().getClientArea();
+        parent.setBounds(monitor.x + monitor.width - 300, monitor.y + monitor.height - 200, 300, 200);
+        Shell sheet = new Shell(parent, SWT.SHEET);
+        sheet.setSize(400, 300);
+        sheet.open();
+        assertThat(sheet.getLocation()).isEqualTo(new Point(
+                monitor.x + monitor.width - 400, monitor.y + monitor.height - 300));
+    }
 }

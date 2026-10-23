@@ -15,8 +15,8 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * {@code Shell.setActive()} moves the focus into the shell before it announces the activation: a shell that the
- * focus it takes disposes announces nothing.
+ * {@code Shell.setActive()} announces the activation before it moves the focus into the shell: a shell that its
+ * Activate listener disposes takes no focus.
  *
  * <pre>./gradlew :swt-evolve:swt_native:test --tests '*ShellActivationFlutterTest'</pre>
  */
@@ -33,7 +33,7 @@ class ShellActivationFlutterTest {
     }
 
     @Test
-    void aShellTheFocusItTakesDisposesIsNotActivated() {
+    void aShellItsActivateListenerDisposesTakesNoFocus() {
         install(TestWebBridge::new);
         Shell main = new Shell(display);
         main.setSize(400, 300);
@@ -45,16 +45,16 @@ class ShellActivationFlutterTest {
         other.open();
         main.setActive();
         List<String> events = new ArrayList<>();
-        other.addListener(SWT.Activate, e -> events.add("Activate"));
-        field.addListener(SWT.FocusIn, e -> {
-            events.add("FocusIn");
+        other.addListener(SWT.Activate, e -> {
+            events.add("Activate");
             other.dispose();
         });
+        field.addListener(SWT.FocusIn, e -> events.add("FocusIn"));
 
         other.setActive();
 
         assertThat(other.isDisposed()).isTrue();
-        assertThat(events).containsExactly("FocusIn");
+        assertThat(events).containsExactly("Activate");
     }
 
     // ---- harness ----------------------------------------------------------------------------------

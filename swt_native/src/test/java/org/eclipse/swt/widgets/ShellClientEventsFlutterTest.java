@@ -139,4 +139,50 @@ class ShellClientEventsFlutterTest {
         runLoop();
         assertThat(events).isEmpty();
     }
+
+    @Test
+    void anActivationWhoseListenerDisposesTheShellMovesNoFocus() {
+        main.setActive();
+        runLoop();
+        List<Integer> events = record(SWT.FocusIn);
+        shell.addListener(SWT.Activate, e -> shell.dispose());
+        fromClient("Activate", new Event());
+        runLoop();
+        assertThat(shell.isDisposed()).isTrue();
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    void theBoundsTheShellAlreadyHasMoveAndResizeNothing() {
+        List<Integer> events = record(SWT.Move, SWT.Resize);
+        Rectangle bounds = shell.getBounds();
+        Event e = new Event();
+        e.x = bounds.x;
+        e.y = bounds.y;
+        e.width = bounds.width;
+        e.height = bounds.height;
+        fromClient("SetBounds", e);
+        runLoop();
+        assertThat(events).isEmpty();
+        assertThat(shell.getBounds()).isEqualTo(bounds);
+    }
+
+    @Test
+    void eachChangeOfTheBoundsTheWindowReportsBecomesTheShells() {
+        Rectangle b = shell.getBounds();
+        List<Integer> events = record(SWT.Resize);
+        int[][] reports = { { b.x, b.y + 20, b.width, b.height }, { b.x, b.y + 20, b.width + 20, b.height },
+                { b.x, b.y + 20, b.width + 20, b.height + 20 } };
+        for (int[] r : reports) {
+            Event e = new Event();
+            e.x = r[0];
+            e.y = r[1];
+            e.width = r[2];
+            e.height = r[3];
+            fromClient("SetBounds", e);
+            runLoop();
+        }
+        assertThat(events).containsExactly(SWT.Resize, SWT.Resize);
+        assertThat(shell.getBounds()).isEqualTo(new Rectangle(b.x, b.y + 20, b.width + 20, b.height + 20));
+    }
 }
