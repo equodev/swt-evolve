@@ -30,11 +30,17 @@ public class TreeSizes {
     private static final double ITEM_INDENT = 16.0;
     private static final double ITEM_INDENT_WITH_COLS = 16.0;
     private static final double EXPAND_ICON_SIZE = 12.0;
-    private static final double EXPAND_ICON_SPACING = 8.0;
+    public static final double EXPAND_ICON_SPACING = 8.0;
     private static final double CHECKBOX_SPACE = 18.0 + 4.0;
     private static final int ICON_SIZE = 16;
     private static final int ICON_SPACE = ICON_SIZE + 8;
-    private static final int TEXT_PADDING = 8;
+    public static final int TEXT_PADDING = 8;
+    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment's. */
+    public static final int CELL_PADDING = 12;
+    /** The gap before the divider that every column but the last draws at its right. */
+    public static final int DIVIDER_GAP = 8;
+    /** The room a header image takes before the text. */
+    public static final int HEADER_IMAGE_GAP = 4;
     private static final int CELL_INSET = 4;
     private static final int ALIGNMENT_INSET = 4;
 

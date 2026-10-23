@@ -69,7 +69,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   }
 
   /// The room between a header's image and its text.
-  static const double _headerImageGap = 4.0;
+  static const double headerImageGap = 4.0;
 
   Widget _buildHeaderImage(VImage image) {
     final render = ImageUtils.buildVImageAsync(
@@ -79,7 +79,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       renderAsIcon: true,
     );
     return Padding(
-      padding: const EdgeInsets.only(right: _headerImageGap),
+      padding: const EdgeInsets.only(right: headerImageGap),
       child: FutureBuilder<Widget?>(
         future: render,
         initialData: ImageUtils.resolvedRender(render),

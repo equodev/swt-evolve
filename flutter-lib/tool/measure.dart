@@ -11,6 +11,7 @@ import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/treecolumn_evolve.dart' show TreeColumnImpl;
 
 import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
@@ -3887,7 +3888,7 @@ public class CoolBarSizes {
       final row = sizingTheme.extension<TreeThemeExtension>();
       if (row != null) {
         buffer.writeln(
-          '    private static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
+          '    public static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
         );
         buffer.writeln(
           '    private static final double CHECKBOX_SPACE = ${_d(row.checkboxSize)} + ${_d(row.checkboxSpacing)};',
@@ -3899,10 +3900,28 @@ public class CoolBarSizes {
           '    private static final int ICON_SPACE = ICON_SIZE + ${row.itemIconSpacing.round()};',
         );
         buffer.writeln(
-          '    private static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
+          '    public static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
         );
         // The alignment inset the row builder applies to left-aligned text.
         const alignmentInset = 4.0;
+        buffer.writeln(
+          '    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment\'s. */',
+        );
+        buffer.writeln(
+          '    public static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset).round()};',
+        );
+        buffer.writeln(
+          '    /** The gap before the divider that every column but the last draws at its right. */',
+        );
+        buffer.writeln(
+          '    public static final int DIVIDER_GAP = ${row.columnDividerGap.round()};',
+        );
+        buffer.writeln(
+          '    /** The room a header image takes before the text. */',
+        );
+        buffer.writeln(
+          '    public static final int HEADER_IMAGE_GAP = ${TreeColumnImpl.headerImageGap.round()};',
+        );
         buffer.writeln(
           '    private static final int CELL_INSET = ${row.cellMultiColumnPadding.left.round()};',
         );

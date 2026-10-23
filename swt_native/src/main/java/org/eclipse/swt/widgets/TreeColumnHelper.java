@@ -15,17 +15,6 @@ import org.eclipse.swt.graphics.Image;
 /** The width a TreeColumn packs to, which its generated implementation cannot work out. */
 public final class TreeColumnHelper {
 
-    /** Horizontal room a header or a cell takes around its text: both paddings and the alignment's. */
-    static final int CELL_PADDING = 12;
-    /** The gap before the divider that every column but the last draws at its right. */
-    static final int DIVIDER_GAP = 8;
-    /** The room a header image takes before the text. */
-    static final int HEADER_IMAGE_GAP = 4;
-    /** The text padding a cell's text is measured with. */
-    static final int TEXT_PADDING = 8;
-    /** The space between the expander and the text, which the tree column's header leaves too. */
-    static final int EXPANDER_SPACING = 8;
-
     private TreeColumnHelper() {
     }
 
@@ -52,7 +41,7 @@ public final class TreeColumnHelper {
             if (gc != null) gc.dispose();
         }
         boolean last = index == dartTree.columnCount - 1;
-        return width + CELL_PADDING + (last ? 0 : DIVIDER_GAP);
+        return width + TreeSizes.CELL_PADDING + (last ? 0 : TreeSizes.DIVIDER_GAP);
     }
 
     static int headerWidth(DartTreeColumn column, DartTree tree, int index) {
@@ -64,9 +53,9 @@ public final class TreeColumnHelper {
             width += measure(text, tree.getApi().getFont());
         }
         Image image = column.getImage();
-        if (image != null) width += image.getBounds().width + HEADER_IMAGE_GAP;
+        if (image != null) width += image.getBounds().width + TreeSizes.HEADER_IMAGE_GAP;
         // The tree column's header starts where the rows' text does, after the expander.
-        if (index == 0 && width > 0) width += (int) Math.ceil(TreeSizes.getExpanderWidth()) + EXPANDER_SPACING;
+        if (index == 0 && width > 0) width += (int) Math.ceil(TreeSizes.getExpanderWidth() + TreeSizes.EXPAND_ICON_SPACING);
         return width;
     }
 
@@ -91,7 +80,7 @@ public final class TreeColumnHelper {
         Font font = cellFonts != null ? cellFonts[index] : null;
         if (font == null) font = cell.font;
         if (font == null) font = tree.getApi().getFont();
-        int width = text == null || text.isEmpty() ? 0 : measure(text, font) + TEXT_PADDING;
+        int width = text == null || text.isEmpty() ? 0 : measure(text, font) + TreeSizes.TEXT_PADDING;
         if (image != null) width += TreeSizes.getIconSpace();
         // A virtual row is measured by its listener only once it holds its data.
         boolean measured = (tree.getApi().getStyle() & SWT.VIRTUAL) == 0 || cell.cached;
