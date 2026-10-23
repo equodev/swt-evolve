@@ -479,18 +479,22 @@ class _StyledDropdownCCombo extends StatelessWidget {
       children: [
         SizedBox(width: width, child: dropdown),
         Positioned.fill(
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: isReadOnly
-                      ? HitTestBehavior.translucent
-                      : HitTestBehavior.opaque,
-                  onTap: isReadOnly ? null : () => focusNode?.requestFocus(),
+          // Part of the field for its tap-outside check: a press here is on the field, and a mouse
+          // press outside it would unfocus the field until the release focused it again.
+          child: TextFieldTapRegion(
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    behavior: isReadOnly
+                        ? HitTestBehavior.translucent
+                        : HitTestBehavior.opaque,
+                    onTap: isReadOnly ? null : () => focusNode?.requestFocus(),
+                  ),
                 ),
-              ),
-              SizedBox(width: arrowAreaWidth),
-            ],
+                SizedBox(width: arrowAreaWidth),
+              ],
+            ),
           ),
         ),
       ],
