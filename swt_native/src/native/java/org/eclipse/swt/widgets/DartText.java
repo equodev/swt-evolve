@@ -999,10 +999,6 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void insertEditText(String string) {
-        _insertEditText(string, false);
-    }
-
-    void _insertEditText(String string, boolean enableUndo) {
         int length = string.length();
         Point selection = getSelection();
         if (selection.x > getCharCount() || selection.y > getCharCount()) {
@@ -1027,6 +1023,10 @@ public class DartText extends DartScrollable implements IText {
         if (!newText.equals(oldText))
             sendEvent(SWT.Modify);
         applySegments();
+    }
+
+    void _insertEditText(String string, boolean enableUndo) {
+        insertEditText(string);
     }
 
     @Override
