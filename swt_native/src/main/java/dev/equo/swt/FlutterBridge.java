@@ -1438,6 +1438,8 @@ public abstract class FlutterBridge {
     }
 
     public static void send(DartWidget resource, String event, Object args) {
+        if (drawnByParent(resource))
+            return;
         CommService comm = commFor(resource);
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
@@ -1513,13 +1515,22 @@ public abstract class FlutterBridge {
     }
 
     public void dirty(DartWidget widget) {
-        if (widget == null)
+        if (widget == null || drawnByParent(widget))
             return;
         registerForRefresh(widget);
         synchronized (dirty) {
             dirty.add(widget);
         }
         wakeForDirty();
+    }
+
+    /** A control its parent draws itself, such as a CCombo's field, has no client-side peer: nothing is sent for it. */
+    private static boolean drawnByParent(DartWidget widget) {
+        if (!(widget instanceof DartControl))
+            return false;
+        Composite parent = ((DartControl) widget)._parent();
+        return parent != null && parent.getImpl() instanceof DartComposite
+                && ((DartComposite) parent.getImpl())._drawsItself(((DartControl) widget).getApi());
     }
 
     /**
