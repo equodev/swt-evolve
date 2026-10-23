@@ -302,6 +302,11 @@ public class DartSashForm extends DartComposite implements ISashForm {
             ((SashFormData) data1).weight = (((long) b1.height << 16) + area.height - 1) / area.height;
             ((SashFormData) data2).weight = (((long) b2.height << 16) + area.height - 1) / area.height;
         }
+        int[] __weights = getWeights();
+        if (!java.util.Arrays.equals(__weights, weights)) {
+            getValue().markDirty(VSashForm.WEIGHTS);
+            weights = __weights;
+        }
         if (correction || (event.doit && event.detail != SWT.DRAG)) {
             c1.setBounds(b1);
             sash.setBounds(event.x, event.y, event.width, event.height);

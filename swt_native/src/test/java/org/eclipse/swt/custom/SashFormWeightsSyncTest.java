@@ -106,6 +106,20 @@ class SashFormWeightsSyncTest {
     }
 
     @Test
+    @DisplayName("a sash drag sends Flutter the weights the form now answers")
+    void aDragSendsTheNewWeights() {
+        SashForm form = laidOutForm();
+        VSashForm value = ((DartSashForm) form.getImpl()).getValue();
+        value.clearDirty();
+        Sash sash = sashOf(form);
+
+        dragSashTo(sash, sash.getBounds().x + 50);
+
+        assertThat(value.changedKeys()).contains(VSashForm.WEIGHTS);
+        assertThat(value.getWeights()).containsExactly(form.getWeights());
+    }
+
+    @Test
     @DisplayName("the panes keep the size a sash drag gave them through the next layout")
     void aDragSurvivesTheNextLayout() {
         SashForm form = laidOutForm();
