@@ -71,7 +71,7 @@ public class WorkbenchEdgeDragSnippet {
         Shell shell = folder.getShell();
         log("dragDetect on " + folder.getItem(0).getText() + " at " + x + "," + y
                 + " cursor(shell)=" + display.map(null, shell, display.getCursorLocation()));
-        Tracker tracker = new Tracker(display, SWT.NULL);
+        Tracker tracker = new Tracker(shell, SWT.NULL);
         tracker.setStippled(true);
         tracker.addListener(SWT.Move, e -> {
             Point cursor = display.getCursorLocation();
