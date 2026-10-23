@@ -220,12 +220,13 @@ public class ControlHelper {
     }
 
     /**
-     * Mirrors {@code SwtControl/SwtComposite.traversalCode}: arrows stay in the control, and a
-     * key-listening Canvas keeps every key unless a Traverse listener lets it go.
+     * Mirrors {@code SwtControl/SwtComposite/SwtButton.traversalCode}: arrows stay in the control
+     * except in a radio button, and a key-listening Canvas keeps every key unless a Traverse
+     * listener lets it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
-            return false;
+            return control.getApi() instanceof Button && (control.getApi().getStyle() & SWT.RADIO) != 0;
         if (control.getApi() instanceof Canvas) {
             if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0)
                 return false;
