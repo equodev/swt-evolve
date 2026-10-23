@@ -93,4 +93,20 @@ class CanvasScrollTest {
         outside.scroll(10, 0, 0, 0, 20, 20, true);
         assertThat(inOutside.getBounds()).as("a canvas outside its parent").isEqualTo(new Rectangle(10, 0, 10, 10));
     }
+
+    @Test
+    @DisplayName("a canvas whose redraw, or its parent's, is off still moves its children")
+    void aCanvasThatDoesNotDrawStillScrolls() {
+        Shell shell = shell();
+        Canvas canvas = new Canvas(shell, SWT.NONE);
+        canvas.setBounds(0, 0, 50, 50);
+        Composite child = child(canvas);
+        canvas.setRedraw(false);
+        canvas.scroll(10, 0, 0, 0, 20, 20, true);
+        assertThat(child.getBounds()).as("its own redraw off").isEqualTo(new Rectangle(10, 0, 10, 10));
+        canvas.setRedraw(true);
+        when(shell.getImpl().isDrawing()).thenReturn(false);
+        canvas.scroll(20, 0, 10, 0, 20, 20, true);
+        assertThat(child.getBounds()).as("its parent's redraw off").isEqualTo(new Rectangle(20, 0, 10, 10));
+    }
 }

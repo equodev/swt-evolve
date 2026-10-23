@@ -227,8 +227,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
         int deltaX = destX - x, deltaY = destY - y;
         if (deltaX == 0 && deltaY == 0)
             return;
-        if (!isDrawing())
-            return;
         if (!getApi().isVisible())
             return;
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
