@@ -176,4 +176,25 @@ class ColumnHelperTest {
         assertThat(moved).containsExactly("c0", "c1");
         assertThat(tableColumns[2].isDisposed()).isTrue();
     }
+
+    @Test
+    @DisplayName("a middle column disposed by an earlier column's Move listener leaves the columns after it one Move each")
+    void middleColumnDisposedDuringTheMoves() {
+        Tree tree = new Tree(shell, SWT.NONE);
+        TreeColumn[] treeColumns = treeColumns(tree);
+        watched(new TreeColumn(tree, SWT.NONE), "c3").setWidth(40);
+        moved.clear();
+        treeColumns[1].addListener(SWT.Move, e -> treeColumns[2].dispose());
+        ColumnHelper.columnResized(tree, treeColumns[0]);
+        assertThat(moved).containsExactly("c1", "c3");
+        assertThat(treeColumns[2].isDisposed()).isTrue();
+
+        moved.clear();
+        Table table = new Table(shell, SWT.NONE);
+        TableColumn[] tableColumns = tableColumns(table);
+        tableColumns[0].addListener(SWT.Move, e -> tableColumns[1].dispose());
+        ColumnHelper.columnsShiftedFrom(table, 0);
+        assertThat(moved).containsExactly("c0", "c2");
+        assertThat(tableColumns[1].isDisposed()).isTrue();
+    }
 }
