@@ -56,6 +56,7 @@ MenuItemThemeExtension _getMenuItemTheme({
 
     // Separator colors
     separatorColor: colorScheme.outlineVariant,
+    checkboxBorderColor: colorScheme.outline,
 
     // Border styling
     borderRadius: 4.0,

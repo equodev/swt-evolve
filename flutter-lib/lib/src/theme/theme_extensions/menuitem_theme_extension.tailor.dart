@@ -22,6 +22,7 @@ mixin _$MenuItemThemeExtensionTailorMixin
   Color get iconColor;
   Color get disabledIconColor;
   Color get separatorColor;
+  Color get checkboxBorderColor;
   double get borderRadius;
   double get itemHeight;
   double get minItemWidth;
@@ -52,6 +53,7 @@ mixin _$MenuItemThemeExtensionTailorMixin
     Color? iconColor,
     Color? disabledIconColor,
     Color? separatorColor,
+    Color? checkboxBorderColor,
     double? borderRadius,
     double? itemHeight,
     double? minItemWidth,
@@ -83,6 +85,7 @@ mixin _$MenuItemThemeExtensionTailorMixin
       iconColor: iconColor ?? this.iconColor,
       disabledIconColor: disabledIconColor ?? this.disabledIconColor,
       separatorColor: separatorColor ?? this.separatorColor,
+      checkboxBorderColor: checkboxBorderColor ?? this.checkboxBorderColor,
       borderRadius: borderRadius ?? this.borderRadius,
       itemHeight: itemHeight ?? this.itemHeight,
       minItemWidth: minItemWidth ?? this.minItemWidth,
@@ -146,6 +149,11 @@ mixin _$MenuItemThemeExtensionTailorMixin
         t,
       )!,
       separatorColor: Color.lerp(separatorColor, other.separatorColor, t)!,
+      checkboxBorderColor: Color.lerp(
+        checkboxBorderColor,
+        other.checkboxBorderColor,
+        t,
+      )!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       itemHeight: t < 0.5 ? itemHeight : other.itemHeight,
       minItemWidth: t < 0.5 ? minItemWidth : other.minItemWidth,
@@ -217,6 +225,10 @@ mixin _$MenuItemThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               separatorColor,
               other.separatorColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderColor,
+              other.checkboxBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
               borderRadius,
@@ -293,6 +305,7 @@ mixin _$MenuItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(iconColor),
       const DeepCollectionEquality().hash(disabledIconColor),
       const DeepCollectionEquality().hash(separatorColor),
+      const DeepCollectionEquality().hash(checkboxBorderColor),
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(itemHeight),
       const DeepCollectionEquality().hash(minItemWidth),
@@ -329,6 +342,7 @@ extension MenuItemThemeExtensionBuildContextProps on BuildContext {
   Color get iconColor => menuItemThemeExtension.iconColor;
   Color get disabledIconColor => menuItemThemeExtension.disabledIconColor;
   Color get separatorColor => menuItemThemeExtension.separatorColor;
+  Color get checkboxBorderColor => menuItemThemeExtension.checkboxBorderColor;
   double get borderRadius => menuItemThemeExtension.borderRadius;
   double get itemHeight => menuItemThemeExtension.itemHeight;
   double get minItemWidth => menuItemThemeExtension.minItemWidth;

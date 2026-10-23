@@ -38,6 +38,9 @@ MenuItemThemeExtension _$MenuItemThemeExtensionFromJson(
   separatorColor: const ColorConverter().fromJson(
     json['separatorColor'] as String,
   ),
+  checkboxBorderColor: const ColorConverter().fromJson(
+    json['checkboxBorderColor'] as String,
+  ),
   borderRadius: (json['borderRadius'] as num).toDouble(),
   itemHeight: (json['itemHeight'] as num).toDouble(),
   minItemWidth: (json['minItemWidth'] as num).toDouble(),
@@ -88,6 +91,9 @@ Map<String, dynamic> _$MenuItemThemeExtensionToJson(
     instance.disabledIconColor,
   ),
   'separatorColor': const ColorConverter().toJson(instance.separatorColor),
+  'checkboxBorderColor': const ColorConverter().toJson(
+    instance.checkboxBorderColor,
+  ),
   'borderRadius': instance.borderRadius,
   'itemHeight': instance.itemHeight,
   'minItemWidth': instance.minItemWidth,

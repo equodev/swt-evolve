@@ -34,6 +34,10 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
   // Separator colors
   final Color separatorColor;
 
+  // Rim of the check and radio boxes a host toolkit draws in its own menus; MenuItem itself
+  // draws only a mark.
+  final Color checkboxBorderColor;
+
   // Border styling
   final double borderRadius;
 
@@ -74,6 +78,7 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
     required this.iconColor,
     required this.disabledIconColor,
     required this.separatorColor,
+    required this.checkboxBorderColor,
     required this.borderRadius,
     required this.itemHeight,
     required this.minItemWidth,
