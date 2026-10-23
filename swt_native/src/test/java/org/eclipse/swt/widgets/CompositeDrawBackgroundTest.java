@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Composite.drawBackground fills with the GC's background when nothing paints behind the composite, and with the
@@ -157,8 +158,8 @@ class CompositeDrawBackgroundTest {
         GC gc = new GC(image);
         gc.dispose();
         try {
-            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> composite.drawBackground(gc, 0, 0, 1, 1, 0, 0));
+            assertThatThrownBy(() -> composite.drawBackground(gc, 0, 0, 1, 1, 0, 0))
+                    .isInstanceOf(IllegalArgumentException.class);
         } finally {
             image.dispose();
         }
