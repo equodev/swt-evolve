@@ -11,6 +11,7 @@ import 'package:swtflutter/src/comm/comm_frame.dart' show EquoCommBase;
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/widget_config.dart' show resetConfigFlags;
 
 VStyledText _styledText() => VStyledText()
@@ -57,6 +58,15 @@ void main() {
   for (final (name, buttons) in [('primary', kPrimaryButton), ('secondary', kSecondaryButton)]) {
     testWidgets('a $name press sends its MouseDown with no FocusIn ahead of it', (tester) async {
       expect(await _press(tester, buttons), ['MouseDown']);
+    });
+
+    testWidgets('a $name press takes the keyboard once Java asks the client to focus it', (tester) async {
+      final sent = await _press(tester, buttons);
+      FocusRequests.instance.request(4);
+      addTearDown(FocusRequests.instance.reset);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'StyledText');
+      expect(sent, ['MouseDown', 'FocusIn']);
     });
   }
 }
