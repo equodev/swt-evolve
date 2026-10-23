@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/gc.dart';
+import 'package:swtflutter/src/gen/rgb.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/widget_utils.dart';
@@ -32,6 +33,11 @@ const _hoverYellow = 0xFFFFFF00;
 const _warmBand = 0xFFFCF6ED;
 const _warmHover = 0xFFF6E6D6;
 const _warmSelection = 0xFFDBC7B4;
+
+VRGB _vrgb(int argb) => VRGB()
+  ..red = argb >> 16 & 0xFF
+  ..green = argb >> 8 & 0xFF
+  ..blue = argb & 0xFF;
 
 const _roleHover = Color(0xFF336699);
 const _roleSelection = Color(0xFF993366);
@@ -218,8 +224,8 @@ void main() {
       (tester) async {
     final drawer = await themedDrawer(tester, _canvasTheme(_darkFill, _darkHighlight));
     drawer.state
-      ..hoverFills = [_warmHover & 0xFFFFFF]
-      ..selectionFills = [_warmSelection & 0xFFFFFF];
+      ..hoverFills = [_vrgb(_warmHover)]
+      ..selectionFills = [_vrgb(_warmSelection)];
     final normal = fill(drawer, _white, times: 10);
 
     expect(fill(drawer, _warmHover), _roleHover);
@@ -231,7 +237,7 @@ void main() {
   testWidgets('declared roles only apply to a themed canvas', (tester) async {
     final drawer = await themedDrawer(tester, _canvasTheme(_darkFill, _darkHighlight));
     setConfigFlags(ConfigFlags()..disable_swt_canvas_colors = false);
-    drawer.state.hoverFills = [_warmHover & 0xFFFFFF];
+    drawer.state.hoverFills = [_vrgb(_warmHover)];
 
     expect(fill(drawer, _warmHover), const Color(_warmHover));
   });

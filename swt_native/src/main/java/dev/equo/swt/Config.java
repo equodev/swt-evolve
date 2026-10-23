@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.*;
 
@@ -1149,13 +1150,13 @@ public class Config {
     }
 
     /** The hover fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
-    public static int[] canvasHoverFills(Drawable drawable) {
+    public static RGB[] canvasHoverFills(Drawable drawable) {
         CanvasFillRoles roles = nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
         return roles == null ? null : roles.hover;
     }
 
     /** The selection fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
-    public static int[] canvasSelectionFills(Drawable drawable) {
+    public static RGB[] canvasSelectionFills(Drawable drawable) {
         CanvasFillRoles roles = nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
         return roles == null ? null : roles.selection;
     }

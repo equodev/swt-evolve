@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.graphics.RGB;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,15 +32,15 @@ class ConfigCanvasFillRolesTest {
         Map<String, CanvasFillRoles> byClass = Config.canvasFillRolesByClassFromProperties();
 
         assertThat(byClass).containsOnlyKeys("a.Grid");
-        assertThat(byClass.get("a.Grid").hover).containsExactly(0xF6E6D6);
-        assertThat(byClass.get("a.Grid").selection).containsExactly(0xDBC7B4);
+        assertThat(byClass.get("a.Grid").hover).containsExactly(new RGB(0xF6, 0xE6, 0xD6));
+        assertThat(byClass.get("a.Grid").selection).containsExactly(new RGB(0xDB, 0xC7, 0xB4));
     }
 
     @Test
     void entriesThatAreNotAColorAndAKnownRoleAreDropped() {
         CanvasFillRoles roles = CanvasFillRoles.parse("F6E6D6:hover,FFF:hover,DBC7B4:focus,ZZZZZZ:selection,AABBCC");
 
-        assertThat(roles.hover).containsExactly(0xF6E6D6);
+        assertThat(roles.hover).containsExactly(new RGB(0xF6, 0xE6, 0xD6));
         assertThat(roles.selection).as("a role with no color stays off the wire").isNull();
         assertThat(CanvasFillRoles.parse("FFF:hover")).isNull();
     }

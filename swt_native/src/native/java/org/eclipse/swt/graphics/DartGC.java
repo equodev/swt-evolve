@@ -3522,11 +3522,11 @@ public final class DartGC extends DartResource implements IGC {
         return dev.equo.swt.Config.canvasColorsOverride(drawable);
     }
 
-    int[] wireHoverFills() {
+    RGB[] wireHoverFills() {
         return dev.equo.swt.Config.canvasHoverFills(drawable);
     }
 
-    int[] wireSelectionFills() {
+    RGB[] wireSelectionFills() {
         return dev.equo.swt.Config.canvasSelectionFills(drawable);
     }
 

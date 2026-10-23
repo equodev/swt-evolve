@@ -695,18 +695,18 @@ public class VGC extends VResource {
     public void setThemedCanvas(Boolean value) {
     }
 
-    public int[] getHoverFills() {
+    public RGB[] getHoverFills() {
         return ((DartGC) impl).wireHoverFills();
     }
 
-    public void setHoverFills(int[] value) {
+    public void setHoverFills(RGB[] value) {
     }
 
-    public int[] getSelectionFills() {
+    public RGB[] getSelectionFills() {
         return ((DartGC) impl).wireSelectionFills();
     }
 
-    public void setSelectionFills(int[] value) {
+    public void setSelectionFills(RGB[] value) {
     }
 
     public static final String XORMODE = "XORMode";

@@ -57,10 +57,10 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..bufferScale = (json['bufferScale'] as num?)?.toDouble()
   ..themedCanvas = json['themedCanvas'] as bool?
   ..hoverFills = (json['hoverFills'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
+      ?.map((e) => e == null ? null : VRGB.fromJson(e as Map<String, dynamic>))
       .toList()
   ..selectionFills = (json['selectionFills'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
+      ?.map((e) => e == null ? null : VRGB.fromJson(e as Map<String, dynamic>))
       .toList();
 
 Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{

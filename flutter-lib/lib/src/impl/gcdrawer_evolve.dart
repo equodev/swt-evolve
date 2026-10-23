@@ -20,6 +20,7 @@ import '../gen/image.dart';
 import '../gen/path.dart';
 import '../gen/pathdata.dart';
 import '../gen/pattern.dart';
+import '../gen/rgb.dart';
 import '../gen/swt.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'assets_manager.dart';
@@ -417,11 +418,14 @@ class GCDrawer extends GCDrawerBase {
   // The theme's color for a fill the integrator declared a hover or a selection
   // (VGC.hoverFills / VGC.selectionFills), or null when the color has no declared role.
   Color? _declaredRoleFill(Color app) {
-    final rgb = app.toARGB32() & 0xFFFFFF;
-    if (state.hoverFills?.contains(rgb) ?? false) return _canvasTheme?.hoverFillColor;
-    if (state.selectionFills?.contains(rgb) ?? false) return _canvasTheme?.selectionFillColor;
+    if (_isAnyOf(state.hoverFills, app)) return _canvasTheme?.hoverFillColor;
+    if (_isAnyOf(state.selectionFills, app)) return _canvasTheme?.selectionFillColor;
     return null;
   }
+
+  static bool _isAnyOf(List<VRGB?>? fills, Color app) =>
+      fills?.any((c) => c != null && (c.red << 16 | c.green << 8 | c.blue) == app.toARGB32() & 0xFFFFFF) ??
+      false;
 
   // The control's own background or, when it sets none, the fill this GC has painted with most.
   // The counts span the control's paints; within one paint the normal is what the paints before it

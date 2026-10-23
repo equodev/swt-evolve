@@ -67,9 +67,9 @@ class GCCanvasFillRolesNativeTest {
         Grid grid = new Grid(shell);
 
         for (Control control : new Control[] {grid, new FrozenGrid(shell), new Composite(grid, SWT.NONE)}) {
-            int[][] fills = fills(control);
-            assertThat(fills[0]).containsExactly(0xF6E6D6);
-            assertThat(fills[1]).containsExactly(0xDBC7B4);
+            RGB[][] fills = fills(control);
+            assertThat(fills[0]).containsExactly(new RGB(0xF6, 0xE6, 0xD6));
+            assertThat(fills[1]).containsExactly(new RGB(0xDB, 0xC7, 0xB4));
         }
     }
 
@@ -81,16 +81,16 @@ class GCCanvasFillRolesNativeTest {
         assertThat(fills(unlisted)[1]).isNull();
         assertThat(json(unlisted)).doesNotContain("hoverFills").doesNotContain("selectionFills");
         assertThat(json(new Grid(shell)))
-                .contains("\"hoverFills\":[" + 0xF6E6D6 + "]")
-                .contains("\"selectionFills\":[" + 0xDBC7B4 + "]");
+                .contains("\"hoverFills\":[{\"red\":246,\"green\":230,\"blue\":214}]")
+                .contains("\"selectionFills\":[{\"red\":219,\"green\":199,\"blue\":180}]");
     }
 
     /** The hover and the selection fills a GC on {@code control} carries. */
-    private static int[][] fills(Control control) {
+    private static RGB[][] fills(Control control) {
         GC gc = new GC(control);
         try {
             VGC value = (VGC) ((DartGC) gc.getImpl()).getValue();
-            return new int[][] {value.getHoverFills(), value.getSelectionFills()};
+            return new RGB[][] {value.getHoverFills(), value.getSelectionFills()};
         } finally {
             gc.dispose();
         }
