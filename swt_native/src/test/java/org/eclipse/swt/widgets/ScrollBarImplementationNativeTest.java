@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
 
 /**
  * The bounds {@link DartScrollBar} reports for its track and thumb: where {@code canvas_evolve.dart} draws them,
@@ -84,19 +87,34 @@ class ScrollBarImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("setVisible shows and hides the bars of a List, a Text, a Table and a Tree too, as on GTK and Win32")
+    @DisplayName("setVisible shows and hides the bars of a List, a Text, a Table and a Tree too, with Hide and Show, as on GTK and Win32")
     void setVisibleChangesTheBarsOfEveryParent() {
         Shell shell = canvas(200, 150).getShell();
         Scrollable[] owners = {
                 new List(shell, SWT.V_SCROLL), new Text(shell, SWT.MULTI | SWT.V_SCROLL),
                 new Table(shell, SWT.V_SCROLL), new Tree(shell, SWT.V_SCROLL),
         };
+        DartDisplay display = (DartDisplay) shell.getDisplay().getImpl();
+        doCallRealMethod().when(display).sendEvent(any(EventTable.class), any(Event.class));
+        try {
+            assertHideAndShow(owners);
+        } finally {
+            doNothing().when(display).sendEvent(any(EventTable.class), any(Event.class));
+        }
+    }
+
+    private static void assertHideAndShow(Scrollable[] owners) {
         for (Scrollable owner : owners) {
+            String name = owner.getClass().getSimpleName();
             ScrollBar bar = owner.getVerticalBar();
+            java.util.List<Integer> events = new java.util.ArrayList<>();
+            bar.addListener(SWT.Hide, e -> events.add(SWT.Hide));
+            bar.addListener(SWT.Show, e -> events.add(SWT.Show));
             bar.setVisible(false);
-            assertThat(bar.getVisible()).as(owner.getClass().getSimpleName()).isFalse();
+            assertThat(bar.getVisible()).as(name).isFalse();
             bar.setVisible(true);
-            assertThat(bar.getVisible()).as(owner.getClass().getSimpleName()).isTrue();
+            assertThat(bar.getVisible()).as(name).isTrue();
+            assertThat(events).as(name).containsExactly(SWT.Hide, SWT.Show);
         }
     }
 }
