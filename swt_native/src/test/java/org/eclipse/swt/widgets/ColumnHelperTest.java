@@ -157,4 +157,23 @@ class ColumnHelperTest {
         ColumnHelper.columnsShiftedFrom(table, -1);
         assertThat(moved).containsExactly("c2");
     }
+
+    @Test
+    @DisplayName("a column disposed by an earlier column's Move listener is not told it moved")
+    void columnDisposedDuringTheMoves() {
+        Tree tree = new Tree(shell, SWT.NONE);
+        TreeColumn[] treeColumns = treeColumns(tree);
+        treeColumns[1].addListener(SWT.Move, e -> treeColumns[2].dispose());
+        ColumnHelper.columnResized(tree, treeColumns[0]);
+        assertThat(moved).containsExactly("c1");
+        assertThat(treeColumns[2].isDisposed()).isTrue();
+
+        moved.clear();
+        Table table = new Table(shell, SWT.NONE);
+        TableColumn[] tableColumns = tableColumns(table);
+        tableColumns[0].addListener(SWT.Move, e -> tableColumns[2].dispose());
+        ColumnHelper.columnsShiftedFrom(table, 0);
+        assertThat(moved).containsExactly("c0", "c1");
+        assertThat(tableColumns[2].isDisposed()).isTrue();
+    }
 }
