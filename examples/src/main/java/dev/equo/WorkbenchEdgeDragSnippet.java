@@ -44,6 +44,8 @@ public class WorkbenchEdgeDragSnippet {
 
         shell.setSize(900, 640);
         shell.open();
+        log("shell bounds=" + shell.getBounds() + " host origin(display)=" + display.map(host, null, 0, 0));
+        reportCursor(display, host, 6);
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch())
                 display.sleep();
@@ -84,6 +86,16 @@ public class WorkbenchEdgeDragSnippet {
         log("tracker closed accepted=" + accepted + " cursor(shell)="
                 + display.map(null, shell, display.getCursorLocation()));
         tracker.dispose();
+    }
+
+    /** Logs where SWT puts the pointer, once a second, to compare with the screen position. */
+    static void reportCursor(Display display, Composite host, int times) {
+        if (times == 0 || host.isDisposed())
+            return;
+        Point cursor = display.getCursorLocation();
+        log("cursor display=" + cursor + " host=" + display.map(null, host, cursor) + " over="
+                + describe(display.getCursorControl()) + " shell=" + host.getShell().getBounds());
+        display.timerExec(1000, () -> reportCursor(display, host, times - 1));
     }
 
     static String describe(Control control) {
