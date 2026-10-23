@@ -1456,6 +1456,10 @@ public class DartComposite extends DartScrollable implements IComposite {
         return _getChildren();
     }
 
+    public boolean _drawsItself(Control child) {
+        return false;
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

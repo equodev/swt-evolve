@@ -200,6 +200,10 @@ public final class EvolveSwingHost {
         // even if a caller reaches it without that gate.
         openSwingInternals();
         startToolkit();
+        // The toolkit starts once per process, but the dispatcher it installed can since have been
+        // cleared or left bound to a disposed Display; without it AWT runs its own dispatch thread,
+        // which on macOS deadlocks against AppKit's main thread under the AWT tree lock.
+        ensureDispatcherInstalled(parent.getDisplay());
         installOutsideClickRepaintFilter(parent.getDisplay());
         installMenuCloseFilter(parent.getDisplay());
 
@@ -580,7 +584,15 @@ public final class EvolveSwingHost {
      */
     static void ensureDispatcherInstalled() {
         try {
-            EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(Display.getDefault());
+            ensureDispatcherInstalled(Display.getDefault());
+        } catch (Throwable notInstallable) {
+        }
+    }
+
+    /** {@link #ensureDispatcherInstalled()} for {@code display}; call it on that Display's thread. */
+    static void ensureDispatcherInstalled(Display display) {
+        try {
+            EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(display);
             if (wrapper.isDispatchThread() == EventQueue.isDispatchThread()) return;
             setFwDispatcher(Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
         } catch (Throwable notInstallable) {

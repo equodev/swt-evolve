@@ -37,6 +37,14 @@ public interface WindowBridge {
     }
 
     /**
+     * Whether this shell is the root of a native window, drawn without a Flutter title bar: the shell
+     * filling the bridge's own window, or one in a window of its own.
+     */
+    default boolean rootsAWindow(Object shell) {
+        return rendersAsMainWindow(shell);
+    }
+
+    /**
      * The native top-level window this shell is drawn into, or 0 when there is none.
      *
      * <p>A window the application opens on its own, such as a Swing dialog from embedded content,

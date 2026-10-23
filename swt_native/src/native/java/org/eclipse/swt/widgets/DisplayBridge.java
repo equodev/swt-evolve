@@ -45,6 +45,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * request; applying it moves the focus straight back off the one just asked for.
      */
     private DartControl pendingClientFocus = null;
+    /** The control the client last reported focused, whether or not the report was applied. */
+    private DartControl clientReportedFocus = null;
+    /** What the client had last reported focused when the pending request went out: the only control
+     *  a report older than that request can name. */
+    private DartControl clientFocusAtRequest = null;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
 
@@ -650,6 +655,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return forDisplay != null && isMainShell(forDisplay, shell);
     }
 
+    @Override
+    public boolean rootsAWindow(Object shell) {
+        if (!(shell instanceof Shell)) return false;
+        Shell s = (Shell) shell;
+        return hostsAsMainShell(s) || isShellWindowed(s);
+    }
+
     private static final int MODAL_MASK = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 
     /**
@@ -804,14 +816,21 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         for (Shell shell : forDisplay._shells()) {
             if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
             if (shellWindows.containsKey(shell) || !ownsWindow(shell)) continue;
-            ShellWindow window = createShellWindow(shell);
+            // Before the window opens: its client reports from its own thread as soon as its view has
+            // metrics, while the engine is still being created.
+            registerShellClientReady(shell);
+            ShellWindow window = null;
+            try {
+                window = createShellWindow(shell);
+            } finally {
+                if (window == null) offChannel(shellClientReadyChannel(shell));
+            }
             if (window == null) continue;
             shellWindows.put(shell, window);
             // setMaximized and friends only reach a window that exists, so a state set before open()
             // is applied here.
             int state = windowStateOf(shell);
             if (state != ShellWindow.STATE_NORMAL) window.setState(state);
-            registerShellClientReady(shell);
         }
         return leftOwnWindow;
     }
@@ -966,7 +985,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         lostWindows.remove(shell);
     }
 
-    private static String shellClientReadyChannel(Shell shell) {
+    static String shellClientReadyChannel(Shell shell) {
         return "Shell/" + shell.hashCode() + "/ClientReady";
     }
 
@@ -1108,6 +1127,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // the push below would still find it visible and eligible, and leave its window standing
             // with nothing in it. This is the point that knows the shell is going.
             closeShellWindow(shell);
+            if (shell == displayWindowTaker) displayWindowTaker = null;
             sendDisplayUpdate(forDisplay);
         }
     }
@@ -1221,7 +1241,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Control api = widget == null ? null : widget.getApi();
         if (api != null && !api.isDisposed() && !api.isEnabled())
             return;
-        if (reportPrecedesPendingRequest(widget))
+        boolean stale = reportPrecedesPendingRequest(widget);
+        clientReportedFocus = widget;
+        if (stale)
             return;
         if (api != null && !api.isDisposed() && declinesClientFocus(api))
             return;
@@ -1375,7 +1397,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private boolean reportPrecedesPendingRequest(DartControl widget) {
         DartControl pending = pendingClientFocus;
         pendingClientFocus = null;
-        if (pending == null || pending == widget)
+        // A control the client did not hold when the request went out -- one built since, say -- is
+        // a report that came after it, not one that crossed it. A Shell, which the client never
+        // reports focusing, leaves its request unanswered until such a report arrives.
+        if (pending == null || pending == widget || widget != clientFocusAtRequest)
             return false;
         Control api = pending.getApi();
         return api != null && !api.isDisposed();
@@ -1409,6 +1434,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         focusRequested = widget;
         pendingClientFocus = widget;
+        clientFocusAtRequest = clientReportedFocus;
         sendFocusRequest(widget);
     }
 

@@ -91,7 +91,7 @@ void main() {
     final double boxHeight = tester.getSize(find.byType(ComboSwt<VCombo>)).height;
     final double viewportHeight = tester.getSize(editable).height;
 
-    // 8px of padding above and below the text, and the 1px border on each side.
-    expect(boxHeight - viewportHeight, 18.0);
+    // 1.5px of padding above and below the text, and the 1px border on each side.
+    expect(boxHeight - viewportHeight, 5.0);
   });
 }
