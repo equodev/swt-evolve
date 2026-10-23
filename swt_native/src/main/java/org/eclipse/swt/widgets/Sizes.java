@@ -4,7 +4,6 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.size.*;
 import org.eclipse.swt.SWT;
-import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
@@ -800,26 +799,7 @@ public class Sizes {
     }
 
     public static List<TreeItem> flattenVisibleTreeItems(DartTree tree) {
-        List<TreeItem> result = new ArrayList<>();
-        for (TreeItem root : tree.getApi().getItems()) {
-            addVisible(result, root);
-        }
-        return result;
-    }
-
-    /**
-     * A released item is skipped: while a Tree is being disposed its items go one by one, and a Dispose
-     * listener of a later item (a TreeCursor moving to its neighbour) still asks for that neighbour's bounds.
-     */
-    private static void addVisible(List<TreeItem> result, TreeItem item) {
-        if (item.isDisposed())
-            return;
-        result.add(item);
-        if (item.getExpanded()) {
-            for (TreeItem child : item.getItems()) {
-                addVisible(result, child);
-            }
-        }
+        return TreeHelper.visibleItems(tree);
     }
 
     /** The row an item is shown in, in viewport coordinates; null when a collapsed ancestor hides it. */
