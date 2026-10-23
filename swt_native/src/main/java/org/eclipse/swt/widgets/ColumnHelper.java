@@ -100,8 +100,20 @@ public final class ColumnHelper {
             return;
         for (int i = fromDisplayIndex; i < order.length; i++) {
             Item column = columns[order[i]];
-            if (!column.isDisposed())
+            if (!column.isDisposed() && !shownAfterADisposedColumn(columns, order, i))
                 column.getImpl().sendEvent(SWT.Move);
         }
+    }
+
+    /**
+     * Whether a column shown before {@code displayIndex} was disposed by a Move listener of this pass: its
+     * disposal already told every column shown after it that it moved, and a native list moves each once.
+     */
+    private static boolean shownAfterADisposedColumn(Item[] columns, int[] order, int displayIndex) {
+        for (int i = 0; i < displayIndex; i++) {
+            if (columns[order[i]].isDisposed())
+                return true;
+        }
+        return false;
     }
 }
