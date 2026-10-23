@@ -454,19 +454,7 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     Rectangle getImageBoundsInPixels(int index) {
         checkWidget();
-        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
-        //     error(SWT.ERROR_WIDGET_DISPOSED);
-        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        int width = 0;
-        int height = 0;
-        if (image != null) {
-            Rectangle imgBounds = image.getBounds();
-            width = imgBounds.width;
-            height = imgBounds.height;
-        }
-        return new Rectangle(0, 0, width, height);
+        return Sizes.getImageBounds(this, index);
     }
 
     /**
@@ -624,12 +612,12 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -751,8 +739,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VTableItem.FONT);
         }
@@ -878,12 +866,12 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }

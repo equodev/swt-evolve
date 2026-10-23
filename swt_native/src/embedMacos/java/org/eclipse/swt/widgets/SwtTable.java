@@ -275,7 +275,7 @@ public class SwtTable extends SwtComposite implements ITable {
         long modifiers = NSApplication.sharedApplication().currentEvent().modifierFlags();
         boolean drag = (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect);
         if (drag) {
-            if (!widget.isRowSelected(row) && (modifiers & (OS.NSCommandKeyMask | OS.NSShiftKeyMask | OS.NSAlternateKeyMask)) == 0) {
+            if (!widget.isRowSelected(row) && (modifiers & (OS.NSEventModifierFlagCommand | OS.NSEventModifierFlagShift | OS.NSAlternateKeyMask)) == 0) {
                 NSIndexSet set = (NSIndexSet) new NSIndexSet().alloc();
                 set = set.initWithIndex(row);
                 widget.selectRowIndexes(set, false);
@@ -616,7 +616,7 @@ public class SwtTable extends SwtComposite implements ITable {
             buttonCell.init();
             checkColumn.setDataCell(buttonCell);
             buttonCell.setButtonType(OS.NSButtonTypeSwitch);
-            buttonCell.setControlSize(OS.NSSmallControlSize);
+            buttonCell.setControlSize(OS.NSControlSizeSmall);
             buttonCell.setImagePosition(OS.NSImageOnly);
             buttonCell.setAllowsMixedState(true);
             checkColumn.setWidth(getCheckColumnWidth());
@@ -1150,7 +1150,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 transform.scaleXBy(1, -1);
                 transform.translateXBy(0, -(destRect.height + 2 * destRect.y));
                 transform.concat();
-                image.drawInRect(destRect, new NSRect(), OS.NSCompositeSourceOver, 1);
+                image.drawInRect(destRect, new NSRect(), OS.NSCompositingOperationSourceOver, 1);
                 context.restoreGraphicsState();
                 int imageWidth = imageBounds.width + IMAGE_GAP;
                 rect.x += imageWidth;
@@ -2143,7 +2143,7 @@ public class SwtTable extends SwtComposite implements ITable {
             // which is interpreted as a single click that clears the selection.  Fix is to ignore control-click if the
             // view has a context menu.
             NSEvent event = new NSEvent(theEvent);
-            if ((event.modifierFlags() & OS.NSControlKeyMask) != 0)
+            if ((event.modifierFlags() & OS.NSEventModifierFlagControl) != 0)
                 return;
         }
         super.mouseDown(id, sel, theEvent);
@@ -2198,9 +2198,9 @@ public class SwtTable extends SwtComposite implements ITable {
             index = (int) tableView.selectedRow();
         TableItem item = items[index];
         if (((SwtTableItem) item.getImpl()).grayed) {
-            return ((SwtTableItem) item.getImpl()).checked ? OS.NSOffState : OS.NSMixedState;
+            return ((SwtTableItem) item.getImpl()).checked ? OS.NSControlStateValueOff : OS.NSControlStateValueMixed;
         }
-        return ((SwtTableItem) item.getImpl()).checked ? OS.NSOffState : OS.NSOnState;
+        return ((SwtTableItem) item.getImpl()).checked ? OS.NSControlStateValueOff : OS.NSControlStateValueOn;
     }
 
     @Override
@@ -3632,9 +3632,9 @@ public class SwtTable extends SwtComposite implements ITable {
         if (checkColumn != null && aTableColumn == checkColumn.id) {
             NSNumber value;
             if (((SwtTableItem) item.getImpl()).checked && ((SwtTableItem) item.getImpl()).grayed) {
-                value = NSNumber.numberWithInt(OS.NSMixedState);
+                value = NSNumber.numberWithInt(OS.NSControlStateValueMixed);
             } else {
-                value = NSNumber.numberWithInt(((SwtTableItem) item.getImpl()).checked ? OS.NSOnState : OS.NSOffState);
+                value = NSNumber.numberWithInt(((SwtTableItem) item.getImpl()).checked ? OS.NSControlStateValueOn : OS.NSControlStateValueOff);
             }
             return value.id;
         }

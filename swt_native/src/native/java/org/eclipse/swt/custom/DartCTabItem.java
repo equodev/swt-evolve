@@ -203,7 +203,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      *
      * @deprecated the disabled image is not used
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public Image getDisabledImage() {
         checkWidget();
         return disabledImage;
@@ -426,8 +426,8 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (image != null && image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -456,8 +456,8 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VCTabItem.FONT);
         }
@@ -489,8 +489,8 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.foreground, color)) {
             getValue().markDirty(VCTabItem.FOREGROUND);
         }
@@ -521,8 +521,8 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.selectionForeground, color)) {
             getValue().markDirty(VCTabItem.SELECTION_FOREGROUND);
         }

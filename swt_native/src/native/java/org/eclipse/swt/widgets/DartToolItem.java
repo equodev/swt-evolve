@@ -578,8 +578,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.background, color)) {
             getValue().markDirty(VToolItem.BACKGROUND);
         }
@@ -647,10 +647,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
+        checkWidget();
         if (!java.util.Objects.equals(this.enabled, newValue)) {
             getValue().markDirty(VToolItem.ENABLED);
         }
-        checkWidget();
         if ((getApi().state & DISABLED) == 0 && enabled)
             return;
         if (enabled) {
@@ -680,8 +680,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.disabledImage, image)) {
             getValue().markDirty(VToolItem.DISABLED_IMAGE);
         }
@@ -721,8 +721,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.foreground, color)) {
             getValue().markDirty(VToolItem.FOREGROUND);
         }
@@ -754,8 +754,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.hotImage, image)) {
             getValue().markDirty(VToolItem.HOT_IMAGE);
         }

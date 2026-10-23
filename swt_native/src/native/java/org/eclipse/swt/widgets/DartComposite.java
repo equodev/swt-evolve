@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.ExceptionStash;
+import org.eclipse.swt.internal.*;
 import java.util.Objects;
 import dev.equo.swt.*;
 
@@ -148,7 +148,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }
@@ -874,11 +874,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         return super.setFocus();
     }
 
-    @Override
-    void setIsStyledText() {
-        isStyledText = true;
-    }
-
     /**
      * Sets the layout which is associated with the receiver to be
      * the argument which may be null.
@@ -1115,6 +1110,10 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     Object contentView() {
         return getBridge().container(this);
+    }
+
+    public Control[] _displayedChildren() {
+        return _getChildren();
     }
 
     private boolean hasLayoutableClientArea() {

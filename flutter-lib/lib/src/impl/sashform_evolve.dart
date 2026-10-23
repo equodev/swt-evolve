@@ -10,6 +10,8 @@ import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'color_utils.dart';
+import 'utils/focus_report.dart';
+import 'utils/swt_zoom_scale.dart';
 
 class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     extends CompositeImpl<T, V> {
@@ -80,8 +82,6 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
         // the drag-end onWeightsChanged commit stays authoritative.
         onWeightsDragged: (newWeights) => _sendWeights(
             _mergeVisibleWeights(allWeights, visibleIndices, newWeights)),
-        onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
-        onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
         onFocusIn: () => widget.sendFocusFocusIn(state, null),
         onFocusOut: () => widget.sendFocusFocusOut(state, null),
       ),
@@ -131,8 +131,6 @@ class _SashFormLayout extends StatefulWidget {
   final SashThemeExtension sashTheme;
   final Function(List<int>) onWeightsChanged;
   final Function(List<int>) onWeightsDragged;
-  final VoidCallback onMouseEnter;
-  final VoidCallback onMouseExit;
   final VoidCallback onFocusIn;
   final VoidCallback onFocusOut;
 
@@ -145,8 +143,6 @@ class _SashFormLayout extends StatefulWidget {
     required this.sashTheme,
     required this.onWeightsChanged,
     required this.onWeightsDragged,
-    required this.onMouseEnter,
-    required this.onMouseExit,
     required this.onFocusIn,
     required this.onFocusOut,
   }) : super(key: key);
@@ -167,7 +163,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   static const int _liveSyncMinDelta = 5;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'SashForm');
-  bool _focusReported = false;
+  final FocusReport _focusReport = FocusReport();
 
   @override
   void initState() {
@@ -185,14 +181,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
 
   // hasFocus is true for any focused descendant; SWT gives a SashForm focus only when it holds it itself.
   void _handleFocusChange() {
-    final own = _focusNode.hasPrimaryFocus;
-    if (own == _focusReported) return;
-    _focusReported = own;
-    if (own) {
-      widget.onFocusIn();
-    } else {
-      widget.onFocusOut();
-    }
+    _focusReport.update(_focusNode.hasPrimaryFocus, focusIn: widget.onFocusIn, focusOut: widget.onFocusOut);
   }
 
   @override
@@ -232,7 +221,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        widget.onMouseEnter();
         if (_draggingSashIndex != null && _isDragPaused) {
           setState(() {
             _isDragPaused = false;
@@ -240,7 +228,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
         }
       },
       onExit: (_) {
-        widget.onMouseExit();
         if (_draggingSashIndex != null) {
           setState(() {
             _isDragPaused = true;
@@ -438,9 +425,9 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     if (availableSpace <= 0) return;
 
     final totalWeight = _panelSizes.reduce((a, b) => a + b);
-    final currentGlobalPosition = isVertical
-        ? details.globalPosition.dy
-        : details.globalPosition.dx;
+    // The pointer is read against the view and the panels are laid out in SWT units.
+    final pointer = logicalToSwt(details.globalPosition);
+    final currentGlobalPosition = isVertical ? pointer.dy : pointer.dx;
 
     double currentPixelPosition = 0;
     for (int i = 0; i < sashIndex; i++) {
@@ -486,9 +473,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
 
     final totalWeight = _panelSizes.reduce((a, b) => a + b);
 
-    final currentGlobalPosition = isVertical
-        ? details.globalPosition.dy
-        : details.globalPosition.dx;
+    final pointer = logicalToSwt(details.globalPosition);
+    final currentGlobalPosition = isVertical ? pointer.dy : pointer.dx;
     final targetPixelPosition =
         currentGlobalPosition - _dragStartGlobalPosition;
 

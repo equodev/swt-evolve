@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../theme_extensions/tabitem_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -56,6 +57,8 @@ TabItemThemeExtension _getTabItemTheme({
       fontSize: 12.0,
       fontWeight: FontWeight.normal,
     ),
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

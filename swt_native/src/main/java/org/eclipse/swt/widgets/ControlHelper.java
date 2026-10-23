@@ -5,20 +5,19 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 
 public class ControlHelper {
 
     public static int inPaintDepth;
 
-    // Area each control still owes a Paint for, unioned as redraw() calls arrive and consumed by
-    // the paint that follows. Absent, or a null value, means the whole client area.
-    private static final Map<DartControl, Rectangle> pendingDamage = new WeakHashMap<>();
-
-    // The control each Shell last announced as activated, so the next announcement can end it.
+    // The control each native Shell last announced as activated, so the next announcement can end it.
+    // Only an embedded Dart control in a native Shell lands here: a Dart Shell tracks its own active
+    // control (FlutterBridge.setActiveControl). Keyed by Shell, which belongs to one Display.
     private static final Map<Shell, Control> lastActivated =
             Collections.synchronizedMap(new WeakHashMap<>());
 
@@ -32,6 +31,8 @@ public class ControlHelper {
     }
 
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
+        if (widget instanceof DartControl && AcceleratorHelper.translate(((DartControl) widget).getApi(), event))
+            return;
         widget.sendEvent(SWT.KeyDown, event);
         translateTraversal(widget, event);
     }
@@ -120,11 +121,14 @@ public class ControlHelper {
     }
 
     /**
-     * Offers a traversal key as {@link SWT#Traverse} before the KeyDown, as every platform's
-     * {@code translateTraversal} does. The client performs a Tab traversal itself.
+     * Offers a key to the menu accelerators, then a traversal key as {@link SWT#Traverse}, before
+     * the KeyDown, in the order every platform's key dispatch does. The client performs a Tab
+     * traversal itself.
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        if (AcceleratorHelper.translate(control.getApi(), key))
+            return new RoutedKey(false, false, false);
         int detail = traverseDetail(key.keyCode, key.stateMask);
         boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(key);
         if (mnemonic)
@@ -148,9 +152,12 @@ public class ControlHelper {
                 switch (e.detail) {
                     // A listener that consumed the key clears the detail; Control.traverse counts it as done.
                     case SWT.TRAVERSE_NONE:
+                        traversed = true;
+                        break;
+                    // A Tab with nowhere to go is not a traversal: natively the key is delivered.
                     case SWT.TRAVERSE_TAB_NEXT:
                     case SWT.TRAVERSE_TAB_PREVIOUS:
-                        traversed = true;
+                        traversed = hasTabStop(control.getApi().getShell());
                         break;
                     case SWT.TRAVERSE_MNEMONIC:
                         traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
@@ -163,7 +170,53 @@ public class ControlHelper {
         if (traversed || control.isDisposed())
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
+        rememberTypingKey(control, key);
+        if (key.doit && !control.isDisposed())
+            applyPlatformKey(control, key);
         return new RoutedKey(true, key.doit, traverseDoit);
+    }
+
+    /**
+     * What the platform does with a key no listener vetoed: an item view moves its selection, a
+     * spinner or scale steps its value.
+     */
+    private static void applyPlatformKey(DartControl control, Event key) {
+        if (control instanceof DartTable)
+            TableHelper.moveSelectionByKey((DartTable) control, key);
+        else if (control instanceof DartList)
+            ListHelper.moveSelectionByKey((DartList) control, key);
+        else if (control instanceof DartSpinner)
+            SpinnerHelper.stepByKey((DartSpinner) control, key);
+        else if (control instanceof DartScale)
+            ScaleHelper.stepByKey((DartScale) control, key);
+    }
+
+    /** Keeps the last KeyDown a control let through, for the edit it types; see {@link #takeTypingKey}. */
+    private static void rememberTypingKey(DartControl control, Event key) {
+        if (!key.doit || control.isDisposed()) {
+            control.typingKey = null;
+            return;
+        }
+        Event copy = new Event();
+        copy.character = key.character;
+        copy.keyCode = key.keyCode;
+        copy.stateMask = key.stateMask;
+        control.typingKey = copy;
+    }
+
+    /**
+     * The KeyDown that typed the edit {@code control} is applying, or null when the edit came from
+     * elsewhere (a paste, an input method). Natively a typed edit's Verify carries its key: the
+     * typed character for an insertion, Backspace or Delete for a removal. Consumed once read.
+     */
+    static Event takeTypingKey(DartControl control, String inserted) {
+        Event key = control.typingKey;
+        control.typingKey = null;
+        if (key == null)
+            return null;
+        boolean types = inserted.length() == 1 && key.character == inserted.charAt(0);
+        boolean removes = inserted.isEmpty() && (key.character == SWT.BS || key.character == SWT.DEL);
+        return types || removes ? key : null;
     }
 
     /**
@@ -180,6 +233,50 @@ public class ControlHelper {
                 return false;
         }
         return true;
+    }
+
+    /** Whether {@code control} or a control inside it takes the focus from Tab, as natively. */
+    static boolean hasTabStop(Control control) {
+        if (control == null || control.isDisposed() || !control.getVisible() || !control.getEnabled())
+            return false;
+        if (isTabStop(control))
+            return true;
+        if (control instanceof Composite) {
+            for (Control child : ((Composite) control).getChildren()) {
+                if (hasTabStop(child))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
+    private static boolean isTabStop(Control control) {
+        if ((control.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        if (control instanceof Button || control instanceof Combo || control instanceof DateTime
+                || control instanceof org.eclipse.swt.widgets.List || control instanceof Scale || control instanceof Spinner
+                || control instanceof TabFolder || control instanceof Table || control instanceof Tree
+                || control instanceof Text || control instanceof org.eclipse.swt.custom.CCombo
+                || control instanceof org.eclipse.swt.custom.StyledText)
+            return true;
+        if (control instanceof Link)
+            return holdsLink(((Link) control).getText());
+        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
+            DartWidget impl = (DartWidget) control.getImpl();
+            return impl.hooks(SWT.KeyDown) || impl.hooks(SWT.KeyUp);
+        }
+        return false;
+    }
+
+    /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
+    static boolean holdsLink(String text) {
+        String lower = text.toLowerCase();
+        for (int i = lower.indexOf("<a"); i >= 0; i = lower.indexOf("<a", i + 1)) {
+            if (i + 2 < lower.length() && (lower.charAt(i + 2) == '>' || Character.isWhitespace(lower.charAt(i + 2))))
+                return true;
+        }
+        return false;
     }
 
     public static boolean isModifierKey(int keyCode) {
@@ -201,17 +298,31 @@ public class ControlHelper {
     }
 
     /**
-     * {@code count} is lines, positive up; a pixel scroll arrives in {@code detail}, positive down,
-     * and moves the bar by those pixels. Listeners always see {@code detail} as SCROLL_LINE.
+     * The controls the client scrolls itself, reporting the scroll: an item view's rows, a
+     * ScrolledComposite's content. Moving their bar here as well would scroll them twice.
+     */
+    static boolean scrollsInClient(Widget api) {
+        return api instanceof Table || api instanceof Tree || api instanceof org.eclipse.swt.widgets.List
+                || api instanceof org.eclipse.swt.custom.ScrolledComposite;
+    }
+
+    /**
+     * {@code count} is lines, positive up, or left when {@code type} is SWT.MouseHorizontalWheel; a
+     * pixel scroll arrives in {@code detail}, positive down, and moves the bar by those pixels.
+     * Listeners always see {@code detail} as SCROLL_LINE.
      */
     public static void handleMouseWheel(DartControl control, Event e) {
         int pixels = e.detail;
+        boolean horizontal = e.type == SWT.MouseHorizontalWheel;
         e.detail = SWT.SCROLL_LINE;
         e.doit = true;
-        control.sendEvent(SWT.MouseWheel, e);
+        control.sendEvent(horizontal ? SWT.MouseHorizontalWheel : SWT.MouseWheel, e);
         if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
             return;
-        ScrollBar bar = ((Scrollable) control.getApi()).getVerticalBar();
+        if (scrollsInClient(control.getApi()))
+            return;
+        Scrollable scrollable = (Scrollable) control.getApi();
+        ScrollBar bar = horizontal ? scrollable.getHorizontalBar() : scrollable.getVerticalBar();
         if (bar == null || !bar.getEnabled())
             return;
         int max = bar.getMaximum() - bar.getThumb();
@@ -272,34 +383,50 @@ public class ControlHelper {
         }
     }
 
-    private static Control walkToSwtAncestor(Control control, int[] offset) {
+    /** One parent-ward step of the walk: a point p of the child lands at (x, y) + p * scale. */
+    private static final class Step {
+        final double x, y, scaleX, scaleY;
+
+        Step(double x, double y, double scaleX, double scaleY) {
+            this.x = x;
+            this.y = y;
+            this.scaleX = scaleX;
+            this.scaleY = scaleY;
+        }
+    }
+
+    // CompositeThemeExtension.panelChildGap: the margin a main composite leaves around each panel.
+    private static final int PANEL_CHILD_GAP = 5;
+
+    private static Control walkToSwtAncestor(Control control, List<Step> steps) {
         Control current = control;
         while (current != null && (current.getImpl() instanceof DartControl)) {
             Rectangle bounds = current.getBounds();
-            offset[0] += bounds.x;
-            offset[1] += bounds.y;
+            double x = bounds.x, y = bounds.y, scaleX = 1, scaleY = 1;
             // Plain cast, not a pattern: this source set is also compiled at -source 8 and -source 11
             // for the older SWT versions, where a binding instanceof is a compile error.
             if (current instanceof Shell) {
                 Shell shell = (Shell) current;
                 DartControl impl = (DartControl) current.getImpl();
                 FlutterBridge bridge = impl.getBridge();
-                // The bridge knows which shell it shows as its window (no Flutter title bar) and where
+                // The bridge knows which shells it shows as a window (no Flutter title bar) and where
                 // that window's content sits on screen; the geometry guess is only for a bridge that
                 // does not host shells.
-                Boolean hosted = bridge == null ? null : bridge.hostsAsMainShell(shell);
-                boolean main = hosted != null ? hosted : isMainShell(shell);
+                boolean windowRoot = bridge instanceof dev.equo.swt.WindowBridge
+                    ? ((dev.equo.swt.WindowBridge) bridge).rootsAWindow(shell)
+                    : isMainShell(shell);
                 int st = current.getStyle();
                 boolean showsTitleBar = (st & SWT.NO_TRIM) == 0
                     && ((st & SWT.TITLE) != 0 || (st & SWT.CLOSE) != 0);
-                if (showsTitleBar && !main) {
-                    offset[1] += (st & SWT.TOOL) != 0 ? 22 : 30;
+                if (showsTitleBar && !windowRoot) {
+                    y += (st & SWT.TOOL) != 0 ? 22 : 30;
                 }
                 if (bridge != null) {
                     Point origin = bridge.getWindowOrigin(impl);
-                    offset[0] += origin.x;
-                    offset[1] += origin.y;
+                    x += origin.x;
+                    y += origin.y;
                 }
+                steps.add(new Step(x, y, 1, 1));
                 return null;
             }
             Composite parent = current.getParent();
@@ -315,11 +442,47 @@ public class ControlHelper {
             // this there adds the strip a second time, once per folder in the chain, and everything
             // mapped through it lands that much too low.
             if (parent instanceof Group) {
-                offset[1] -= parent.computeTrim(0, 0, 0, 0).y;
+                y -= parent.computeTrim(0, 0, 0, 0).y;
             }
+            // A Decorations' own menu strip sits outside its client area, as a native menu bar does,
+            // so no child's bounds carry it.
+            if (parent instanceof Decorations) {
+                y += Sizes.ownMenuStripHeight((Decorations) parent);
+            }
+            // A main composite paints each child as a panel: inset by the gap on every side, with the
+            // child's content scaled into what is left (NoLayout._wrapAsPanel). Its bounds alone put
+            // every point inside it up to a gap off from where it is painted.
+            if (parent != null && laysOutChildrenAsPanels(parent)) {
+                x += PANEL_CHILD_GAP;
+                y += PANEL_CHILD_GAP;
+                scaleX = panelScale(bounds.width);
+                scaleY = panelScale(bounds.height);
+            }
+            steps.add(new Step(x, y, scaleX, scaleY));
             current = parent;
         }
         return current;
+    }
+
+    private static double panelScale(int size) {
+        return size > 2 * PANEL_CHILD_GAP ? (size - 2.0 * PANEL_CHILD_GAP) / size : 1;
+    }
+
+    /** MainCompositeImpl.laysOutChildrenAsPanels: a main composite that is not inside a panel itself. */
+    private static boolean laysOutChildrenAsPanels(Composite composite) {
+        return "MainComposite".equals(FlutterBridge.widgetName(composite.getImpl()))
+            && !insidePanel(composite);
+    }
+
+    /** SashPanelMarker.of() as the client resolves it for this control's build. */
+    private static boolean insidePanel(Control control) {
+        Composite parent = control.getParent();
+        if (parent == null || !(parent.getImpl() instanceof DartControl)) return false;
+        String name = FlutterBridge.widgetName(parent.getImpl());
+        if ("MainComposite".equals(name)) return laysOutChildrenAsPanels(parent);
+        // A plain Composite hands its children a cleared marker.
+        if ("Composite".equals(name)) return false;
+        return insidePanel(parent);
     }
 
     private static boolean isMainShell(Shell shell) {
@@ -367,38 +530,52 @@ public class ControlHelper {
     }
 
     static Point toDisplay(DartControl dartControl, int x, int y) {
-        int[] offset = new int[2];
-        Control ancestor = walkToSwtAncestor(dartControl.getApi(), offset);
-        if (ancestor != null) {
-            return ancestor.toDisplay(x + offset[0], y + offset[1]);
+        List<Step> steps = new ArrayList<>();
+        Control ancestor = walkToSwtAncestor(dartControl.getApi(), steps);
+        double px = x, py = y;
+        for (Step step : steps) {
+            px = step.x + px * step.scaleX;
+            py = step.y + py * step.scaleY;
         }
-        return new Point(x + offset[0], y + offset[1]);
+        int rx = (int) Math.round(px), ry = (int) Math.round(py);
+        return ancestor != null ? ancestor.toDisplay(rx, ry) : new Point(rx, ry);
     }
 
     static Point toControl(DartControl dartControl, int x, int y) {
-        int[] offset = new int[2];
-        Control ancestor = walkToSwtAncestor(dartControl.getApi(), offset);
+        List<Step> steps = new ArrayList<>();
+        Control ancestor = walkToSwtAncestor(dartControl.getApi(), steps);
+        double px = x, py = y;
         if (ancestor != null) {
-            Point result = ancestor.toControl(x, y);
-            return new Point(result.x - offset[0], result.y - offset[1]);
+            Point inAncestor = ancestor.toControl(x, y);
+            px = inAncestor.x;
+            py = inAncestor.y;
         }
-        return dartControl.display.map(null, dartControl.getApi(), x, y);
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Step step = steps.get(i);
+            px = (px - step.x) / step.scaleX;
+            py = (py - step.y) / step.scaleY;
+        }
+        return new Point((int) Math.round(px), (int) Math.round(py));
     }
 
-    // Its own latch, not drawCount: that is SWT's setRedraw counter, so a queued paint that moved it
-    // made the control look to everything else as though drawing had been turned off.
-    private static final Set<DartControl> paintQueued =
-        Collections.newSetFromMap(new WeakHashMap<>());
+    static PaintState paintState(DartControl c) {
+        if (c.paintState == null) c.paintState = new PaintState();
+        return c.paintState;
+    }
+
+    private static boolean paints(DartControl c) {
+        return c.hooks(SWT.Paint) || paintState(c).showsPaintedFrame;
+    }
 
     static void paint(DartControl c, Event e) {
         // The client asks for this paint from every Control it mounts, having no way to know which
         // ones paint themselves. Answering one that listens for nothing still builds a GC and
         // disposes it -- a whole VGC push per control, for no drawing.
-        if (!c.hooks(SWT.Paint)) return;
+        if (!paints(c)) return;
         // The client only asks when its view is stale, so the bridge's record of it is out of date.
         dev.equo.swt.FlutterBridge.forgetWhatIsShown(c.getApi());
-        if (c.drawCount > 0 || paintQueued.contains(c)) return;
-        damageAll(c);
+        if (c.drawCount > 0 || paintState(c).queued) return;
+        paintState(c).damageAll();
         firePaint(c);
     }
 
@@ -407,7 +584,7 @@ public class ControlHelper {
      * package, unlike Widget.hooks(int).
      */
     public static void markDamaged(DartControl c) {
-        if (c.hooks(SWT.Paint)) {
+        if (paints(c)) {
             paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
@@ -417,6 +594,9 @@ public class ControlHelper {
     public static void markDamaged(DartControl c, int x, int y, int width, int height) {
         if (c.hooks(SWT.Paint)) {
             paint(c, x, y, width, height);
+        } else if (paintState(c).showsPaintedFrame) {
+            // Only a full-area cycle drops every layer the listener left.
+            paint(c);
         }
         markOwnerDrawnCellsDamaged(c);
     }
@@ -462,7 +642,7 @@ public class ControlHelper {
     }
 
     public static void paint(DartControl c) {
-        damageAll(c);
+        paintState(c).damageAll();
         schedulePaint(c);
     }
 
@@ -472,40 +652,14 @@ public class ControlHelper {
      */
     public static void paint(DartControl c, int x, int y, int width, int height) {
         if (width <= 0 || height <= 0) return;
-        Rectangle damage = new Rectangle(x, y, width, height);
-        synchronized (pendingDamage) {
-            if (!pendingDamage.containsKey(c)) {
-                pendingDamage.put(c, damage);
-            } else {
-                Rectangle pending = pendingDamage.get(c);
-                // null is the whole client area, which already contains anything added to it.
-                if (pending != null) pending.add(damage);
-            }
-        }
+        paintState(c).damage(new Rectangle(x, y, width, height));
         schedulePaint(c);
     }
 
-    private static void damageAll(DartControl c) {
-        synchronized (pendingDamage) {
-            pendingDamage.put(c, null);
-        }
-    }
-
-    /** The area to paint, clamped to {@code bounds}, or null when nothing is left to paint. */
-    private static Rectangle takeDamage(DartControl c, Rectangle bounds) {
-        Rectangle damage;
-        synchronized (pendingDamage) {
-            if (!pendingDamage.containsKey(c)) return bounds;
-            damage = pendingDamage.remove(c);
-        }
-        if (damage == null) return bounds;
-        damage.intersect(bounds);
-        return damage.isEmpty() ? null : damage;
-    }
-
     private static void schedulePaint(DartControl c) {
-        if (c.drawCount > 0 || !paintQueued.add(c))
+        if (c.drawCount > 0 || paintState(c).queued)
             return;
+        paintState(c).queued = true;
         if (PaintPacing.holds(c))
             return;
         dispatchPaint(c);
@@ -513,13 +667,13 @@ public class ControlHelper {
 
     /** A Paint held until the client showed the previous one: sends it, if one is still wanted. */
     static void dispatchHeldPaint(DartControl c) {
-        if (paintQueued.contains(c))
+        if (paintState(c).queued)
             dispatchPaint(c);
     }
 
     private static void dispatchPaint(DartControl c) {
         c.getDisplay().asyncExec(() -> {
-            paintQueued.remove(c);
+            paintState(c).queued = false;
             // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
             if (c.drawCount > 0)
                 return;
@@ -547,7 +701,7 @@ public class ControlHelper {
         if (bounds.width <= 0 || bounds.height <= 0)
             return;
         Rectangle clientArea = new Rectangle(0, 0, bounds.width, bounds.height);
-        Rectangle damage = takeDamage(c, clientArea);
+        Rectangle damage = paintState(c).takeDamage(clientArea);
         if (damage == null)
             return;
         boolean scoped = !damage.equals(clientArea);
@@ -588,6 +742,11 @@ public class ControlHelper {
             if (scoped) event.gc.setClipping(damage);
             c.sendEvent(SWT.Paint, event);
             event.gc.dispose();
+            if (c.hooks(SWT.Paint)) {
+                paintState(c).showsPaintedFrame = true;
+            } else if (!scoped) {
+                paintState(c).showsPaintedFrame = false;
+            }
         } finally {
             paintDamage = outer;
         }
@@ -608,11 +767,9 @@ public class ControlHelper {
             return;
         Control control = null;
         boolean fixFocus = false;
-        if (!enabled) {
-//            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
-//                control = c.display.getFocusControl();
-//                fixFocus = c.isFocusAncestor(control);
-//            }
+        if (!enabled && c.mayFixFocus()) {
+            control = c.display.getFocusControl();
+            fixFocus = c.isFocusAncestor(control);
         }
         if (enabled) {
             c.getApi().state &= ~DartWidget.DISABLED;
@@ -623,6 +780,48 @@ public class ControlHelper {
         c.enableWidget(enabled);
         if (fixFocus)
             c.fixFocus(control);
+    }
+
+    /**
+     * What a native press does before SWT.MouseDown reaches listeners: Shell.setActiveControl(control,
+     * SWT.MouseDown) announces the activation, and a control that takes the focus on a click takes it
+     * -- Shell.FocusOut and FocusIn -- so a MouseDown listener already finds the control focused.
+     * Win32 and GTK agree on that order for every control; Flutter would otherwise report the focus
+     * a microtask after the press, behind the MouseDown it caused.
+     */
+    public static void pressed(DartControl control, Event event) {
+        sendActivateToAncestors(control, SWT.MouseDown);
+        if (control.isDisposed() || event == null)
+            return;
+        boolean focuses = takesFocusOnPress(control, event.button);
+        if (!focuses || control.isFocusControl())
+            return;
+        if (control.forceFocus() && !control.isDisposed())
+            control.getBridge().focusClient(control);
+    }
+
+    /**
+     * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
+     * <p>
+     * Button 1 focuses the controls Win32 and GTK agree on. A Canvas is left to its own press
+     * handling, since natively it takes the focus only while it hooks key events. A TabFolder takes
+     * it only from a click that switches tabs (its client sends it), not from one on its strip or on
+     * the selected tab, as on GTK.
+     * <p>
+     * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
+     * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
+     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out.
+     */
+    static boolean takesFocusOnPress(DartControl control, int button) {
+        Control api = control.getApi();
+        if ((api.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
+                || api instanceof Tree || api instanceof Text;
+        if (button == 3)
+            return fieldOrItemView;
+        return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
+                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale);
     }
 
     /**
@@ -667,9 +866,18 @@ public class ControlHelper {
     public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
             return;
+        // A bridge whose focus changes reach the Shell's own setActiveControl announces the activation
+        // there, once, the way SWT does; walking the chain here as well would announce it twice.
+        FlutterBridge bridge = control.getBridge();
+        if (bridge != null && bridge.activate(control, detail))
+            return;
         Control now = control.getApi();
         Shell shell = now.getShell();
         if (shell == null || shell.isDisposed())
+            return;
+        // A Dart Shell already tracks its active control: Shell.setActiveControl, which focus changes
+        // drive too. A second tracker here announced every focus change twice, once from each.
+        if (control.getBridge().setActiveControl(control, detail))
             return;
         Control previous = lastActivated.put(shell, now);
         // An open shell is the active control of itself until something inside it takes over -- what

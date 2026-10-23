@@ -32,6 +32,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
   double get dividerHeight;
   double get dividerThickness;
   Duration get animationDuration;
+  double get minTextContrast;
 
   @override
   ComboThemeExtension copyWith({
@@ -57,6 +58,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
     double? dividerHeight,
     double? dividerThickness,
     Duration? animationDuration,
+    double? minTextContrast,
   }) {
     return ComboThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -83,6 +85,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       dividerHeight: dividerHeight ?? this.dividerHeight,
       dividerThickness: dividerThickness ?? this.dividerThickness,
       animationDuration: animationDuration ?? this.animationDuration,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -139,6 +142,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       dividerHeight: t < 0.5 ? dividerHeight : other.dividerHeight,
       dividerThickness: t < 0.5 ? dividerThickness : other.dividerThickness,
       animationDuration: t < 0.5 ? animationDuration : other.animationDuration,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -222,6 +226,10 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
             const DeepCollectionEquality().equals(
               animationDuration,
               other.animationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -251,6 +259,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       const DeepCollectionEquality().hash(dividerHeight),
       const DeepCollectionEquality().hash(dividerThickness),
       const DeepCollectionEquality().hash(animationDuration),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -282,4 +291,5 @@ extension ComboThemeExtensionBuildContextProps on BuildContext {
   double get dividerHeight => comboThemeExtension.dividerHeight;
   double get dividerThickness => comboThemeExtension.dividerThickness;
   Duration get animationDuration => comboThemeExtension.animationDuration;
+  double get minTextContrast => comboThemeExtension.minTextContrast;
 }

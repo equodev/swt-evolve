@@ -13,15 +13,18 @@ mixin _$StyledTextThemeExtensionTailorMixin
     on ThemeExtension<StyledTextThemeExtension> {
   Color get backgroundColor;
   Color get foregroundColor;
+  double get minTextContrast;
 
   @override
   StyledTextThemeExtension copyWith({
     Color? backgroundColor,
     Color? foregroundColor,
+    double? minTextContrast,
   }) {
     return StyledTextThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
       foregroundColor: foregroundColor ?? this.foregroundColor,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -35,6 +38,7 @@ mixin _$StyledTextThemeExtensionTailorMixin
     return StyledTextThemeExtension(
       backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t)!,
       foregroundColor: Color.lerp(foregroundColor, other.foregroundColor, t)!,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -50,6 +54,10 @@ mixin _$StyledTextThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               foregroundColor,
               other.foregroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -59,6 +67,7 @@ mixin _$StyledTextThemeExtensionTailorMixin
       runtimeType.hashCode,
       const DeepCollectionEquality().hash(backgroundColor),
       const DeepCollectionEquality().hash(foregroundColor),
+      const DeepCollectionEquality().hash(minTextContrast),
     );
   }
 }
@@ -68,4 +77,5 @@ extension StyledTextThemeExtensionBuildContextProps on BuildContext {
       Theme.of(this).extension<StyledTextThemeExtension>()!;
   Color get backgroundColor => styledTextThemeExtension.backgroundColor;
   Color get foregroundColor => styledTextThemeExtension.foregroundColor;
+  double get minTextContrast => styledTextThemeExtension.minTextContrast;
 }

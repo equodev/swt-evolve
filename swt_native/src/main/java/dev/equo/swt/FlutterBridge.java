@@ -67,7 +67,7 @@ public abstract class FlutterBridge {
     protected static CommService newComm() {
         String impl = System.getProperty("comm.impl", "java-websocket");
         CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
-        comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
+        comm.on(PROPERTY_SET_CHANNEL, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
         // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
@@ -123,6 +123,11 @@ public abstract class FlutterBridge {
      * for the live state, which is authoritative either way.
      */
     public static final String WIDGET_REFRESH_CHANNEL = "swt.evolve.widget.refresh";
+
+    /** Flutter sets properties the user changed (the theme picker); Java echoes them on {@link #PROPERTIES_CHANNEL}. */
+    static final String PROPERTY_SET_CHANNEL = "swt.evolve.property.set";
+    /** Java pushes the properties on it whenever a client needs them: when it connects, and after a property set. */
+    static final String PROPERTIES_CHANNEL = "swt.evolve.properties";
 
     /** Widgets/resources by {@link #id}, so a refresh request can find its target. */
     private static final java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.WeakReference<Object>> widgetsById =
@@ -238,7 +243,7 @@ public abstract class FlutterBridge {
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
-    private static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
+    static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
         if (parsed == null) return;
         boolean changed = false;
         ConfigFlags current = getConfigFlags();
@@ -248,7 +253,7 @@ public abstract class FlutterBridge {
         if (changed) {
             // Echo the updated properties back on the comm they arrived on.
             try {
-                serializeAndSend(comm, "swt.evolve.properties", getConfigFlags());
+                serializeAndSend(comm, PROPERTIES_CHANNEL, getConfigFlags());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -982,14 +987,30 @@ public abstract class FlutterBridge {
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     /** A GC's ops, held to one frame per paint. Flutter paints nothing until gcDispose anyway. */
-    private static final Map<DartGC, MessageBatch> opBatches =
+    private static final Map<DartGC, OpBatch> opBatches =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * A batch and the thread writing it. A batch is written without locking, so only its owner may
+     * send it from an event-loop flush: Displays sharing a JVM each flush on their own thread, and
+     * one sending another's batch sends it mid-write and recycles it while it is still being filled.
+     */
+    private static final class OpBatch {
+        final MessageBatch batch = borrowBatch();
+        final Thread owner = Thread.currentThread();
+    }
 
     /** Cap on what one batch holds, so a GC that is never disposed cannot grow it without end. */
     private static final int MAX_BATCH_BYTES = 1 << 20;
 
     private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
-        MessageBatch batch = opBatches.computeIfAbsent(gc, g -> borrowBatch());
+        OpBatch held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+        if (held.owner != Thread.currentThread()) {
+            // The GC changed threads: what the previous one drew goes first, then this one owns it.
+            if (opBatches.remove(gc, held)) sendOpBatch(gc, held.batch);
+            held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+        }
+        MessageBatch batch = held.batch;
         String channel = gcChannel(gc);
         // A control's overlay outlives its GCs; an image GC's drawer starts blank, so it has no target.
         Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
@@ -1032,8 +1053,8 @@ public abstract class FlutterBridge {
         if (DROP_REPEATED_REPAINTS && repeat) {
             // Nothing in this paint reaches the client, so nothing it wrote counts as held.
             opResources.remove(gc);
-            MessageBatch dropped = opBatches.remove(gc);
-            if (dropped != null) releaseBatch(dropped);
+            OpBatch dropped = opBatches.remove(gc);
+            if (dropped != null) releaseBatch(dropped.batch);
             org.eclipse.swt.widgets.PaintPacing.unchanged(target);
             return;
         }
@@ -1281,9 +1302,9 @@ public abstract class FlutterBridge {
     public static boolean flushBufferedOpsWith(GCImageDrawer drawer, String event, byte[] json) {
         DartGC gc = gcBuffering(drawer);
         if (gc == null) return false;
-        MessageBatch batch = opBatches.get(gc);
-        if (batch == null) return false;
-        batch.add(widgetName(gc) + "/" + drawer.channelId() + "/" + event, json);
+        OpBatch held = opBatches.get(gc);
+        if (held == null) return false;
+        held.batch.add(widgetName(gc) + "/" + drawer.channelId() + "/" + event, json);
         flushOpBatch(gc);
         return true;
     }
@@ -1294,8 +1315,8 @@ public abstract class FlutterBridge {
         DartGC gc = gcBuffering(drawer);
         if (gc == null) return;
         opResources.remove(gc);
-        MessageBatch batch = opBatches.remove(gc);
-        if (batch != null) releaseBatch(batch);
+        OpBatch held = opBatches.remove(gc);
+        if (held != null) releaseBatch(held.batch);
         forgetGcNames();
     }
 
@@ -1321,7 +1342,12 @@ public abstract class FlutterBridge {
     }
 
     private static void flushOpBatch(DartGC gc) {
-        MessageBatch batch = opBatches.remove(gc);
+        OpBatch held = opBatches.remove(gc);
+        sendOpBatch(gc, held == null ? null : held.batch);
+    }
+
+    /** Sends a batch already taken out of {@link #opBatches}, so no other thread can reach it. */
+    private static void sendOpBatch(DartGC gc, MessageBatch batch) {
         java.util.List<Object> written = opResources.remove(gc);
         if (batch == null) return;
         if (batch.isEmpty()) {
@@ -1345,14 +1371,22 @@ public abstract class FlutterBridge {
         releaseBatch(batch);
     }
 
-    /** Nothing may stay buffered across an event-loop turn, whatever disposed the GC or didn't. */
+    /** Nothing this thread buffered may outlast its event-loop turn, whatever disposed the GC or didn't. */
     static void flushOpBatches() {
         if (opBatches.isEmpty()) return;
-        List<DartGC> open;
+        Thread current = Thread.currentThread();
+        List<DartGC> gcs = new ArrayList<>();
+        List<MessageBatch> mine = new ArrayList<>();
         synchronized (opBatches) {
-            open = new ArrayList<>(opBatches.keySet());
+            for (java.util.Iterator<Map.Entry<DartGC, OpBatch>> it = opBatches.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<DartGC, OpBatch> entry = it.next();
+                if (entry.getValue().owner != current) continue;
+                gcs.add(entry.getKey());
+                mine.add(entry.getValue().batch);
+                it.remove();
+            }
         }
-        for (DartGC gc : open) flushOpBatch(gc);
+        for (int i = 0; i < gcs.size(); i++) sendOpBatch(gcs.get(i), mine.get(i));
     }
 
     // A send through the "dirty" branch above defers the actual wire send to an arbitrary
@@ -1607,12 +1641,34 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /**
+     * Makes {@code control} its shell's active control, announcing SWT.Activate/Deactivate with
+     * {@code detail}, when the shell tracks that itself. False when it does not -- a native shell --
+     * and the caller has to announce the change on its own.
+     */
+    public boolean setActiveControl(DartControl control, int detail) {
+        return false;
+    }
+
+    /** Moves the client's keyboard focus onto {@code control}, which Java has just focused itself. */
+    public void focusClient(DartControl control) {
+    }
+
     /** The client moved its focus to {@code control}: tracked like {@link #setFocus}, without echoing it back. */
     public void clientFocused(DartControl control) {
         setFocus(control);
     }
 
     public boolean hasFocus(DartControl control) {
+        return false;
+    }
+
+    /**
+     * Makes {@code control} the active control of its shell, sending Deactivate to the chain that was active
+     * and Activate, carrying {@code detail}, to the new one. False when this bridge leaves activation to its
+     * caller.
+     */
+    public boolean activate(DartControl control, int detail) {
         return false;
     }
 
@@ -1674,7 +1730,7 @@ public abstract class FlutterBridge {
 
     protected void broadcastSwtEvolveProperties() {
         try {
-            serializeAndSend("swt.evolve.properties", getConfigFlags());
+            serializeAndSend(PROPERTIES_CHANNEL, getConfigFlags());
         } catch (Exception e) {
             e.printStackTrace();
         }

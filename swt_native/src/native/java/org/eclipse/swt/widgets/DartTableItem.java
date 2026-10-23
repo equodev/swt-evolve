@@ -466,17 +466,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        int width = 0;
-        int height = 0;
-        if (image != null) {
-            Rectangle imgBounds = image.getBounds();
-            width = imgBounds.width;
-            height = imgBounds.height;
-        }
-        return new Rectangle(0, 0, width, height);
+        return Sizes.getImageBounds(this, index);
     }
 
     /**
@@ -640,8 +630,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.background, color)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
@@ -745,8 +735,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VTableItem.FONT);
         }
@@ -829,8 +819,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.foreground, color)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }

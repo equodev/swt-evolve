@@ -1,7 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
@@ -112,43 +112,4 @@ class VirtualTableRepopulateDeliveryFlutterTest {
         return bridge;
     }
 
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
-    }
-
-    private static final class TestWebBridge extends WebDisplayBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        TestWebBridge(DartDisplay display) {
-            super(display);
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        protected void start(DartDisplay display) {
-            registerDisplayClientReady(display);
-        }
-    }
 }

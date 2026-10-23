@@ -14,6 +14,7 @@ import '../comm/delivery_gate.dart' show deliveryGate, widgetRefreshChannel;
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
+import 'control_evolve.dart' show ControlImpl;
 import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/stylerange.dart';
@@ -33,11 +34,15 @@ import 'color_utils.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
+import 'utils/wheel_input.dart';
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> implements RenderFactsSource {
+  @override
+  bool get forwardsWheelFromWrap => false;
+
   // Keys are forwarded from [_onKeyEvent], which also keeps them away from Flutter's shortcuts.
   @override
   bool get forwardsKeysFromWrap => false;
@@ -89,6 +94,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         context: context,
         foreground: state.foreground,
         defaultColor: _styledTextTheme.foregroundColor,
+        minContrast: _styledTextTheme.minTextContrast,
       );
 
   /// The editor fill marks a place to type. A read-only StyledText is text to read, so it sits on the
@@ -320,21 +326,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (scrollBarPointers.contains(event.pointer)) return;
     widget.sendFocusFocusIn(state, null);
     _focusNode.requestFocus();
-    // The second press of a double click also delivers MouseDoubleClick, after its MouseDown. The
-    // MouseDown is sent by the same pointer dispatch, once this handler returns.
-    final position = event.localPosition;
-    scheduleMicrotask(() {
-      if (!mounted || swtClickCount != 2) return;
-      widget.sendMouseMouseDoubleClick(
-        state,
-        VEvent()
-          ..button = swtButton
-          ..count = 2
-          ..x = position.dx.round()
-          ..y = position.dy.round()
-          ..stateMask = moveStateMask(0),
-      );
-    });
   }
 
   /// Line count and longest line in one pass, over code units — `text[i]` allocates a
@@ -389,7 +380,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       // 0 asks the shape for the height of the row the caret sits on, as a native caret is
       // as tall as its line.
       height: (caretBounds?.height ?? 0) > 0 ? caretBounds!.height.toDouble() : 0,
-      color: applyAlpha(_textColor),
+      color: _textColor,
       styledTextId: state.id,
       blinkRate: _caretBlinkMs,
     );
@@ -432,7 +423,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       text,
       Offset((state.leftMargin ?? 0).toDouble(), (state.topMargin ?? 0).toDouble()),
       defaultStyle,
-      clipRect,
       null,
       caretInfo,
       state.wordWrap ?? false,
@@ -458,8 +448,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       carets,
       selections,
       _styleToken,
+      state.fixedLineHeight ?? false,
     );
     if (previousShape != null) shape.inheritMeasurementsFrom(previousShape);
+    shape.onRowsOutgrown = () => WidgetsBinding.instance.addPostFrameCallback((_) => _refitRows());
     _shape = shape;
     debugRebuildMicros += rebuildWatch.elapsedMicroseconds;
     debugRebuildCalls++;
@@ -496,7 +488,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Object? _paletteBasis;
 
   void _checkPaletteBasis() {
-    final basis = (_getDefaultTextStyle(), applyAlpha(_textColor), _linkForeground);
+    final basis = (_getDefaultTextStyle(), _textColor, _linkForeground);
     if (basis != _paletteBasis || _paletteByContent.length > 512) _paletteByContent.clear();
     _paletteBasis = basis;
   }
@@ -657,8 +649,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       ? null
       : colorFromVColor(state.selectionForeground);
 
+  @visibleForTesting
+  TextStyle debugRangeStyle(VStyleRange vRange) => _convertVStyleRangeToTextStyle(vRange);
+
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
-    final defaultTextColor = applyAlpha(_textColor);
+    final defaultTextColor = _textColor;
     final baseStyle = _getDefaultTextStyle();
 
     Color? foreground;
@@ -716,6 +711,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return TextStyle(
       fontSize: fontSize,
       fontFamily: fontFamily,
+      fontFamilyFallback: FontUtils.fallbackFor(fontFamily),
       fontWeight: rangeWeight,
       fontStyle: rangeSlant,
       color: foreground ?? defaultTextColor,
@@ -764,7 +760,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   /// Get default text style from state.font or fallback
   TextStyle _getDefaultTextStyle() {
-    final defaultTextColor = applyAlpha(_textColor);
+    final defaultTextColor = _textColor;
 
     if (state.font != null) {
        return FontUtils.textStyleFromVFont(
@@ -789,6 +785,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return TextStyle(fontSize: 12, color: defaultTextColor);
   }
 
+  /// A line painted in this frame was taller than the rows: place them again, at its height.
+  void _refitRows() {
+    if (mounted && (_shape?.rowsOutgrown ?? false)) setState(() => _shapeStale = true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -957,55 +957,23 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Less than a pixel of vertical wheel travel, held until it adds up to one.
   double _wheelCarry = 0;
 
-  /// Vertical ticks go through SWT.MouseWheel (a listener may veto), horizontal ones move the bar.
-  /// An unmodified vertical tick sends pixels rather than lines, so a trackpad does not jump.
+  /// Both axes go through Java, where a listener may veto before the bar moves. An unmodified
+  /// vertical tick sends pixels rather than lines, so a trackpad does not jump.
   void _onWheel(PointerScrollEvent event) {
-    final dy = event.scrollDelta.dy;
-    final dx = event.scrollDelta.dx;
-    if (dy != 0) {
-      final stateMask = moveStateMask(0);
-      int? pixels;
-      if (stateMask & SWT.MODIFIER_MASK == 0) {
-        final exact = _wheelCarry + dy;
-        pixels = exact.round();
+    // A StyledText scrolls by the wheel, so it keeps it: its parents do not report it again.
+    if (ControlImpl.wheelKeptBelow(event)) return;
+    ControlImpl.markWheelKept(event);
+    final stateMask = moveStateMask(0);
+    for (final wheel in wheelEvents(event, stateMask: stateMask)) {
+      if (wheel.type == SWT.MouseWheel && stateMask & SWT.MODIFIER_MASK == 0) {
+        final exact = _wheelCarry + wheelDelta(event).dy;
+        final pixels = exact.round();
         _wheelCarry = exact - pixels;
-        if (pixels == 0) return;
+        if (pixels == 0) continue;
+        wheel.detail = pixels;
       }
-      widget.sendMouseWheelMouseWheel(
-        state,
-        VEvent()
-          ..x = event.localPosition.dx.round()
-          ..y = event.localPosition.dy.round()
-          ..count = -_wheelLines(dy)
-          ..detail = pixels
-          ..stateMask = stateMask,
-      );
+      widget.sendMouseWheelMouseWheel(state, wheel);
     }
-    final hBar = state.horizontalBar;
-    if (dx != 0 && hBar != null && hBar.visible != false && hBar.enabled != false) {
-      final minimum = hBar.minimum ?? 0;
-      final maximum = hBar.maximum ?? 100;
-      final thumb = hBar.thumb ?? 0;
-      final next = _hScroll.next(
-        reported: hBar.selection ?? minimum,
-        lines: _wheelLines(dx),
-        increment: hBar.increment ?? 1,
-        minimum: minimum,
-        maximum: maximum,
-        thumb: thumb,
-      );
-      if (next != null) {
-        sendScrollBarSelection(hBar, next, dx > 0 ? SWT.ARROW_DOWN : SWT.ARROW_UP);
-      }
-    }
-  }
-
-  final HorizontalWheelScroll _hScroll = HorizontalWheelScroll();
-
-  /// Lines per wheel event: three per 120-unit notch, as a desktop scrolls by default.
-  static int _wheelLines(double delta) {
-    final lines = (delta / 40).round();
-    return lines != 0 ? lines : (delta > 0 ? 1 : -1);
   }
 
   Size _computeContentSize() {
@@ -1019,8 +987,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ? (javaAscent + javaDescent).toDouble()
         : fontSize * 1.4;
     _ensureTextMetrics(text);
-    final totalHeight =
-        math.max(getBounds().height, _metricsLineCount * lineHeight);
+    // The measured layout counts wrapped rows; the logical line count does not, and a content
+    // box sized from it clips the text and the wheel short of the bottom of the view.
+    final shape = _shape;
+    final textHeight = shape != null
+        ? shape.off.dy + shape.textHeight + (state.bottomMargin ?? 0)
+        : _metricsLineCount * lineHeight;
+    final totalHeight = math.max(getBounds().height, textHeight);
 
     double totalWidth = getBounds().width;
     if (state.wordWrap != true) {
@@ -1504,11 +1477,19 @@ class _LineTopsCache {
 /// so a cached entry cannot go stale: a line whose text, styles, alignment, wrap width
 /// or tab width changes hashes to a different key.
 class _LineLayout {
-  _LineLayout(this.width, this.height, this.metrics, this.rowEnds, this.cost);
+  _LineLayout(this.width, this.height, this.metrics, this.rowEnds);
 
-  /// The line's length in characters — what this entry is charged against the cache
-  /// budget, whether or not [caretX] has been materialized yet.
-  final int cost;
+  /// What a layout without caret positions is charged against the cache budget: its rows, the
+  /// object itself and its key, which together weigh about what a dozen caret positions do.
+  static const int _entryCost = 16;
+
+  /// What this entry weighs against the cache budget now: one unit per caret position, the array
+  /// the memory goes into, plus [_entryCost]. A line measured only for its height and width costs
+  /// little, so a large document's layouts all fit and a rebuilt shape finds them again.
+  int get cost => _entryCost + metrics.length + (caretX?.length ?? 0);
+
+  /// [cost] when the entry was last put in the cache: what it gives back when it leaves.
+  int charged = 0;
 
   final double width;
   final double height;
@@ -1569,26 +1550,29 @@ class _LineLayoutKey {
 /// own inputs turns those back into lookups for the lines the edit did not touch.
 ///
 /// Insertion-ordered, so the eldest entry is the least recently used once a hit
-/// re-inserts its key. The budget counts characters rather than entries because the
-/// per-character x array is what the memory goes into.
+/// re-inserts its key. The budget counts caret positions (see [_LineLayout.cost]) rather than
+/// entries because the per-character x array is what the memory goes into.
 final Map<_LineLayoutKey, _LineLayout> _lineLayoutCache = {};
 int _lineLayoutCacheChars = 0;
 const int _lineLayoutCacheCharBudget = 200000;
 
 void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
+  _watchSystemFonts();
   // The replaced entry stops counting, so a re-inserted line is charged to the budget once.
   final replaced = _lineLayoutCache.remove(key);
   if (replaced != null) {
-    _lineLayoutCacheChars -= replaced.cost;
+    _lineLayoutCacheChars -= replaced.charged;
     // Same key, same layout: keep the caret positions an earlier pass measured.
     layout.caretX ??= replaced.caretX;
   }
   _lineLayoutCache[key] = layout;
-  _lineLayoutCacheChars += layout.cost;
+  // The key's text stays in memory too, at about a quarter of a caret position per character.
+  layout.charged = layout.cost + key.lineText.length ~/ 4;
+  _lineLayoutCacheChars += layout.charged;
   while (_lineLayoutCacheChars > _lineLayoutCacheCharBudget &&
       _lineLayoutCache.length > 1) {
     final evicted = _lineLayoutCache.remove(_lineLayoutCache.keys.first);
-    if (evicted != null) _lineLayoutCacheChars -= evicted.cost;
+    if (evicted != null) _lineLayoutCacheChars -= evicted.charged;
   }
 }
 
@@ -1660,6 +1644,7 @@ class _PaintedLineKey {
 }
 
 void _cachePaintedLine(_PaintedLineKey key, TextPainter painter) {
+  _watchSystemFonts();
   _paintedLineCache[key] = painter;
   while (_paintedLineCache.length > _paintedLineCacheEntries) {
     final oldest = _paintedLineCache.keys.first;
@@ -1749,13 +1734,26 @@ int debugLineCaretMisses = 0;
 
 @visibleForTesting
 void debugResetLineLayoutCache() {
-  _lineLayoutCache.clear();
-  _lineLayoutCacheChars = 0;
   for (final painter in _paintedLineCache.values) {
     painter.dispose();
   }
-  _paintedLineCache.clear();
+  _dropLineCaches();
   debugLineLayoutHits = 0;
+}
+
+/// Dropped, not disposed: a picture already recorded with a painted line may be rasterised again,
+/// and on the web a disposed paragraph draws as garbage there. The engine frees it once nothing
+/// references it.
+void _dropLineCaches() {
+  _lineLayoutCache.clear();
+  _lineLayoutCacheChars = 0;
+  _paintedLineCache.clear();
+}
+
+bool _watchingSystemFonts = false;
+
+void _watchSystemFonts() {
+  if (!_watchingSystemFonts) _watchingSystemFonts = FontUtils.listenToSystemFonts(_dropLineCaches);
 }
 
 class TextShape extends Shape {
@@ -1763,16 +1761,12 @@ class TextShape extends Shape {
   String describe() => 'StyledText "$text" @ ${off.dx.round()},${off.dy.round()} '
       'font=${style.fontFamily}/${style.fontSize} '
       'color=${style.color == null ? "-" : style.color!.toString()} '
-      'wrap=$wordWrap tabs=$tabs lineHeight=$lineHeight'
-      '${clipRect == null ? "" : " clip=${clipRect!.left.round()},${clipRect!.top.round()} "
-          "${clipRect!.width.round()}x${clipRect!.height.round()}"}';
+      'wrap=$wordWrap tabs=$tabs lineHeight=$lineHeight';
 
   final String text;
   final Offset off;
   final TextStyle style;
   final TextSpan? textSpan;
-  @override
-  final Rect? clipRect;
   final CaretInfo? caretInfo;
   final bool? wordWrap;
   final Size? canvasSize;
@@ -1810,7 +1804,6 @@ class TextShape extends Shape {
     this.text,
     this.off,
     this.style, [
-    this.clipRect,
     this.textSpan,
     this.caretInfo,
     this.wordWrap,
@@ -1831,10 +1824,71 @@ class TextShape extends Shape {
     this.carets = const [],
     this.selections = const [],
     this.styleToken = 0,
+    this.fixedLineHeight = false,
   ]);
 
   /// Stands for [style] in a layout key: a change count, since comparing the style is expensive.
   final int styleToken;
+
+  /// StyledText#isFixedLineHeight: every line is one height, as native SWT lays such an editor out.
+  final bool fixedLineHeight;
+
+  /// Every row is [_rowHeight] tall: the rows are known without measuring a line, so the lines out of
+  /// view are left unmeasured, as native SWT leaves them.
+  bool get _uniformRows =>
+      fixedLineHeight && wordWrap != true && lineHeight > 0 && lineSpacing == 0 && lineSpacings == null;
+
+  /// The tallest line measured by this shape and the shapes it replaced. Native SWT makes every
+  /// line as tall as the tallest one it has laid out (a fallback glyph's font can be taller than the
+  /// editor's), and so does [_rowHeight].
+  double _tallestLine = 0;
+  double? _rowHeightValue;
+
+  /// Set when a line measured after the rows were placed is taller than they are: the owner
+  /// builds the shape again, with rows that fit it.
+  bool rowsOutgrown = false;
+
+  /// Told once, when [rowsOutgrown] is set.
+  VoidCallback? onRowsOutgrown;
+
+  double get _rowHeight =>
+      _rowHeightValue ??= math.max(lineHeight, math.max(_tallestLine, _plainLineHeight));
+
+  /// How tall a line of the editor's own font lays out, before any line is measured.
+  late final double _plainLineHeight = () {
+    final tp = TextPainter(text: TextSpan(text: ' ', style: style), textDirection: TextDirection.ltr)
+      ..layout();
+    final height = tp.height;
+    tp.dispose();
+    return height;
+  }();
+
+  /// A line holding a character that breaks it (a form feed, U+2028) lays out on several rows even
+  /// without wrapping; native SWT sizes the rows by the tallest of them, and the rest overflow.
+  static double _tallestRowOf(_LineLayout layout) {
+    if (layout.metrics.isEmpty) return layout.height;
+    var tallest = 0.0;
+    for (final row in layout.metrics) {
+      if (row.height > tallest) tallest = row.height;
+    }
+    return tallest;
+  }
+
+  void _noteLineHeight(double height) {
+    if (height <= _tallestLine) return;
+    _tallestLine = height;
+    final rows = _rowHeightValue;
+    if (!rowsOutgrown && rows != null && height > rows + 0.5) {
+      rowsOutgrown = true;
+      onRowsOutgrown?.call();
+    }
+  }
+
+  /// What the rows of [other] were placed with, for a shape that shares its line tops.
+  void _takeRowHeight(TextShape other) {
+    _tallestLine = math.max(_tallestLine, other._tallestLine);
+    _rowHeightValue = other._rowHeightValue;
+  }
 
   /// Everything a line's measured height depends on; shapes that agree on it share measurements.
   late final int layoutSignature = Object.hash(
@@ -1849,7 +1903,7 @@ class TextShape extends Shape {
       wordWrap == true ? Object.hash(canvasSize?.width, off.dx) : null,
       tabs,
       const ListEquality<int>().hash(tabStops),
-      Object.hash(lineSpacing, lineHeight, direction),
+      Object.hash(lineSpacing, lineHeight, direction, fixedLineHeight),
       lineSpacings == null ? 0 : const ListEquality<int>().hash(lineSpacings!),
       widgetLine.indent,
       widgetLine.wrapIndent,
@@ -1859,8 +1913,15 @@ class TextShape extends Shape {
   /// Takes over what [other] measured when both lay out the same way. After an edit, [other] answers
   /// for the lines the edit did not reach ([_donatedLine]).
   void inheritMeasurementsFrom(TextShape other) {
+    if (other._frameSignature == _frameSignature) {
+      _tallestLine = math.max(_tallestLine, other._tallestLine);
+    }
     if (other.layoutSignature == layoutSignature) {
-      _lineTopsCache = other._lineTopsCache;
+      // Rows that a measured line outgrew are placed again, at the height that fits it.
+      if (!other.rowsOutgrown) {
+        _lineTopsCache = other._lineTopsCache;
+        _rowHeightValue = other._rowHeightValue;
+      }
       _measuredLineCache = other._measuredLineCache;
       _linePropsCache = other._linePropsCache;
       _rangesTokenCache = other._rangesTokenCache;
@@ -1984,6 +2045,12 @@ class TextShape extends Shape {
 
   /// The layout of [lineIndex] as this shape lays it out, measured once.
   _LineLayout _measuredLine(int lineIndex, String lineText, {bool wantCaretX = false}) {
+    final layout = _measuredLineNow(lineIndex, lineText, wantCaretX);
+    if (_uniformRows) _noteLineHeight(_tallestRowOf(layout));
+    return layout;
+  }
+
+  _LineLayout _measuredLineNow(int lineIndex, String lineText, bool wantCaretX) {
     final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
     final inRange = lineIndex >= 0 && lineIndex < memo.length;
     if (inRange && !wantCaretX) {
@@ -2000,6 +2067,43 @@ class TextShape extends Shape {
         align: props.align, maxWidth: _lineMaxWidth(props.layoutIndent), wantCaretX: wantCaretX);
     if (inRange) memo[lineIndex] = layout;
     return layout;
+  }
+
+  /// The layout of [lineIndex] if this shape, or one it replaced, already measured it.
+  _LineLayout? _peekLine(int lineIndex, String lineText) {
+    final memo = _measuredLineCache;
+    if (memo != null && lineIndex >= 0 && lineIndex < memo.length && memo[lineIndex] != null) {
+      return memo[lineIndex];
+    }
+    final donated = _donatedLine(lineIndex, lineText, false);
+    if (donated != null) return donated;
+    final props = _linePropsFor(lineIndex);
+    return _lineLayoutCache[_layoutKeyFor(lineIndex, lineText, props.align, _lineMaxWidth(props.layoutIndent))];
+  }
+
+  /// What [lineIndex]'s layout is cached under.
+  _LineLayoutKey _layoutKeyFor(int lineIndex, String lineText, TextAlign align, double maxWidth) => _LineLayoutKey(
+        lineText,
+        styleToken,
+        _rangesTokenFor(lineIndex, lineText.length),
+        align,
+        maxWidth,
+        tabs,
+        _tabStopsFor(lineIndex),
+      );
+
+  double? _columnAdvance;
+
+  /// A line's width from its column count, tabs expanded to the default stops: exact in a fixed-pitch
+  /// font without pixel tab stops, an estimate otherwise, until the line is laid out.
+  double _estimatedWidth(String lineText) {
+    final advance = _columnAdvance ??= _measureRun('0' * 10, style) / 10;
+    final tabColumns = tabs > 0 ? tabs : 4;
+    int columns = 0;
+    for (int k = 0; k < lineText.length; k++) {
+      columns = lineText.codeUnitAt(k) == 0x09 ? (columns ~/ tabColumns + 1) * tabColumns : columns + 1;
+    }
+    return columns * advance;
   }
 
   ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
@@ -2076,7 +2180,7 @@ class TextShape extends Shape {
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
-      y += props.vIndent + _advance(_measuredLine(i, lines[i]).height, i);
+      y += props.vIndent + (_uniformRows ? _rowHeight : _advance(_measuredLine(i, lines[i]).height, i));
     }
     tops[lines.length] = y;
     debugLineTopsMicros += watch.elapsedMicroseconds;
@@ -2085,6 +2189,9 @@ class TextShape extends Shape {
 
   List<double> _lineTops(List<String> lines) =>
       _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+
+  /// Height of the laid-out text, wrapped rows included, from the top of its first line.
+  double get textHeight => _lineTops(_lines).last;
 
   /// The first line whose band reaches [y], by bisection over the running totals.
   int _lineAtTop(List<double> tops, double y) {
@@ -2106,6 +2213,7 @@ class TextShape extends Shape {
   // so advance by tpHeight; fall back to lineHeight as a floor (empty lines whose painter
   // measures ~0, or to keep a consistent single-line height).
   double _advance(double tpHeight, [int lineIndex = -1]) {
+    if (_uniformRows) return _rowHeight;
     final lh = lineHeight > 0 ? lineHeight : (style.fontSize ?? 16) * 1.2;
     return (tpHeight > lh ? tpHeight : lh) + _spacingFor(lineIndex);
   }
@@ -2136,11 +2244,6 @@ class TextShape extends Shape {
     final paintersAtStart = debugPainterLayouts;
     int firstPainted = -1, lastPainted = -1;
     final paintedRows = <List<double>>[];
-    if (clipRect != null) {
-      c.save();
-      c.clipRect(clipRect!);
-    }
-
     final lines = _lines;
     final paintOffset = off;
     double currentY = paintOffset.dy;
@@ -2205,7 +2308,10 @@ class TextShape extends Shape {
         if (band != null) c.restore();
       }
       _drawBullet(c, props, paintOffset.dx, currentY + vIndent);
-      if (wrapShift == 0 || rows.length < 2) {
+      if (_uniformRows && rows.length > 1) {
+        // The rows its own characters broke it onto lie under the lines below, as natively.
+        paintRows(originX, Rect.fromLTRB(0, currentY, canvasSize?.width ?? tp.width, currentY + advance));
+      } else if (wrapShift == 0 || rows.length < 2) {
         paintRows(originX, null);
       } else {
         final split = currentY + vIndent + rows.first.height;
@@ -2221,9 +2327,6 @@ class TextShape extends Shape {
       if (selection.hasSelection) _drawSelection(c, selection);
     }
 
-    if (clipRect != null) {
-      c.restore();
-    }
     debugPaintersLastDraw = debugPainterLayouts - paintersAtStart;
     debugDrawCalls++;
     debugDrawMicros += drawWatch.elapsedMicroseconds;
@@ -2243,7 +2346,6 @@ class TextShape extends Shape {
         other.style == style &&
         other.styleToken == styleToken &&
         other.textSpan == textSpan &&
-        other.clipRect == clipRect &&
         other.wordWrap == wordWrap &&
         other.canvasSize == canvasSize &&
         other.lineHeight == lineHeight &&
@@ -2288,18 +2390,12 @@ class TextShape extends Shape {
   void drawCarets(Canvas c) {
     final caret = caretInfo;
     if (caret == null) return;
-    final clip = clipRect;
-    if (clip != null) {
-      c.save();
-      c.clipRect(clip);
-    }
     for (final offset in allCarets) {
       final rect = caretRectAt(offset);
       if (rect != null) {
         c.drawRect(rect, Paint()..color = caret.color..style = PaintingStyle.fill);
       }
     }
-    if (clip != null) c.restore();
   }
 
   /// StyledText#setLineBullet: the bullet sits in the width it reserved before the text, right
@@ -2557,6 +2653,28 @@ class TextShape extends Shape {
       final vIndent = props.vIndent;
       final maxW = _lineMaxWidth(props.layoutIndent);
 
+      if (!wholeDocument && _uniformRows && !rowIsVisible(currentY, vIndent + _rowHeight)) {
+        // Out of view: its width as far as known, without laying the line out for it.
+        final width = _peekLine(i, line)?.width ?? _estimatedWidth(line);
+        final x = _lineOriginX(
+            props.indent, props.align, width, canvasSize == null ? double.infinity : maxW);
+        maxWidth = math.max(maxWidth, x + width);
+        visual.add(GeometryRow(
+          i,
+          docOffset,
+          docOffset + line.length,
+          _roundPx(x),
+          _roundPx(currentY),
+          _roundPx(width),
+          _roundPx(vIndent + _rowHeight),
+          vIndent != 0 ? vIndent : null,
+          null,
+        ));
+        currentY += vIndent + _rowHeight;
+        docOffset += line.length + 1;
+        continue;
+      }
+
       var layout = _measuredLine(i, line, wantCaretX: wholeDocument);
       // Per-character x is worth its weight only for the rows someone can see; the line has to
       // be laid out to know where it ends, so the decision comes after.
@@ -2581,7 +2699,8 @@ class TextShape extends Shape {
       // text-position queries and uses the box for line/pixel queries.
       final metrics = layout.metrics;
       final includeCharX = caretX != null;
-      if (metrics.length <= 1) {
+      // Uniform rows hold one line each, whatever rows its layout broke into.
+      if (metrics.length <= 1 || _uniformRows) {
         maxWidth = math.max(maxWidth, finalX + layout.width);
         visual.add(GeometryRow(
           i,
@@ -2749,15 +2868,7 @@ class TextShape extends Shape {
     required double maxWidth,
     required bool wantCaretX,
   }) {
-    final key = _LineLayoutKey(
-      lineText,
-      styleToken,
-      _rangesTokenFor(lineIndex, lineText.length),
-      align,
-      maxWidth,
-      tabs,
-      _tabStopsFor(lineIndex),
-    );
+    final key = _layoutKeyFor(lineIndex, lineText, align, maxWidth);
 
     var layout = _lineLayoutCache[key];
     if (layout != null && (!wantCaretX || layout.caretX != null)) {
@@ -2802,7 +2913,6 @@ class TextShape extends Shape {
         tp.height,
         metrics,
         rowEnds,
-        lineText.length + 1,
       );
       if (wantCaretX) {
         layout.caretX = [
@@ -2827,15 +2937,7 @@ class TextShape extends Shape {
     required double maxWidth,
   }) {
     final key = _PaintedLineKey(
-      _LineLayoutKey(
-        lineText,
-        styleToken,
-        _rangesTokenFor(lineIndex, lineText.length),
-        align,
-        maxWidth,
-        tabs,
-        _tabStopsFor(lineIndex),
-      ),
+      _layoutKeyFor(lineIndex, lineText, align, maxWidth),
       _paintTokenFor(lineIndex, lineText.length),
     );
     final cached = _paintedLineCache[key];
@@ -3428,7 +3530,6 @@ class TextShape extends Shape {
       text,
       off,
       style,
-      clipRect,
       textSpan,
       caretInfo,
       wordWrap,
@@ -3449,7 +3550,10 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
-    ).._lineTopsCache = _lineTopsCache;
+      fixedLineHeight,
+    )
+      .._lineTopsCache = _lineTopsCache
+      .._takeRowHeight(this);
   }
 
   TextShape copyWithEditingState(TextEditingState newEditingState) {
@@ -3457,7 +3561,6 @@ class TextShape extends Shape {
       text,
       off,
       style,
-      clipRect,
       TextRenderer.buildFinalTextSpan(text, newEditingState, style),
       caretInfo,
       wordWrap,
@@ -3478,6 +3581,7 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
+      fixedLineHeight,
     );
   }
 
@@ -3508,7 +3612,6 @@ class TextShape extends Shape {
       newText,
       off,
       style,
-      clipRect,
       newEditingState != null
           ? TextRenderer.buildFinalTextSpan(newText, newEditingState, style)
           : textSpan,
@@ -3531,6 +3634,7 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
+      fixedLineHeight,
     );
   }
 
@@ -3539,7 +3643,6 @@ class TextShape extends Shape {
       text,
       off,
       style,
-      clipRect,
       textSpan,
       caretInfo,
       wordWrap,
@@ -3560,7 +3663,10 @@ class TextShape extends Shape {
       carets,
       selections,
       styleToken,
-    ).._lineTopsCache = _lineTopsCache;
+      fixedLineHeight,
+    )
+      .._lineTopsCache = _lineTopsCache
+      .._takeRowHeight(this);
   }
 
   TextShape updateCaretOffset(int offset) {
@@ -3877,7 +3983,7 @@ class TextShape extends Shape {
 
   @override
   String toString() =>
-      'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}${clipRect != null ? " [clipped]" : ""}';
+      'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}';
 }
 
 /// The rectangle a block selection covers, painted over the text it selects.
@@ -4367,36 +4473,6 @@ class _GeometrySplice {
   final int offsetDelta;
   final double yDelta;
   final List<GeometryRow> rows;
-}
-
-/// Where the horizontal bar is being asked to go across one gesture: Java's answer is a round
-/// trip away, so each event builds on the last request rather than on the stale position.
-@visibleForTesting
-class HorizontalWheelScroll {
-  int? _target;
-  int? _from;
-
-  /// Where to ask the bar to go after a wheel event worth [lines], or null when it would not move.
-  int? next({
-    required int reported,
-    required int lines,
-    required int increment,
-    required int minimum,
-    required int maximum,
-    required int thumb,
-  }) {
-    // Java reporting anything other than what it reported when we started asking means it has
-    // caught up, or moved for its own reasons. Either way its position is now the truth.
-    if (_from != reported) _target = null;
-    final base = _target ?? reported;
-    final next = (base + lines * increment)
-        .clamp(minimum, math.max(minimum, maximum - thumb))
-        .toInt();
-    if (next == base) return null;
-    _from = reported;
-    _target = next;
-    return next;
-  }
 }
 
 /// Drops the ranges another range already covers, from a list sorted by start; the sort makes

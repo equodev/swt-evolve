@@ -278,7 +278,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     DartShell(Display display, Shell parent, int style, long handle, boolean embedded, Shell api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null)
             display = DartDisplay.getCurrent();
         if (display == null)
@@ -919,12 +919,16 @@ public class DartShell extends DartDecorations implements IShell {
     void makeKeyAndOrderFront() {
         ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         boolean wasActive = display.getActiveShell() == this.getApi();
-        _takeFocusHolder(true);
-        if (!isDisposed() && !wasActive) {
-            // The client reports the focus this moves into the shell as an activation of its own.
-            _suppressNextFlutterActivate = true;
-            sendEvent(SWT.Activate);
+        if (wasActive) {
+            _takeFocusHolder(true);
+            return;
         }
+        // The client reports the focus this moves into the shell as an activation of its own.
+        _suppressNextFlutterActivate = true;
+        // Activate first, then the focus: a listener that focuses a control of its own keeps it.
+        sendEvent(SWT.Activate);
+        if (!isDisposed())
+            _takeFocusHolder(false);
     }
 
     /**
@@ -1219,10 +1223,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setAlpha(int alpha) {
         int newValue = alpha;
+        checkWidget();
         if (!java.util.Objects.equals(this.alpha, newValue)) {
             getValue().markDirty(VShell.ALPHA);
         }
-        checkWidget();
         alpha &= 0xFF;
         this.alpha = newValue;
     }
@@ -1239,7 +1243,6 @@ public class DartShell extends DartDecorations implements IShell {
         {
             super.setBounds(x, y, width, height, move, resize);
             resized = true;
-            sendEvent(SWT.Resize);
             if (isDisposed())
                 return;
             if (layout != null) {
@@ -1328,13 +1331,15 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setImeInputMode(int mode) {
         int newValue = mode;
-        this.imeInputMode = newValue;
         checkWidget();
+        this.imeInputMode = newValue;
     }
 
     @Override
     public void setMaximized(boolean maximized) {
         checkWidget();
+        if (maximized && !getMaximized())
+            normalBounds = getBounds();
         super.setMaximized(maximized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowMaximized(this, maximized);
@@ -1470,10 +1475,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setModified(boolean modified) {
         boolean newValue = modified;
+        checkWidget();
         if (!java.util.Objects.equals(this.modified, newValue)) {
             getValue().markDirty(VShell.MODIFIED);
         }
-        checkWidget();
         this.modified = newValue;
     }
 
@@ -1968,12 +1973,14 @@ public class DartShell extends DartDecorations implements IShell {
                 _suppressNextFlutterDeactivate = false;
                 if (getBridge() instanceof DisplayBridge)
                     ((DisplayBridge) getBridge()).noteClientActivated(this);
-                _takeFocusHolder(false);
                 if (_suppressNextFlutterActivate) {
                     _suppressNextFlutterActivate = false;
+                    _takeFocusHolder(false);
                     return;
                 }
                 sendEvent(SWT.Activate, e);
+                if (!isDisposed())
+                    _takeFocusHolder(false);
             });
         });
         FlutterBridge.on(this, "Shell", "Close", e -> {
@@ -1988,6 +1995,11 @@ public class DartShell extends DartDecorations implements IShell {
                 if (isDisposed())
                     return;
                 _suppressNextFlutterActivate = false;
+                Control _focus = display.getFocusControl();
+                if (_focus != null && _focus != getApi() && _focus.getShell() == getApi())
+                    setSavedFocus(_focus);
+                if (getBridge() instanceof DisplayBridge)
+                    ((DisplayBridge) getBridge()).noteClientDeactivated(this);
                 if (_suppressNextFlutterDeactivate) {
                     _suppressNextFlutterDeactivate = false;
                     return;
@@ -2015,6 +2027,11 @@ public class DartShell extends DartDecorations implements IShell {
                     return;
                 if (e == null)
                     return;
+                if (getBridge() instanceof DisplayBridge && ((DisplayBridge) getBridge()).ignoresClientPosition(getApi(), e.detail)) {
+                    org.eclipse.swt.graphics.Point _at = getApi().getLocation();
+                    e.x = _at.x;
+                    e.y = _at.y;
+                }
                 org.eclipse.swt.graphics.Rectangle _before = getApi().getBounds();
                 getApi().setBounds(e.x, e.y, e.width, e.height);
                 if (_before != null && _before.x == e.x && _before.y == e.y && _before.width == e.width && _before.height == e.height)

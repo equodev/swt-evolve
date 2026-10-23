@@ -171,7 +171,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public DartControl(Composite parent, int style, Control api) {
         super(parent, style, api);
         this.parent = parent;
-        notifyCreationTracker();
         createWidget(0);
         ControlUtils.addToParentChildren(this);
     }
@@ -452,6 +451,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         return true;
     }
 
@@ -1368,6 +1369,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @return the origin of the Control's SWTFixed container relative to the Shell
      */
     Point getControlOrigin() {
+        Shell shell = getShell();
+        /*
+	 * A popover-backed Shell renders in its own surface positioned (via oldX/oldY) within
+	 * the nearest real top-level window's content. translate_coordinates only yields the
+	 * offset within the popover, so add the placement of each popover-backed ancestor to
+	 * keep display coordinates consistent with that window (e.g. so a sibling popup can be
+	 * laid out next to it via toDisplay, including the javadoc popup parented to the
+	 * content-assist proposal popup).
+	 */
+        while (((SwtShell) shell.getImpl()).popover) {
+            Shell parentShell = shell.getImpl()._parent() != null ? shell.getImpl()._parent().getShell() : null;
+            if (parentShell == null || parentShell == shell)
+                break;
+            shell = parentShell;
+        }
         return null;
     }
 
@@ -2083,7 +2099,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         /* there will not be any */
         if (labelRelation != null) {
-            _getAccessible().removeRelation(ACC.RELATION_LABELLED_BY, ((DartControl) labelRelation.getImpl())._getAccessible());
+            if (accessible != null && labelRelation.getImpl()._accessible() != null) {
+                accessible.removeRelation(ACC.RELATION_LABELLED_BY, labelRelation.getImpl()._accessible());
+            }
             labelRelation = null;
         }
     }
@@ -3421,8 +3439,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
@@ -3460,8 +3478,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         boolean newValue = capture;
-        this.capture = newValue;
         checkWidget();
+        this.capture = newValue;
         /* FIXME !!!!! */
         /*
 	if (capture) {
@@ -3522,10 +3540,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        checkWidget();
         if (!java.util.Objects.equals(this.dragDetect, newValue)) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         this.dragDetect = newValue;
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
@@ -3592,8 +3610,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
@@ -3928,7 +3946,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         int newValue = textDirection;
-        this.textDirection = newValue;
         checkWidget();
         textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
         updateTextDirection(textDirection);
@@ -3937,6 +3954,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             getApi().state &= ~HAS_AUTO_DIRECTION;
         }
+        this.textDirection = newValue;
     }
 
     /**
@@ -4013,8 +4031,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTouchEnabled(boolean enabled) {
         boolean newValue = enabled;
-        this.touchEnabled = newValue;
         checkWidget();
+        this.touchEnabled = newValue;
     }
 
     /**
@@ -4035,10 +4053,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
         }
-        checkWidget();
         if (((getApi().state & HIDDEN) == 0) == visible)
             return;
         if (visible) {
@@ -4635,6 +4653,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void update(boolean all, boolean flush) {
+        // flushExposes drains X11 Expose events and is a no-op on GTK4, which uses a
     }
 
     public void updateBackgroundMode() {
@@ -4845,6 +4864,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    PaintState paintState;
+
+    Event typingKey;
+
     int resolveTextDirection() {
         /*
                      * For generic Controls do nothing here. Text-enabled Controls will resolve
@@ -4888,6 +4911,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return font;
     }
 
+    boolean mayFixFocus() {
+        return false;
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
@@ -4917,6 +4944,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
                     return;
                 sendEvent(SWT.DragDetect, e);
             });
@@ -5004,6 +5033,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
                     return;
                 sendEvent(SWT.MouseDown, e);
             });

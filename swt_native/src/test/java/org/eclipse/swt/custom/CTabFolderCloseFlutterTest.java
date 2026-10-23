@@ -47,18 +47,7 @@ class CTabFolderCloseFlutterTest {
     @AfterEach
     void clear() {
         for (Control c : shell.getChildren()) c.dispose();
-        settle();
-    }
-
-    private void settle() {
-        int quiet = 0;
-        for (int round = 0; round < 40 && quiet < 3; round++) {
-            long before = flutter.dispatched();
-            flutter.drain();
-            flutter.flush();
-            flutter.drain();
-            quiet = flutter.dispatched() == before ? quiet + 1 : 0;
-        }
+        flutter.settle();
     }
 
     private CTabFolder folderWithTabs(String... names) {
@@ -91,11 +80,11 @@ class CTabFolderCloseFlutterTest {
     @DisplayName("a closed tab is gone from the tabs the client draws")
     void closedTabIsGone() {
         CTabFolder folder = folderWithTabs("one", "two", "three");
-        settle();
+        flutter.settle();
         assertThat(clientTabs(folder)).as("sanity").hasSize(3);
 
         folder.getItem(1).dispose();
-        settle();
+        flutter.settle();
 
         assertThat(clientTabs(folder)).hasSize(2);
     }
@@ -105,10 +94,10 @@ class CTabFolderCloseFlutterTest {
     void closingTheSelectedTab() {
         CTabFolder folder = folderWithTabs("one", "two", "three");
         folder.setSelection(1);
-        settle();
+        flutter.settle();
 
         folder.getItem(1).dispose();
-        settle();
+        flutter.settle();
 
         assertThat(clientTabs(folder)).hasSize(2);
         @SuppressWarnings("unchecked")
@@ -120,11 +109,11 @@ class CTabFolderCloseFlutterTest {
     @DisplayName("closing the only tab leaves the client drawing none")
     void closingTheOnlyTab() {
         CTabFolder folder = folderWithTabs("only");
-        settle();
+        flutter.settle();
         assertThat(clientTabs(folder)).as("sanity").hasSize(1);
 
         folder.getItem(0).dispose();
-        settle();
+        flutter.settle();
 
         assertThat(clientTabs(folder)).isEmpty();
     }

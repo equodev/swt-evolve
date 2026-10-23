@@ -34,7 +34,6 @@ TextShape _shape(List<StyleRange> ranges) => TextShape(
       _widgetStyle,
       null,
       null,
-      null,
       false,
       _size,
       true,

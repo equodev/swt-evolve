@@ -336,11 +336,8 @@ public class DartCaret extends DartWidget implements ICaret {
         if (isFocus && isVisible)
             hideCaret();
         this.x = x;
-        getValue().markDirty(VCaret.BOUNDS);
         this.y = y;
-        getValue().markDirty(VCaret.BOUNDS);
         this.width = width;
-        getValue().markDirty(VCaret.BOUNDS);
         this.height = height;
         getValue().markDirty(VCaret.BOUNDS);
         if (isFocus && isVisible)
@@ -391,8 +388,8 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -415,8 +412,8 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }

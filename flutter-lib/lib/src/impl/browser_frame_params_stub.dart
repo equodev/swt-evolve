@@ -30,7 +30,9 @@ Object? browserEvalInFrame(
 
 /// Only the web iframe needs a same-origin URL for inline content; native webviews render
 /// `loadHtmlString` scriptably on their own.
-String? browserInlineDocumentUrl(String html, String? baseUrl) => null;
+Future<String?> browserInlineDocumentUrl(String html, String? baseUrl) async => null;
+
+String browserInlineDocumentEndpoint() => '';
 
 void browserRevokeInlineDocumentUrl(String url) {}
 

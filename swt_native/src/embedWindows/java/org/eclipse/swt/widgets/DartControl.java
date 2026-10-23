@@ -141,7 +141,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (!isAutoscalingDisabled()) {
             this.getApi().nativeZoom = getShellZoom();
         }
-        notifyCreationTracker();
         createWidget();
         ControlUtils.addToParentChildren(this);
     }
@@ -1090,10 +1089,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return this.bounds;
     }
 
-    int getCodePage() {
-        return 0;
-    }
-
     String getClipboardText() {
         String string = "";
         return string;
@@ -1980,6 +1975,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         return true;
     }
 
@@ -2079,6 +2076,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
+                return true;
             }
         } else {
             if (control.getImpl()._backgroundImage() != null) {
@@ -2661,8 +2659,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
@@ -2766,10 +2764,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(Rectangle rect) {
         Rectangle newValue = rect;
+        checkWidget();
         if (!java.util.Objects.equals(this.bounds, newValue)) {
             getValue().markDirty(VControl.BOUNDS);
         }
-        checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.bounds = newValue;
@@ -2913,10 +2911,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        checkWidget();
         if (!java.util.Objects.equals(this.dragDetect, newValue)) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
         } else {
@@ -2980,8 +2978,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
@@ -3020,13 +3018,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -3477,10 +3475,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
         }
-        checkWidget();
         if (!getDrawing()) {
             if (((getApi().state & HIDDEN) == 0) == visible)
                 return;
@@ -4338,6 +4336,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    PaintState paintState;
+
+    Event typingKey;
+
     public boolean getDragSource() {
         Widget w = getApi();
         Object ds = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
@@ -4359,6 +4361,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Font getExplicitFont() {
         return font;
+    }
+
+    boolean mayFixFocus() {
+        return false;
     }
 
     public FlutterBridge getBridge() {
@@ -4390,6 +4396,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
                     return;
                 sendEvent(SWT.DragDetect, e);
             });
@@ -4477,6 +4485,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
                     return;
                 sendEvent(SWT.MouseDown, e);
             });
