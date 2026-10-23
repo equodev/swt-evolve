@@ -1982,9 +1982,10 @@ public class DartTable extends DartComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
+        // Older SWT versions' remove(int, int) leave the released rows in the array, past itemCount.
         int widest = 0;
         for (TableItem item : items) {
-            if (item != null)
+            if (item != null && !item.isDisposed())
                 widest = Math.max(widest, ((DartTableItem) item.getImpl()).contentWidth());
         }
         return TableHelper.setColumnlessWidth(this, widest, set);
