@@ -144,6 +144,8 @@ class CompositeDrawBackgroundTest {
                     .containsExactly(Fill.image(0, 0, 10, 10, -3, -4), BLUE_AFTERWARDS);
             assertThat(drawn(child, gc -> child.drawBackground(gc, 0, 0, 7, 6, -3, -4)))
                     .containsExactly(Fill.image(0, 0, 7, 6, 0, 0), BLUE_AFTERWARDS);
+            assertThat(drawn(child, gc -> child.drawBackground(gc, 0, 0, 7, 6, -3, 0)))
+                    .containsExactly(Fill.image(0, 0, 7, 6, 0, -4), BLUE_AFTERWARDS);
         } finally {
             image.dispose();
         }
