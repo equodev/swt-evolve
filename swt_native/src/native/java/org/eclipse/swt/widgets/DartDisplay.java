@@ -1473,7 +1473,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static boolean getSheetEnabled() {
-        return !"false".equals(System.getProperty("org.eclipse.swt.sheet"));
+        return false;
     }
 
     /**

@@ -479,6 +479,22 @@ public class DartShell extends DartDecorations implements IShell {
     void center() {
         if (parent == null)
             return;
+        Rectangle rect = getBounds();
+        Rectangle parentRect = display.map(parent, null, parent.getClientArea());
+        int x = Math.max(parentRect.x, parentRect.x + (parentRect.width - rect.width) / 2);
+        int y = Math.max(parentRect.y, parentRect.y + (parentRect.height - rect.height) / 2);
+        Rectangle monitorRect = parent.getMonitor().getClientArea();
+        if (x + rect.width > monitorRect.x + monitorRect.width) {
+            x = Math.max(monitorRect.x, monitorRect.x + monitorRect.width - rect.width);
+        } else {
+            x = Math.max(x, monitorRect.x);
+        }
+        if (y + rect.height > monitorRect.y + monitorRect.height) {
+            y = Math.max(monitorRect.y, monitorRect.y + monitorRect.height - rect.height);
+        } else {
+            y = Math.max(y, monitorRect.y);
+        }
+        getApi().setLocation(x, y);
     }
 
     /**
@@ -985,6 +1001,8 @@ public class DartShell extends DartDecorations implements IShell {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         // Print only the client area (children) without shell decorations
         Control[] children = _getChildren();
         for (Control child : children) {
@@ -1247,7 +1265,10 @@ public class DartShell extends DartDecorations implements IShell {
                 width = atLeast.x;
                 height = atLeast.y;
             }
+            Point before = move ? getApi().getLocation() : null;
             super.setBounds(x, y, width, height, move, resize);
+            if (before != null && (before.x != x || before.y != y))
+                moved = true;
             resized = true;
             if (isDisposed())
                 return;
