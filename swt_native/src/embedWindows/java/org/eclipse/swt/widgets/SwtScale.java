@@ -49,7 +49,7 @@ public class SwtScale extends SwtControl implements IScale {
 
     static final long TrackBarProc;
 
-    static final TCHAR TrackBarClass = new TCHAR(0, OS.TRACKBAR_CLASS, true);
+    static final TCHAR TrackBarClass = new TCHAR(OS.TRACKBAR_CLASS, true);
 
     boolean createdAsRTL;
 
@@ -546,13 +546,7 @@ public class SwtScale extends SwtControl implements IScale {
 	* results.  The fix is to send a fake WM_SIZE to force it
 	* to redraw every time there is a WM_PAINT.
 	*/
-        boolean fixPaint = findBackgroundControl() != null;
-        if (!fixPaint) {
-            if (OS.IsAppThemed()) {
-                Control control = findThemeControl();
-                fixPaint = control != null;
-            }
-        }
+        boolean fixPaint = findBackgroundControl() != null || findThemeControl() != null;
         if (fixPaint) {
             boolean redraw = getDrawing() && OS.IsWindowVisible(getApi().handle);
             if (redraw)

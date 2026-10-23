@@ -188,7 +188,7 @@ public class SwtFileTransfer extends SwtByteArrayTransfer implements IFileTransf
             // initialize with 2 for the empty (but double null terminated) parent pidl
             int pidlSizeSum = 2;
             for (int i = 0; i < n; i++) {
-                TCHAR szfileName = new TCHAR(0, fileNames[i], true);
+                TCHAR szfileName = new TCHAR(fileNames[i], true);
                 long[] ppv = new long[1];
                 int hr = COM.PathToPIDL(szfileName.chars, ppv);
                 if (hr != OS.S_OK) {

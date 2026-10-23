@@ -620,23 +620,23 @@ public class OLE extends SWT {
         //$NON-NLS-1$
         if (extension.charAt(0) != '.')
             extension = "." + extension;
-        TCHAR extensionKey = new TCHAR(0, extension, true);
+        TCHAR extensionKey = new TCHAR(extension, true);
         String result = getKeyValue(extensionKey);
         if (result != null) {
             // look for "<programID>\NotInsertable"
             //$NON-NLS-1$
-            TCHAR notInsertableKey = new TCHAR(0, result + "\\NotInsertable", true);
+            TCHAR notInsertableKey = new TCHAR(result + "\\NotInsertable", true);
             //$NON-NLS-1$
             if (getKeyExists(notInsertableKey))
                 return "";
             // look for "<programID>\Insertable"
             //$NON-NLS-1$
-            TCHAR insertableKey = new TCHAR(0, result + "\\Insertable", true);
+            TCHAR insertableKey = new TCHAR(result + "\\Insertable", true);
             if (getKeyExists(insertableKey))
                 return result;
             // look for "<programID>\protocol\StdFileEditing\server"
             //$NON-NLS-1$
-            TCHAR serverKey = new TCHAR(0, result + "\\protocol\\StdFileEditing\\server", true);
+            TCHAR serverKey = new TCHAR(result + "\\protocol\\StdFileEditing\\server", true);
             if (getKeyExists(serverKey))
                 return result;
         }
@@ -656,7 +656,7 @@ public class OLE extends SWT {
             if (length == 0) {
                 result = "";
             } else {
-                TCHAR lpData = new TCHAR(0, length);
+                TCHAR lpData = new TCHAR(length);
                 if (OS.RegQueryValueEx(phkResult[0], null, 0, null, lpData, lpcbData) == 0) {
                     length = Math.max(0, lpData.length() - 1);
                     result = lpData.toString(0, length);

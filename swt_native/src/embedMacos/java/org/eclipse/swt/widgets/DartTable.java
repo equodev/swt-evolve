@@ -475,6 +475,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -500,6 +501,7 @@ public class DartTable extends DartComposite implements ITable {
         super.createWidget();
         items = new TableItem[4];
         columns = new TableColumn[4];
+        getValue().markDirty(VTable.COLUMNS);
         getValue().markDirty(VTable.ITEMS);
     }
 
@@ -680,6 +682,7 @@ public class DartTable extends DartComposite implements ITable {
             setScrollWidth();
         } else {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {
@@ -1007,7 +1010,7 @@ public class DartTable extends DartComposite implements ITable {
         int y = point.y - getHeaderHeight();
         if (y < 0)
             return null;
-        int index = topIndex + (y / itemHeight);
+        int index = (y + scrollOffsetY) / itemHeight;
         if (index >= 0 && index < itemCount && items[index] != null)
             return items[index];
         return null;
@@ -1776,6 +1779,7 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
@@ -1815,6 +1819,7 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._headerForeground, newValue)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }
@@ -1849,10 +1854,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.headerVisible, newValue)) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
-        checkWidget();
         this.headerVisible = newValue;
     }
 
@@ -1948,10 +1953,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
+        checkWidget();
         if (!java.util.Objects.equals(this.linesVisible, newValue)) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 
@@ -2538,6 +2543,8 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    int scrollOffsetY;
+
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
@@ -2574,6 +2581,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                scrollOffsetY = Math.max(0, e.y);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

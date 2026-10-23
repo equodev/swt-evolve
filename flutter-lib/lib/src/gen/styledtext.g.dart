@@ -112,7 +112,8 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
       .toList()
   ..styleIndex = (json['styleIndex'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
-      .toList();
+      .toList()
+  ..fixedLineHeight = json['fixedLineHeight'] as bool?;
 
 Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
     <String, dynamic>{
@@ -170,4 +171,5 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'caretOffsets': ?instance.caretOffsets,
       'styles': ?instance.styles,
       'styleIndex': ?instance.styleIndex,
+      'fixedLineHeight': ?instance.fixedLineHeight,
     };

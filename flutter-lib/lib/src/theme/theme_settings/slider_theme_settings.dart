@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../theme_extensions/slider_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -68,5 +69,7 @@ SliderThemeExtension _getSliderTheme({
     increment: 1,
     pageIncrement: 10,
     thumb: 10,
+
+    minTextContrast: kMinTextContrast,
   );
 }

@@ -46,6 +46,8 @@ class LinkThemeExtension extends ThemeExtension<LinkThemeExtension> with _$LinkT
   // Alignment
   final TextAlign textAlign;
 
+  final double minTextContrast;
+
   const LinkThemeExtension({
     required this.textColor,
     required this.linkTextColor,
@@ -62,6 +64,7 @@ class LinkThemeExtension extends ThemeExtension<LinkThemeExtension> with _$LinkT
     required this.linkDecoration,
     required this.linkHoverDecoration,
     required this.textAlign,
+    required this.minTextContrast,
   });
 
   factory LinkThemeExtension.fromJson(Map<String, dynamic> json) =>

@@ -55,9 +55,12 @@ public class TreeItemSizes {
         return m;
     }
 
+    /** The size the icon is drawn at, whatever the size of the image. */
+    public static final double ICON_SIZE = 16.0;
+
     private static PointD computeImage(DartTreeItem widget) {
         if (Drawn.image(widget) == null) return PointD.zero;
-        return new PointD(16.0, 16.0);
+        return new PointD(ICON_SIZE, ICON_SIZE);
     }
 
     private static PointD computeText(DartTreeItem widget, Measure m, boolean emptyTextAffectsSizing) {

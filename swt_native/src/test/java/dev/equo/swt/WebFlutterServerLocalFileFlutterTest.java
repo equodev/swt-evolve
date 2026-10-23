@@ -127,6 +127,36 @@ class WebFlutterServerLocalFileFlutterTest {
     }
 
     @Test
+    void servedHtmlPage_definesBrowserFunctionsAheadOfItsOwnScripts() throws Exception {
+        LocalFileServing.Served served = registerLocalPageFixture();
+
+        String body = client.send(HttpRequest.newBuilder(URI.create(
+                        server.getApplicationUrl() + "/local-file/" + served.tokenPath())).GET().build(),
+                HttpResponse.BodyHandlers.ofString()).body();
+
+        assertThat(body).contains(BrowserFunctionBootstrap.SCRIPT);
+        assertThat(body.indexOf(BrowserFunctionBootstrap.SCRIPT))
+                .as("the bootstrap runs before the page's own script")
+                .isLessThan(body.indexOf("static/js/main.js"));
+        assertThat(body).startsWith("<!doctype html>");
+    }
+
+    @Test
+    void browserFunctionEndpoint_listsTheNamesRegisteredOnABrowser() throws Exception {
+        BrowserFunctionRegistry.register(4242, "equoListed", null, args -> null);
+        try {
+            HttpResponse<String> response = client.send(HttpRequest.newBuilder(URI.create(
+                            server.getApplicationUrl() + "/equo-browser-function?browserId=4242")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.body()).isEqualTo("{\"names\":[\"equoListed\"]}");
+        } finally {
+            BrowserFunctionRegistry.unregister(4242, "equoListed");
+        }
+    }
+
+    @Test
     void servedHtmlPage_hasItsFileSchemeResourcesRewrittenAndServed() throws Exception {
         File image = writeImageFixture();
         LocalFileServing.Served served = registerLocalPageFixture(

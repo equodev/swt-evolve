@@ -73,6 +73,7 @@ mixin _$ButtonThemeExtensionTailorMixin
   Color get disabledForegroundColor;
   Color get focusRingColor;
   double get focusRingWidth;
+  double get minTextContrast;
 
   @override
   ButtonThemeExtension copyWith({
@@ -138,6 +139,7 @@ mixin _$ButtonThemeExtensionTailorMixin
     Color? disabledForegroundColor,
     Color? focusRingColor,
     double? focusRingWidth,
+    double? minTextContrast,
   }) {
     return ButtonThemeExtension(
       buttonPressDelay: buttonPressDelay ?? this.buttonPressDelay,
@@ -238,6 +240,7 @@ mixin _$ButtonThemeExtensionTailorMixin
           disabledForegroundColor ?? this.disabledForegroundColor,
       focusRingColor: focusRingColor ?? this.focusRingColor,
       focusRingWidth: focusRingWidth ?? this.focusRingWidth,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -482,6 +485,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       )!,
       focusRingColor: Color.lerp(focusRingColor, other.focusRingColor, t)!,
       focusRingWidth: t < 0.5 ? focusRingWidth : other.focusRingWidth,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -737,6 +741,10 @@ mixin _$ButtonThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               focusRingWidth,
               other.focusRingWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -806,6 +814,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(disabledForegroundColor),
       const DeepCollectionEquality().hash(focusRingColor),
       const DeepCollectionEquality().hash(focusRingWidth),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -908,4 +917,5 @@ extension ButtonThemeExtensionBuildContextProps on BuildContext {
       buttonThemeExtension.disabledForegroundColor;
   Color get focusRingColor => buttonThemeExtension.focusRingColor;
   double get focusRingWidth => buttonThemeExtension.focusRingWidth;
+  double get minTextContrast => buttonThemeExtension.minTextContrast;
 }

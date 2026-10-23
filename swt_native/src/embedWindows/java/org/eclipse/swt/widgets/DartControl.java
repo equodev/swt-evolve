@@ -1089,10 +1089,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return this.bounds;
     }
 
-    int getCodePage() {
-        return 0;
-    }
-
     String getClipboardText() {
         String string = "";
         return string;
@@ -2080,6 +2076,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
+                return true;
             }
         } else {
             if (control.getImpl()._backgroundImage() != null) {
@@ -2767,10 +2764,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(Rectangle rect) {
         Rectangle newValue = rect;
+        checkWidget();
         if (!java.util.Objects.equals(this.bounds, newValue)) {
             getValue().markDirty(VControl.BOUNDS);
         }
-        checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.bounds = newValue;
@@ -2914,10 +2911,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        checkWidget();
         if (!java.util.Objects.equals(this.dragDetect, newValue)) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
         } else {
@@ -3024,6 +3021,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
@@ -3478,10 +3476,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
+        checkWidget();
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
         }
-        checkWidget();
         if (!getDrawing()) {
             if (((getApi().state & HIDDEN) == 0) == visible)
                 return;
@@ -4339,6 +4337,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    PaintState paintState;
+
+    Event typingKey;
+
     public boolean getDragSource() {
         Widget w = getApi();
         Object ds = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
@@ -4395,6 +4397,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
                     return;
                 sendEvent(SWT.DragDetect, e);
             });
@@ -4482,6 +4486,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 if (!isActive())
+                    return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
                     return;
                 sendEvent(SWT.MouseDown, e);
             });

@@ -627,6 +627,7 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setMenuBar(Menu menu) {
         checkWidget();
+        int menuStripBefore = Sizes.ownMenuStripHeight(getApi());
         if (!java.util.Objects.equals(this.menuBar, menu)) {
             getValue().markDirty(VDecorations.MENU_BAR);
         }
@@ -641,6 +642,7 @@ public class DartDecorations extends DartCanvas implements IDecorations {
                 error(SWT.ERROR_INVALID_PARENT);
         }
         menuBar = menu;
+        Sizes.menuStripChanged(getApi(), menuStripBefore);
     }
 
     /**
@@ -774,6 +776,14 @@ public class DartDecorations extends DartCanvas implements IDecorations {
 
     public Button _defaultButton() {
         return defaultButton;
+    }
+
+    int wireMenuStripHeight() {
+        return Sizes.menuStripHeight();
+    }
+
+    boolean wireOwnMenuStrip() {
+        return Sizes.ownMenuStripHeight(getApi()) > 0;
     }
 
     protected void _hookEvents() {

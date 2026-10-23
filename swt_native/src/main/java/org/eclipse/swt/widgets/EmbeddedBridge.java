@@ -6,7 +6,8 @@ import dev.equo.swt.FlutterNative;
 import dev.equo.swt.GCImageDrawer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
-import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
@@ -49,10 +50,13 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
             if (widget instanceof DartCTabFolder) { DartCTabFolder t = (DartCTabFolder) widget; // workaround
-                t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
-                    Rectangle bounds = t.getBounds();
-                    bridge.setBoundsCTabFolder(t, bounds, true);
-                }));
+                t.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent e) {
+                        Rectangle bounds = t.getBounds();
+                        bridge.setBoundsCTabFolder(t, bounds, true);
+                    }
+                });
             }
             return bridge;
         }

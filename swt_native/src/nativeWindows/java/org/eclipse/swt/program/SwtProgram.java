@@ -52,20 +52,20 @@ public final class SwtProgram implements IProgram {
     }
 
     static String assocQueryString(int assocStr, TCHAR key, boolean expand) {
-        TCHAR pszOut = new TCHAR(0, 1024);
+        TCHAR pszOut = new TCHAR(1024);
         int[] pcchOut = new int[1];
         pcchOut[0] = pszOut.length();
         int flags = OS.ASSOCF_NOTRUNCATE | OS.ASSOCF_INIT_IGNOREUNKNOWN;
         int result = OS.AssocQueryString(flags, assocStr, key, null, pszOut, pcchOut);
         if (result == OS.E_POINTER) {
-            pszOut = new TCHAR(0, pcchOut[0]);
+            pszOut = new TCHAR(pcchOut[0]);
             result = OS.AssocQueryString(flags, assocStr, key, null, pszOut, pcchOut);
         }
         if (result == 0) {
             if (expand) {
                 int length = OS.ExpandEnvironmentStrings(pszOut, null, 0);
                 if (length != 0) {
-                    TCHAR lpDst = new TCHAR(0, length);
+                    TCHAR lpDst = new TCHAR(length);
                     OS.ExpandEnvironmentStrings(pszOut, lpDst, length);
                     return lpDst.toString(0, Math.max(0, length - 1));
                 } else {
@@ -99,7 +99,7 @@ public final class SwtProgram implements IProgram {
         //$NON-NLS-1$
         if (extension.charAt(0) != '.')
             extension = "." + extension;
-        TCHAR key = new TCHAR(0, extension, true);
+        TCHAR key = new TCHAR(extension, true);
         Program program = null;
         String command = assocQueryString(OS.ASSOCSTR_COMMAND, key, true);
         if (command != null) {
@@ -156,7 +156,7 @@ public final class SwtProgram implements IProgram {
     }
 
     static String getKeyValue(String string, boolean expand) {
-        TCHAR key = new TCHAR(0, string, true);
+        TCHAR key = new TCHAR(string, true);
         long[] phkResult = new long[1];
         if (OS.RegOpenKeyEx(OS.HKEY_CLASSES_ROOT, key, 0, OS.KEY_READ, phkResult) != 0) {
             return null;
@@ -307,13 +307,13 @@ public final class SwtProgram implements IProgram {
         if (fileName == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         long hHeap = OS.GetProcessHeap();
-        TCHAR buffer = new TCHAR(0, fileName, true);
+        TCHAR buffer = new TCHAR(fileName, true);
         int byteCount = buffer.length() * TCHAR.sizeof;
         long lpFile = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
         OS.MoveMemory(lpFile, buffer, byteCount);
         long lpDirectory = 0;
         if (workingDir != null && OS.PathIsExe(lpFile)) {
-            TCHAR buffer1 = new TCHAR(0, workingDir, true);
+            TCHAR buffer1 = new TCHAR(workingDir, true);
             byteCount = buffer1.length() * TCHAR.sizeof;
             lpDirectory = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
             OS.MoveMemory(lpDirectory, buffer1, byteCount);
@@ -365,7 +365,7 @@ public final class SwtProgram implements IProgram {
             fileName = " \"" + fileName + "\"";
         String commandLine = prefix + fileName + suffix;
         long hHeap = OS.GetProcessHeap();
-        TCHAR buffer = new TCHAR(0, commandLine, true);
+        TCHAR buffer = new TCHAR(commandLine, true);
         int byteCount = buffer.length() * TCHAR.sizeof;
         long lpCommandLine = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
         OS.MoveMemory(lpCommandLine, buffer, byteCount);

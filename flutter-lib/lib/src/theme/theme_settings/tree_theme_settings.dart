@@ -68,6 +68,11 @@ TreeThemeExtension _getTreeTheme({
     itemSelectedBorderWidth: 0.0,
     itemFocusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
     itemFocusRingWidth: 2.0,
+
+    // Drag and drop
+    dropFeedbackLineWidth: 2.0,
+    dropFeedbackHighlightAlpha: 90,
+    dragImageOpacity: 0.85,
     
     headerBackgroundColor: colorScheme.surfaceContainerLow,
     headerTextColor: colorScheme.onSurface,
@@ -181,6 +186,8 @@ TreeThemeExtension _getTreeTheme({
     eventDefaultX: 0,
     eventDefaultY: 0,
     eventDefaultDetail: 0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -206,19 +213,22 @@ Color getTreeItemTextColor(
   bool selected,
   bool enabled, {
   VColor? parentForeground,
+  Color? background,
 }) {
   final defaultColor = enabled
       ? (selected
           ? widgetTheme.itemSelectedTextColor
           : widgetTheme.itemTextColor)
       : widgetTheme.itemDisabledTextColor;
-  
+
   return getForegroundColor(
     context: context,
     // The item's own colour, else the Tree's: an item with no colour of its own takes the
     // control's, the way SWT resolves it.
     foreground: state.foreground ?? parentForeground,
     defaultColor: defaultColor,
+    minContrast: widgetTheme.minTextContrast,
+    background: background,
   );
 }
 

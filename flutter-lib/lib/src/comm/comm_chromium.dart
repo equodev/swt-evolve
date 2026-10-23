@@ -7,6 +7,7 @@ import 'package:web/web.dart' as web;
 import '../gen/widget.dart';
 import 'comm_api.dart';
 import 'comm_frame.dart';
+import 'server_replacement.dart';
 
 /// Host-injected comm URL. An embedding host (any reverse-proxy deployment) sets
 /// this so the browser connects back to the *gateway*, not to localhost — which
@@ -14,6 +15,16 @@ import 'comm_frame.dart';
 /// local desktop-web, where browser and runtime share a machine.
 @JS('window.equoCommUrl')
 external JSString? get _equoCommUrl;
+
+/// [_equoCommUrl] when a host injected one, null for local desktop-web.
+String? _hostInjectedCommUrl() {
+  final injected = _equoCommUrl?.toDart;
+  return injected != null && injected.isNotEmpty && !injected.contains('{{') ? injected : null;
+}
+
+/// The instance of the server that served this page, empty when it was not served by one.
+@JS('window.evolve.instance')
+external JSString? get _servedBy;
 
 /// Web comm: a direct browser WebSocket speaking the binary frame protocol. All
 /// protocol logic lives in [EquoCommBase]; this class only owns the socket.
@@ -36,6 +47,8 @@ external JSString? get _equoCommUrl;
 class _BrowserComm extends EquoCommBase {
   final String _url;
   web.WebSocket? _ws;
+  bool _wasOpen = false;
+  Timer? _replacementWatch;
 
   _BrowserComm(String url) : _url = url {
     openSocket();
@@ -48,6 +61,9 @@ class _BrowserComm extends EquoCommBase {
     ws.binaryType = 'arraybuffer';
     ws.onopen = ((web.Event _) {
       if (!identical(_ws, ws)) return;
+      _wasOpen = true;
+      _replacementWatch?.cancel();
+      _replacementWatch = null;
       markOpen();
     }).toJS;
     ws.onmessage = ((web.MessageEvent e) {
@@ -65,6 +81,39 @@ class _BrowserComm extends EquoCommBase {
   void _onDead(web.WebSocket ws) {
     if (!identical(_ws, ws)) return;
     markClosed();
+    if (_wasOpen) _watchForReplacement();
+  }
+
+  /// The JVM this page talked to is gone. An application that relaunches itself comes back as
+  /// another JVM on the same origin, with another comm port and other widget ids, so reconnecting
+  /// the socket can never reach it: the page reloads into it instead.
+  void _watchForReplacement() {
+    if (_replacementWatch != null) return;
+    final servedBy = _servedBy?.toDart ?? '';
+    if (servedBy.isEmpty || _hostInjectedCommUrl() != null) return;
+    _askServerAfter(servedBy, 0);
+  }
+
+  void _askServerAfter(String servedBy, int attempt) {
+    _replacementWatch = Timer(replacementPollDelay(attempt), () async {
+      if (await _isReplaced(servedBy)) {
+        web.window.location.reload();
+      } else if (_replacementWatch != null) {
+        _askServerAfter(servedBy, attempt + 1);
+      }
+    });
+  }
+
+  static Future<bool> _isReplaced(String servedBy) async {
+    try {
+      final response = await web.window
+          .fetch('/equo-instance'.toJS, web.RequestInit(cache: 'no-store'))
+          .toDart;
+      final answer = response.ok ? (await response.text().toDart).toDart : null;
+      return isServedByAnotherInstance(servedBy, answer);
+    } catch (_) {
+      return false; // Nothing is serving the origin.
+    }
   }
 
   @override
@@ -103,8 +152,8 @@ class EquoCommService {
   /// browser and runtime share a machine — it falls back to
   /// `ws://localhost:<port>` using the configured port.
   static String? _resolveUrl() {
-    final injected = _equoCommUrl?.toDart;
-    if (injected != null && injected.isNotEmpty && !injected.contains('{{')) {
+    final injected = _hostInjectedCommUrl();
+    if (injected != null) {
       if (injected.startsWith('ws://') || injected.startsWith('wss://')) {
         return injected;
       }

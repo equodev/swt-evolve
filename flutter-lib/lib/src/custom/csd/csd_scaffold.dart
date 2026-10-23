@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../impl/utils/widget_utils.dart' show contrastRatio;
 import '../../impl/widget_config.dart';
 import '../../theme/named_themes.dart';
 import '../../theme/theme.dart' show parseThemeColorFromHex;
@@ -142,20 +143,12 @@ class CsdOverlayStrip extends StatelessWidget {
   /// [preferred] when it is legible against [background], else plain white/black. The 4.5:1
   /// threshold is WCAG AA for text this size (12px).
   static Color _readableOn(Color background, Color? preferred) {
-    if (preferred != null && _contrastRatio(preferred, background) >= 4.5) {
+    if (preferred != null && contrastRatio(preferred, background) >= 4.5) {
       return preferred;
     }
     return ThemeData.estimateBrightnessForColor(background) == Brightness.dark
         ? Colors.white
         : Colors.black87;
-  }
-
-  static double _contrastRatio(Color a, Color b) {
-    final la = a.computeLuminance();
-    final lb = b.computeLuminance();
-    final lighter = la > lb ? la : lb;
-    final darker = la > lb ? lb : la;
-    return (lighter + 0.05) / (darker + 0.05);
   }
 
   /// The title-bar colour set explicitly — by the `csd_titlebar_color` flag, else by the active

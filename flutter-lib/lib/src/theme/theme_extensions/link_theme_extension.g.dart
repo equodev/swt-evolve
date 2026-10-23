@@ -51,6 +51,7 @@ LinkThemeExtension _$LinkThemeExtensionFromJson(Map<String, dynamic> json) =>
       textAlign: const TextAlignConverter().fromJson(
         (json['textAlign'] as num).toInt(),
       ),
+      minTextContrast: (json['minTextContrast'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$LinkThemeExtensionToJson(
@@ -87,6 +88,7 @@ Map<String, dynamic> _$LinkThemeExtensionToJson(
     instance.linkHoverDecoration,
   ),
   'textAlign': const TextAlignConverter().toJson(instance.textAlign),
+  'minTextContrast': instance.minTextContrast,
 };
 
 Value? _$JsonConverterFromJson<Json, Value>(
