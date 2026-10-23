@@ -1,8 +1,12 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.SerializeTestBase;
+import dev.equo.swt.size.TableSizes;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.graphics.Font;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -300,5 +304,67 @@ class TableImplementationNativeTest extends SerializeTestBase {
 
         column.dispose();
         assertThat(impl(table).columnlessWidth).isEqualTo(width(table.getItem(0)));
+    }
+
+    private interface Measured {
+        int[] measure();
+    }
+
+    private static int[] withSwtFonts(boolean on, Measured measured) {
+        ConfigFlags saved = Config.getConfigFlags();
+        try {
+            Config.setConfigFlags(ConfigFlags.use_swt_fonts(on));
+            return measured.measure();
+        } finally {
+            Config.setConfigFlags(saved);
+        }
+    }
+
+    private static int[] rowAndHeader(Font font) {
+        Table table = new Table(shell(), SWT.NONE);
+        table.setHeaderVisible(true);
+        if (font != null) table.setFont(font);
+        return new int[] {table.getItemHeight(), table.getHeaderHeight()};
+    }
+
+    @Test
+    @DisplayName("with SWT fonts on, a table's own font sets its row and header heights; with them off the theme does")
+    void aTablesOwnFontSetsItsRowAndHeaderHeightsOnlyWithSwtFonts() {
+        Font big = new Font(shell().getDisplay(), "Arial", 40, SWT.NORMAL);
+        int[] themed = withSwtFonts(true, () -> rowAndHeader(null));
+        int[] own = withSwtFonts(true, () -> rowAndHeader(big));
+        int[] ignored = withSwtFonts(false, () -> rowAndHeader(big));
+
+        assertThat(own[0]).isGreaterThan(themed[0]);
+        assertThat(own[1]).isGreaterThan(themed[1]);
+        assertThat(ignored).containsExactly(themed);
+    }
+
+    @Test
+    @DisplayName("with SWT fonts on, a row's own font or its table's sets its text width; with them off only the style is kept")
+    void aRowsOwnFontSetsItsTextWidthOnlyWithSwtFonts() {
+        Font big = new Font(shell().getDisplay(), "Arial", 40, SWT.NORMAL);
+        Measured widths = () -> {
+            Table table = new Table(shell(), SWT.NONE);
+            TableItem themed = new TableItem(table, SWT.NONE);
+            TableItem own = new TableItem(table, SWT.NONE);
+            TableItem empty = new TableItem(table, SWT.NONE);
+            themed.setText(LONG);
+            own.setText(LONG);
+            own.setFont(big);
+            Table bigTable = new Table(shell(), SWT.NONE);
+            bigTable.setFont(big);
+            TableItem inherited = new TableItem(bigTable, SWT.NONE);
+            inherited.setText(LONG);
+            return new int[] {TableSizes.getTextWidth(themed), TableSizes.getTextWidth(own),
+                TableSizes.getTextWidth(inherited), TableSizes.getTextWidth(empty)};
+        };
+        int[] on = withSwtFonts(true, widths);
+        int[] off = withSwtFonts(false, widths);
+
+        assertThat(on[1]).isGreaterThan(on[0]);
+        assertThat(on[2]).isEqualTo(on[1]);
+        assertThat(on[3]).isZero();
+        assertThat(off).containsExactly(on[0], on[0], on[0], 0);
     }
 }

@@ -28,6 +28,9 @@ public class TableSizes {
     private static final int CELL_MARGIN = 2;
     private static final int CHECKBOX_WIDTH = 20;
 
+    private TableSizes() {
+    }
+
     public static Point computeSize(DartTable table, int wHint, int hHint, boolean changed) {
         int columnCount = table.getColumnCount();
         int style = table.getStyle();
@@ -85,7 +88,7 @@ public class TableSizes {
     /** The width the first cell's text takes. */
     public static int getTextWidth(TableItem item) {
         String text = item.getText();
-        if (text == null || text.isEmpty()) return 0;
+        if (text.isEmpty()) return 0;
         return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());
     }
 
