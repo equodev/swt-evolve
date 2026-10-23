@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.*;
 
@@ -17,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 
@@ -878,6 +880,8 @@ public class Config {
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
             configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
+            configFlags.canvas_hover_fills_by_class = fillsByClassFromProperties(CANVAS_HOVER_FILLS_BY_CLASS);
+            configFlags.canvas_selection_fills_by_class = fillsByClassFromProperties(CANVAS_SELECTION_FILLS_BY_CLASS);
             // Drops what an application paints over a control through its GC, keeping only what the
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
@@ -1122,14 +1126,7 @@ public class Config {
      * class name as written: unlike the per-widget flags, the key is the application's own class.
      */
     static Map<String, Boolean> canvasColorsByClassFromProperties() {
-        TreeMap<String, Boolean> byClass = new TreeMap<>();
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (!key.startsWith(DISABLE_SWT_CANVAS_COLORS_BY_CLASS)) continue;
-            String className = key.substring(DISABLE_SWT_CANVAS_COLORS_BY_CLASS.length()).trim();
-            Boolean value = optionalBoolean(System.getProperty(key));
-            if (!className.isEmpty() && value != null) byClass.put(className, value);
-        }
-        return byClass.isEmpty() ? null : byClass;
+        return byPrefix(DISABLE_SWT_CANVAS_COLORS_BY_CLASS, Function.identity(), Config::optionalBoolean);
     }
 
     /**
@@ -1139,11 +1136,50 @@ public class Config {
      * Composite inside a listed control follows it. A GC on an Image has no control and gets null.
      */
     public static Boolean canvasColorsOverride(Drawable drawable) {
-        Map<String, Boolean> byClass = getConfigFlags().disable_swt_canvas_colors_by_class;
+        return nearestListed(getConfigFlags().disable_swt_canvas_colors_by_class, drawable);
+    }
+
+    static final String CANVAS_HOVER_FILLS_BY_CLASS = "swt.evolve.canvas_hover_fills_";
+    static final String CANVAS_SELECTION_FILLS_BY_CLASS = "swt.evolve.canvas_selection_fills_";
+
+    /**
+     * {@code -D<prefix><fully.qualified.Class>=RRGGBB,...}, keyed by the application's class name as
+     * written: the colors that class fills a hover or a selection with, so a themed GC paints them
+     * with the theme's color for that role.
+     */
+    static Map<String, RGB[]> fillsByClassFromProperties(String prefix) {
+        return byPrefix(prefix, Function.identity(), Config::fillColors);
+    }
+
+    /** The hover fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static RGB[] canvasHoverFills(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_hover_fills_by_class, drawable);
+    }
+
+    /** The selection fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static RGB[] canvasSelectionFills(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_selection_fills_by_class, drawable);
+    }
+
+    /** The six-digit colors (an optional {@code #} before each) of a comma-separated list; null when none is. */
+    static RGB[] fillColors(String value) {
+        if (value == null) return null;
+        ArrayList<RGB> colors = new ArrayList<>();
+        for (String entry : value.split(",")) {
+            String hex = entry.trim();
+            if (hex.startsWith("#")) hex = hex.substring(1);
+            if (!hex.matches("[0-9a-fA-F]{6}")) continue;
+            int rgb = Integer.parseInt(hex, 16);
+            colors.add(new RGB(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF));
+        }
+        return colors.isEmpty() ? null : colors.toArray(new RGB[0]);
+    }
+
+    private static <T> T nearestListed(Map<String, T> byClass, Drawable drawable) {
         if (byClass == null || byClass.isEmpty() || !(drawable instanceof Control)) return null;
         for (Control c = (Control) drawable; c != null && !c.isDisposed(); c = c.getParent()) {
             for (Class<?> type = c.getClass(); type != null; type = type.getSuperclass()) {
-                Boolean value = byClass.get(type.getName());
+                T value = byClass.get(type.getName());
                 if (value != null) return value;
             }
         }
@@ -1160,14 +1196,22 @@ public class Config {
      * name, like {@code swt.evolve.theme_color_<widget>}.
      */
     static Map<String, Boolean> fontColorsByWidgetFromProperties() {
-        TreeMap<String, Boolean> byWidget = new TreeMap<>();
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (!key.startsWith(USE_SWT_FONT_COLORS_BY_WIDGET)) continue;
-            String widget = key.substring(USE_SWT_FONT_COLORS_BY_WIDGET.length()).trim().toLowerCase();
-            Boolean value = optionalBoolean(System.getProperty(key));
-            if (!widget.isEmpty() && value != null) byWidget.put(widget, value);
+        return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, String::toLowerCase, Config::optionalBoolean);
+    }
+
+    /**
+     * The system properties named {@code prefix<key>}, keyed by {@code keyOf} of the trimmed suffix;
+     * a blank key or a value {@code parse} maps to null is left out. Null when nothing is left.
+     */
+    private static <T> Map<String, T> byPrefix(String prefix, Function<String, String> keyOf, Function<String, T> parse) {
+        TreeMap<String, T> byKey = new TreeMap<>();
+        for (String property : System.getProperties().stringPropertyNames()) {
+            if (!property.startsWith(prefix)) continue;
+            String key = keyOf.apply(property.substring(prefix.length()).trim());
+            T value = parse.apply(System.getProperty(property));
+            if (!key.isEmpty() && value != null) byKey.put(key, value);
         }
-        return byWidget.isEmpty() ? null : byWidget;
+        return byKey.isEmpty() ? null : byKey;
     }
 
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {
