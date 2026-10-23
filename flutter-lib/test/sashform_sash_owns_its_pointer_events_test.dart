@@ -1,24 +1,17 @@
 // A SashForm's divider is its Sash child on every SWT, so a press, drag or release on it is the
-// Sash's MouseDown/MouseUp, never the SashForm's own.
+// Sash's MouseDown, Selection and MouseUp, never the SashForm's own.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/gen/event.dart';
+import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/sash.dart';
 import 'package:swtflutter/src/gen/sashform.dart';
 import 'package:swtflutter/src/gen/swt.dart';
-
-class _CapturingSashFormSwt extends SashFormSwt<VSashForm> {
-  const _CapturingSashFormSwt({required super.value, required this.events});
-
-  final List<String> events;
-
-  @override
-  void sendEvent(VSashForm val, String ev, VEvent? payload) => events.add(ev);
-}
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -27,6 +20,7 @@ VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..height = h;
 
 VLabel _label(int id, int x) => VLabel()
+  ..swt = 'Label'
   ..id = id
   ..style = SWT.NONE
   ..text = 'pane $id'
@@ -34,7 +28,9 @@ VLabel _label(int id, int x) => VLabel()
   ..enabled = true
   ..bounds = _rect(x, 0, 195, 300);
 
+// Laid out as Java's SashFormLayout places them: pane, 10-wide sash, pane.
 VSashForm _sashForm() => VSashForm()
+  ..swt = 'SashForm'
   ..id = 42
   ..style = SWT.HORIZONTAL
   ..enabled = true
@@ -42,12 +38,23 @@ VSashForm _sashForm() => VSashForm()
   ..sashWidth = 10
   ..weights = [1, 1]
   ..bounds = _rect(0, 0, 400, 300)
-  ..children = [_label(1, 0), _label(2, 205)];
+  ..children = [
+    _label(1, 0),
+    VSash()
+      ..swt = 'Sash'
+      ..id = 3
+      ..style = SWT.VERTICAL
+      ..visible = true
+      ..enabled = true
+      ..bounds = _rect(195, 0, 10, 300),
+    _label(2, 205),
+  ];
 
 void main() {
-  testWidgets('a press, drag and release on the divider is not reported as the SashForm\'s own',
+  testWidgets('a press, drag and release on the divider is the Sash\'s, not the SashForm\'s',
       (tester) async {
-    final events = <String>[];
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() => EquoCommBase.recordSentFrames = false);
     await tester.pumpWidget(EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Align(
@@ -55,15 +62,17 @@ void main() {
         child: SizedBox(
           width: 400,
           height: 300,
-          child: _CapturingSashFormSwt(value: _sashForm(), events: events),
+          child: SashFormSwt(value: _sashForm()),
         ),
       ),
     ));
     await tester.pumpAndSettle();
+    EquoCommService.commForTesting.clearSentFrames();
 
-    // Two equal panes in 400 minus the 10-wide sash: the form's centre is on the divider.
-    final divider = find.byKey(const ValueKey('sashform-sash-0'));
+    final divider = find.byType(SashSwt);
     expect(divider, findsOneWidget);
+    expect(tester.getRect(divider), const Rect.fromLTWH(195, 0, 10, 300),
+        reason: 'the sash is drawn where Java laid it out');
     final gesture = await tester.startGesture(tester.getCenter(divider));
     await tester.pump();
     await gesture.moveBy(const Offset(20, 0));
@@ -71,8 +80,11 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    final pointer = events.where((e) => e.startsWith('Mouse/')).toList();
-    expect(pointer, isEmpty,
-        reason: 'the divider is the Sash, so the SashForm must not report its press and release');
+    final sent = EquoCommService.commForTesting.sentFrames
+        .map((f) => EquoCommBase.decodeFrame(f).$1)
+        .toList();
+    expect(sent.where((c) => c.startsWith('SashForm/42/')), isEmpty,
+        reason: 'the divider is the Sash, so the SashForm reports neither its press nor its drag');
+    expect(sent, containsAllInOrder(['Sash/3/Mouse/MouseDown', 'Sash/3/Selection/Selection', 'Sash/3/Mouse/MouseUp']));
   });
 }

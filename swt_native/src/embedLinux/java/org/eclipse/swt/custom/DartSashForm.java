@@ -528,20 +528,8 @@ public class DartSashForm extends DartComposite implements ISashForm {
         return weights;
     }
 
-    @Override
-    public Control[] _displayedChildren() {
-        return getControls(false);
-    }
-
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                SashFormHelper.applyWeightsFromFlutter(this, e);
-            });
-        });
     }
 
     public SashForm getApi() {
