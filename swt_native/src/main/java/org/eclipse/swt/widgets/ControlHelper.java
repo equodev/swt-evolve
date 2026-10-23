@@ -122,8 +122,8 @@ public class ControlHelper {
 
     /**
      * Offers a key to the menu accelerators, then a traversal key as {@link SWT#Traverse}, before
-     * the KeyDown, in the order every platform's key dispatch does. The client performs a Tab
-     * traversal itself.
+     * the KeyDown, in the order every platform's key dispatch does. Escape and Enter run the whole
+     * traversal here, up to the shell; the client performs a Tab traversal itself.
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
@@ -137,6 +137,8 @@ public class ControlHelper {
         boolean traverseDoit = false;
         if (key.keyCode == SWT.ESC) {
             traversed = escapeTraversal(control, key);
+        } else if (detail == SWT.TRAVERSE_RETURN) {
+            traversed = returnTraversal(control, key);
         } else if (detail != SWT.TRAVERSE_NONE) {
             Event e = new Event();
             e.character = key.character;
@@ -220,12 +222,18 @@ public class ControlHelper {
     }
 
     /**
-     * Mirrors {@code SwtControl/SwtComposite.traversalCode}: arrows stay in the control, and a
-     * key-listening Canvas keeps every key unless a Traverse listener lets it go.
+     * Mirrors the natives' {@code traversalCode}: arrows stay in the control, a key-listening Canvas
+     * keeps every key, and an editable multi-line Text keeps Enter, unless a Traverse listener lets
+     * it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
             return false;
+        if (detail == SWT.TRAVERSE_RETURN && control.getApi() instanceof Text) {
+            int style = control.getApi().getStyle();
+            if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)
+                return false;
+        }
         if (control.getApi() instanceof Canvas) {
             if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0)
                 return false;
@@ -288,13 +296,32 @@ public class ControlHelper {
         Control start = resolveTraverseStart(origin);
         if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
             return false;
+        Event event = traverseEventOf(keyEvent);
+        event.doit = true;
+        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
+    }
+
+    /**
+     * Enter runs the whole traversal, so the shell presses its default button, unless the control
+     * keeps Enter, as a multi-line Text does.
+     */
+    private static boolean returnTraversal(DartControl origin, Event keyEvent) {
+        Control start = resolveTraverseStart(origin);
+        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
+            return false;
+        DartControl impl = (DartControl) start.getImpl();
+        Event event = traverseEventOf(keyEvent);
+        event.doit = traversesByDefault(impl, SWT.TRAVERSE_RETURN);
+        return impl.traverse(SWT.TRAVERSE_RETURN, event);
+    }
+
+    private static Event traverseEventOf(Event keyEvent) {
         Event event = new Event();
         event.character = keyEvent.character;
         event.keyCode = keyEvent.keyCode;
         event.keyLocation = keyEvent.keyLocation;
         event.stateMask = keyEvent.stateMask;
-        event.doit = true;
-        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
+        return event;
     }
 
     /**
@@ -363,7 +390,7 @@ public class ControlHelper {
 
     private static int traverseDetail(int keyCode, int stateMask) {
         switch (keyCode) {
-            // Escape runs the whole traversal instead; see escapeTraversal.
+            // Escape is not here: it runs the whole traversal straight away; see escapeTraversal.
             case SWT.CR:
                 return SWT.TRAVERSE_RETURN;
             case SWT.ARROW_DOWN:
