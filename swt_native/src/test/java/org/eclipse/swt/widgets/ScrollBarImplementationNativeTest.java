@@ -50,10 +50,12 @@ class ScrollBarImplementationNativeTest {
     void theTracksLieAlongTheFarEdges() {
         Canvas canvas = canvas(200, 150);
         Rectangle area = canvas.getClientArea();
+        int width = canvas.getVerticalBar().getSize().x;
+        int height = canvas.getHorizontalBar().getSize().y;
         assertThat(canvas.getVerticalBar().getThumbTrackBounds())
-                .isEqualTo(new Rectangle(area.x + area.width, area.y, 17, area.height));
+                .isEqualTo(new Rectangle(area.x + area.width, area.y, width, area.height));
         assertThat(canvas.getHorizontalBar().getThumbTrackBounds())
-                .isEqualTo(new Rectangle(area.x, area.y + area.height, area.width, 17));
+                .isEqualTo(new Rectangle(area.x, area.y + area.height, area.width, height));
     }
 
     @Test
@@ -62,17 +64,18 @@ class ScrollBarImplementationNativeTest {
         Canvas canvas = canvas(SWT.V_SCROLL, 200, 150);
         int x = canvas.getClientArea().width;
         ScrollBar vertical = canvas.getVerticalBar();
+        int width = vertical.getSize().x;
         vertical.setValues(0, 0, 100, 10, 1, 10);
-        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 0, 17, 16));
+        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 0, width, 16));
         vertical.setSelection(90);
-        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 134, 17, 16));
+        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 134, width, 16));
         vertical.setValues(25, 0, 100, 50, 1, 10);
-        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 38, 17, 75));
+        assertThat(vertical.getThumbBounds()).isEqualTo(new Rectangle(x, 38, width, 75));
 
         Canvas wide = canvas(SWT.H_SCROLL, 200, 150);
         ScrollBar horizontal = wide.getHorizontalBar();
         horizontal.setValues(50, 0, 200, 100, 1, 10);
-        assertThat(horizontal.getThumbBounds()).isEqualTo(new Rectangle(50, wide.getClientArea().height, 100, 17));
+        assertThat(horizontal.getThumbBounds()).isEqualTo(new Rectangle(50, wide.getClientArea().height, 100, horizontal.getSize().y));
     }
 
     @Test
@@ -80,10 +83,10 @@ class ScrollBarImplementationNativeTest {
     void aShortTrackIsFilled() {
         Canvas shortOne = canvas(SWT.V_SCROLL, 200, 10);
         assertThat(shortOne.getVerticalBar().getThumbBounds())
-                .isEqualTo(new Rectangle(shortOne.getClientArea().width, 0, 17, 10));
+                .isEqualTo(new Rectangle(shortOne.getClientArea().width, 0, shortOne.getVerticalBar().getSize().x, 10));
         Canvas empty = canvas(SWT.V_SCROLL, 200, 0);
         assertThat(empty.getVerticalBar().getThumbBounds())
-                .isEqualTo(new Rectangle(empty.getClientArea().width, 0, 17, 0));
+                .isEqualTo(new Rectangle(empty.getClientArea().width, 0, empty.getVerticalBar().getSize().x, 0));
     }
 
     @Test

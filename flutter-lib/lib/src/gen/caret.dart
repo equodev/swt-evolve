@@ -22,10 +22,10 @@ class VCaret extends VWidget {
     swt = "Caret";
   }
 
+  VImage? image;
   bool? visible;
 
   VRectangle? bounds;
-  VImage? image;
   bool? focused;
   int? blinkRate;
 
@@ -33,9 +33,9 @@ class VCaret extends VWidget {
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VCaret) {
+      image = other.image;
       visible = other.visible;
       bounds = other.bounds;
-      image = other.image;
       focused = other.focused;
       blinkRate = other.blinkRate;
     }
@@ -44,16 +44,16 @@ class VCaret extends VWidget {
   @override
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
+      case 'image':
+        image = json['image'] == null
+            ? null
+            : VImage.fromJson(json['image'] as Map<String, dynamic>);
       case 'visible':
         visible = json['visible'] as bool?;
       case 'bounds':
         bounds = json['bounds'] == null
             ? null
             : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>);
-      case 'image':
-        image = json['image'] == null
-            ? null
-            : VImage.fromJson(json['image'] as Map<String, dynamic>);
       case 'focused':
         focused = json['focused'] as bool?;
       case 'blinkRate':

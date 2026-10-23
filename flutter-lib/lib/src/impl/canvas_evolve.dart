@@ -201,10 +201,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
     final caret = state.caret;
     if (caret != null) {
-      base = Stack(children: [
-        base,
-        Positioned.fill(child: IgnorePointer(child: mapWidgetFromValue(caret))),
-      ]);
+      base = Stack(children: [base, mapWidgetFromValue(caret)]);
     }
 
     if (_localVScrollPx != 0.0 || _localHScrollPx != 0.0) {

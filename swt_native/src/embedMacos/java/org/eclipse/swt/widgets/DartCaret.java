@@ -423,6 +423,9 @@ public class DartCaret extends DartWidget implements ICaret {
     public void setImage(Image image) {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        if (!java.util.Objects.equals(this.image, image)) {
+            getValue().markDirty(VCaret.IMAGE);
+        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -430,7 +433,6 @@ public class DartCaret extends DartWidget implements ICaret {
         if (isFocus && isVisible)
             hideCaret();
         this.image = image;
-        getValue().markDirty(VCaret.IMAGE);
         getValue().markDirty(VCaret.BOUNDS);
         if (isFocus && isVisible)
             showCaret();
@@ -533,7 +535,6 @@ public class DartCaret extends DartWidget implements ICaret {
         if (visible == isVisible)
             return;
         isVisible = visible;
-        getValue().markDirty(VCaret.VISIBLE);
         if (!isFocusCaret())
             return;
         if (isVisible) {
