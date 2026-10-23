@@ -586,8 +586,6 @@ public abstract class DartWidget implements IWidget {
     public Object getData(String key) {
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (key.equals(IS_ACTIVE))
-            return Boolean.valueOf(isActive());
         if ((getApi().state & KEYED_DATA) != 0) {
             Object[] table = (Object[]) data;
             for (int i = 1; i < table.length; i += 2) {
@@ -1138,22 +1136,11 @@ public abstract class DartWidget implements IWidget {
      * @see #getData()
      */
     public void setData(Object data) {
-        if (WEBKIT_EVENTS_FIX_KEY.equals(data)) {
-            getApi().state |= WEBKIT_EVENTS_FIX;
-            return;
-        }
-        if (STYLEDTEXT_KEY.equals(data)) {
-            setIsStyledText();
-            return;
-        }
         if ((getApi().state & KEYED_DATA) != 0) {
             ((Object[]) this.data)[0] = data;
         } else {
             this.data = data;
         }
-    }
-
-    void setIsStyledText() {
     }
 
     /**
@@ -1183,10 +1170,6 @@ public abstract class DartWidget implements IWidget {
     public void setData(String key, Object value) {
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (GLCONTEXT_KEY.equals(key)) {
-            setOpenGLContext(value);
-            return;
-        }
         int index = 1;
         Object[] table = null;
         if ((getApi().state & KEYED_DATA) != 0) {
@@ -1230,9 +1213,6 @@ public abstract class DartWidget implements IWidget {
         }
         if (key.equals(SWT.SKIN_CLASS) || key.equals(SWT.SKIN_ID))
             this.reskin(SWT.ALL);
-    }
-
-    void setOpenGLContext(Object value) {
     }
 
     void setOrientation() {

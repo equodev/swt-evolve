@@ -3309,24 +3309,17 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (parent != null && parent.getImpl() instanceof DartTable)
                 ((DartTable) parent.getImpl()).dirty();
         }
-        if (visible) {
-            if ((getApi().state & HIDDEN) == 0)
-                return;
-            getApi().state &= ~HIDDEN;
-        } else {
+        if (!visible) {
             if ((getApi().state & HIDDEN) != 0)
                 return;
             getApi().state |= HIDDEN;
-        }
-        if (visible) {
-            /*
-		* It is possible (but unlikely), that application
-		* code could have disposed the widget in the show
-		* event.  If this happens, just return.
-		*/
+        } else {
+            if ((getApi().state & HIDDEN) == 0)
+                return;
             sendEvent(SWT.Show);
             if (isDisposed())
                 return;
+            getApi().state &= ~HIDDEN;
         }
         /*
 	* Feature in the Macintosh.  If the receiver has focus, hiding

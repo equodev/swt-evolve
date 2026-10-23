@@ -322,15 +322,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
         super.setFont(font);
     }
 
-    @Override
-    void setOpenGLContext(Object value) {
-        Shell shell = getShell();
-        {
-            ((DartShell) shell.getImpl()).glContextCount--;
-        }
-        shell.getImpl().updateOpaque();
-    }
-
     /**
      * Sets the receiver's IME.
      *
