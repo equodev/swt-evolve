@@ -1012,7 +1012,7 @@ public class DartTable extends DartComposite implements ITable {
         int y = point.y - getHeaderHeight();
         if (y < 0)
             return null;
-        int index = topIndex + (y / itemHeight);
+        int index = (y + TableHelper.scrollOffsetY(this)) / itemHeight;
         if (index >= 0 && index < itemCount && items[index] != null)
             return items[index];
         return null;
@@ -1987,9 +1987,10 @@ public class DartTable extends DartComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
+        // Older SWT versions' remove(int, int) leave the released rows in the array, past itemCount.
         int widest = 0;
         for (TableItem item : items) {
-            if (item != null)
+            if (item != null && !item.isDisposed())
                 widest = Math.max(widest, ((DartTableItem) item.getImpl()).contentWidth());
         }
         return TableHelper.setColumnlessWidth(this, widest, set);

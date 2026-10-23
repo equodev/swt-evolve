@@ -170,14 +170,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  /// Returns the VTableItem id at the given Flutter coordinates, or null.
+  /// Returns the VTableItem id at the given viewport coordinates, or null.
   Object? findItemIdAtPosition(double x, double y) {
     final rowHeight = _cachedRowHeight;
     if (rowHeight == null || rowHeight <= 0) return null;
     final headerOffset = _cachedHeaderOffset ?? 0.0;
-    final adjustedY = y - headerOffset;
-    if (adjustedY < 0) return null;
-    final itemIndex = (adjustedY / rowHeight).floor();
+    final bodyY = y - headerOffset;
+    if (bodyY < 0) return null;
+    final itemIndex = ((bodyY + verticalScrollOffset) / rowHeight).floor();
     final items = getItems();
     if (itemIndex < 0 || itemIndex >= items.length) return null;
     return items[itemIndex].id;
@@ -200,7 +200,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     if (itemIndex < 0) return Rect.zero;
 
-    final y = headerOffset + (itemIndex * rowHeight);
+    final y = headerOffset + itemIndex * rowHeight - verticalScrollOffset;
 
     final columns = getColumns();
     double x = 0.0;
@@ -238,7 +238,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double get verticalScrollOffset =>
       _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
 
-  int? _reportedScrollOffset;
+  int _reportedScrollOffset = 0;
 
   /// Java keeps how far the rows are scrolled: the row at the top, a row's bounds and API scrolling
   /// are computed from it.
@@ -281,6 +281,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   Widget build(BuildContext context) {
+    // A rebuild can remount the scroll view (a refresh that empties the table first), and the new
+    // position starts at the top without notifying the controller; Java is told where it landed.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reportScrollOffset();
+    });
     final widgetTheme = Theme.of(context).extension<TableThemeExtension>()!;
     final columns = getColumns();
     final items = getItems();
@@ -743,8 +748,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     final viewport =
         constraints.maxHeight.isFinite ? constraints.maxHeight : totalRows * rowHeight;
-    final offset =
-        _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+    final offset = verticalScrollOffset;
     final visibleRows = (viewport / rowHeight).ceil() + 1;
     // Half a screenful each side: enough that a small scroll shows no blank frame, and proportional
     // so the window stays inside SWT's budget of three times the visible rows of SetData.
@@ -1043,10 +1047,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       // which row is selected. Java's editor list is the source of truth for
       // which editors exist.
 
-      final scrollOffset = _verticalScrollController.hasClients
-          ? _verticalScrollController.offset
-          : 0.0;
-      final editorY = headerOffset + (itemIndex * rowHeight) - scrollOffset;
+      final editorY = headerOffset + (itemIndex * rowHeight) - verticalScrollOffset;
 
       double editorX = borderWidth;
       double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
