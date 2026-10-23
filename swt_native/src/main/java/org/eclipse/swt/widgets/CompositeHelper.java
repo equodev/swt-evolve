@@ -2,10 +2,13 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Pattern;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 
 /** What a Composite does that its generated implementation cannot say by itself. */
 public final class CompositeHelper {
@@ -54,8 +57,8 @@ public final class CompositeHelper {
 
     /**
      * Composite.drawBackground: the GC's own background where nothing paints behind the composite, otherwise
-     * the image or the colour of the control that does. An image is tiled from that control's origin, moved by
-     * the offsets. The GC keeps its background.
+     * the image or the colour of the control that does. An image repeats from that control's origin, moved by
+     * the offsets, as upstream's pattern does. The GC keeps its background, background pattern and transform.
      */
     public static void fillBackground(DartComposite composite, GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         Control control = composite.findBackgroundControl();
@@ -63,17 +66,19 @@ public final class CompositeHelper {
             gc.fillRectangle(x, y, width, height);
             return;
         }
-        DartControl owner = (DartControl) control.getImpl();
-        Image image = owner.backgroundImage;
+        Image image = ((DartControl) control.getImpl()).backgroundImage;
         if (image != null && !image.isDisposed()) {
             Point origin = originIn(composite.getApi(), control);
-            tile(gc, image, x, y, width, height, origin.x - offsetX, origin.y - offsetY);
+            fillWithImage(gc, image, x, y, width, height, origin.x - offsetX, origin.y - offsetY);
             return;
         }
+        // setBackground drops the GC's background pattern, so the pattern is put back too.
+        Pattern previousPattern = gc.getBackgroundPattern();
         Color previous = gc.getBackground();
         gc.setBackground(control.getBackground());
         gc.fillRectangle(x, y, width, height);
         gc.setBackground(previous);
+        gc.setBackgroundPattern(previousPattern);
     }
 
     /** Where the client area of the control or of one of its ancestors starts, in the control's own coordinates. */
@@ -87,19 +92,33 @@ public final class CompositeHelper {
         return new Point(x, y);
     }
 
-    /** Fills the rectangle with copies of the image laid edge to edge from (originX, originY). */
-    static void tile(GC gc, Image image, int x, int y, int width, int height, int originX, int originY) {
-        if (width <= 0 || height <= 0)
-            return;
-        Rectangle size = image.getBounds();
-        int startX = originX + Math.floorDiv(x - originX, size.width) * size.width;
-        int startY = originY + Math.floorDiv(y - originY, size.height) * size.height;
-        for (int tileY = startY; tileY < y + height; tileY += size.height) {
-            int top = Math.max(y, tileY), bottom = Math.min(y + height, tileY + size.height);
-            for (int tileX = startX; tileX < x + width; tileX += size.width) {
-                int left = Math.max(x, tileX), right = Math.min(x + width, tileX + size.width);
-                gc.drawImage(image, left - tileX, top - tileY, right - left, bottom - top, left, top, right - left, bottom - top);
+    /** Fills the rectangle with the image repeated edge to edge from (originX, originY). */
+    private static void fillWithImage(GC gc, Image image, int x, int y, int width, int height, int originX, int originY) {
+        Device device = gc.getDevice();
+        Pattern previousPattern = gc.getBackgroundPattern();
+        Pattern pattern = new Pattern(device, image);
+        Transform previous = null;
+        Transform shifted = null;
+        try {
+            // A pattern repeats from the GC's origin, so the GC is moved to where the tiles start.
+            if (originX != 0 || originY != 0) {
+                previous = new Transform(device);
+                gc.getTransform(previous);
+                shifted = new Transform(device);
+                gc.getTransform(shifted);
+                shifted.translate(originX, originY);
+                gc.setTransform(shifted);
             }
+            gc.setBackgroundPattern(pattern);
+            gc.fillRectangle(x - originX, y - originY, width, height);
+        } finally {
+            gc.setBackgroundPattern(previousPattern);
+            if (previous != null) {
+                gc.setTransform(previous);
+                previous.dispose();
+                shifted.dispose();
+            }
+            pattern.dispose();
         }
     }
 }

@@ -165,7 +165,7 @@ class CompositeInternalsTest {
     }
 
     @Test
-    @DisplayName("a disposed background image is passed over for the colour behind it, and an empty fill draws nothing")
+    @DisplayName("a disposed background image is passed over for the colour behind it")
     void aDisposedImageFallsBackToTheColour() {
         Shell shell = Mocks.shell();
         Composite composite = new Composite(shell, SWT.NONE);
@@ -179,13 +179,11 @@ class CompositeInternalsTest {
         try {
             bridge.comm.sent.clear();
             composite.drawBackground(gc, 0, 0, 5, 5, 0, 0);
-            CompositeHelper.tile(gc, new Image(shell.getDisplay(), 2, 2), 0, 0, 0, 5, 0, 0);
-            CompositeHelper.tile(gc, new Image(shell.getDisplay(), 2, 2), 0, 0, 5, 0, 0, 0);
         } finally {
             gc.dispose();
         }
         String wire = String.join("", bridge.comm.sent.stream().map(f -> f.json).toList());
-        assertThat(wire).contains("fillRectangleintintintint\",[0,0,5,5]]").contains("\"r\":1").doesNotContain("drawImage");
+        assertThat(wire).contains("fillRectangleintintintint\",[0,0,5,5]]").contains("\"r\":1").doesNotContain("\"backgroundPattern\":{");
     }
 
     @Test

@@ -2,7 +2,8 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.GcFills;
+import dev.equo.swt.harness.GcFills.Fill;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -17,11 +18,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,10 +32,6 @@ class CompositeDrawBackgroundTest {
 
     private static final RGB RED = new RGB(255, 0, 0);
     private static final RGB BLUE = new RGB(0, 0, 255);
-    private static final String RED_ON_WIRE = "\"background\":{\"a\":255,\"b\":0,\"g\":0,\"r\":255}";
-    private static final String BLUE_ON_WIRE = "\"background\":{\"a\":255,\"b\":255,\"g\":0,\"r\":0}";
-    /** Blue as a GC state change carries it, 0xFF0000FF. */
-    private static final String BLUE_ARGB = "\"background\":4278190335";
 
     private RecordingBridge bridge;
 
@@ -63,8 +56,11 @@ class CompositeDrawBackgroundTest {
         FlutterBridge.set(null);
     }
 
-    /** What the GC put on the wire while {@code paint} ran, up to its disposal. */
-    private String drawn(Composite composite, java.util.function.Consumer<GC> paint) {
+    /**
+     * What a GC with a blue background filled while {@code paint} ran, then with one more 1x1 fill at (39, 39)
+     * that shows what the GC fills with afterwards.
+     */
+    private List<Fill> drawn(Composite composite, java.util.function.Consumer<GC> paint) {
         Canvas surface = new Canvas(composite.getShell(), SWT.NONE);
         surface.setBounds(0, 0, 40, 40);
         GC gc = new GC(surface);
@@ -72,37 +68,23 @@ class CompositeDrawBackgroundTest {
             gc.setBackground(new Color(composite.getDisplay(), BLUE));
             bridge.comm.sent.clear();
             paint.accept(gc);
+            gc.fillRectangle(39, 39, 1, 1);
             assertThat(gc.getBackground().getRGB()).as("the GC keeps its background").isEqualTo(BLUE);
         } finally {
             gc.dispose();
             surface.dispose();
         }
-        return bridge.comm.sent.stream()
-                .filter(f -> f.event.startsWith("GC/") || f.event.equals(MessageBatch.EVENT))
-                .map(f -> f.json)
-                .collect(Collectors.joining());
+        return GcFills.of(bridge.comm.sent);
     }
 
-    /**
-     * The eight numbers after the image of each drawImage on the wire, in order. Compared against drawImage calls
-     * made directly, because how the source rectangle travels depends on the release: SWT 3.114 sends it in the
-     * image's pixels at the device zoom.
-     */
-    private static List<String> drawImageArguments(String wire) {
-        List<String> arguments = new ArrayList<>();
-        Matcher m = Pattern.compile("},(-?\\d+(?:,-?\\d+){7})]").matcher(wire);
-        while (m.find())
-            arguments.add(m.group(1));
-        return arguments;
-    }
+    private static final Fill BLUE_AFTERWARDS = Fill.colour(39, 39, 1, 1, BLUE);
 
     @Test
     @DisplayName("with nothing painting behind it, the GC's own background fills the rectangle")
     void nothingBehindFillsWithTheGc() {
         Composite composite = new Composite(Mocks.shell(), SWT.NONE);
-        String wire = drawn(composite, gc -> composite.drawBackground(gc, 1, 2, 3, 4, 0, 0));
-        assertThat(wire).contains("fillRectangleintintintint\",[1,2,3,4]]");
-        assertThat(wire).as("filled while the GC's background was its own").contains(BLUE_ON_WIRE).doesNotContain(RED_ON_WIRE);
+        assertThat(drawn(composite, gc -> composite.drawBackground(gc, 1, 2, 3, 4, 0, 0)))
+                .containsExactly(Fill.colour(1, 2, 3, 4, BLUE), BLUE_AFTERWARDS);
     }
 
     @Test
@@ -113,12 +95,8 @@ class CompositeDrawBackgroundTest {
         composite.setBackground(new Color(shell.getDisplay(), RED));
         Control behind = ((DartControl) composite.getImpl()).findBackgroundControl();
         assertThat(behind).isSameAs(composite);
-        String wire = drawn(composite, gc -> composite.drawBackground(gc, 1, 2, 3, 4, 0, 0));
-        assertThat(wire).contains("fillRectangleintintintint\",[1,2,3,4]]");
-        assertThat(wire.indexOf(RED_ON_WIRE)).as("filled in the composite's colour").isGreaterThanOrEqualTo(0)
-                .isLessThan(wire.indexOf("fillRectangleintintintint"));
-        assertThat(wire.indexOf(BLUE_ARGB)).as("then the GC's own background is back")
-                .isGreaterThan(wire.indexOf("fillRectangleintintintint"));
+        assertThat(drawn(composite, gc -> composite.drawBackground(gc, 1, 2, 3, 4, 0, 0)))
+                .containsExactly(Fill.colour(1, 2, 3, 4, RED), BLUE_AFTERWARDS);
     }
 
     @Test
@@ -160,18 +138,11 @@ class CompositeDrawBackgroundTest {
             parent.setBackgroundMode(SWT.INHERIT_FORCE);
             Composite child = new Composite(parent, SWT.NONE);
             child.setBounds(3, 4, 50, 50);
-            String wire = drawn(child, gc -> child.drawBackground(gc, 0, 0, 10, 10, 0, 0));
-            // The parent's tiles start at (-3, -4) in the child: the 10x10 rectangle meets four of them, row by row.
-            assertThat(drawImageArguments(wire)).isEqualTo(drawImageArguments(drawn(child, gc -> {
-                gc.drawImage(image, 3, 4, 7, 6, 0, 0, 7, 6);
-                gc.drawImage(image, 0, 4, 3, 6, 7, 0, 3, 6);
-                gc.drawImage(image, 3, 0, 7, 4, 0, 6, 7, 4);
-                gc.drawImage(image, 0, 0, 3, 4, 7, 6, 3, 4);
-            }))).hasSize(4);
-            assertThat(wire).doesNotContain("fillRectangle");
-            String shifted = drawn(child, gc -> child.drawBackground(gc, 0, 0, 7, 6, -3, -4));
-            assertThat(drawImageArguments(shifted))
-                    .isEqualTo(drawImageArguments(drawn(child, gc -> gc.drawImage(image, 0, 0, 7, 6, 0, 0, 7, 6)))).hasSize(1);
+            // The parent's tiles start at (-3, -4) in the child.
+            assertThat(drawn(child, gc -> child.drawBackground(gc, 0, 0, 10, 10, 0, 0)))
+                    .containsExactly(Fill.image(0, 0, 10, 10, -3, -4), BLUE_AFTERWARDS);
+            assertThat(drawn(child, gc -> child.drawBackground(gc, 0, 0, 7, 6, -3, -4)))
+                    .containsExactly(Fill.image(0, 0, 7, 6, 0, 0), BLUE_AFTERWARDS);
         } finally {
             image.dispose();
         }
