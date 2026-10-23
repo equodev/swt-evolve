@@ -57,21 +57,6 @@ MenuItemThemeExtension _getMenuItemTheme({
     // Separator colors
     separatorColor: colorScheme.outlineVariant,
 
-    // Checkbox colors
-    checkboxColor: colorSchemeExtension.stateDefaultEnabled,
-    checkboxSelectedColor: colorScheme.primary,
-    checkboxHoverColor: colorScheme.onSurface.withOpacity(isDark ? 0.05 : 0.03),
-    checkboxBorderColor: colorScheme.outline,
-    checkboxCheckmarkColor: colorScheme.onPrimary,
-
-    // Radio button colors
-    radioButtonColor: colorSchemeExtension.stateDefaultEnabled,
-    radioButtonSelectedColor: colorScheme.primary,
-    radioButtonHoverColor: colorScheme.onSurface.withOpacity(isDark ? 0.05 : 0.03),
-    radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, colorScheme.onSurface, 0.1) ?? colorScheme.primary,
-    radioButtonBorderColor: colorScheme.outline,
-    radioButtonInnerColor: colorScheme.onPrimary,
-
     // Border styling
     borderRadius: 4.0,
 
@@ -87,13 +72,10 @@ MenuItemThemeExtension _getMenuItemTheme({
 
     // Checkbox sizes
     checkboxSize: 16.0,
-    checkboxBorderRadius: 3.0,
-    checkboxBorderWidth: 1.5,
     checkboxCheckmarkSize: 12.0,
 
     // Radio button sizes
     radioButtonSize: 16.0,
-    radioButtonBorderWidth: 1.5,
     radioButtonInnerSize: 8.0,
 
     // Disabled opacity
