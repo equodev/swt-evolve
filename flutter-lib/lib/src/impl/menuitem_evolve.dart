@@ -116,10 +116,11 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       onArm: _sendArm,
       onTap: isEnabled ? _onCheckPressed : null,
       leading: _buildToggleLeading(
-        indicator: _MenuCheckbox(
+        indicator: _MenuStateMark(
           widgetTheme: widgetTheme,
           isEnabled: isEnabled,
           isSelected: isChecked,
+          isRadio: false,
         ),
         widgetTheme: widgetTheme,
         isEnabled: isEnabled,
@@ -163,10 +164,11 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       onArm: _sendArm,
       onTap: isEnabled ? _onRadioPressed : null,
       leading: _buildToggleLeading(
-        indicator: _MenuRadioButton(
+        indicator: _MenuStateMark(
           widgetTheme: widgetTheme,
           isEnabled: isEnabled,
           isSelected: isSelected,
+          isRadio: true,
         ),
         widgetTheme: widgetTheme,
         isEnabled: isEnabled,
@@ -709,119 +711,40 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   }
 }
 
-class _MenuCheckbox extends StatefulWidget {
+/// The state column of a CHECK or RADIO item. Native menus draw no box or ring, only a mark in
+/// the item text colour while the item is selected; the column stays reserved either way so
+/// labels keep their alignment.
+class _MenuStateMark extends StatelessWidget {
   final MenuItemThemeExtension widgetTheme;
   final bool isEnabled;
   final bool isSelected;
+  final bool isRadio;
 
-  const _MenuCheckbox({
+  const _MenuStateMark({
     required this.widgetTheme,
     required this.isEnabled,
     required this.isSelected,
+    required this.isRadio,
   });
 
   @override
-  State<_MenuCheckbox> createState() => _MenuCheckboxState();
-}
-
-class _MenuCheckboxState extends State<_MenuCheckbox> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    final size = widget.widgetTheme.checkboxSize;
-
-    Color backgroundColor;
-    Color borderColor;
-
-    backgroundColor = getMenuCheckboxBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
-    borderColor = getMenuCheckboxBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: widget.widgetTheme.animationDuration,
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(
-            widget.widgetTheme.checkboxBorderRadius,
-          ),
-          border: Border.all(
-            color: borderColor,
-            width: widget.widgetTheme.checkboxBorderWidth,
-          ),
-        ),
-        child: widget.isSelected
-            ? Icon(
-          Icons.check,
-          size: widget.widgetTheme.checkboxCheckmarkSize,
-          color: widget.widgetTheme.checkboxCheckmarkColor,
-        )
-            : null,
-      ),
-    );
-  }
-}
-
-class _MenuRadioButton extends StatefulWidget {
-  final MenuItemThemeExtension widgetTheme;
-  final bool isEnabled;
-  final bool isSelected;
-
-  const _MenuRadioButton({
-    required this.widgetTheme,
-    required this.isEnabled,
-    required this.isSelected,
-  });
-
-  @override
-  State<_MenuRadioButton> createState() => _MenuRadioButtonState();
-}
-
-class _MenuRadioButtonState extends State<_MenuRadioButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = widget.widgetTheme.radioButtonSize;
-
-    Color backgroundColor;
-    Color borderColor;
-
-    backgroundColor = getMenuRadioBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
-    borderColor = getMenuRadioBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: widget.widgetTheme.animationDuration,
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: borderColor,
-            width: widget.widgetTheme.radioButtonBorderWidth,
-          ),
-        ),
-        child: widget.isSelected
-            ? Center(
-          child: Container(
-            width: widget.widgetTheme.radioButtonInnerSize,
-            height: widget.widgetTheme.radioButtonInnerSize,
-            decoration: BoxDecoration(
-              color: widget.widgetTheme.radioButtonInnerColor,
-              shape: BoxShape.circle,
-            ),
-          ),
-        )
-            : null,
-      ),
+    final size = isRadio ? widgetTheme.radioButtonSize : widgetTheme.checkboxSize;
+    final color = getMenuItemTextColor(widgetTheme, isEnabled: isEnabled);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: !isSelected
+          ? null
+          : isRadio
+              ? Center(
+                  child: Container(
+                    width: widgetTheme.radioButtonInnerSize,
+                    height: widgetTheme.radioButtonInnerSize,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
+                )
+              : Icon(Icons.check, size: widgetTheme.checkboxCheckmarkSize, color: color),
     );
   }
 }
