@@ -313,6 +313,8 @@ sourceSets {
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
             // The widget tracker is told of each widget from 3.130.
             if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
+            // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
+            if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
             // tests covering that constructor cannot compile against older SWT.
             if (swtMinorNative < 129) {
@@ -363,6 +365,8 @@ sourceSets {
                 // so the API class the generator writes only carries it from there; this test reads
                 // one image back at three zooms.
                 exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
+                // Table/Tree.setHeaderBackground and setHeaderForeground were added in 3.106.
+                exclude("org/eclipse/swt/widgets/WidgetCheckedFirstTest.java")
             }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
