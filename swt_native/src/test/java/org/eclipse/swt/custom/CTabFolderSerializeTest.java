@@ -43,6 +43,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("selectionBgImage").equalsTo(value(w).getSelectionBgImage(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("single").equalsTo(w.getSingle(), orAbsentIfFalse));
+        assertJ.satisfies(node("tabHeight").equalsTo(value(w).getTabHeight(), null));
         assertJ.satisfies(node("tabPosition").equalsTo(w.getTabPosition(), orAbsentIf0));
         assertJ.satisfies(node("topRight").equalsTo(w.getTopRight(), orAbsentIfNull));
         assertJ.satisfies(node("unselectedCloseVisible").equalsTo(w.getUnselectedCloseVisible(), orAbsentIfFalse));

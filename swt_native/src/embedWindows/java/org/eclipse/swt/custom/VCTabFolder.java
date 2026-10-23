@@ -271,13 +271,13 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).single = value;
     }
 
-    @JsonAttribute(ignore = true)
-    public int getTabHeight() {
-        return ((DartCTabFolder) impl).getTabHeight();
+    public Integer getTabHeight() {
+        int value = ((DartCTabFolder) impl)._displayedTabHeight();
+        return value == dev.equo.swt.size.CTabFolderSizes.TAB_STRIP_HEIGHT ? null : value;
     }
 
-    public void setTabHeight(int value) {
-        ((DartCTabFolder) impl).fixedTabHeight = value;
+    public void setTabHeight(Integer value) {
+        ((DartCTabFolder) impl).tabHeight = value == null ? dev.equo.swt.size.CTabFolderSizes.TAB_STRIP_HEIGHT : value;
     }
 
     public int getTabPosition() {
@@ -361,6 +361,8 @@ public class VCTabFolder extends VComposite {
 
     public static final String SINGLE = "single";
 
+    public static final String TAB_HEIGHT = "tabHeight";
+
     public static final String TAB_POSITION = "tabPosition";
 
     public static final String TOP_RIGHT = "topRight";
@@ -430,6 +432,9 @@ public class VCTabFolder extends VComposite {
                 return;
             case "single":
                 Serializer.writeKeyValue(writer, "single", getSingle());
+                return;
+            case "tabHeight":
+                Serializer.writeKeyValue(writer, "tabHeight", getTabHeight());
                 return;
             case "tabPosition":
                 Serializer.writeKeyValue(writer, "tabPosition", getTabPosition());

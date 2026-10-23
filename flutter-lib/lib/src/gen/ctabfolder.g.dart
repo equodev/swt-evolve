@@ -80,6 +80,7 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..showChevron = json['showChevron'] as bool?
   ..showListPopupSeq = (json['showListPopupSeq'] as num?)?.toInt()
   ..single = json['single'] as bool?
+  ..tabHeight = (json['tabHeight'] as num?)?.toInt()
   ..tabPosition = (json['tabPosition'] as num?)?.toInt()
   ..topRight = json['topRight'] == null
       ? null
@@ -132,6 +133,7 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'showChevron': ?instance.showChevron,
       'showListPopupSeq': ?instance.showListPopupSeq,
       'single': ?instance.single,
+      'tabHeight': ?instance.tabHeight,
       'tabPosition': ?instance.tabPosition,
       'topRight': ?instance.topRight,
       'topRightAlignment': ?instance.topRightAlignment,

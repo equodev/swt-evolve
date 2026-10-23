@@ -996,6 +996,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // joined the gesture arena and its menu could not open. Translucent keeps the hit passing
       // through to whatever is behind, so a nested control still wins the arena over its parent.
       behavior: HitTestBehavior.translucent,
+      // The tap callbacks below are pointer plumbing for the menu. Left in the semantics tree they
+      // give the control a tap action, and the web engine then answers every click on it with a
+      // position-less semantic tap, so the control never sees its MouseDown/MouseUp.
+      excludeFromSemantics: true,
       onSecondaryTapUp: (details) => openMenuAt(details.localPosition),
       onTapUp: (details) {
         // macOS treats Ctrl+Click as a secondary click.

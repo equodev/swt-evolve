@@ -409,15 +409,16 @@ public class ControlHelper {
                 Shell shell = (Shell) current;
                 DartControl impl = (DartControl) current.getImpl();
                 FlutterBridge bridge = impl.getBridge();
-                // The bridge knows which shell it shows as its window (no Flutter title bar) and where
+                // The bridge knows which shells it shows as a window (no Flutter title bar) and where
                 // that window's content sits on screen; the geometry guess is only for a bridge that
                 // does not host shells.
-                Boolean hosted = bridge == null ? null : bridge.hostsAsMainShell(shell);
-                boolean main = hosted != null ? hosted : isMainShell(shell);
+                boolean windowRoot = bridge instanceof dev.equo.swt.WindowBridge
+                    ? ((dev.equo.swt.WindowBridge) bridge).rootsAWindow(shell)
+                    : isMainShell(shell);
                 int st = current.getStyle();
                 boolean showsTitleBar = (st & SWT.NO_TRIM) == 0
                     && ((st & SWT.TITLE) != 0 || (st & SWT.CLOSE) != 0);
-                if (showsTitleBar && !main) {
+                if (showsTitleBar && !windowRoot) {
                     y += (st & SWT.TOOL) != 0 ? 22 : 30;
                 }
                 if (bridge != null) {
