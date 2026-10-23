@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart' show EquoCommBase;
 import 'package:swtflutter/src/gen/button.dart';
+import 'package:swtflutter/src/gen/clabel.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/event.dart';
@@ -147,5 +148,35 @@ void main() {
       () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 30),
     );
     expect(sent.map((s) => s.split('/').take(2).join('/')), ['Button/2', 'Composite/1']);
+  });
+
+  testWidgets('a wheel over a styled text without scroll bars is reported by it, then the composite', (tester) async {
+    final text = VStyledText()
+      ..id = 4
+      ..style = SWT.NONE
+      ..enabled = true
+      ..text = ''
+      ..bounds = _rect(10, 10, 150, 80);
+    final sent = await _wheel(
+      tester,
+      SizedBox(width: 200, height: 120, child: CompositeSwt<VComposite>(value: _composite(text))),
+      () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 50),
+    );
+    expect(sent.map((s) => s.split('/').take(2).join('/')), ['StyledText/4', 'Composite/1']);
+  });
+
+  testWidgets('a wheel over a clabel is reported by it, then the composite', (tester) async {
+    final label = VCLabel()
+      ..id = 5
+      ..style = SWT.NONE
+      ..enabled = true
+      ..text = 'Label'
+      ..bounds = _rect(10, 10, 150, 40);
+    final sent = await _wheel(
+      tester,
+      SizedBox(width: 200, height: 120, child: CompositeSwt<VComposite>(value: _composite(label))),
+      () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 30),
+    );
+    expect(sent.map((s) => s.split('/').take(2).join('/')), ['CLabel/5', 'Composite/1']);
   });
 }

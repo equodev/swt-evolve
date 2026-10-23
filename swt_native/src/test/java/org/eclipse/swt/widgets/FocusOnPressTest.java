@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyledText;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +34,14 @@ class FocusOnPressTest extends KeyRoutingTestBase {
         assertThat(focuses(new Tree(shell, SWT.NONE), 3)).isTrue();
         assertThat(focuses(new Button(shell, SWT.PUSH), 3)).isFalse();
         assertThat(focuses(new DateTime(shell, SWT.DATE), 3)).isFalse();
+    }
+
+    @Test
+    @DisplayName("button 1 focuses a StyledText; button 3 leaves it to the StyledText's own press handling")
+    void styledTextPress() {
+        Shell shell = shell();
+        assertThat(focuses(new StyledText(shell, SWT.NONE), 1)).isTrue();
+        assertThat(focuses(new StyledText(shell, SWT.NONE), 3)).isFalse();
     }
 
     @Test
