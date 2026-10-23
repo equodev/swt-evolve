@@ -5,12 +5,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,6 +37,7 @@ class ToolTipAndScrollBarEventsFromFlutterNativeTest {
         FlutterBridge.set(bridge);
         display = DartMocks.dartDisplay();
         doAnswer(invocation -> queued.add(invocation.getArgument(0))).when(display).asyncExec(any(Runnable.class));
+        doReturn(new Point(0, 0)).when(display).getCursorLocation();
         DartDisplay impl = (DartDisplay) display.getImpl();
         doCallRealMethod().when(impl).sendEvent(any(EventTable.class), any(Event.class));
         shell = DartMocks.dartShell(display);
