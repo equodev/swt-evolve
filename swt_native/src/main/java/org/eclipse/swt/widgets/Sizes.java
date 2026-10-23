@@ -747,36 +747,37 @@ public class Sizes {
             ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
     }
 
-    public static Rectangle getBounds(DartTableItem item) {
+    /** The row an item is shown in, in viewport coordinates; null when the item is not in the table. */
+    private static Rectangle tableRow(DartTableItem item) {
         Table parent = item._parent();
         int itemIndex = parent.indexOf(item.getApi());
         if (itemIndex == -1)
-            return new Rectangle(0, 0, 0, 0);
+            return null;
         DartTable dartTable = (DartTable) parent.getImpl();
         int itemHeight = dartTable.getItemHeight();
         if (itemHeight <= 0)
             itemHeight = 20;
-        int headerHeight = dartTable.getHeaderHeight();
-        int y = headerHeight + (itemIndex * itemHeight);
+        // The row index counts from the top of the model; take off however far Flutter has scrolled.
+        int y = dartTable.getHeaderHeight() + itemIndex * itemHeight - dartTable.scrollOffsetY;
         Rectangle parentBounds = parent.getBounds();
-        int width = parentBounds != null ? parentBounds.width : 100;
-        return new Rectangle(0, y, width, itemHeight);
+        return new Rectangle(0, y, parentBounds != null ? parentBounds.width : 100, itemHeight);
+    }
+
+    public static Rectangle getBounds(DartTableItem item) {
+        Rectangle row = tableRow(item);
+        return row != null ? row : new Rectangle(0, 0, 0, 0);
     }
 
     public static Rectangle getBounds(DartTableItem item, int index) {
-        Table parent = item._parent();
-        DartTable dartTable = (DartTable) parent.getImpl();
+        DartTable dartTable = (DartTable) item._parent().getImpl();
         int columnCount = dartTable.columnCount;
         if (!(0 <= index && index < Math.max(1, columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        int itemIndex = parent.indexOf(item.getApi());
-        if (itemIndex == -1)
+        Rectangle row = tableRow(item);
+        if (row == null)
             return new Rectangle(0, 0, 0, 0);
-        int itemHeight = dartTable.getItemHeight();
-        if (itemHeight <= 0)
-            itemHeight = 20;
-        int headerHeight = dartTable.getHeaderHeight();
-        int y = headerHeight + (itemIndex * itemHeight);
+        int y = row.y;
+        int itemHeight = row.height;
         // The first cell's content starts after its inset (and checkbox); the others fill their column.
         int inset = dev.equo.swt.size.TableSizes.getLeadingInset(dartTable);
         if (columnCount == 0)
