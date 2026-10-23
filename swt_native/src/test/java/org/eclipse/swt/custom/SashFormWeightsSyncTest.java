@@ -113,13 +113,15 @@ class SashFormWeightsSyncTest {
         Sash sash = sashOf(form);
 
         dragSashTo(sash, sash.getBounds().x + 50);
+        assertThat(panes[0].getBounds()).isEqualTo(new Rectangle(0, 0, 248, 300));
         int[] weights = form.getWeights();
-        int dragged = panes[0].getBounds().width;
         form.layout();
 
         assertThat(form.getWeights()).containsExactly(weights);
-        // The 16.16 weights SashForm keeps round a pane down by up to a pixel on relayout, natively too.
-        assertThat(panes[0].getBounds().width).isBetween(dragged - 1, dragged);
-        assertThat(sash.getBounds().x).isEqualTo(panes[0].getBounds().width);
+        // Native SashForm: onDragSash stores 16.16 weights 40633 and 24413 of the 400 px area; layout gives
+        // pane 0 40633 * 397 / 65046 = 247 px, so it lands a pixel short of the 248 the drag set.
+        assertThat(panes[0].getBounds()).isEqualTo(new Rectangle(0, 0, 247, 300));
+        assertThat(sash.getBounds()).isEqualTo(new Rectangle(247, 0, 3, 300));
+        assertThat(panes[1].getBounds()).isEqualTo(new Rectangle(250, 0, 150, 300));
     }
 }
