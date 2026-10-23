@@ -80,11 +80,20 @@ public class VSpinner extends VComposite {
     public void setDecimalSeparator(String value) {
     }
 
+    public String getKeptText() {
+        return ((DartSpinner) impl).wireKeptText();
+    }
+
+    public void setKeptText(String value) {
+    }
+
     public static final String DECIMAL_SEPARATOR = "decimalSeparator";
 
     public static final String DIGITS = "digits";
 
     public static final String INCREMENT = "increment";
+
+    public static final String KEPT_TEXT = "keptText";
 
     public static final String MAXIMUM = "maximum";
 
@@ -122,6 +131,9 @@ public class VSpinner extends VComposite {
                 return;
             case "decimalSeparator":
                 Serializer.writeKeyValue(writer, "decimalSeparator", getDecimalSeparator());
+                return;
+            case "keptText":
+                Serializer.writeKeyValue(writer, "keptText", getKeptText());
                 return;
         }
         super.writeProperty(writer, key);

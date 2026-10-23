@@ -92,6 +92,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         increment: increment,
         digits: digits,
         decimalSeparator: decimalSeparator,
+        keptText: state.keptText,
         pageIncrement: pageIncrement,
         textLimit: textLimit,
         enabled: enabled,
@@ -142,6 +143,8 @@ class _ThemedSpinner extends StatefulWidget {
   final int increment;
   final int digits;
   final String decimalSeparator;
+  // The text a refused Verify kept over the selection; null while the text follows the value.
+  final String? keptText;
   final int pageIncrement;
   final int textLimit;
   final bool enabled;
@@ -168,6 +171,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.increment,
     required this.digits,
     required this.decimalSeparator,
+    this.keptText,
     required this.pageIncrement,
     required this.textLimit,
     required this.enabled,
@@ -205,7 +209,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: _formatValue(widget.value));
+    _controller = TextEditingController(text: _heldText);
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
     widget.modifyGate.onUnmatched = _revertVetoedEdit;
@@ -216,9 +220,10 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     super.didUpdateWidget(oldWidget);
     final shown = oldWidget.value != widget.value ||
         oldWidget.digits != widget.digits ||
-        oldWidget.decimalSeparator != widget.decimalSeparator;
+        oldWidget.decimalSeparator != widget.decimalSeparator ||
+        oldWidget.keptText != widget.keptText;
     if (_localValue == null && shown) {
-      _controller.text = _formatValue(widget.value);
+      _controller.text = _heldText;
     }
   }
 
@@ -246,7 +251,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   void _revertVetoedEdit(bool doit) {
     if (doit || !mounted) return;
     _localValue = null;
-    final held = _formatValue(widget.value);
+    final held = _heldText;
     _controller.value = TextEditingValue(
       text: held,
       selection: TextSelection.collapsed(offset: held.length),
@@ -396,6 +401,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   // Value formatting
+  String get _heldText => widget.keptText ?? _formatValue(widget.value);
+
   String _formatValue(int value) {
     if (widget.digits == 0) {
       return value.toString();
@@ -486,7 +493,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       widget.onSubmitted(clampedValue);
     } catch (e) {
       _localValue = null;
-      _controller.text = _formatValue(widget.value);
+      _controller.text = _heldText;
     }
   }
 

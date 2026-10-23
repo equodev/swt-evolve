@@ -12,7 +12,7 @@ public class SpinnerHelper {
 
     public static String getText(DartSpinner c) {
         c.checkWidget();
-        return format(c, c.selection);
+        return c.keptText != null ? c.keptText : format(c, c.selection);
     }
 
     /**
@@ -22,20 +22,6 @@ public class SpinnerHelper {
     public static String decimalSeparator(DartSpinner c) {
         Locale locale = c.textLocale();
         return String.valueOf(DecimalFormatSymbols.getInstance(locale == null ? Locale.ROOT : locale).getDecimalSeparator());
-    }
-
-    /** A client that reports another locale changes the separator of every open spinner, so each is sent again. */
-    static void clientLocaleChanged(Display display) {
-        for (Shell shell : display.getShells())
-            resendSeparator(shell);
-    }
-
-    private static void resendSeparator(Control control) {
-        if (control.getImpl() instanceof DartSpinner)
-            ((DartSpinner) control.getImpl()).getValue().markDirty(VSpinner.DECIMAL_SEPARATOR);
-        if (control instanceof Composite)
-            for (Control child : ((Composite) control).getChildren())
-                resendSeparator(child);
     }
 
     /** {@code value} as the spinner's text field shows it. */
@@ -113,21 +99,26 @@ public class SpinnerHelper {
 
     /**
      * Moves the spinner to {@code value}. With {@code setText} the text follows, as natively: a Verify listener
-     * hears the new text first and may refuse it, which leaves the old text and sends no Modify; the position has
-     * moved already, as the native stepper's has.
+     * hears the new text first and may refuse it, which keeps the old text and sends no Modify or Selection; the
+     * position has moved already, as the native stepper's has.
      */
     static void setSelection(DartSpinner c, int value, boolean setPos, boolean setText, boolean notify) {
         if (c.selection != value) {
             c.getValue().markDirty(VSpinner.SELECTION);
         }
         if (setText && (c.hooks(SWT.Verify) || c.filters(SWT.Verify))) {
+            String old = getText(c);
             Event verify = new Event();
             verify.text = format(c, value);
             verify.start = 0;
-            verify.end = format(c, c.selection).length();
+            verify.end = old.length();
             c.selection = value;
             c.sendEvent(SWT.Verify, verify);
-            if (!verify.doit || c.isDisposed()) {
+            if (c.isDisposed()) {
+                return;
+            }
+            if (!verify.doit) {
+                keepText(c, old);
                 return;
             }
         }
@@ -140,19 +131,28 @@ public class SpinnerHelper {
         }
         c.selection = value;
         if (setText) {
+            keepText(c, null);
             c.sendEvent(SWT.Modify);
         }
         if (notify)
             c.sendSelectionEvent(SWT.Selection);
     }
 
+    /** {@code text} stays in the field over the selection, or with null the field shows the selection again. */
+    private static void keepText(DartSpinner c, String text) {
+        if (text == null ? c.keptText != null : !text.equals(c.keptText)) {
+            c.getValue().markDirty(VSpinner.KEPT_TEXT);
+        }
+        c.keptText = text;
+    }
+
     /**
      * A value the user chose with the arrows of the client. The text follows it, so listeners hear Modify and then
-     * Selection, in the order a native spinner sends them.
+     * Selection, in the order a native spinner sends them; a refused text sends neither.
      */
     static void selectedInFlutter(DartSpinner c, int value) {
-        c.setSelection(value);
-        if (c.isDisposed()) {
+        setSelection(c, Math.max(c.minimum, Math.min(c.maximum, value)), true, true, false);
+        if (c.isDisposed() || c.keptText != null) {
             return;
         }
         c.sendSelectionEvent(SWT.Selection, null, true);
@@ -257,6 +257,7 @@ public class SpinnerHelper {
                 text = text.substring(0, e.start) + verified + text.substring(e.start + count);
             }
         }
+        keepText(c, null);
         Integer value = parseText(text, c.digits, c.minimum, c.maximum, decimalSeparator(c));
         if (value != null && value != c.selection) {
             c.getValue().markDirty(VSpinner.SELECTION);

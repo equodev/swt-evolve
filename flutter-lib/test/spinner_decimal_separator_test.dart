@@ -119,4 +119,27 @@ void main() {
 
     expect(_shown(tester), '1,23');
   });
+
+  testWidgets('a text Java kept after a refused Verify is shown over the selection until it is cleared',
+      (WidgetTester tester) async {
+    await _pump(tester, _spinner(digits: 0, selection: 20));
+
+    // ignore: avoid_dynamic_calls
+    final dynamic widgetState = tester.state(find.byType(_CapturingSpinnerSwt));
+    // ignore: avoid_dynamic_calls
+    widgetState.state.selection = 21;
+    // ignore: avoid_dynamic_calls
+    widgetState.state.keptText = '20';
+    // ignore: avoid_dynamic_calls
+    widgetState.setValue(widgetState.state);
+    await tester.pump();
+    expect(_shown(tester), '20');
+
+    // ignore: avoid_dynamic_calls
+    widgetState.state.keptText = null;
+    // ignore: avoid_dynamic_calls
+    widgetState.setValue(widgetState.state);
+    await tester.pump();
+    expect(_shown(tester), '21');
+  });
 }

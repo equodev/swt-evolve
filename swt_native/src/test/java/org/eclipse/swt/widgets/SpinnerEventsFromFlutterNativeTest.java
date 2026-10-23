@@ -165,6 +165,24 @@ class SpinnerEventsFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("a Selection from Flutter whose text Verify refuses moves the value and notifies neither Modify nor Selection")
+    void aRefusedSelectionFromFlutterNotifiesNothing() {
+        Spinner spinner = spinner();
+        spinner.setSelection(20);
+        List<String> order = new ArrayList<>();
+        spinner.addListener(SWT.Verify, e -> e.doit = false);
+        spinner.addListener(SWT.Modify, e -> order.add("Modify"));
+        spinner.addListener(SWT.Selection, e -> order.add("Selection"));
+
+        fromFlutter(spinner, "Selection/Selection", 21);
+        runQueued();
+
+        assertThat(order).isEmpty();
+        assertThat(spinner.getSelection()).isEqualTo(21);
+        assertThat(spinner.getText()).isEqualTo("20");
+    }
+
+    @Test
     @DisplayName("each Selection from Flutter notifies the Selection listeners")
     void everySelectionNotifies() {
         Spinner spinner = spinner();

@@ -57,6 +57,7 @@ class VSpinner extends VComposite {
   int? textLimit;
 
   String? decimalSeparator;
+  String? keptText;
 
   @override
   void copyFrom(VWidget other) {
@@ -70,6 +71,7 @@ class VSpinner extends VComposite {
       selection = other.selection;
       textLimit = other.textLimit;
       decimalSeparator = other.decimalSeparator;
+      keptText = other.keptText;
     }
   }
 
@@ -92,6 +94,8 @@ class VSpinner extends VComposite {
         textLimit = (json['textLimit'] as num?)?.toInt();
       case 'decimalSeparator':
         decimalSeparator = json['decimalSeparator'] as String?;
+      case 'keptText':
+        keptText = json['keptText'] as String?;
       default:
         super.readProperty(key, json);
     }

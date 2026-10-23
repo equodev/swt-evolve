@@ -4068,7 +4068,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (locale.equals(clientLocale))
             return;
         clientLocale = locale;
-        SpinnerHelper.clientLocaleChanged(getApi());
+        for (Shell shell : getApi().getShells()) clientLocaleChanged(shell);
+    }
+
+    static void clientLocaleChanged(Control control) {
+        if (control.getImpl() instanceof DartWidget)
+            ((DartWidget) control.getImpl()).clientLocaleChanged();
+        if (control instanceof Composite)
+            for (Control child : ((Composite) control).getChildren()) clientLocaleChanged(child);
     }
 
     boolean performKeyEquivalent(Object window, Object nsEvent) {

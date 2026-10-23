@@ -806,6 +806,12 @@ public class DartSpinner extends DartComposite implements ISpinner {
         return SpinnerHelper.decimalSeparator(this);
     }
 
+    String keptText;
+
+    String wireKeptText() {
+        return keptText;
+    }
+
     java.util.Locale textLocale() {
         return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
     }
