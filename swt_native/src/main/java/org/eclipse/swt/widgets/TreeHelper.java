@@ -30,10 +30,11 @@ public class TreeHelper {
      * put it.
      */
     public static void recordScrollOffset(DartTree tree, Event event) {
-        int offset = Math.max(0, event.y);
-        SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(Math.max(0, event.x), offset));
         java.util.List<TreeItem> rows = visibleItems(tree);
-        int row = offset / Math.max(1, tree.getItemHeight());
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int offset = Math.min(Math.max(0, event.y), maxScrollOffset(tree, rows.size(), itemHeight));
+        SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(Math.max(0, event.x), offset));
+        int row = offset / itemHeight;
         tree.topItem = row < rows.size() ? rows.get(row) : null;
     }
 
@@ -58,7 +59,6 @@ public class TreeHelper {
         if (rows.isEmpty()) return null;
         int itemHeight = Math.max(1, tree.getItemHeight());
         int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
-        setScrollOffsetY(tree, offset);
         return rows.get(Math.min(offset / itemHeight, rows.size() - 1));
     }
 
