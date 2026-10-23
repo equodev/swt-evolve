@@ -141,6 +141,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (!isAutoscalingDisabled()) {
             this.getApi().nativeZoom = getShellZoom();
         }
+        notifyCreationTracker();
         createWidget();
         ControlUtils.addToParentChildren(this);
     }

@@ -93,6 +93,7 @@ class ControlFocusActivationFlutterTest {
         assertThat(log).containsExactly("first FocusOut", "second FocusIn", "first Deactivate", "second Activate 0");
     }
 
+    /** A focus the client reports comes from a press, which activates the chain before the focus moves (Win32, GTK). */
     @Test
     void aFocusTheClientReportsIsActivatedOnce() {
         Text first = text(shell);
@@ -106,7 +107,7 @@ class ControlFocusActivationFlutterTest {
         web.comm.fireContaining("/" + second.hashCode() + "/Focus/FocusIn", new Event());
         drain();
 
-        assertThat(log).containsExactly("first FocusOut", "second FocusIn", "first Deactivate", "second Activate 0");
+        assertThat(log).containsExactly("first Deactivate", "second Activate 0", "first FocusOut", "second FocusIn");
     }
 
     /** A click on a control that takes no focus activates its chain with the click's detail, once. */
