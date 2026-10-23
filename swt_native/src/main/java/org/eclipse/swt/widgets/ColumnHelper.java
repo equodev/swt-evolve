@@ -2,6 +2,8 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 
+import java.util.function.Consumer;
+
 /**
  * The SWT.Move a native Tree or Table sends its columns when their places change: after a column is
  * resized, to the columns shown after it; after a column is disposed, to the columns that were shown after
@@ -70,21 +72,19 @@ public final class ColumnHelper {
      */
     public static void movedByUser(TreeColumn column, int displayIndex) {
         Tree tree = column.getParent();
-        int[] order = moved(tree.getColumnOrder(), tree.indexOf(column), displayIndex, column.getMoveable());
-        if (order != null)
-            tree.setColumnOrder(order);
+        movedByUser(tree.getColumnOrder(), tree.indexOf(column), displayIndex, column.getMoveable(), tree::setColumnOrder);
     }
 
-    /**
-     * A column the user dragged in the header and dropped at {@code displayIndex}: the columns are reordered as a
-     * native header drag does, which sends SWT.Move to the columns whose place changed. Only a moveable column
-     * moves.
-     */
+    /** {@link #movedByUser(TreeColumn, int)} for a table's column. */
     public static void movedByUser(TableColumn column, int displayIndex) {
         Table table = column.getParent();
-        int[] order = moved(table.getColumnOrder(), table.indexOf(column), displayIndex, column.getMoveable());
-        if (order != null)
-            table.setColumnOrder(order);
+        movedByUser(table.getColumnOrder(), table.indexOf(column), displayIndex, column.getMoveable(), table::setColumnOrder);
+    }
+
+    private static void movedByUser(int[] order, int index, int displayIndex, boolean moveable, Consumer<int[]> setOrder) {
+        int[] moved = moved(order, index, displayIndex, moveable);
+        if (moved != null)
+            setOrder.accept(moved);
     }
 
     /** {@code order} with column {@code index} shown at {@code displayIndex}, or null when nothing moves. */
