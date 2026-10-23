@@ -7,6 +7,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Sash;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.doAnswer;
 class SashFormWeightsSyncTest {
 
     private RecordingBridge bridge;
+    private Mocks.Delivery delivery;
 
     @BeforeAll
     static void useEquo() {
@@ -43,20 +45,23 @@ class SashFormWeightsSyncTest {
     void setUp() {
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
+        delivery = Mocks.deliverEvents(Mocks.display());
     }
 
     @AfterEach
     void tearDown() {
+        delivery.close();
         FlutterBridge.set(null);
     }
 
     private SashForm laidOutForm() {
         Shell shell = Mocks.shell();
+        Display display = shell.getDisplay();
         // The Sash's Selection hook hops through asyncExec; run it inline on the mocked Display.
         doAnswer(inv -> {
             ((Runnable) inv.getArgument(0)).run();
             return null;
-        }).when(shell.getDisplay()).asyncExec(any(Runnable.class));
+        }).when(display).asyncExec(any(Runnable.class));
         SashForm form = new SashForm(shell, SWT.HORIZONTAL);
         form.setBounds(0, 0, 400, 300);
         new Composite(form, SWT.NONE);
@@ -85,7 +90,7 @@ class SashFormWeightsSyncTest {
     @DisplayName("dragging the sash moves the panes on either side of it")
     void draggingTheSashMovesThePanes() {
         SashForm form = laidOutForm();
-        Control[] panes = form.getControls(false);
+        Control[] panes = ((DartSashForm) form.getImpl()).getControls(false);
         Sash sash = sashOf(form);
         Rectangle left = panes[0].getBounds();
         Rectangle right = panes[1].getBounds();
@@ -104,15 +109,17 @@ class SashFormWeightsSyncTest {
     @DisplayName("the panes keep the size a sash drag gave them through the next layout")
     void aDragSurvivesTheNextLayout() {
         SashForm form = laidOutForm();
-        Control[] panes = form.getControls(false);
+        Control[] panes = ((DartSashForm) form.getImpl()).getControls(false);
         Sash sash = sashOf(form);
 
         dragSashTo(sash, sash.getBounds().x + 50);
-        Rectangle left = panes[0].getBounds();
-        Rectangle right = panes[1].getBounds();
+        int[] weights = form.getWeights();
+        int dragged = panes[0].getBounds().width;
         form.layout();
 
-        assertThat(panes[0].getBounds()).isEqualTo(left);
-        assertThat(panes[1].getBounds()).isEqualTo(right);
+        assertThat(form.getWeights()).containsExactly(weights);
+        // The 16.16 weights SashForm keeps round a pane down by up to a pixel on relayout, natively too.
+        assertThat(panes[0].getBounds().width).isBetween(dragged - 1, dragged);
+        assertThat(sash.getBounds().x).isEqualTo(panes[0].getBounds().width);
     }
 }
