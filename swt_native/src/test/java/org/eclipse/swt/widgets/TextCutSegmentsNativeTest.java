@@ -58,6 +58,19 @@ class TextCutSegmentsNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
+    @DisplayName("a password text cuts nothing and reports the whole text")
+    void passwordCutReportsTheWholeText() {
+        Text text = text(SWT.SINGLE | SWT.PASSWORD, "abcdef");
+        text.setSelection(1, 3);
+        List<Event> events = record(text, SWT.Segments);
+
+        text.cut();
+
+        assertThat(text.getText()).isEqualTo("abcdef");
+        assertThat(texts(events)).containsExactly("abcdef");
+    }
+
+    @Test
     @DisplayName("a read-only text cuts nothing and reports no Segments")
     void readOnlyCutReportsNoSegments() {
         Text text = text(SWT.SINGLE | SWT.READ_ONLY, "abcdef");
