@@ -1,6 +1,5 @@
 package org.eclipse.swt.graphics;
 
-import dev.equo.swt.CanvasFillRoles;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
@@ -24,12 +23,12 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * {@code swt.evolve.canvas_fill_roles_<Class>} tells a themed GC which of the application's fill
- * colors are a hover or a selection. Each GC carries the roles for the control it draws on, found
- * the way {@code disable_swt_canvas_colors_<Class>} is.
+ * {@code swt.evolve.canvas_hover_fills_<Class>} and {@code canvas_selection_fills_<Class>} tell a
+ * themed GC which of the application's fill colors are a hover or a selection. Each GC carries the
+ * fills for the control it draws on, found the way {@code disable_swt_canvas_colors_<Class>} is.
  */
 @Tag("native-unit")
-class GCCanvasFillRolesNativeTest {
+class GCCanvasFillsNativeTest {
 
     static class Grid extends Canvas {
         Grid(Composite parent) {
@@ -52,7 +51,8 @@ class GCCanvasFillRolesNativeTest {
         FlutterBridge.set(new RecordingBridge());
         shell = DartMocks.dartShell(DartMocks.dartDisplay());
         ConfigFlags flags = new ConfigFlags();
-        flags.canvas_fill_roles_by_class = Map.of(Grid.class.getName(), CanvasFillRoles.parse("F6E6D6:hover,DBC7B4:selection"));
+        flags.canvas_hover_fills_by_class = Map.of(Grid.class.getName(), new RGB[] {new RGB(0xF6, 0xE6, 0xD6)});
+        flags.canvas_selection_fills_by_class = Map.of(Grid.class.getName(), new RGB[] {new RGB(0xDB, 0xC7, 0xB4)});
         Config.setConfigFlags(flags);
     }
 

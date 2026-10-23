@@ -880,7 +880,8 @@ public class Config {
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
             configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
-            configFlags.canvas_fill_roles_by_class = canvasFillRolesByClassFromProperties();
+            configFlags.canvas_hover_fills_by_class = fillsByClassFromProperties(CANVAS_HOVER_FILLS_BY_CLASS);
+            configFlags.canvas_selection_fills_by_class = fillsByClassFromProperties(CANVAS_SELECTION_FILLS_BY_CLASS);
             // Drops what an application paints over a control through its GC, keeping only what the
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
@@ -1138,27 +1139,40 @@ public class Config {
         return nearestListed(getConfigFlags().disable_swt_canvas_colors_by_class, drawable);
     }
 
-    static final String CANVAS_FILL_ROLES_BY_CLASS = "swt.evolve.canvas_fill_roles_";
+    static final String CANVAS_HOVER_FILLS_BY_CLASS = "swt.evolve.canvas_hover_fills_";
+    static final String CANVAS_SELECTION_FILLS_BY_CLASS = "swt.evolve.canvas_selection_fills_";
 
     /**
-     * {@code -Dswt.evolve.canvas_fill_roles_<fully.qualified.Class>=RRGGBB:role,...}, keyed by the
-     * application's class name as written: which of the colors that class fills with are a hover or
-     * a selection, so a themed GC paints them with the theme's color for that role.
+     * {@code -D<prefix><fully.qualified.Class>=RRGGBB,...}, keyed by the application's class name as
+     * written: the colors that class fills a hover or a selection with, so a themed GC paints them
+     * with the theme's color for that role.
      */
-    static Map<String, CanvasFillRoles> canvasFillRolesByClassFromProperties() {
-        return byPrefix(CANVAS_FILL_ROLES_BY_CLASS, Function.identity(), CanvasFillRoles::parse);
+    static Map<String, RGB[]> fillsByClassFromProperties(String prefix) {
+        return byPrefix(prefix, Function.identity(), Config::fillColors);
     }
 
     /** The hover fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
     public static RGB[] canvasHoverFills(Drawable drawable) {
-        CanvasFillRoles roles = nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
-        return roles == null ? null : roles.hover;
+        return nearestListed(getConfigFlags().canvas_hover_fills_by_class, drawable);
     }
 
     /** The selection fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
     public static RGB[] canvasSelectionFills(Drawable drawable) {
-        CanvasFillRoles roles = nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
-        return roles == null ? null : roles.selection;
+        return nearestListed(getConfigFlags().canvas_selection_fills_by_class, drawable);
+    }
+
+    /** The six-digit colors (an optional {@code #} before each) of a comma-separated list; null when none is. */
+    static RGB[] fillColors(String value) {
+        if (value == null) return null;
+        ArrayList<RGB> colors = new ArrayList<>();
+        for (String entry : value.split(",")) {
+            String hex = entry.trim();
+            if (hex.startsWith("#")) hex = hex.substring(1);
+            if (!hex.matches("[0-9a-fA-F]{6}")) continue;
+            int rgb = Integer.parseInt(hex, 16);
+            colors.add(new RGB(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF));
+        }
+        return colors.isEmpty() ? null : colors.toArray(new RGB[0]);
     }
 
     private static <T> T nearestListed(Map<String, T> byClass, Drawable drawable) {

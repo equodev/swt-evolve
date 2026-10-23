@@ -41,8 +41,8 @@ import org.eclipse.swt.widgets.Shell;
 /**
  * The same hover + selection NatTable three times: with the application's colors, with Canvas theming
  * turned on ({@code disable_swt_canvas_colors_<Class>}), and themed with its hover and selection
- * colors declared ({@code canvas_fill_roles_<Class>}). Hover a row and click cells in each to compare
- * how the highlight colors survive theming.
+ * colors declared ({@code canvas_hover_fills_<Class>}, {@code canvas_selection_fills_<Class>}).
+ * Hover a row and click cells in each to compare how the highlight colors survive theming.
  */
 public class NatTableHoverThemingSnippet {
 
@@ -63,8 +63,8 @@ public class NatTableHoverThemingSnippet {
     public static void main(String[] args) {
         System.setProperty("swt.evolve.disable_swt_canvas_colors_" + NatTable.class.getName(), "true");
         System.setProperty("swt.evolve.disable_swt_canvas_colors_" + AppColorsNatTable.class.getName(), "false");
-        System.setProperty("swt.evolve.canvas_fill_roles_" + DeclaredRolesNatTable.class.getName(),
-                "F6E6D6:hover,DBC7B4:selection");
+        System.setProperty("swt.evolve.canvas_hover_fills_" + DeclaredRolesNatTable.class.getName(), "F6E6D6");
+        System.setProperty("swt.evolve.canvas_selection_fills_" + DeclaredRolesNatTable.class.getName(), "DBC7B4");
 
         Display display = new Display();
         Shell shell = new Shell(display);
