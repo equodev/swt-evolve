@@ -218,6 +218,10 @@ public class DartTable extends DartComposite implements ITable {
             sendEvent(SWT.SetData, event);
             //widget could be disposed at this point
             currentItem = null;
+            if (fixScrollWidth && !isDisposed()) {
+                fixScrollWidth = false;
+                setScrollWidth(items, true);
+            }
             if (isDisposed() || item.isDisposed())
                 return false;
             if (!setScrollWidth(item))
@@ -1977,8 +1981,6 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     boolean setScrollWidth(TableItem[] items, boolean set) {
-        if (items == null)
-            return false;
         if (columnCount != 0)
             return false;
         if (!getDrawing())

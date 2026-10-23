@@ -150,4 +150,155 @@ class TableImplementationNativeTest extends SerializeTestBase {
         table.deselectAll();
         assertThat(named(table, VTable.SELECTION)).isTrue();
     }
+
+    private static final String LONG = "a row much wider than the others";
+
+    private static int width(TableItem item) {
+        return TableHelper.contentWidth(item);
+    }
+
+    @Test
+    @DisplayName("a columnless row changed while another row is asked for its data is measured once that request returns")
+    void aRowChangedInsideAnotherRowsSetDataIsMeasured() {
+        try (Mocks.Delivery delivery = Mocks.deliverEvents(shell().getDisplay())) {
+            Table table = new Table(shell(), SWT.VIRTUAL);
+            TableItem[] second = new TableItem[1];
+            boolean[] widenSecond = {false};
+            table.addListener(SWT.SetData, e -> {
+                ((TableItem) e.item).setText(e.index == 0 ? "a" : "b");
+                if (e.index == 1)
+                    second[0] = (TableItem) e.item;
+                if (e.index == 0 && widenSecond[0])
+                    second[0].setText(LONG);
+            });
+            table.setItemCount(2);
+
+            widenSecond[0] = true;
+            table.clear(0);
+            table.getItem(0).getText();
+
+            assertThat(impl(table).columnlessWidth).isEqualTo(width(second[0])).isGreaterThan(width(table.getItem(0)));
+        }
+    }
+
+    @Test
+    @DisplayName("a columnless table measured again while a row is asked for its data is measured once that request returns")
+    void aTableMeasuredInsideSetDataIsMeasuredAfter() {
+        try (Mocks.Delivery delivery = Mocks.deliverEvents(shell().getDisplay())) {
+            Table table = new Table(shell(), SWT.VIRTUAL);
+            boolean[] removeSecond = {false};
+            table.addListener(SWT.SetData, e -> {
+                ((TableItem) e.item).setText(e.index == 0 ? "a" : LONG);
+                if (e.index == 0 && removeSecond[0])
+                    table.remove(1);
+            });
+            table.setItemCount(2);
+            assertThat(impl(table).columnlessWidth).isEqualTo(width(table.getItem(1)));
+
+            removeSecond[0] = true;
+            table.clear(0);
+            table.getItem(0).getText();
+
+            assertThat(table.getItemCount()).isEqualTo(1);
+            assertThat(impl(table).columnlessWidth).isEqualTo(width(table.getItem(0)));
+        }
+    }
+
+    @Test
+    @DisplayName("a SetData listener that changes another row and disposes the table leaves nothing to measure")
+    void aTableDisposedInsideSetDataIsNotMeasured() {
+        try (Mocks.Delivery delivery = Mocks.deliverEvents(shell().getDisplay())) {
+            Table table = new Table(shell(), SWT.VIRTUAL);
+            TableItem[] second = new TableItem[1];
+            boolean[] dispose = {false};
+            table.addListener(SWT.SetData, e -> {
+                if (e.index == 1)
+                    second[0] = (TableItem) e.item;
+                if (e.index == 0 && dispose[0]) {
+                    second[0].setText(LONG);
+                    table.dispose();
+                }
+            });
+            table.setItemCount(2);
+            TableItem first = table.getItem(0);
+
+            dispose[0] = true;
+            table.clear(0);
+
+            assertThat(impl(table).checkData(first, 0)).isFalse();
+            assertThat(table.isDisposed()).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("a row its SetData listener disposes is neither measured nor drawn")
+    void aRowDisposedInsideSetDataIsNotMeasured() {
+        try (Mocks.Delivery delivery = Mocks.deliverEvents(shell().getDisplay())) {
+            Table table = new Table(shell(), SWT.VIRTUAL);
+            table.setItemCount(1);
+            TableItem row = table.getItem(0);
+            table.addListener(SWT.SetData, e -> e.item.dispose());
+
+            table.clear(0);
+
+            assertThat(impl(table).checkData(row, 0)).isFalse();
+            assertThat(table.getItemCount()).isZero();
+            assertThat(impl(table).columnlessWidth).isZero();
+        }
+    }
+
+    @Test
+    @DisplayName("a columnless table measured while remove(int, int) releases its rows skips the rows already released")
+    void aTableMeasuredDuringARangeRemoveSkipsReleasedRows() {
+        try (Mocks.Delivery delivery = Mocks.deliverEvents(shell().getDisplay())) {
+            Table table = new Table(shell(), SWT.NONE);
+            new TableItem(table, SWT.NONE).setText(LONG);
+            TableItem second = new TableItem(table, SWT.NONE);
+            second.setText("b");
+            new TableItem(table, SWT.NONE).setText("c");
+            boolean[] measured = {false};
+            second.addListener(SWT.Dispose, e -> {
+                table.setRedraw(false);
+                table.setRedraw(true);
+                measured[0] = true;
+            });
+
+            table.remove(0, 1);
+
+            assertThat(measured[0]).isTrue();
+            assertThat(table.getItemCount()).isEqualTo(1);
+            assertThat(impl(table).columnlessWidth).isEqualTo(width(table.getItem(0)));
+        }
+    }
+
+    @Test
+    @DisplayName("a columnless table with redraw off measures its rows when redraw comes back on")
+    void aColumnlessTableIsMeasuredWhenRedrawComesBack() {
+        Table table = new Table(shell(), SWT.NONE);
+        TableColumn column = new TableColumn(table, SWT.NONE);
+        new TableItem(table, SWT.NONE).setText("a");
+        new TableItem(table, SWT.NONE).setText("b");
+
+        table.setRedraw(false);
+        column.dispose();
+        table.getItem(1).setText(LONG);
+        assertThat(impl(table).columnlessWidth).isZero();
+
+        table.setRedraw(true);
+        assertThat(impl(table).columnlessWidth).isEqualTo(width(table.getItem(1)));
+    }
+
+    @Test
+    @DisplayName("a table with columns leaves the columnless width alone until its last column goes")
+    void aTableWithColumnsIsMeasuredWhenItsLastColumnGoes() {
+        Table table = new Table(shell(), SWT.NONE);
+        TableColumn column = new TableColumn(table, SWT.NONE);
+        new TableItem(table, SWT.NONE).setText("a");
+        new TableItem(table, SWT.NONE).setText(LONG);
+        table.remove(0);
+        assertThat(impl(table).columnlessWidth).isZero();
+
+        column.dispose();
+        assertThat(impl(table).columnlessWidth).isEqualTo(width(table.getItem(0)));
+    }
 }
