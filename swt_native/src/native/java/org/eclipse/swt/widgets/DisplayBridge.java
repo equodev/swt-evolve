@@ -1127,6 +1127,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // the push below would still find it visible and eligible, and leave its window standing
             // with nothing in it. This is the point that knows the shell is going.
             closeShellWindow(shell);
+            if (shell == displayWindowTaker) displayWindowTaker = null;
             sendDisplayUpdate(forDisplay);
         }
     }
