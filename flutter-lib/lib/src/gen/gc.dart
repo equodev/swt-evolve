@@ -57,7 +57,8 @@ class VGC extends VWidget {
   double? lineDashOffset;
   double? bufferScale;
   bool? themedCanvas;
-  String? fillRoles;
+  List<int>? hoverFills;
+  List<int>? selectionFills;
 
   @override
   void copyFrom(VWidget other) {
@@ -86,7 +87,8 @@ class VGC extends VWidget {
       lineDashOffset = other.lineDashOffset;
       bufferScale = other.bufferScale;
       themedCanvas = other.themedCanvas;
-      fillRoles = other.fillRoles;
+      hoverFills = other.hoverFills;
+      selectionFills = other.selectionFills;
     }
   }
 
@@ -161,8 +163,14 @@ class VGC extends VWidget {
         bufferScale = (json['bufferScale'] as num?)?.toDouble();
       case 'themedCanvas':
         themedCanvas = json['themedCanvas'] as bool?;
-      case 'fillRoles':
-        fillRoles = json['fillRoles'] as String?;
+      case 'hoverFills':
+        hoverFills = (json['hoverFills'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      case 'selectionFills':
+        selectionFills = (json['selectionFills'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
       default:
         super.readProperty(key, json);
     }

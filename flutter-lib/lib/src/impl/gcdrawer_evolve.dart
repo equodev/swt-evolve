@@ -27,6 +27,7 @@ import 'color_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/glyph_tone.dart';
 import 'utils/image_utils.dart';
+import 'utils/widget_utils.dart';
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
 
@@ -126,6 +127,7 @@ class GCDrawer extends GCDrawerBase {
     // JSON, so it can travel in the same message as the ops it ends.
     _localTokens["${state.swt}/${state.id}/gcDispose"] =
         EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (raw) async {
+      _settleNormalFill();
       final payload = (raw is String ? jsonDecode(raw) : raw) as Map;
       final ref = (payload['ref'] as num).toInt();
       final wantPixels = payload['pixels'] == true;
@@ -203,6 +205,7 @@ class GCDrawer extends GCDrawerBase {
           !(payload is Map && payload['fullRepaint'] == false);
       final cycleStaging = _staging;
       _staging = [];
+      _settleNormalFill();
 
       final pending = List<Future<Shape>>.from(_pendingImages);
       _pendingImages.clear();
@@ -375,7 +378,12 @@ class GCDrawer extends GCDrawerBase {
   static const double _offsetScale = 20;
   // How far the most chromatic fill goes toward highlightColor.
   static const double _maxHighlight = 0.6;
-  static const int _maxCountedFills = 256;
+  // Below both, a fill reads as the normal one and takes the theme fill as it is.
+  static const double _minLstarDifference = 1;
+  static const double _minTint = 0.01;
+  // Mid-grey L*: a theme fill darker than it has its room above, a lighter one below.
+  static const double _midLstar = 50;
+  static const int _maxTrackedFills = 256;
 
   // Keeps a hover or selection apart from the normal fill under the theme, moving it toward the side
   // with room (a light app darkens its highlights, which on a dark fill would sink into black). The
@@ -388,85 +396,58 @@ class GCDrawer extends GCDrawerBase {
     final declared = _declaredRoleFill(app);
     if (declared != null) return declared;
     final normal = _normalFill(app);
-    final difference = (_lstar(app) - _lstar(normal)).abs();
-    final tint = (_chroma(app) - _chroma(normal)).clamp(0.0, 1.0) * _maxHighlight;
-    if (difference < 1 && tint < 0.01) return themed;
-    final fill = _lstar(themed);
+    final key = (app.toARGB32(), normal.toARGB32(), themed.toARGB32(), highlight.toARGB32());
+    if (_contrasted.length >= _maxTrackedFills) _contrasted.clear();
+    return _contrasted.putIfAbsent(key, () => _contrastedFill(app, normal, themed, highlight));
+  }
+
+  // Fills already moved apart, keyed by everything the result depends on.
+  final Map<(int, int, int, int), Color> _contrasted = {};
+
+  static Color _contrastedFill(Color app, Color normal, Color themed, Color highlight) {
+    final difference = (lstar(app) - lstar(normal)).abs();
+    final tint = (chroma(app) - chroma(normal)).clamp(0.0, 1.0) * _maxHighlight;
+    if (difference < _minLstarDifference && tint < _minTint) return themed;
+    final fill = lstar(themed);
     final offset = _maxOffset * (1 - math.exp(-difference / _offsetScale));
-    final apart = fill < 50 ? fill + offset : fill - offset;
-    return _withLstar(Color.lerp(themed, highlight, tint)!, apart + (_lstar(highlight) - apart) * tint);
+    final apart = fill < _midLstar ? fill + offset : fill - offset;
+    return withLstar(Color.lerp(themed, highlight, tint)!, apart + (lstar(highlight) - apart) * tint);
   }
 
   // The theme's color for a fill the integrator declared a hover or a selection
-  // (`RRGGBB:role,...` in VGC.fillRoles), or null when the color has no declared role.
+  // (VGC.hoverFills / VGC.selectionFills), or null when the color has no declared role.
   Color? _declaredRoleFill(Color app) {
-    final role = _fillRoles[app.toARGB32() & 0xFFFFFF];
-    return switch (role) {
-      'hover' => _canvasTheme?.hoverFillColor,
-      'selection' => _canvasTheme?.selectionFillColor,
-      _ => null,
-    };
+    final rgb = app.toARGB32() & 0xFFFFFF;
+    if (state.hoverFills?.contains(rgb) ?? false) return _canvasTheme?.hoverFillColor;
+    if (state.selectionFills?.contains(rgb) ?? false) return _canvasTheme?.selectionFillColor;
+    return null;
   }
 
-  String? _fillRolesSource;
-  Map<int, String> _parsedFillRoles = const {};
-
-  Map<int, String> get _fillRoles {
-    final source = state.fillRoles;
-    if (source == _fillRolesSource) return _parsedFillRoles;
-    _fillRolesSource = source;
-    _parsedFillRoles = {
-      for (final entry in (source ?? '').split(','))
-        if (entry.split(':') case [final color, final role])
-          if (int.tryParse(color, radix: 16) case final rgb?) rgb: role,
-    };
-    return _parsedFillRoles;
-  }
-
-  // The control's own background or, when it sets none (NatTable never does), the fill this GC
-  // has painted with most.
+  // The control's own background or, when it sets none, the fill this GC has painted with most.
+  // The counts span the control's paints; within one paint the normal is what the paints before it
+  // settled on, so one application color never paints two ways in the same frame.
   final Map<int, int> _fillCounts = {};
   int? _commonestFill;
+  int? _settledNormalFill;
 
   Color _normalFill(Color app) {
     final ground = _controlBackground;
     if (ground != null) return colorFromVColor(ground);
     final key = app.toARGB32();
-    if (_fillCounts.length < _maxCountedFills || _fillCounts.containsKey(key)) {
+    if (_fillCounts.length < _maxTrackedFills || _fillCounts.containsKey(key)) {
       final count = _fillCounts.update(key, (n) => n + 1, ifAbsent: () => 1);
       if (count > (_fillCounts[_commonestFill] ?? 0)) _commonestFill = key;
     }
-    return Color(_commonestFill ?? key);
+    return Color(_settledNormalFill ?? _commonestFill ?? key);
   }
+
+  void _settleNormalFill() => _settledNormalFill = _commonestFill;
 
   VColor? get _controlBackground {
     final host = widgetContext;
     if (host is! StatefulElement || !host.mounted) return null;
     final ground = host.state;
     return ground is GCGround ? (ground as GCGround).swtGround : null;
-  }
-
-  static double _lstar(Color c) {
-    final y = c.computeLuminance();
-    return y > 0.008856 ? 116 * math.pow(y, 1 / 3) - 16 : 903.3 * y;
-  }
-
-  static double _chroma(Color c) =>
-      math.max(c.r, math.max(c.g, c.b)) - math.min(c.r, math.min(c.g, c.b));
-
-  // Same hue and saturation, with the HSL lightness that reaches [target] L*.
-  static Color _withLstar(Color c, double target) {
-    final hsl = HSLColor.fromColor(c);
-    var lo = 0.0, hi = 1.0;
-    for (var i = 0; i < 16; i++) {
-      final mid = (lo + hi) / 2;
-      if (_lstar(hsl.withLightness(mid).toColor()) < target) {
-        lo = mid;
-      } else {
-        hi = mid;
-      }
-    }
-    return hsl.withLightness((lo + hi) / 2).toColor();
   }
 
   Color? get _hostGround {
@@ -981,18 +962,21 @@ class GCDrawer extends GCDrawerBase {
 
   void _addPathShape(VPath? path, {required bool isFilled}) {
     final built = _buildPath(path);
-    if (built != null) _addPathGeometry(built, isFilled: isFilled);
-    for (final text in _pathTexts(path, isFilled: isFilled)) {
+    // One fill op, so the strings take the geometry's color rather than resolving it again.
+    final color = built != null ? _addPathGeometry(built, isFilled: isFilled) : null;
+    for (final text in _pathTexts(path, isFilled: isFilled, color: color)) {
       _addShape(text);
     }
   }
 
-  void _addPathGeometry(Path built, {required bool isFilled}) {
-    if (isFilled && _addPatternFill(built)) return;
+  /// The color the geometry was drawn with, or null when a pattern filled it.
+  Color? _addPathGeometry(Path built, {required bool isFilled}) {
+    if (isFilled && _addPatternFill(built)) return null;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
-    if (!isFilled && _addDashedStroke(() => built, color)) return;
+    if (!isFilled && _addDashedStroke(() => built, color)) return color;
     _addShape(PathShape(built, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
         isFilled: isFilled, clipRect: _childClip));
+    return color;
   }
 
   /// The strings a Path holds, filled or outlined as its geometry would be. Path.addString has no

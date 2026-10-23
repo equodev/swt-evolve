@@ -86,13 +86,12 @@ public class ConfigFlags {
 
     /**
      * Which fill colors of a control class are a hover or a selection
-     * ({@code -Dswt.evolve.canvas_fill_roles_<fully.qualified.Class>=RRGGBB:role,...}), normalized
-     * and keyed by the class name as written; resolved like
-     * {@link #disable_swt_canvas_colors_by_class}. Java-only: the client gets the outcome per GC as
-     * {@code VGC.fillRoles}.
+     * ({@code -Dswt.evolve.canvas_fill_roles_<fully.qualified.Class>=RRGGBB:role,...}), keyed by the
+     * class name as written; resolved like {@link #disable_swt_canvas_colors_by_class}. Java-only:
+     * the client gets the outcome per GC as {@code VGC.hoverFills} and {@code VGC.selectionFills}.
      */
     @JsonAttribute(ignore = true)
-    public Map<String, String> canvas_fill_roles_by_class;
+    public Map<String, CanvasFillRoles> canvas_fill_roles_by_class;
 
     /** Drops what an application paints through a Control's own GC, leaving the control's own
      *  rendering alone. A control that draws itself and is then painted over -- a check box whose

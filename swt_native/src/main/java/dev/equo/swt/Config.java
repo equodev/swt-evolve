@@ -14,11 +14,10 @@ import org.eclipse.swt.widgets.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 
@@ -1125,14 +1124,7 @@ public class Config {
      * class name as written: unlike the per-widget flags, the key is the application's own class.
      */
     static Map<String, Boolean> canvasColorsByClassFromProperties() {
-        TreeMap<String, Boolean> byClass = new TreeMap<>();
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (!key.startsWith(DISABLE_SWT_CANVAS_COLORS_BY_CLASS)) continue;
-            String className = key.substring(DISABLE_SWT_CANVAS_COLORS_BY_CLASS.length()).trim();
-            Boolean value = optionalBoolean(System.getProperty(key));
-            if (!className.isEmpty() && value != null) byClass.put(className, value);
-        }
-        return byClass.isEmpty() ? null : byClass;
+        return byPrefix(DISABLE_SWT_CANVAS_COLORS_BY_CLASS, Function.identity(), Config::optionalBoolean);
     }
 
     /**
@@ -1152,39 +1144,20 @@ public class Config {
      * application's class name as written: which of the colors that class fills with are a hover or
      * a selection, so a themed GC paints them with the theme's color for that role.
      */
-    static Map<String, String> canvasFillRolesByClassFromProperties() {
-        TreeMap<String, String> byClass = new TreeMap<>();
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (!key.startsWith(CANVAS_FILL_ROLES_BY_CLASS)) continue;
-            String className = key.substring(CANVAS_FILL_ROLES_BY_CLASS.length()).trim();
-            String roles = normalizeFillRoles(System.getProperty(key));
-            if (!className.isEmpty() && roles != null) byClass.put(className, roles);
-        }
-        return byClass.isEmpty() ? null : byClass;
+    static Map<String, CanvasFillRoles> canvasFillRolesByClassFromProperties() {
+        return byPrefix(CANVAS_FILL_ROLES_BY_CLASS, Function.identity(), CanvasFillRoles::parse);
     }
 
-    /**
-     * The entries of a fill-roles value that are a six-digit color and a known role, as
-     * {@code RRGGBB:role} in upper-case hex joined by commas; null when none is.
-     */
-    static String normalizeFillRoles(String value) {
-        if (value == null) return null;
-        StringJoiner roles = new StringJoiner(",");
-        for (String entry : value.split(",")) {
-            String[] parts = entry.split(":", 2);
-            if (parts.length != 2) continue;
-            String color = parts[0].trim();
-            if (color.startsWith("#")) color = color.substring(1);
-            String role = parts[1].trim().toLowerCase(Locale.ROOT);
-            if (color.matches("[0-9a-fA-F]{6}") && (role.equals("hover") || role.equals("selection")))
-                roles.add(color.toUpperCase(Locale.ROOT) + ":" + role);
-        }
-        return roles.length() == 0 ? null : roles.toString();
+    /** The hover fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static int[] canvasHoverFills(Drawable drawable) {
+        CanvasFillRoles roles = nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
+        return roles == null ? null : roles.hover;
     }
 
-    /** The fill roles for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
-    public static String canvasFillRoles(Drawable drawable) {
-        return nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
+    /** The selection fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static int[] canvasSelectionFills(Drawable drawable) {
+        CanvasFillRoles roles = nearestListed(getConfigFlags().canvas_fill_roles_by_class, drawable);
+        return roles == null ? null : roles.selection;
     }
 
     private static <T> T nearestListed(Map<String, T> byClass, Drawable drawable) {
@@ -1208,14 +1181,22 @@ public class Config {
      * name, like {@code swt.evolve.theme_color_<widget>}.
      */
     static Map<String, Boolean> fontColorsByWidgetFromProperties() {
-        TreeMap<String, Boolean> byWidget = new TreeMap<>();
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (!key.startsWith(USE_SWT_FONT_COLORS_BY_WIDGET)) continue;
-            String widget = key.substring(USE_SWT_FONT_COLORS_BY_WIDGET.length()).trim().toLowerCase();
-            Boolean value = optionalBoolean(System.getProperty(key));
-            if (!widget.isEmpty() && value != null) byWidget.put(widget, value);
+        return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, String::toLowerCase, Config::optionalBoolean);
+    }
+
+    /**
+     * The system properties named {@code prefix<key>}, keyed by {@code keyOf} of the trimmed suffix;
+     * a blank key or a value {@code parse} maps to null is left out. Null when nothing is left.
+     */
+    private static <T> Map<String, T> byPrefix(String prefix, Function<String, String> keyOf, Function<String, T> parse) {
+        TreeMap<String, T> byKey = new TreeMap<>();
+        for (String property : System.getProperties().stringPropertyNames()) {
+            if (!property.startsWith(prefix)) continue;
+            String key = keyOf.apply(property.substring(prefix.length()).trim());
+            T value = parse.apply(System.getProperty(property));
+            if (!key.isEmpty() && value != null) byKey.put(key, value);
         }
-        return byWidget.isEmpty() ? null : byWidget;
+        return byKey.isEmpty() ? null : byKey;
     }
 
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {

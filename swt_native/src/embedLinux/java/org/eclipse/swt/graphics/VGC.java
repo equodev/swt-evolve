@@ -598,11 +598,18 @@ public class VGC extends VResource {
     public void setThemedCanvas(Boolean value) {
     }
 
-    public String getFillRoles() {
-        return ((DartGC) impl).wireFillRoles();
+    public int[] getHoverFills() {
+        return ((DartGC) impl).wireHoverFills();
     }
 
-    public void setFillRoles(String value) {
+    public void setHoverFills(int[] value) {
+    }
+
+    public int[] getSelectionFills() {
+        return ((DartGC) impl).wireSelectionFills();
+    }
+
+    public void setSelectionFills(int[] value) {
     }
 
     public static final String XORMODE = "XORMode";
@@ -621,13 +628,13 @@ public class VGC extends VResource {
 
     public static final String CLIPPING_RECTS = "clippingRects";
 
-    public static final String FILL_ROLES = "fillRoles";
-
     public static final String FILL_RULE = "fillRule";
 
     public static final String FONT = "font";
 
     public static final String FOREGROUND = "foreground";
+
+    public static final String HOVER_FILLS = "hoverFills";
 
     public static final String INTERPOLATION = "interpolation";
 
@@ -642,6 +649,8 @@ public class VGC extends VResource {
     public static final String LINE_STYLE = "lineStyle";
 
     public static final String LINE_WIDTH = "lineWidth";
+
+    public static final String SELECTION_FILLS = "selectionFills";
 
     public static final String STYLE = "style";
 
@@ -710,8 +719,11 @@ public class VGC extends VResource {
             case "themedCanvas":
                 Serializer.writeKeyValue(writer, "themedCanvas", getThemedCanvas());
                 return;
-            case "fillRoles":
-                Serializer.writeKeyValue(writer, "fillRoles", getFillRoles());
+            case "hoverFills":
+                Serializer.writeKeyValue(writer, "hoverFills", getHoverFills());
+                return;
+            case "selectionFills":
+                Serializer.writeKeyValue(writer, "selectionFills", getSelectionFills());
                 return;
         }
         super.writeProperty(writer, key);

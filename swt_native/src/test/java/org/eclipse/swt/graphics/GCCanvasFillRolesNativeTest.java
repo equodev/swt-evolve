@@ -1,5 +1,6 @@
 package org.eclipse.swt.graphics;
 
+import dev.equo.swt.CanvasFillRoles;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
@@ -51,7 +52,7 @@ class GCCanvasFillRolesNativeTest {
         FlutterBridge.set(new RecordingBridge());
         shell = DartMocks.dartShell(DartMocks.dartDisplay());
         ConfigFlags flags = new ConfigFlags();
-        flags.canvas_fill_roles_by_class = Map.of(Grid.class.getName(), "F6E6D6:hover,DBC7B4:selection");
+        flags.canvas_fill_roles_by_class = Map.of(Grid.class.getName(), CanvasFillRoles.parse("F6E6D6:hover,DBC7B4:selection"));
         Config.setConfigFlags(flags);
     }
 
@@ -65,24 +66,31 @@ class GCCanvasFillRolesNativeTest {
     void a_gc_on_the_listed_class_a_subclass_or_a_child_carries_its_roles() {
         Grid grid = new Grid(shell);
 
-        assertThat(roles(grid)).isEqualTo("F6E6D6:hover,DBC7B4:selection");
-        assertThat(roles(new FrozenGrid(shell))).isEqualTo("F6E6D6:hover,DBC7B4:selection");
-        assertThat(roles(new Composite(grid, SWT.NONE))).isEqualTo("F6E6D6:hover,DBC7B4:selection");
+        for (Control control : new Control[] {grid, new FrozenGrid(shell), new Composite(grid, SWT.NONE)}) {
+            int[][] fills = fills(control);
+            assertThat(fills[0]).containsExactly(0xF6E6D6);
+            assertThat(fills[1]).containsExactly(0xDBC7B4);
+        }
     }
 
     @Test
     void an_unlisted_control_carries_no_roles_on_the_wire() throws IOException {
         Composite unlisted = new Composite(shell, SWT.NONE);
 
-        assertThat(roles(unlisted)).isNull();
-        assertThat(json(unlisted)).doesNotContain("fillRoles");
-        assertThat(json(new Grid(shell))).contains("\"fillRoles\":\"F6E6D6:hover,DBC7B4:selection\"");
+        assertThat(fills(unlisted)[0]).isNull();
+        assertThat(fills(unlisted)[1]).isNull();
+        assertThat(json(unlisted)).doesNotContain("hoverFills").doesNotContain("selectionFills");
+        assertThat(json(new Grid(shell)))
+                .contains("\"hoverFills\":[" + 0xF6E6D6 + "]")
+                .contains("\"selectionFills\":[" + 0xDBC7B4 + "]");
     }
 
-    private static String roles(Control control) {
+    /** The hover and the selection fills a GC on {@code control} carries. */
+    private static int[][] fills(Control control) {
         GC gc = new GC(control);
         try {
-            return ((VGC) ((DartGC) gc.getImpl()).getValue()).getFillRoles();
+            VGC value = (VGC) ((DartGC) gc.getImpl()).getValue();
+            return new int[][] {value.getHoverFills(), value.getSelectionFills()};
         } finally {
             gc.dispose();
         }
