@@ -695,7 +695,6 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this.background, newValue)) {
             getValue().markDirty(VTableItem.BACKGROUND);
         }
@@ -906,7 +905,6 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             getValue().markDirty(VTableItem.FOREGROUND);
         }

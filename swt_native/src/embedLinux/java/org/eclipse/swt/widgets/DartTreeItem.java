@@ -978,7 +978,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this.background, newValue)) {
             getValue().markDirty(VTreeItem.BACKGROUND);
         }
@@ -1206,7 +1205,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             getValue().markDirty(VTreeItem.FOREGROUND);
         }

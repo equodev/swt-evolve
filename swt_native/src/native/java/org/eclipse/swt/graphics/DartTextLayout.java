@@ -308,8 +308,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics runMetrics = style != null && style.font != null && !style.font.isDisposed() ? org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(style.font, 1) : base;
                 int rise = style != null ? style.rise : 0;
                 // Runs meet on the baseline they are drawn on, so the base run's own offset carries over to every run.
-                int runY = lineY + _lineAscent[line] - base.ascent - (org.eclipse.swt.custom.StyledTextHelper.drawnAscent(runFont)
-                        - org.eclipse.swt.custom.StyledTextHelper.drawnAscent(_defaultFont())) - rise;
+                int runY = lineY + _lineAscent[line] - base.ascent - (org.eclipse.swt.custom.StyledTextHelper.drawnAscent(runFont) - org.eclipse.swt.custom.StyledTextHelper.drawnAscent(_defaultFont())) - rise;
                 gc.setFont(runFont != null ? runFont : gcFont);
                 gc.setForeground(selected ? selectionForeground : style != null && style.foreground != null ? style.foreground : gcForeground);
                 boolean opaque = style != null && style.background != null;

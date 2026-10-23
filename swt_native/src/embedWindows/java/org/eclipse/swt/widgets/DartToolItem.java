@@ -580,7 +580,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VToolItem.BACKGROUND);
         }
@@ -745,7 +744,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VToolItem.FOREGROUND);
         }

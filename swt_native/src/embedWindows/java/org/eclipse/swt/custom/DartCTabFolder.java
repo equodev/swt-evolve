@@ -3479,7 +3479,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         color = GraphicsUtils.copyColor(color);
         if (inDispose)
             return;
-        checkWidget();
         if (!java.util.Objects.equals(this.selectionBackground, color)) {
             getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         }
