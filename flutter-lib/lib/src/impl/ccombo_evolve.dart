@@ -235,10 +235,17 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// selection: the menu's own highlight must neither show in the field nor be reported on Enter.
   bool _listKeyInFlight = false;
 
+  /// Set from an Enter in this CCombo until its release. Java answers that Enter, open list or not;
+  /// the field submits the entry the menu last highlighted, which is no Selection.
+  bool _enterHeld = false;
+
   // HardwareKeyboard handlers run before the key reaches the focused menu.
   bool _handleListKey(KeyEvent event) {
-    if (event is KeyUpEvent || !_menuController.isOpen) return false;
     final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      _enterHeld = event is! KeyUpEvent && _isFocused;
+    }
+    if (event is KeyUpEvent || !_menuController.isOpen) return false;
     if (_isListNavigationKey(key)) {
       _listKeyInFlight = true;
       scheduleMicrotask(() {
@@ -260,7 +267,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   }
 
   void _onDropdownSelected(String? value) {
-    if (value == null || _listKeyInFlight) {
+    if (value == null || _listKeyInFlight || _enterHeld) {
       _restoreSelectedText();
     } else {
       onChanged(value);

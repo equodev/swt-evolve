@@ -68,6 +68,16 @@ String _field(WidgetTester tester) =>
 void main() {
   const down = LogicalKeyboardKey.arrowDown;
 
+  testWidgets('editable: Enter on the closed list reports no Selection', (tester) async {
+    final events = await _openAndPress(
+        tester, _combo(0), [LogicalKeyboardKey.escape, LogicalKeyboardKey.enter]);
+
+    expect(find.text('TWT'), findsNothing, reason: 'sanity: the list is closed');
+    expect(events.where((e) => e.$1.startsWith('Selection/')), isEmpty,
+        reason: 'Java fires DefaultSelection for this Enter; the field submitting the entry the '
+            'menu last highlighted is no Selection');
+  });
+
   for (final (name, style) in [('editable', 0), ('READ_ONLY', SWT.READ_ONLY)]) {
     testWidgets('$name: opening the list gives the combo focus', (tester) async {
       final events = await _openAndPress(tester, _combo(style), []);

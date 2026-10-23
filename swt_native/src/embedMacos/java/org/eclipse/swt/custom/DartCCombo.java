@@ -1658,7 +1658,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     void textEvent(Event event) {
-        if (CComboHelper.routeToOpenList(this, event))
+        if (CComboHelper.routeToOpenList(this, event) || CComboHelper.keyDefaultAction(this, event))
             return;
         switch(event.type) {
             case SWT.FocusIn:
