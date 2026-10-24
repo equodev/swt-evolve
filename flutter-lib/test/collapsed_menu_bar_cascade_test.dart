@@ -121,6 +121,15 @@ Future<void> _click(WidgetTester tester, TestGesture mouse, Finder target) async
   await tester.pumpAndSettle();
 }
 
+// The pointer arrives and presses before a frame runs, as a quick click does.
+Future<void> _clickRightAway(WidgetTester tester, TestGesture mouse, Finder target) async {
+  final at = tester.getCenter(target);
+  await mouse.moveTo(at);
+  await mouse.down(at);
+  await mouse.up();
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('a click on a title opens its menu', (tester) async {
     await _openCollapsedBar(tester);
@@ -128,9 +137,19 @@ void main() {
     await _click(tester, mouse, find.byIcon(Icons.menu));
     expect(find.text('File'), findsOneWidget, reason: 'the collapsed bar must list its titles');
 
-    await _click(tester, mouse, find.text('File'));
+    await _clickRightAway(tester, mouse, find.text('File'));
 
     expect(find.text('Exit'), findsOneWidget, reason: "File's menu must open");
+  });
+
+  testWidgets('a click on a title its hover opened keeps the menu open', (tester) async {
+    await _openCollapsedBar(tester);
+    final mouse = await _mouse(tester);
+    await _click(tester, mouse, find.byIcon(Icons.menu));
+
+    await _click(tester, mouse, find.text('File'));
+
+    expect(find.text('Exit'), findsOneWidget, reason: "the click must not close File's menu");
   });
 
   testWidgets('hovering a title opens its menu', (tester) async {
