@@ -2517,6 +2517,10 @@ public class DartTable extends DartComposite implements ITable {
 
     int virtualWindowEnd;
 
+    String typedText = "";
+
+    long typedAt;
+
     public void _addEditor(TableEditor value) {
         TableEditor[] result = ControlEditorHelper.addEditor(editors, value, TableEditor.class);
         if (result != editors) {

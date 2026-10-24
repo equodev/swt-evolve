@@ -2890,6 +2890,10 @@ public class DartTable extends DartComposite implements ITable {
 
     int virtualWindowEnd;
 
+    String typedText = "";
+
+    long typedAt;
+
     boolean checkData(TableItem item, int index) {
         return checkData(item);
     }

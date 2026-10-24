@@ -365,13 +365,6 @@ public class TableHelper {
     /** How long a pause ends the text typed so far, so the next key starts a search of its own. */
     static final int TYPING_TIMEOUT_MS = 1000;
 
-    private static final class Typed {
-        String text = "";
-        long at;
-    }
-
-    private static final java.util.Map<DartTable, Typed> TYPED = new java.util.WeakHashMap<>();
-
     /**
      * Selects the row whose text starts with what was typed, as Win32's list view does. A first
      * letter searches from the row after the selected one, so typing it again steps through the rows
@@ -383,13 +376,13 @@ public class TableHelper {
         if (!Character.isLetterOrDigit(c))
             return false;
         long now = System.currentTimeMillis();
-        Typed typed = TYPED.computeIfAbsent(table, t -> new Typed());
-        if (now - typed.at > TYPING_TIMEOUT_MS)
-            typed.text = "";
-        typed.at = now;
-        typed.text += Character.toLowerCase(c);
-        boolean repeated = typed.text.chars().allMatch(ch -> ch == typed.text.charAt(0));
-        String prefix = repeated ? typed.text.substring(0, 1) : typed.text;
+        if (now - table.typedAt > TYPING_TIMEOUT_MS)
+            table.typedText = "";
+        table.typedAt = now;
+        String typed = table.typedText + Character.toLowerCase(c);
+        table.typedText = typed;
+        boolean repeated = typed.chars().allMatch(ch -> ch == typed.charAt(0));
+        String prefix = repeated ? typed.substring(0, 1) : typed;
         int count = table.getItemCount();
         int current = table.getSelectionIndex();
         int start = repeated ? current + 1 : Math.max(0, current);
