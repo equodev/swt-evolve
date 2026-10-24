@@ -436,8 +436,9 @@ class VRegistry {
       if (!isAwaiting(channel)) return;
       // Nothing was held for it and nothing describes it: the sender named a widget this client
       // was never given. Recovering works, but it costs a round trip and should not be reachable -
-      // said out loud so that it is noticed rather than absorbed.
-      print('[delivery] unresolved reference $channel: asking for it');
+      // said out loud in debug builds so that it is noticed rather than absorbed; a release build
+      // stays quiet, since the app's console is the user's.
+      if (kDebugMode) print('[delivery] unresolved reference $channel: asking for it');
       EquoCommService.sendPayload(widgetRefreshChannel, '$id');
     });
   }
