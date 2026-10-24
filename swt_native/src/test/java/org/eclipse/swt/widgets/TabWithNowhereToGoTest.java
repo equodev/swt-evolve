@@ -52,6 +52,15 @@ class TabWithNowhereToGoTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("a CCombo is a tab stop: the NO_FOCUS it gives itself leaves the focus to its field")
+    void ccomboIsATabStop() {
+        Composite parent = new Composite(shell(), SWT.NONE);
+        new org.eclipse.swt.custom.CCombo(parent, SWT.NONE);
+
+        assertThat(ControlHelper.hasTabStop(parent)).isTrue();
+    }
+
+    @Test
     @DisplayName("a hidden, disabled or NO_FOCUS control is no tab stop")
     void hiddenDisabledOrNoFocusIsNot() {
         Composite parent = new Composite(shell(), SWT.NONE);

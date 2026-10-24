@@ -39,6 +39,10 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     _lastJavaListVisible = state.listVisible;
   }
 
+  /// Its field keeps the wheel on every native, so the parent reports none.
+  @override
+  bool get keepsWheel => true;
+
   int get _selectedIndex => (state.items ?? const <String>[]).indexOf(state.text ?? '');
 
   // The list is an SWT List: it highlights the selection only, and the pointer over it moves nothing.
@@ -82,6 +86,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       if (open != _javaListTarget) return;
       _javaListTarget = null;
     }
+    // The anchor rebuilds for more than an open or a close: only a change reaches Java.
     if (open == (_lastJavaListVisible ?? false)) return;
     _lastJavaListVisible = open;
     state.listVisible = open;
@@ -184,8 +189,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             textStyle: textStyle,
             onSelected: isEnabled ? _onDropdownSelected : null,
             isHighlighted: _isHighlighted,
-            onListShown: () => scheduleMicrotask(_reportListVisible),
-            onListClosed: () => scheduleMicrotask(_reportListVisible),
+            reportListVisible: () => scheduleMicrotask(_reportListVisible),
             controlHeight: height,
             borderWidth: borderWidth,
           ),
@@ -231,8 +235,16 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// field takes no focus, so there the surface does.
   @override
   void takeFocusOnPress() {
-    if ((state.style & SWT.READ_ONLY) != 0) super.takeFocusOnPress();
+    if ((state.style & SWT.READ_ONLY) != 0) {
+      super.takeFocusOnPress();
+    } else {
+      _focusNode?.requestFocus();
+    }
   }
+
+  /// Every native's field takes the focus on a right press too.
+  @override
+  bool get takesFocusOnSecondaryPress => (state.style & SWT.READ_ONLY) == 0;
 
   void onChanged(String? value) {
     setState(() {
@@ -325,8 +337,9 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final TextStyle textStyle;
   final ValueChanged<String?>? onSelected;
   final bool Function(int index) isHighlighted;
-  final VoidCallback onListShown;
-  final VoidCallback onListClosed;
+  /// Tells Java whether the list is open. Called on every rebuild of the menu anchor, which every
+  /// open and close causes; the report itself drops a state Java already has.
+  final VoidCallback reportListVisible;
   final double? controlHeight;
   final double borderWidth;
 
@@ -342,8 +355,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.textStyle,
     this.onSelected,
     required this.isHighlighted,
-    required this.onListShown,
-    required this.onListClosed,
+    required this.reportListVisible,
     this.controlHeight,
     required this.borderWidth,
   });
@@ -414,6 +426,11 @@ class _StyledDropdownCCombo extends StatelessWidget {
       focusNode: focusNode,
       controller: controller,
       menuController: menuController,
+      // The anchor's builder runs on every open and close, entries or not: an empty list opens too.
+      decorationBuilder: (context, controller) {
+        reportListVisible();
+        return const InputDecoration();
+      },
       expandedInsets: EdgeInsets.zero,
       initialSelection: state.text,
       requestFocusOnTap: !isReadOnly,
@@ -461,13 +478,9 @@ class _StyledDropdownCCombo extends StatelessWidget {
         return DropdownMenuEntry<String>(
           value: item,
           label: item,
-          labelWidget: _EntryLifecycle(
-            onShown: onListShown,
-            onGone: onListClosed,
-            child: HtmlTooltip(
-              html: tooltip,
-              child: labelWidget,
-            ),
+          labelWidget: HtmlTooltip(
+            html: tooltip,
+            child: labelWidget,
           ),
           style: getCComboEntryStyle(widgetTheme, textStyle, width, () => isHighlighted(index)),
         );
@@ -635,33 +648,4 @@ class _StyledSimpleCCombo extends StatelessWidget {
     }
     return Alignment.centerLeft;
   }
-}
-
-/// Reports a list entry entering and leaving the tree, which is the list opening and closing.
-class _EntryLifecycle extends StatefulWidget {
-  final VoidCallback onShown;
-  final VoidCallback onGone;
-  final Widget child;
-
-  const _EntryLifecycle({required this.onShown, required this.onGone, required this.child});
-
-  @override
-  State<_EntryLifecycle> createState() => _EntryLifecycleState();
-}
-
-class _EntryLifecycleState extends State<_EntryLifecycle> {
-  @override
-  void initState() {
-    super.initState();
-    widget.onShown();
-  }
-
-  @override
-  void dispose() {
-    widget.onGone();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
