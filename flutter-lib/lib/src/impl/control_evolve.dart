@@ -627,6 +627,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// the chrome Listener would fire a second event with different coordinates.
   bool get forwardsControlMouseDown => true;
 
+  /// Whether [wrap] sends the MouseDown of this press: [forwardsControlMouseDown], unless the
+  /// control tells its own parts' presses apart from the rest of its area.
+  bool forwardsMouseDownOf(PointerDownEvent event) => forwardsControlMouseDown;
+
   /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
   /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
   /// otherwise every keystroke reaches SWT KeyDown listeners twice.
@@ -870,7 +874,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       onPointerDown: (e) {
         if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
         registerPointerDown(e);
-        if (forwardsControlMouseDown) {
+        if (forwardsMouseDownOf(e)) {
           final event = VEvent()
             ..button = swtButton
             ..x = e.localPosition.dx.round()

@@ -31,7 +31,7 @@ class _RecordingTableSwt extends TableSwt<VTable> {
       calls.add('$ev:${payload?.count}');
 }
 
-VTable _table() => VTable()
+VTable _table({int rows = 2}) => VTable()
   ..id = 1
   ..style = SWT.NONE
   ..enabled = true
@@ -45,12 +45,10 @@ VTable _table() => VTable()
       ..text = 'Col'
   ]
   ..items = [
-    VTableItem()
-      ..id = 10
-      ..texts = ['Row 0'],
-    VTableItem()
-      ..id = 11
-      ..texts = ['Row 1'],
+    for (var i = 0; i < rows; i++)
+      VTableItem()
+        ..id = 10 + i
+        ..texts = ['Row $i'],
   ]
   ..bounds = (VRectangle()
     ..x = 0
@@ -138,4 +136,52 @@ void main() {
             'press before the tap; the row still has to be pressed, once');
     handle.dispose();
   });
+
+  testWidgets('a click on a row of a table that scrolls sends one MouseDown', (tester) async {
+    // A table taller than its rows has a drag of its own in the arena, so the click's tap wins
+    // only after the release. That late tap is the pointer's, already pressed, not a second press.
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 800,
+        height: 400,
+        child: _RecordingTableSwt(value: _table(rows: 40), calls: calls),
+      ),
+    ));
+    await tester.pump();
+
+    final gesture = await tester.startGesture(tester.getCenter(find.text('Row 1')));
+    await tester.pump(const Duration(milliseconds: 40));
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(_countsOf(calls, 'Mouse/MouseDown'), equals([1]));
+    expect(_countsOf(calls, 'Mouse/MouseDoubleClick'), isEmpty);
+  });
+
+  testWidgets('a press past the last column is the Table MouseDown, and a cell press stays one', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 800,
+        height: 400,
+        child: _RecordingTableSwt(value: _table(), calls: calls),
+      ),
+    ));
+    await tester.pump();
+
+    // The one column is 400 wide in an 800-wide table: the right half of a row is no cell's.
+    final row = tester.getCenter(find.text('Row 1'));
+    await tester.tapAt(Offset(700, row.dy));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(_countsOf(calls, 'Mouse/MouseDown'), equals([1]));
+
+    calls.clear();
+    await tester.tap(find.text('Row 1'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(_countsOf(calls, 'Mouse/MouseDown'), equals([1]));
+  });
 }
+
