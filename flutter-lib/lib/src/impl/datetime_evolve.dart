@@ -9,7 +9,9 @@ import 'utils/widget_utils.dart';
 
 const _kDtButtonWidth = 9.0;
 const _kDtIconSize = 9.0;
-const _kDtDropDownWidth = 9.0;
+// A drop-down date's calendar button is as wide as a Win32 scroll bar (SM_CXVSCROLL), as there.
+const _kDtCalendarButtonWidth = 17.0;
+const _kDtCalendarIconSize = 16.0;
 
 class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     extends CompositeImpl<T, V> {
@@ -287,8 +289,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       enabled,
       fields,
       '/',
-      extraTrailing: hasDropDown
-          ? _DropDownArrow(
+      calendarButton: hasDropDown
+          ? _CalendarButton(
               enabled: enabled,
               isOpen: _calendarDropped,
               theme: theme,
@@ -313,7 +315,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     bool enabled,
     List<_FieldDef> fields,
     String separator, {
-    Widget? extraTrailing,
+    Widget? calendarButton,
   }) {
     final selIdx = _selectedField.clamp(0, fields.length - 1);
     final background = _ground(
@@ -466,8 +468,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                     )
                   else
                     fieldRow(),
-                  spinnerButtons(),
-                  if (extraTrailing != null) extraTrailing,
+                  // A drop-down date is set from its calendar, so the button replaces the stepper.
+                  calendarButton ?? spinnerButtons(),
                 ],
               ),
             ),
@@ -596,13 +598,13 @@ class _FieldSeparator extends StatelessWidget {
 
 // ── Drop-down arrow button ─────────────────────────────────────────────────
 
-class _DropDownArrow extends StatefulWidget {
+class _CalendarButton extends StatefulWidget {
   final bool enabled;
   final bool isOpen;
   final SpinnerThemeExtension theme;
   final VoidCallback onTap;
 
-  const _DropDownArrow({
+  const _CalendarButton({
     required this.enabled,
     required this.isOpen,
     required this.theme,
@@ -610,10 +612,10 @@ class _DropDownArrow extends StatefulWidget {
   });
 
   @override
-  State<_DropDownArrow> createState() => _DropDownArrowState();
+  State<_CalendarButton> createState() => _CalendarButtonState();
 }
 
-class _DropDownArrowState extends State<_DropDownArrow> {
+class _CalendarButtonState extends State<_CalendarButton> {
   bool _isHovered = false;
 
   @override
@@ -623,9 +625,10 @@ class _DropDownArrowState extends State<_DropDownArrow> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: widget.enabled ? widget.onTap : null,
         child: Container(
-          width: _kDtDropDownWidth,
+          width: _kDtCalendarButtonWidth,
           decoration: BoxDecoration(
             color: _isHovered && widget.enabled
                 ? t.buttonHoverColor
@@ -637,7 +640,7 @@ class _DropDownArrowState extends State<_DropDownArrow> {
           child: Center(
             child: Icon(
               widget.isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: _kDtIconSize,
+              size: _kDtCalendarIconSize,
               color: widget.enabled ? t.iconColor : t.disabledIconColor,
             ),
           ),

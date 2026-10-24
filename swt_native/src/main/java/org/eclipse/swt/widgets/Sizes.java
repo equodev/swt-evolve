@@ -313,13 +313,12 @@ public class Sizes {
             }
             height = 32;
         } else {
+            // A drop-down date has the calendar button instead of the up/down buttons, and it is wider.
+            int buttons = (style & SWT.DROP_DOWN) != 0 ? 24 : 20;
             if ((style & SWT.SHORT) != 0) {
-                width = 80;   // MM + / + YYYY + spinner + border → 21+6+37+20+2 - 6
+                width = 60 + buttons;  // MM + / + YYYY + border → 21+6+37+2 - 6
             } else {
-                width = 107;  // MM + / + DD + / + YYYY + spinner + border → 21+6+21+6+37+20+2 - 6
-            }
-            if ((style & SWT.DROP_DOWN) != 0) {
-                width += 24;  // _DropDownArrow: buttonWidth(20) + 4
+                width = 87 + buttons;  // MM + / + DD + / + YYYY + border → 21+6+21+6+37+2 - 6
             }
             height = 32;
         }
