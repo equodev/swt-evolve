@@ -489,6 +489,8 @@ public class GallerySnippet {
         DateTime date = new DateTime(progressGroup, SWT.DATE | SWT.BORDER);
         date.setDate(2026, 6, 15); // months are 0-based: July 15, 2026
         date.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Date changed")));
+        DateTime dropDownDate = new DateTime(progressGroup, SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN | SWT.BORDER);
+        dropDownDate.setDate(2026, 6, 15);
 
         // Menu / CLabel / Canvas — the CLabel carries the popup menu (each item posts to the
         // status Label) and the Canvas reports its mouse events the same way. The Canvas gets
