@@ -157,7 +157,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     dartDisplay.addShell((Shell) dartShell.getApi());
                     if (injected == null) {
                         if (dartShell.parent == null) {
-                            dartShell.bounds = dartDisplay.bounds;
+                            DisplayBridge surface = dartDisplay.displayBridge;
+                            // No surface (a harness that clears the bridge once the Display exists): nothing draws it.
+                            if (surface != null) surface.sizeNewTopLevelShell(dartShell);
+                            else dartShell.bounds = dartDisplay.bounds;
                         } else if (dartShell.bounds.width == 0 && dartShell.bounds.height == 0) {
                             Rectangle db = dartDisplay.bounds;
                             int w = Math.max(400, db.width * 3 / 5);
@@ -172,6 +175,52 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
         if (injected != null) return injected;
         return null;
+    }
+
+    /**
+     * Top-level shells still at the size {@link #sizeNewTopLevelShell} gave them: the application has
+     * not set their bounds. Display thread only.
+     */
+    private final java.util.Set<Shell> unsizedShells =
+            java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /**
+     * Gives a new top-level shell the size a native one opens at, 5/8 of the monitor, centered on it,
+     * and sends it sized: a shell sent unsized is drawn at a placeholder size, which the client then
+     * reports back as the shell's own. Before any client has reported, the monitor is a placeholder,
+     * so {@link #resizeUnsizedShells} applies it again from the real one.
+     */
+    void sizeNewTopLevelShell(DartShell shell) {
+        shell.bounds = fiveEighths(forDisplay.bounds);
+        shell.laidOut = true;
+        unsizedShells.add(shell.getApi());
+    }
+
+    private static Rectangle fiveEighths(Rectangle monitor) {
+        int width = monitor.width * 5 / 8, height = monitor.height * 5 / 8;
+        return new Rectangle(monitor.x + (monitor.width - width) / 2, monitor.y + (monitor.height - height) / 2,
+                width, height);
+    }
+
+    /** Whether {@code shell} still has the size it was created with, the application never having set one. */
+    protected boolean isUnsized(Shell shell) {
+        return unsizedShells.contains(shell);
+    }
+
+    /** The application set {@code control}'s bounds: if it is a top-level shell, it is no longer unsized. */
+    protected void noteBoundsSet(DartControl control) {
+        if (!applyingClientBounds && control instanceof DartShell) unsizedShells.remove(((DartShell) control).getApi());
+    }
+
+    /** Re-applies 5/8 of the now real monitor ({@code display.bounds}) to the shells nobody has sized. */
+    protected void resizeUnsizedShells(DartDisplay display) {
+        applyClientBounds(() -> {
+            for (Shell shell : new java.util.ArrayList<>(unsizedShells)) {
+                if (shell.isDisposed()) continue;
+                Rectangle sized = fiveEighths(display.bounds);
+                if (!sized.equals(shell.getBounds())) shell.setBounds(sized);
+            }
+        });
     }
 
     /**
@@ -390,8 +439,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
         java.util.Map<Shell, Rectangle> placedOnDefault = clientViewportApplied ? null : shellBounds(display);
         Rectangle defaultBounds = display.bounds;
+        boolean firstReport = !clientViewportApplied;
         clientViewportApplied = true;
         display.bounds = viewport;
+        if (firstReport) resizeUnsizedShells(display);
         applyClientBounds(() -> resizeMainShells(display, viewport));
         if (placedOnDefault != null) repositionShells(display, placedOnDefault, defaultBounds);
         return true;
@@ -408,20 +459,22 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /**
      * Moves the shells placed before any client reported its viewport, so against the Display's default
      * bounds. A shell centered on its reference is centered on that reference's new bounds: the
-     * reference is its parent shell, or the Display when there is none or the parent still has the
-     * bounds a shell inherits from the Display. Any other shell keeps its position, moved only as far
-     * as needed to stay inside the viewport. A shell placed outside its reference is left alone.
+     * reference is its parent shell, or the Display when there is none or nothing has sized the
+     * parent. Any other shell keeps its position, moved only as far as needed to stay inside the
+     * viewport. A shell placed outside its reference is left alone.
      */
     private void repositionShells(DartDisplay display, java.util.Map<Shell, Rectangle> placed, Rectangle defaultBounds) {
         Shell main = mainShell(display);
         Rectangle viewport = display.bounds;
+        // Read before any move below: moving a shell counts as sizing it.
+        java.util.Set<Shell> unsized = new java.util.HashSet<>(unsizedShells);
         for (java.util.Map.Entry<Shell, Rectangle> entry : placed.entrySet()) {
             Shell shell = entry.getKey();
             if (shell.isDisposed() || shell == main || shellWindows.containsKey(shell)) continue;
             Rectangle at = entry.getValue();
             Shell parent = shell.getParent() instanceof Shell ? (Shell) shell.getParent() : null;
             boolean inParent = parent != null && !parent.isDisposed() && placed.containsKey(parent)
-                    && !placed.get(parent).equals(defaultBounds);
+                    && !unsized.contains(parent);
             Rectangle before = inParent ? placed.get(parent) : defaultBounds;
             Rectangle after = inParent ? parent.getBounds() : viewport;
             if (before.equals(after) || !before.contains(at.x, at.y)) continue;
@@ -1590,6 +1643,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     // the surfaces that have one override these and fall back to super for the rest.
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
+        noteBoundsSet(control);
         // Applying a client-reported resize: the window already has this geometry, so echoing it
         // back fights the window manager -- the same loop the main shell avoids.
         if (applyingClientBounds || bounds == null) return;
@@ -1609,7 +1663,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        if (fullScreen) fillMonitorIfUnsized(control);
         setShellWindowState(control, fullScreen, ShellWindow.STATE_FULLSCREEN);
+    }
+
+    /** A full-screen shell covers the monitor: one nobody sized is not left where it was centered. */
+    protected void fillMonitorIfUnsized(DartControl control) {
+        if (!(control instanceof DartShell) || !isUnsized(((DartShell) control).getApi())) return;
+        Rectangle monitor = forDisplay.bounds;
+        control.bounds = new Rectangle(monitor.x, monitor.y, monitor.width, monitor.height);
+        control.getValue().markDirty(VControl.BOUNDS);
     }
 
     /** The window state {@code shell} asks for. */
