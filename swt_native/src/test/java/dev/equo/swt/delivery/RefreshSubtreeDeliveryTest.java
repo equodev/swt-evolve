@@ -1,8 +1,8 @@
-package dev.equo.swt;
+package dev.equo.swt.delivery;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import dev.equo.swt.Config;
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.FrameRefs;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -67,26 +67,15 @@ class RefreshSubtreeDeliveryTest {
         int requests = 0;
         Set<Long> missing = new LinkedHashSet<>(Set.of((long) FlutterBridge.id(part)));
         while (!missing.isEmpty() && requests < 10) {
-            for (long id : missing) FlutterBridge.handleWidgetRefresh(Long.toString(id));
+            for (long id : missing) FlutterBridge.resendWidget(id);
             requests++;
             bridge.comm.sent.clear();
             FlutterBridge.update();
-            missing.clear();
-            for (var frame : bridge.comm.sent) collectNamed(JsonParser.parseString(frame.json), missing);
+            missing = FrameRefs.of(bridge.comm.sent).unresolved;
         }
 
         assertThat(requests)
                 .as("requests to rebuild a part four composites deep that the client let go of")
                 .isEqualTo(1);
-    }
-
-    private static void collectNamed(JsonElement element, Set<Long> named) {
-        if (element.isJsonArray()) {
-            for (JsonElement e : element.getAsJsonArray()) collectNamed(e, named);
-        } else if (element.isJsonObject()) {
-            JsonObject object = element.getAsJsonObject();
-            if (object.has("_r") && object.has("id")) named.add(object.get("id").getAsLong());
-            for (var entry : object.entrySet()) collectNamed(entry.getValue(), named);
-        }
     }
 }

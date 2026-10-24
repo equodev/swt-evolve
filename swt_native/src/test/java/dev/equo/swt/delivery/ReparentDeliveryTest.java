@@ -2,6 +2,7 @@ package dev.equo.swt.delivery;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.FrameRefs;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -17,13 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -110,28 +104,11 @@ class ReparentDeliveryTest {
 
         // Read in delivery order, as the client applies them: a name resolves only to something
         // described before it.
-        Set<Long> described = new HashSet<>();
-        Set<Long> unresolved = new LinkedHashSet<>();
-        for (var frame : bridge.comm.sent) walk(JsonParser.parseString(frame.json), described, unresolved);
+        FrameRefs refs = FrameRefs.of(bridge.comm.sent);
         for (Widget w : new Widget[]{part, inner, leaf}) {
-            assertThat(described).as("%s is described", w).contains((long) w.hashCode());
-            assertThat(unresolved).as("%s is never named before it is described", w)
+            assertThat(refs.described).as("%s is described", w).contains((long) w.hashCode());
+            assertThat(refs.unresolved).as("%s is never named before it is described", w)
                     .doesNotContain((long) w.hashCode());
-        }
-    }
-
-    private static void walk(JsonElement element, Set<Long> described, Set<Long> unresolved) {
-        if (element.isJsonArray()) {
-            for (JsonElement e : element.getAsJsonArray()) walk(e, described, unresolved);
-        } else if (element.isJsonObject()) {
-            JsonObject object = element.getAsJsonObject();
-            if (object.has("id") && object.has("_r")) {
-                long id = object.get("id").getAsLong();
-                if (!described.contains(id)) unresolved.add(id);
-            } else if (object.has("id") && object.has("_s") && !object.has("_b")) {
-                described.add(object.get("id").getAsLong());
-            }
-            for (var entry : object.entrySet()) walk(entry.getValue(), described, unresolved);
         }
     }
 
