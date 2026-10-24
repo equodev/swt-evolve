@@ -4,6 +4,7 @@
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -150,6 +151,24 @@ void main() {
     await _click(tester, mouse, find.text('File'));
 
     expect(find.text('Exit'), findsOneWidget, reason: "the click must not close File's menu");
+  });
+
+  // With the semantics tree on, Flutter web turns a click on a button into a semantics tap.
+  testWidgets('a semantics tap on a title its hover opened keeps the menu open', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await _openCollapsedBar(tester);
+    final mouse = await _mouse(tester);
+    await _click(tester, mouse, find.byIcon(Icons.menu));
+    await mouse.moveTo(tester.getCenter(find.text('File')));
+    await tester.pumpAndSettle();
+    expect(find.text('Exit'), findsOneWidget, reason: "File's menu must open on hover");
+
+    tester.binding.pipelineOwner.semanticsOwner!
+        .performAction(tester.getSemantics(find.text('File')).id, SemanticsAction.tap);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exit'), findsOneWidget, reason: "the tap must not close File's menu");
+    semantics.dispose();
   });
 
   testWidgets('hovering a title opens its menu', (tester) async {
