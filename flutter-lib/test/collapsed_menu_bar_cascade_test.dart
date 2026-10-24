@@ -171,6 +171,20 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('a semantics tap on a title nobody hovered opens its menu', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await _openCollapsedBar(tester);
+    final mouse = await _mouse(tester);
+    await _click(tester, mouse, find.byIcon(Icons.menu));
+    final file = tester.getSemantics(find.text('File'));
+
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(file.id, SemanticsAction.tap);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exit'), findsOneWidget, reason: "File's menu must open");
+    semantics.dispose();
+  });
+
   testWidgets('hovering a title opens its menu', (tester) async {
     await _openCollapsedBar(tester);
     final mouse = await _mouse(tester);
