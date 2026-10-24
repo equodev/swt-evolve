@@ -6,8 +6,10 @@ import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartWidget;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Widget;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,6 +17,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,6 +86,53 @@ class ReparentDeliveryTest {
         assertThat(payload)
                 .as("described, so it arrives with a stamp of its own")
                 .contains("{\"id\":" + moved.hashCode() + ",\"swt\":\"Composite\",\"_s\":");
+    }
+
+    @Test
+    @DisplayName("a control moved into a hidden shell and back arrives with everything under it described")
+    void aControlBackFromAHiddenShellIsDescribedWhole() {
+        Shell shell = Mocks.shell();
+        Composite host = new Composite(shell, SWT.NONE);
+        Shell hidden = new Shell(shell, SWT.NONE);
+        Composite part = new Composite(host, SWT.NONE);
+        Composite inner = new Composite(part, SWT.NONE);
+        Label leaf = new Label(inner, SWT.NONE);
+        leaf.setText("leaf");
+        settle(host);
+
+        // Nothing the client is shown holds the part any more, so it lets go of it and of
+        // everything under it.
+        part.setParent(hidden);
+        FlutterBridge.update();
+        bridge.comm.sent.clear();
+        part.setParent(host);
+        FlutterBridge.update();
+
+        // Read in delivery order, as the client applies them: a name resolves only to something
+        // described before it.
+        Set<Long> described = new HashSet<>();
+        Set<Long> unresolved = new LinkedHashSet<>();
+        for (var frame : bridge.comm.sent) walk(JsonParser.parseString(frame.json), described, unresolved);
+        for (Widget w : new Widget[]{part, inner, leaf}) {
+            assertThat(described).as("%s is described", w).contains((long) w.hashCode());
+            assertThat(unresolved).as("%s is never named before it is described", w)
+                    .doesNotContain((long) w.hashCode());
+        }
+    }
+
+    private static void walk(JsonElement element, Set<Long> described, Set<Long> unresolved) {
+        if (element.isJsonArray()) {
+            for (JsonElement e : element.getAsJsonArray()) walk(e, described, unresolved);
+        } else if (element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            if (object.has("id") && object.has("_r")) {
+                long id = object.get("id").getAsLong();
+                if (!described.contains(id)) unresolved.add(id);
+            } else if (object.has("id") && object.has("_s") && !object.has("_b")) {
+                described.add(object.get("id").getAsLong());
+            }
+            for (var entry : object.entrySet()) walk(entry.getValue(), described, unresolved);
+        }
     }
 
     /**
