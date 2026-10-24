@@ -64,7 +64,10 @@ void main() {
     await tester.tapAt(const Offset(_width - 15, _height / 2));
     await tester.pumpAndSettle();
 
-    expect(find.text('10'), findsOneWidget, reason: 'the month was not stepped');
+    // The calendar has a day 10 too, but it is drawn in an overlay, outside the field.
+    expect(find.descendant(of: find.byType(DateTimeSwt<VDateTime>), matching: find.text('10')),
+        findsOneWidget,
+        reason: 'the month was not stepped');
     expect(find.text('October 2026'), findsOneWidget, reason: 'the calendar is open on the date');
   });
 
