@@ -753,6 +753,7 @@ public class GallerySnippet {
             spinner.setSelection(25);
             progressBar.setSelection(30);
             date.setDate(2026, 6, 15);
+            dropDownDate.setDate(2026, 6, 15);
             popup.setVisible(false); // a failed scenario may leave the context menu up
             tip.setVisible(false);
             if (browserReloaded[0]) { // restore silently (the TitleListener ignores the original title)
