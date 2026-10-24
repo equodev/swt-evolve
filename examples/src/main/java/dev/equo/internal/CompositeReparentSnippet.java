@@ -1,4 +1,4 @@
-package dev.equo;
+package dev.equo.internal;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.*;
  * back, tree branches collapsed and expanded, tabs switched, a part hidden and shown. Each step
  * first names itself in the shell title, then acts.
  */
-public class DeliveryReparentSnippet {
+public class CompositeReparentSnippet {
 
     static final int DEPTH = 4;
 
