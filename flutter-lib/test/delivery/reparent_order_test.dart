@@ -7,6 +7,7 @@
 // let go of is only forgotten once every frame received with it is applied, so a new parent that
 // merely names it still finds it.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -190,6 +191,58 @@ void main() {
     ]);
 
     expectTheMoveLanded('one run');
+    expect(sent, isNot(contains(EquoCommBase.widgetRefreshChannel)),
+        reason: 'nothing was missing, so nothing is asked for');
+  });
+
+  test('one run whose handler awaits between the old parent letting go and the new parent naming it',
+      () async {
+    // The run is applied in several microtask turns when an entry's handler awaits, so the
+    // widget stays unheld across them: only the end of the whole run may forget it.
+    settle();
+    final sent = <String>[];
+    EquoCommBase.sendObserverForTesting = (actionId, _) => sent.add(actionId);
+    final release = Completer<void>();
+    const awaiting = 'Test/awaits';
+    EquoCommService.onRaw(awaiting, (_) => release.future);
+    addTearDown(() {
+      EquoCommBase.sendObserverForTesting = null;
+      EquoCommService.remove(awaiting);
+    });
+
+    await _deliver(EquoCommBase.batchEvent, [
+      [
+        _mover,
+        {
+          'swt': 'Composite',
+          'id': _moverId,
+          '_s': 21,
+          'style': SWT.NONE,
+          'children': [
+            {'swt': 'Label', 'id': _underMoverId, 'style': SWT.NONE, '_r': 1},
+          ],
+        },
+      ],
+      [_oldParent, _oldParentLettingGo(22)],
+      [awaiting, <String, dynamic>{}],
+      [
+        _newParent,
+        {
+          'swt': 'Composite',
+          'id': 7,
+          '_s': 23,
+          '_b': 3,
+          '_d': ['children'],
+          'children': [
+            {'swt': 'Composite', 'id': _moverId, 'style': SWT.NONE, '_r': 1},
+          ],
+        },
+      ],
+    ]);
+    release.complete();
+    await Future<void>.delayed(Duration.zero);
+
+    expectTheMoveLanded('one run, awaiting halfway');
     expect(sent, isNot(contains(EquoCommBase.widgetRefreshChannel)),
         reason: 'nothing was missing, so nothing is asked for');
   });
