@@ -1520,7 +1520,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setListVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (!java.util.Objects.equals(this.listVisible, newValue)) {
+        if (this.listVisible != newValue) {
             getValue().markDirty(VCCombo.LIST_VISIBLE);
         }
         this.listVisible = newValue;
@@ -1613,7 +1613,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setTextLimit(int limit) {
         int newValue = limit;
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+        if (this.textLimit != newValue) {
             getValue().markDirty(VCCombo.TEXT_LIMIT);
         }
         this.textLimit = newValue;

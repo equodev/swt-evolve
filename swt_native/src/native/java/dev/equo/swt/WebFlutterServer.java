@@ -341,7 +341,7 @@ public class WebFlutterServer {
     }
 
     private void launchBrowserWithCommand(String command, String url) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         ProcessBuilder pb;
         if (os.contains("mac")) {
             pb = new ProcessBuilder("open", "-a", command, url);
@@ -649,7 +649,7 @@ public class WebFlutterServer {
         private static String getMimeType(String fileName) {
             int dot = fileName.lastIndexOf('.');
             if (dot >= 0 && dot < fileName.length() - 1) {
-                String ext = fileName.substring(dot + 1).toLowerCase();
+                String ext = fileName.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
                 return MIME_TYPES.getOrDefault(ext, DEFAULT_MIME);
             }
             return DEFAULT_MIME;

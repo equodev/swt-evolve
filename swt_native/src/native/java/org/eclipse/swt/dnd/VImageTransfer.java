@@ -7,7 +7,6 @@ import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
 
-@CompiledJson()
 public class VImageTransfer extends VByteArrayTransfer {
 
     protected VImageTransfer() {
@@ -42,6 +41,24 @@ public class VImageTransfer extends VByteArrayTransfer {
                 writer.writeNull();
             else
                 writer.serializeObject(api.getImpl());
+        }
+    }
+
+    @JsonConverter(target = VImageTransfer.class)
+    public static class EmptyJson {
+
+        public static VImageTransfer read(JsonReader<?> reader) throws IOException {
+            if (reader.wasNull())
+                return null;
+            reader.skip();
+            return new VImageTransfer();
+        }
+
+        public static void write(JsonWriter writer, VImageTransfer value) {
+            if (value == null)
+                writer.writeNull();
+            else
+                writer.writeAscii("{}");
         }
     }
 }

@@ -3406,7 +3406,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setAntialias(int antialias) {
         int newValue = antialias;
-        if (!java.util.Objects.equals(this.antialias, newValue)) {
+        if (this.antialias != newValue) {
             getValue().markDirty(VGC.ANTIALIAS);
         }
         checkNonDisposed();
@@ -3462,7 +3462,7 @@ public final class DartGC extends DartResource implements IGC {
     public void setAlpha(int alpha) {
         alpha &= 0xFF;
         int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
+        if (this.alpha != newValue) {
             getValue().markDirty(VGC.ALPHA);
         }
         checkNonDisposed();
@@ -3828,7 +3828,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setFillRule(int rule) {
         int newValue = rule;
-        if (!java.util.Objects.equals(this.fillRule, newValue)) {
+        if (this.fillRule != newValue) {
             getValue().markDirty(VGC.FILL_RULE);
         }
         checkNonDisposed();
@@ -4025,7 +4025,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setInterpolation(int interpolation) {
         int newValue = interpolation;
-        if (!java.util.Objects.equals(this.interpolation, newValue)) {
+        if (this.interpolation != newValue) {
             getValue().markDirty(VGC.INTERPOLATION);
         }
         checkNonDisposed();
@@ -4235,7 +4235,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineCap(int cap) {
         int newValue = cap;
-        if (!java.util.Objects.equals(this.lineCap, newValue)) {
+        if (this.lineCap != newValue) {
             getValue().markDirty(VGC.LINE_CAP);
         }
         checkNonDisposed();
@@ -4287,7 +4287,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineDash(int[] dashes) {
         int[] newValue = dashes;
-        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         checkNonDisposed();
@@ -4348,7 +4348,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineJoin(int join) {
         int newValue = join;
-        if (!java.util.Objects.equals(this.lineJoin, newValue)) {
+        if (this.lineJoin != newValue) {
             getValue().markDirty(VGC.LINE_JOIN);
         }
         checkNonDisposed();
@@ -4398,7 +4398,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineStyle(int lineStyle) {
         int newValue = lineStyle;
-        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+        if (this.lineStyle != newValue) {
             getValue().markDirty(VGC.LINE_STYLE);
         }
         checkNonDisposed();
@@ -4460,7 +4460,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineWidth(int lineWidth) {
         int newValue = lineWidth;
-        if (!java.util.Objects.equals(this.lineWidth, newValue)) {
+        if (this.lineWidth != newValue) {
             getValue().markDirty(VGC.LINE_WIDTH);
         }
         checkNonDisposed();
@@ -4514,7 +4514,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setXORMode(boolean xor) {
         boolean newValue = xor;
-        if (!java.util.Objects.equals(this.XORMode, newValue)) {
+        if (this.XORMode != newValue) {
             getValue().markDirty(VGC.XORMODE);
         }
         checkNonDisposed();

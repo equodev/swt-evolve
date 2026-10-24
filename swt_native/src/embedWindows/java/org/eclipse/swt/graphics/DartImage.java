@@ -2292,7 +2292,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 		* Windows 7 when the image has a position offset in the first frame.
 		* The fix is to not use GDI+ image loading in this case.
 		*/
-            if (filename.toLowerCase().endsWith(".gif"))
+            if (filename.toLowerCase(java.util.Locale.ROOT).endsWith(".gif"))
                 gdip = false;
             if (!gdip)
                 return null;

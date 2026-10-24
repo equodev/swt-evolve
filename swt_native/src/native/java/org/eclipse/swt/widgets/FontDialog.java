@@ -109,6 +109,7 @@ public class FontDialog extends Dialog {
      * @deprecated use #getFontList ()
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public FontData getFontData() {
         return getImpl().getFontData();
     }
@@ -179,6 +180,7 @@ public class FontDialog extends Dialog {
      * @deprecated use #setFontList (FontData [])
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void setFontData(FontData fontData) {
         getImpl().setFontData(fontData);
     }

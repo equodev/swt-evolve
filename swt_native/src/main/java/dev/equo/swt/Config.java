@@ -32,7 +32,7 @@ public class Config {
     static Impl statusBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.statusbar", defaultImpl.name()));
     static Impl mainCompositeImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maincomposite", defaultImpl.name()));
 
-    private static final String os = System.getProperty("os.name").toLowerCase();
+    private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
     static final Map<Class<?>, Impl> equoEnabled;
     static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
     static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
@@ -928,7 +928,7 @@ public class Config {
             boolean desktopMode = ConfigFlags.isDesktopMode();
             String csdDefault = chromiumMode ? "toolbar" : desktopMode ? "overlay" : "false";
             configFlags.csd_placement = System.getProperty(
-                    "dev.equo.swt.csd", csdDefault).toLowerCase();
+                    "dev.equo.swt.csd", csdDefault).toLowerCase(java.util.Locale.ROOT);
             // OS picks the native control styling; override to test other platforms:
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
@@ -1089,7 +1089,7 @@ public class Config {
 
     /** Maps a raw {@code os.name} to the CSD styling key the Flutter side understands. */
     private static String normalizeOs(String osName) {
-        String n = osName == null ? "" : osName.toLowerCase();
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
         if (n.startsWith("mac") || n.contains("darwin")) return "mac";
         if (n.startsWith("win")) return "windows";
         return "linux";
@@ -1196,7 +1196,7 @@ public class Config {
      * name, like {@code swt.evolve.theme_color_<widget>}.
      */
     static Map<String, Boolean> fontColorsByWidgetFromProperties() {
-        return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, String::toLowerCase, Config::optionalBoolean);
+        return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, k -> k.toLowerCase(java.util.Locale.ROOT), Config::optionalBoolean);
     }
 
     /**
@@ -1232,7 +1232,7 @@ public class Config {
             if (value == null || value.trim().isEmpty()) {
                 continue;
             }
-            String widgetKey = key.substring(prefix.length()).trim().toLowerCase();
+            String widgetKey = key.substring(prefix.length()).trim().toLowerCase(java.util.Locale.ROOT);
             if (widgetKey.isEmpty()) {
                 continue;
             }

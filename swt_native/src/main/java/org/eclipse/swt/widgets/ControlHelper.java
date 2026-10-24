@@ -280,7 +280,7 @@ public class ControlHelper {
 
     /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
     static boolean holdsLink(String text) {
-        String lower = text.toLowerCase();
+        String lower = text.toLowerCase(java.util.Locale.ROOT);
         for (int i = lower.indexOf("<a"); i >= 0; i = lower.indexOf("<a", i + 1)) {
             if (i + 2 < lower.length() && (lower.charAt(i + 2) == '>' || Character.isWhitespace(lower.charAt(i + 2))))
                 return true;

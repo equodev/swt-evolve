@@ -2,11 +2,13 @@ import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
+import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     java
     `java-library`
     jacoco
+    alias(libs.plugins.errorprone)
 }
 
 val eclipseUrl: String by project
@@ -420,6 +422,31 @@ if (chromiumMode) {
         "testRuntimeOnly"(libs.equo.chromium)
         "testRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
     }
+}
+
+dependencies { errorprone(libs.errorprone.core) }
+
+// Error Prone on the one compile holding all our code once: every native backend shares main/ and
+// native/, Windows adds our only per-OS file. Upstream copies are skipped; a Dart* finding is fixed
+// in the generator. -PerrorProne=false turns it off where CI runs it as a job of its own.
+val errorProne = findProperty("errorProne")?.toString() != "false"
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        enabled.set(errorProne && name == "compileNativeWindowsJava")
+        disableAllWarnings.set(true)
+        // Checks off or only warnings by default that found real defects here, or guard against
+        // common ones, as errors.
+        error(
+            "StringCaseLocaleUsage", "DefaultLocale", "ObjectEqualsForPrimitives",
+            "JavaTimeDefaultTimeZone", "UndefinedEquals", "CollectionUndefinedEquality",
+            "ToStringReturnsNull", "InterruptedExceptionSwallowed",
+            "FallThrough", "MissingCasesInEnumSwitch", "ModifiedButNotUsed",
+        )
+        // dsl-json's converters under build/generated are not ours either.
+        excludedPaths.set("(.*/src/native[A-Za-z]*/java/(?!dev/equo/)(?!.*/Dart[^/]*\\.java$)|.*/build/generated/).*")
+    }
+    // That compile is warning-free; keep it so.
+    if (errorProne && name == "compileNativeWindowsJava") options.compilerArgs.add("-Werror")
 }
 
 // Configure Java compilation

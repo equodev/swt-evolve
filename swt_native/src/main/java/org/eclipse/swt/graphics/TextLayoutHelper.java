@@ -100,6 +100,7 @@ public final class TextLayoutHelper {
         return result;
     }
 
+    @SuppressWarnings("DefaultLocale") // the user's locale, as the native text layouts break lines
     private static void wrap(String text, int start, int end, int wrapWidth, int indent, int wrapIndent, Advance advance,
             List<Integer> starts) {
         BreakIterator breaks = BreakIterator.getLineInstance();
@@ -146,6 +147,7 @@ public final class TextLayoutHelper {
      * The next cluster boundary from {@code offset}, which is neither the end when moving forward nor 0 when moving
      * backward: a character keeps its combining marks, as on GTK and Win32 (Cocoa steps one code point).
      */
+    @SuppressWarnings("DefaultLocale") // the user's locale, as the native text layouts step clusters
     public static int nextCluster(String text, int offset, boolean forward) {
         BreakIterator clusters = BreakIterator.getCharacterInstance();
         clusters.setText(text);
