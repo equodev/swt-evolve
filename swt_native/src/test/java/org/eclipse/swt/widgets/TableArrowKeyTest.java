@@ -183,7 +183,7 @@ class TableArrowKeyTest extends KeyRoutingTestBase {
     @Test
     @DisplayName("a NO_SEARCH or VIRTUAL table selects no row by a typed letter")
     void noTypingSearchWhereTheStyleTurnsItOff() {
-        for (int style : new int[] {SWT.NO_SEARCH, SWT.VIRTUAL}) {
+        for (int style : new int[] {TableHelper.NO_SEARCH, SWT.VIRTUAL}) {
             Table table = new Table(new Composite(shell(), SWT.NONE), SWT.SINGLE | style);
             table.addListener(SWT.SetData, e -> ((TableItem) e.item).setText("delta"));
             table.setItemCount(4);

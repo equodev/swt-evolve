@@ -364,7 +364,7 @@ public class TableHelper {
     }
 
     /** SWT.NO_SEARCH, which the oldest SWT versions this builds against do not declare. */
-    private static final int NO_SEARCH = 1 << 10;
+    static final int NO_SEARCH = 1 << 10;
 
     /** How long a pause ends the text typed so far, so the next key starts a search of its own. */
     static final int TYPING_TIMEOUT_MS = 1000;
