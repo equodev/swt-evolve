@@ -1247,6 +1247,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         if (api != null && !api.isDisposed() && declinesClientFocus(api))
             return;
+        // The client reports the CCombo it focused; Java's focus is already on the CCombo's field.
+        if (heldByItsField(widget))
+            return;
         focusRequested = widget;
         setFocus(widget);
     }
@@ -1493,7 +1496,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public boolean hasFocus(DartControl widget) {
-        return widget == focused;
+        return widget == focused || heldByItsField(widget);
+    }
+
+    /** Whether {@code widget} holds the focus through its field, as a CCombo does. */
+    private boolean heldByItsField(DartControl widget) {
+        return focused != null && widget != null
+                && org.eclipse.swt.custom.CComboHelper.focusedThroughField(focused.getApi(), widget.getApi());
     }
 
     /** The control that currently holds focus (Java-tracked; there is no OS focus on the web). */

@@ -260,13 +260,14 @@ public class ControlHelper {
 
     /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
     private static boolean isTabStop(Control control) {
+        if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control))
+            return true;
         if ((control.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
         if (control instanceof Button || control instanceof Combo || control instanceof DateTime
                 || control instanceof org.eclipse.swt.widgets.List || control instanceof Scale || control instanceof Spinner
                 || control instanceof TabFolder || control instanceof Table || control instanceof Tree
-                || control instanceof Text || control instanceof org.eclipse.swt.custom.CCombo
-                || control instanceof org.eclipse.swt.custom.StyledText)
+                || control instanceof Text || control instanceof org.eclipse.swt.custom.StyledText)
             return true;
         if (control instanceof Link)
             return holdsLink(((Link) control).getText());
@@ -343,6 +344,8 @@ public class ControlHelper {
         boolean horizontal = e.type == SWT.MouseHorizontalWheel;
         e.detail = SWT.SCROLL_LINE;
         e.doit = true;
+        if (!horizontal && org.eclipse.swt.custom.CComboHelper.deliverWheel(control.getApi(), e))
+            return;
         control.sendEvent(horizontal ? SWT.MouseHorizontalWheel : SWT.MouseWheel, e);
         if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
             return;
@@ -825,7 +828,9 @@ public class ControlHelper {
         boolean focuses = takesFocusOnPress(control, event.button);
         if (!focuses || control.isFocusControl())
             return;
-        if (control.forceFocus() && !control.isDisposed())
+        boolean focused = org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control.getApi())
+                ? control.getApi().setFocus() : control.forceFocus();
+        if (focused && !control.isDisposed())
             control.getBridge().focusClient(control);
     }
 
@@ -843,6 +848,8 @@ public class ControlHelper {
      */
     static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
+        if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(api))
+            return button == 1 || button == 3;
         if ((api.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
         boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
