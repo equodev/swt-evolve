@@ -48,7 +48,8 @@ void main() {
   testWidgets('a drop-down date has no up/down buttons', (tester) async {
     await _pump(tester, _dropDown);
 
-    expect(find.byIcon(Icons.arrow_drop_up), findsNothing);
+    // The calendar button's arrow is the only one: up/down buttons would add a second down arrow.
+    expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
   });
 
   testWidgets('a date without DROP_DOWN keeps its up/down buttons', (tester) async {
