@@ -873,17 +873,6 @@ public abstract class FlutterBridge {
         if (spares.size() < MAX_SPARE_BATCHES && batch.capacity() <= 2 * MAX_BATCH_BYTES) spares.addFirst(batch);
     }
 
-    /**
-     * Has {@code widget} described in full, everything under it included, by the ancestor that next
-     * carries it, as a widget just created there would be, rather than sent on its own channel and
-     * named by that ancestor: a client drops a frame for a widget it does not hold, and the name
-     * would then be one it has to ask for.
-     */
-    public static void describeWhereItLands(DartWidget widget) {
-        Serializer.forgetDelivery(widget.getValue());
-        widget.setData(DEV_EQU_SWT_NEW, null);
-    }
-
     private static void setNotNew(Object control) {
         if (control instanceof DartWidget)
             ((DartWidget) control).setData(DEV_EQU_SWT_NEW, false);

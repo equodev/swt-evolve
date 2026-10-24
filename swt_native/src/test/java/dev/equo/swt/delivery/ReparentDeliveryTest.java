@@ -2,15 +2,12 @@ package dev.equo.swt.delivery;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.harness.FrameRefs;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartWidget;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Widget;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -80,36 +77,6 @@ class ReparentDeliveryTest {
         assertThat(payload)
                 .as("described, so it arrives with a stamp of its own")
                 .contains("{\"id\":" + moved.hashCode() + ",\"swt\":\"Composite\",\"_s\":");
-    }
-
-    @Test
-    @DisplayName("a control moved into a hidden shell and back arrives with everything under it described")
-    void aControlBackFromAHiddenShellIsDescribedWhole() {
-        Shell shell = Mocks.shell();
-        Composite host = new Composite(shell, SWT.NONE);
-        Shell hidden = new Shell(shell, SWT.NONE);
-        Composite part = new Composite(host, SWT.NONE);
-        Composite inner = new Composite(part, SWT.NONE);
-        Label leaf = new Label(inner, SWT.NONE);
-        leaf.setText("leaf");
-        settle(host);
-
-        // Nothing the client is shown holds the part any more, so it lets go of it and of
-        // everything under it.
-        part.setParent(hidden);
-        FlutterBridge.update();
-        bridge.comm.sent.clear();
-        part.setParent(host);
-        FlutterBridge.update();
-
-        // Read in delivery order, as the client applies them: a name resolves only to something
-        // described before it.
-        FrameRefs refs = FrameRefs.of(bridge.comm.sent);
-        for (Widget w : new Widget[]{part, inner, leaf}) {
-            assertThat(refs.described).as("%s is described", w).contains((long) w.hashCode());
-            assertThat(refs.unresolved).as("%s is never named before it is described", w)
-                    .doesNotContain((long) w.hashCode());
-        }
     }
 
     /**

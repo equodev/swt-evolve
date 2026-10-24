@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.FlutterBridge;
 import java.util.Arrays;
 
 public class ControlUtils {
@@ -8,10 +7,9 @@ public class ControlUtils {
         removeFromParentChildren(control);
         control.parent = newParent;
         addToParentChildren(control);
-        // Described in full by the new parent, subtree included: a name carries no write stamp, so the
-        // old parent's frame applied first reads as a disposal; and a client that saw the control
-        // leave every parent it shows has let go of everything under it.
-        FlutterBridge.describeWhereItLands(control);
+        // Scheduled so the new parent describes the control instead of naming it. A name carries no
+        // write stamp, and the stamp is what tells a move from a disposal - without one, the old
+        // parent's frame, applied first, reads as the control having gone away.
         control.getBridge().dirty(control);
     }
 
