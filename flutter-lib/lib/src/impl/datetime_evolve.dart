@@ -631,7 +631,7 @@ class _FieldSeparator extends StatelessWidget {
   }
 }
 
-// ── Drop-down arrow button ─────────────────────────────────────────────────
+// ── Calendar button ────────────────────────────────────────────────────────
 
 class _CalendarButton extends StatefulWidget {
   final bool enabled;
