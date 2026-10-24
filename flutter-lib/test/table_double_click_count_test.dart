@@ -6,6 +6,7 @@
 // A cell reporting every down as count 1 defeats that guard and activates the
 // editor twice, which opens two dialogs for one double-click.
 
+import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -182,6 +183,29 @@ void main() {
     await tester.tap(find.text('Row 1'));
     await tester.pump(const Duration(milliseconds: 500));
     expect(_countsOf(calls, 'Mouse/MouseDown'), equals([1]));
+  });
+
+  testWidgets('a right press past the last column is the Table MenuDetect, once', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 800,
+        height: 400,
+        child: _RecordingTableSwt(value: _table(), calls: calls),
+      ),
+    ));
+    await tester.pump();
+
+    final row = tester.getCenter(find.text('Row 1'));
+    await tester.tapAt(Offset(700, row.dy), buttons: kSecondaryButton);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(calls.where((c) => c.startsWith('MenuDetect/MenuDetect')), hasLength(1));
+
+    calls.clear();
+    await tester.tapAt(row, buttons: kSecondaryButton);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(calls.where((c) => c.startsWith('MenuDetect/MenuDetect')), hasLength(1));
   });
 }
 

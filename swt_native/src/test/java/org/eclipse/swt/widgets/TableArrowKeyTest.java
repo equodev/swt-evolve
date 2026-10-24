@@ -160,4 +160,40 @@ class TableArrowKeyTest extends KeyRoutingTestBase {
         press(other, 'o');
         assertThat(events).containsExactly("bravo", "bob");
     }
+
+    @Test
+    @DisplayName("Enter names the row the last selection by input landed on, not the first selected one")
+    void enterNamesTheFocusRow() {
+        Table table = new Table(new Composite(shell(), SWT.NONE), SWT.MULTI);
+        for (String text : new String[] {"alpha", "bravo", "charlie", "delta"})
+            new TableItem(table, SWT.NONE).setText(text);
+        Event click = new Event();
+        click.segments = new int[] {2};
+        TableHelper.sendSelection((DartTable) table.getImpl(), click, SWT.Selection);
+        table.select(0);
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.DefaultSelection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, SWT.CR);
+
+        assertThat(table.getSelectionIndices()).containsExactly(0, 2);
+        assertThat(events).containsExactly("charlie");
+    }
+
+    @Test
+    @DisplayName("a NO_SEARCH or VIRTUAL table selects no row by a typed letter")
+    void noTypingSearchWhereTheStyleTurnsItOff() {
+        for (int style : new int[] {SWT.NO_SEARCH, SWT.VIRTUAL}) {
+            Table table = new Table(new Composite(shell(), SWT.NONE), SWT.SINGLE | style);
+            table.addListener(SWT.SetData, e -> ((TableItem) e.item).setText("delta"));
+            table.setItemCount(4);
+            for (int i = 0; i < 4; i++) table.getItem(i).setText(new String[] {"alpha", "bravo", "charlie", "delta"}[i]);
+            table.setSelection(1);
+
+            press(table, 'd');
+
+            assertThat(table.getSelectionIndex()).isEqualTo(1);
+        }
+    }
 }
+

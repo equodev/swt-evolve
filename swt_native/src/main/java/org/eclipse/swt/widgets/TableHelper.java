@@ -337,8 +337,9 @@ public class TableHelper {
         sendSelection(table, selection, SWT.Selection);
     }
 
+    /** Names the focus row, as Win32's focused item and GTK's cursor row; the first selected row until input set one. */
     private static void sendDefaultSelection(DartTable table) {
-        int index = table.getSelectionIndex();
+        int index = table.focusRow >= 0 && table.focusRow < table.getItemCount() ? table.focusRow : table.getSelectionIndex();
         if (index < 0 || table.items == null || index >= table.items.length)
             return;
         Event event = new Event();
@@ -372,11 +373,14 @@ public class TableHelper {
      * on. The search wraps past the last row.
      */
     static boolean selectByTyping(DartTable table, Event key) {
+        // GTK has no search in a NO_SEARCH or VIRTUAL tree view, and a VIRTUAL table would ask for every row's data.
+        if ((table.getApi().style & (SWT.NO_SEARCH | SWT.VIRTUAL)) != 0)
+            return false;
         char c = key.character != 0 ? key.character : (key.keyCode & SWT.KEYCODE_BIT) == 0 ? (char) key.keyCode : 0;
         if (!Character.isLetterOrDigit(c))
             return false;
-        long now = System.currentTimeMillis();
-        if (now - table.typedAt > TYPING_TIMEOUT_MS)
+        long now = key.time & 0xFFFFFFFFL;
+        if (now - table.typedAt > TYPING_TIMEOUT_MS || now < table.typedAt)
             table.typedText = "";
         table.typedAt = now;
         String typed = table.typedText + Character.toLowerCase(c);
@@ -423,6 +427,8 @@ public class TableHelper {
         } else {
             if (event.segments != null) {
                 table.setSelection(event.segments);
+                if (event.segments.length > 0)
+                    table.focusRow = event.segments[0];
             }
             if (event.segments != null && event.segments.length > 0) {
                 int index = event.segments[0];

@@ -2894,6 +2894,8 @@ public class DartTable extends DartComposite implements ITable {
 
     long typedAt;
 
+    int focusRow = -1;
+
     boolean checkData(TableItem item, int index) {
         return checkData(item);
     }

@@ -84,11 +84,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   VoidCallback? selectBeforeMenuDetect;
 
   @override
-  void handleMenuDetect(int pointer, Offset localPosition) {
+  void handleMenuDetect(PointerDownEvent press) {
     final select = selectBeforeMenuDetect;
     selectBeforeMenuDetect = null;
     select?.call();
-    super.handleMenuDetect(pointer, localPosition);
+    super.handleMenuDetect(press);
   }
   // The header row and the widths its cells were drawn at, where a dragged header is dropped.
   final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');

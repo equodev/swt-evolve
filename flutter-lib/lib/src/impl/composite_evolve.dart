@@ -124,7 +124,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           // own area -- the gap a container with a lazily-built context menu falls into.
           // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
           if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
-            impl.handleMenuDetect(e.pointer, e.localPosition);
+            impl.handleMenuDetect(e);
           }
         }
       },
