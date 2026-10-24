@@ -363,6 +363,9 @@ public class TableHelper {
         }
     }
 
+    /** SWT.NO_SEARCH, which the oldest SWT versions this builds against do not declare. */
+    private static final int NO_SEARCH = 1 << 10;
+
     /** How long a pause ends the text typed so far, so the next key starts a search of its own. */
     static final int TYPING_TIMEOUT_MS = 1000;
 
@@ -374,7 +377,7 @@ public class TableHelper {
      */
     static boolean selectByTyping(DartTable table, Event key) {
         // GTK has no search in a NO_SEARCH or VIRTUAL tree view, and a VIRTUAL table would ask for every row's data.
-        if ((table.getApi().style & (SWT.NO_SEARCH | SWT.VIRTUAL)) != 0)
+        if ((table.getApi().style & (NO_SEARCH | SWT.VIRTUAL)) != 0)
             return false;
         char c = key.character != 0 ? key.character : (key.keyCode & SWT.KEYCODE_BIT) == 0 ? (char) key.keyCode : 0;
         if (!Character.isLetterOrDigit(c))
