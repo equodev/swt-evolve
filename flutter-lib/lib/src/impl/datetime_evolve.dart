@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_time_patterns.dart';
+import 'package:intl/intl.dart';
 import '../gen/datetime.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
@@ -246,8 +248,9 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     final month = _month;
     final day = _day;
 
-    final fields = <_FieldDef>[
-      _FieldDef(
+    final layout = _numericDateLayout(WidgetsBinding.instance.platformDispatcher.locale);
+    final byLetter = <String, _FieldDef>{
+      'M': _FieldDef(
         value: month + 1,
         min: 1,
         max: 12,
@@ -258,7 +261,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         },
       ),
       if (!isShort)
-        _FieldDef(
+        'd': _FieldDef(
           value: day,
           min: 1,
           max: _daysInMonth(year, month),
@@ -268,7 +271,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
             widget.sendSelectionSelection(state, _makeSelectionEvent());
           },
         ),
-      _FieldDef(
+      'y': _FieldDef(
         value: year,
         min: 1752,
         max: 9999,
@@ -278,7 +281,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
           widget.sendSelectionSelection(state, _makeSelectionEvent());
         },
       ),
-    ];
+    };
+    final fields = [for (final letter in layout.order) ?byLetter[letter]];
 
     // Upstream SWT opens the drop-down calendar in the platform's own colors, not the cell's, even
     // when the field itself follows the table -- so this one keeps the app theme.
@@ -288,7 +292,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       theme,
       enabled,
       fields,
-      '/',
+      layout.separator,
       calendarButton: hasDropDown
           ? _CalendarButton(
               enabled: enabled,
@@ -504,6 +508,37 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       ..count = state.minutes ?? now.minute
       ..index = state.seconds ?? now.second;
   }
+}
+
+// ── Numeric date layout ──────────────────────────────────────────────────
+
+final Map<String, Map<String, String>> _datePatterns = dateTimePatternMap();
+
+/// The order of the day, month and year fields ('d', 'M', 'y') and the separator between them in
+/// [locale]'s numeric date. Win32 takes them from the user's short-date format; on the web the
+/// user's locale is the browser's.
+({List<String> order, String separator}) _numericDateLayout(Locale locale) {
+  final name = Intl.verifiedLocale(locale.toLanguageTag(), _datePatterns.containsKey,
+      onFailure: (_) => 'en_US')!;
+  final pattern = _datePatterns[name]?['yMd'] ?? 'M/d/y';
+  final order = <String>[];
+  final separators = <String>[];
+  var pending = StringBuffer();
+  for (final char in pattern.split('')) {
+    if (char == 'd' || char == 'M' || char == 'y') {
+      if (order.isEmpty || order.last != char) {
+        if (order.isNotEmpty) separators.add(pending.toString());
+        order.add(char);
+      }
+      pending = StringBuffer();
+    } else {
+      pending.write(char);
+    }
+  }
+  if (order.length != 3 || separators.isEmpty || separators.first.isEmpty) {
+    return (order: const ['M', 'd', 'y'], separator: '/');
+  }
+  return (order: order, separator: separators.first);
 }
 
 // ── Field definition ──────────────────────────────────────────────────────

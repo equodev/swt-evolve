@@ -81,4 +81,13 @@ void main() {
     final texts = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>();
     expect(texts.join(), contains('24.10.2026'));
   });
+
+  testWidgets('a US English locale shows the date as month/day/year', (tester) async {
+    tester.platformDispatcher.localeTestValue = const Locale('en', 'US');
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    await _pump(tester, _dropDown);
+
+    final texts = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>();
+    expect(texts.join(), contains('10/24/2026'));
+  });
 }
