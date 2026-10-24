@@ -424,16 +424,23 @@ final _cascadeOpenKeys = {
 };
 
 /// Natively a cascade opens on hover, a click, Right, Enter or Space, never because Up or Down made it
-/// the current item; Flutter opens one whenever it gets the focus.
+/// the current item; Flutter opens one whenever it gets the focus. A click only opens it, where
+/// Flutter's toggle would close the submenu the pointer's hover has just opened.
 class _CascadeMenuController extends MenuController {
-  _CascadeMenuController(this._mayOpen);
+  _CascadeMenuController(this._mayOpen, this._isPressed);
 
   final bool Function() _mayOpen;
+  final bool Function() _isPressed;
 
   /// [force] opens it whatever [_mayOpen] says, for an opening the user asked for by key.
   @override
   void open({Offset? position, bool force = false}) {
     if (force || _mayOpen()) super.open(position: position);
+  }
+
+  @override
+  void close() {
+    if (!_isPressed()) super.close();
   }
 }
 
@@ -463,10 +470,12 @@ class _CascadeMenuItemRow extends StatefulWidget {
 }
 
 class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemonicItem {
-  late final _CascadeMenuController _menuController = _CascadeMenuController(() =>
-      _isHovered ||
-      _isPressed ||
-      HardwareKeyboard.instance.logicalKeysPressed.any(_cascadeOpenKeys.contains));
+  late final _CascadeMenuController _menuController = _CascadeMenuController(
+      () =>
+          _isHovered ||
+          _isPressed ||
+          HardwareKeyboard.instance.logicalKeysPressed.any(_cascadeOpenKeys.contains),
+      () => _isPressed);
   late final FocusNode _buttonFocusNode =
       FocusNode(debugLabel: 'Cascade', onKeyEvent: _enterOpenSubmenu);
   final FocusNode _submenuFocusNode = FocusNode(debugLabel: 'Cascade.menu');
