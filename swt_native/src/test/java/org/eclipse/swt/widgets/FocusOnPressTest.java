@@ -51,15 +51,15 @@ class FocusOnPressTest extends KeyRoutingTestBase {
     void otherControlsUnchanged() {
         Shell shell = shell();
         Control[] focusedByButton1And3 = {new Text(shell, SWT.BORDER), new Combo(shell, SWT.DROP_DOWN),
-                new Spinner(shell, SWT.NONE), new Table(shell, SWT.NONE), new Tree(shell, SWT.NONE)};
+                new Spinner(shell, SWT.NONE), new Table(shell, SWT.NONE), new Tree(shell, SWT.NONE),
+                new org.eclipse.swt.custom.CCombo(shell, SWT.NONE)};
         Control[] focusedByButton1 = {new Button(shell, SWT.PUSH), new Button(shell, SWT.CHECK),
                 new DateTime(shell, SWT.DATE), new org.eclipse.swt.widgets.List(shell, SWT.NONE),
                 new Scale(shell, SWT.NONE)};
         Control[] focusedByNone = {new Label(shell, SWT.NONE), new Canvas(shell, SWT.NONE),
                 new Composite(shell, SWT.NONE), new Group(shell, SWT.NONE), new Link(shell, SWT.NONE),
                 new ProgressBar(shell, SWT.NONE), new Slider(shell, SWT.NONE), new TabFolder(shell, SWT.NONE),
-                new org.eclipse.swt.custom.CLabel(shell, SWT.NONE), new org.eclipse.swt.custom.CCombo(shell, SWT.NONE),
-                new org.eclipse.swt.custom.CTabFolder(shell, SWT.NONE)};
+                new org.eclipse.swt.custom.CLabel(shell, SWT.NONE), new org.eclipse.swt.custom.CTabFolder(shell, SWT.NONE)};
         for (Control c : focusedByButton1And3)
             assertThat(new boolean[] {focuses(c, 1), focuses(c, 2), focuses(c, 3)}).as(c.toString())
                     .containsExactly(true, false, true);
