@@ -100,6 +100,34 @@ class SpinnerProgrammaticVerifyTest {
     }
 
     @Test
+    void aTextTheListenerRewritesIsTheOneTheFieldShows() {
+        spinner.addListener(SWT.Verify, e -> e.text = e.text + "!");
+
+        spinner.setSelection(7);
+
+        assertThat(heard).containsExactly("Verify 7 0-2", "Modify 7!");
+        assertThat(spinner.getSelection()).isEqualTo(7);
+    }
+
+    @Test
+    void setValuesOffersTheNewTextOverTheOneTheOldDigitsWrote() {
+        spinner.setValues(1, 1, 1, 1, 1, 1);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "1 0-2", "Modify 0" + separator + "1");
+    }
+
+    @Test
+    void whileTheListenersDecideTheFieldStillShowsTheOldText() {
+        List<String> seen = new ArrayList<>();
+        spinner.addListener(SWT.Verify, e -> seen.add(spinner.getText()));
+
+        spinner.setSelection(7);
+
+        assertThat(seen).containsExactly("20");
+    }
+
+    @Test
     void aSpinnerDisposedByItsVerifyListenerStopsThere() {
         spinner.addListener(SWT.Verify, e -> spinner.dispose());
 
