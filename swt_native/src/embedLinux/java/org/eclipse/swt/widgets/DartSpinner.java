@@ -780,20 +780,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setValues(int selection, int minimum, int maximum, int digits, int increment, int pageIncrement) {
         checkWidget();
-        if (maximum < minimum)
-            return;
-        if (digits < 0)
-            return;
-        if (increment < 1)
-            return;
-        if (pageIncrement < 1)
-            return;
-        this.minimum = minimum;
-        this.maximum = maximum;
-        this.increment = increment;
-        this.pageIncrement = pageIncrement;
-        this.digits = digits;
-        setSelection(selection);
+        SpinnerHelper.setValues(this, selection, minimum, maximum, digits, increment, pageIncrement);
     }
 
     @Override

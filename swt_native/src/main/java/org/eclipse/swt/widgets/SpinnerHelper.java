@@ -94,15 +94,45 @@ public class SpinnerHelper {
         c.sendEvent(SWT.Verify, verify);
         if (!verify.doit || c.isDisposed())
             return;
-        applySelection(c, value, true, true);
+        applySelection(c, value, true, true, rewritten(c, value, verify));
+    }
+
+    /**
+     * Sets the range, the steps and the digits, then the selection. Its Verify replaces the text the field shows,
+     * which the old digits wrote.
+     */
+    static void setValues(DartSpinner c, int selection, int minimum, int maximum, int digits, int increment,
+            int pageIncrement) {
+        if (maximum < minimum || digits < 0 || increment < 1 || pageIncrement < 1)
+            return;
+        String shown = getText(c);
+        if (c.minimum != minimum)
+            c.getValue().markDirty(VSpinner.MINIMUM);
+        if (c.maximum != maximum)
+            c.getValue().markDirty(VSpinner.MAXIMUM);
+        if (c.increment != increment)
+            c.getValue().markDirty(VSpinner.INCREMENT);
+        if (c.pageIncrement != pageIncrement)
+            c.getValue().markDirty(VSpinner.PAGE_INCREMENT);
+        if (c.digits != digits)
+            c.getValue().markDirty(VSpinner.DIGITS);
+        c.minimum = minimum;
+        c.maximum = maximum;
+        c.increment = increment;
+        c.pageIncrement = pageIncrement;
+        c.digits = digits;
+        keepText(c, shown);
+        c.setSelection(selection);
     }
 
     /**
      * Moves the spinner to {@code value}. With {@code setText} the text follows, as natively: a Verify listener
-     * hears the new text first and may refuse it, which keeps the old text and sends no Modify or Selection; the
-     * position has moved already, as the native stepper's has.
+     * hears the new text first and may refuse it, which keeps the old text and sends no Modify or Selection, or
+     * rewrite it, which the field then shows; the position has moved already, as the native stepper's has.
+     *
+     * @return false when a Verify listener refused the text
      */
-    static void setSelection(DartSpinner c, int value, boolean setPos, boolean setText, boolean notify) {
+    static boolean setSelection(DartSpinner c, int value, boolean setPos, boolean setText, boolean notify) {
         if (c.selection != value) {
             c.getValue().markDirty(VSpinner.SELECTION);
         }
@@ -112,26 +142,35 @@ public class SpinnerHelper {
             verify.text = format(c, value);
             verify.start = 0;
             verify.end = old.length();
+            // The field still shows the old text while the listeners decide, as a native one does.
+            keepText(c, old);
             c.selection = value;
             c.sendEvent(SWT.Verify, verify);
             if (c.isDisposed()) {
-                return;
+                return true;
             }
             if (!verify.doit) {
-                keepText(c, old);
-                return;
+                return false;
             }
+            applySelection(c, value, true, notify, rewritten(c, value, verify));
+            return true;
         }
-        applySelection(c, value, setText, notify);
+        applySelection(c, value, setText, notify, null);
+        return true;
     }
 
-    private static void applySelection(DartSpinner c, int value, boolean setText, boolean notify) {
+    /** The text a Verify listener put in place of {@code value}'s own, or null when it left it as offered. */
+    private static String rewritten(DartSpinner c, int value, Event verify) {
+        return verify.text == null || verify.text.equals(format(c, value)) ? null : verify.text;
+    }
+
+    private static void applySelection(DartSpinner c, int value, boolean setText, boolean notify, String shown) {
         if (c.selection != value) {
             c.getValue().markDirty(VSpinner.SELECTION);
         }
         c.selection = value;
         if (setText) {
-            keepText(c, null);
+            keepText(c, shown);
             c.sendEvent(SWT.Modify);
         }
         if (notify)
@@ -151,8 +190,7 @@ public class SpinnerHelper {
      * Selection, in the order a native spinner sends them; a refused text sends neither.
      */
     static void selectedInFlutter(DartSpinner c, int value) {
-        setSelection(c, Math.max(c.minimum, Math.min(c.maximum, value)), true, true, false);
-        if (c.isDisposed() || c.keptText != null) {
+        if (!setSelection(c, Math.max(c.minimum, Math.min(c.maximum, value)), true, true, false) || c.isDisposed()) {
             return;
         }
         c.sendSelectionEvent(SWT.Selection, null, true);
