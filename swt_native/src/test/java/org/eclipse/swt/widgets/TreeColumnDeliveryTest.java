@@ -78,9 +78,35 @@ class TreeColumnDeliveryTest {
         assertThat(diffOf(tree)).contains("\"columns\"");
     }
 
+    @Test
+    @DisplayName("the column that becomes the first when the first is disposed is left aligned, and the update says so")
+    void columnThatBecomesTheFirstIsLeftAligned() {
+        Tree tree = new Tree(Mocks.shell(), SWT.NONE);
+        TreeColumn first = new TreeColumn(tree, SWT.LEFT);
+        TreeColumn second = new TreeColumn(tree, SWT.LEFT);
+        second.setAlignment(SWT.RIGHT);
+        sendWhole(tree);
+
+        first.dispose();
+
+        assertThat(second.getAlignment()).isEqualTo(SWT.LEFT);
+        assertThat(second.getStyle() & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)).isEqualTo(SWT.LEFT);
+        assertThat(diffOf(second)).contains("\"alignment\"");
+        second.setAlignment(SWT.CENTER);
+        assertThat(second.getAlignment()).as("the first column refuses a new alignment").isEqualTo(SWT.LEFT);
+    }
+
     /** The update the tree is due, or empty when it has nothing to say. */
     private String diffOf(Tree tree) {
-        byte[] update = serializer.toDiff((DartTree) tree.getImpl());
+        return diffOf((DartWidget) tree.getImpl());
+    }
+
+    private String diffOf(TreeColumn column) {
+        return diffOf((DartWidget) column.getImpl());
+    }
+
+    private String diffOf(DartWidget impl) {
+        byte[] update = serializer.toDiff(impl);
         return update == null ? "" : new String(update, StandardCharsets.UTF_8);
     }
 

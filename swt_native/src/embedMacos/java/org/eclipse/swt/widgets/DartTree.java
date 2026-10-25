@@ -730,6 +730,8 @@ public class DartTree extends DartComposite implements ITree {
             if (index == 0) {
             }
         }
+        if (index == 0)
+            TreeHelper.leftAlignTheFirstColumn(this);
         ColumnHelper.columnsShiftedFrom(this.getApi(), shownAt);
         getValue().markDirty(VTree.COLUMNS);
     }

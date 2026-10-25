@@ -171,6 +171,18 @@ public class TreeHelper {
         tree.columnOrder = next;
     }
 
+    /**
+     * The first column was disposed: the column that takes its place is left aligned, as Win32 and GTK
+     * do and as the first column always is.
+     */
+    public static void leftAlignTheFirstColumn(DartTree tree) {
+        if (tree.columnCount == 0) return;
+        TreeColumn first = tree.columns[0];
+        first.style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        first.style |= SWT.LEFT;
+        ((DartTreeColumn) first.getImpl()).getValue().markDirty(VTreeColumn.ALIGNMENT);
+    }
+
     /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */
     public static final int EMPTINESS_CHANGED = 56;
 
