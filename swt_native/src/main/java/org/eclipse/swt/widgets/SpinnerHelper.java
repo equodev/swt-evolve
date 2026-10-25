@@ -161,7 +161,7 @@ public class SpinnerHelper {
 
     /** The text a Verify listener put in place of {@code value}'s own, or null when it left it as offered. */
     private static String rewritten(DartSpinner c, int value, Event verify) {
-        return verify.text == null || verify.text.equals(format(c, value)) ? null : verify.text;
+        return java.util.Objects.equals(verify.text, format(c, value)) ? null : verify.text;
     }
 
     private static void applySelection(DartSpinner c, int value, boolean setText, boolean notify, String shown) {
