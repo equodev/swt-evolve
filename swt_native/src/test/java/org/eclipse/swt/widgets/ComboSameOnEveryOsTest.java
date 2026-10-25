@@ -24,10 +24,11 @@ import static org.mockito.Mockito.when;
 /**
  * A Combo behaves the same on every OS, whatever the native combo of the host does. Where the natives disagree it
  * does what two of them do: removing or deselecting the selected item empties the text, so does deselecting all,
- * replacing the list deselects, a text change puts the selection back at the start and deselects the item, the
- * selected item stays selected when one goes in before it, clearing the selection collapses it onto its end, a
- * read-only combo's text is set without asking the Verify listeners, and a read-only combo answers the visible item
- * count it was given. Where all three differ it does what Win32 does: a replaced selected item shows its new text.
+ * replacing the list deselects, a text change puts the selection back at the start, a text set from code keeps the
+ * item selected and a typed one deselects it, the selected item stays selected when one goes in before it, clearing
+ * the selection collapses it onto its end, a read-only combo asks the Verify listeners before it sets its text, and
+ * a read-only combo answers the visible item count it was given. Where all three differ it does what Win32 does: a
+ * replaced selected item shows its new text.
  */
 @Tag("native-unit")
 class ComboSameOnEveryOsTest {
@@ -186,20 +187,40 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
-    @DisplayName("a new text deselects the item of an editable combo; selecting an item keeps it selected")
-    void newTextDeselects() {
+    @DisplayName("a new text set from code keeps the item of an editable combo selected; selecting another item moves it")
+    void newTextKeepsTheItemSelected() {
         for (int style : new int[] {SWT.NONE, SWT.SIMPLE}) {
             Combo combo = abc(style, 1);
 
             combo.setText("zzz");
 
-            assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(-1);
+            assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(1);
             assertThat(combo.getText()).as("style %d", style).isEqualTo("zzz");
+
+            combo.setText("");
+
+            assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(1);
+            assertThat(combo.getText()).as("style %d", style).isEmpty();
 
             combo.select(2);
 
             assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(2);
             assertThat(combo.getText()).as("style %d", style).isEqualTo("ccc");
+        }
+    }
+
+    @Test
+    @DisplayName("a text the user typed deselects the item of an editable combo")
+    void typedTextDeselects() {
+        for (int style : new int[] {SWT.NONE, SWT.SIMPLE}) {
+            Combo combo = abc(style, 1);
+            Event typed = new Event();
+            typed.text = "bbx";
+
+            ComboHelper.handleModify((DartCombo) combo.getImpl(), typed);
+
+            assertThat(combo.getSelectionIndex()).as("style %d", style).isEqualTo(-1);
+            assertThat(combo.getText()).as("style %d", style).isEqualTo("bbx");
         }
     }
 
@@ -234,20 +255,66 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
-    @DisplayName("setting the text of a read-only combo selects the item of that name without asking the Verify listeners")
-    void readOnlySetTextAsksNoVerifyListener() {
+    @DisplayName("a read-only combo asks the Verify listeners about the item before it selects it, and a veto keeps the item shown")
+    void readOnlySetTextAsksTheVerifyListeners() {
         Combo combo = abc(SWT.READ_ONLY, 0);
-        List<Event> verified = new ArrayList<>();
+        List<String> verified = new ArrayList<>();
+        List<Event> modified = new ArrayList<>();
         combo.addListener(SWT.Verify, e -> {
-            verified.add(e);
+            verified.add(e.start + ".." + e.end + "=" + e.text);
             e.doit = false;
         });
+        combo.addListener(SWT.Modify, modified::add);
 
         combo.setText("bb");
 
+        assertThat(verified).containsExactly("0..1=bb");
+        assertThat(modified).isEmpty();
+        assertThat(combo.getSelectionIndex()).isZero();
+        assertThat(combo.getText()).isEqualTo("a");
+    }
+
+    @Test
+    @DisplayName("a read-only combo asks nothing for a text that is no item, or the item already shown")
+    void readOnlySetTextAsksOnlyForAnotherItem() {
+        Combo combo = abc(SWT.READ_ONLY, 0);
+        List<Event> verified = new ArrayList<>();
+        combo.addListener(SWT.Verify, verified::add);
+
+        combo.setText("zzz");
+        combo.setText("a");
+
         assertThat(verified).isEmpty();
-        assertThat(combo.getSelectionIndex()).isEqualTo(1);
-        assertThat(combo.getText()).isEqualTo("bb");
+        assertThat(combo.getSelectionIndex()).isZero();
+        assertThat(combo.getText()).isEqualTo("a");
+    }
+
+    @Test
+    @DisplayName("a replacement that names another item selects it; one that names no item selects the item asked for")
+    void readOnlySetTextTakesAReplacementThatIsAnItem() {
+        Combo combo = abc(SWT.READ_ONLY, 0);
+        combo.addListener(SWT.Verify, e -> e.text = e.text.equals("bb") ? "ccc" : e.text.toUpperCase());
+
+        combo.setText("bb");
+
+        assertThat(combo.getSelectionIndex()).isEqualTo(2);
+        assertThat(combo.getText()).isEqualTo("ccc");
+
+        combo.setText("a");
+
+        assertThat(combo.getSelectionIndex()).isZero();
+        assertThat(combo.getText()).isEqualTo("a");
+    }
+
+    @Test
+    @DisplayName("a read-only combo whose Verify listener disposes it selects nothing")
+    void readOnlySetTextStopsWhenAListenerDisposesTheCombo() {
+        Combo combo = abc(SWT.READ_ONLY, 0);
+        combo.addListener(SWT.Verify, e -> combo.dispose());
+
+        assertThatCode(() -> combo.setText("bb")).doesNotThrowAnyException();
+
+        assertThat(combo.isDisposed()).isTrue();
     }
 
     @Test

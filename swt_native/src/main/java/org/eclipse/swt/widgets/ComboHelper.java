@@ -44,15 +44,26 @@ public class ComboHelper {
     /**
      * Sets the text of an editable combo, or selects the item a read-only combo has under that name. The Verify
      * listeners have already ruled on an editable combo's text: {@code DartCombo.setText(String, boolean)} asks
-     * them, and a text the user typed was asked about by the client. A read-only combo asks none, as on Win32 and
-     * GTK. A new text deselects the item, as on Win32 and GTK, unless {@code selecting}: it is the text of the item
-     * being selected.
+     * them, and a text the user typed was asked about by the client. A read-only combo asks them too, as Win32 and
+     * Cocoa do, in Win32's order: once it has found the item, and only when that item is not the one shown. A veto
+     * keeps the item shown, and a replacement that names another item selects that one. A text set from code
+     * leaves the selected item selected, as on Win32 and Cocoa; an {@code edited} one, typed, cut or pasted,
+     * deselects it.
      */
-    public static void setText(DartCombo combo, String string, boolean notify, boolean selecting) {
+    public static void setText(DartCombo combo, String string, boolean notify, boolean edited) {
         if (readOnly(combo)) {
             int index = combo.indexOf(string);
-            if (index != -1)
-                combo.select(index);
+            if (index == -1)
+                return;
+            if (!string.equals(combo.text) && (combo.hooks(SWT.Verify) || combo.filters(SWT.Verify))) {
+                String verified = verify(combo, string, 0, getCharCount(combo));
+                if (verified == null)
+                    return;
+                int named = combo.indexOf(verified);
+                if (named != -1)
+                    index = named;
+            }
+            combo.select(index);
             return;
         }
         String text = string.substring(0, Math.min(string.length(), combo.textLimit));
@@ -61,17 +72,35 @@ public class ComboHelper {
         combo.text = text;
         // The old selection belonged to the old text.
         combo.selection = new Point(0, 0);
-        if (!selecting)
+        if (edited)
             combo.selectedIndex = -1;
         if (notify)
             combo.sendEvent(SWT.Modify);
     }
 
-    /** A text the user typed: the Verify listeners have already ruled on it. */
+    /**
+     * Asks the Verify listeners about {@code text} replacing the range {@code start..end}; answers what they let
+     * in, or null when they refuse it or dispose the combo.
+     */
+    private static String verify(DartCombo combo, String text, int start, int end) {
+        Event event = new Event();
+        event.text = text;
+        event.start = start;
+        event.end = end;
+        combo.sendEvent(SWT.Verify, event);
+        if (!event.doit || combo.isDisposed())
+            return null;
+        return event.text;
+    }
+
+    /**
+     * A text the user typed: the Verify listeners have already ruled on it. It deselects the item, as on Win32 and
+     * GTK.
+     */
     public static void handleModify(DartCombo combo, Event e) {
         if (e.text == null)
             combo.error(SWT.ERROR_NULL_ARGUMENT);
-        setText(combo, e.text, true, false);
+        setText(combo, e.text, true, true);
         sendSegments(combo);
     }
 

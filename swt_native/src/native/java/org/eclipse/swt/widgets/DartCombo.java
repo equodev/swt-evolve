@@ -1332,7 +1332,7 @@ public class DartCombo extends DartComposite implements ICombo {
 
     void setText(String string, boolean notify) {
         if ((getApi().style & SWT.READ_ONLY) != 0) {
-            ComboHelper.setText(this, string, notify, ignoreSelection);
+            ComboHelper.setText(this, string, notify, !notify);
             return;
         }
         if (notify) {
@@ -1342,7 +1342,7 @@ public class DartCombo extends DartComposite implements ICombo {
                     return;
             }
         }
-        ComboHelper.setText(this, string, notify, ignoreSelection);
+        ComboHelper.setText(this, string, notify, !notify);
     }
 
     /**
