@@ -1243,7 +1243,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setListVisible(boolean visible) {
         checkWidget();
-        if (!java.util.Objects.equals(this.listVisible, visible)) {
+        if (this.listVisible != visible) {
             getValue().markDirty(VCombo.LIST_VISIBLE);
         }
         if ((getApi().style & SWT.READ_ONLY) != 0) {

@@ -13,11 +13,12 @@ import java.util.Locale;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
+import static org.mockito.Mockito.when;
 
 /**
  * The text of a spinner with digits writes its decimal places with the separator of the user's locale, as every
- * native spinner does. The user is the session's client, whose locale its display holds, and the client is told
- * which separator that is so that it writes and reads the same one.
+ * native spinner does. The user is the session's client, whose locale its display holds. The client writes and
+ * reads numbers in that same locale, so nothing of it travels with the spinner.
  */
 class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
 
@@ -32,6 +33,7 @@ class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
         Shell shell = shell();
         DartDisplay display = (DartDisplay) shell.getDisplay().getImpl();
         display.clientLocale = locale;
+        when(display.textLocale()).thenCallRealMethod();
         localized.add(display);
         return shell;
     }
@@ -81,9 +83,8 @@ class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
     }
 
     @Test
-    void theClientIsToldTheSeparator() {
-        assertThatJson(serialize(spinner(Locale.GERMANY))).node("decimalSeparator").isEqualTo(",");
-        assertThatJson(serialize(spinner(Locale.US))).node("decimalSeparator").isEqualTo(".");
+    void theSpinnerSendsNoSeparator() {
+        assertThatJson(serialize(spinner(Locale.GERMANY))).isObject().doesNotContainKey("decimalSeparator");
     }
 
     @Test

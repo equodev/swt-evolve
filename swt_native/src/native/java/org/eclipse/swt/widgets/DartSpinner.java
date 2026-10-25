@@ -544,7 +544,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setDigits(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.digits, value)) {
+        if (this.digits != value) {
             getValue().markDirty(VSpinner.DIGITS);
         }
         if (value < 0)
@@ -576,7 +576,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setIncrement(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, newValue)) {
+        if (this.increment != newValue) {
             getValue().markDirty(VSpinner.INCREMENT);
         }
         if (value < 1)
@@ -646,7 +646,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setPageIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.pageIncrement, value)) {
+        if (this.pageIncrement != value) {
             getValue().markDirty(VSpinner.PAGE_INCREMENT);
         }
         if (value < 1)
@@ -802,23 +802,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
         return selection;
     }
 
-    String wireDecimalSeparator() {
-        return SpinnerHelper.decimalSeparator(this);
-    }
-
     String keptText;
 
     String wireKeptText() {
         return keptText;
     }
 
-    @Override
-    void clientLocaleChanged() {
-        getValue().markDirty(VSpinner.DECIMAL_SEPARATOR);
-    }
-
     java.util.Locale textLocale() {
-        return ((DartDisplay) display.getImpl()).clientLocale;
+        return ((DartDisplay) display.getImpl()).textLocale();
     }
 
     protected void _hookEvents() {

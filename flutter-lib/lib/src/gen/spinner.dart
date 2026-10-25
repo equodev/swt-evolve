@@ -56,7 +56,6 @@ class VSpinner extends VComposite {
   int? selection;
   int? textLimit;
 
-  String? decimalSeparator;
   String? keptText;
 
   @override
@@ -70,7 +69,6 @@ class VSpinner extends VComposite {
       pageIncrement = other.pageIncrement;
       selection = other.selection;
       textLimit = other.textLimit;
-      decimalSeparator = other.decimalSeparator;
       keptText = other.keptText;
     }
   }
@@ -92,8 +90,6 @@ class VSpinner extends VComposite {
         selection = (json['selection'] as num?)?.toInt();
       case 'textLimit':
         textLimit = (json['textLimit'] as num?)?.toInt();
-      case 'decimalSeparator':
-        decimalSeparator = json['decimalSeparator'] as String?;
       case 'keptText':
         keptText = json['keptText'] as String?;
       default:

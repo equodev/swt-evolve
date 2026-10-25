@@ -1339,7 +1339,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         checkWidget();
-        if (!java.util.Objects.equals(this.echoCharacter, echo)) {
+        if (this.echoCharacter != echo) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
         if ((getApi().style & SWT.MULTI) != 0)
@@ -1367,7 +1367,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
-        if (!java.util.Objects.equals(this.editable, newValue)) {
+        if (this.editable != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
         if (editable) {
@@ -1688,7 +1688,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, limit)) {
+        if (this.textLimit != limit) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
         if (limit == 0)

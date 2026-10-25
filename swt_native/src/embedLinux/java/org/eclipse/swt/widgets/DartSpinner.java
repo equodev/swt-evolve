@@ -586,7 +586,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setIncrement(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, newValue)) {
+        if (this.increment != newValue) {
             getValue().markDirty(VSpinner.INCREMENT);
         }
         if (value < 1)
@@ -657,7 +657,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setPageIncrement(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
+        if (this.pageIncrement != newValue) {
             getValue().markDirty(VSpinner.PAGE_INCREMENT);
         }
         if (value < 1)
@@ -681,7 +681,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setSelection(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (this.selection != newValue) {
             getValue().markDirty(VSpinner.SELECTION);
         }
         this.selection = newValue;
@@ -743,7 +743,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setDigits(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.digits, newValue)) {
+        if (this.digits != newValue) {
             getValue().markDirty(VSpinner.DIGITS);
         }
         if (value < 0)
@@ -898,10 +898,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
 
     public int _textLimit() {
         return textLimit;
-    }
-
-    String wireDecimalSeparator() {
-        return SpinnerHelper.decimalSeparator(this);
     }
 
     String keptText;

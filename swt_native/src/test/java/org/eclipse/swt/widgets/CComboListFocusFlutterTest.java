@@ -91,6 +91,47 @@ class CComboListFocusFlutterTest {
         assertThat(display.getFocusControl()).isNotSameAs(view);
     }
 
+    @Test
+    void aPressGivesTheFieldTheFocusBeforeTheMouseDown() {
+        openShell();
+        view.setFocus();
+        Control[] focusAtPress = new Control[1];
+        combo.addListener(SWT.MouseDown, e -> focusAtPress[0] = display.getFocusControl());
+
+        Event press = new Event();
+        press.button = 3;
+        press.count = 1;
+        web.comm.fireContaining(channel(combo, "Mouse/MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+
+        // The field holds it, as natively: the keys then reach the CCombo through its field.
+        assertThat(focusAtPress[0]).isInstanceOf(Text.class).isNotSameAs(view);
+        assertThat(focusAtPress[0].getParent()).isSameAs(combo);
+    }
+
+    @Test
+    void theClientFocusingTheCComboItsFieldHoldsIsNoChange() {
+        openShell();
+        view.setFocus();
+        Event press = new Event();
+        press.button = 1;
+        press.count = 1;
+        web.comm.fireContaining(channel(combo, "Mouse/MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+        Control field = display.getFocusControl();
+        java.util.List<String> events = new java.util.ArrayList<>();
+        combo.addListener(SWT.FocusIn, e -> events.add("CCombo.FocusIn"));
+        field.addListener(SWT.FocusOut, e -> events.add("field.FocusOut"));
+
+        // The client's own report of the focus the press gave the CCombo.
+        clientReports(combo, "Focus/FocusIn", 0);
+
+        assertThat(display.getFocusControl()).isSameAs(field);
+        assertThat(events).isEmpty();
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     private static String channel(Widget widget, String suffix) {

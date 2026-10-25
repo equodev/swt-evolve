@@ -536,7 +536,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setHours(int hours) {
         int newValue = hours;
         checkWidget();
-        if (!java.util.Objects.equals(this.hours, newValue)) {
+        if (this.hours != newValue) {
             getValue().markDirty(VDateTime.HOURS);
         }
         if (hours < 0 || hours > 23)
@@ -560,7 +560,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setMinutes(int minutes) {
         int newValue = minutes;
         checkWidget();
-        if (!java.util.Objects.equals(this.minutes, newValue)) {
+        if (this.minutes != newValue) {
             getValue().markDirty(VDateTime.MINUTES);
         }
         if (minutes < 0 || minutes > 59)
@@ -609,7 +609,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setSeconds(int seconds) {
         int newValue = seconds;
         checkWidget();
-        if (!java.util.Objects.equals(this.seconds, newValue)) {
+        if (this.seconds != newValue) {
             getValue().markDirty(VDateTime.SECONDS);
         }
         if (seconds < 0 || seconds > 59)

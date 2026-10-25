@@ -351,7 +351,7 @@ public class GraphicsUtils {
         if (file == null) return false;
         String n = file.getName();
         int dot = n.lastIndexOf('.');
-        String ext = n.substring(dot + 1).toLowerCase();
+        String ext = n.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
         try {
             byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
             if (ext.equals("svg")) {
