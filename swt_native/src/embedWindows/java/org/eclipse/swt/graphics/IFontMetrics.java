@@ -42,6 +42,7 @@ public interface IFontMetrics extends ImplFontMetrics {
      * @return the average character width of the font
      * @deprecated Use getAverageCharacterWidth() instead
      */
+    @Deprecated
     int getAverageCharWidth();
 
     /**

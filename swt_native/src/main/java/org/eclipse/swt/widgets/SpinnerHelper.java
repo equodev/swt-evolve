@@ -76,7 +76,7 @@ public class SpinnerHelper {
 
     static void setSelection(DartSpinner c, int value, boolean setPos, boolean setText, boolean notify) {
         int newValue = value;
-        if (!java.util.Objects.equals(c.selection, newValue)) {
+        if (c.selection != newValue) {
             c.getValue().markDirty(VSpinner.SELECTION);
         }
         if (setPos) {

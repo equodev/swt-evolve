@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart' show EquoCommBase;
 import 'package:swtflutter/src/gen/button.dart';
+import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/clabel.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/control.dart';
@@ -178,5 +179,22 @@ void main() {
       () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 30),
     );
     expect(sent.map((s) => s.split('/').take(2).join('/')), ['CLabel/5', 'Composite/1']);
+  });
+
+  testWidgets('a wheel over a ccombo in a composite is reported by the ccombo only', (tester) async {
+    final combo = VCCombo()
+      ..id = 5
+      ..style = SWT.NONE
+      ..enabled = true
+      ..text = ''
+      ..items = const []
+      ..bounds = _rect(10, 10, 150, 30);
+    final sent = await _wheel(
+      tester,
+      SizedBox(width: 200, height: 120, child: CompositeSwt<VComposite>(value: _composite(combo))),
+      () => tester.getTopLeft(find.byType(CompositeSwt<VComposite>)) + const Offset(60, 25),
+    );
+    expect(sent.map((s) => s.split('/').take(2).join('/')), ['CCombo/5'],
+        reason: 'its field keeps the wheel on every native, so the parent sees none');
   });
 }

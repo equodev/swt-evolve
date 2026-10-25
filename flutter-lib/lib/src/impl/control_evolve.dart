@@ -609,6 +609,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// too.
   bool get keepsWheel => false;
 
+  /// Whether a right press focuses this control as a left one does: a native edit field's does.
+  bool get takesFocusOnSecondaryPress => false;
+
   /// The wheel event a control below has kept, by its untransformed original: every listener on the
   /// pointer's path receives its own transformed copy of the same event.
   static PointerEvent? _keptWheel;
@@ -847,8 +850,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         }
         // After MouseDown: Java orders the press's activation and focus ahead of the MouseDown it
         // delivers (ControlHelper.pressed), and a focus reported first would arrive as a separate,
-        // earlier change. Only the primary button focuses this way, as natively.
-        if (e.buttons == kPrimaryButton) takeFocusOnPress();
+        // earlier change. Only the primary button focuses this way, as natively, unless the control
+        // is an edit field that a right press focuses too.
+        if (e.buttons == kPrimaryButton || (e.buttons == kSecondaryButton && takesFocusOnSecondaryPress)) {
+          takeFocusOnPress();
+        }
         // After MouseDown, never before: a tool that tracks the secondary press picks the
         // item under the cursor there, and a menu built ahead of it describes the previous
         // selection. Still ahead of the menu opening, which applyMenu does on the release.

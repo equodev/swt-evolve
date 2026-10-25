@@ -20,6 +20,7 @@ class FocusOnPressTest extends KeyRoutingTestBase {
         Shell shell = shell();
         assertThat(focuses(new Button(shell, SWT.PUSH), 1)).isTrue();
         assertThat(focuses(new Text(shell, SWT.BORDER), 1)).isTrue();
+        assertThat(focuses(new org.eclipse.swt.custom.CCombo(shell, SWT.NONE), 1)).isTrue();
         assertThat(focuses(new DateTime(shell, SWT.DATE), 1)).isTrue();
         assertThat(focuses(new Table(shell, SWT.NONE), 1)).isTrue();
         assertThat(focuses(new Label(shell, SWT.NONE), 1)).isFalse();
@@ -31,6 +32,7 @@ class FocusOnPressTest extends KeyRoutingTestBase {
         Shell shell = shell();
         assertThat(focuses(new Text(shell, SWT.BORDER), 3)).isTrue();
         assertThat(focuses(new Combo(shell, SWT.DROP_DOWN), 3)).isTrue();
+        assertThat(focuses(new org.eclipse.swt.custom.CCombo(shell, SWT.NONE), 3)).isTrue();
         assertThat(focuses(new Tree(shell, SWT.NONE), 3)).isTrue();
         assertThat(focuses(new Button(shell, SWT.PUSH), 3)).isFalse();
         assertThat(focuses(new DateTime(shell, SWT.DATE), 3)).isFalse();

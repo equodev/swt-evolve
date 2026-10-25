@@ -34,6 +34,7 @@ public class VFontDialog extends VDialog {
         ((DartFontDialog) impl).effectsVisible = value;
     }
 
+    @SuppressWarnings("removal")
     public FontData getFontData() {
         FontData val = ((DartFontDialog) impl).fontData;
         if (val != null && !(val.getImpl() instanceof DartFontData))

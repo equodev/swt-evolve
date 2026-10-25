@@ -384,6 +384,7 @@ public interface IStyledText extends ICanvas, ImplStyledText {
      *
      * @deprecated use BidiSegmentListener instead.
      */
+    @Deprecated
     boolean getBidiColoring();
 
     /**
@@ -958,6 +959,7 @@ public interface IStyledText extends ICanvas, ImplStyledText {
      *
      * @deprecated Use {@link #getOffsetAtPoint(Point)} instead for better performance
      */
+    @Deprecated
     int getOffsetAtLocation(Point point);
 
     /**
@@ -2055,6 +2057,7 @@ public interface IStyledText extends ICanvas, ImplStyledText {
      *
      * @deprecated use BidiSegmentListener instead.
      */
+    @Deprecated
     void setBidiColoring(boolean mode);
 
     /**
