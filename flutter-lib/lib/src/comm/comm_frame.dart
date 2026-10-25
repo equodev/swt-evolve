@@ -76,6 +76,10 @@ abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, List<dynamic>> _pending = {};
 
+  /// The channels a handler is registered on.
+  @visibleForTesting
+  Iterable<String> get handledChannels => _handlers.keys;
+
   /// Channels whose held run overflowed and has had no whole frame since: the changes arriving
   /// after it describe a state this side no longer has, so they are not kept.
   final Set<String> _overflowed = {};

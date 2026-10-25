@@ -33,6 +33,7 @@ import org.eclipse.swt.widgets.Widget;
  * Built once at bench startup; re-serialized through the production Serializer each iteration like
  * every other shape. Do not edit by hand — re-run the generator after re-capturing the JSON.
  */
+@SuppressWarnings("removal")
 final class WorkbenchTree {
 
     static DartControl build(Shell shell) {

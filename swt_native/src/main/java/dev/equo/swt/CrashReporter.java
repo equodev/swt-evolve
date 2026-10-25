@@ -173,12 +173,12 @@ public class CrashReporter {
             Path dir = java.nio.file.Paths.get(System.getProperty("user.home"), ".equo");
             Files.createDirectories(dir);
 
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            String timestamp = LocalDateTime.now(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", java.util.Locale.ROOT));
             File logFile = dir.resolve("crash-" + timestamp + ".log").toFile();
 
             try (PrintWriter pw = new PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(logFile, true), StandardCharsets.UTF_8))) {
                 pw.println("=== Equo SWT Crash Report ===");
-                pw.println("Timestamp: " + LocalDateTime.now());
+                pw.println("Timestamp: " + LocalDateTime.now(java.time.ZoneId.systemDefault()));
                 pw.println();
 
                 pw.println("=== System Info ===");
@@ -329,7 +329,7 @@ public class CrashReporter {
         try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(crashLog), StandardCharsets.UTF_8))) {
             String firstLine = reader.readLine();
             // Detect hs_err format: first line starts with '#' and contains "fatal error"
-            if (firstLine != null && firstLine.startsWith("#") && firstLine.toLowerCase().contains("fatal error")) {
+            if (firstLine != null && firstLine.startsWith("#") && firstLine.toLowerCase(java.util.Locale.ROOT).contains("fatal error")) {
                 return summarizeHsErrLog(reader, firstLine);
             }
 
@@ -502,7 +502,7 @@ public class CrashReporter {
                 int dot = name.lastIndexOf('.');
                 String base = dot >= 0 ? name.substring(0, dot) : name;
                 String ext = dot >= 0 ? name.substring(dot) : "";
-                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+                String timestamp = LocalDateTime.now(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", java.util.Locale.ROOT));
                 target = equoDir.resolve(base + "-" + timestamp + ext);
             }
 

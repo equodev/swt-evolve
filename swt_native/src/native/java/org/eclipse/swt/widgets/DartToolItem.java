@@ -648,7 +648,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        if (this.enabled != newValue) {
             getValue().markDirty(VToolItem.ENABLED);
         }
         if ((getApi().state & DISABLED) == 0 && enabled)
@@ -809,7 +809,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setSelection(boolean selected) {
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, selected)) {
+        if (this.selection != selected) {
             getValue().markDirty(VToolItem.SELECTION);
         }
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
@@ -933,7 +933,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        if (!java.util.Objects.equals(this.width, width)) {
+        if (this.width != width) {
             getValue().markDirty(VToolItem.WIDTH);
         }
         if ((getApi().style & SWT.SEPARATOR) == 0)

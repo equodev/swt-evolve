@@ -11,11 +11,7 @@ public interface ImplCCombo extends ImplComposite {
 
     Text _text();
 
-    List _list();
-
     int _visibleItemCount();
-
-    Button _arrow();
 
     boolean _hasFocus();
 

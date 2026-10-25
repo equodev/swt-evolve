@@ -63,6 +63,12 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private Point windowOrigin = new Point(0, 0);
 
+    /** Whether a client has reported the real monitor yet; until then {@code display.bounds} is a placeholder. */
+    private boolean monitorReported;
+
+    /** Whether the window has been sized to the unsized main shell it first showed. */
+    private boolean windowSizedToUnsizedShell;
+
     /** The last real viewport the window reported, or null until it reports one. */
     private Rectangle windowViewport;
 
@@ -701,6 +707,10 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (monitor != null && !display.bounds.equals(monitor)) {
             display.bounds = monitor; // the Display is the screen, not the window
             changed = true;
+            if (!monitorReported) {
+                monitorReported = true;
+                resizeUnsizedShells(display);
+            }
         }
 
         Shell main = mainShell(display);
@@ -721,6 +731,17 @@ public class DeskDisplayBridge extends DisplayBridge {
                 return changed;
             }
             windowShell = main;
+            // A main shell nobody sized opens its window at its own size, 5/8 of the real monitor, as a
+            // native shell opens its window, instead of the size the window was created at before the
+            // monitor was known.
+            if (monitorReported && isUnsized(main) && !windowSizedToUnsizedShell) {
+                windowSizedToUnsizedShell = true;
+                Rectangle own = main.getBounds();
+                if (own.width != viewport.width || own.height != viewport.height) {
+                    forwardWindowBounds(windowBoundsFor(own));
+                    return true;
+                }
+            }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
             boolean shellMatches = current != null
@@ -934,6 +955,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             super.setBounds(control, bounds);
             return;
         }
+        noteBoundsSet(control);
         if (bounds == null) {
             return;
         }
@@ -971,6 +993,7 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        if (fullScreen) fillMonitorIfUnsized(control);
         if (isMainWindow(control)) {
             setShellWindowState(windowContext, fullScreen ? ShellWindow.STATE_FULLSCREEN : ShellWindow.STATE_NORMAL);
             return;

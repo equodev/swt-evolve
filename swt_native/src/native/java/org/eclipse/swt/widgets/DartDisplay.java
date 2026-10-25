@@ -3496,7 +3496,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.118
      */
     public <T, E extends Exception> T syncCall(SwtCallable<T, E> callable) throws E {
-        Objects.nonNull(callable);
+        Objects.requireNonNull(callable);
         AtomicReference<T> result = new AtomicReference<>();
         AtomicReference<Exception> ex = new AtomicReference<>();
         syncExec(() -> {

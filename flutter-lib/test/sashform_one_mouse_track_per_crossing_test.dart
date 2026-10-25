@@ -14,9 +14,10 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 
 class _RecordingSashFormSwt extends SashFormSwt<VSashForm> {
-  const _RecordingSashFormSwt({required super.value, required this.calls});
+  const _RecordingSashFormSwt({required super.value, required this.calls, this.weights});
 
   final List<String> calls;
+  final List<String>? weights;
 
   @override
   void sendMouseTrackMouseEnter(VSashForm val, VEvent? payload) =>
@@ -25,6 +26,11 @@ class _RecordingSashFormSwt extends SashFormSwt<VSashForm> {
   @override
   void sendMouseTrackMouseExit(VSashForm val, VEvent? payload) =>
       calls.add('exit:${payload?.x},${payload?.y}');
+
+  @override
+  void sendEvent(VSashForm val, String ev, VEvent? payload) {
+    if (ev == 'Selection/Selection') weights?.add(payload!.text!);
+  }
 }
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -128,5 +134,57 @@ void main() {
     await mouse.removePointer();
 
     expect(afterRelease, isEmpty);
+  });
+
+  // Java answers every weight a drag reports, live ones included, and an answer can arrive after
+  // the release: applied, a stale one would move the sash back from under the pointer and out again.
+  testWidgets('weights Java sends back late from a finished drag do not move the sash',
+      (tester) async {
+    final calls = <String>[];
+    final sent = <String>[];
+    final value = VSashForm()
+      ..swt = 'SashForm'
+      ..id = 1
+      ..style = SWT.HORIZONTAL
+      ..visible = true
+      ..enabled = true
+      ..bounds = _rect(0, 0, 300, 200)
+      ..weights = [1, 1]
+      ..children = [_text(2, 0), _text(3, 150)];
+    Widget app() => EvolveApp(
+          theme: ThemeMode.light,
+          contentWidget: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(width: 300, height: 200, child: _RecordingSashFormSwt(calls: calls, weights: sent, value: value)),
+          ),
+        );
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+
+    final sash = tester.getCenter(find.byKey(const ValueKey('sashform-sash-0')));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: sash);
+    await tester.pumpAndSettle();
+
+    await mouse.down(sash);
+    await tester.pump();
+    for (var i = 1; i <= 8; i++) {
+      await mouse.moveTo(sash + Offset(i * 10.0, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await mouse.up();
+    await tester.pumpAndSettle();
+    final released = tester.getCenter(find.byKey(const ValueKey('sashform-sash-0')));
+
+    expect(sent.length, greaterThan(1));
+    calls.clear();
+    // The first live report comes back only now, after the release.
+    value.weights = sent.first.split(',').map(int.parse).toList();
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+
+    expect(tester.getCenter(find.byKey(const ValueKey('sashform-sash-0'))), released);
+    expect(calls, isEmpty);
+    await mouse.removePointer();
   });
 }
