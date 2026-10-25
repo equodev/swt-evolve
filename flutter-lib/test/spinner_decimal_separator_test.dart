@@ -1,6 +1,7 @@
 // The text of a Spinner with digits shows its decimal places with the separator of the user's locale, as every
-// native spinner does, and getText() on the Java side answers the same text. Java sends the separator it uses, and
-// this side writes it into the field and reads it back out of what is typed.
+// native spinner does, and getText() on the Java side answers the same text. On desktop the locale is the JVM's,
+// whose separator arrives in the config flags; this side writes it into the field and reads it back out of what
+// is typed.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,8 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/spinner.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 /// The generated SpinnerSwt, except sendEvent captures outgoing events instead of handing them to
 /// EquoCommService, which needs a live transport.
@@ -24,7 +27,7 @@ class _CapturingSpinnerSwt extends SpinnerSwt<VSpinner> {
       onEvent(ev, payload);
 }
 
-VSpinner _spinner({int digits = 2, String? separator, int selection = 123}) =>
+VSpinner _spinner({int digits = 2, int selection = 123}) =>
     VSpinner()
       ..id = 31
       ..style = SWT.BORDER
@@ -34,7 +37,6 @@ VSpinner _spinner({int digits = 2, String? separator, int selection = 123}) =>
       ..selection = selection
       ..increment = 1
       ..digits = digits
-      ..decimalSeparator = separator
       ..bounds = (VRectangle()
         ..x = 0
         ..y = 0
@@ -42,7 +44,8 @@ VSpinner _spinner({int digits = 2, String? separator, int selection = 123}) =>
         ..height = 32);
 
 Future<void> _pump(WidgetTester tester, VSpinner value,
-    {void Function(String ev, VEvent? payload)? onEvent}) async {
+    {String? separator, void Function(String ev, VEvent? payload)? onEvent}) async {
+  setConfigFlags(ConfigFlags()..decimal_separator = separator);
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
@@ -57,9 +60,11 @@ String _shown(WidgetTester tester) =>
     tester.widget<EditableText>(find.byType(EditableText)).controller.text;
 
 void main() {
-  testWidgets('the field writes its decimals with the separator Java sent',
+  tearDown(resetConfigFlags);
+
+  testWidgets('the field writes its decimals with the separator of the JVM\'s locale',
       (WidgetTester tester) async {
-    await _pump(tester, _spinner(separator: ','));
+    await _pump(tester, _spinner(), separator: ',');
 
     expect(_shown(tester), '1,23');
   });
@@ -73,7 +78,7 @@ void main() {
 
   testWidgets('a separator that is not a point is written once, for every place',
       (WidgetTester tester) async {
-    await _pump(tester, _spinner(separator: '\u066B', selection: 5));
+    await _pump(tester, _spinner(selection: 5), separator: '\u066B');
 
     expect(_shown(tester), '0\u066B05');
   });
@@ -81,7 +86,7 @@ void main() {
   testWidgets('a text typed with the separator is committed as that many places',
       (WidgetTester tester) async {
     final committed = <int>[];
-    await _pump(tester, _spinner(separator: ','), onEvent: (ev, payload) {
+    await _pump(tester, _spinner(), separator: ',', onEvent: (ev, payload) {
       if (ev == 'Selection/DefaultSelection') committed.add(payload!.index!);
     });
 
@@ -95,7 +100,7 @@ void main() {
 
   testWidgets('a point is not accepted when the separator is another character',
       (WidgetTester tester) async {
-    await _pump(tester, _spinner(separator: ','));
+    await _pump(tester, _spinner(), separator: ',');
 
     await tester.enterText(find.byType(EditableText), '1.5');
     await tester.pump();
@@ -105,7 +110,7 @@ void main() {
 
   testWidgets('changing the digits rewrites the text of the same value',
       (WidgetTester tester) async {
-    await _pump(tester, _spinner(digits: 0, separator: ','));
+    await _pump(tester, _spinner(digits: 0), separator: ',');
     expect(_shown(tester), '123');
 
     // What an update from Java does: the state takes the new digits and the widget rebuilds.

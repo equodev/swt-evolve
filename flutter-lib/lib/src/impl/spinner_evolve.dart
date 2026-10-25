@@ -9,6 +9,7 @@ import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import '../theme/theme_settings/spinner_theme_settings.dart';
+import 'utils/number_locale.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
@@ -49,7 +50,6 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         state.pageIncrement ?? widgetTheme.defaultPageIncrement;
     final digits = state.digits ?? widgetTheme.defaultDigits;
     final textLimit = state.textLimit ?? widgetTheme.defaultTextLimit;
-    final decimalSeparator = state.decimalSeparator ?? '.';
 
     final currentValue = selection!.clamp(minimum, maximum);
     final enabled = state.enabled ?? false;
@@ -91,7 +91,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         max: maximum,
         increment: increment,
         digits: digits,
-        decimalSeparator: decimalSeparator,
+        decimalSeparator: decimalSeparator(),
         keptText: state.keptText,
         pageIncrement: pageIncrement,
         textLimit: textLimit,

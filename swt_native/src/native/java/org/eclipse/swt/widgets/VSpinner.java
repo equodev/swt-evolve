@@ -73,21 +73,12 @@ public class VSpinner extends VComposite {
         ((DartSpinner) impl).textLimit = value;
     }
 
-    public String getDecimalSeparator() {
-        return ((DartSpinner) impl).wireDecimalSeparator();
-    }
-
-    public void setDecimalSeparator(String value) {
-    }
-
     public String getKeptText() {
         return ((DartSpinner) impl).wireKeptText();
     }
 
     public void setKeptText(String value) {
     }
-
-    public static final String DECIMAL_SEPARATOR = "decimalSeparator";
 
     public static final String DIGITS = "digits";
 
@@ -128,9 +119,6 @@ public class VSpinner extends VComposite {
                 return;
             case "textLimit":
                 Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
-                return;
-            case "decimalSeparator":
-                Serializer.writeKeyValue(writer, "decimalSeparator", getDecimalSeparator());
                 return;
             case "keptText":
                 Serializer.writeKeyValue(writer, "keptText", getKeptText());

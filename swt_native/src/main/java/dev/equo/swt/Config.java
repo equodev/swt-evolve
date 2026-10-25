@@ -861,6 +861,11 @@ public class Config {
         return configFlags;
     }
 
+    /** The locale numbers are written in on desktop, where the JVM serves a single user. */
+    public static java.util.Locale formatLocale() {
+        return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
+    }
+
     public static ConfigFlags getConfigFlags() {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
@@ -962,6 +967,8 @@ public class Config {
         // Also derived, and for the same reason: the client reports the monitor's zoom only once it
         // is up, and swt.autoScale is applied to it after these flags were first read.
         configFlags.ui_zoom = uiZoom();
+        configFlags.decimal_separator =
+                String.valueOf(java.text.DecimalFormatSymbols.getInstance(formatLocale()).getDecimalSeparator());
         return configFlags;
     }
 

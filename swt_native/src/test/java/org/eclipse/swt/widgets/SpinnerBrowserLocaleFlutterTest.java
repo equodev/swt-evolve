@@ -8,11 +8,13 @@ import org.junit.jupiter.api.Test;
 
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** The browser reports its language when it connects, and a spinner writes its decimals the way that language does. */
+/**
+ * The browser reports its language when it connects, and a spinner writes its decimals the way that language does;
+ * the browser writes them with the same separator, which it takes from that language itself.
+ */
 @Tag("flutter-it")
 class SpinnerBrowserLocaleFlutterTest {
 
@@ -24,7 +26,6 @@ class SpinnerBrowserLocaleFlutterTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void aSpinnerWritesItsDecimalsInTheBrowsersLanguage() {
         Display display = flutter.boot();
         flutter.settle();
@@ -40,7 +41,7 @@ class SpinnerBrowserLocaleFlutterTest {
         String separator = String.valueOf(DecimalFormatSymbols.getInstance(browser).getDecimalSeparator());
 
         assertThat(spinner.getText()).isEqualTo("1" + separator + "23");
-        Map<String, Object> state = (Map<String, Object>) flutter.queryState(spinner).get("state");
-        assertThat(state.get("decimalSeparator")).isEqualTo(separator);
+        String browsers = flutter.devTools().evaluate("(1.5).toLocaleString(navigator.language)").getAsString();
+        assertThat(browsers).isEqualTo("1" + separator + "5");
     }
 }

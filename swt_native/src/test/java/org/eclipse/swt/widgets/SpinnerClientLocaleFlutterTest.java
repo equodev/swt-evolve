@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
@@ -10,58 +12,53 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * A spinner writes its decimals in the locale of its session's client, which the client reports with its viewport:
- * the browser's on web, the OS's on desktop. Until it does, the separator is a point.
+ * A spinner writes its decimals in the locale of its Display. On web that is the locale the browser reports with its
+ * viewport, a point until it does; on desktop it is the JVM's, which the client gets in the config flags.
  */
 @Tag("flutter-it")
 class SpinnerClientLocaleFlutterTest {
 
+    private final Locale jvmLocale = Locale.getDefault(Locale.Category.FORMAT);
+    private final String mode = ConfigFlags.mode();
     private Display display;
 
     @AfterEach
     void tearDown() {
         if (display != null && !display.isDisposed()) display.dispose();
         FlutterBridge.set(null);
+        Locale.setDefault(Locale.Category.FORMAT, jvmLocale);
+        if (mode == null) System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        else ConfigFlags.setMode(mode);
     }
 
     @Test
     void onTheWebASpinnerIsWrittenInTheBrowsersLocaleOnceItIsReported() {
         TestWebBridge web = install(TestWebBridge::new);
-        writesTheReportedLocale(web.comm);
-    }
-
-    @Test
-    void onTheDesktopASpinnerIsWrittenInTheSystemsLocaleOnceItIsReported() {
-        TestDeskBridge desk = install(TestDeskBridge::new);
-        writesTheReportedLocale(desk.comm);
-    }
-
-    private void writesTheReportedLocale(RecordingComm comm) {
         Spinner spinner = spinner();
         assertThat(spinner.getText()).as("before the client reports").isEqualTo("1.23");
 
-        clientReady(comm, "de-DE", true);
+        clientReady(web.comm, "de-DE", true);
 
         assertThat(spinner.getText()).isEqualTo("1,23");
-        assertThat(sent(comm)).contains(COMMA);
     }
 
     @Test
-    void aLocaleReportedLaterMarksEveryOpenSpinnerToBeSentAgain() {
-        install(TestWebBridge::new);
+    void onTheDesktopASpinnerIsWrittenInTheJvmsLocale() {
+        Locale.setDefault(Locale.Category.FORMAT, Locale.GERMANY);
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
+        TestDeskBridge desk = install(TestDeskBridge::new);
         Spinner spinner = spinner();
-        VSpinner value = (VSpinner) ((DartSpinner) spinner.getImpl()).getValue();
-        value.changedKeys().clear();
 
-        ((DartDisplay) display.getImpl()).applyClientLocale("de-DE");
+        clientReady(desk.comm, "en-US", true);
 
-        assertThat(value.changedKeys()).contains(VSpinner.DECIMAL_SEPARATOR);
-        assertThat(value.getDecimalSeparator()).isEqualTo(",");
+        assertThat(spinner.getText()).isEqualTo("1,23");
+        assertThat(Config.getConfigFlags().decimal_separator).isEqualTo(",");
     }
 
     @Test
@@ -84,17 +81,14 @@ class SpinnerClientLocaleFlutterTest {
     }
 
     @Test
-    void theSameLocaleAgainMarksNoSpinner() {
-        install(TestWebBridge::new);
-        Spinner spinner = spinner();
-        DartDisplay client = (DartDisplay) display.getImpl();
-        client.applyClientLocale("de-DE");
-        VSpinner value = (VSpinner) ((DartSpinner) spinner.getImpl()).getValue();
+    void aReportedLocaleSendsNothingToTheSpinners() {
+        TestWebBridge web = install(TestWebBridge::new);
+        VSpinner value = (VSpinner) ((DartSpinner) spinner().getImpl()).getValue();
         value.changedKeys().clear();
 
-        client.applyClientLocale("de-DE");
+        clientReady(web.comm, "de-DE", true);
 
-        assertThat(value.changedKeys()).doesNotContain(VSpinner.DECIMAL_SEPARATOR);
+        assertThat(value.changedKeys()).isEmpty();
     }
 
     // ---- harness ----------------------------------------------------------------------------------
@@ -106,19 +100,6 @@ class SpinnerClientLocaleFlutterTest {
         Spinner spinner = new Spinner(group, SWT.NONE);
         spinner.setValues(123, 0, 1000, 2, 1, 10);
         return spinner;
-    }
-
-    private static final String COMMA = "\"decimalSeparator\":\",\"";
-
-    /** Everything sent to the client, once what the Display had pending is flushed. */
-    private String sent(RecordingComm comm) {
-        while (display.readAndDispatch()) {
-        }
-        FlutterBridge.flushDirtyStates();
-        StringBuilder all = new StringBuilder();
-        for (RecordingComm.Frame frame : comm.sent)
-            if (frame.json != null) all.append(frame.json).append('\n');
-        return all.toString();
     }
 
     private <B extends DisplayBridge> B install(Function<DartDisplay, B> factory) {
