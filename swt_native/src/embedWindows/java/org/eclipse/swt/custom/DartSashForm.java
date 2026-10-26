@@ -440,7 +440,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
      */
     public void setSashWidth(int width) {
         checkWidget();
-        if (!java.util.Objects.equals(this.getApi().SASH_WIDTH, width)) {
+        if (this.getApi().SASH_WIDTH != width) {
             getValue().markDirty(VSashForm.SASH_WIDTH);
         }
         if (getApi().SASH_WIDTH == width)

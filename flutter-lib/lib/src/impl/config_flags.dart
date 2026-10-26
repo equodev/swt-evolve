@@ -59,6 +59,9 @@ class ConfigFlags {
   /// True when the OS owns the menu bar (macOS desktop) and this side must not draw one.
   bool? system_menu_bar;
 
+  /// The decimal separator of the JVM's locale, which a desktop client writes numbers with.
+  String? decimal_separator;
+
   /// Logical pixels per SWT font point on the host the application runs on, as the Java side
   /// measured its text extents at. Not derivable here: this client's platform is the browser's.
   double? font_point_scale;

@@ -3540,7 +3540,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
         checkWidget();
-        if (!java.util.Objects.equals(this.dragDetect, newValue)) {
+        if (this.dragDetect != newValue) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
         this.dragDetect = newValue;
@@ -4053,7 +4053,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (!java.util.Objects.equals(getVisible(), newValue)) {
+        if (getVisible() != newValue) {
             getValue().markDirty(VControl.VISIBLE);
         }
         if (((getApi().state & HIDDEN) == 0) == visible)

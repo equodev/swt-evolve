@@ -1806,7 +1806,7 @@ public class DartTable extends DartComposite implements ITable {
         //int[] newValue = indices;
         ;
         checkWidget();
-        //if (!java.util.Objects.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
+        //if (!java.util.Arrays.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
         ;
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2257,7 +2257,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, newValue)) {
+        if (this.headerVisible != newValue) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
         /*
@@ -2417,7 +2417,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
         this.linesVisible = newValue;
@@ -2564,7 +2564,7 @@ public class DartTable extends DartComposite implements ITable {
         //int[] newValue = indices;
         ;
         checkWidget();
-        //if (!java.util.Objects.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
+        //if (!java.util.Arrays.equals(this.selection, newValue)) {    getValue().markDirty(VTable.SELECTION);}
         ;
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);

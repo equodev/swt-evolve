@@ -1057,7 +1057,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setChecked(boolean checked) {
         boolean newValue = checked;
         checkWidget();
-        if (!java.util.Objects.equals(this.checked, newValue)) {
+        if (this.checked != newValue) {
             getValue().markDirty(VTreeItem.CHECKED);
         }
         if ((parent.style & SWT.CHECK) == 0)
@@ -1080,7 +1080,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setExpanded(boolean expanded) {
         checkWidget();
-        if (!java.util.Objects.equals(this.isExpanded, expanded)) {
+        if (this.isExpanded != expanded) {
             getValue().markDirty(VTreeItem.EXPANDED);
         }
     }
@@ -1284,7 +1284,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (!java.util.Objects.equals(this.grayed, grayed)) {
+        if (this.grayed != grayed) {
             getValue().markDirty(VTreeItem.GRAYED);
         }
         if ((parent.style & SWT.CHECK) == 0)

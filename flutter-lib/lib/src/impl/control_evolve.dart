@@ -601,7 +601,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   bool get forwardsKeysFromWrap => true;
 
   /// Whether [wrap] reports the mouse wheel. A control that reports it from its own handler (Canvas,
-  /// StyledText) overrides this to false.
+  /// a StyledText with scroll bars) overrides this to false.
   bool get forwardsWheelFromWrap => true;
 
   /// Whether a wheel over this control ends with it: a List, Table or Tree keeps it (Win32 and

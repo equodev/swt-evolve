@@ -476,7 +476,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setAlwaysShowScrollBars(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.alwaysShowScroll, show)) {
+        if (this.alwaysShowScroll != show) {
             getValue().markDirty(VScrolledComposite.ALWAYS_SHOW_SCROLL_BARS);
         }
         if (show == alwaysShowScroll)
@@ -552,7 +552,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setExpandHorizontal(boolean expand) {
         checkWidget();
-        if (!java.util.Objects.equals(this.expandHorizontal, expand)) {
+        if (this.expandHorizontal != expand) {
             getValue().markDirty(VScrolledComposite.EXPAND_HORIZONTAL);
         }
         if (expand == expandHorizontal)
@@ -578,7 +578,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setExpandVertical(boolean expand) {
         checkWidget();
-        if (!java.util.Objects.equals(this.expandVertical, expand)) {
+        if (this.expandVertical != expand) {
             getValue().markDirty(VScrolledComposite.EXPAND_VERTICAL);
         }
         if (expand == expandVertical)
@@ -622,7 +622,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setMinHeight(int height) {
         setMinSize(minWidth, height);
-        if (!java.util.Objects.equals(this.minHeight, height)) {
+        if (this.minHeight != height) {
             getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
         }
     }
@@ -662,9 +662,9 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setMinSize(int width, int height) {
         checkWidget();
-        if (!java.util.Objects.equals(this.minHeight, height))
+        if (this.minHeight != height)
             getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
-        if (!java.util.Objects.equals(this.minWidth, width)) {
+        if (this.minWidth != width) {
             getValue().markDirty(VScrolledComposite.MIN_WIDTH);
         }
         if (width == minWidth && height == minHeight)
@@ -688,7 +688,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setMinWidth(int width) {
         setMinSize(width, minHeight);
-        if (!java.util.Objects.equals(this.minWidth, width)) {
+        if (this.minWidth != width) {
             getValue().markDirty(VScrolledComposite.MIN_WIDTH);
         }
     }

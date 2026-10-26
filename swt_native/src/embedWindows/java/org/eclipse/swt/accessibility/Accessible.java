@@ -75,6 +75,7 @@ public class Accessible {
      * @deprecated
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected Accessible() {
         this((IIAccessible) null);
         setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(this) : new SwtAccessible(this));
