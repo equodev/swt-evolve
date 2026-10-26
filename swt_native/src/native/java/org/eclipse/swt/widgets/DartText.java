@@ -395,8 +395,14 @@ public class DartText extends DartScrollable implements IText {
         Point oldSelection = getSelection();
         if (oldSelection.x == oldSelection.y)
             return;
+        String newText = "";
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            newText = verifyText(newText, oldSelection.x, oldSelection.y);
+            if (newText == null)
+                return;
+        }
         copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
-        insertEditText("");
+        insertEditText(newText);
         if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
     }
@@ -1072,6 +1078,12 @@ public class DartText extends DartScrollable implements IText {
         String newText = getClipboardText();
         if (newText == null)
             return;
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            Point selection = getSelection();
+            newText = verifyText(newText, selection.x, selection.y);
+            if (newText == null)
+                return;
+        }
         if (textLimit != Text.LIMIT) {
             Point sel = getSelection();
             int charCount = getCharCount();
