@@ -331,6 +331,8 @@ sourceSets {
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
             if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            // These assert what SWT 3.134's BusyIndicator does when the display goes away; earlier releases differ.
+            if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
             // TextLayout.setFixedLineMetrics was added in 3.125.
             if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
             // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
@@ -558,6 +560,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/TextLayoutMeasurement.java",
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
+    "**/TrackerHelper.java",
     "**/NativeCursorHotspot.java",
 )
 
