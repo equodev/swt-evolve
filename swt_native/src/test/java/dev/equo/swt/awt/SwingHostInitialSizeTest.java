@@ -10,11 +10,13 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SwingHostInitialSizeTest {
 
     private static final int VIEWPORT_HEIGHT = 100;
+    private static final int INNER_DIVIDER = 200;
+    private static final int OUTER_DIVIDER = 600;
 
     @Test
     void anIslandFrameKeepsAnEmptyTablesPreferredHeightAboveTheDivider() {
@@ -68,40 +72,68 @@ class SwingHostInitialSizeTest {
     @Test
     void contentThatRepaintsFromItselfKeepsItsDividersWhenAddedBeforeTheFrameHasASize() {
         JSplitPane inner = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JLabel("Selection"), new JLabel("Units"));
-        inner.setDividerLocation(200);
+        inner.setDividerLocation(INNER_DIVIDER);
         JSplitPane outer = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inner, new JPanel());
-        outer.setDividerLocation(600);
+        outer.setDividerLocation(OUTER_DIVIDER);
         JPanel applet = new JPanel(new BorderLayout());
         applet.add(outer);
         EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
-        JPanel frame = new JPanel(new BorderLayout());
+        JPanel frame = displayableFrame();
         frame.add(root);
 
         EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 0, 0));
+        layOut(frame);
         root.host(applet);
-        paintFromItselfIfInTree(applet, frame);
+        paintFromItself(applet);
         EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 384, 820));
+        paintInto(frame); // JLightweightFrame repaints on a new size before its deferred layout
         layOutAndPaint(frame);
 
         int units = inner.getBottomComponent().getHeight();
-        assertTrue(units >= 300, "middle pane " + units + " px high, expected about 390");
+        int expected = OUTER_DIVIDER - INNER_DIVIDER - 2 * outer.getDividerSize();
+        assertTrue(units >= expected, "middle pane " + units + " px high, expected at least " + expected);
+    }
+
+    @Test
+    void contentAddedBeforeTheFrameHasASizeIsInTheFramesTreeAtOnce() {
+        EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
+        JPanel frame = displayableFrame();
+        frame.add(root);
+        JPanel content = new JPanel();
+
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 0, 0));
+        root.host(content);
+
+        assertTrue(SwingUtilities.isDescendingFrom(content, frame), "content kept out of the frame's tree");
     }
 
     /**
-     * An applet is its own repaint root: Swing paints it at its own bounds, with nothing above it
-     * consulted, as soon as it is part of a displayable tree. Here that tree is the frame's.
+     * A frame stand-in whose tree has lightweight peers, so a descendant's {@code getGraphics()}
+     * resolves through its ancestors to this panel, as it resolves to the frame's buffer.
      */
-    private static void paintFromItselfIfInTree(JPanel applet, JPanel frame) {
-        if (!javax.swing.SwingUtilities.isDescendingFrom(applet, frame)) return;
+    private static JPanel displayableFrame() {
+        JPanel frame = new JPanel(new BorderLayout()) {
+            @Override
+            public Graphics getGraphics() {
+                return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).getGraphics();
+            }
+        };
+        frame.addNotify();
+        return frame;
+    }
+
+    /**
+     * The application sizes the applet to its preferred size and repaints it. An applet is its own
+     * repaint root: Swing paints it at its own bounds, with nothing above it consulted but its
+     * {@code getGraphics()}, and skips the paint when that is {@code null}.
+     */
+    private static void paintFromItself(JPanel applet) {
         applet.setSize(applet.getPreferredSize());
         layOut(applet);
-        BufferedImage buffer = new BufferedImage(applet.getWidth(), applet.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics g = buffer.getGraphics();
-        try {
-            applet.paint(g);
-        } finally {
-            g.dispose();
-        }
+        Graphics onScreen = applet.getGraphics();
+        if (onScreen == null) return;
+        onScreen.dispose();
+        paintInto(applet);
     }
 
     private static JSplitPane splitWithEmptyTable() {
@@ -120,10 +152,14 @@ class SwingHostInitialSizeTest {
     private static void layOutAndPaint(JPanel frame) {
         layOut(frame);
         if (frame.getWidth() <= 0 || frame.getHeight() <= 0) return;
-        BufferedImage buffer = new BufferedImage(frame.getWidth(), frame.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        paintInto(frame);
+    }
+
+    private static void paintInto(JComponent c) {
+        BufferedImage buffer = new BufferedImage(c.getWidth(), c.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics g = buffer.getGraphics();
         try {
-            frame.paint(g);
+            c.paint(g);
         } finally {
             g.dispose();
         }
