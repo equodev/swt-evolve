@@ -82,6 +82,16 @@ static std::wstring BundleBase() {
     return g_bundle_override.empty() ? GetDllPath() : g_bundle_override;
 }
 
+// Impeller compiles its pipelines on every engine start, on the UI thread. Java turns it off when
+// shells get windows of their own, each with its own engine; text is then measured off it too.
+static flutter::DartProject EngineProject(bool impeller) {
+    flutter::DartProject project(BundleBase() + L"\\data");
+    if (!impeller) {
+        project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
+    }
+    return project;
+}
+
 // Stores the external bundle base so BundleBase() points the engine at it.
 extern "C" JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetBundleDir(JNIEnv* env, jclass cls, jstring dir) {
@@ -110,14 +120,14 @@ int pumpMessages(int maxMessages) {
     return count;
 }
 
-void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName, std::string theme, int backgroundColor, int parentBackgroundColor) {
+void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName, std::string theme, int backgroundColor, int parentBackgroundColor, bool impeller) {
     std::cout<<"InitializeFlutterWindow"<<std::endl;
   // Attach to console when present (e.g., 'flutter run') or create a new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
     CreateAndAttachConsole();
   }
 
-  flutter::DartProject project(BundleBase() + L"\\data");
+  flutter::DartProject project = EngineProject(impeller);
 
   std::vector<std::string> arguments = {std::to_string(port), std::to_string(widgetId), widgetName, theme, std::to_string(backgroundColor), std::to_string(parentBackgroundColor)};
   project.set_dart_entrypoint_arguments(std::move(arguments));
@@ -159,7 +169,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 }
 
 // Creates a visible top-level window hosting the whole Display (desktop-native, 100% Flutter).
-FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled) {
+FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled, bool impeller) {
     std::cout << "FlutterNative.createDisplayWindow port:" << port << " id:" << displayId
               << " name:" << widgetName << " " << width << "x" << height << std::endl;
 
@@ -169,7 +179,7 @@ FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std:
     // COM is required by the Flutter Windows embedder/plugins. Harmless if already initialized.
     ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-    flutter::DartProject project(BundleBase() + L"\\data");
+    flutter::DartProject project = EngineProject(impeller);
 
     // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg]. Passing the real
     // widget background (not 0) avoids the Flutter theme rendering a pure-black Display background.
@@ -221,7 +231,7 @@ struct Surface {
 // JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds.
 // =================================================================================================
 
-JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled) {
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled, jboolean impeller_enabled) {
     const char* name_c = env->GetStringUTFChars(widget_name, nullptr);
     std::string nameStr(name_c);
     env->ReleaseStringUTFChars(widget_name, name_c);
@@ -236,10 +246,10 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, 
         // For a window, |parent| is the surface of the window that owns this one, or 0 for none.
         Surface* owner = reinterpret_cast<Surface*>(parent);
         HWND ownerWnd = (owner && owner->window) ? owner->window->GetHandle() : nullptr;
-        window = createDisplayWindow(port, ownerWnd, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE);
+        window = createDisplayWindow(port, ownerWnd, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE, impeller_enabled == JNI_TRUE);
         isWindow = true;
     } else {
-        window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color));
+        window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color, impeller_enabled == JNI_TRUE));
         isWindow = false;
     }
     if (!window) {

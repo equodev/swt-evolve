@@ -3,6 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 
 /**
@@ -67,6 +68,35 @@ public class CComboHelper {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Whether {@code control} hands its focus to a field of its own: a CCombo, whose field is a
+     * Java-only Text that never reaches Flutter, kept because SWT's own tests observe it as the
+     * focus control. The CCombo is NO_FOCUS itself, so the shared press, Tab and focus code asks
+     * here rather than reading its style, and routes the focus to the CCombo with setFocus.
+     */
+    public static boolean ownsFieldFocus(Control control) {
+        return control instanceof CCombo;
+    }
+
+    /** Whether {@code focused} is the field of {@code control}, which then holds the focus through it. */
+    public static boolean focusedThroughField(Control focused, Control control) {
+        return ownsFieldFocus(control) && focused != null && !focused.isDisposed()
+                && focused.getParent() == control;
+    }
+
+    /**
+     * Delivers a vertical wheel over a CCombo as its field does natively, through the CCombo's own
+     * handler for its field's events: its listeners first, then a step of the selection. Flutter
+     * reports the wheel on the CCombo, so no field event carries it there.
+     */
+    public static boolean deliverWheel(Control control, Event event) {
+        if (!(control instanceof CCombo) || !(control.getImpl() instanceof DartCCombo))
+            return false;
+        event.type = SWT.MouseWheel;
+        ((DartCCombo) control.getImpl()).textEvent(event);
+        return true;
     }
 
     /** The height of a row of the list Flutter draws: the font's height plus the row's margin, as a List's. */

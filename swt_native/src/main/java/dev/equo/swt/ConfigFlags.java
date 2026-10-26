@@ -3,8 +3,11 @@ package dev.equo.swt;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.JsonAttribute;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.TreeMap;
 import dev.equo.swt.DecorationsAlign;
+import org.eclipse.swt.graphics.RGB;
 
 @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class ConfigFlags {
@@ -83,6 +86,19 @@ public class ConfigFlags {
      */
     @JsonAttribute(ignore = true)
     public Map<String, Boolean> disable_swt_canvas_colors_by_class;
+
+    /**
+     * The fill colors a control class paints a hover with
+     * ({@code -Dswt.evolve.canvas_hover_fills_<fully.qualified.Class>=RRGGBB,...}), keyed by the
+     * class name as written; resolved like {@link #disable_swt_canvas_colors_by_class}. Java-only:
+     * the client gets the outcome per GC as {@code VGC.hoverFills}.
+     */
+    @JsonAttribute(ignore = true)
+    public Map<String, RGB[]> canvas_hover_fills_by_class;
+
+    /** Like {@link #canvas_hover_fills_by_class}, for a selection ({@code canvas_selection_fills_<Class>}). */
+    @JsonAttribute(ignore = true)
+    public Map<String, RGB[]> canvas_selection_fills_by_class;
 
     /** Drops what an application paints through a Control's own GC, leaving the control's own
      *  rendering alone. A control that draws itself and is then painted over -- a check box whose
@@ -169,6 +185,13 @@ public class ConfigFlags {
      *  the system bar belongs to the browser. */
     public boolean system_menu_bar;
 
+    /** The decimal separator of the JVM's locale, which a desktop client writes numbers with. A browser
+     *  client uses its own locale's instead, the one it reports to the Display. */
+    public String decimal_separator;
+
+    /** The JVM's locale as a language tag, which a desktop client writes dates in. A browser client uses its own. */
+    public String locale;
+
     /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
@@ -222,6 +245,8 @@ public class ConfigFlags {
                 ", use_swt_colors=" + use_swt_colors +
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
                 ", disable_swt_canvas_colors_by_class=" + disable_swt_canvas_colors_by_class +
+                ", canvas_hover_fills_by_class=" + fills(canvas_hover_fills_by_class) +
+                ", canvas_selection_fills_by_class=" + fills(canvas_selection_fills_by_class) +
                 ", disable_control_gc_overlay=" + disable_control_gc_overlay +
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +
@@ -249,6 +274,17 @@ public class ConfigFlags {
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", system_menu_bar=" + system_menu_bar +
+                ", decimal_separator='" + decimal_separator + '\'' +
+                ", locale='" + locale + '\'' +
                 '}';
+    }
+
+    private static String fills(Map<String, RGB[]> byClass) {
+        if (byClass == null) return "null";
+        Map<String, String> printable = new TreeMap<>();
+        for (Map.Entry<String, RGB[]> entry : byClass.entrySet()) {
+            printable.put(entry.getKey(), Arrays.toString(entry.getValue()));
+        }
+        return printable.toString();
     }
 }

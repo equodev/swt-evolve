@@ -91,7 +91,7 @@ public final class WindowPolicy {
     public static Mode mode() {
         String value = System.getProperty(MODE_PROPERTY);
         if (value == null) return Mode.SINGLE;
-        String mode = value.trim().toLowerCase();
+        String mode = value.trim().toLowerCase(java.util.Locale.ROOT);
         if ("top-level".equals(mode) || "toplevel".equals(mode) || "top_level".equals(mode))
             return Mode.TOP_LEVEL;
         if ("all".equals(mode))
@@ -167,7 +167,7 @@ public final class WindowPolicy {
     private static Placement placement(String property, Mode mode) {
         String value = System.getProperty(property);
         if (value != null) {
-            String normalized = value.trim().toLowerCase();
+            String normalized = value.trim().toLowerCase(java.util.Locale.ROOT);
             if ("own".equals(normalized) || "window".equals(normalized)) return Placement.OWN;
             if ("inline".equals(normalized)) return Placement.INLINE;
         }

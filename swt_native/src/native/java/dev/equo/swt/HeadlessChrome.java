@@ -64,7 +64,7 @@ public final class HeadlessChrome implements AutoCloseable {
                 && new File(override).canExecute()) {
             return override;
         }
-        String os = System.getProperty("os.name", "").toLowerCase();
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         String[] candidates = os.contains("mac")
                 ? new String[]{"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
                                "/Applications/Chromium.app/Contents/MacOS/Chromium"}
@@ -148,7 +148,7 @@ public final class HeadlessChrome implements AutoCloseable {
 
     /** Redirect.DISCARD is Java 9; the platform's null device is the same thing on every release. */
     private static final File NULL_DEVICE =
-            new File(System.getProperty("os.name", "").toLowerCase().contains("win") ? "NUL" : "/dev/null");
+            new File(System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win") ? "NUL" : "/dev/null");
 
     /**
      * Kills the helpers Chrome spawned. ProcessHandle arrived in Java 9 and the fragments built for

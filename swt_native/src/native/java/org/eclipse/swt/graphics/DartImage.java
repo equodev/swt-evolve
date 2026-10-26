@@ -1049,7 +1049,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 alphaInfo_100 = new AlphaInfo();
             // For compatibility, images created from .ico files are treated as SWT.ICON format, even though
             // they are no different than other bitmaps in Cocoa.
-            if (filename.toLowerCase().endsWith(".ico")) {
+            if (filename.toLowerCase(java.util.Locale.ROOT).endsWith(".ico")) {
                 this.getApi().type = SWT.ICON;
             } else {
                 this.getApi().type = SWT.BITMAP;
