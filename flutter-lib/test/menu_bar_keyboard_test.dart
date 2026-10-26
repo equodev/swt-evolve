@@ -17,8 +17,12 @@ import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/decorations_align.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'support/menu_bar_fixtures.dart';
 import 'support/menu_shown_ack.dart';
 
 const _displayId = 5;
@@ -143,6 +147,21 @@ void main() {
     });
   });
 
+  testWidgets('Right in an open drop-down moves to the next title and opens its drop-down', (tester) async {
+    await _pumpMenuBar(tester);
+    await _fromJava(tester, 'MenuItem/$_fileTitleId/openMenu');
+    await _answerShow(tester, _fileMenuId);
+    EquoCommService.commForTesting.clearSentFrames();
+
+    await _press(tester, LogicalKeyboardKey.arrowRight);
+    await _answerShow(tester, _editMenuId);
+
+    expect(_sent('Menu/$_fileMenuId/Menu/Hide'), hasLength(1));
+    expect(_sent('Menu/$_editMenuId/Menu/Show'), hasLength(1));
+    expect(find.text('Copy'), findsOneWidget);
+    expect(find.text('New'), findsNothing);
+  });
+
   testWidgets('a click on a title sends its drop-down the Show', (tester) async {
     await _pumpMenuBar(tester);
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -205,5 +224,22 @@ void main() {
 
       expect(find.text('New'), findsNothing);
     });
+  });
+
+  testWidgets('F10 or a lone Alt opens the collapsed bar with its first title current', (tester) async {
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() => EquoCommBase.recordSentFrames = false);
+    setConfigFlags(ConfigFlags()..decorations_align = DecorationsAlign.vleft);
+    addTearDown(resetConfigFlags);
+    await pumpDecorations(tester, decorations(menuBar: _menuBar(), children: [mainToolbar()]));
+    await tester.pumpAndSettle();
+    EquoCommService.commForTesting.clearSentFrames();
+
+    await _fromJava(tester, 'Menu/$_barId/activate');
+    expect(find.text('File'), findsOneWidget, reason: 'the collapsed bar must open');
+
+    await _press(tester, LogicalKeyboardKey.arrowRight);
+    expect(_sent('Menu/$_fileMenuId/Menu/Show'), hasLength(1));
+    expect(find.text('New'), findsOneWidget, reason: "File's menu must open");
   });
 }

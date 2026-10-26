@@ -76,26 +76,43 @@ class MenuMnemonicItems {
 /// Opens a menu bar's menu when Java resolves Alt+letter to its title (`MnemonicHelper`), wherever the
 /// bar is drawn: as a strip, or collapsed into the menu button. The latest opener of an item wins.
 class MenuBarOpeners {
-  static final Map<String, List<VoidCallback>> _openers = {};
+  static void add(VMenuItem item, VoidCallback open) => _latest.add(_channel(item), open);
 
-  static void add(VMenuItem item, VoidCallback open) {
-    final channel = _channel(item);
-    final openers = _openers.putIfAbsent(channel, () => []);
-    if (openers.isEmpty) {
-      EquoCommService.onRaw(channel, (_) => _openers[channel]?.lastOrNull?.call());
-    }
-    openers.add(open);
-  }
-
-  static void remove(VMenuItem item, VoidCallback open) {
-    final channel = _channel(item);
-    final openers = _openers[channel];
-    if (openers == null || !openers.remove(open) || openers.isNotEmpty) return;
-    _openers.remove(channel);
-    EquoCommService.remove(channel);
-  }
+  static void remove(VMenuItem item, VoidCallback open) => _latest.remove(_channel(item), open);
 
   static String _channel(VMenuItem item) => '${item.swt}/${item.id}/openMenu';
+}
+
+/// Makes a menu bar active when Java resolves F10 or a lone Alt to it, wherever the bar is drawn.
+/// The latest activator of a bar wins.
+class MenuBarActivators {
+  static void add(int barId, VoidCallback activate) => _latest.add(_channel(barId), activate);
+
+  static void remove(int barId, VoidCallback activate) => _latest.remove(_channel(barId), activate);
+
+  static String _channel(int barId) => 'Menu/$barId/activate';
+}
+
+final _latest = _LatestHandlers();
+
+/// One raw channel per key, answered by the handler added last.
+class _LatestHandlers {
+  final Map<String, List<VoidCallback>> _handlers = {};
+
+  void add(String channel, VoidCallback handler) {
+    final handlers = _handlers.putIfAbsent(channel, () => []);
+    if (handlers.isEmpty) {
+      EquoCommService.onRaw(channel, (_) => _handlers[channel]?.lastOrNull?.call());
+    }
+    handlers.add(handler);
+  }
+
+  void remove(String channel, VoidCallback handler) {
+    final handlers = _handlers[channel];
+    if (handlers == null || !handlers.remove(handler) || handlers.isNotEmpty) return;
+    _handlers.remove(channel);
+    EquoCommService.remove(channel);
+  }
 }
 
 class _MenuMnemonicsState extends State<MenuMnemonics> {
