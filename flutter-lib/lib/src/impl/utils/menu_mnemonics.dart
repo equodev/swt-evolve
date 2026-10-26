@@ -49,6 +49,10 @@ class MenuMnemonics extends StatefulWidget {
 class MenuMnemonicItems {
   final Map<FocusNode, ({String label, VoidCallback? activate})> _items = {};
 
+  /// The items are the titles of a menu bar that has the keyboard: Down, Up, Enter or Space opens
+  /// the current one, as on the strip.
+  bool activeBar = false;
+
   /// Makes [node] reachable by letter. [label] is the item's SWT text, `&` marker included;
   /// [activate] is null while the item is disabled.
   void register(FocusNode node, String label, VoidCallback? activate) =>

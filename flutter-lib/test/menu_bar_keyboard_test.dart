@@ -244,6 +244,26 @@ void main() {
     expect(find.text('New'), findsOneWidget, reason: "File's menu must open");
   });
 
+  testWidgets('Down on the active collapsed bar opens its current title, File, as on the strip', (tester) async {
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() => EquoCommBase.recordSentFrames = false);
+    setConfigFlags(ConfigFlags()..decorations_align = DecorationsAlign.vleft);
+    addTearDown(resetConfigFlags);
+    await pumpDecorations(tester, decorations(menuBar: _menuBar(), children: [mainToolbar()]));
+    await tester.pumpAndSettle();
+    await _fromJava(tester, 'Menu/$_barId/activate');
+    EquoCommService.commForTesting.clearSentFrames();
+
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _answerShow(tester, _fileMenuId);
+
+    expect(_sent('Menu/$_fileMenuId/Menu/Show'), hasLength(1));
+    expect(_sent('Menu/$_editMenuId/Menu/Show'), isEmpty);
+    expect(find.text('New'), findsOneWidget, reason: "File's menu must open");
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'MenuItem',
+        reason: "the keyboard must be on File's first item");
+  });
+
   group('Alt+F typed on the collapsed bar opens File in it', () {
     Future<void> pumpCollapsed(WidgetTester tester) async {
       EquoCommBase.recordSentFrames = true;

@@ -134,6 +134,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
   // F10 or a lone Alt, resolved by Java: the collapsed bar opens with its first title current.
   void _activate() {
     if (!mounted || _controller.isOpen) return;
+    _items.activeBar = true;
     _controller.open();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.isOpen) return;
@@ -146,6 +147,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
   // Alt+letter on a menu bar title, resolved by Java: the collapsed bar opens, and that title's menu in it.
   void _openFromMnemonic(int id) {
     if (!mounted) return;
+    _items.activeBar = true;
     if (!_controller.isOpen) _controller.open();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.isOpen) return;
@@ -154,6 +156,11 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       if (item != null) _items.activate(item.text ?? '');
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _onClose() {
+    _items.activeBar = false;
+    _flushChanges();
   }
 
   void _flushChanges() {
@@ -192,7 +199,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       ),
       alignmentOffset: Offset.zero,
       anchorTapClosesMenu: false,
-      onClose: _flushChanges,
+      onClose: _onClose,
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
           registerPendingChange: (cb) => _pendingChanges.add(cb),
