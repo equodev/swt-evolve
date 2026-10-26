@@ -26,4 +26,9 @@ public class ClientReadyPayload {
      * client that does not report it.
      */
     public String locale;
+    /**
+     * The OS the client runs on, as Flutter's {@code TargetPlatform} name ({@code macOS}, {@code windows},
+     * {@code linux}, {@code iOS}, {@code android}). Null from a client that does not report it.
+     */
+    public String targetPlatform;
 }
