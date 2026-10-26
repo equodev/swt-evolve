@@ -41,6 +41,10 @@ class MenuMnemonics extends StatefulWidget {
   static MenuMnemonicItems? of(BuildContext context) =>
       context.getInheritedWidgetOfExactType<_MenuMnemonicsScope>()?.items;
 
+  /// Closes the menu [context] is in, and only that one, as Escape there does.
+  static void closeMenuOf(BuildContext context) =>
+      context.findAncestorStateOfType<_MenuMnemonicsState>()?.widget.close();
+
   @override
   State<MenuMnemonics> createState() => _MenuMnemonicsState();
 }
@@ -168,6 +172,10 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+      widget.close();
+      return KeyEventResult.handled;
+    }
     final character = event.character;
     if (character == null ||
         character.trim().isEmpty ||

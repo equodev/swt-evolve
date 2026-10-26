@@ -286,6 +286,83 @@ void main() {
         reason: "the keyboard must be on File's first item");
   });
 
+  group("File's drop-down opened from the active collapsed bar, its first item New a cascade", () {
+    const newTitleId = 35;
+    const newMenuId = 36;
+
+    VMenu barWithNewCascade() => VMenu()
+      ..id = _barId
+      ..style = SWT.BAR
+      ..enabled = true
+      ..items = [
+        _item(_fileTitleId, '&File', style: SWT.CASCADE)
+          ..menu = _dropDown(_fileMenuId, [
+            _item(newTitleId, '&New', style: SWT.CASCADE)
+              ..menu = _dropDown(newMenuId, [_item(37, '&Project')]),
+            _item(34, 'E&xit'),
+          ]),
+        _item(_editTitleId, '&Edit', style: SWT.CASCADE)
+          ..menu = _dropDown(_editMenuId, [_item(43, '&Copy')]),
+      ];
+
+    Future<void> openFileWithEnter(WidgetTester tester) async {
+      EquoCommBase.recordSentFrames = true;
+      addTearDown(() => EquoCommBase.recordSentFrames = false);
+      setConfigFlags(ConfigFlags()..decorations_align = DecorationsAlign.vleft);
+      addTearDown(resetConfigFlags);
+      await pumpDecorations(tester, decorations(menuBar: barWithNewCascade(), children: [mainToolbar()]));
+      await tester.pumpAndSettle();
+      await _fromJava(tester, 'Menu/$_barId/activate');
+      EquoCommService.commForTesting.clearSentFrames();
+
+      // Java answers File's Show while Enter is still down, so New becomes current under the held key.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      await _answerShow(tester, _fileMenuId);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      await _answerShow(tester, newMenuId);
+    }
+
+    testWidgets('Enter on the active collapsed bar opens File without opening New\'s cascade', (tester) async {
+      await openFileWithEnter(tester);
+
+      expect(_sent('Menu/$_fileMenuId/Menu/Show'), hasLength(1));
+      expect(find.text('New'), findsOneWidget, reason: "File's menu must open");
+      expect(_sent('Menu/$newMenuId/Menu/Show'), isEmpty, reason: "New's cascade must stay closed");
+      expect(find.text('Project'), findsNothing, reason: "New's cascade must stay closed");
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Cascade',
+          reason: 'New must be the current item');
+    });
+
+    testWidgets("Esc in File's drop-down opened from the collapsed bar closes only that level", (tester) async {
+      await openFileWithEnter(tester);
+
+      await _press(tester, LogicalKeyboardKey.escape);
+
+      expect(find.text('New'), findsNothing, reason: "File's menu must close");
+      expect(find.text('File'), findsOneWidget, reason: 'the collapsed bar must stay open');
+      expect(find.text('Edit'), findsOneWidget, reason: 'the collapsed bar must stay open');
+      expect(_sent('Menu/$_fileMenuId/Menu/Hide'), hasLength(1));
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Cascade', reason: 'File must be current');
+
+      await _press(tester, LogicalKeyboardKey.escape);
+
+      expect(find.text('File'), findsNothing, reason: 'the second Escape closes the collapsed bar');
+    });
+
+    testWidgets("Esc on a plain item of File's drop-down closes only that level", (tester) async {
+      await openFileWithEnter(tester);
+      await _press(tester, LogicalKeyboardKey.arrowDown);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, isNot('Cascade'), reason: 'Exit must be current');
+
+      await _press(tester, LogicalKeyboardKey.escape);
+
+      expect(find.text('Exit'), findsNothing, reason: "File's menu must close");
+      expect(find.text('File'), findsOneWidget, reason: 'the collapsed bar must stay open');
+    });
+  });
+
   group('Alt+F typed on the collapsed bar opens File in it', () {
     Future<void> pumpCollapsed(WidgetTester tester) async {
       EquoCommBase.recordSentFrames = true;
