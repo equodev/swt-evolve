@@ -475,6 +475,21 @@ public class TableHelper {
         }
     }
 
+    /**
+     * Drops the selected rows at or past {@code itemCount}, as a native table does whenever its row
+     * count shrinks: removing the last row, or every row, never shifts the selection otherwise.
+     */
+    public static void dropSelectionPast(DartTable table, int itemCount) {
+        int[] selection = table.selection;
+        if (selection == null)
+            return;
+        int[] kept = Arrays.stream(selection).filter(index -> index < itemCount).toArray();
+        if (kept.length == selection.length)
+            return;
+        table.getValue().markDirty(VTable.SELECTION);
+        table.selection = kept;
+    }
+
     public static void fixSelectionRange(DartTable table, int start, int end) {
         int[] selection = table.selection != null ? table.selection : new int[0];
         if (selection.length == 0) return;

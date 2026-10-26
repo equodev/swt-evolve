@@ -269,13 +269,13 @@ public class ControlHelper {
     }
 
     /**
-     * Mirrors the natives' {@code traversalCode}: arrows stay in the control, a key-listening Canvas
-     * keeps every key, and an editable multi-line Text keeps Enter, unless a Traverse listener lets
-     * it go.
+     * Mirrors the natives' {@code traversalCode}: arrows stay in the control except in a radio
+     * button, a key-listening Canvas keeps every key, and an editable multi-line Text keeps Enter,
+     * unless a Traverse listener lets it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
-            return false;
+            return control.getApi() instanceof Button && (control.getApi().getStyle() & SWT.RADIO) != 0;
         if (detail == SWT.TRAVERSE_RETURN && control.getApi() instanceof Text) {
             int style = control.getApi().getStyle();
             if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)

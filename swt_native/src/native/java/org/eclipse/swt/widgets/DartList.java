@@ -1167,6 +1167,7 @@ public class DartList extends DartScrollable implements IList {
     }
 
     void updateRowCount() {
+        ListHelper.deselectRange(this, itemCount, Integer.MAX_VALUE);
         /*
 	 * Feature in Cocoa. Changing the row count while the mouse is tracking will confuse the code that calculates the
 	 * current selection.  Fix is to not call noteNumberOfRowsChanged if the mouse is down.
