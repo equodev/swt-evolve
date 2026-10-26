@@ -187,6 +187,16 @@ public final class FlutterNative {
         return (int) packed;
     }
 
+    public static final int WORK_AREA_UNKNOWN = Integer.MIN_VALUE;
+
+    /**
+     * The top of the work area of the monitor nearest the window rect {@code (x, y, w, h)}, in the
+     * units {@link #setBounds} takes, or {@link #WORK_AREA_UNKNOWN}. Windows runner only.
+     */
+    public static int getWorkAreaTop(long context, int x, int y, int w, int h) {
+        return GetWorkAreaTop(context, x, y, w, h);
+    }
+
     /**
      * Points the native bridge at an external app-bundle directory (the EWT-owned combined
      * bundle: {@code <dir>/lib/libapp.so} + {@code <dir>/data/flutter_assets}). Must be
@@ -202,6 +212,8 @@ public final class FlutterNative {
     private static native void SetOwner(long context, long owner);
 
     private static native long GetOrigin(long context);
+
+    private static native int GetWorkAreaTop(long context, int x, int y, int w, int h);
 
     private static native boolean IsActive(long context);
 

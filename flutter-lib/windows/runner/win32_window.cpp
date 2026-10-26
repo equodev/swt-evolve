@@ -456,6 +456,15 @@ void Win32Window::Move(const Point& origin, const Size& size, const Point& vorig
     DWORD style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_STYLE));
     DWORD ex_style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_EXSTYLE));
     AdjustWindowRectExForDpi(&frame, style, FALSE, ex_style, GetDpiForWindow(window_handle_));
+    // Native SWT puts a shell's title bar at the y it is given, but this y is the content's, below
+    // the caption: wherever that title bar would still show, the caption goes on the screen too.
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!(style & WS_CHILD) &&
+        GetMonitorInfo(MonitorFromRect(&frame, MONITOR_DEFAULTTONEAREST), &monitor)) {
+      const LONG top = monitor.rcWork.top;
+      const LONG caption = py - frame.top;
+      if (frame.top < top && py > top - caption) OffsetRect(&frame, 0, top - frame.top);
+    }
   }
   MoveWindow(window_handle_, frame.left, frame.top, frame.right - frame.left, frame.bottom - frame.top, true);
   if (origin.x == vorigin.x && origin.y == vorigin.y && size.width == vsize.width && size.height == vsize.height) {

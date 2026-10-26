@@ -2,6 +2,7 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <climits>
 #include <cmath>
 #include <string>
 #include <iostream>
@@ -372,6 +373,20 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, j
     const LONG y = static_cast<LONG>(std::lround(origin.y / scale));
     return (static_cast<jlong>(x) << 32)
             | (static_cast<jlong>(static_cast<uint32_t>(y)));
+}
+
+// The top of the work area of the monitor nearest a window rect, in the logical pixels SetBounds
+// takes, or INT_MIN when there is no window. The monitor is the one Win32Window::Move measures a
+// caption against, so a strip placed from Java and a caption placed here stop at the same edge.
+JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_GetWorkAreaTop(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return INT_MIN;
+    const double scale = s->window->scale_factor();
+    RECT rect = {static_cast<LONG>(x * scale), static_cast<LONG>(y * scale),
+                 static_cast<LONG>((x + width) * scale), static_cast<LONG>((y + height) * scale)};
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!::GetMonitorInfo(::MonitorFromRect(&rect, MONITOR_DEFAULTTONEAREST), &monitor)) return INT_MIN;
+    return static_cast<jint>(std::lround(monitor.rcWork.top / scale));
 }
 
 // Whether this window is the one the OS gives keyboard input to. The foreground window is the
