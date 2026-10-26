@@ -449,11 +449,14 @@ void Win32Window::Move(const Point& origin, const Size& size, const Point& vorig
             << " scale=" << scale_factor_ << " scaled=(" << px << "," << py << " " << pw << "x" << ph << ")" << std::endl;
   // The rect from Java is the content rect; MoveWindow takes the frame rect, so grow it by the
   // caption and borders of the window's own style. A child (embedded) window has none, so this
-  // is a no-op there.
+  // is a no-op there. A frameless window's style still names a caption and borders, but
+  // WM_NCCALCSIZE gives their space to the client, so its frame rect already is the content rect.
   RECT frame = {px, py, px + pw, py + ph};
-  DWORD style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_STYLE));
-  DWORD ex_style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_EXSTYLE));
-  AdjustWindowRectExForDpi(&frame, style, FALSE, ex_style, GetDpiForWindow(window_handle_));
+  if (!frameless_) {
+    DWORD style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_STYLE));
+    DWORD ex_style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_EXSTYLE));
+    AdjustWindowRectExForDpi(&frame, style, FALSE, ex_style, GetDpiForWindow(window_handle_));
+  }
   MoveWindow(window_handle_, frame.left, frame.top, frame.right - frame.left, frame.bottom - frame.top, true);
   if (origin.x == vorigin.x && origin.y == vorigin.y && size.width == vsize.width && size.height == vsize.height) {
     return;
