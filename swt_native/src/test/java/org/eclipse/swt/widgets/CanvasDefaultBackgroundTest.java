@@ -17,8 +17,9 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.verify;
 
 /**
- * With SWT's colours a canvas has the background of any control, as upstream; with the theme's it has the surface
- * of a list.
+ * With SWT's colours a canvas has the background of any control, as upstream. With the theme's, a canvas is painted
+ * as the theme's drawing surface, and the list background is that colour (white, or the dark surface), so
+ * getBackground() reports what is drawn.
  */
 @ExtendWith(Mocks.class)
 class CanvasDefaultBackgroundTest {
