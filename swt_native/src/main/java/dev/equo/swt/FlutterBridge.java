@@ -239,7 +239,7 @@ public abstract class FlutterBridge {
         Object value = payload.get("url");
         if (!(value instanceof String)) return null;
         String url = ((String) value).trim();
-        String lower = url.toLowerCase();
+        String lower = url.toLowerCase(java.util.Locale.ROOT);
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
@@ -1396,6 +1396,7 @@ public abstract class FlutterBridge {
     private static final java.util.Set<CompletableFuture<?>> pendingDeferredSends =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    @SuppressWarnings("CollectionUndefinedEquality") // a future is equal only to itself, which is what this set tracks
     private static void trackDeferredSend(CompletableFuture<Void> future) {
         pendingDeferredSends.add(future);
         future.whenComplete((r, e) -> pendingDeferredSends.remove(future));
@@ -1671,6 +1672,15 @@ public abstract class FlutterBridge {
     }
 
     public boolean hasFocus(DartControl control) {
+        return false;
+    }
+
+    /**
+     * Makes {@code control} the active control of its shell, sending Deactivate to the chain that was active
+     * and Activate, carrying {@code detail}, to the new one. False when this bridge leaves activation to its
+     * caller.
+     */
+    public boolean activate(DartControl control, int detail) {
         return false;
     }
 

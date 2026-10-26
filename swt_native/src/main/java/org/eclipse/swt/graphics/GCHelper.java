@@ -185,7 +185,7 @@ public class GCHelper {
             return java.util.Objects.equals(resolvedDrawable, other.resolvedDrawable)
                 && java.util.Objects.equals(swtSource, other.swtSource)
                 && java.util.Objects.equals(dartImage, other.dartImage)
-                && java.util.Objects.equals(renderFuture, other.renderFuture);
+                && renderFuture == other.renderFuture;
         }
 
         @Override

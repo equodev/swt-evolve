@@ -135,7 +135,7 @@ public class DartPopupList implements IPopupList {
      * 	</ul>
      */
     public String[] getItems() {
-        return this.items;
+        return list.getItems();
     }
 
     /**

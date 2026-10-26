@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,7 +19,8 @@ import static org.eclipse.swt.widgets.Mocks.shell;
 /**
  * A DateTime nobody has set a value on holds the moment it was created, as every native backend
  * does: win32's control starts at the system time, gtk's at {@code Calendar.getInstance()}, cocoa's
- * at {@code NSCalendarDate.calendarDate()}.
+ * at {@code NSCalendarDate.calendarDate()}. A CALENDAR holds today at 00:00:00, as on win32 and gtk,
+ * which keep a calendar's time in fields of their own that start at zero.
  */
 class DateTimeStartsAtNowTest extends SerializeTestBase {
 
@@ -42,6 +44,16 @@ class DateTimeStartsAtNowTest extends SerializeTestBase {
         if (held.isBefore(before))
             held = held.plusDays(1);
         assertThat(held).isBetween(before, after);
+    }
+
+    @Test
+    void anUntouchedCalendarIsTodayAtMidnight() {
+        LocalDate before = LocalDate.now();
+        DateTime w = new DateTime(shell(), SWT.CALENDAR);
+        LocalDate after = LocalDate.now();
+
+        assertThat(LocalDate.of(w.getYear(), w.getMonth() + 1, w.getDay())).isBetween(before, after);
+        assertThat(LocalTime.of(w.getHours(), w.getMinutes(), w.getSeconds())).isEqualTo(LocalTime.MIDNIGHT);
     }
 
     @Test

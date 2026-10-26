@@ -432,6 +432,7 @@ public interface ITableItem extends IItem, ImplTableItem {
      *
      * @deprecated this functionality is not supported on most platforms
      */
+    @Deprecated
     void setImageIndent(int indent);
 
     /**

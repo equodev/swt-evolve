@@ -77,6 +77,8 @@ public final class DisplayInput {
         if (display.isDisposed())
             return;
         if (event.type == SWT.KeyDown || event.type == SWT.KeyUp) {
+            if (ControlHelper.capturedKey(display, event.type, event))
+                return;
             Control focus = display.getFocusControl();
             if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl))
                 return;

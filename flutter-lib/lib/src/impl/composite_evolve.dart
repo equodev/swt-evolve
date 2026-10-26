@@ -133,10 +133,12 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
         final takenBelow = ControlImpl.pointerTakenBelow(e);
+        final pos = impl.heldLocal(e);
+        impl.releasePointer(e);
         if (!impl.capturedPointerDowns.remove(e.pointer) || takenBelow) return;
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
+          ..x = pos.dx.round()
+          ..y = pos.dy.round()
           ..button = impl.swtButton
           ..count = impl.swtClickCount
           ..stateMask =
@@ -146,6 +148,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       onPointerCancel: (e) {
         if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
+        impl.releasePointer(e);
         impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
@@ -162,14 +165,14 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // onPointerUp: SWT sends moves to the control holding the capture, not to whatever
         // the pointer has since wandered over.
         if (ControlImpl.pointerTakenBelow(e)) return;
-        if (!impl.capturedPointerDowns.contains(e.pointer) &&
-            _hitsAnyChild(state, e.localPosition)) {
+        final pos = impl.heldLocal(e);
+        if (!impl.capturedPointerDowns.contains(e.pointer) && _hitsAnyChild(state, pos)) {
           return;
         }
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
-        impl.sendThrottledDragMove(state, event, e.buttons);
+          ..x = pos.dx.round()
+          ..y = pos.dy.round();
+        impl.sendThrottledDragMove(state, event, e);
       },
       onPointerPanZoomUpdate: (e) {
         if (!forwardsPointer || !impl.forwardsWheelFromWrap || ControlImpl.wheelKeptBelow(e)) return;

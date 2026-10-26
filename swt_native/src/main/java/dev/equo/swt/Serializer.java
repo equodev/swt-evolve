@@ -31,6 +31,14 @@ public class Serializer {
      */
     private static final ThreadLocal<int[]> depth = ThreadLocal.withInitial(() -> new int[1]);
 
+    /**
+     * How many of the widgets enclosing the current point of the walk are being described to a
+     * client that does not hold them. Above zero, nothing is named: the client lets go of a widget
+     * together with everything under it, so a name inside one it lacks is a name it cannot resolve,
+     * and each costs it a request.
+     */
+    private static final ThreadLocal<int[]> insideUnheld = new ThreadLocal<>();
+
     /** How many widget payloads this thread is writing; above zero, getters are being read for the client. */
     private static final ThreadLocal<int[]> writing = ThreadLocal.withInitial(() -> new int[1]);
 
@@ -395,7 +403,7 @@ public class Serializer {
         }
         // Identity stub. A null here is undecodable where the reference sits inside a widget array
         // (children, items) and would abort the ancestor's payload; style is read off the api
-        // field, not a checkWidget()-guarded getter, so it is safe on a disposed widget.
+        // field, not getStyle(), which refuses a disposed widget as SWT's does.
         //
         // No write stamp, for the same reason a reference carries none: this says which widget, not
         // what it holds. Stamping it made the far side record a state it had not been given and
@@ -403,7 +411,7 @@ public class Serializer {
         // not hold, and the stub itself, being newer than everything, displaced the real widget.
         if (converter == null || disposed) {
             writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-            NumberConverter.serialize(api.getStyle(), writer);
+            NumberConverter.serialize(org.eclipse.swt.widgets.WidgetHelper.styleOf(api), writer);
             writer.writeByte((byte)'}');
             return;
         }
@@ -417,14 +425,22 @@ public class Serializer {
         // be relative to a state nobody was ever sent. The send path applies these once the bytes
         // are on their way; nested children are collected here too, since only this walk knows
         // which ones it wrote.
+        boolean unheld = value.sentSeq(target.get()) == 0;
         noteWritten(impl, value, seq, true);
         depth.get()[0]++;
+        int[] unheldCount = null;
+        if (unheld) {
+            unheldCount = insideUnheld.get();
+            if (unheldCount == null) insideUnheld.set(unheldCount = new int[1]);
+            unheldCount[0]++;
+        }
         try {
             if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
             else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
             else writer.getByteBuffer()[writer.size() - 1] = '}';
         } finally {
             depth.get()[0]--;
+            if (unheldCount != null) unheldCount[0]--;
         }
     }
 
@@ -434,7 +450,8 @@ public class Serializer {
      * <p>Four things have to hold. It has to be nested — the widget a frame is about is always
      * described in full, or the frame says nothing. The far side has to already hold it, which its
      * write stamp records: a widget that has been written has been delivered, on its own channel or
-     * inside an ancestor. Nothing about it can have changed, or the reference would be the only
+     * inside an ancestor; and none of the widgets it sits in may be one the far side lacks, see
+     * {@link #insideUnheld}. Nothing about it can have changed, or the reference would be the only
      * mention of a change and it would be lost. And nothing beneath it can be travelling through it
      * either — see {@link #describeInFull(java.util.Set)}.
      *
@@ -446,6 +463,8 @@ public class Serializer {
     private static boolean canReference(VWidget value, boolean stateless) {
         if (!mayReference() || depth.get()[0] == 0) return false;
         if (value.sentSeq(target.get()) == 0) return false;
+        int[] unheldCount = insideUnheld.get();
+        if (!stateless && unheldCount != null && unheldCount[0] > 0) return false;
         java.util.Set<VWidget> required = describeInFull.get();
         if (required != null && required.contains(value)) return false;
         if (stateless || !value.anyDirty()) return true;
@@ -509,10 +528,9 @@ public class Serializer {
     /**
      * Forgets that {@code value} was ever delivered, to anyone.
      *
-     * <p>For a client that says it does not hold a widget. Until this, asking for one re-sent it as
-     * what had changed since a state the asker did not have, with everything under it named rather
-     * than described - so the answer to "I do not have this" was a frame that named more things the
-     * asker did not have, and it asked again for each.
+     * <p>For a client that does not hold a widget, or may have let go of it: the next write describes
+     * it in full rather than by what changed since a state that client lacks, and everything under it
+     * with it (see {@link #insideUnheld}).
      */
     public static void forgetDelivery(VWidget value) {
         if (value != null) value.sent(0, 0L);
@@ -914,7 +932,7 @@ public class Serializer {
     private static boolean canReferenceResource(Object value) {
         if (!diffEnabled) return false;
         Integer given = resourceDelivery.get(value);
-        return given != null && given == target.get();
+        return given != null && given.equals(target.get());
     }
 
     /** Forgets that {@code value} was delivered, for a resource whose content has changed under it. */
