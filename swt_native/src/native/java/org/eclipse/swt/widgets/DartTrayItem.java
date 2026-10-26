@@ -364,8 +364,8 @@ public class DartTrayItem extends DartItem implements ITrayItem {
      * @since 3.8
      */
     public void setHighlightImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         highlightImage = image;
