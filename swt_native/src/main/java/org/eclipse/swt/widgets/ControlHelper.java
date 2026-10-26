@@ -159,8 +159,8 @@ public class ControlHelper {
 
     /**
      * Offers a key to the menu accelerators, then a traversal key as {@link SWT#Traverse}, before
-     * the KeyDown, in the order every platform's key dispatch does. The client performs a Tab
-     * traversal itself.
+     * the KeyDown, in the order every platform's key dispatch does. Escape and Enter run the whole
+     * traversal here, up to the shell; the client performs a Tab traversal itself.
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
@@ -174,6 +174,8 @@ public class ControlHelper {
         boolean traverseDoit = false;
         if (key.keyCode == SWT.ESC) {
             traversed = escapeTraversal(control, key);
+        } else if (detail == SWT.TRAVERSE_RETURN) {
+            traversed = returnTraversal(control, key);
         } else if (detail != SWT.TRAVERSE_NONE) {
             Event e = new Event();
             e.character = key.character;
@@ -257,12 +259,18 @@ public class ControlHelper {
     }
 
     /**
-     * Mirrors {@code SwtControl/SwtComposite.traversalCode}: arrows stay in the control, and a
-     * key-listening Canvas keeps every key unless a Traverse listener lets it go.
+     * Mirrors the natives' {@code traversalCode}: arrows stay in the control, a key-listening Canvas
+     * keeps every key, and an editable multi-line Text keeps Enter, unless a Traverse listener lets
+     * it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
             return false;
+        if (detail == SWT.TRAVERSE_RETURN && control.getApi() instanceof Text) {
+            int style = control.getApi().getStyle();
+            if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)
+                return false;
+        }
         if (control.getApi() instanceof Canvas) {
             if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0)
                 return false;
@@ -289,13 +297,14 @@ public class ControlHelper {
 
     /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
     private static boolean isTabStop(Control control) {
+        if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control))
+            return true;
         if ((control.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
         if (control instanceof Button || control instanceof Combo || control instanceof DateTime
                 || control instanceof org.eclipse.swt.widgets.List || control instanceof Scale || control instanceof Spinner
                 || control instanceof TabFolder || control instanceof Table || control instanceof Tree
-                || control instanceof Text || control instanceof org.eclipse.swt.custom.CCombo
-                || control instanceof org.eclipse.swt.custom.StyledText)
+                || control instanceof Text || control instanceof org.eclipse.swt.custom.StyledText)
             return true;
         if (control instanceof Link)
             return holdsLink(((Link) control).getText());
@@ -308,7 +317,7 @@ public class ControlHelper {
 
     /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
     static boolean holdsLink(String text) {
-        String lower = text.toLowerCase();
+        String lower = text.toLowerCase(java.util.Locale.ROOT);
         for (int i = lower.indexOf("<a"); i >= 0; i = lower.indexOf("<a", i + 1)) {
             if (i + 2 < lower.length() && (lower.charAt(i + 2) == '>' || Character.isWhitespace(lower.charAt(i + 2))))
                 return true;
@@ -325,13 +334,32 @@ public class ControlHelper {
         Control start = resolveTraverseStart(origin);
         if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
             return false;
+        Event event = traverseEventOf(keyEvent);
+        event.doit = true;
+        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
+    }
+
+    /**
+     * Enter runs the whole traversal, so the shell presses its default button, unless the control
+     * keeps Enter, as a multi-line Text does.
+     */
+    private static boolean returnTraversal(DartControl origin, Event keyEvent) {
+        Control start = resolveTraverseStart(origin);
+        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
+            return false;
+        DartControl impl = (DartControl) start.getImpl();
+        Event event = traverseEventOf(keyEvent);
+        event.doit = traversesByDefault(impl, SWT.TRAVERSE_RETURN);
+        return impl.traverse(SWT.TRAVERSE_RETURN, event);
+    }
+
+    private static Event traverseEventOf(Event keyEvent) {
         Event event = new Event();
         event.character = keyEvent.character;
         event.keyCode = keyEvent.keyCode;
         event.keyLocation = keyEvent.keyLocation;
         event.stateMask = keyEvent.stateMask;
-        event.doit = true;
-        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
+        return event;
     }
 
     /**
@@ -353,6 +381,8 @@ public class ControlHelper {
         boolean horizontal = e.type == SWT.MouseHorizontalWheel;
         e.detail = SWT.SCROLL_LINE;
         e.doit = true;
+        if (!horizontal && org.eclipse.swt.custom.CComboHelper.deliverWheel(control.getApi(), e))
+            return;
         control.sendEvent(horizontal ? SWT.MouseHorizontalWheel : SWT.MouseWheel, e);
         if (!e.doit || control.isDisposed() || !(control.getApi() instanceof Scrollable))
             return;
@@ -400,7 +430,7 @@ public class ControlHelper {
 
     private static int traverseDetail(int keyCode, int stateMask) {
         switch (keyCode) {
-            // Escape runs the whole traversal instead; see escapeTraversal.
+            // Escape is not here: it runs the whole traversal straight away; see escapeTraversal.
             case SWT.CR:
                 return SWT.TRAVERSE_RETURN;
             case SWT.ARROW_DOWN:
@@ -804,11 +834,9 @@ public class ControlHelper {
             return;
         Control control = null;
         boolean fixFocus = false;
-        if (!enabled) {
-//            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
-//                control = c.display.getFocusControl();
-//                fixFocus = c.isFocusAncestor(control);
-//            }
+        if (!enabled && c.mayFixFocus()) {
+            control = c.display.getFocusControl();
+            fixFocus = c.isFocusAncestor(control);
         }
         if (enabled) {
             c.getApi().state &= ~DartWidget.DISABLED;
@@ -835,17 +863,19 @@ public class ControlHelper {
         boolean focuses = takesFocusOnPress(control, event.button);
         if (!focuses || control.isFocusControl())
             return;
-        if (control.forceFocus() && !control.isDisposed())
+        boolean focused = org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control.getApi())
+                ? control.getApi().setFocus() : control.forceFocus();
+        if (focused && !control.isDisposed())
             control.getBridge().focusClient(control);
     }
 
     /**
      * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
      * <p>
-     * Button 1 focuses the controls Win32 and GTK agree on. A Canvas is left to its own press
-     * handling, since natively it takes the focus only while it hooks key events. A TabFolder takes
-     * it only from a click that switches tabs (its client sends it), not from one on its strip or on
-     * the selected tab, as on GTK.
+     * Button 1 focuses the controls Win32 and GTK agree on, StyledText included. Any other Canvas is
+     * left to its own press handling, since natively it takes the focus only while it hooks key
+     * events. A TabFolder takes it only from a click that switches tabs (its client sends it), not
+     * from one on its strip or on the selected tab, as on GTK.
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
@@ -853,6 +883,8 @@ public class ControlHelper {
      */
     static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
+        if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(api))
+            return button == 1 || button == 3;
         if ((api.getStyle() & SWT.NO_FOCUS) != 0)
             return false;
         boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
@@ -860,7 +892,8 @@ public class ControlHelper {
         if (button == 3)
             return fieldOrItemView;
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
-                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale);
+                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
+                || api instanceof org.eclipse.swt.custom.StyledText);
     }
 
     /**
@@ -904,6 +937,11 @@ public class ControlHelper {
      */
     public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
+            return;
+        // A bridge whose focus changes reach the Shell's own setActiveControl announces the activation
+        // there, once, the way SWT does; walking the chain here as well would announce it twice.
+        FlutterBridge bridge = control.getBridge();
+        if (bridge != null && bridge.activate(control, detail))
             return;
         Control now = control.getApi();
         Shell shell = now.getShell();

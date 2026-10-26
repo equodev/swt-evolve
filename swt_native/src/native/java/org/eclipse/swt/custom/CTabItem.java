@@ -155,6 +155,7 @@ public class CTabItem extends Item {
      * @deprecated the disabled image is not used
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public Image getDisabledImage() {
         return getImpl().getDisabledImage();
     }

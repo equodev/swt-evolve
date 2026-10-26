@@ -1,18 +1,23 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.GcFills;
+import dev.equo.swt.harness.GcFills.Fill;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Pattern;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Transform;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,10 +55,10 @@ class CanvasDrawBackgroundNativeTest {
     }
 
     /**
-     * The traffic of a simulated SWT.Paint cycle that calls drawBackground, read after disposing the
-     * GC: a paint's ops are batched until then. A Paint listener cannot run in this harness.
+     * What a simulated SWT.Paint cycle that calls drawBackground filled, read after disposing the GC: a
+     * paint's ops are batched until then. A Paint listener cannot run in this harness.
      */
-    private String drawBackground(int x, int y, int width, int height) {
+    private List<Fill> drawBackground(int x, int y, int width, int height) {
         bridge.comm.sent.clear();
         ControlHelper.inPaintDepth++;
         try {
@@ -63,7 +68,7 @@ class CanvasDrawBackgroundNativeTest {
         } finally {
             ControlHelper.inPaintDepth--;
         }
-        return bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+        return GcFills.of(bridge.comm.sent);
     }
 
     @Test
@@ -71,10 +76,7 @@ class CanvasDrawBackgroundNativeTest {
     void fillsWithTheBackgroundColor() {
         canvas.setBackground(new Color(display, 7, 8, 9));
 
-        String wire = drawBackground(0, 0, 50, 20);
-
-        assertThat(wire).contains("fillRectangleintintintint\",[0,0,50,20]")
-                .contains("\"background\":{\"a\":255,\"b\":9,\"g\":8,\"r\":7}");
+        assertThat(drawBackground(0, 0, 50, 20)).containsExactly(Fill.colour(0, 0, 50, 20, new RGB(7, 8, 9)));
     }
 
     @Test
@@ -82,10 +84,7 @@ class CanvasDrawBackgroundNativeTest {
     void fillsWithTheBackgroundImage() {
         canvas.setBackgroundImage(new Image(display, 1, 20));
 
-        String wire = drawBackground(0, 0, 50, 20);
-
-        assertThat(wire).contains("fillRectangleintintintint\",[0,0,50,20]")
-                .contains("\"backgroundPattern\":{");
+        assertThat(drawBackground(0, 0, 50, 20)).containsExactly(Fill.image(0, 0, 50, 20, 0, 0));
     }
 
     @Test
@@ -130,10 +129,8 @@ class CanvasDrawBackgroundNativeTest {
         } finally {
             ControlHelper.inPaintDepth--;
         }
-        String wire = bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
-
-        assertThat(wire).contains("fillRectangleintintintint\",[5,3,50,20]")
-                .contains("\"elements\":[1.0,0.0,0.0,1.0,-3.0,1.0]");
+        // The GC is translated by (2, 4): the rectangle lands there, and the tiles start 5 and 3 before it.
+        assertThat(GcFills.of(bridge.comm.sent)).containsExactly(Fill.image(2, 4, 50, 20, -3, 1));
         assertThat(after).containsExactly(before);
     }
 }

@@ -136,8 +136,3 @@ ButtonStyle getCComboEntryStyle(
     ),
   );
 }
-
-Color getCComboSimpleItemHoverColor(CComboThemeExtension widgetTheme) =>
-    widgetTheme.itemHoverBackgroundColor.a > 0
-        ? widgetTheme.itemHoverBackgroundColor
-        : widgetTheme.hoverBackgroundColor.withOpacity(0.1);

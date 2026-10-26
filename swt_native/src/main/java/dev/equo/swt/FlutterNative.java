@@ -48,7 +48,22 @@ public final class FlutterNative {
         // leave a window with no title bar, no buttons and nothing to drag.
         boolean csdEnabled = !"false".equals(Config.getConfigFlags().csd_placement);
         return Initialize(port, parent, widgetId, widgetName, theme,
-                backgroundColor, parentBackgroundColor, width, height, csdEnabled);
+                backgroundColor, parentBackgroundColor, width, height, csdEnabled, impellerEnabled());
+    }
+
+    /** {@code -Ddev.equo.swt.impeller=true|false} forces the Windows engines' renderer either way. */
+    public static final String IMPELLER_PROPERTY = "dev.equo.swt.impeller";
+
+    /**
+     * Whether the Windows engines render with Impeller, which compiles its pipelines on every engine
+     * start, on the UI thread. On unless shells can get windows of their own: each of those starts an
+     * engine. The measuring engines follow the same choice, so text is measured by the renderer that
+     * paints it. Other runners ignore it.
+     */
+    static boolean impellerEnabled() {
+        String forced = System.getProperty(IMPELLER_PROPERTY);
+        if (forced != null && !forced.trim().isEmpty()) return Boolean.parseBoolean(forced.trim());
+        return WindowPolicy.isSingleWindow();
     }
 
     /** Native view handle of a surface: the embedded view, or a window's content view. */
@@ -197,7 +212,8 @@ public final class FlutterNative {
 
     private static native long Initialize(int port, long parent, long widgetId, String widgetName,
                                            String theme, int backgroundColor, int parentBackgroundColor,
-                                           int width, int height, boolean csdEnabled);
+                                           int width, int height, boolean csdEnabled,
+                                           boolean impellerEnabled);
 
     private static native long GetView(long context);
 
