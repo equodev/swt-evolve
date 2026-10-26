@@ -861,7 +861,7 @@ public class Config {
         return configFlags;
     }
 
-    /** The locale numbers are written in on desktop, where the JVM serves a single user. */
+    /** The locale numbers and dates are written in on desktop, where the JVM serves a single user. */
     public static java.util.Locale formatLocale() {
         return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
     }
@@ -969,6 +969,7 @@ public class Config {
         configFlags.ui_zoom = uiZoom();
         configFlags.decimal_separator =
                 String.valueOf(java.text.DecimalFormatSymbols.getInstance(formatLocale()).getDecimalSeparator());
+        configFlags.locale = formatLocale().toLanguageTag();
         return configFlags;
     }
 
