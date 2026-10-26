@@ -222,6 +222,11 @@ public class ConfigFlags {
      *  Set with {@code -Dswt.evolve.bigger_icon_size=true}. */
     public boolean bigger_icon_size;
 
+    /** Draws a CHECK or RADIO menu item without its box or ring: only the mark, in the item text
+     *  colour, while the item is selected, as native menus do. Off by default: the theme's box is
+     *  drawn. Set with {@code -Dswt.evolve.transparent_menu_check_box=true}. */
+    public boolean transparent_menu_check_box;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -267,6 +272,7 @@ public class ConfigFlags {
                 ", font_point_scale=" + font_point_scale +
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
+                ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", system_menu_bar=" + system_menu_bar +
                 ", decimal_separator='" + decimal_separator + '\'' +
                 ", locale='" + locale + '\'' +

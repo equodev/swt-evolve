@@ -73,6 +73,10 @@ class ConfigFlags {
   /// side (`swt.evolve.push_button_margin`). 0 paints the button over its whole bounds.
   int? push_button_margin;
 
+  /// CHECK and RADIO menu items draw no box or ring, only the mark while selected
+  /// (`swt.evolve.transparent_menu_check_box`). Off by default: the theme's box is drawn.
+  bool? transparent_menu_check_box;
+
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);
   Map<String, dynamic> toJson() => _$ConfigFlagsToJson(this);
