@@ -9,6 +9,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/toolbar_evolve.dart';
@@ -53,15 +54,16 @@ VToolItem _item(int id, int style, String text) => VToolItem()
   ..enabled = true
   ..text = text;
 
-VToolBar _toolBar() => VToolBar()
+VToolBar _toolBar({int style = 0, List<VToolItem>? items}) => VToolBar()
   ..id = 1
-  ..style = SWT.HORIZONTAL | SWT.FLAT
+  ..style = SWT.HORIZONTAL | SWT.FLAT | style
   ..enabled = true
   ..visible = true
-  ..items = [
-    _item(2, SWT.PUSH, 'Push'),
-    _item(3, SWT.DROP_DOWN, 'Drop'),
-  ]
+  ..items = items ??
+      [
+        _item(2, SWT.PUSH, 'Push'),
+        _item(3, SWT.DROP_DOWN, 'Drop'),
+      ]
   ..bounds = (VRectangle()
     ..x = 0
     ..y = 0
@@ -84,7 +86,7 @@ int? _focusedItemId() {
   return id;
 }
 
-Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester) async {
+Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester, [VToolBar? toolBar]) async {
   final field = FocusNode(debugLabel: 'field');
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
@@ -92,7 +94,7 @@ Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester) async {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(width: 400, child: TextField(focusNode: field)),
-        SizedBox(width: 400, height: 40, child: _RecordingToolBarSwt(value: _toolBar())),
+        SizedBox(width: 400, height: 40, child: _RecordingToolBarSwt(value: toolBar ?? _toolBar())),
       ],
     ),
   ));
@@ -100,6 +102,23 @@ Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester) async {
   field.requestFocus();
   await tester.pump();
   return field;
+}
+
+Future<void> _tabUntil(WidgetTester tester, bool Function() done, {int max = 6}) async {
+  for (var i = 0; i < max && !done(); i++) {
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+  }
+}
+
+Future<void> _press(WidgetTester tester, LogicalKeyboardKey key) async {
+  await tester.sendKeyEvent(key);
+  await tester.pump();
+}
+
+bool _arrowFocused() {
+  final focus = FocusManager.instance.primaryFocus;
+  return focus is ToolItemFocusNode && focus.arrow;
 }
 
 void main() {
@@ -169,6 +188,110 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     expect(_sent, ['3 Selection/OpenMenu']);
+
+    field.dispose();
+  });
+
+  testWidgets('Left and Right skip a disabled item', (tester) async {
+    final field = await _pumpFieldAndToolBar(
+        tester,
+        _toolBar(items: [
+          _item(2, SWT.PUSH, 'First'),
+          _item(3, SWT.PUSH, 'Disabled')..enabled = false,
+          _item(4, SWT.PUSH, 'Last'),
+        ]));
+
+    await _tabUntil(tester, () => _focusedItemId() != null);
+    expect(_focusedItemId(), 2);
+    await _press(tester, LogicalKeyboardKey.arrowRight);
+    expect(_focusedItemId(), 4);
+    await _press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(_focusedItemId(), 2);
+
+    field.dispose();
+  });
+
+  testWidgets('Left and Right from a DROP_DOWN arrow move to the neighbouring items', (tester) async {
+    final field = await _pumpFieldAndToolBar(
+        tester,
+        _toolBar(items: [
+          _item(2, SWT.PUSH, 'Before'),
+          _item(3, SWT.DROP_DOWN, 'Drop'),
+          _item(4, SWT.PUSH, 'After'),
+        ]));
+
+    await _tabUntil(tester, _arrowFocused);
+    expect(_focusedItemId(), 3);
+    expect(_arrowFocused(), isTrue);
+    await _press(tester, LogicalKeyboardKey.arrowRight);
+    expect(_focusedItemId(), 4);
+
+    await _press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(_focusedItemId(), 3);
+    expect(_arrowFocused(), isFalse);
+
+    await _press(tester, LogicalKeyboardKey.tab);
+    expect(_arrowFocused(), isTrue);
+    await _press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(_focusedItemId(), 2);
+
+    field.dispose();
+  });
+
+  testWidgets('RIGHT_TO_LEFT mirrors Left and Right', (tester) async {
+    final field = await _pumpFieldAndToolBar(
+        tester,
+        _toolBar(style: SWT.RIGHT_TO_LEFT, items: [
+          _item(2, SWT.PUSH, 'First'),
+          _item(3, SWT.PUSH, 'Second'),
+          _item(4, SWT.PUSH, 'Third'),
+        ]));
+
+    await _tabUntil(tester, () => _focusedItemId() == 2);
+    expect(_focusedItemId(), 2);
+    await _press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(_focusedItemId(), 3);
+    await _press(tester, LogicalKeyboardKey.arrowRight);
+    expect(_focusedItemId(), 2);
+    await _press(tester, LogicalKeyboardKey.arrowRight);
+    expect(_focusedItemId(), 4);
+
+    field.dispose();
+  });
+
+  testWidgets('A control hosted in a separator item keeps its keys and reports no ToolBar focus', (tester) async {
+    final field = await _pumpFieldAndToolBar(
+        tester,
+        _toolBar(items: [
+          _item(2, SWT.PUSH, 'Push'),
+          _item(3, SWT.SEPARATOR, '')
+            ..width = 120
+            ..control = (VText()
+              ..swt = 'Text'
+              ..id = 4
+              ..style = SWT.SINGLE
+              ..enabled = true
+              ..visible = true
+              ..text = 'hosted'
+              ..bounds = (VRectangle()
+                ..x = 0
+                ..y = 0
+                ..width = 120
+                ..height = 30)),
+        ]));
+
+    final hosted = find.descendant(of: find.byType(_RecordingToolBarSwt), matching: find.byType(EditableText));
+    expect(hosted, findsOneWidget);
+    await tester.tap(hosted);
+    await tester.pump();
+    final hostedFocus = FocusManager.instance.primaryFocus;
+    expect(hostedFocus?.context?.findAncestorWidgetOfExactType<EditableText>(), isNotNull);
+
+    for (final key in [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowRight, LogicalKeyboardKey.arrowDown]) {
+      await _press(tester, key);
+      expect(FocusManager.instance.primaryFocus, same(hostedFocus));
+    }
+    expect(_sent.where((e) => e.startsWith('1 Focus/')), isEmpty);
 
     field.dispose();
   });
