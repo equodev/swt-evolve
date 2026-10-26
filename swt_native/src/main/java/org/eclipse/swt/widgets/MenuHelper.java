@@ -5,6 +5,9 @@ import dev.equo.swt.FlutterBridge;
 
 public class MenuHelper {
 
+    /** Display data set while the last KeyDown was Alt and no other key has been pressed since. */
+    private static final String ALT_ALONE = "org.eclipse.swt.internal.menuBarAltAlone";
+
     static void hookEvents(DartMenu menu) {
         FlutterBridge.on(menu, "Help", "Help", e -> {
             menu.getDisplay().asyncExec(() -> {
@@ -56,6 +59,37 @@ public class MenuHelper {
         api.style = (api.style & ~flags) | wanted;
         menu.getValue().markDirty(VMenu.STYLE);
         menu.getValue().markDirty(VMenu.ORIENTATION);
+    }
+
+    /** Notes a KeyDown for the lone Alt, which activates the menu bar when it is released before any other key. */
+    static void noteKeyDown(Control control, Event key) {
+        control.getDisplay().setData(ALT_ALONE, key.keyCode == SWT.ALT ? Boolean.TRUE : null);
+    }
+
+    /** F10 with no modifier activates the menu bar once its KeyDown went through unvetoed, as on Windows. */
+    static void keyDownDelivered(Control control, Event key) {
+        if (key.doit && key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == 0)
+            activateMenuBar(control);
+    }
+
+    /** The release of a lone Alt activates the menu bar, unless a KeyUp listener vetoed it. */
+    static void keyUpDelivered(Control control, Event key) {
+        Display display = control.getDisplay();
+        if (key.keyCode != SWT.ALT || display.getData(ALT_ALONE) == null)
+            return;
+        display.setData(ALT_ALONE, null);
+        if (key.doit)
+            activateMenuBar(control);
+    }
+
+    /** The client takes the keyboard into the shell's menu bar, with its first title current. */
+    private static void activateMenuBar(Control control) {
+        if (control.isDisposed())
+            return;
+        Menu bar = control.getShell().getMenuBar();
+        if (bar == null || bar.isDisposed() || !bar.getEnabled() || bar.getItemCount() == 0)
+            return;
+        FlutterBridge.sendEvent(bar.getImpl(), "activate");
     }
 
     static MenuItem[] removeItem(MenuItem[] items, MenuItem item) {

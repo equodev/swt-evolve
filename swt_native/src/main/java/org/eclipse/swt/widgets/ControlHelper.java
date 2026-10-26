@@ -174,6 +174,7 @@ public class ControlHelper {
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        MenuHelper.noteKeyDown(control.getApi(), key);
         if (AcceleratorHelper.translate(control.getApi(), key))
             return new RoutedKey(false, false, false);
         int detail = traverseDetail(key.keyCode, key.stateMask);
@@ -220,14 +221,19 @@ public class ControlHelper {
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
         rememberTypingKey(control, key);
-        if (key.doit && !control.isDisposed())
+        if (key.doit && !control.isDisposed()) {
             applyPlatformKey(control, key);
+            MenuHelper.keyDownDelivered(control.getApi(), key);
+        }
         return new RoutedKey(true, key.doit, traverseDoit);
     }
 
-    /** Delivers a KeyUp to the focused control. */
+    /** Delivers a KeyUp to the focused control; the release of a lone Alt then activates the menu bar. */
     public static void routeKeyUp(DartControl control, Event key) {
+        key.doit = true;
         control.sendEvent(SWT.KeyUp, key);
+        if (!control.isDisposed())
+            MenuHelper.keyUpDelivered(control.getApi(), key);
     }
 
     /**

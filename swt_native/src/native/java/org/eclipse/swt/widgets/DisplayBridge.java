@@ -412,7 +412,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     sendDisplayGate(display, "traverse/verdict", "doit", routed.traverseDoit);
                 }
             } else {
-                dc.sendEvent(org.eclipse.swt.SWT.KeyUp, ev);
+                ControlHelper.routeKeyUp(dc, ev);
             }
         });
     }
