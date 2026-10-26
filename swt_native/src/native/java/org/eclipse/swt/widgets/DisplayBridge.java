@@ -1559,6 +1559,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 && org.eclipse.swt.custom.CComboHelper.focusedThroughField(focused.getApi(), widget.getApi());
     }
 
+    /** The shell's setActiveControl, which the focus changes tracked here already go through. */
+    @Override
+    public boolean activate(DartControl control, int detail) {
+        Control api = control.getApi();
+        Shell shell = api.getShell();
+        if (shell == null || shell.isDisposed() || !(shell.getImpl() instanceof DartShell))
+            return false;
+        ((DartShell) shell.getImpl()).setActiveControl(api, detail);
+        return true;
+    }
+
     /** The control that currently holds focus (Java-tracked; there is no OS focus on the web). */
     public org.eclipse.swt.widgets.Control getFocused() {
         return (focused != null && !focused.getApi().isDisposed()) ? focused.getApi() : null;

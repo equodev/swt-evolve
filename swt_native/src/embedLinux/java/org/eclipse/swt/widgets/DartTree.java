@@ -1966,8 +1966,8 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerBackground, color)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
@@ -2020,8 +2020,8 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);

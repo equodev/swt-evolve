@@ -1675,6 +1675,15 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /**
+     * Makes {@code control} the active control of its shell, sending Deactivate to the chain that was active
+     * and Activate, carrying {@code detail}, to the new one. False when this bridge leaves activation to its
+     * caller.
+     */
+    public boolean activate(DartControl control, int detail) {
+        return false;
+    }
+
     /** Clears the tracked focus holder if it is {@code control}. No-op unless a Display-level bridge
      *  tracks focus (see the whole-tree surface); embedded/other bridges have nothing to clear. */
     public void clearFocus(DartControl control) {

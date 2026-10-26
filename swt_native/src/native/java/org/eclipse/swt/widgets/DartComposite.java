@@ -904,11 +904,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         return super.setFocus();
     }
 
-    @Override
-    void setIsStyledText() {
-        isStyledText = true;
-    }
-
     /**
      * Sets the layout which is associated with the receiver to be
      * the argument which may be null.
