@@ -23,6 +23,7 @@ import 'package:swtflutter/src/impl/decorations_align.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'delivery/support/deliver.dart';
 import 'support/menu_bar_fixtures.dart';
 import 'support/menu_shown_ack.dart';
 
@@ -161,6 +162,27 @@ void main() {
     expect(_sent('Menu/$_editMenuId/Menu/Show'), hasLength(1));
     expect(find.text('Copy'), findsOneWidget);
     expect(find.text('New'), findsNothing);
+  });
+
+  testWidgets('a title whose drop-down is replaced before Java answers its Show opens the new one', (tester) async {
+    await _pumpMenuBar(tester);
+    await _fromJava(tester, 'MenuItem/$_fileTitleId/openMenu');
+    expect(_sent('Menu/$_fileMenuId/Menu/Show'), hasLength(1));
+
+    const replacementId = 35;
+    final bar = _menuBar()..seq = 10;
+    bar.items!.first
+      ..seq = 10
+      ..menu = (_dropDown(replacementId, [_item(36, '&Open')])..seq = 10);
+    await deliverWhole(bar);
+    await tester.pumpAndSettle();
+    await _fromJava(tester, 'MenuItem/$_fileTitleId/openMenu');
+    // Java answers the Show with the drop-down's items, then the ack.
+    await deliverWhole(_dropDown(replacementId, [_item(36, '&Open')])..seq = 11);
+    await _answerShow(tester, replacementId);
+
+    expect(_sent('Menu/$replacementId/Menu/Show'), hasLength(1));
+    expect(find.text('Open'), findsOneWidget, reason: 'the new drop-down must open');
   });
 
   testWidgets('a click on a title sends its drop-down the Show', (tester) async {

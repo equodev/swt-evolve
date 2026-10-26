@@ -324,6 +324,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     if (menuItems.isEmpty) {
       return const SizedBox.shrink();
     }
+    _titleKeys.removeWhere((id, _) => !menuItems.any((item) => item.id == id));
     final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
     final alignRight = align == DecorationsAlign.hright;
     final backgroundColor = enabled
@@ -776,6 +777,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     if (items != null && !identical(items, oldWidget.item.menu?.items)) {
       _menuChildren = _childrenOf(items);
     }
+    // Java sends no answer for a drop-down disposed during its Show.
+    if (_showingMenuId != null && widget.item.menu?.id != _showingMenuId) _stopShowing();
     if (oldWidget.item.id == widget.item.id && (oldWidget.item.menu == null) == (widget.item.menu == null)) {
       return;
     }
