@@ -837,10 +837,10 @@ public class ControlHelper {
     /**
      * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
      * <p>
-     * Button 1 focuses the controls Win32 and GTK agree on. A Canvas is left to its own press
-     * handling, since natively it takes the focus only while it hooks key events. A TabFolder takes
-     * it only from a click that switches tabs (its client sends it), not from one on its strip or on
-     * the selected tab, as on GTK.
+     * Button 1 focuses the controls Win32 and GTK agree on, StyledText included. Any other Canvas is
+     * left to its own press handling, since natively it takes the focus only while it hooks key
+     * events. A TabFolder takes it only from a click that switches tabs (its client sends it), not
+     * from one on its strip or on the selected tab, as on GTK.
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
@@ -857,7 +857,8 @@ public class ControlHelper {
         if (button == 3)
             return fieldOrItemView;
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
-                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale);
+                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
+                || api instanceof org.eclipse.swt.custom.StyledText);
     }
 
     /**
