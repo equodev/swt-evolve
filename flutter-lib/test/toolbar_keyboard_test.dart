@@ -105,7 +105,7 @@ Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester) async {
 void main() {
   setUp(_sent.clear);
 
-  testWidgets('Tab onto a tool item reports the ToolBar focused', (tester) async {
+  testWidgets('Tab onto a tool item reports the ToolBar focused, and leaving its items unfocused', (tester) async {
     final field = await _pumpFieldAndToolBar(tester);
 
     for (var i = 0; i < 3 && _focusedItemId() == null; i++) {
@@ -114,6 +114,14 @@ void main() {
     }
     expect(_focusedItemId(), isNotNull);
     expect(_sent, contains('1 Focus/FocusIn'));
+
+    // Moving between the bar's own items keeps the ToolBar focused; leaving them is one FocusOut.
+    for (var i = 0; i < 5 && _focusedItemId() != null; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+    }
+    expect(_focusedItemId(), isNull);
+    expect(_sent.where((e) => e.startsWith('1 Focus/')), ['1 Focus/FocusIn', '1 Focus/FocusOut']);
 
     field.dispose();
   });
@@ -131,6 +139,36 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     expect(_sent, contains('3 Selection/OpenMenu'));
+
+    field.dispose();
+  });
+
+  testWidgets('Right and Left move between the items, and Down on the DROP_DOWN one opens its menu',
+      (tester) async {
+    final field = await _pumpFieldAndToolBar(tester);
+
+    for (var i = 0; i < 3 && _focusedItemId() == null; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+    }
+    expect(_focusedItemId(), 2);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(_focusedItemId(), 3);
+
+    // Past the last item, back to the first, as on Windows.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(_focusedItemId(), 2);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(_focusedItemId(), 3);
+
+    _sent.clear();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(_sent, ['3 Selection/OpenMenu']);
 
     field.dispose();
   });
