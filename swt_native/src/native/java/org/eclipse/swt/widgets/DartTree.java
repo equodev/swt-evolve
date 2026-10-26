@@ -1740,9 +1740,9 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
@@ -1775,9 +1775,9 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1808,7 +1808,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, newValue)) {
+        if (this.headerVisible != newValue) {
             getValue().markDirty(VTree.HEADER_VISIBLE);
         }
         this.headerVisible = newValue;
@@ -1941,7 +1941,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
         this.linesVisible = newValue;
@@ -2037,7 +2037,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
         checkWidget();

@@ -386,7 +386,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   void dispose() {
     appScaleNotifier.removeListener(_applyContentZoom);
     _inlineDocuments.dispose();
-    browserReleaseWebView(_controller);
+    unawaited(browserReleaseWebView(_controller));
+    _opTokens.forEach(EquoCommService.remove);
     super.dispose();
   }
 
@@ -506,9 +507,12 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// for Map payloads (`FlutterBridge.send(..., Map.of(...))`). This variant
   /// tolerates either form.
   void _onOp(String op, void Function(dynamic) handler) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/$op",
-        (raw) => handler(raw is String ? jsonDecode(raw) : raw));
+    final channel = "${state.swt}/${state.id}/$op";
+    _opTokens[channel] = EquoCommService.onRaw(
+        channel, (raw) => handler(raw is String ? jsonDecode(raw) : raw));
   }
+
+  final Map<String, Object> _opTokens = {};
 
   /// Parses SWT-style request headers (a list of "Name: value" strings, as
   /// passed to Browser.setUrl(url, postData, headers)) into a header map.

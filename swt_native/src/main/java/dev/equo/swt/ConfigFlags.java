@@ -185,6 +185,13 @@ public class ConfigFlags {
      *  the system bar belongs to the browser. */
     public boolean system_menu_bar;
 
+    /** The decimal separator of the JVM's locale, which a desktop client writes numbers with. A browser
+     *  client uses its own locale's instead, the one it reports to the Display. */
+    public String decimal_separator;
+
+    /** The JVM's locale as a language tag, which a desktop client writes dates in. A browser client uses its own. */
+    public String locale;
+
     /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
@@ -261,6 +268,8 @@ public class ConfigFlags {
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", system_menu_bar=" + system_menu_bar +
+                ", decimal_separator='" + decimal_separator + '\'' +
+                ", locale='" + locale + '\'' +
                 '}';
     }
 

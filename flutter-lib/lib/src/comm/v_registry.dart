@@ -335,6 +335,7 @@ class VRegistry {
     _adopting.clear();
     _referrers.clear();
     _holdings.clear();
+    _unheld.clear();
     for (final tick in _boundsTicks.values) {
       tick.dispose();
     }
@@ -436,8 +437,9 @@ class VRegistry {
       if (!isAwaiting(channel)) return;
       // Nothing was held for it and nothing describes it: the sender named a widget this client
       // was never given. Recovering works, but it costs a round trip and should not be reachable -
-      // said out loud so that it is noticed rather than absorbed.
-      print('[delivery] unresolved reference $channel: asking for it');
+      // said out loud in debug builds so that it is noticed rather than absorbed; a release build
+      // stays quiet, since the app's console is the user's.
+      if (kDebugMode) print('[delivery] unresolved reference $channel: asking for it');
       EquoCommService.sendPayload(widgetRefreshChannel, '$id');
     });
   }
@@ -467,28 +469,54 @@ class VRegistry {
     }
   }
 
-  /// One reference to [channel] goes away. The widget goes with it when it was the last.
+  /// One reference to [channel] goes away. The widget goes with it when it was the last - once
+  /// every frame received so far is applied, and only if nothing has taken it by then.
+  ///
+  /// A widget that moves is dropped by its old parent and taken by its new one, and the two frames
+  /// can arrive in either order in one run: applied in between, it is held by nothing.
   void _release(String holder, String channel, int? writtenAt) {
-    final holders = _referrers[channel];
-    if (holders != null) {
-      holders.remove(holder);
-      if (holders.isNotEmpty) return;
-      _referrers.remove(channel);
-    }
+    if (!_letGo(holder, channel, writtenAt)) return;
+    if (_unheld.isEmpty) EquoCommBase.whenApplied(_evictUnheld);
+    _unheld[channel] = writtenAt;
+  }
 
+  /// Widgets that lost their last holder, and when the value that let go of each was written.
+  final Map<String, int?> _unheld = {};
+
+  void _evictUnheld() {
+    final unheld = Map.of(_unheld);
+    _unheld.clear();
+    unheld.forEach(_evictIfUnheld);
+  }
+
+  void _evictIfUnheld(String channel, int? writtenAt) {
+    if (_referrers[channel]?.isNotEmpty ?? false) return;
     final node = _nodes[channel];
-    if (node == null) return;
-    // Described more recently than the value letting go of it: the widget moved, and the frame
-    // dropping it is the old parent catching up rather than news of a disposal. Java writes one
-    // stamp per write from one counter, so "newer" is a fact about the two writes, not a guess.
-    if (writtenAt != null && !node.awaitingValue && node.value.seq > writtenAt) return;
-
+    if (node == null || _movedSince(node, writtenAt)) return;
     final held = node.references;
     evict(channel);
     for (final reference in held) {
-      _release(channel, reference, writtenAt);
+      if (_letGo(channel, reference, writtenAt)) _evictIfUnheld(reference, writtenAt);
     }
   }
+
+  /// Takes [holder] off [channel]'s holders; whether that left [channel] held by nothing.
+  bool _letGo(String holder, String channel, int? writtenAt) {
+    final holders = _referrers[channel];
+    if (holders != null) {
+      holders.remove(holder);
+      if (holders.isNotEmpty) return false;
+      _referrers.remove(channel);
+    }
+    final node = _nodes[channel];
+    return node != null && !_movedSince(node, writtenAt);
+  }
+
+  // Described more recently than the value letting go of it: the widget moved, and the frame
+  // dropping it is the old parent catching up rather than news of a disposal. Java writes one
+  // stamp per write from one counter, so "newer" is a fact about the two writes, not a guess.
+  static bool _movedSince(VNode node, int? writtenAt) =>
+      writtenAt != null && !node.awaitingValue && node.value.seq > writtenAt;
 
   /// The channels a value refers to directly. Handed the identity of each widget it holds, which
   /// is all this needs — the values themselves are already the ones the registry holds.

@@ -22,13 +22,13 @@ class _CapturingCComboSwt extends CComboSwt<VCCombo> {
 const _id = 12;
 int _seq = 0;
 
-VCCombo _combo() => VCCombo()
+VCCombo _combo({List<String> items = const ['MD', 'TVD', 'TVDSS', 'TWT']}) => VCCombo()
   ..swt = 'CCombo'
   ..id = _id
   ..style = 0
   ..enabled = true
-  ..items = const ['MD', 'TVD', 'TVDSS', 'TWT']
-  ..text = 'TVD'
+  ..items = items
+  ..text = items.isEmpty ? '' : 'TVD'
   ..listVisible = false
   ..bounds = (VRectangle()
     ..x = 0
@@ -36,7 +36,7 @@ VCCombo _combo() => VCCombo()
     ..width = 200
     ..height = 24);
 
-Future<List<int?>> _pump(WidgetTester tester) async {
+Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
   VRegistry.instance.clear();
   _seq = 0;
   final reports = <int?>[];
@@ -47,7 +47,7 @@ Future<List<int?>> _pump(WidgetTester tester) async {
         width: 200,
         height: 24,
         child: _CapturingCComboSwt(
-          value: _combo(),
+          value: items == null ? _combo() : _combo(items: items),
           onEvent: (ev, payload) {
             if (ev == 'List/Visible') reports.add(payload?.detail);
           },
@@ -102,5 +102,17 @@ void main() {
     await _javaSends(tester, false);
     expect(_listOpen(), isFalse);
     expect(reports, isEmpty, reason: 'what Java commanded is not reported back to it');
+  });
+
+  testWidgets('the arrow of a combo with no items opens its list, and Java is told', (tester) async {
+    final reports = await _pump(tester, items: const []);
+
+    await tester.tap(find.byType(IconButton).first);
+    await tester.pumpAndSettle();
+    expect(reports, [1]);
+
+    await tester.tap(find.byType(IconButton).first);
+    await tester.pumpAndSettle();
+    expect(reports, [1, 0]);
   });
 }

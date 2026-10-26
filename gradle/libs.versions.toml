@@ -16,6 +16,8 @@ jacoco = "0.8.12"
 # JavaFX (FXCanvas embedded-scene bridge + snippets). monocle pins a separate patch.
 javafx = "21.0.4"
 openjfx-monocle = "21.0.2"
+errorprone = "2.50.0"
+errorprone-plugin = "5.1.1"
 
 [libraries]
 # JUnit 5
@@ -41,3 +43,9 @@ equo-chromium = { group = "com.equo", name = "com.equo.chromium", version.ref = 
 # Jetty 12 core flavor (no servlets) — websocket artifact renamed from websocket-jetty-server.
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
 jetty-websocket-server = { group = "org.eclipse.jetty.websocket", name = "jetty-websocket-jetty-server", version.ref = "jetty" }
+
+# Static analysis
+errorprone-core = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorprone" }
+
+[plugins]
+errorprone = { id = "net.ltgt.errorprone", version.ref = "errorprone-plugin" }

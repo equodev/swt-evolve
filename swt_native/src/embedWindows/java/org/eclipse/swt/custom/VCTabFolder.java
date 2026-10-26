@@ -255,6 +255,7 @@ public class VCTabFolder extends VComposite {
     }
 
     @JsonAttribute(ignore = true)
+    @SuppressWarnings("removal")
     public boolean getSimple() {
         return ((DartCTabFolder) impl).getSimple();
     }
