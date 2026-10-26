@@ -4160,10 +4160,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     static volatile long WEB_PARK_CAP_MS = 16;
 
-    volatile Boolean clientIsMac;
+    volatile String clientPlatform;
 
     boolean isMacWebClient() {
-        return "web".equals(org.eclipse.swt.SWT.getPlatform()) && Boolean.TRUE.equals(clientIsMac);
+        return "web".equals(org.eclipse.swt.SWT.getPlatform()) && ("macOS".equals(clientPlatform) || "iOS".equals(clientPlatform));
     }
 
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();

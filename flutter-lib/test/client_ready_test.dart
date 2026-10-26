@@ -1,6 +1,7 @@
 // A change that moves the scale reaches the ClientReady report from both the scale's listener and
 // the config's; Java must be told the new area once, and a reconnect must announce a fresh client.
 
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/impl/client_ready.dart';
 
@@ -50,11 +51,11 @@ void main() {
     expect(sent.single.$2.containsKey('locale'), isFalse);
   });
 
-  test('the client reports whether its shortcut modifier is Cmd', () {
+  test('the client reports the OS it runs on', () {
     reporter.report('Display', 1,
-        width: 1, height: 1, displayWidth: 1, displayHeight: 1, zoom: 100, isMacClient: true);
+        width: 1, height: 1, displayWidth: 1, displayHeight: 1, zoom: 100, platform: TargetPlatform.macOS);
 
-    expect(sent.single.$2['isMacClient'], isTrue);
+    expect(sent.single.$2['targetPlatform'], 'macOS');
   });
 
   test('after a restart the same area is reported again, as a fresh client', () {

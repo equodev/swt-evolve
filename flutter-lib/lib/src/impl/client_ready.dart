@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import '../comm/comm.dart';
 
 /// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on,
-/// that monitor's zoom, the height of the title strip the client draws above the shell, and on web
-/// the browser's locale, which Java formats numbers in. A desktop client sends none: the JVM's applies.
+/// that monitor's zoom, the height of the title strip the client draws above the shell, the OS the
+/// client runs on, and on web the browser's locale, which Java formats numbers in. A desktop client
+/// sends no locale: the JVM's applies.
 ///
 /// A report equal to the last one on its channel is not sent again: a change that moves the scale
 /// reaches here from both the scale's listener and the config's.
@@ -35,7 +36,7 @@ class ClientReadyReporter {
       required int displayHeight,
       required int zoom,
       int insetTop = 0,
-      bool? isMacClient}) {
+      TargetPlatform? platform}) {
     final isFirst = !_firstSent;
     _firstSent = true;
     final channel = '$widgetName/$widgetId/ClientReady';
@@ -49,7 +50,7 @@ class ClientReadyReporter {
       'zoom': zoom,
       'insetTop': insetTop,
       if (locale != null) 'locale': locale,
-      'isMacClient': isMacClient ?? clientUsesCommandKey,
+      'targetPlatform': (platform ?? defaultTargetPlatform).name,
     };
     if (!isFirst && mapEquals(payload, _lastSent[channel])) return;
     _lastSent[channel] = payload;
@@ -58,7 +59,3 @@ class ClientReadyReporter {
     _send(channel, payload);
   }
 }
-
-/// Whether the client's primary shortcut modifier is Cmd: a Mac, or an iPad with a keyboard.
-bool get clientUsesCommandKey =>
-    defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.iOS;
