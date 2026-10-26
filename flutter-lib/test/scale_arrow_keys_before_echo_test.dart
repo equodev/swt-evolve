@@ -73,7 +73,7 @@ void main() {
       }
 
       expect(selections, hasLength(4));
-      expect(value.selection, 50);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 50);
       expect(selections.last, 50);
     });
   }
@@ -93,5 +93,58 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(tester.widget<Slider>(find.byType(Slider)).value, 10);
+  });
+
+  // The application answers each reported value in turn, one key late. A rebuild of the Scale
+  // between a key and its answer must not count as that answer, nor may an answer to a value since
+  // replaced move the slider back: the next key would step from it.
+  testWidgets('answers arriving a key late, around rebuilds, leave the arrows cancelling out', (tester) async {
+    final selections = <int?>[];
+    final value = _scale(50, vertical: true);
+    late StateSetter rebuild;
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 40,
+          height: 300,
+          child: StatefulBuilder(builder: (context, setState) {
+            rebuild = setState;
+            return _RecordingScaleSwt(value: value, selections: selections);
+          }),
+        ),
+      ),
+    ));
+    await tester.pump();
+    tester.widget<Slider>(find.byType(Slider)).focusNode!.requestFocus();
+    await tester.pump();
+
+    var answered = 0;
+    Future<void> answerOne() async {
+      rebuild(() => value.selection = selections[answered++]);
+      await tester.pump();
+    }
+
+    final keys = [
+      LogicalKeyboardKey.arrowLeft,
+      LogicalKeyboardKey.arrowRight,
+      LogicalKeyboardKey.arrowUp,
+      LogicalKeyboardKey.arrowDown,
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      await tester.sendKeyEvent(keys[i]);
+      await tester.pump();
+      rebuild(() {});
+      await tester.pump();
+      if (i > 0) await answerOne();
+    }
+    while (answered < selections.length) {
+      await answerOne();
+    }
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(selections, [45, 50, 55, 50]);
+    expect(tester.widget<Slider>(find.byType(Slider)).value, 50);
   });
 }

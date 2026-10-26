@@ -552,7 +552,10 @@ JNIEXPORT jlong JNICALL
 Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, jlong parent,
                                            jlong widget_id, jstring widget_name, jstring theme,
                                            jint background_color, jint parent_background_color,
-                                           jint width, jint height, jboolean csd_enabled) {
+                                           jint width, jint height, jboolean csd_enabled,
+                                           jboolean impeller_enabled) {
+  // The renderer choice is the Windows engine's; this embedder has no Impeller switch.
+  (void)impeller_enabled;
   const char *name = env->GetStringUTFChars(widget_name, NULL);
   const char *th = env->GetStringUTFChars(theme, NULL);
   FlutterWindow *w;

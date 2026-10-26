@@ -39,6 +39,10 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     _lastJavaListVisible = state.listVisible;
   }
 
+  /// Its field keeps the wheel on every native, so the parent reports none.
+  @override
+  bool get keepsWheel => true;
+
   int get _selectedIndex => (state.items ?? const <String>[]).indexOf(state.text ?? '');
 
   // The list is an SWT List: it highlights the selection only, and the pointer over it moves nothing.
@@ -82,6 +86,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       if (open != _javaListTarget) return;
       _javaListTarget = null;
     }
+    // The anchor rebuilds for more than an open or a close: only a change reaches Java.
     if (open == (_lastJavaListVisible ?? false)) return;
     _lastJavaListVisible = open;
     state.listVisible = open;
@@ -93,7 +98,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final widgetTheme = Theme.of(context).extension<CComboThemeExtension>()!;
     final styleBits = StyleBits(state.style);
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
-    final bool isSimple = styleBits.has(SWT.SIMPLE);
     final bool isEnabled = state.enabled ?? true;
 
     final bool isActive = _isFocused || _isHovered;
@@ -140,58 +144,34 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         ? state.bounds!.height.toDouble()
         : null;
 
-    Widget result;
-
-    if (isSimple) {
-      result = _StyledSimpleCCombo(
-        state: state,
-        widgetTheme: widgetTheme,
-        controller: _controller,
-        focusNode: _focusNode,
-        items: state.items ?? [],
-        enabled: isEnabled,
-        readOnly: isReadOnly,
-        textStyle: textStyle,
-        backgroundColor: currentBg,
-        borderColor: currentBorderColor,
-        borderWidth: borderWidth,
-        onChanged: isEnabled ? onChanged : null,
-        onTextChanged: onTextChanged,
-        onTextSubmitted: onTextSubmitted,
-        controlHeight: height,
-      );
-    } else {
-      // Dropdown mode
-      result = MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedContainer(
-          duration: widgetTheme.animationDuration,
-          decoration: BoxDecoration(
-            color: currentBg,
-            borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-            border: Border.all(color: currentBorderColor, width: borderWidth),
-          ),
-          child: _StyledDropdownCCombo(
-            state: state,
-            widgetTheme: widgetTheme,
-            controller: _controller,
-            focusNode: _focusNode,
-            menuController: _menuController,
-            items: state.items ?? [],
-            enabled: isEnabled,
-            isReadOnly: isReadOnly,
-            textStyle: textStyle,
-            onSelected: isEnabled ? _onDropdownSelected : null,
-            isHighlighted: _isHighlighted,
-            onListShown: () => scheduleMicrotask(_reportListVisible),
-            onListClosed: () => scheduleMicrotask(_reportListVisible),
-            controlHeight: height,
-            borderWidth: borderWidth,
-          ),
+    Widget result = MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: widgetTheme.animationDuration,
+        decoration: BoxDecoration(
+          color: currentBg,
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          border: Border.all(color: currentBorderColor, width: borderWidth),
         ),
-      );
-    }
+        child: _StyledDropdownCCombo(
+          state: state,
+          widgetTheme: widgetTheme,
+          controller: _controller,
+          focusNode: _focusNode,
+          menuController: _menuController,
+          items: state.items ?? [],
+          enabled: isEnabled,
+          isReadOnly: isReadOnly,
+          textStyle: textStyle,
+          onSelected: isEnabled ? _onDropdownSelected : null,
+          isHighlighted: _isHighlighted,
+          reportListVisible: () => scheduleMicrotask(_reportListVisible),
+          controlHeight: height,
+          borderWidth: borderWidth,
+        ),
+      ),
+    );
 
     // The field, the arrow button and the menu's own keyboard node all belong to this control: focus
     // on any of them is focus on the CCombo, so Java routes the arrow keys to it while the list is open.
@@ -231,8 +211,16 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// field takes no focus, so there the surface does.
   @override
   void takeFocusOnPress() {
-    if ((state.style & SWT.READ_ONLY) != 0) super.takeFocusOnPress();
+    if ((state.style & SWT.READ_ONLY) != 0) {
+      super.takeFocusOnPress();
+    } else {
+      _focusNode?.requestFocus();
+    }
   }
+
+  /// Every native's field takes the focus on a right press too.
+  @override
+  bool get takesFocusOnSecondaryPress => (state.style & SWT.READ_ONLY) == 0;
 
   void onChanged(String? value) {
     setState(() {
@@ -279,17 +267,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     }
   }
 
-  void onTextChanged(String value) {
-    state.text = value;
-    recordSentText(value);
-    widget.sendModifyModify(state, VEvent()..text = value);
-  }
-
-  void onTextSubmitted(String text) {
-    widget.sendSelectionDefaultSelection(state, VEvent()..text = text);
-    widget.sendVerifyVerify(state, VEvent()..text = text);
-  }
-
   void _handleFocusChange(bool hasFocus) {
     if (!mounted) return;
     setState(() => _isFocused = hasFocus);
@@ -325,8 +302,9 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final TextStyle textStyle;
   final ValueChanged<String?>? onSelected;
   final bool Function(int index) isHighlighted;
-  final VoidCallback onListShown;
-  final VoidCallback onListClosed;
+  /// Tells Java whether the list is open. Called on every rebuild of the menu anchor, which every
+  /// open and close causes; the report itself drops a state Java already has.
+  final VoidCallback reportListVisible;
   final double? controlHeight;
   final double borderWidth;
 
@@ -342,8 +320,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.textStyle,
     this.onSelected,
     required this.isHighlighted,
-    required this.onListShown,
-    required this.onListClosed,
+    required this.reportListVisible,
     this.controlHeight,
     required this.borderWidth,
   });
@@ -414,6 +391,11 @@ class _StyledDropdownCCombo extends StatelessWidget {
       focusNode: focusNode,
       controller: controller,
       menuController: menuController,
+      // The anchor's builder runs on every open and close, entries or not: an empty list opens too.
+      decorationBuilder: (context, controller) {
+        reportListVisible();
+        return const InputDecoration();
+      },
       expandedInsets: EdgeInsets.zero,
       initialSelection: state.text,
       requestFocusOnTap: !isReadOnly,
@@ -461,13 +443,9 @@ class _StyledDropdownCCombo extends StatelessWidget {
         return DropdownMenuEntry<String>(
           value: item,
           label: item,
-          labelWidget: _EntryLifecycle(
-            onShown: onListShown,
-            onGone: onListClosed,
-            child: HtmlTooltip(
-              html: tooltip,
-              child: labelWidget,
-            ),
+          labelWidget: HtmlTooltip(
+            html: tooltip,
+            child: labelWidget,
           ),
           style: getCComboEntryStyle(widgetTheme, textStyle, width, () => isHighlighted(index)),
         );
@@ -523,145 +501,4 @@ class _StyledDropdownCCombo extends StatelessWidget {
     }
     return null;
   }
-}
-
-class _StyledSimpleCCombo extends StatelessWidget {
-  final VCCombo state;
-  final CComboThemeExtension widgetTheme;
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final List<String> items;
-  final bool enabled;
-  final bool readOnly;
-  final TextStyle textStyle;
-  final Color backgroundColor;
-  final Color borderColor;
-  final double borderWidth;
-  final ValueChanged<String?>? onChanged;
-  final ValueChanged<String>? onTextChanged;
-  final ValueChanged<String>? onTextSubmitted;
-  final double? controlHeight;
-
-  const _StyledSimpleCCombo({
-    required this.state,
-    required this.widgetTheme,
-    required this.controller,
-    this.focusNode,
-    required this.items,
-    required this.enabled,
-    required this.readOnly,
-    required this.textStyle,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.borderWidth,
-    this.onChanged,
-    this.onTextChanged,
-    this.onTextSubmitted,
-    this.controlHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-          border: Border.all(color: borderColor, width: borderWidth),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Text field
-            Padding(
-              padding: widgetTheme.textFieldPadding,
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                enabled: enabled,
-                readOnly: readOnly,
-                textAlign: _getTextAlign(),
-                style: textStyle,
-                decoration: const InputDecoration.collapsed(hintText: ''),
-                maxLength: state.textLimit,
-                minLines: controlHeight != null ? 1 : null,
-                maxLines: 1,
-                onChanged: readOnly ? null : onTextChanged,
-                onSubmitted: readOnly ? null : onTextSubmitted,
-                // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
-                // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
-                contextMenuBuilder: null,
-              ),
-            ),
-            // Divider
-            if (items.isNotEmpty)
-              Divider(
-                height: widgetTheme.dividerHeight,
-                thickness: widgetTheme.dividerThickness,
-                color: widgetTheme.dividerColor,
-              ),
-            // Items list
-            ...items.map((item) {
-              final bool isSelected = item == state.text;
-              return InkWell(
-                hoverColor: getCComboSimpleItemHoverColor(widgetTheme),
-                onTap: enabled ? () => onChanged?.call(item) : null,
-                child: Container(
-                  height: widgetTheme.itemHeight,
-                  padding: widgetTheme.textFieldPadding,
-                  color: getCComboItemBackgroundColor(widgetTheme, isSelected),
-                  alignment: _getAlignment(),
-                  child: Text(item, style: textStyle),
-                ),
-              );
-            }),
-          ],
-        ),
-    );
-  }
-
-  TextAlign _getTextAlign() {
-    if (state.alignment == SWT.CENTER) return TextAlign.center;
-    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
-      return TextAlign.right;
-    }
-    return TextAlign.left;
-  }
-
-  Alignment _getAlignment() {
-    if (state.alignment == SWT.CENTER) return Alignment.center;
-    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
-      return Alignment.centerRight;
-    }
-    return Alignment.centerLeft;
-  }
-}
-
-/// Reports a list entry entering and leaving the tree, which is the list opening and closing.
-class _EntryLifecycle extends StatefulWidget {
-  final VoidCallback onShown;
-  final VoidCallback onGone;
-  final Widget child;
-
-  const _EntryLifecycle({required this.onShown, required this.onGone, required this.child});
-
-  @override
-  State<_EntryLifecycle> createState() => _EntryLifecycleState();
-}
-
-class _EntryLifecycleState extends State<_EntryLifecycle> {
-  @override
-  void initState() {
-    super.initState();
-    widget.onShown();
-  }
-
-  @override
-  void dispose() {
-    widget.onGone();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }

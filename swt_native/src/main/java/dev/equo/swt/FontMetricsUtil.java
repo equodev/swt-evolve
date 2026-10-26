@@ -148,7 +148,7 @@ public final class FontMetricsUtil {
     }
 
     public static org.eclipse.swt.graphics.Point hostScreenDPI(String osName) {
-        String n = osName == null ? "" : osName.toLowerCase();
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
         int dpi = (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
         return new org.eclipse.swt.graphics.Point(dpi, dpi);
     }

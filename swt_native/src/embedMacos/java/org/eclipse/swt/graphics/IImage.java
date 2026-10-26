@@ -74,6 +74,7 @@ public interface IImage extends IResource, ImplImage {
      * @deprecated This API doesn't serve the purpose in an environment having
      *             multiple monitors with different DPIs, hence deprecated.
      */
+    @Deprecated
     Rectangle getBoundsInPixels();
 
     /**
@@ -112,6 +113,7 @@ public interface IImage extends IResource, ImplImage {
      *             multiple monitors with different DPIs, hence deprecated. Use
      *             {@link #getImageData(int)} instead.
      */
+    @Deprecated
     ImageData getImageDataAtCurrentZoom();
 
     /**

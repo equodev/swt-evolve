@@ -454,7 +454,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if (!java.util.Objects.equals(this.visible, visible)) {
+        if (this.visible != visible) {
             getValue().markDirty(VToolTip.VISIBLE);
         }
         if (visible == getApi().getVisible())

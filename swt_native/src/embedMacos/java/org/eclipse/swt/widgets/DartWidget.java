@@ -558,6 +558,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(Object)
      */
     public Object getData() {
+        checkWidget();
         return (getApi().state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
     }
 
@@ -586,6 +587,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
+        checkWidget();
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (key.equals(IS_ACTIVE))
@@ -712,6 +714,7 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public int getStyle() {
+        checkWidget();
         return getApi().style;
     }
 
@@ -1137,6 +1140,7 @@ public abstract class DartWidget implements IWidget {
      * @see #getData()
      */
     public void setData(Object data) {
+        checkWidget();
         if (WEBKIT_EVENTS_FIX_KEY.equals(data)) {
             getApi().state |= WEBKIT_EVENTS_FIX;
             return;
@@ -1180,6 +1184,7 @@ public abstract class DartWidget implements IWidget {
      * @see #getData(String)
      */
     public void setData(String key, Object value) {
+        checkWidget();
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (GLCONTEXT_KEY.equals(key)) {

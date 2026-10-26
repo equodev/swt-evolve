@@ -16,6 +16,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 
 /**
  * The list of a CCombo is drawn by Flutter, so Java learns that it is open only when Flutter says
@@ -46,6 +47,8 @@ class CComboOpenListEscapeTest {
 
     @AfterEach
     void tearDown() {
+        // The mock display is shared by every test in the JVM: a synchronous asyncExec must not outlive this one.
+        doNothing().when(Mocks.display()).asyncExec(any(Runnable.class));
         FlutterBridge.set(null);
     }
 

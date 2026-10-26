@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
 /**
  * Alt+Down and Alt+Up open and close a CCombo's list from its field. Flutter draws the list, so the
@@ -47,6 +48,7 @@ class CComboAltArrowTogglesListTest {
 
     private static CCombo combo() {
         Shell shell = Mocks.shell();
+        when(shell.isVisible()).thenReturn(true); // CCombo.dropDown(true) does nothing on a hidden combo
         Display display = shell.getDisplay();
         doAnswer(inv -> {
             ((Runnable) inv.getArgument(0)).run();

@@ -82,21 +82,20 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         isVertical: isVertical,
         widgetTheme: widgetTheme,
         onMarginPress: () => _pressOnMargin = true,
+        // The value is the application's: it changes when the application sends it back, which is
+        // how the slider below tells an answer to its own report from a value set by the application.
         onChanged: (value) {
           _changedDuringPress = true;
-          state.selection = value.round();
           widget.sendSelectionSelection(
             state,
             VEvent()
-              ..index = state.selection
+              ..index = value.round()
               ..stateMask = _pressed ? SWT.BUTTON1 : 0,
           );
         },
-        onChangeEnd: (value) {
-          // No event of its own: a Scale sends Selection and nothing else, and the change that
-          // ends the gesture has already sent one through onChanged.
-          state.selection = value.round();
-        },
+        // No event of its own: a Scale sends Selection and nothing else, and the change that ends
+        // the gesture has already sent one through onChanged.
+        onChangeEnd: (_) {},
         focusNode: _focusNode,
         onFocusChanged: (hasFocus) {
           if (hasFocus) {
@@ -186,7 +185,9 @@ class _ThemedScaleState extends State<_ThemedScale> {
   @override
   void didUpdateWidget(_ThemedScale old) {
     super.didUpdateWidget(old);
-    if (_unconfirmed.isEmpty) return;
+    // Only a value the application sends says anything: a rebuild that brings the same one is no
+    // answer, even when it equals a value reported since.
+    if (_unconfirmed.isEmpty || widget.value == old.value) return;
     final shown = widget.value.round();
     final at = _unconfirmed.indexOf(shown);
     if (at >= 0) {
