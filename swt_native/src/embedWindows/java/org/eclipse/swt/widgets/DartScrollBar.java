@@ -458,7 +458,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     /**
@@ -477,7 +477,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible() && parent.isVisible();
+        return getApi().getVisible() && parent.isVisible();
     }
 
     @Override
@@ -541,10 +541,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        checkWidget();
+        if (this.enabled != newValue) {
             getValue().markDirty(VScrollBar.ENABLED);
         }
-        checkWidget();
         this.enabled = newValue;
         if (enabled) {
             getApi().state &= ~DISABLED;
@@ -568,7 +568,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, value)) {
+        if (this.increment != value) {
             getValue().markDirty(VScrollBar.INCREMENT);
         }
         if (value < 1)
@@ -591,10 +591,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setMaximum(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.maximum, newValue)) {
+        checkWidget();
+        if (this.maximum != newValue) {
             getValue().markDirty(VScrollBar.MAXIMUM);
         }
-        checkWidget();
         if (value < 0)
             return;
         this.maximum = newValue;
@@ -615,10 +615,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setMinimum(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.minimum, newValue)) {
+        checkWidget();
+        if (this.minimum != newValue) {
             getValue().markDirty(VScrollBar.MINIMUM);
         }
-        checkWidget();
         if (value < 0)
             return;
         this.minimum = newValue;
@@ -683,10 +683,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setThumb(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.thumb, newValue)) {
+        checkWidget();
+        if (this.thumb != newValue) {
             getValue().markDirty(VScrollBar.THUMB);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.thumb = newValue;
@@ -715,7 +715,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, increment)) {
+        if (this.increment != increment) {
             getValue().markDirty(VScrollBar.INCREMENT);
         }
         if (minimum < 0)
@@ -750,11 +750,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(this.visible, newValue)) {
+        checkWidget();
+        if (this.visible != newValue) {
             getValue().markDirty(VScrollBar.VISIBLE);
         }
-        checkWidget();
-        if (visible == getVisible())
+        if (visible == getApi().getVisible())
             return;
         /*
 	* Set the state bits before calling ShowScrollBar ()

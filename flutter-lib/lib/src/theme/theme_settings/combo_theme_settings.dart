@@ -54,7 +54,8 @@ ComboThemeExtension _getComboTheme({
     disabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
     borderRadius: 4.0,
     borderWidth: 1.0,
-    textFieldPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    // Keeps a Combo as tall as a bordered Text, as natively; height-driven layouts rely on it.
+    textFieldPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1.5),
     itemPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     iconSpacing: 8.0,
     dividerHeight: 1.0,
@@ -64,6 +65,7 @@ ComboThemeExtension _getComboTheme({
     itemTextStyle: textTheme.bodyMedium,
     dividerColor: colorScheme.outline,
     animationDuration: const Duration(milliseconds: 150),
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -102,6 +104,7 @@ Color getComboTextColor(
     foreground: state.foreground,
     defaultColor: widgetTheme.textColor,
     context: context,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

@@ -17,6 +17,7 @@ public class DisposeTest {
     //@RepeatedTest(25)
     @Disabled
     @Test
+    @SuppressWarnings("removal")
     void testDisposeShouldntCrash() {
         Display display = new Display();
         Shell shell = new Shell();

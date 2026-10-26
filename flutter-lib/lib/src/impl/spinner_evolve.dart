@@ -9,6 +9,7 @@ import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import '../theme/theme_settings/spinner_theme_settings.dart';
+import 'utils/number_locale.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
@@ -20,15 +21,20 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
   // A KeyDown listener may veto the keystroke, so an edit is held un-rendered until Java answers.
   final VetoGate _keyGate = VetoGate('key');
 
+  // Java answers an edit it was asked to Verify; a veto sends the field back to the value Java holds.
+  final VetoGate _modifyGate = VetoGate('modify');
+
   @override
   void initState() {
     super.initState();
     _keyGate.attach(state.swt, state.id);
+    _modifyGate.attach(state.swt, state.id);
   }
 
   @override
   void dispose() {
     _keyGate.detach();
+    _modifyGate.detach();
     super.dispose();
   }
 
@@ -85,11 +91,14 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         max: maximum,
         increment: increment,
         digits: digits,
+        decimalSeparator: decimalSeparator(),
+        keptText: state.keptText,
         pageIncrement: pageIncrement,
         textLimit: textLimit,
         enabled: enabled,
         readOnly: readOnly,
         keyGate: _keyGate,
+        modifyGate: _modifyGate,
         width: size.width,
         height: size.height,
         widgetTheme: widgetTheme,
@@ -104,6 +113,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
             VEvent()..index = state.selection,
           );
         },
+        onEdited: (edit) => widget.sendModifyModify(state, edit),
         onSubmitted: (value) {
           state.selection = value;
           widget.sendSelectionDefaultSelection(
@@ -117,14 +127,8 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
             widget.sendFocusFocusIn(state, null);
           } else {
             _keyGate.armed = false;
+            _modifyGate.armed = false;
             widget.sendFocusFocusOut(state, null);
-          }
-        },
-        onHover: (isHovering) {
-          if (isHovering) {
-            widget.sendMouseTrackMouseEnter(state, null);
-          } else {
-            widget.sendMouseTrackMouseExit(state, null);
           }
         },
       ),
@@ -138,12 +142,16 @@ class _ThemedSpinner extends StatefulWidget {
   final int max;
   final int increment;
   final int digits;
+  final String decimalSeparator;
+  // The text a refused Verify kept over the selection; null while the text follows the value.
+  final String? keptText;
   final int pageIncrement;
   final int textLimit;
   final bool enabled;
   final bool readOnly;
 
   final VetoGate keyGate;
+  final VetoGate modifyGate;
   final double width;
   final double height;
   final SpinnerThemeExtension widgetTheme;
@@ -152,9 +160,9 @@ class _ThemedSpinner extends StatefulWidget {
   final Color borderColor;
   final TextStyle textStyle;
   final ValueChanged<int> onChanged;
+  final ValueChanged<VEvent> onEdited;
   final ValueChanged<int> onSubmitted;
   final ValueChanged<bool> onFocusChanged;
-  final ValueChanged<bool> onHover;
 
   const _ThemedSpinner({
     required this.value,
@@ -162,11 +170,14 @@ class _ThemedSpinner extends StatefulWidget {
     required this.max,
     required this.increment,
     required this.digits,
+    required this.decimalSeparator,
+    this.keptText,
     required this.pageIncrement,
     required this.textLimit,
     required this.enabled,
     required this.readOnly,
     required this.keyGate,
+    required this.modifyGate,
     required this.width,
     required this.height,
     required this.widgetTheme,
@@ -175,9 +186,9 @@ class _ThemedSpinner extends StatefulWidget {
     required this.borderColor,
     required this.textStyle,
     required this.onChanged,
+    required this.onEdited,
     required this.onSubmitted,
     required this.onFocusChanged,
-    required this.onHover,
   });
 
   @override
@@ -188,6 +199,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   int? _localValue;
+  // The text the field showed before the edit that is being reported: what the range of that edit is relative to.
+  String _editedFrom = '';
   bool _isUpHovered = false;
   bool _isDownHovered = false;
   bool _isUpPressed = false;
@@ -196,16 +209,21 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: _formatValue(widget.value));
+    _controller = TextEditingController(text: _heldText);
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
+    widget.modifyGate.onUnmatched = _revertVetoedEdit;
   }
 
   @override
   void didUpdateWidget(_ThemedSpinner oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_localValue == null && oldWidget.value != widget.value) {
-      _controller.text = _formatValue(widget.value);
+    final shown = oldWidget.value != widget.value ||
+        oldWidget.digits != widget.digits ||
+        oldWidget.decimalSeparator != widget.decimalSeparator ||
+        oldWidget.keptText != widget.keptText;
+    if (_localValue == null && shown) {
+      _controller.text = _heldText;
     }
   }
 
@@ -218,53 +236,57 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text != oldValue.text) _editedFrom = oldValue.text;
     if (!widget.keyGate.armed) return newValue;
     if (newValue.text == oldValue.text) return newValue;
     widget.keyGate.propose((doit) {
       if (!doit || !mounted) return;
       _controller.value = newValue;
-      _handleTextChanged(newValue.text);
+      _handleTextChanged(newValue.text, oldValue.text);
     });
     return oldValue;
+  }
+
+  // Java vetoed the edit, or changed what was typed: the field shows the value Java holds.
+  void _revertVetoedEdit(bool doit) {
+    if (doit || !mounted) return;
+    _localValue = null;
+    final held = _heldText;
+    _controller.value = TextEditingValue(
+      text: held,
+      selection: TextSelection.collapsed(offset: held.length),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isInteractive = widget.enabled && !widget.readOnly;
 
-    return MouseRegion(
-      onEnter: (_) {
-        widget.onHover(true);
-      },
-      onExit: (_) {
-        widget.onHover(false);
-      },
-      child: AnimatedContainer(
-        duration: widget.widgetTheme.animationDuration,
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: widget.backgroundColor,
-          border: Border.all(
-            color: widget.borderColor,
-            width: widget.widgetTheme.borderWidth,
-          ),
-          borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+    return AnimatedContainer(
+      duration: widget.widgetTheme.animationDuration,
+      width: widget.width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: widget.backgroundColor,
+        border: Border.all(
+          color: widget.borderColor,
+          width: widget.widgetTheme.borderWidth,
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: DoubleClickWordSelector(
-                controller: _controller,
-                focusNode: _focusNode,
-                text: _controller.text,
-                onWordSelected: (_, __) {},
-                child: _buildTextField(isInteractive),
-              ),
+        borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: DoubleClickWordSelector(
+              controller: _controller,
+              focusNode: _focusNode,
+              text: _controller.text,
+              onWordSelected: (_, __) {},
+              child: _buildTextField(isInteractive),
             ),
-            _buildButtonColumn(isInteractive),
-          ],
-        ),
+          ),
+          _buildButtonColumn(isInteractive),
+        ],
       ),
     );
   }
@@ -288,12 +310,17 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       ),
       inputFormatters: [
         FilteringTextInputFormatter.allow(
-          widget.digits > 0 ? RegExp(r'^-?\d*\.?\d*$') : RegExp(r'^-?\d*$'),
+          widget.digits > 0
+              ? RegExp('^-?\\d*${RegExp.escape(widget.decimalSeparator)}?\\d*\$')
+              : RegExp(r'^-?\d*$'),
         ),
         TextInputFormatter.withFunction(_gateEdit),
       ],
-      onChanged: _handleTextChanged,
+      onChanged: (text) => _handleTextChanged(text, _editedFrom),
       onSubmitted: _handleSubmitted,
+      // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
+      // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
+      contextMenuBuilder: null,
     );
   }
 
@@ -374,13 +401,21 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   // Value formatting
+  String get _heldText => widget.keptText ?? _formatValue(widget.value);
+
   String _formatValue(int value) {
     if (widget.digits == 0) {
       return value.toString();
     }
     final displayValue = value / _getMultiplier();
-    return displayValue.toStringAsFixed(widget.digits);
+    return displayValue
+        .toStringAsFixed(widget.digits)
+        .replaceFirst('.', widget.decimalSeparator);
   }
+
+  // The number a typed text stands for, or null when it is not one.
+  double? _parseNumber(String text) =>
+      double.tryParse(text.replaceFirst(widget.decimalSeparator, '.'));
 
   int _getMultiplier() {
     int multiplier = 1;
@@ -410,10 +445,35 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   // Event handlers
-  void _handleTextChanged(String text) {
+
+  // What a user edit did to the text: the range of the previous text it replaced and how many characters it put
+  // there. Java asks its Verify listeners about that range and reads the value out of the new text.
+  void _reportEdit(String from, String to) {
+    final shorter = from.length < to.length ? from.length : to.length;
+    var start = 0;
+    while (start < shorter && from.codeUnitAt(start) == to.codeUnitAt(start)) {
+      start++;
+    }
+    var tail = 0;
+    while (tail < shorter - start &&
+        from.codeUnitAt(from.length - 1 - tail) ==
+            to.codeUnitAt(to.length - 1 - tail)) {
+      tail++;
+    }
+    widget.onEdited(
+      VEvent()
+        ..text = to
+        ..start = start
+        ..end = from.length - tail
+        ..count = to.length - tail - start,
+    );
+  }
+
+  void _handleTextChanged(String text, String from) {
+    _reportEdit(from, text);
     if (text.isEmpty) return;
 
-    final parsedValue = double.tryParse(text);
+    final parsedValue = _parseNumber(text);
     if (parsedValue != null) {
       final scaledValue = (parsedValue * _getMultiplier()).round();
       final clampedValue = scaledValue.clamp(widget.min, widget.max);
@@ -423,7 +483,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   void _handleSubmitted(String text) {
     try {
-      final parsedValue = double.parse(text.isEmpty ? "0" : text);
+      final parsedValue = _parseNumber(text.isEmpty ? '0' : text);
+      if (parsedValue == null) throw const FormatException();
       final scaledValue = (parsedValue * _getMultiplier()).round();
       final clampedValue = scaledValue.clamp(widget.min, widget.max);
 
@@ -432,7 +493,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       widget.onSubmitted(clampedValue);
     } catch (e) {
       _localValue = null;
-      _controller.text = _formatValue(widget.value);
+      _controller.text = _heldText;
     }
   }
 

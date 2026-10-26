@@ -46,6 +46,7 @@ GroupThemeExtension _$GroupThemeExtensionFromJson(
   shadowEtchedBlurRadius: (json['shadowEtchedBlurRadius'] as num).toDouble(),
   shadowInBorderFactor: (json['shadowInBorderFactor'] as num).toDouble(),
   shadowInBgFactor: (json['shadowInBgFactor'] as num).toDouble(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$GroupThemeExtensionToJson(
@@ -75,4 +76,5 @@ Map<String, dynamic> _$GroupThemeExtensionToJson(
   'shadowEtchedBlurRadius': instance.shadowEtchedBlurRadius,
   'shadowInBorderFactor': instance.shadowInBorderFactor,
   'shadowInBgFactor': instance.shadowInBgFactor,
+  'minTextContrast': instance.minTextContrast,
 };

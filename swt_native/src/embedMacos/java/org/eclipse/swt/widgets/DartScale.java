@@ -115,6 +115,7 @@ public class DartScale extends DartControl implements IScale {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -351,7 +352,7 @@ public class DartScale extends DartControl implements IScale {
         this.selection = clamped;
     }
 
-    int maximum;
+    int maximum = 100;
 
     int minimum;
 
@@ -377,6 +378,8 @@ public class DartScale extends DartControl implements IScale {
         return selection;
     }
 
+    final LatestEvent dragSelection = new LatestEvent();
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
@@ -388,13 +391,11 @@ public class DartScale extends DartControl implements IScale {
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                setSelection(e.index);
-            });
-        });
+        FlutterBridge.on(this, "Selection", "Selection", sent -> dragSelection.post(getDisplay(), sent, e -> {
+            if (isDisposed())
+                return;
+            ScaleHelper.selected(this, e);
+        }));
     }
 
     public Scale getApi() {

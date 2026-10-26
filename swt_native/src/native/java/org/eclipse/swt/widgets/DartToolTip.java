@@ -280,7 +280,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible();
+        return getApi().getVisible();
     }
 
     void onDispose(Event event) {
@@ -457,10 +457,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setMessage(String string) {
         String newValue = string;
+        checkWidget();
         if (!java.util.Objects.equals(this.message, newValue)) {
             getValue().markDirty(VToolTip.MESSAGE);
         }
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (layoutMessage != null)
@@ -490,10 +490,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setText(String string) {
         String newValue = string;
+        checkWidget();
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VToolTip.TEXT);
         }
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (layoutText != null)
@@ -534,10 +534,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(this.visible, newValue)) {
+        checkWidget();
+        if (this.visible != newValue) {
             getValue().markDirty(VToolTip.VISIBLE);
         }
-        checkWidget();
         ;
         ;
         Display display = getDisplay();

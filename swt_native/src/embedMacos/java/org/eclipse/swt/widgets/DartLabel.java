@@ -123,6 +123,7 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -167,13 +168,7 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public int getAlignment() {
         checkWidget();
-        if ((getApi().style & SWT.SEPARATOR) != 0)
-            return SWT.LEFT;
-        if ((getApi().style & SWT.CENTER) != 0)
-            return SWT.CENTER;
-        if ((getApi().style & SWT.RIGHT) != 0)
-            return SWT.RIGHT;
-        return SWT.LEFT;
+        return LabelHelper.alignmentOf(getApi().style);
     }
 
     /**
@@ -295,20 +290,15 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setImage(Image image) {
-        getValue().markDirty(VLabel.IMAGE);
         checkWidget();
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if ((getApi().style & SWT.SEPARATOR) != 0)
-            return;
-        if (image != null) {
-            this.image = GraphicsUtils.copyImage(display, image);
-            isImage = true;
-        } else {
-            this.image = null;
-            isImage = false;
-        }
+        this.image = image != null ? GraphicsUtils.copyImage(display, image) : null;
+        getValue().markDirty(VLabel.IMAGE);
+        _show(image != null);
     }
 
     /**
@@ -356,7 +346,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     private void _setText() {
-        isImage = false;
+        _show(false);
     }
 
     public String _text() {
@@ -369,6 +359,26 @@ public class DartLabel extends DartControl implements ILabel {
 
     public boolean _isImage() {
         return isImage;
+    }
+
+    /**
+     * A label shows its text or its image, whichever was set last, and isImage says which. Flutter
+     * is sent both, the one not on show as empty, so switching between them changes both.
+     */
+    private void _show(boolean image) {
+        if (isImage != image) {
+            getValue().markDirty(VLabel.TEXT);
+            getValue().markDirty(VLabel.IMAGE);
+        }
+        isImage = image;
+    }
+
+    public String _displayedText() {
+        return isImage || (getApi().style & SWT.SEPARATOR) != 0 ? "" : text;
+    }
+
+    public Image _displayedImage() {
+        return isImage ? image : null;
     }
 
     protected void _hookEvents() {

@@ -96,7 +96,7 @@ public class SwtColorDialog extends SwtDialog implements IColorDialog {
      */
     public SwtColorDialog(Shell parent, int style, ColorDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     /**

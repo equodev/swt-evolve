@@ -32,6 +32,12 @@ class CanvasThemeExtension extends ThemeExtension<CanvasThemeExtension> with _$C
   final Color patternStartColor;
   final Color patternEndColor;
   final Color imageTintColor;
+  // What a fill the application set apart by its hue (a hover, a highlight) is tinted toward.
+  final Color highlightColor;
+  // The fills an integrator declared a hover or a selection (canvas_hover_fills_<Class>,
+  // canvas_selection_fills_<Class>).
+  final Color hoverFillColor;
+  final Color selectionFillColor;
 
   // A blitted image the application owns takes imageTintColor only while it reads as a glyph:
   // no larger than this on either side, and no channel spread past this in any opaque pixel.
@@ -55,6 +61,9 @@ class CanvasThemeExtension extends ThemeExtension<CanvasThemeExtension> with _$C
     required this.patternStartColor,
     required this.patternEndColor,
     required this.imageTintColor,
+    required this.highlightColor,
+    required this.hoverFillColor,
+    required this.selectionFillColor,
     required this.glyphTintMaxSide,
     required this.glyphTintChannelTolerance,
   });

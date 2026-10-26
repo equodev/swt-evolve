@@ -15,8 +15,8 @@ class LabelEmptySizeTest {
     void empty_label_computes_to_zero_width() {
         DartLabel label = mock(DartLabel.class);
         when(label.getStyle()).thenReturn(SWT.HORIZONTAL);
-        when(label.getText()).thenReturn("");
-        when(label.getImage()).thenReturn(null);
+        when(label._displayedText()).thenReturn("");
+        when(label._displayedImage()).thenReturn(null);
 
         Point size = LabelSizes.computeSize(label, SWT.DEFAULT, SWT.DEFAULT, true);
 

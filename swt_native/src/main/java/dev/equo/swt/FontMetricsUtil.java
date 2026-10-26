@@ -148,7 +148,7 @@ public final class FontMetricsUtil {
     }
 
     public static org.eclipse.swt.graphics.Point hostScreenDPI(String osName) {
-        String n = osName == null ? "" : osName.toLowerCase();
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
         int dpi = (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
         return new org.eclipse.swt.graphics.Point(dpi, dpi);
     }
@@ -284,8 +284,16 @@ public final class FontMetricsUtil {
         return getFontSize(text, FontMetricsUtil.getId(fontDatum), height, 0);
     }
 
+    /**
+     * The extent of text the render side paints as a {@code Text} widget. Those go through the
+     * {@code textScaler} {@code SwtZoomScale} sets, {@code 1 / uiScale}, so they come out larger
+     * than their style says whenever autoscale rounds the monitor's zoom down (100 on a 125%
+     * monitor) and smaller when it rounds up; the box laid out here has to follow.
+     */
     public static PointD getFontSize(String text, TextStyle textStyle) {
-        return getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.weight()), textStyle.size(), textStyle.height());
+        PointD size = getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.weight()), textStyle.size(), textStyle.height());
+        double textScale = 1 / Config.uiScale();
+        return textScale == 1.0 ? size : new PointD(size.x() * textScale, size.y() * textScale);
     }
 
     public static PointD getFontSize(String text, String fontId, int fontSize){

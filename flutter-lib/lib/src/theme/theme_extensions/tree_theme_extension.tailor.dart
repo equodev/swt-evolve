@@ -20,6 +20,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   Color get itemHoverBackgroundColor;
   Color get itemSelectedBorderColor;
   double get itemSelectedBorderWidth;
+  double get dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha;
+  double get dragImageOpacity;
   Color get headerBackgroundColor;
   Color get headerTextColor;
   Color get headerBorderColor;
@@ -106,6 +109,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   int get eventDefaultX;
   int get eventDefaultY;
   int get eventDefaultDetail;
+  double get minTextContrast;
 
   @override
   TreeThemeExtension copyWith({
@@ -119,6 +123,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     Color? itemHoverBackgroundColor,
     Color? itemSelectedBorderColor,
     double? itemSelectedBorderWidth,
+    double? dropFeedbackLineWidth,
+    int? dropFeedbackHighlightAlpha,
+    double? dragImageOpacity,
     Color? headerBackgroundColor,
     Color? headerTextColor,
     Color? headerBorderColor,
@@ -205,6 +212,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     int? eventDefaultX,
     int? eventDefaultY,
     int? eventDefaultDetail,
+    double? minTextContrast,
   }) {
     return TreeThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -224,6 +232,11 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
           itemSelectedBorderColor ?? this.itemSelectedBorderColor,
       itemSelectedBorderWidth:
           itemSelectedBorderWidth ?? this.itemSelectedBorderWidth,
+      dropFeedbackLineWidth:
+          dropFeedbackLineWidth ?? this.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha:
+          dropFeedbackHighlightAlpha ?? this.dropFeedbackHighlightAlpha,
+      dragImageOpacity: dragImageOpacity ?? this.dragImageOpacity,
       headerBackgroundColor:
           headerBackgroundColor ?? this.headerBackgroundColor,
       headerTextColor: headerTextColor ?? this.headerTextColor,
@@ -341,6 +354,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       eventDefaultX: eventDefaultX ?? this.eventDefaultX,
       eventDefaultY: eventDefaultY ?? this.eventDefaultY,
       eventDefaultDetail: eventDefaultDetail ?? this.eventDefaultDetail,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -391,6 +405,13 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       itemSelectedBorderWidth: t < 0.5
           ? itemSelectedBorderWidth
           : other.itemSelectedBorderWidth,
+      dropFeedbackLineWidth: t < 0.5
+          ? dropFeedbackLineWidth
+          : other.dropFeedbackLineWidth,
+      dropFeedbackHighlightAlpha: t < 0.5
+          ? dropFeedbackHighlightAlpha
+          : other.dropFeedbackHighlightAlpha,
+      dragImageOpacity: t < 0.5 ? dragImageOpacity : other.dragImageOpacity,
       headerBackgroundColor: Color.lerp(
         headerBackgroundColor,
         other.headerBackgroundColor,
@@ -627,6 +648,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       eventDefaultDetail: t < 0.5
           ? eventDefaultDetail
           : other.eventDefaultDetail,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -674,6 +696,18 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
             const DeepCollectionEquality().equals(
               itemSelectedBorderWidth,
               other.itemSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackLineWidth,
+              other.dropFeedbackLineWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropFeedbackHighlightAlpha,
+              other.dropFeedbackHighlightAlpha,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dragImageOpacity,
+              other.dragImageOpacity,
             ) &&
             const DeepCollectionEquality().equals(
               headerBackgroundColor,
@@ -1015,6 +1049,10 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
             const DeepCollectionEquality().equals(
               eventDefaultDetail,
               other.eventDefaultDetail,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -1032,6 +1070,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(itemHoverBackgroundColor),
       const DeepCollectionEquality().hash(itemSelectedBorderColor),
       const DeepCollectionEquality().hash(itemSelectedBorderWidth),
+      const DeepCollectionEquality().hash(dropFeedbackLineWidth),
+      const DeepCollectionEquality().hash(dropFeedbackHighlightAlpha),
+      const DeepCollectionEquality().hash(dragImageOpacity),
       const DeepCollectionEquality().hash(headerBackgroundColor),
       const DeepCollectionEquality().hash(headerTextColor),
       const DeepCollectionEquality().hash(headerBorderColor),
@@ -1118,6 +1159,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(eventDefaultX),
       const DeepCollectionEquality().hash(eventDefaultY),
       const DeepCollectionEquality().hash(eventDefaultDetail),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -1140,6 +1182,10 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
       treeThemeExtension.itemSelectedBorderColor;
   double get itemSelectedBorderWidth =>
       treeThemeExtension.itemSelectedBorderWidth;
+  double get dropFeedbackLineWidth => treeThemeExtension.dropFeedbackLineWidth;
+  int get dropFeedbackHighlightAlpha =>
+      treeThemeExtension.dropFeedbackHighlightAlpha;
+  double get dragImageOpacity => treeThemeExtension.dragImageOpacity;
   Color get headerBackgroundColor => treeThemeExtension.headerBackgroundColor;
   Color get headerTextColor => treeThemeExtension.headerTextColor;
   Color get headerBorderColor => treeThemeExtension.headerBorderColor;
@@ -1247,4 +1293,5 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
   int get eventDefaultX => treeThemeExtension.eventDefaultX;
   int get eventDefaultY => treeThemeExtension.eventDefaultY;
   int get eventDefaultDetail => treeThemeExtension.eventDefaultDetail;
+  double get minTextContrast => treeThemeExtension.minTextContrast;
 }

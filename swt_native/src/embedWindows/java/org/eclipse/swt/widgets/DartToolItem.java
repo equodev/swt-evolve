@@ -194,7 +194,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getEnabled()) {
+            if (getApi().getEnabled()) {
                 if ((getApi().style & SWT.SEPARATOR) != 0) {
                     if (control != null)
                         return control.getImpl().computeTabList();
@@ -455,7 +455,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     public boolean isTabGroup() {
@@ -579,10 +579,10 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setBackground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VToolItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -668,10 +668,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        checkWidget();
+        if (this.enabled != newValue) {
             getValue().markDirty(VToolItem.ENABLED);
         }
-        checkWidget();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -718,7 +718,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(disabledImage, image));
         disabledImage = image;
-        updateImages(getEnabled() && parent.getEnabled());
+        updateImages(getApi().getEnabled() && parent.getEnabled());
     }
 
     /**
@@ -743,10 +743,10 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setForeground(Color color) {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
+        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VToolItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -790,7 +790,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(hotImage, image));
         hotImage = image;
-        updateImages(getEnabled() && parent.getEnabled());
+        updateImages(getApi().getEnabled() && parent.getEnabled());
     }
 
     @Override
@@ -804,7 +804,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(super.image, image));
         super.setImage(image);
-        updateImages(getEnabled() && parent.getEnabled());
+        updateImages(getApi().getEnabled() && parent.getEnabled());
     }
 
     boolean isImageSizeChanged(Image oldImage, Image image) {
@@ -843,10 +843,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (this.selection != newValue) {
             getValue().markDirty(VToolItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         if (selected) {
@@ -864,7 +864,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 	* when the selection changes in a disabled tool item.
 	*/
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0) {
-            if (!getEnabled() || !parent.getEnabled()) {
+            if (!getApi().getEnabled() || !parent.getEnabled()) {
                 updateImages(false);
             }
         }
@@ -1007,7 +1007,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     void setWidthInPixels(int width) {
         int newValue = width;
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        if (this.width != newValue) {
             getValue().markDirty(VToolItem.WIDTH);
         }
         if ((getApi().style & SWT.SEPARATOR) == 0)

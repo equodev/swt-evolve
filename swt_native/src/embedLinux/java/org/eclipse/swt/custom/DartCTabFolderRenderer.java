@@ -555,7 +555,15 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
 
     private void drawDirtyIndicator(GC gc, Rectangle closeRect, boolean selected) {
         int diameter = 8;
-        if (!selected) {
+        /*
+		 * Alpha and anti-aliasing switch the GC to GDI+ on Windows. All tabs share one
+		 * GC, so tabs painted afterwards would use different text metrics and lose
+		 * their clipping. Leaving the advanced mode resets the clipping, hence the save
+		 * and restore.
+		 */
+        Region clipping = null;
+        if (clipping != null) {
+            clipping.dispose();
         }
     }
 
@@ -817,6 +825,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     ((DartCTabItem) item.getImpl()).shortenedText = shortenText(gc, item.getText(), textWidth);
                     ((DartCTabItem) item.getImpl()).shortenedTextWidth = textWidth;
                 }
+                Point extent = gc.textExtent(((DartCTabItem) item.getImpl()).shortenedText, FLAGS);
+                int textY = y + (height - extent.y) / 2;
+                textY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
                 // draw a Focus rectangle
                 if (getApi().parent.isFocusControl()) {
                 }
@@ -960,6 +971,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     ((DartCTabItem) item.getImpl()).shortenedText = shortenText(gc, item.getText(), textWidth);
                     ((DartCTabItem) item.getImpl()).shortenedTextWidth = textWidth;
                 }
+                Point extent = gc.textExtent(((DartCTabItem) item.getImpl()).shortenedText, FLAGS);
+                int textY = y + (height - extent.y) / 2;
+                textY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
             }
             // draw close or dirty indicator
             if (shouldAllocateCloseRect(item)) {
@@ -997,12 +1011,19 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     String shortenText(GC gc, String text, int width, String ellipses) {
+        if (gc.textExtent(text, FLAGS).x <= width)
+            return text;
+        int ellipseWidth = gc.textExtent(ellipses, FLAGS).x;
         int length = text.length();
         TextLayout layout = new TextLayout(getApi().parent.getDisplay());
         layout.setText(text);
         int end = layout.getPreviousOffset(length, SWT.MOVEMENT_CLUSTER);
         while (end > 0) {
             text = text.substring(0, end);
+            int l = gc.textExtent(text, FLAGS).x;
+            if (l + ellipseWidth <= width) {
+                break;
+            }
             end = layout.getPreviousOffset(end, SWT.MOVEMENT_CLUSTER);
         }
         layout.dispose();

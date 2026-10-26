@@ -278,7 +278,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     DartShell(Display display, Shell parent, int style, long handle, boolean embedded, Shell api) {
         super(api);
-        checkSubclass();
+        getApi().checkSubclass();
         if (display == null)
             display = DartDisplay.getCurrent();
         if (display == null)
@@ -512,11 +512,13 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
@@ -597,7 +599,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void forceActive() {
         checkWidget();
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         makeKeyAndOrderFront();
     }
@@ -727,7 +729,7 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public boolean getMinimized() {
         checkWidget();
-        if (!getVisible())
+        if (!getApi().getVisible())
             return super.getMinimized();
         return this.minimized;
     }
@@ -890,7 +892,7 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled();
+        return getApi().getEnabled();
     }
 
     @Override
@@ -911,18 +913,22 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public boolean isVisible() {
         checkWidget();
-        return getVisible();
+        return getApi().getVisible();
     }
 
     void makeKeyAndOrderFront() {
         ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         boolean wasActive = display.getActiveShell() == this.getApi();
-        _takeFocusHolder(true);
-        if (!isDisposed() && !wasActive) {
-            // The client reports the focus this moves into the shell as an activation of its own.
-            _suppressNextFlutterActivate = true;
-            sendEvent(SWT.Activate);
+        if (wasActive) {
+            _takeFocusHolder(true);
+            return;
         }
+        // The client reports the focus this moves into the shell as an activation of its own.
+        _suppressNextFlutterActivate = true;
+        // Activate first, then the focus: a listener that focuses a control of its own keeps it.
+        sendEvent(SWT.Activate);
+        if (!isDisposed())
+            _takeFocusHolder(false);
     }
 
     /**
@@ -1115,7 +1121,7 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void sendToolTipEvent(boolean enter) {
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         if (tooltipTag == 0) {
             if (tooltipTag != 0) {
@@ -1148,7 +1154,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setActive() {
         checkWidget();
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         makeKeyAndOrderFront();
     }
@@ -1217,10 +1223,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setAlpha(int alpha) {
         int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
+        checkWidget();
+        if (this.alpha != newValue) {
             getValue().markDirty(VShell.ALPHA);
         }
-        checkWidget();
         alpha &= 0xFF;
         this.alpha = newValue;
     }
@@ -1237,7 +1243,6 @@ public class DartShell extends DartDecorations implements IShell {
         {
             super.setBounds(x, y, width, height, move, resize);
             resized = true;
-            sendEvent(SWT.Resize);
             if (isDisposed())
                 return;
             if (layout != null) {
@@ -1281,7 +1286,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setFullScreen(boolean fullScreen) {
         checkWidget();
-        if (!java.util.Objects.equals(this.fullScreen, fullScreen)) {
+        if (this.fullScreen != fullScreen) {
             getValue().markDirty(VShell.FULL_SCREEN);
         }
         if (_getFullScreen() == fullScreen)
@@ -1326,13 +1331,15 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setImeInputMode(int mode) {
         int newValue = mode;
-        this.imeInputMode = newValue;
         checkWidget();
+        this.imeInputMode = newValue;
     }
 
     @Override
     public void setMaximized(boolean maximized) {
         checkWidget();
+        if (maximized && !getMaximized())
+            normalBounds = getBounds();
         super.setMaximized(maximized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowMaximized(this, maximized);
@@ -1402,7 +1409,7 @@ public class DartShell extends DartDecorations implements IShell {
         super.setMinimized(minimized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowMinimized(this, minimized);
-        if (!getVisible())
+        if (!getApi().getVisible())
             return;
         if (minimized) {
         } else {
@@ -1468,10 +1475,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setModified(boolean modified) {
         boolean newValue = modified;
-        if (!java.util.Objects.equals(this.modified, newValue)) {
+        checkWidget();
+        if (this.modified != newValue) {
             getValue().markDirty(VShell.MODIFIED);
         }
-        checkWidget();
         this.modified = newValue;
     }
 
@@ -1661,7 +1668,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     void setZOrder(Control control, boolean above) {
-        if (!getVisible())
+        if (!getApi().getVisible())
             return;
         if (control == null) {
             if (above) {
@@ -1675,7 +1682,7 @@ public class DartShell extends DartDecorations implements IShell {
     boolean traverseEscape() {
         if (parent == null)
             return false;
-        if (!isVisible() || !isEnabled())
+        if (!getApi().isVisible() || !getApi().isEnabled())
             return false;
         close();
         return true;
@@ -1966,12 +1973,14 @@ public class DartShell extends DartDecorations implements IShell {
                 _suppressNextFlutterDeactivate = false;
                 if (getBridge() instanceof DisplayBridge)
                     ((DisplayBridge) getBridge()).noteClientActivated(this);
-                _takeFocusHolder(false);
                 if (_suppressNextFlutterActivate) {
                     _suppressNextFlutterActivate = false;
+                    _takeFocusHolder(false);
                     return;
                 }
                 sendEvent(SWT.Activate, e);
+                if (!isDisposed())
+                    _takeFocusHolder(false);
             });
         });
         FlutterBridge.on(this, "Shell", "Close", e -> {
@@ -1986,6 +1995,11 @@ public class DartShell extends DartDecorations implements IShell {
                 if (isDisposed())
                     return;
                 _suppressNextFlutterActivate = false;
+                Control _focus = display.getFocusControl();
+                if (_focus != null && _focus != getApi() && _focus.getShell() == getApi())
+                    setSavedFocus(_focus);
+                if (getBridge() instanceof DisplayBridge)
+                    ((DisplayBridge) getBridge()).noteClientDeactivated(this);
                 if (_suppressNextFlutterDeactivate) {
                     _suppressNextFlutterDeactivate = false;
                     return;
@@ -2013,6 +2027,11 @@ public class DartShell extends DartDecorations implements IShell {
                     return;
                 if (e == null)
                     return;
+                if (getBridge() instanceof DisplayBridge && ((DisplayBridge) getBridge()).ignoresClientPosition(getApi(), e.detail)) {
+                    org.eclipse.swt.graphics.Point _at = getApi().getLocation();
+                    e.x = _at.x;
+                    e.y = _at.y;
+                }
                 org.eclipse.swt.graphics.Rectangle _before = getApi().getBounds();
                 getApi().setBounds(e.x, e.y, e.width, e.height);
                 if (_before != null && _before.x == e.x && _before.y == e.y && _before.width == e.width && _before.height == e.height)

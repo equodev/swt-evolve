@@ -80,7 +80,7 @@ class DisplayResizeFlutterTest {
     @Test
     void desk_firstClientReady_sizesShellToWindow_displayStaysMonitor() {
         TestDeskBridge desk = install(TestDeskBridge::new);
-        Shell shell = newMainShell(); // created at the placeholder Display (monitor) bounds
+        Shell shell = newMainShell();
         Rectangle monitorBefore = dartDisplay().bounds;
         desk.forwarded.clear();
 
@@ -120,6 +120,7 @@ class DisplayResizeFlutterTest {
     void desk_reportedMonitor_setsDisplayBounds_shellTracksViewport() {
         TestDeskBridge desk = install(TestDeskBridge::new);
         Shell shell = newMainShell();
+        shell.setSize(1280, 800); // sized by the app: the window, not the monitor, decides its size
         desk.forwarded.clear();
 
         clientReady(desk.comm, 1280, 800, 2560, 1440, true); // 1280x800 window on a 2560x1440 monitor
@@ -172,6 +173,105 @@ class DisplayResizeFlutterTest {
         assertThat(desk.forwarded)
                 .as("a genuine app-driven shell resize must reach the native window")
                 .containsExactly(new Rectangle(0, 0, 1000, 700));
+    }
+
+    @Test
+    void desk_replacementShell_takesOverWindow_fillsCurrentViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell previous = newMainShell();
+        previous.open();
+        clientReady(desk.comm, 1920, 1040, true); // the user maximized the window
+        desk.forwarded.clear();
+
+        // A workbench that replaces its window opens the new one at its persisted geometry while
+        // the old one is still the main shell, then disposes the old one.
+        Shell replacement = newMainShell();
+        replacement.setBounds(200, 100, 1280, 800);
+        replacement.open();
+        previous.dispose();
+        drainEventLoop();
+
+        assertThat(replacement.getBounds())
+                .as("the shell that takes the window over fills it; no resize of the window, which "
+                        + "keeps its size, would ever arrive to correct it")
+                .isEqualTo(new Rectangle(200, 100, 1920, 1040));
+        assertThat(desk.forwarded)
+                .as("fitting the shell to the window must not command the window")
+                .isEmpty();
+    }
+
+    @Test
+    void desk_shellShownAfterHandshake_fillsCurrentViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell previous = newMainShell();
+        previous.open();
+        clientReady(desk.comm, 1920, 1040, true);
+        previous.setVisible(false);
+        Shell replacement = newMainShell();
+        replacement.setBounds(200, 100, 1280, 800); // not the main shell yet: the window is not told
+        desk.forwarded.clear();
+
+        replacement.open();
+        drainEventLoop();
+
+        assertThat(replacement.getBounds())
+                .as("a shell shown into an already-sized window fills it")
+                .isEqualTo(new Rectangle(200, 100, 1920, 1040));
+        assertThat(desk.forwarded).isEmpty();
+    }
+
+    @Test
+    void desk_unsizedMainShell_opensItsWindowAtFiveEighthsOfTheReportedMonitor() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell shell = newUnsizedShell(); // created before the client reported: the monitor is a placeholder
+        shell.open();
+        desk.forwarded.clear();
+
+        clientReady(desk.comm, 1280, 800, 2560, 1440, true); // the window as created, on the real monitor
+
+        assertThat(shell.getBounds())
+                .as("5/8 of the monitor the client reported, not of the placeholder, centered on it")
+                .isEqualTo(new Rectangle(480, 270, 1600, 900));
+        assertThat(desk.forwarded)
+                .as("the window opens at the size of the shell nobody sized, as a native window does")
+                .extracting(r -> r.width + "x" + r.height)
+                .containsExactly("1600x900");
+
+        clientReady(desk.comm, 1600, 900, 2560, 1440, false); // the window followed
+        assertThat(shell.getBounds()).isEqualTo(new Rectangle(480, 270, 1600, 900));
+        assertThat(desk.forwarded).as("and nothing more is forwarded once it has").hasSize(1);
+    }
+
+    @Test
+    void desk_newTopLevelShell_opensAtFiveEighthsOfTheMonitor_andIsSentSized() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell main = newMainShell();
+        main.open();
+        clientReady(desk.comm, 1280, 800, 1600, 1000, true);
+
+        Shell second = newUnsizedShell();
+
+        assertThat(second.getBounds())
+                .as("a top-level shell nobody sized has the size a new native shell opens at, centered")
+                .isEqualTo(new Rectangle(300, 187, 1000, 625));
+        assertThat(((DartShell) second.getImpl()).getValue().getBounds())
+                .as("sent to the client sized, or it draws a placeholder and reports that back as the size")
+                .isEqualTo(new Rectangle(300, 187, 1000, 625));
+    }
+
+    @Test
+    void desk_appResizeOfMainShell_isNotUndoneByTheStaleViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell shell = newMainShell();
+        shell.open();
+        clientReady(desk.comm, 1280, 800, true);
+
+        shell.setBounds(0, 0, 1000, 700); // forwarded; the window's own resize report is still on its way
+        drainEventLoop();
+
+        assertThat(shell.getBounds())
+                .as("the shell already drives the window, so the last reported viewport is not applied")
+                .isEqualTo(new Rectangle(0, 0, 1000, 700));
     }
 
     // ---- web --------------------------------------------------------------------------------------
@@ -487,8 +587,16 @@ class DisplayResizeFlutterTest {
         comm.fireContaining("ClientReady", p);
     }
 
+    /** A top-level, display-tracking main shell (default, empty title), placed at the origin. */
     private Shell newMainShell() {
-        return new Shell(display); // default (empty) title — a top-level, display-tracking main shell
+        Shell shell = new Shell(display);
+        shell.setLocation(0, 0);
+        return shell;
+    }
+
+    /** A top-level shell the application never sizes or places. */
+    private Shell newUnsizedShell() {
+        return new Shell(display);
     }
 
     private static void clientReady(RecordingComm comm, int width, int height, boolean isFirst) {
@@ -546,6 +654,18 @@ class DisplayResizeFlutterTest {
 
         @Override
         protected void disposeNativeWindow() {
+        }
+
+        @Override
+        protected void setShellWindowTitle(long context, String title) {
+        }
+
+        @Override
+        protected void setShellWindowState(long context, int state) {
+        }
+
+        @Override
+        protected void setShellWindowVisible(long context, boolean visible) {
         }
 
         @Override

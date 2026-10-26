@@ -86,6 +86,9 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
           widget.sendSelectionSelection(state, e);
         },
         onChangeEnd: (value) {
+          // GTK ignores the second press of a double click on a range: one that moved nothing
+          // reports nothing.
+          if (isRepeatPress && value.round() == state.selection) return;
           state.selection = value.round();
           var e = VEvent()..index = state.selection;
           widget.sendSelectionDefaultSelection(state, e);
@@ -108,6 +111,7 @@ Color getSliderActiveTrackColor(
     context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.activeTrackColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -139,6 +143,7 @@ Color getSliderThumbColor(
     context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.thumbColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -193,9 +198,14 @@ class _StyledSliderState extends State<_StyledSlider> {
 
   static const Duration _replayQuiet = Duration(milliseconds: 250);
 
+  /// A slider takes no keyboard focus from a click, as on every native, so the arrows a user
+  /// presses afterwards go to whatever holds the focus instead of moving it.
+  final FocusNode _focusNode = FocusNode(canRequestFocus: false, skipTraversal: true);
+
   @override
   void dispose() {
     _replay?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -251,6 +261,7 @@ class _StyledSliderState extends State<_StyledSlider> {
         value: displayValue.clamp(widget.min, widget.max),
         min: widget.min,
         max: widget.max,
+        focusNode: _focusNode,
         onChangeStart: widget.enabled
             ? (_) {
                 _replay?.cancel();

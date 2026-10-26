@@ -39,17 +39,24 @@ public class TextSizes {
         m.text = computeText(widget, m, LEFT.EMPTY_TEXT_AFFECTS_SIZING);
         double naturalWidth = Math.max(m.text.x() + (m.text.x() > 0 ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
         width = wHint != SWT.DEFAULT ? wHint : naturalWidth;
-        height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
+        boolean wraps = hasFlags(style, SWT.WRAP);
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
+            double availableWidth = Math.max(1.0, wHint - LEFT.HORIZONTAL_PADDING);
+            PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
+            wrapped = new PointD(wrapped.x(), Math.max(wrapped.y(), m.text.y()));
+            height = Math.max(wrapped.y() + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
+        } else {
+            height = Math.max(m.text.y() + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
+        }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
     }
 
     private static PointD computeText(DartText widget, Measure m, boolean emptyTextAffectsSizing) {
-        String text = widget.getText();
-        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {
-            text = dev.equo.swt.Java8.repeat("*", text.length());
-        }
+        String text = Drawn.text(widget);
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = TextTheme.get().textStyle().withStyleFrom(widget.getFont());

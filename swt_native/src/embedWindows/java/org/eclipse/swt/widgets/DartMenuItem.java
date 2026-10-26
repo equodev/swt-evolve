@@ -450,7 +450,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     @Override
@@ -614,7 +614,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setAccelerator(int accelerator) {
         checkWidget();
-        if (!java.util.Objects.equals(this.accelerator, accelerator)) {
+        if (this.accelerator != accelerator) {
             getValue().markDirty(VMenuItem.ACCELERATOR);
         }
         if (this.accelerator == accelerator)
@@ -638,10 +638,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        checkWidget();
+        if (this.enabled != newValue) {
             getValue().markDirty(VMenuItem.ENABLED);
         }
-        checkWidget();
         /*
 	* Feature in Windows.  For some reason, when the menu item
 	* is a separator, GetMenuItemInfo() always indicates that
@@ -717,6 +717,9 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     private void updateImage() {
         if (((DartMenu) parent.getImpl()).needsMenuCallback()) {
         } else {
+            hBitmap = getMenuItemIconBitmapHandle(image);
+            {
+            }
         }
         ((DartMenu) parent.getImpl()).redraw();
     }
@@ -865,10 +868,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (this.selection != newValue) {
             getValue().markDirty(VMenuItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = newValue;
@@ -1135,12 +1138,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if ((getApi().style & SWT.CHECK) != 0) {
-                    setSelection(!getSelection());
-                } else if ((getApi().style & SWT.RADIO) != 0) {
-                    selectRadio();
-                }
-                sendEvent(SWT.Selection, e);
+                MenuItemHelper.pick(this, e);
             });
         });
     }

@@ -54,7 +54,14 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
       ? null
       : VPath.fromJson(json['clippingText'] as Map<String, dynamic>)
   ..lineDashOffset = (json['lineDashOffset'] as num?)?.toDouble()
-  ..bufferScale = (json['bufferScale'] as num?)?.toDouble();
+  ..bufferScale = (json['bufferScale'] as num?)?.toDouble()
+  ..themedCanvas = json['themedCanvas'] as bool?
+  ..hoverFills = (json['hoverFills'] as List<dynamic>?)
+      ?.map((e) => e == null ? null : VRGB.fromJson(e as Map<String, dynamic>))
+      .toList()
+  ..selectionFills = (json['selectionFills'] as List<dynamic>?)
+      ?.map((e) => e == null ? null : VRGB.fromJson(e as Map<String, dynamic>))
+      .toList();
 
 Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -82,6 +89,9 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'clippingText': ?instance.clippingText,
   'lineDashOffset': ?instance.lineDashOffset,
   'bufferScale': ?instance.bufferScale,
+  'themedCanvas': ?instance.themedCanvas,
+  'hoverFills': ?instance.hoverFills,
+  'selectionFills': ?instance.selectionFills,
 };
 
 VGCCopyAreaImageintint _$VGCCopyAreaImageintintFromJson(

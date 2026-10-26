@@ -156,6 +156,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -533,14 +534,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * </ul>
      */
     public void setHours(int hours) {
-        int newValue = hours;
-        if (!java.util.Objects.equals(this.hours, newValue)) {
-            getValue().markDirty(VDateTime.HOURS);
-        }
         checkWidget();
         if (hours < 0 || hours > 23)
             return;
-        this.hours = newValue;
+        if (this.hours != hours)
+            getValue().markDirty(VDateTime.HOURS);
+        this.hours = hours;
     }
 
     /**
@@ -557,14 +556,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * </ul>
      */
     public void setMinutes(int minutes) {
-        int newValue = minutes;
-        if (!java.util.Objects.equals(this.minutes, newValue)) {
-            getValue().markDirty(VDateTime.MINUTES);
-        }
         checkWidget();
         if (minutes < 0 || minutes > 59)
             return;
-        this.minutes = newValue;
+        if (this.minutes != minutes)
+            getValue().markDirty(VDateTime.MINUTES);
+        this.minutes = minutes;
     }
 
     /**
@@ -606,14 +603,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * </ul>
      */
     public void setSeconds(int seconds) {
-        int newValue = seconds;
-        if (!java.util.Objects.equals(this.seconds, newValue)) {
-            getValue().markDirty(VDateTime.SECONDS);
-        }
         checkWidget();
         if (seconds < 0 || seconds > 59)
             return;
-        this.seconds = newValue;
+        if (this.seconds != seconds)
+            getValue().markDirty(VDateTime.SECONDS);
+        this.seconds = seconds;
     }
 
     @Override
@@ -735,6 +730,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
         return year;
     }
 
+    {
+        DateTimeHelper.startAtNow(this);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
@@ -750,17 +749,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (e != null) {
-                    if ((getApi().style & SWT.TIME) != 0) {
-                        hours = e.height;
-                        minutes = e.count;
-                        seconds = e.index;
-                    } else {
-                        year = e.x;
-                        month = e.y;
-                        day = e.width;
-                    }
-                }
+                DateTimeHelper.applySelection(this, e);
                 sendEvent(SWT.Selection, e);
             });
         });

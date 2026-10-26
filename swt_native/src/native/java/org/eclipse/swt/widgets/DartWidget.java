@@ -169,7 +169,7 @@ public abstract class DartWidget implements IWidget {
      */
     public DartWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         display = ((DartWidget) parent.getImpl()).display;
@@ -677,7 +677,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;
@@ -777,7 +777,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return DartDisplay.isValidClass(getClass());
+        return DartDisplay.isValidClass(getApi().getClass());
     }
 
     boolean isValidThread() {
@@ -941,7 +941,7 @@ public abstract class DartWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 

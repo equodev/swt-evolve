@@ -203,7 +203,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      *
      * @deprecated the disabled image is not used
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public Image getDisabledImage() {
         checkWidget();
         return disabledImage;
@@ -567,7 +567,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setShowClose(boolean close) {
         checkWidget();
-        if (!java.util.Objects.equals(this.showClose, close)) {
+        if (this.showClose != close) {
             getValue().markDirty(VCTabItem.SHOW_CLOSE);
         }
         if (showClose == close)

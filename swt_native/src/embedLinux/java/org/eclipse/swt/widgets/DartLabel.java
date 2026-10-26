@@ -193,15 +193,7 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public int getAlignment() {
         checkWidget();
-        if ((getApi().style & SWT.SEPARATOR) != 0)
-            return 0;
-        if ((getApi().style & SWT.LEFT) != 0)
-            return SWT.LEFT;
-        if ((getApi().style & SWT.CENTER) != 0)
-            return SWT.CENTER;
-        if ((getApi().style & SWT.RIGHT) != 0)
-            return SWT.RIGHT;
-        return SWT.LEFT;
+        return LabelHelper.alignmentOf(getApi().style);
     }
 
     @Override
@@ -528,6 +520,14 @@ public class DartLabel extends DartControl implements ILabel {
 
     public String _text() {
         return text;
+    }
+
+    public String _displayedText() {
+        return text;
+    }
+
+    public Image _displayedImage() {
+        return image;
     }
 
     protected void _hookEvents() {

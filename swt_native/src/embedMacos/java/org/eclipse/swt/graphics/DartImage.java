@@ -163,16 +163,27 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * by creating a GC and using any of its drawing operations,
      * as shown in the following example:
      * <pre>
-     *    Image i = new Image(device, width, height);
+     *    Image i = new Image(device, imageWidth, imageHeight);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, imageWidth, imageHeight);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), imageWidth, imageHeight);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -190,6 +201,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *    <li>ERROR_NO_HANDLES if a handle could not be obtained for image creation</li>
      * </ul>
      *
+     * @see #Image(Device, ImageGcDrawer, int, int)
      * @see #dispose()
      */
     public DartImage(Device device, int width, int height, Image api) {
@@ -298,14 +310,25 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * <pre>
      *    Image i = new Image(device, boundsRectangle);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, boundsRectangle.width, boundsRectangle.height);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), boundsRectangle.width, boundsRectangle.height);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -325,7 +348,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *
      * @see #dispose()
      *
-     * @deprecated use {@link Image#Image(Device, int, int)} instead
+     * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
     public DartImage(Device device, Rectangle bounds, Image api) {
@@ -1014,7 +1037,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 alphaInfo_100 = new AlphaInfo();
             // For compatibility, images created from .ico files are treated as SWT.ICON format, even though
             // they are no different than other bitmaps in Cocoa.
-            if (filename.toLowerCase().endsWith(".ico")) {
+            if (filename.toLowerCase(java.util.Locale.ROOT).endsWith(".ico")) {
                 this.getApi().type = SWT.ICON;
             } else {
                 this.getApi().type = SWT.BITMAP;
@@ -1175,6 +1198,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
+        org.eclipse.swt.internal.StrictChecks.runWithStrictChecksDisabled(() -> {
+            Image imageToDraw = new Image(gc.getDevice(), (ImageDataProvider) zoom -> imageData);
+            Rectangle source = imageToDraw.getBounds();
+            gc.drawImage(imageToDraw, 0, 0, source.width, source.height, 0, 0, width, height);
+            imageToDraw.dispose();
+        });
     }
 
     void executeOnImageAtSizeBestFittingSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {

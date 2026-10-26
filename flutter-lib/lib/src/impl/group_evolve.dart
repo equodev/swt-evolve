@@ -9,7 +9,9 @@ import '../gen/group.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import 'utils/focus_report.dart';
 import 'utils/widget_utils.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 
 const int _shadowIn = 1 << 2;
@@ -33,42 +35,34 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<GroupThemeExtension>()!;
     final children = state.children;
-    final text = stripAccelerators(state.text);
 
     return SwtControlScope(
       swt: state.swt,
-      child: tagSemantics(MouseRegion(
-        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-        child: Focus(
-          focusNode: _focusNode,
-          child: _StyledGroup(
-            widgetTheme: widgetTheme,
-            text: text,
-            composite: state,
-            children: children,
-            vFont: state.font,
-            textColor: state.foreground,
-            hasBounds: hasBounds(state.bounds),
-            style: state.style,
-          ),
+      child: tagSemantics(trackPointer(Focus(
+        focusNode: _focusNode,
+        // Not a tab stop: Tab passes over it, as on every native; focus can still be set.
+        skipTraversal: true,
+        child: _StyledGroup(
+          widgetTheme: widgetTheme,
+          text: state.text ?? '',
+          composite: state,
+          children: children,
+          vFont: state.font,
+          textColor: state.foreground,
+          hasBounds: hasBounds(state.bounds),
+          style: state.style,
         ),
-      )),
+      ))),
     );
   }
 
-  bool _focusReported = false;
+  final FocusReport _focusReport = FocusReport();
 
   // hasFocus is true for any focused descendant; SWT gives a Group focus only when it holds it itself.
   void _handleFocusChange() {
-    final own = _focusNode!.hasPrimaryFocus;
-    if (own == _focusReported) return;
-    _focusReported = own;
-    if (own) {
-      widget.sendFocusFocusIn(state, null);
-    } else {
-      widget.sendFocusFocusOut(state, null);
-    }
+    _focusReport.update(_focusNode!.hasPrimaryFocus,
+        focusIn: () => widget.sendFocusFocusIn(state, null),
+        focusOut: () => widget.sendFocusFocusOut(state, null));
   }
 
   @override
@@ -81,6 +75,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
 
 class _StyledGroup extends StatelessWidget {
   final GroupThemeExtension widgetTheme;
+  /// The title, `&` mnemonic marker included.
   final String text;
   final List<VControl>? children;
   final VFont? vFont;
@@ -136,6 +131,7 @@ class _StyledGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = stripAccelerators(text);
     final backgroundColor = getBackgroundColor(
           background: composite.background,
           defaultColor: widgetTheme.backgroundColor,
@@ -155,6 +151,7 @@ class _StyledGroup extends StatelessWidget {
       context: context,
       foreground: textColor,
       defaultColor: widgetTheme.foregroundColor,
+      minContrast: widgetTheme.minTextContrast,
     );
     final titleStyle = getTextStyle(
       context: context,
@@ -164,7 +161,7 @@ class _StyledGroup extends StatelessWidget {
     );
 
     final titleFontSize = titleStyle?.fontSize ?? widgetTheme.textStyle?.fontSize ?? 12.0;
-    final titleTopOffset = text.isNotEmpty ? titleFontSize / 2 : 0.0;
+    final titleTopOffset = title.isNotEmpty ? titleFontSize / 2 : 0.0;
 
     final borderWidth = _noShadow ? 0.0 : widgetTheme.borderWidth;
     final borderDecoration = BoxDecoration(
@@ -216,12 +213,12 @@ class _StyledGroup extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (text.isNotEmpty)
+            if (title.isNotEmpty)
               Opacity(
                 opacity: 0,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(text, style: titleStyle),
+                  child: Text(title, style: titleStyle),
                 ),
               ),
             if (children != null)
@@ -231,7 +228,7 @@ class _StyledGroup extends StatelessWidget {
               ),
           ],
         ),
-        if (text.isNotEmpty)
+        if (title.isNotEmpty)
           Positioned(
             top: 0,
             left: widgetTheme.titleHorizontalOffset,
@@ -245,7 +242,7 @@ class _StyledGroup extends StatelessWidget {
                       : null,
                   borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
                 ),
-                child: Text(text, style: titleStyle),
+                child: MnemonicText(text, style: titleStyle),
               ),
             ),
           ),

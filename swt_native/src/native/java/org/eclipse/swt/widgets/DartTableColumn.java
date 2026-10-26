@@ -481,10 +481,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
-        if (!java.util.Objects.equals(this.resizable, newValue)) {
+        checkWidget();
+        if (this.resizable != newValue) {
             getValue().markDirty(VTableColumn.RESIZABLE);
         }
-        checkWidget();
         this.resizable = newValue;
     }
 
@@ -545,11 +545,11 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setWidth(int width) {
         int newValue = width;
-        boolean widthChanged = !java.util.Objects.equals(this.width, newValue);
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        boolean widthChanged = this.width != newValue;
+        checkWidget();
+        if (this.width != newValue) {
             getValue().markDirty(VTableColumn.WIDTH);
         }
-        checkWidget();
         if (width < 0)
             return;
         // TODO how to differentiate 0 and 1 cases?

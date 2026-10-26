@@ -262,6 +262,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
             width += DartExpandItem.TEXT_INSET + imageWidth;
         }
         if (text.length() > 0) {
+            width += gc.stringExtent(text).x;
         }
         return width;
     }
@@ -343,7 +344,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setExpanded(boolean expanded) {
         checkWidget();
-        if (!java.util.Objects.equals(this.expanded, expanded)) {
+        if (this.expanded != expanded) {
             getValue().markDirty(VExpandItem.EXPANDED);
         }
         this.expanded = expanded;
@@ -381,7 +382,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
-        if (!java.util.Objects.equals(this.height, height)) {
+        if (this.height != height) {
             getValue().markDirty(VExpandItem.HEIGHT);
         }
         if (height < 0)

@@ -174,7 +174,7 @@ public abstract class DartWidget implements IWidget {
      */
     public DartWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
@@ -701,7 +701,7 @@ public abstract class DartWidget implements IWidget {
      * @return the name of the widget
      */
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;
@@ -823,7 +823,7 @@ public abstract class DartWidget implements IWidget {
  * @return <code>true</code> when subclassing is allowed and <code>false</code> otherwise
  */
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     /*
@@ -1059,7 +1059,7 @@ public abstract class DartWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 

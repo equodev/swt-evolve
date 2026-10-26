@@ -67,6 +67,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   double get tabDragThreshold;
   double get chevronMenuItemHeight;
   EdgeInsets get chevronMenuItemPadding;
+  double get minTextContrast;
 
   @override
   CTabFolderThemeExtension copyWith({
@@ -126,6 +127,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     double? tabDragThreshold,
     double? chevronMenuItemHeight,
     EdgeInsets? chevronMenuItemPadding,
+    double? minTextContrast,
   }) {
     return CTabFolderThemeExtension(
       tabBarBackgroundColor:
@@ -211,6 +213,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
           chevronMenuItemHeight ?? this.chevronMenuItemHeight,
       chevronMenuItemPadding:
           chevronMenuItemPadding ?? this.chevronMenuItemPadding,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -410,6 +413,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       chevronMenuItemPadding: t < 0.5
           ? chevronMenuItemPadding
           : other.chevronMenuItemPadding,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -641,6 +645,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               chevronMenuItemPadding,
               other.chevronMenuItemPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -704,6 +712,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabDragThreshold),
       const DeepCollectionEquality().hash(chevronMenuItemHeight),
       const DeepCollectionEquality().hash(chevronMenuItemPadding),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -801,4 +810,5 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
       cTabFolderThemeExtension.chevronMenuItemHeight;
   EdgeInsets get chevronMenuItemPadding =>
       cTabFolderThemeExtension.chevronMenuItemPadding;
+  double get minTextContrast => cTabFolderThemeExtension.minTextContrast;
 }

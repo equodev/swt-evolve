@@ -48,7 +48,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     static final long ListProc;
 
-    static final TCHAR ListClass = new TCHAR(0, "LISTBOX", true);
+    static final TCHAR ListClass = new TCHAR("LISTBOX", true);
 
     // indicates whether Bidi UCC were added; 'state & HAS_AUTO_DIRECTION' isn't a sufficient indicator
     boolean addedUCC = false;
@@ -114,7 +114,7 @@ public class SwtList extends SwtScrollable implements IList {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         int result = (int) OS.SendMessage(getApi().handle, OS.LB_ADDSTRING, 0, buffer);
         if (result == OS.LB_ERR)
             error(SWT.ERROR_ITEM_NOT_ADDED);
@@ -156,7 +156,7 @@ public class SwtList extends SwtScrollable implements IList {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (index == -1)
             error(SWT.ERROR_INVALID_RANGE);
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         int result = (int) OS.SendMessage(getApi().handle, OS.LB_INSERTSTRING, index, buffer);
         if (result == OS.LB_ERRSPACE)
             error(SWT.ERROR_ITEM_NOT_ADDED);
@@ -749,7 +749,7 @@ public class SwtList extends SwtScrollable implements IList {
         if (!(0 <= start && start < count))
             return -1;
         int index = start - 1, last;
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
+        TCHAR buffer = new TCHAR(string, true);
         do {
             index = (int) OS.SendMessage(getApi().handle, OS.LB_FINDSTRINGEXACT, last = index, buffer);
             if (index == OS.LB_ERR || index <= last)
@@ -1329,10 +1329,9 @@ public class SwtList extends SwtScrollable implements IList {
         OS.SendMessage(getApi().handle, OS.LB_RESETCONTENT, 0, 0);
         OS.SendMessage(getApi().handle, OS.LB_INITSTORAGE, length, length * 32);
         int index = 0;
-        int cp = getCodePage();
         while (index < length) {
             String string = items[index];
-            TCHAR buffer = new TCHAR(cp, string, true);
+            TCHAR buffer = new TCHAR(string, true);
             int result = (int) OS.SendMessage(getApi().handle, OS.LB_ADDSTRING, 0, buffer);
             if (result == OS.LB_ERR || result == OS.LB_ERRSPACE)
                 break;
@@ -1764,8 +1763,7 @@ public class SwtList extends SwtScrollable implements IList {
                 case OS.LB_FINDSTRINGEXACT:
                     // we are always Unicode here
                     int length = OS.wcslen(lParam);
-                    int cp = getCodePage();
-                    TCHAR buffer = new TCHAR(cp, length);
+                    TCHAR buffer = new TCHAR(length);
                     OS.MoveMemory(buffer, lParam, buffer.length() * TCHAR.sizeof);
                     String string = buffer.toString(0, length);
                     int direction = BidiUtil.resolveTextDirection(string);
@@ -1778,7 +1776,7 @@ public class SwtList extends SwtScrollable implements IList {
                         direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? SWT.RIGHT_TO_LEFT : SWT.LEFT_TO_RIGHT;
                     }
                     string = (direction == SWT.RIGHT_TO_LEFT ? RLE : LRE) + string;
-                    buffer = new TCHAR(cp, string, true);
+                    buffer = new TCHAR(string, true);
                     long hHeap = OS.GetProcessHeap();
                     length = buffer.length() * TCHAR.sizeof;
                     long pszText = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, length);

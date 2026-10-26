@@ -42,6 +42,9 @@ class _RowWindow {
 
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
+  @override
+  bool get keepsWheel => true;
+
   int _selectedRowIndex = -1;
 
   // Cached layout values updated each build, used by Flutter→Java listeners
@@ -70,8 +73,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// the editor twice, which opens two dialogs for one double-click.
   int get lastRowTapCount => _lastRowTapCount;
 
-  int registerRowTap(int rowIndex) =>
-      _lastRowTapCount = _rowTapDetector.registerTap(key: rowIndex);
+  int registerRowTap(int rowIndex, [Duration? at]) =>
+      _lastRowTapCount = _rowTapDetector.registerTap(key: rowIndex, at: at);
 
   // Each cell has its own GestureDetector that sends MouseDown; suppress both
   // the ControlImpl.wrap() Listener and wrapCompositeInteractionChrome to
@@ -86,6 +89,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void initState() {
     super.initState();
     _verticalScrollController.addListener(() => setState(() {}));
+    _verticalScrollController.addListener(_reportScrollOffset);
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
     _registerGetItemHeightListener();
@@ -157,14 +161,31 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  /// Returns the VTableItem id at the given Flutter coordinates, or null.
+  double get _scrollOffset =>
+      _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+
+  /// Java lays out no rows of its own, so every coordinate-to-row lookup it makes -- the hit test
+  /// behind getItem(Point) and an item's bounds -- counts from the top of the model. Tell it how far
+  /// this table has scrolled so it can take that off. Rounded to whole pixels and skipped when
+  /// unchanged, which drops the notifications a ScrollController fires without movement.
+  int _reportedScrollOffset = 0;
+
+  void _reportScrollOffset() {
+    if (!_verticalScrollController.hasClients) return;
+    final offset = _verticalScrollController.offset.round();
+    if (offset == _reportedScrollOffset) return;
+    _reportedScrollOffset = offset;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+  }
+
+  /// Returns the VTableItem id at the given viewport coordinates, or null.
   Object? findItemIdAtPosition(double x, double y) {
     final rowHeight = _cachedRowHeight;
     if (rowHeight == null || rowHeight <= 0) return null;
     final headerOffset = _cachedHeaderOffset ?? 0.0;
-    final adjustedY = y - headerOffset;
-    if (adjustedY < 0) return null;
-    final itemIndex = (adjustedY / rowHeight).floor();
+    final bodyY = y - headerOffset;
+    if (bodyY < 0) return null;
+    final itemIndex = ((bodyY + _scrollOffset) / rowHeight).floor();
     final items = getItems();
     if (itemIndex < 0 || itemIndex >= items.length) return null;
     return items[itemIndex].id;
@@ -187,7 +208,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     if (itemIndex < 0) return Rect.zero;
 
-    final y = headerOffset + (itemIndex * rowHeight);
+    final y = headerOffset + itemIndex * rowHeight - _scrollOffset;
 
     final columns = getColumns();
     double x = 0.0;
@@ -231,6 +252,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   Widget build(BuildContext context) {
+    // A rebuild can remount the scroll view (a refresh that empties the table first), and the new
+    // position starts at the top without notifying the controller; Java is told where it landed.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reportScrollOffset();
+    });
     final widgetTheme = Theme.of(context).extension<TableThemeExtension>()!;
     final columns = getColumns();
     final items = getItems();
@@ -247,6 +273,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: widgetTheme.rowTextColor,
         context: context,
+        minContrast: widgetTheme.minTextContrast,
       ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
@@ -309,6 +336,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   void dispose() {
     _verticalScrollController.dispose();
+    _dropFeedback.dispose();
     // Remove Flutter event listeners
     for (final eventName in _eventNames) {
       EquoCommService.remove(eventName);
@@ -564,6 +592,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -671,8 +700,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     final viewport =
         constraints.maxHeight.isFinite ? constraints.maxHeight : totalRows * rowHeight;
-    final offset =
-        _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+    final offset = _scrollOffset;
     final visibleRows = (viewport / rowHeight).ceil() + 1;
     // Half a screenful each side: enough that a small scroll shows no blank frame, and proportional
     // so the window stays inside SWT's budget of three times the visible rows of SetData.
@@ -765,6 +793,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   final HoverTracker<int> _dragHover = HoverTracker<int>();
 
+  /// The DND.FEEDBACK_* bits the drop target's listener answered for [_dragHover]'s row.
+  final ValueNotifier<int> _dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+
   int _rowIndexForLocalY(double y, int itemCount) {
     final rowHeight = _cachedRowHeight;
     if (rowHeight == null || rowHeight <= 0) return itemCount;
@@ -790,23 +821,30 @@ class TableImpl<T extends TableSwt, V extends VTable>
       resolveIndex: resolveIndex,
       onDrop: (_, targetIndex, __, position) => sendRowDrop(targetIndex ?? itemCount, position),
       builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) _dragHover.update(null);
+        if (!isHovering) {
+          _dragHover.update(null);
+        } else {
+          _dropFeedback.value = negotiation.feedback;
+        }
         return child;
       },
     );
   }
 
   Widget wrapCellForRowDrag(Widget cell, int rowIndex, VTableItem item) {
-    final row = ValueListenableBuilder<int?>(
-      valueListenable: _dragHover.notifier,
-      builder: (context, hoveredIndex, child) => hoveredIndex == rowIndex
-          ? DecoratedBox(
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.blue, width: 2)),
-              ),
-              child: child,
-            )
-          : child!,
+    final row = ListenableBuilder(
+      listenable: Listenable.merge([_dragHover.notifier, _dropFeedback]),
+      builder: (context, child) {
+        if (_dragHover.value != rowIndex) return child!;
+        final theme = Theme.of(context).extension<TableThemeExtension>();
+        return decorateDropFeedback(
+          feedback: _dropFeedback.value,
+          color: theme?.selectedBackgroundColor ?? Theme.of(context).colorScheme.primary,
+          lineWidth: theme?.dropFeedbackLineWidth ?? 2.0,
+          highlightAlpha: theme?.dropFeedbackHighlightAlpha ?? 90,
+          child: child!,
+        );
+      },
       child: cell,
     );
     return wrapDraggable<DndDragPayload>(
@@ -815,7 +853,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       widget: widget,
       state: state,
       dragDetectEvent: dragDetectPayload,
-      onDragStarted: () => handleRowTap(rowIndex, item),
+      beforeDragDetect: () => handleRowTap(rowIndex, item),
       // A cell's content can include a flex Row (Expanded text/padding) — fine within the
       // table's own bounded layout, but the feedback overlay renders inside Flutter's Overlay,
       // which gives unbounded width. Without an explicit width here, that flex Row throws
@@ -824,7 +862,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
         width: state.bounds?.width?.toDouble() ?? 200,
         child: Material(
           elevation: 2,
-          child: Opacity(opacity: 0.85, child: cell),
+          child: Opacity(
+            opacity: Theme.of(context).extension<TableThemeExtension>()?.dragImageOpacity ?? 0.85,
+            child: cell,
+          ),
         ),
       ),
       childWhenDraggingBuilder: (c) => Opacity(opacity: 0.3, child: cell),
@@ -884,6 +925,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
+  /// Sent from the second press, so its stateMask carries the button, as a native's does.
   void handleRowDoubleTap(int index, VTableItem item) {
     if (state.enabled != true) return;
     setState(() {
@@ -892,7 +934,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
       state.selection!.clear();
       state.selection!.add(_selectedRowIndex);
 
-      final event = VEvent()..segments = state.selection;
+      final event = VEvent()
+        ..segments = state.selection
+        ..stateMask = SWT.BUTTON1;
       widget.sendSelectionDefaultSelection(state, event);
     });
   }
@@ -915,6 +959,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -952,10 +997,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       // which row is selected. Java's editor list is the source of truth for
       // which editors exist.
 
-      final scrollOffset = _verticalScrollController.hasClients
-          ? _verticalScrollController.offset
-          : 0.0;
-      final editorY = headerOffset + (itemIndex * rowHeight) - scrollOffset;
+      final editorY = headerOffset + (itemIndex * rowHeight) - _scrollOffset;
 
       double editorX = borderWidth;
       double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
@@ -1030,6 +1072,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
@@ -1097,6 +1140,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
@@ -1219,6 +1263,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -1258,6 +1303,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         foreground: state.foreground,
         defaultColor: theme.rowTextColor,
         context: context,
+        minContrast: theme.minTextContrast,
       ),
       baseTextStyle: theme.rowTextStyle,
     );
@@ -1305,6 +1351,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerPainter = TextPainter(
       text: TextSpan(text: headerText, style: headerTextStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
     );
     headerPainter.layout();
     return headerPainter.width + theme.headerPadding.horizontal;
@@ -1339,6 +1386,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final cellPainter = TextPainter(
         text: TextSpan(text: cellText, style: cellTextStyle),
         textDirection: TextDirection.ltr,
+        textScaler: FontUtils.textWidgetScaler,
       );
       cellPainter.layout();
       cellWidth += cellPainter.width;
@@ -1434,12 +1482,7 @@ class TableItemSwtWrapper {
 
 double measureTableText(String text, TextStyle style) {
   if (text.isEmpty) return 0.0;
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: style),
-    textDirection: TextDirection.ltr,
-    maxLines: 1,
-  )..layout();
-  return painter.width;
+  return FontUtils.measureTextWidget(text, style).width;
 }
 
 EdgeInsets fitTableCellPadding(

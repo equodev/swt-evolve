@@ -573,6 +573,16 @@ public class Serializer {
         return keys;
     }
 
+    /**
+     * The client changed {@code key} itself, so what it was last sent no longer says what it holds:
+     * the next change of that property is sent even when it matches that last value.
+     */
+    public static void clientChanged(VWidget value, String key) {
+        java.util.Map<String, long[]> seen = lastSent.get(value);
+        if (seen != null)
+            seen.remove(key);
+    }
+
     /** {@link #lastSent} for resources, whose state a client may also be given whole or by name. */
     private static final java.util.Map<VResource, java.util.Map<String, long[]>> lastSentResource =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
@@ -904,7 +914,7 @@ public class Serializer {
     private static boolean canReferenceResource(Object value) {
         if (!diffEnabled) return false;
         Integer given = resourceDelivery.get(value);
-        return given != null && given == target.get();
+        return given != null && given.equals(target.get());
     }
 
     /** Forgets that {@code value} was delivered, for a resource whose content has changed under it. */

@@ -51,12 +51,16 @@ class ConfigFlags {
   String? csd_os;
   String? csd_maximize;
   int? double_click_timeout_ms;
+  int? hover_delay_ms;
 
   /// Explicit CSD title-bar colour as RRGGBB/AARRGGBB hex. Overrides the theme's own
   /// title-bar colour; unset falls back to the theme (see CsdOverlayStrip).
   String? csd_titlebar_color;
   /// True when the OS owns the menu bar (macOS desktop) and this side must not draw one.
   bool? system_menu_bar;
+
+  /// The decimal separator of the JVM's locale, which a desktop client writes numbers with.
+  String? decimal_separator;
 
   /// Logical pixels per SWT font point on the host the application runs on, as the Java side
   /// measured its text extents at. Not derivable here: this client's platform is the browser's.

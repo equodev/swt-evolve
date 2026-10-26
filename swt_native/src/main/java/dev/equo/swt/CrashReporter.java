@@ -35,6 +35,7 @@ public class CrashReporter {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleCrash(throwable));
         Thread initThread = new Thread(() -> {
             boolean cleanShutdown = checkAndWriteSessionMarker();
+            markCleanOnOrderlyExit();
             if (!cleanShutdown) {
                 checkNativeCrashFiles();
                 if (pendingNativeCrashes == null) {
@@ -46,6 +47,11 @@ public class CrashReporter {
         initThread.start();
     }
 
+    /** Whether the previous session ended without a clean exit and left no native crash file. */
+    static boolean previousSessionAbnormal() {
+        return pendingAbnormalExit;
+    }
+
     private static void checkNativeCrashFiles() {
         try {
             List<File> found = scanForNativeCrashFiles();
@@ -54,6 +60,17 @@ public class CrashReporter {
             }
         } catch (Throwable t) {
             System.err.println("[CrashReporter] Failed to scan for native crash files: " + t);
+        }
+    }
+
+    // An application may return from its entry point or call System.exit without disposing the
+    // Display. Shutdown hooks run for those exits and not for a native crash or a forced kill, which
+    // are the sessions the dialog is for. Registered after "started" is written, so it never runs first.
+    private static void markCleanOnOrderlyExit() {
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(CrashReporter::writeCleanShutdownMarker, "crash-reporter-shutdown"));
+        } catch (IllegalStateException alreadyShuttingDown) {
+            writeCleanShutdownMarker();
         }
     }
 
@@ -156,12 +173,12 @@ public class CrashReporter {
             Path dir = java.nio.file.Paths.get(System.getProperty("user.home"), ".equo");
             Files.createDirectories(dir);
 
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            String timestamp = LocalDateTime.now(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", java.util.Locale.ROOT));
             File logFile = dir.resolve("crash-" + timestamp + ".log").toFile();
 
             try (PrintWriter pw = new PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(logFile, true), StandardCharsets.UTF_8))) {
                 pw.println("=== Equo SWT Crash Report ===");
-                pw.println("Timestamp: " + LocalDateTime.now());
+                pw.println("Timestamp: " + LocalDateTime.now(java.time.ZoneId.systemDefault()));
                 pw.println();
 
                 pw.println("=== System Info ===");
@@ -312,7 +329,7 @@ public class CrashReporter {
         try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(crashLog), StandardCharsets.UTF_8))) {
             String firstLine = reader.readLine();
             // Detect hs_err format: first line starts with '#' and contains "fatal error"
-            if (firstLine != null && firstLine.startsWith("#") && firstLine.toLowerCase().contains("fatal error")) {
+            if (firstLine != null && firstLine.startsWith("#") && firstLine.toLowerCase(java.util.Locale.ROOT).contains("fatal error")) {
                 return summarizeHsErrLog(reader, firstLine);
             }
 
@@ -485,7 +502,7 @@ public class CrashReporter {
                 int dot = name.lastIndexOf('.');
                 String base = dot >= 0 ? name.substring(0, dot) : name;
                 String ext = dot >= 0 ? name.substring(dot) : "";
-                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+                String timestamp = LocalDateTime.now(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", java.util.Locale.ROOT));
                 target = equoDir.resolve(base + "-" + timestamp + ext);
             }
 

@@ -45,6 +45,7 @@ ListThemeExtension _$ListThemeExtensionFromJson(Map<String, dynamic> json) =>
       animationDuration: Duration(
         microseconds: (json['animationDuration'] as num).toInt(),
       ),
+      minTextContrast: (json['minTextContrast'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$ListThemeExtensionToJson(
@@ -77,4 +78,5 @@ Map<String, dynamic> _$ListThemeExtensionToJson(
   'itemPadding': const EdgeInsetsConverter().toJson(instance.itemPadding),
   'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
   'animationDuration': instance.animationDuration.inMicroseconds,
+  'minTextContrast': instance.minTextContrast,
 };

@@ -469,7 +469,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.movable, moveable)) {
+        if (this.movable != moveable) {
             getValue().markDirty(VTreeColumn.MOVEABLE);
         }
         this.movable = moveable;
@@ -550,11 +550,11 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         int newValue = width;
-        boolean widthChanged = !java.util.Objects.equals(this.width, newValue);
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        boolean widthChanged = this.width != newValue;
+        checkWidget();
+        if (this.width != newValue) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
-        checkWidget();
         if (width < 0)
             return;
         // TODO how to differentiate 0 and 1 cases?

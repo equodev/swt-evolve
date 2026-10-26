@@ -44,6 +44,9 @@ const _canvasTheme = CanvasThemeExtension(
   patternStartColor: _patternStart,
   patternEndColor: _patternEnd,
   imageTintColor: _imageTint,
+  highlightColor: Color(0xFFFF00AA),
+  hoverFillColor: Color(0xFF00AA00),
+  selectionFillColor: Color(0xFF0000AA),
   glyphTintMaxSide: 64,
   glyphTintChannelTolerance: 4,
 );

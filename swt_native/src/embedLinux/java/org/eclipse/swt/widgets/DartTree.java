@@ -623,6 +623,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         updateHeaderCSS();
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -679,6 +680,7 @@ public class DartTree extends DartComposite implements ITree {
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
         // reset to default font to get the usual behavior
         setFontDescription(defaultFont().handle);
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -779,6 +781,7 @@ public class DartTree extends DartComposite implements ITree {
         if (!searchEnabled()) {
         } else {
         }
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item) {
@@ -1589,6 +1592,11 @@ public class DartTree extends DartComposite implements ITree {
     public void removeAll() {
         checkWidget();
         checkSetDataInProcessBeforeRemoval();
+        // Disconnect the model from the view before clearing it.
+        // gtk_tree_store_clear fires cell-data / row-changed callbacks for every
+        // row it removes. Those callbacks re-enter SWT (cellDataProc -> checkData
+        // -> getParentItem -> gtk_tree_model_get_path) with iterators that are
+        // already being freed, causing a SIGSEGV. With no model attached the view
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed())
@@ -2044,7 +2052,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setHeaderVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, show)) {
+        if (this.headerVisible != show) {
             getValue().markDirty(VTree.HEADER_VISIBLE);
         }
         this.headerHeight = this.getHeaderHeight();
@@ -2072,10 +2080,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        checkWidget();
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 
@@ -2166,10 +2174,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
-        checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();

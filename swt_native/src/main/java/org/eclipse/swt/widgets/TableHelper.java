@@ -92,17 +92,86 @@ public class TableHelper {
             // Event it is handed and EventTable's send loop re-reads that type on every step, so
             // passing the in-flight MouseDown event would leave it typed SWT.Selection and drop
             // every MouseDown listener still behind this one.
+            // A native Table's click Selection names the item and nothing about the click itself, but
+            // for the button still held: its stateMask carries it, as the event fires before release.
             Event selection = new Event();
             selection.segments = event.segments;
             selection.detail = event.detail;
-            selection.stateMask = event.stateMask;
-            selection.button = event.button;
-            selection.count = event.count;
-            selection.x = event.x;
-            selection.y = event.y;
+            selection.stateMask = event.stateMask | buttonMask(event.button);
             selection.time = event.time;
             sendSelection(table, selection, SWT.Selection);
         }
+    }
+
+    /** The stateMask bit of a held mouse button; SWT's BUTTON4 and BUTTON5 do not follow BUTTON3. */
+    static int buttonMask(int button) {
+        switch (button) {
+            case 1: return SWT.BUTTON1;
+            case 2: return SWT.BUTTON2;
+            case 3: return SWT.BUTTON3;
+            case 4: return SWT.BUTTON4;
+            case 5: return SWT.BUTTON5;
+            default: return 0;
+        }
+    }
+
+    /**
+     * Up and Down move a single selection to the row above or below, Home and End to the first and
+     * last row, and Page Down and Page Up to the last or first row in view, or a page on when already
+     * there, as the platform's table does for a key no listener vetoed, and report it as a Selection
+     * naming the item. The page keys read the top index, which the client does not report when it
+     * scrolls. A MULTI table moves from its first selected row, not a focus row of its own, and ends
+     * with that one row selected; Shift and Ctrl with a key are not handled.
+     */
+    public static void moveSelectionByKey(DartTable table, Event key) {
+        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+            return;
+        int count = table.getItemCount();
+        if (count == 0)
+            return;
+        int current = table.getSelectionIndex();
+        int next;
+        switch (key.keyCode) {
+            case SWT.ARROW_UP:
+                next = current < 0 ? 0 : current - 1;
+                break;
+            case SWT.ARROW_DOWN:
+                next = current < 0 ? 0 : current + 1;
+                break;
+            case SWT.HOME:
+                next = 0;
+                break;
+            case SWT.END:
+                next = count - 1;
+                break;
+            case SWT.PAGE_DOWN: {
+                // The last row of the page in view, or a page on from there when already on it.
+                int bottom = table.getTopIndex() + visibleRows(table) - 1;
+                next = current < bottom ? bottom : current + visibleRows(table) - 1;
+                break;
+            }
+            case SWT.PAGE_UP: {
+                int top = table.getTopIndex();
+                next = current > top ? top : current - visibleRows(table) + 1;
+                break;
+            }
+            default:
+                return;
+        }
+        next = Math.max(0, Math.min(count - 1, next));
+        if (next == current)
+            return;
+        Event selection = new Event();
+        selection.segments = new int[] { next };
+        sendSelection(table, selection, SWT.Selection);
+    }
+
+    /** How many whole rows the table shows below its header. */
+    static int visibleRows(DartTable table) {
+        Table api = table.getApi();
+        int itemHeight = Math.max(1, api.getItemHeight());
+        int height = api.getClientArea().height - (api.getHeaderVisible() ? api.getHeaderHeight() : 0);
+        return Math.max(1, height / itemHeight);
     }
 
     public static void sendSelection(DartTable table, Event event, int selectionType) {
@@ -124,7 +193,10 @@ public class TableHelper {
                 int index = event.segments[0];
                 if (table.items != null && index >= 0 && index < table.items.length) {
                     event.item = table.items[index];
-                    event.index = index;
+                    // A native Table's Selection names the row by its item alone; the index is only
+                    // the cell edit's own (read below), which arrives carrying text.
+                    if (event.text != null)
+                        event.index = index;
                 }
             }
         }
@@ -340,7 +412,7 @@ public class TableHelper {
                 System.arraycopy(newSelection, 0, finalSelection, 0, newCount);
             }
 
-            if (!java.util.Objects.equals(table.selection, finalSelection)) {
+            if (!Arrays.equals(table.selection, finalSelection)) {
                 table.getValue().markDirty(VTable.SELECTION);
             }
             table.selection = finalSelection;
@@ -653,7 +725,7 @@ public class TableHelper {
                     if (drawn != null)
                         text.append(drawn);
                 };
-                dartGc.imageCapture = drawn -> image[0] = drawn;
+                dartGc.imageCapture = drawn -> image[0] = GraphicsUtils.copyImage(item.getDisplay(), drawn);
                 Event event = new Event();
                 event.item = item.getApi();
                 event.index = i;

@@ -212,15 +212,18 @@ class StyledTextMouseFlutterTest {
     }
 
     @Test
-    @DisplayName("a horizontal wheel tick scrolls a long unwrapped line")
+    @DisplayName("a horizontal wheel tick delivers MouseHorizontalWheel and scrolls a long unwrapped line")
     void horizontalWheelScrolls() {
         StringBuilder wide = new StringBuilder();
         for (int i = 0; i < 40; i++) wide.append("wide").append(i).append(' ');
         fresh(SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL, wide + "\nshort");
+        int[] horizontal = {0};
+        text.addListener(SWT.MouseHorizontalWheel, e -> horizontal[0]++);
         double[] at = stage.page(text, 50, 10);
         stage.input().wheel(at[0], at[1], 120, 0, 0);
         stage.settle();
 
+        assertThat(horizontal[0]).as("MouseHorizontalWheel events").isEqualTo(1);
         assertThat(text.getHorizontalPixel()).as("scrolled").isPositive();
         assertThat(stage.renderedScroll(text)[0]).as("shown scroll").isEqualTo(text.getHorizontalPixel());
     }

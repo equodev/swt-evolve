@@ -19,4 +19,11 @@ public class ClientReadyPayload {
     public int displayHeight;
     /** Device zoom in percent (100 = no scaling). 0 when the client can't report it yet. */
     public int zoom;
+    /** Height of the chrome the client draws inside the window above the app content -- the CSD title strip. */
+    public int insetTop;
+    /**
+     * The client's locale as a BCP 47 tag ({@code es-AR}): the browser's on web, the OS's on desktop. Null from a
+     * client that does not report it.
+     */
+    public String locale;
 }
