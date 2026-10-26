@@ -14,7 +14,8 @@ import org.eclipse.swt.custom.CTabItem;
  * generated {@code Dart*.java}, this helper walks the focused control's shell over the <em>public</em>
  * SWT widget tree, finds the control/item whose mnemonic matches, and activates it — Button clicks,
  * Label moves focus to the following control, Group focuses its first child, TabItem and CTabItem
- * select their tab. A mnemonic no control claims opens the menu bar's menu whose title carries it.
+ * select their tab. A mnemonic no control claims is delivered as a KeyDown, and then opens the menu
+ * bar's menu whose title carries it ({@link #openMenuBarTitle}).
  *
  * <p>Invoked from {@link ControlHelper#routeKeyDown} after a {@code TRAVERSE_MNEMONIC} event
  * is fired and not vetoed. Uses only public API, so it is backend-agnostic and needs no generator
@@ -32,24 +33,32 @@ public final class MnemonicHelper {
         Shell shell = focus.getShell();
         if (shell == null || shell.isDisposed())
             return false;
-        char target = Character.toLowerCase(key);
-        return walk(shell, target) || openMenuBarMenu(shell, target);
+        return walk(shell, Character.toLowerCase(key));
     }
 
-    /** Win32 and GTK hand a mnemonic no control took to the menu bar. The client opens the menu. */
-    private static boolean openMenuBarMenu(Shell shell, char target) {
+    /**
+     * Win32 and GTK hand a mnemonic no control took to the menu bar once its KeyDown went through
+     * unvetoed, whether or not the focused control's Traverse listener rejected it. The client opens
+     * the menu.
+     */
+    static void openMenuBarTitle(Control focus, char key) {
+        if (focus == null || focus.isDisposed())
+            return;
+        Shell shell = focus.getShell();
+        if (shell == null || shell.isDisposed())
+            return;
+        char target = Character.toLowerCase(key);
         Menu bar = shell.getMenuBar();
         if (bar == null || bar.isDisposed() || !bar.isEnabled())
-            return false;
+            return;
         for (MenuItem item : bar.getItems()) {
             if (item.isDisposed() || !item.isEnabled() || item.getMenu() == null || !matches(item.getText(), target))
                 continue;
             if (!(item.getImpl() instanceof DartMenuItem))
-                return false;
+                return;
             FlutterBridge.sendEvent(item.getImpl(), "openMenu");
-            return true;
+            return;
         }
-        return false;
     }
 
     private static boolean walk(Composite parent, char target) {

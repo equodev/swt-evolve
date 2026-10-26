@@ -107,17 +107,45 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
         press(focus, SWT.ESC);
         release(focus, SWT.ESC);
         press(focus, SWT.ALT);
-        Event f = new Event();
-        f.keyCode = 'f';
-        f.character = 'f';
-        f.stateMask = SWT.ALT;
-        ControlHelper.routeKeyDown((DartControl) focus.getImpl(), f);
+        MnemonicActivationTest.pressAlt(focus, 'f');
         release(focus, 'f');
         release(focus, SWT.ALT);
 
-        assertThat(bridge.comm.sent.stream().map(e -> e.event).filter(e -> e.endsWith("/openMenu")))
-                .containsExactly(FlutterBridge.eventName(bar.getItem(0).getImpl(), "openMenu"));
+        assertThat(openRequests()).containsExactly(FlutterBridge.eventName(bar.getItem(0).getImpl(), "openMenu"));
         assertThat(activations()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Alt+F on a control whose Traverse listener rejects the mnemonic is delivered and opens File")
+    void altLetterRejectedByTheFocusedControlOpensTheMenu() {
+        Menu bar = menuBar();
+        // As a CTabFolder with no tab carrying the letter does.
+        focus.addListener(SWT.Traverse, e -> {
+            if (e.detail == SWT.TRAVERSE_MNEMONIC)
+                e.doit = false;
+        });
+        int[] keyDowns = {0};
+        focus.addListener(SWT.KeyDown, e -> keyDowns[0]++);
+
+        MnemonicActivationTest.pressAlt(focus, 'f');
+
+        assertThat(keyDowns[0]).isEqualTo(1);
+        assertThat(openRequests()).containsExactly(FlutterBridge.eventName(bar.getItem(0).getImpl(), "openMenu"));
+    }
+
+    @Test
+    @DisplayName("an Alt+F a KeyDown listener vetoes does not open File")
+    void vetoedAltLetterDoesNotOpenTheMenu() {
+        menuBar();
+        focus.addListener(SWT.Traverse, e -> {
+            if (e.detail == SWT.TRAVERSE_MNEMONIC)
+                e.doit = false;
+        });
+        focus.addListener(SWT.KeyDown, e -> e.doit = false);
+
+        MnemonicActivationTest.pressAlt(focus, 'f');
+
+        assertThat(openRequests()).isEmpty();
     }
 
     @Test
@@ -151,6 +179,10 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
 
     private List<String> activations() {
         return bridge.comm.sent.stream().map(f -> f.event).filter(e -> e.endsWith("/activate")).collect(Collectors.toList());
+    }
+
+    private List<String> openRequests() {
+        return bridge.comm.sent.stream().map(f -> f.event).filter(e -> e.endsWith("/openMenu")).collect(Collectors.toList());
     }
 
     private static void release(Control control, int keyCode) {

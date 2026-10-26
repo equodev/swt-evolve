@@ -439,7 +439,7 @@ public class ControlHelper {
     }
 
     /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */
-    private static boolean isMnemonicTrigger(Event ev) {
+    static boolean isMnemonicTrigger(Event ev) {
         if ((ev.stateMask & SWT.ALT) == 0)
             return false;
         if ((ev.stateMask & (SWT.CTRL | SWT.COMMAND)) != 0)

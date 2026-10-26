@@ -66,10 +66,17 @@ public class MenuHelper {
         control.getDisplay().setData(ALT_ALONE, key.keyCode == SWT.ALT ? Boolean.TRUE : null);
     }
 
-    /** F10 with no modifier activates the menu bar once its KeyDown went through unvetoed, as on Windows. */
+    /**
+     * Once its KeyDown went through unvetoed, F10 with no modifier activates the menu bar, as on
+     * Windows, and an Alt+letter no control took opens the menu bar title carrying it.
+     */
     static void keyDownDelivered(Control control, Event key) {
-        if (key.doit && key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == 0)
+        if (!key.doit)
+            return;
+        if (key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == 0)
             activateMenuBar(control);
+        else if (ControlHelper.isMnemonicTrigger(key))
+            MnemonicHelper.openMenuBarTitle(control, (char) key.keyCode);
     }
 
     /** The release of a lone Alt activates the menu bar, unless a KeyUp listener vetoed it. */
