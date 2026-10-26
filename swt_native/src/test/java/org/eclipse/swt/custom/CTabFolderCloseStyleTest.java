@@ -77,6 +77,10 @@ class CTabFolderCloseStyleTest {
         assertThat(impl._chevronTb() != null && impl._chevronTb().getVisible()).isFalse();
         folder.setMaximizeVisible(true);
         folder.getItem(0).getBounds();
+        // Older releases create the max button's ToolBar after sizing the tabs, so only the next
+        // layout counts it.
+        impl.updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT);
+        folder.getItem(0).getBounds();
         assumeTrue(impl._minMaxTb() != null, "this SWT release has no max-button ToolBar taking room from the tabs");
         return impl._chevronTb() != null && impl._chevronTb().getVisible();
     }
@@ -84,9 +88,10 @@ class CTabFolderCloseStyleTest {
     @Test
     @DisplayName("the max button shows the chevron only when the tabs no longer fit beside it")
     void theMaxButtonShowsTheChevronOnlyOnOverflow() {
-        // At 300 px the close buttons leave the three tabs too little room beside the max button.
-        assertThat(chevronShownByTheMaxButton(SWT.NONE, 300)).isFalse();
-        assertThat(chevronShownByTheMaxButton(SWT.CLOSE, 300)).isTrue();
-        assertThat(chevronShownByTheMaxButton(SWT.CLOSE, 400)).isFalse();
+        // At 260 px the close buttons leave the three tabs too little room beside the max button;
+        // at 300 px they still fit, as they do natively.
+        assertThat(chevronShownByTheMaxButton(SWT.NONE, 260)).isFalse();
+        assertThat(chevronShownByTheMaxButton(SWT.CLOSE, 260)).isTrue();
+        assertThat(chevronShownByTheMaxButton(SWT.CLOSE, 300)).isFalse();
     }
 }
