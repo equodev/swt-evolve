@@ -56,7 +56,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Offset? _lastPointerCrossing;
   int _lastDragMoveMs = 0;
 
-  /// Where the held pointer was last reported, by its press or a move, in whole pixels.
+  /// Where in the view the held pointer was last reported, by its press or a move, in whole
+  /// pixels. In view coordinates because a control moved along with the pointer reports the same
+  /// local position for a pointer that did move.
   Offset? _lastHeld;
   int? _dragDetectPointer;
   Offset? _dragDetectOrigin;
@@ -305,15 +307,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     super.dispose();
   }
 
-  void sendThrottledDragMove(V state, VEvent event, int buttons) {
+  void sendThrottledDragMove(V state, VEvent event, PointerMoveEvent e) {
     // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
     // with the press.
-    if (_lastHeld == Offset((event.x ?? 0).toDouble(), (event.y ?? 0).toDouble())) return;
+    final held = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
+    if (_lastHeld == held) return;
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
       _lastDragMoveMs = now;
-      _lastHeld = Offset((event.x ?? 0).toDouble(), (event.y ?? 0).toDouble());
-      event.stateMask = moveStateMask(buttons);
+      _lastHeld = held;
+      event.stateMask = moveStateMask(e.buttons);
       widget.sendMouseMoveMouseMove(state, event);
       RoundTripTiming.trace();
     }
@@ -435,9 +438,36 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _lastButton = button;
     _dragDetectPointer = e.pointer;
     _dragDetectOrigin = e.localPosition;
-    _lastHeld = Offset(e.localPosition.dx.roundToDouble(), e.localPosition.dy.roundToDouble());
+    _lastHeld = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
     _dragDetectSent = false;
+    final box = _ownBox();
+    if (box != null) _pressOrigins[e.pointer] = box.localToGlobal(Offset.zero);
   }
+
+  /// Where this control's top-left was in the view when each held pointer went down.
+  final Map<int, Offset> _pressOrigins = {};
+
+  RenderBox? _ownBox() {
+    if (!mounted) return null;
+    final box = context.findRenderObject();
+    return box is RenderBox && box.hasSize && box.attached ? box : null;
+  }
+
+  /// [e]'s position relative to where this control is now, as SWT reports MouseMove and MouseUp.
+  ///
+  /// Flutter delivers every event of a held pointer through the transforms it hit-tested at the
+  /// press, so [PointerEvent.localPosition] stays relative to where the control was then. A
+  /// listener that moves the control under the pointer (a pane resized from its own edge) would
+  /// otherwise read the whole distance it moved it a second time, on every move.
+  Offset heldLocal(PointerEvent e) {
+    final origin = _pressOrigins[e.pointer];
+    final box = origin == null ? null : _ownBox();
+    if (box == null) return e.localPosition;
+    return e.localPosition + box.globalToLocal(origin!);
+  }
+
+  /// Forgets the press of [e]'s pointer once it is released or cancelled.
+  void releasePointer(PointerEvent e) => _pressOrigins.remove(e.pointer);
 
   /// Whether a drag over this control is announced from its own pointer handling. False for a
   /// control that runs its own Draggable and raises DragDetect from there, or the gesture would be
@@ -865,11 +895,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       onPointerUp: (e) {
         if (pointerTakenBelow(e)) return;
         forgetDragDetect(e.pointer);
+        final pos = heldLocal(e);
+        releasePointer(e);
         if (scrollBarPointers.remove(e.pointer)) return;
         final event = VEvent()
           ..button = swtButton
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
+          ..x = pos.dx.round()
+          ..y = pos.dy.round()
           ..count = swtClickCount
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
         widget.sendMouseMouseUp(state, event);
@@ -884,6 +916,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       },
       onPointerCancel: (e) {
         forgetDragDetect(e.pointer);
+        releasePointer(e);
         scrollBarPointers.remove(e.pointer);
       },
       onPointerMove: (e) {
@@ -891,10 +924,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         // No hover while a button is held: the pointer is moving, not resting.
         _hoverTimer?.cancel();
         maybeSendDragDetect(e);
+        final pos = heldLocal(e);
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
-        sendThrottledDragMove(state, event, e.buttons);
+          ..x = pos.dx.round()
+          ..y = pos.dy.round();
+        sendThrottledDragMove(state, event, e);
       },
       child: child,
     );
