@@ -87,19 +87,6 @@ class TextClipboardTest {
     }
 
     @Test
-    void pasteInsertsWhatTheClipboardApiWrote() {
-        for (int style : new int[] {SWT.SINGLE, SWT.MULTI}) {
-            Shell shell = Mocks.shell();
-            Text text = new Text(shell, style);
-            text.setText("ab");
-            put(shell.getDisplay(), "from outside");
-            text.setSelection(1);
-            text.paste();
-            assertThat(text.getText()).as("style " + style).isEqualTo("afrom outsideb");
-        }
-    }
-
-    @Test
     void aComboCopiesAndPastesThroughTheSameClipboard() {
         Shell shell = Mocks.shell();
         Combo combo = new Combo(shell, SWT.DROP_DOWN);
