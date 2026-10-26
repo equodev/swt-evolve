@@ -1,12 +1,17 @@
 import 'dart:js_interop';
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:flutter/widgets.dart' show Locale, WidgetsBinding;
+
 @JS('Intl.NumberFormat')
 extension type _NumberFormat._(JSObject _) implements JSObject {
   external factory _NumberFormat(JSString locale);
 
   external JSString format(JSNumber value);
 }
+
+/// On the web the locale is the browser's, the one the client reports to Java with its viewport.
+Locale userLocale() => WidgetsBinding.instance.platformDispatcher.locale;
 
 String? _tag;
 String _separator = '.';

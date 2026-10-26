@@ -9,7 +9,7 @@ import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import '../theme/theme_settings/spinner_theme_settings.dart';
-import 'utils/number_locale.dart';
+import 'utils/client_locale.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';

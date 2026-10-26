@@ -59,6 +59,7 @@ class SpinnerClientLocaleFlutterTest {
 
         assertThat(spinner.getText()).isEqualTo("1,23");
         assertThat(Config.getConfigFlags().decimal_separator).isEqualTo(",");
+        assertThat(Config.getConfigFlags().locale).isEqualTo("de-DE");
     }
 
     @Test
