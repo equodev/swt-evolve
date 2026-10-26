@@ -472,10 +472,7 @@ public final class EvolveSwingHost {
             frame.add(contents);
             return;
         }
-        hostAsLightweight(contents);
-        host.contentRoot.add(contents);
-        host.contentRoot.revalidate();
-        host.contentRoot.repaint();
+        host.contentRoot.attach(contents);
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -490,7 +487,8 @@ public final class EvolveSwingHost {
      * component that repaints itself while painting — feeds itself without bound.
      */
     /** Drops every reference this class holds to a disposed embedding's component tree. */
-    private static void forgetEmbed(Container root, Window frame) {
+    private static void forgetEmbed(ContentRoot root, Window frame) {
+        root.dropHeld();
         EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
         REPAINT_PENDING.remove(root);
@@ -815,8 +813,12 @@ public final class EvolveSwingHost {
             this.drawn = drawn;
         }
 
-        /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
+        /**
+         * Attaches held content and lets the hosted tree paint from now on. Runs on the EDT; {@code
+         * held} is still empty at the first call, from {@code newFrame} on the SWT thread.
+         */
         void place() {
+            if (placed) return;
             placed = true;
             List<Component> attach;
             synchronized (held) {
@@ -841,7 +843,14 @@ public final class EvolveSwingHost {
             attach(child);
         }
 
-        private void attach(Component child) {
+        /** Drops content held for a canvas disposed before it ever had a size. */
+        void dropHeld() {
+            synchronized (held) {
+                held.clear();
+            }
+        }
+
+        void attach(Component child) {
             hostAsLightweight(child);
             add(child);
             revalidate();
