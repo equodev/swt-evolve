@@ -785,8 +785,8 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setBackground(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
@@ -846,8 +846,8 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.image, image)) {
             getValue().markDirty(VCLabel.IMAGE);
         }

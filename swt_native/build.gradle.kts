@@ -310,6 +310,13 @@ sourceSets {
             // (absent in 3.131), so the test covering that path cannot compile against older SWT.
             val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
             if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+            // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
+            // The widget tracker is told of each widget from 3.130.
+            if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
+            // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
+            if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
             // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
             if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
@@ -365,6 +372,8 @@ sourceSets {
                 // so the API class the generator writes only carries it from there; this test reads
                 // one image back at three zooms.
                 exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
+                // Table/Tree.setHeaderBackground and setHeaderForeground were added in 3.106.
+                exclude("org/eclipse/swt/widgets/WidgetCheckedFirstTest.java")
             }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the

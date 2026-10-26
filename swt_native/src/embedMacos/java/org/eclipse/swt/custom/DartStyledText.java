@@ -10421,8 +10421,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @since 3.5
      */
     public void setMarginColor(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.marginColor, color)) {
             getValue().markDirty(VStyledText.MARGIN_COLOR);
         }
@@ -10672,8 +10672,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @since 2.1
      */
     public void setSelectionBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.selectionBackground, color)) {
             getValue().markDirty(VStyledText.SELECTION_BACKGROUND);
         }
@@ -10708,8 +10708,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @since 2.1
      */
     public void setSelectionForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.selectionForeground, color)) {
             getValue().markDirty(VStyledText.SELECTION_FOREGROUND);
         }
