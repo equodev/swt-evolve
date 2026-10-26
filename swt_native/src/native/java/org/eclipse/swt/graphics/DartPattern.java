@@ -211,7 +211,7 @@ public class DartPattern extends DartResource implements IPattern {
     public String toString() {
         if (isDisposed())
             return "Pattern {*DISPOSED*}";
-        return null;
+        return "Pattern {" + System.identityHashCode(this) + "}";
     }
 
     float endX;

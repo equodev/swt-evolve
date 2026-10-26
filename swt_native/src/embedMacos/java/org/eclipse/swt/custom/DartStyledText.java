@@ -8812,7 +8812,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setAlignment(int alignment) {
         checkWidget();
-        if (!java.util.Objects.equals(this.alignment, alignment)) {
+        if (this.alignment != alignment) {
             getValue().markDirty(VStyledText.ALIGNMENT);
         }
         alignment &= (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
@@ -8844,7 +8844,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setAlwaysShowScrollBars(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.alwaysShowScroll, show)) {
+        if (this.alwaysShowScroll != show) {
             getValue().markDirty(VStyledText.ALWAYS_SHOW_SCROLL_BARS);
         }
         if (show == alwaysShowScroll)
@@ -8893,7 +8893,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setBlockSelection(boolean blockSelection) {
         checkWidget();
-        if (!java.util.Objects.equals(this.blockSelection, blockSelection)) {
+        if (this.blockSelection != blockSelection) {
             getValue().markDirty(VStyledText.BLOCK_SELECTION);
         }
         if ((getStyle() & SWT.SINGLE) != 0)
@@ -9111,7 +9111,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setBottomMargin(int bottomMargin) {
         checkWidget();
-        if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
+        if (this.bottomMargin != bottomMargin) {
             getValue().markDirty(VStyledText.BOTTOM_MARGIN);
         }
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
@@ -9398,7 +9398,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setDoubleClickEnabled(boolean enable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.doubleClickEnabled, enable)) {
+        if (this.doubleClickEnabled != enable) {
             getValue().markDirty(VStyledText.DOUBLE_CLICK_ENABLED);
         }
         doubleClickEnabled = enable;
@@ -9425,7 +9425,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setEditable(boolean editable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.editable, editable)) {
+        if (this.editable != editable) {
             getValue().markDirty(VStyledText.EDITABLE);
         }
         this.editable = editable;
@@ -9624,7 +9624,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setHorizontalPixel(int pixel) {
         checkWidget();
-        if (!java.util.Objects.equals(this.horizontalScrollOffset, pixel)) {
+        if (this.horizontalScrollOffset != pixel) {
             getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         }
         if (getCharCount() == 0) {
@@ -9669,7 +9669,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setIndent(int indent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.indent, indent)) {
+        if (this.indent != indent) {
             getValue().markDirty(VStyledText.INDENT);
         }
         if (this.indent == indent || indent < 0)
@@ -9697,7 +9697,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setJustify(boolean justify) {
         checkWidget();
-        if (!java.util.Objects.equals(this.justify, justify)) {
+        if (this.justify != justify) {
             getValue().markDirty(VStyledText.JUSTIFY);
         }
         if (this.justify == justify)
@@ -9777,7 +9777,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setLeftMargin(int leftMargin) {
         checkWidget();
-        if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
+        if (this.leftMargin != leftMargin) {
             getValue().markDirty(VStyledText.LEFT_MARGIN);
         }
         setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
@@ -10202,7 +10202,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setLineSpacing(int lineSpacing) {
         checkWidget();
-        if (!java.util.Objects.equals(this.lineSpacing, lineSpacing)) {
+        if (this.lineSpacing != lineSpacing) {
             getValue().markDirty(VStyledText.LINE_SPACING);
         }
         if (this.lineSpacing == lineSpacing || lineSpacing < 0)
@@ -10449,16 +10449,16 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topMargin, topMargin)) {
+        if (this.topMargin != topMargin) {
             getValue().markDirty(VStyledText.TOP_MARGIN);
         }
-        if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
+        if (this.rightMargin != rightMargin) {
             getValue().markDirty(VStyledText.RIGHT_MARGIN);
         }
-        if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
+        if (this.leftMargin != leftMargin) {
             getValue().markDirty(VStyledText.LEFT_MARGIN);
         }
-        if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
+        if (this.bottomMargin != bottomMargin) {
             getValue().markDirty(VStyledText.BOTTOM_MARGIN);
         }
         this.leftMargin = Math.max(0, leftMargin) + alignmentMargin;
@@ -10551,7 +10551,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setRightMargin(int rightMargin) {
         checkWidget();
-        if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
+        if (this.rightMargin != rightMargin) {
             getValue().markDirty(VStyledText.RIGHT_MARGIN);
         }
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
@@ -11373,7 +11373,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTabs(int tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabLength, tabs)) {
+        if (this.tabLength != tabs) {
             getValue().markDirty(VStyledText.TABS);
         }
         tabLength = tabs;
@@ -11412,7 +11412,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTabStops(int[] tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabs, tabs)) {
+        if (!java.util.Arrays.equals(this.tabs, tabs)) {
             getValue().markDirty(VStyledText.TAB_STOPS);
         }
         if (tabs != null) {
@@ -11605,7 +11605,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTopMargin(int topMargin) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topMargin, topMargin)) {
+        if (this.topMargin != topMargin) {
             getValue().markDirty(VStyledText.TOP_MARGIN);
         }
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
@@ -11632,7 +11632,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setTopPixel(int pixel) {
         int newValue = pixel;
         checkWidget();
-        if (!java.util.Objects.equals(this.topPixel, newValue)) {
+        if (this.topPixel != newValue) {
             getValue().markDirty(VStyledText.TOP_PIXEL);
         }
         if (getCharCount() == 0) {
@@ -11669,7 +11669,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setWordWrap(boolean wrap) {
         checkWidget();
-        if (!java.util.Objects.equals(this.wordWrap, wrap)) {
+        if (this.wordWrap != wrap) {
             getValue().markDirty(VStyledText.WORD_WRAP);
         }
         if ((getStyle() & SWT.SINGLE) != 0)
@@ -11716,7 +11716,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setWrapIndent(int wrapIndent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.wrapIndent, wrapIndent)) {
+        if (this.wrapIndent != wrapIndent) {
             getValue().markDirty(VStyledText.WRAP_INDENT);
         }
         if (this.wrapIndent == wrapIndent || wrapIndent < 0)

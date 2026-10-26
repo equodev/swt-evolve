@@ -10,7 +10,6 @@ import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
 
-@CompiledJson()
 public class VBusyIndicator {
 
     protected VBusyIndicator() {
@@ -47,6 +46,24 @@ public class VBusyIndicator {
                 writer.writeNull();
             else
                 writer.serializeObject(api.getImpl());
+        }
+    }
+
+    @JsonConverter(target = VBusyIndicator.class)
+    public static class EmptyJson {
+
+        public static VBusyIndicator read(JsonReader<?> reader) throws IOException {
+            if (reader.wasNull())
+                return null;
+            reader.skip();
+            return new VBusyIndicator();
+        }
+
+        public static void write(JsonWriter writer, VBusyIndicator value) {
+            if (value == null)
+                writer.writeNull();
+            else
+                writer.writeAscii("{}");
         }
     }
 }

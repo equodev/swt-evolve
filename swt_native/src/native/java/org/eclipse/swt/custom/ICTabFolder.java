@@ -52,6 +52,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      *
      * @deprecated use addCTabFolder2Listener(CTabFolder2Listener)
      */
+    @Deprecated
     void addCTabFolderListener(CTabFolderListener listener);
 
     /**
@@ -330,6 +331,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * @since 3.0
      * @deprecated Curved tabs are no longer supported.
      */
+    @Deprecated
     boolean getSimple();
 
     /**
@@ -483,6 +485,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      *
      * @deprecated see removeCTabFolderCloseListener(CTabFolderListener)
      */
+    @Deprecated
     void removeCTabFolderListener(CTabFolderListener listener);
 
     /**
@@ -946,6 +949,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * @since 3.0
      * @deprecated Curved tabs are no longer supported.
      */
+    @Deprecated
     void setSimple(boolean simple);
 
     /**

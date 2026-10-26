@@ -462,8 +462,8 @@ public class Sizes {
 
     /** The longest value string the spinner's range can put in its text field. */
     private static String widestSpinnerValue(DartSpinner c) {
-        String min = SpinnerHelper.format(c._minimum(), c._digits());
-        String max = SpinnerHelper.format(c._maximum(), c._digits());
+        String min = SpinnerHelper.format(c._minimum(), c._digits(), SpinnerHelper.decimalSeparator(c));
+        String max = SpinnerHelper.format(c._maximum(), c._digits(), SpinnerHelper.decimalSeparator(c));
         return max.length() >= min.length() ? max : min;
     }
 

@@ -2249,16 +2249,8 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
         return text;
     }
 
-    public List _list() {
-        return list;
-    }
-
     public int _visibleItemCount() {
         return visibleItemCount;
-    }
-
-    public Button _arrow() {
-        return arrow;
     }
 
     public boolean _hasFocus() {

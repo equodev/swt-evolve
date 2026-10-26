@@ -160,7 +160,7 @@ public final class DartProgram implements IProgram {
         String target = fileName.trim();
         if (target.isEmpty())
             return false;
-        String osName = System.getProperty("os.name", "").toLowerCase();
+        String osName = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         try {
             ProcessBuilder pb;
             if (osName.contains("mac")) {

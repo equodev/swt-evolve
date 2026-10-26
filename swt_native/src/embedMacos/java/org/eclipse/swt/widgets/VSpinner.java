@@ -73,9 +73,18 @@ public class VSpinner extends VComposite {
         ((DartSpinner) impl).textLimit = value;
     }
 
+    public String getKeptText() {
+        return ((DartSpinner) impl).wireKeptText();
+    }
+
+    public void setKeptText(String value) {
+    }
+
     public static final String DIGITS = "digits";
 
     public static final String INCREMENT = "increment";
+
+    public static final String KEPT_TEXT = "keptText";
 
     public static final String MAXIMUM = "maximum";
 
@@ -110,6 +119,9 @@ public class VSpinner extends VComposite {
                 return;
             case "textLimit":
                 Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
+                return;
+            case "keptText":
+                Serializer.writeKeyValue(writer, "keptText", getKeptText());
                 return;
         }
         super.writeProperty(writer, key);

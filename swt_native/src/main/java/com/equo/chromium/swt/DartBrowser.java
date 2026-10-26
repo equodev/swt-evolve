@@ -1111,7 +1111,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
      */
     public void setJavascriptEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.javascriptEnabled, newValue)) {
+        if (this.javascriptEnabled != newValue) {
             dirty();
         }
         checkWidget();
