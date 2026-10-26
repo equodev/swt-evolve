@@ -242,4 +242,64 @@ void main() {
     expect(_sent('Menu/$_fileMenuId/Menu/Show'), hasLength(1));
     expect(find.text('New'), findsOneWidget, reason: "File's menu must open");
   });
+
+  group('Alt+F typed on the collapsed bar opens File in it', () {
+    Future<void> pumpCollapsed(WidgetTester tester) async {
+      EquoCommBase.recordSentFrames = true;
+      addTearDown(() => EquoCommBase.recordSentFrames = false);
+      setConfigFlags(ConfigFlags()..decorations_align = DecorationsAlign.vleft);
+      addTearDown(resetConfigFlags);
+      await pumpDecorations(tester, decorations(menuBar: _menuBar(), children: [mainToolbar()]));
+      await tester.pumpAndSettle();
+      EquoCommService.commForTesting.clearSentFrames();
+    }
+
+    void expectFileOpen() {
+      expect(find.text('New'), findsOneWidget, reason: "File's menu must be open");
+      expect(_sent('Menu/$_fileMenuId/Menu/Show'), hasLength(1));
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'MenuItem',
+          reason: "the keyboard must be in File's menu, not on its title");
+    }
+
+    testWidgets('when Java answers before the keys are released', (tester) async {
+      await pumpCollapsed(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await _fromJava(tester, 'MenuItem/$_fileTitleId/openMenu');
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyF);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+      await tester.pumpAndSettle();
+      await _answerShow(tester, _fileMenuId);
+
+      expectFileOpen();
+    });
+
+    testWidgets('after a lone Alt opened the bar and Escape closed it', (tester) async {
+      await pumpCollapsed(tester);
+      await _fromJava(tester, 'Menu/$_barId/activate');
+      await _press(tester, LogicalKeyboardKey.escape);
+      expect(find.text('Edit'), findsNothing, reason: 'Escape must close the collapsed bar');
+      EquoCommService.commForTesting.clearSentFrames();
+
+      await _fromJava(tester, 'MenuItem/$_fileTitleId/openMenu');
+      await _answerShow(tester, _fileMenuId);
+
+      expectFileOpen();
+    });
+
+    testWidgets('when Java answers after the keys are released', (tester) async {
+      await pumpCollapsed(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyF);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+      await tester.pumpAndSettle();
+      await _fromJava(tester, 'MenuItem/$_fileTitleId/openMenu');
+      await _answerShow(tester, _fileMenuId);
+
+      expectFileOpen();
+    });
+  });
 }
