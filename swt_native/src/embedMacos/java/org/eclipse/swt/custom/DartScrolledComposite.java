@@ -438,6 +438,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * @since 2.0
      */
     public void setOrigin(int x, int y) {
+        getValue().markDirty(VScrolledComposite.ORIGIN);
         Point newValue = new Point(x, y);
         checkWidget();
         if (content == null)
@@ -458,6 +459,8 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
         }
         this.origin = newValue;
         content.setLocation(x, y);
+        originRequest++;
+        getValue().markDirty(VScrolledComposite.ORIGIN_REQUEST);
     }
 
     /**
@@ -821,6 +824,12 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
 
     public Point _origin() {
         return origin;
+    }
+
+    int originRequest;
+
+    int wireOriginRequest() {
+        return originRequest;
     }
 
     protected void _hookEvents() {

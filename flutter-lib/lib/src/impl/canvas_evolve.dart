@@ -18,6 +18,7 @@ import '../gen/widgets.dart';
 import '../nolayout.dart';
 import '../styles.dart';
 import 'composite_evolve.dart';
+import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
@@ -503,12 +504,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   void sendScrollBarSelection(VScrollBar bar, int newValue, int detail) =>
       _sendSelection(bar, newValue, detail);
 
-  void _sendSelection(VScrollBar bar, int newValue, int detail) {
-    EquoCommService.sendPayload(
-      "ScrollBar/${bar.id}/Selection/Selection",
-      (VEvent()..index = newValue..detail = detail).toJson(),
-    );
-  }
+  void _sendSelection(VScrollBar bar, int newValue, int detail) =>
+      sendScrollBarSelectionEvent(bar, newValue, detail: detail);
 
   /// Java runs the wheel listeners, which may veto, then scrolls the bar of each axis.
   void _sendWheel(PointerScrollEvent event) {
