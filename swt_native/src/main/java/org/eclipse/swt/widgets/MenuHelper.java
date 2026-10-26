@@ -71,8 +71,6 @@ public class MenuHelper {
      * Windows, and an Alt+letter no control took opens the menu bar title carrying it.
      */
     static void keyDownDelivered(Control control, Event key) {
-        if (!key.doit)
-            return;
         if (key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == 0)
             activateMenuBar(control);
         else if (ControlHelper.isMnemonicTrigger(key))
@@ -91,12 +89,15 @@ public class MenuHelper {
 
     /** The client takes the keyboard into the shell's menu bar, with its first title current. */
     private static void activateMenuBar(Control control) {
-        if (control.isDisposed())
-            return;
+        Menu bar = usableMenuBar(control);
+        if (bar != null)
+            FlutterBridge.sendEvent(bar.getImpl(), "activate");
+    }
+
+    /** The menu bar of the control's shell when the keyboard can enter it: enabled, with a title. */
+    static Menu usableMenuBar(Control control) {
         Menu bar = control.getShell().getMenuBar();
-        if (bar == null || bar.isDisposed() || !bar.getEnabled() || bar.getItemCount() == 0)
-            return;
-        FlutterBridge.sendEvent(bar.getImpl(), "activate");
+        return bar != null && bar.isEnabled() && bar.getItemCount() > 0 ? bar : null;
     }
 
     static MenuItem[] removeItem(MenuItem[] items, MenuItem item) {

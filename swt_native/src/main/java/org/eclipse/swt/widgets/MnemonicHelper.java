@@ -42,15 +42,10 @@ public final class MnemonicHelper {
      * the menu.
      */
     static void openMenuBarTitle(Control focus, char key) {
-        if (focus == null || focus.isDisposed())
-            return;
-        Shell shell = focus.getShell();
-        if (shell == null || shell.isDisposed())
+        Menu bar = MenuHelper.usableMenuBar(focus);
+        if (bar == null)
             return;
         char target = Character.toLowerCase(key);
-        Menu bar = shell.getMenuBar();
-        if (bar == null || bar.isDisposed() || !bar.isEnabled())
-            return;
         for (MenuItem item : bar.getItems()) {
             if (item.isDisposed() || !item.isEnabled() || item.getMenu() == null || !matches(item.getText(), target))
                 continue;

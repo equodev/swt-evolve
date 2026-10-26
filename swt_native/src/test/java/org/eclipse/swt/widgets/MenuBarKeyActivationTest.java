@@ -168,6 +168,44 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
         assertThat(activations()).isEmpty();
     }
 
+    @Test
+    @DisplayName("a lone Alt whose KeyUp a listener vetoes does not activate the menu bar")
+    void vetoedAltReleaseDoesNotActivate() {
+        menuBar();
+        focus.addListener(SWT.KeyUp, e -> e.doit = false);
+
+        press(focus, SWT.ALT);
+        release(focus, SWT.ALT);
+
+        assertThat(activations()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a KeyUp listener that disposes the focused control ends the release there")
+    void releaseDisposingTheFocusedControl() {
+        menuBar();
+        focus.addListener(SWT.KeyUp, e -> focus.dispose());
+
+        press(focus, SWT.ALT);
+        release(focus, SWT.ALT);
+
+        assertThat(focus.isDisposed()).isTrue();
+        assertThat(activations()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a menu bar with no title is not activated")
+    void emptyMenuBarIsNotActivated() {
+        Menu bar = new Menu(shell, SWT.BAR);
+        when(shell.getMenuBar()).thenReturn(bar);
+
+        press(focus, SWT.F10);
+        press(focus, SWT.ALT);
+        release(focus, SWT.ALT);
+
+        assertThat(activations()).isEmpty();
+    }
+
     private Menu menuBar() {
         Menu bar = new Menu(shell, SWT.BAR);
         when(shell.getMenuBar()).thenReturn(bar);
