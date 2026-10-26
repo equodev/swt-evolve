@@ -665,6 +665,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void deregister() {
+        dev.equo.swt.FlutterBridge.releaseRegistrations(this);
         if (bridge != null)
             bridge.destroy(this);
     }
