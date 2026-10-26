@@ -1310,7 +1310,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setFullScreen(boolean fullScreen) {
         checkWidget();
-        if (!java.util.Objects.equals(this.fullScreen, fullScreen)) {
+        if (this.fullScreen != fullScreen) {
             getValue().markDirty(VShell.FULL_SCREEN);
         }
         if (_getFullScreen() == fullScreen)
@@ -1501,7 +1501,7 @@ public class DartShell extends DartDecorations implements IShell {
     public void setModified(boolean modified) {
         boolean newValue = modified;
         checkWidget();
-        if (!java.util.Objects.equals(this.modified, newValue)) {
+        if (this.modified != newValue) {
             getValue().markDirty(VShell.MODIFIED);
         }
         this.modified = newValue;
