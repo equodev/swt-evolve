@@ -476,16 +476,6 @@ public class TableHelper {
     }
 
     /**
-     * Replaces the selection with the first {@code count} of {@code indices}. The cocoa-derived
-     * callers pass the receiver's own selection array after rewriting it in place, so the old value
-     * is gone and the change is always recorded.
-     */
-    public static void select(DartTable table, int[] indices, int count) {
-        table.getValue().markDirty(VTable.SELECTION);
-        table.selection = Arrays.copyOf(indices, count);
-    }
-
-    /**
      * Drops the selected rows at or past {@code itemCount}, as a native table does whenever its row
      * count shrinks: removing the last row, or every row, never shifts the selection otherwise.
      */

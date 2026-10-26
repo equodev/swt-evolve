@@ -125,11 +125,13 @@ class TableSelectionAfterRemoveTest {
     void removeRange() {
         Table table = table(SWT.MULTI, 6);
         table.setSelection(new int[] { 1, 2, 5 });
+        value(table).clearDirty();
 
         table.remove(1, 3);
 
         assertThat(table.getSelectionIndices()).containsExactly(2);
         assertThat(table.getSelection()).extracting(TableItem::getText).containsExactly("row 5");
+        assertThat(value(table).changedKeys()).contains(VTable.SELECTION);
     }
 
     @Test
@@ -154,6 +156,20 @@ class TableSelectionAfterRemoveTest {
         table.setItemCount(2);
 
         assertNothingSelected(table);
+        assertThat(value(table).changedKeys()).contains(VTable.SELECTION);
+    }
+
+    @Test
+    @DisplayName("inserting a row above the selection shifts it down and tells the client")
+    void insertRowAboveTheSelection() {
+        Table table = table(SWT.SINGLE, 3);
+        table.setSelection(1);
+        value(table).clearDirty();
+
+        new TableItem(table, SWT.NONE, 0).setText("new");
+
+        assertThat(table.getSelectionIndices()).containsExactly(2);
+        assertThat(table.getSelection()).extracting(TableItem::getText).containsExactly("row 1");
         assertThat(value(table).changedKeys()).contains(VTable.SELECTION);
     }
 }
