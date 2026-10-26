@@ -143,6 +143,16 @@ public class ControlHelper {
             key.character = (char) (c - '@');
     }
 
+    /**
+     * Presents a Cmd chord from a Mac client as the {@link SWT#MOD1} chord this platform binds: the
+     * web platform's MOD1 is Ctrl, so Cmd+S must arrive as Ctrl+S for the shortcut to run.
+     */
+    public static void applyClientModifier(Event key) {
+        if ((key.stateMask & SWT.COMMAND) == 0)
+            return;
+        key.stateMask = (key.stateMask & ~SWT.COMMAND) | SWT.MOD1;
+    }
+
     /** What {@link #routeKeyDown} did with a key. */
     public static final class RoutedKey {
         /** Whether the KeyDown was delivered, and its doit after the listeners ran. */
