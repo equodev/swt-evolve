@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 
 /** A Dart control on a mocked shell that delivers its events, and a key pressed into it as the client would. */
 @ExtendWith(Mocks.class)
@@ -39,8 +40,11 @@ abstract class KeyRoutingTestBase {
     /** A shell whose display really sends the events its controls fire. */
     static Shell shell() {
         Shell shell = Mocks.shell();
-        DartDisplay displayImpl = (DartDisplay) shell.getDisplay().getImpl();
+        Display display = shell.getDisplay();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> inv.callRealMethod()).when(displayImpl).sendEvent(any(EventTable.class), any(Event.class));
+        // The display mock is shared by the JVM and other tests leave asyncExec running at once; this drops the runnables again.
+        doNothing().when(display).asyncExec(any(Runnable.class));
         return shell;
     }
 
