@@ -30,7 +30,44 @@ public class ControlHelper {
         return paintDamage;
     }
 
+    /**
+     * Takes the keys the client sends while a widget runs an event loop of its own that owns the keyboard,
+     * as a Tracker does: they go to it instead of the focus control.
+     */
+    public interface KeyCapture {
+        /** Handles a KeyDown or KeyUp; false when the capture is over and the key goes where it would have. */
+        boolean key(int type, Event event);
+    }
+
+    private static final String KEY_CAPTURE = "dev.equo.swt.keyCapture";
+
+    /** Makes {@code capture} take the keys of {@code display}, or stops capturing them with null; answers the one it replaces. */
+    public static KeyCapture captureKeys(Display display, KeyCapture capture) {
+        if (display.isDisposed())
+            return null;
+        KeyCapture before = (KeyCapture) display.getData(KEY_CAPTURE);
+        display.setData(KEY_CAPTURE, capture);
+        return before;
+    }
+
+    /** Hands a key from the client to the capture of {@code display}; false when there is none to take it. */
+    public static boolean capturedKey(Display display, int type, Event event) {
+        if (display == null || display.isDisposed())
+            return false;
+        Object data = display.getData(KEY_CAPTURE);
+        if (!(data instanceof KeyCapture))
+            return false;
+        KeyCapture capture = (KeyCapture) data;
+        if (capture.key(type, event))
+            return true;
+        if (!display.isDisposed() && display.getData(KEY_CAPTURE) == capture)
+            display.setData(KEY_CAPTURE, null);
+        return false;
+    }
+
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
+        if (capturedKey(widget.display, SWT.KeyDown, event))
+            return;
         if (widget instanceof DartControl && AcceleratorHelper.translate(((DartControl) widget).getApi(), event))
             return;
         widget.sendEvent(SWT.KeyDown, event);
