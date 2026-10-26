@@ -19,6 +19,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -245,14 +247,11 @@ public final class EvolveSwingHost {
 
     /**
      * Never below 1x1: a component added to a 0x0 frame is never laid out. {@code root} paints only
-     * once the area is real, and only after the tree is laid out at it: the frame repaints on a new
-     * size before its own deferred layout.
+     * once the area is real.
      */
     static void sizeBlitFrame(Component frame, ContentRoot root, Rectangle area) {
+        if (area.width > 0 && area.height > 0) root.place();
         frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
-        if (area.width <= 0 || area.height <= 0 || root.placed) return;
-        frame.validate();
-        root.place();
     }
 
     /**
@@ -473,7 +472,10 @@ public final class EvolveSwingHost {
             frame.add(contents);
             return;
         }
-        host.contentRoot.host(contents);
+        hostAsLightweight(contents);
+        host.contentRoot.add(contents);
+        host.contentRoot.revalidate();
+        host.contentRoot.repaint();
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -805,6 +807,7 @@ public final class EvolveSwingHost {
      */
     static final class ContentRoot extends JPanel {
         private final Runnable drawn;
+        private final List<Component> held = new ArrayList<>();
         private volatile boolean placed;
 
         ContentRoot(Runnable drawn) {
@@ -815,10 +818,30 @@ public final class EvolveSwingHost {
         /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
         void place() {
             placed = true;
+            List<Component> attach;
+            synchronized (held) {
+                attach = new ArrayList<>(held);
+                held.clear();
+            }
+            attach.forEach(this::attach);
         }
 
-        /** Adds application content to the tree, where it paints only once {@link #place}d. */
+        /**
+         * Adds application content, held out of the tree until {@link #place}: an applet repaints
+         * from itself rather than through {@link #paintChildren}, and a {@code JSplitPane} painted at
+         * the applet's own placeholder size keeps that layout when the frame grows.
+         */
         void host(Component child) {
+            synchronized (held) {
+                if (!placed) {
+                    held.add(child);
+                    return;
+                }
+            }
+            attach(child);
+        }
+
+        private void attach(Component child) {
             hostAsLightweight(child);
             add(child);
             revalidate();
@@ -841,10 +864,8 @@ public final class EvolveSwingHost {
             return !placed;
         }
 
-        // A hosted applet is its own repaint root and takes its Graphics from here, past paintChildren.
         @Override
         public Graphics getGraphics() {
-            if (!placed) return null;
             Graphics g = super.getGraphics();
             if (g != null) drawn.run();
             return g;
