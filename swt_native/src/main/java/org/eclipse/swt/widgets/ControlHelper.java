@@ -225,6 +225,11 @@ public class ControlHelper {
         return new RoutedKey(true, key.doit, traverseDoit);
     }
 
+    /** Delivers a KeyUp to the focused control. */
+    public static void routeKeyUp(DartControl control, Event key) {
+        control.sendEvent(SWT.KeyUp, key);
+    }
+
     /**
      * What the platform does with a key no listener vetoed: an item view moves its selection, a
      * spinner or scale steps its value.
