@@ -196,8 +196,9 @@ public class DeskDisplayBridge extends DisplayBridge {
         Rectangle placed = (normal.x != 0 || normal.y != 0) ? normal : cascade(normal);
         window.setBounds(placed);
         if (!shell.getMaximized() && !shell.getFullScreen()) shell.setLocation(placed.x, placed.y);
+        // Always set, even empty: the window was created titled with the client's widget name.
         String title = shell.getText();
-        if (title != null && !title.isEmpty()) window.setTitle(title);
+        window.setTitle(title == null ? "" : title);
         bindShellWindowView(shell, context);
         return window;
     }
