@@ -2343,7 +2343,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         alpha &= 0xFF;
         int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
+        if (this.alpha != newValue) {
             getValue().markDirty(VGC.ALPHA);
         }
         if (getApi().handle == 0)
@@ -2387,7 +2387,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = antialias;
-        if (!java.util.Objects.equals(this.antialias, newValue)) {
+        if (this.antialias != newValue) {
             getValue().markDirty(VGC.ANTIALIAS);
         }
         if (getApi().handle == 0)
@@ -2794,7 +2794,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = rule;
-        if (!java.util.Objects.equals(this.fillRule, newValue)) {
+        if (this.fillRule != newValue) {
             getValue().markDirty(VGC.FILL_RULE);
         }
         if (getApi().handle == 0)
@@ -2914,7 +2914,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = interpolation;
-        if (!java.util.Objects.equals(this.interpolation, newValue)) {
+        if (this.interpolation != newValue) {
             getValue().markDirty(VGC.INTERPOLATION);
         }
         if (getApi().handle == 0)
@@ -3095,7 +3095,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = cap;
-        if (!java.util.Objects.equals(this.lineCap, newValue)) {
+        if (this.lineCap != newValue) {
             getValue().markDirty(VGC.LINE_CAP);
         }
         if (getApi().handle == 0)
@@ -3137,7 +3137,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int[] newValue = dashes;
-        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         if (getApi().handle == 0)
@@ -3200,7 +3200,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = join;
-        if (!java.util.Objects.equals(this.lineJoin, newValue)) {
+        if (this.lineJoin != newValue) {
             getValue().markDirty(VGC.LINE_JOIN);
         }
         if (getApi().handle == 0)
@@ -3240,7 +3240,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineStyle;
-        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+        if (this.lineStyle != newValue) {
             getValue().markDirty(VGC.LINE_STYLE);
         }
         if (getApi().handle == 0)
@@ -3291,7 +3291,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineWidth;
-        if (!java.util.Objects.equals(this.lineWidth, newValue)) {
+        if (this.lineWidth != newValue) {
             getValue().markDirty(VGC.LINE_WIDTH);
         }
         if (getApi().handle == 0)
@@ -3452,7 +3452,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         boolean newValue = xor;
-        if (!java.util.Objects.equals(this.XORMode, newValue)) {
+        if (this.XORMode != newValue) {
             getValue().markDirty(VGC.XORMODE);
         }
         if (getApi().handle == 0)

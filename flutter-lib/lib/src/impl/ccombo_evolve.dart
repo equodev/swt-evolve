@@ -98,7 +98,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final widgetTheme = Theme.of(context).extension<CComboThemeExtension>()!;
     final styleBits = StyleBits(state.style);
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
-    final bool isSimple = styleBits.has(SWT.SIMPLE);
     final bool isEnabled = state.enabled ?? true;
 
     final bool isActive = _isFocused || _isHovered;
@@ -145,57 +144,34 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         ? state.bounds!.height.toDouble()
         : null;
 
-    Widget result;
-
-    if (isSimple) {
-      result = _StyledSimpleCCombo(
-        state: state,
-        widgetTheme: widgetTheme,
-        controller: _controller,
-        focusNode: _focusNode,
-        items: state.items ?? [],
-        enabled: isEnabled,
-        readOnly: isReadOnly,
-        textStyle: textStyle,
-        backgroundColor: currentBg,
-        borderColor: currentBorderColor,
-        borderWidth: borderWidth,
-        onChanged: isEnabled ? onChanged : null,
-        onTextChanged: onTextChanged,
-        onTextSubmitted: onTextSubmitted,
-        controlHeight: height,
-      );
-    } else {
-      // Dropdown mode
-      result = MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedContainer(
-          duration: widgetTheme.animationDuration,
-          decoration: BoxDecoration(
-            color: currentBg,
-            borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-            border: Border.all(color: currentBorderColor, width: borderWidth),
-          ),
-          child: _StyledDropdownCCombo(
-            state: state,
-            widgetTheme: widgetTheme,
-            controller: _controller,
-            focusNode: _focusNode,
-            menuController: _menuController,
-            items: state.items ?? [],
-            enabled: isEnabled,
-            isReadOnly: isReadOnly,
-            textStyle: textStyle,
-            onSelected: isEnabled ? _onDropdownSelected : null,
-            isHighlighted: _isHighlighted,
-            reportListVisible: () => scheduleMicrotask(_reportListVisible),
-            controlHeight: height,
-            borderWidth: borderWidth,
-          ),
+    Widget result = MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: widgetTheme.animationDuration,
+        decoration: BoxDecoration(
+          color: currentBg,
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          border: Border.all(color: currentBorderColor, width: borderWidth),
         ),
-      );
-    }
+        child: _StyledDropdownCCombo(
+          state: state,
+          widgetTheme: widgetTheme,
+          controller: _controller,
+          focusNode: _focusNode,
+          menuController: _menuController,
+          items: state.items ?? [],
+          enabled: isEnabled,
+          isReadOnly: isReadOnly,
+          textStyle: textStyle,
+          onSelected: isEnabled ? _onDropdownSelected : null,
+          isHighlighted: _isHighlighted,
+          reportListVisible: () => scheduleMicrotask(_reportListVisible),
+          controlHeight: height,
+          borderWidth: borderWidth,
+        ),
+      ),
+    );
 
     // The field, the arrow button and the menu's own keyboard node all belong to this control: focus
     // on any of them is focus on the CCombo, so Java routes the arrow keys to it while the list is open.
@@ -289,17 +265,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     } else {
       onChanged(value);
     }
-  }
-
-  void onTextChanged(String value) {
-    state.text = value;
-    recordSentText(value);
-    widget.sendModifyModify(state, VEvent()..text = value);
-  }
-
-  void onTextSubmitted(String text) {
-    widget.sendSelectionDefaultSelection(state, VEvent()..text = text);
-    widget.sendVerifyVerify(state, VEvent()..text = text);
   }
 
   void _handleFocusChange(bool hasFocus) {
@@ -535,117 +500,5 @@ class _StyledDropdownCCombo extends StatelessWidget {
       return AlignmentDirectional.topEnd;
     }
     return null;
-  }
-}
-
-class _StyledSimpleCCombo extends StatelessWidget {
-  final VCCombo state;
-  final CComboThemeExtension widgetTheme;
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final List<String> items;
-  final bool enabled;
-  final bool readOnly;
-  final TextStyle textStyle;
-  final Color backgroundColor;
-  final Color borderColor;
-  final double borderWidth;
-  final ValueChanged<String?>? onChanged;
-  final ValueChanged<String>? onTextChanged;
-  final ValueChanged<String>? onTextSubmitted;
-  final double? controlHeight;
-
-  const _StyledSimpleCCombo({
-    required this.state,
-    required this.widgetTheme,
-    required this.controller,
-    this.focusNode,
-    required this.items,
-    required this.enabled,
-    required this.readOnly,
-    required this.textStyle,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.borderWidth,
-    this.onChanged,
-    this.onTextChanged,
-    this.onTextSubmitted,
-    this.controlHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-          border: Border.all(color: borderColor, width: borderWidth),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Text field
-            Padding(
-              padding: widgetTheme.textFieldPadding,
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                enabled: enabled,
-                readOnly: readOnly,
-                textAlign: _getTextAlign(),
-                style: textStyle,
-                decoration: const InputDecoration.collapsed(hintText: ''),
-                maxLength: state.textLimit,
-                minLines: controlHeight != null ? 1 : null,
-                maxLines: 1,
-                onChanged: readOnly ? null : onTextChanged,
-                onSubmitted: readOnly ? null : onTextSubmitted,
-                // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
-                // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
-                contextMenuBuilder: null,
-              ),
-            ),
-            // Divider
-            if (items.isNotEmpty)
-              Divider(
-                height: widgetTheme.dividerHeight,
-                thickness: widgetTheme.dividerThickness,
-                color: widgetTheme.dividerColor,
-              ),
-            // Items list
-            ...items.map((item) {
-              final bool isSelected = item == state.text;
-              return InkWell(
-                hoverColor: getCComboSimpleItemHoverColor(widgetTheme),
-                onTap: enabled ? () => onChanged?.call(item) : null,
-                child: Container(
-                  height: widgetTheme.itemHeight,
-                  padding: widgetTheme.textFieldPadding,
-                  color: getCComboItemBackgroundColor(widgetTheme, isSelected),
-                  alignment: _getAlignment(),
-                  child: Text(item, style: textStyle),
-                ),
-              );
-            }),
-          ],
-        ),
-    );
-  }
-
-  TextAlign _getTextAlign() {
-    if (state.alignment == SWT.CENTER) return TextAlign.center;
-    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
-      return TextAlign.right;
-    }
-    return TextAlign.left;
-  }
-
-  Alignment _getAlignment() {
-    if (state.alignment == SWT.CENTER) return Alignment.center;
-    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
-      return Alignment.centerRight;
-    }
-    return Alignment.centerLeft;
   }
 }

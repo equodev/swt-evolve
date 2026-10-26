@@ -62,6 +62,7 @@ public final class AppMenuMessages {
      * The bundle is read directly rather than through {@code SWT.getMessage}, which reports a
      * missing key and a missing bundle as return values a real translation cannot be told from.
      */
+    @SuppressWarnings("DefaultLocale") // the user's locale, as SWT.getMessage uses it
     private static ResourceBundle bundle() {
         try {
             return ResourceBundle.getBundle("org.eclipse.swt.internal.SWTMessages");

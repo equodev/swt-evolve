@@ -35,6 +35,21 @@ void main() {
     expect(sent.last.$2['isFirst'], isFalse);
   });
 
+  test('a browser\'s report carries the locale it formats numbers in', () {
+    reporter = ClientReadyReporter(
+        (channel, payload) async => sent.add((channel, payload as Map<String, Object>)), () => 'de-AT');
+
+    report(1280, 800);
+
+    expect(sent.single.$2['locale'], 'de-AT');
+  });
+
+  test('a desktop client reports no locale, so Java keeps the JVM\'s', () {
+    report(1280, 800);
+
+    expect(sent.single.$2.containsKey('locale'), isFalse);
+  });
+
   test('after a restart the same area is reported again, as a fresh client', () {
     report(1280, 800);
     reporter.restart();

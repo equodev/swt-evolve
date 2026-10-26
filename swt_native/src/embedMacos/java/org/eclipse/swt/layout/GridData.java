@@ -418,13 +418,10 @@ public final class GridData {
      */
     public static final int FILL_BOTH = FILL_VERTICAL | FILL_HORIZONTAL;
 
-    @JsonAttribute()
     int cacheWidth = -1, cacheHeight = -1;
 
-    @JsonAttribute()
     int defaultWhint, defaultHhint, defaultWidth = -1, defaultHeight = -1;
 
-    @JsonAttribute()
     int currentWhint, currentHhint, currentWidth = -1, currentHeight = -1;
 
     /**

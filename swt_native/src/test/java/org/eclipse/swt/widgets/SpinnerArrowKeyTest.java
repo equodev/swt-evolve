@@ -67,6 +67,41 @@ class SpinnerArrowKeyTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("an arrow pressed with a modifier is not a step")
+    void aModifiedArrowLeavesTheValue() {
+        Spinner spinner = spinner();
+
+        press(spinner, SWT.ARROW_UP, SWT.MOD1);
+
+        assertThat(spinner.getSelection()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("a WRAP spinner inside its range steps as a plain one does")
+    void wrapStepsInsideTheRange() {
+        Spinner wrapping = new Spinner(new Composite(shell(), SWT.NONE), SWT.BORDER | SWT.WRAP);
+        wrapping.setValues(5, 0, 100, 0, 1, 10);
+
+        press(wrapping, SWT.ARROW_UP);
+
+        assertThat(wrapping.getSelection()).isEqualTo(6);
+    }
+
+    @Test
+    @DisplayName("a Verify listener that disposes the spinner ends the step there")
+    void aSpinnerDisposedByVerifyStopsTheStep() {
+        Spinner spinner = spinner();
+        List<String> events = new ArrayList<>();
+        spinner.addListener(SWT.Verify, e -> spinner.dispose());
+        spinner.addListener(SWT.Modify, e -> events.add("Modify"));
+
+        press(spinner, SWT.ARROW_UP);
+
+        assertThat(spinner.isDisposed()).isTrue();
+        assertThat(events).isEmpty();
+    }
+
+    @Test
     @DisplayName("Page Up and Page Down step by the page increment; Home and End leave the value alone")
     void pageKeysStepByThePage() {
         Spinner spinner = spinner();

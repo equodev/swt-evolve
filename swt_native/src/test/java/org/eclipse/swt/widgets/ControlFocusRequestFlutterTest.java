@@ -197,6 +197,44 @@ class ControlFocusRequestFlutterTest {
                 .isEmpty();
     }
 
+    @Test
+    void aPrimaryPressOnAStyledTextActivatesAndFocusesItAheadOfItsMouseDown() {
+        assertThat(pressStyledText(1)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "FocusIn", "MouseDown", "client focus");
+    }
+
+    @Test
+    void aSecondaryPressOnAStyledTextFocusesItFromItsOwnMouseDown() {
+        assertThat(pressStyledText(3)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "MouseDown", "FocusIn", "client focus");
+    }
+
+    /** What reaches a StyledText, and the client, from a press of {@code button} the client reports. */
+    private java.util.List<String> pressStyledText(int button) {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text field = new Text(shell, SWT.SINGLE);
+        org.eclipse.swt.custom.StyledText styled = new org.eclipse.swt.custom.StyledText(shell, SWT.NONE);
+        field.setFocus();
+        java.util.List<String> events = new java.util.ArrayList<>();
+        // Filters, as the input parity recorder uses: they see the MouseDown ahead of the StyledText's
+        // own listener, which focuses it on any button.
+        display.addFilter(SWT.Activate, e -> { if (e.widget == styled) events.add("Activate detail=" + e.detail); });
+        display.addFilter(SWT.FocusIn, e -> { if (e.widget == styled) events.add("FocusIn"); });
+        display.addFilter(SWT.MouseDown, e -> { if (e.widget == styled) events.add("MouseDown"); });
+        web.comm.sent.clear();
+
+        Event press = new Event();
+        press.button = button;
+        web.comm.fireContaining(FlutterBridge.event((DartWidget) styled.getImpl(), "Mouse", "MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+
+        if (focusRequests(web).equals(java.util.List.of(String.valueOf(styled.hashCode()))))
+            events.add("client focus");
+        return events;
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     /** The control ids named by every {@code swt.evolve.focus} frame sent so far, in order. */
