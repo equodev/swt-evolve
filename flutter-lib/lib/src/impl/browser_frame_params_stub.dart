@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugPrint, defaultTargetPlatform;
 import 'package:webview_all/webview_all.dart'
     show
+        NavigationDelegate,
         PlatformWebViewControllerCreationParams,
         WebViewController,
         WebViewCookie,
@@ -49,11 +52,24 @@ bool installBrowserFrameKeyHandling(
             onKey) =>
     false;
 
-/// Releases the WebView2 behind [controller]. Removing the WebView widget does not, so without
-/// this every disposed Browser keeps its WebView2 until the engine shuts down.
+/// Releases the native webview behind [controller]; removing the WebView widget does not. Windows
+/// disposes its WebView2. On macOS the webview lives until the controller is collected and keeps
+/// loading meanwhile, and a response arriving after its engine is gone aborts the process, so the
+/// load is stopped.
 Future<void> browserReleaseWebView(WebViewController controller) async {
   final platform = controller.platform;
-  if (platform is WindowsWebViewController) await platform.dispose();
+  if (platform is WindowsWebViewController) {
+    await platform.dispose();
+    return;
+  }
+  if (defaultTargetPlatform != TargetPlatform.macOS) return;
+  try {
+    // A fresh delegate, so the blank load reports nothing for a Browser that is gone.
+    await controller.setNavigationDelegate(NavigationDelegate());
+    await controller.loadRequest(Uri.parse('about:blank'));
+  } catch (e) {
+    debugPrint('Browser: could not stop a disposed webview: $e');
+  }
 }
 
 /// The value of cookie [name] for [url], HttpOnly cookies included; null when there is none or

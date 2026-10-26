@@ -150,7 +150,7 @@ class ProxyHandler implements HttpHandler {
             Fetched resp = fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies);
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
-            String lowerContentType = contentType.toLowerCase();
+            String lowerContentType = contentType.toLowerCase(java.util.Locale.ROOT);
             // The URL a rewritten link routes through: this server's own origin, not the target's.
             // A page we serve carries an injected <base href> pointing at the *target* (so the
             // target's own untouched relative references keep resolving against it) -- so a
@@ -260,7 +260,7 @@ class ProxyHandler implements HttpHandler {
 
     private static boolean variesOnCredentials(String vary) {
         if (vary == null) return false;
-        String lower = vary.toLowerCase();
+        String lower = vary.toLowerCase(java.util.Locale.ROOT);
         return lower.contains("cookie") || lower.contains("authorization") || lower.contains("*");
     }
 

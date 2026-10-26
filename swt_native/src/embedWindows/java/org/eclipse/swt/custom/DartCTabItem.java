@@ -567,7 +567,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setShowClose(boolean close) {
         checkWidget();
-        if (!java.util.Objects.equals(this.showClose, close)) {
+        if (this.showClose != close) {
             getValue().markDirty(VCTabItem.SHOW_CLOSE);
         }
         if (showClose == close)

@@ -4,7 +4,6 @@ import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
 
-@CompiledJson()
 public class VHTMLTransfer extends VByteArrayTransfer {
 
     protected VHTMLTransfer() {
@@ -39,6 +38,24 @@ public class VHTMLTransfer extends VByteArrayTransfer {
                 writer.writeNull();
             else
                 writer.serializeObject(api.getImpl());
+        }
+    }
+
+    @JsonConverter(target = VHTMLTransfer.class)
+    public static class EmptyJson {
+
+        public static VHTMLTransfer read(JsonReader<?> reader) throws IOException {
+            if (reader.wasNull())
+                return null;
+            reader.skip();
+            return new VHTMLTransfer();
+        }
+
+        public static void write(JsonWriter writer, VHTMLTransfer value) {
+            if (value == null)
+                writer.writeNull();
+            else
+                writer.writeAscii("{}");
         }
     }
 }

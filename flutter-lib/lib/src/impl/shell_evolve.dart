@@ -66,6 +66,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _maximized = false;
   bool _interacting = false;
   bool _initialBoundsSent = false;
+  /// The bounds Java last set that the drawn size was reported against (see build).
+  (int, int, int, int)? _drawnSizeReportedFor;
   final Set<int> _openedDialogIds = {};
 
   final ValueNotifier<double> _opacityNotifier = ValueNotifier(1.0);
@@ -335,29 +337,36 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final isFullScreen = state.fullScreen == true;
     final b = state.bounds;
 
+    final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
+    final headerH = _showTitleBar ? titleBarH : 0.0;
+    // What the frame adds around the body on each axis: the border drawn around a floating pane.
+    final chromeEdge =
+        _showFloatingBorder && state.region == null ? 2 * theme.dialogBorderWidth : 0.0;
+
     final rawW = (b?.width ?? 400).toDouble();
     final rawH = (b?.height ?? 300).toDouble();
     // A trimmed shell is drawn at the size the application set, as a native one is; a floor is the
     // application's to set (setMinimumSize). Only a dimension Java has not set yet (0, or -1 before
     // the shell is sized) gets one here, since drawn at that size the shell would not be there.
-    double bodySize(double raw, double fallback, int? minimum, double viewportMax) {
+    // The ceiling is what fits in the viewport under the title bar and inside the border: Java sizes
+    // a shell against the monitor, which on this surface is the viewport, and its bounds include
+    // neither.
+    double bodySize(double raw, double fallback, int? minimum, double fits) {
       final wanted = math.max(raw > 0 ? raw : fallback, (minimum ?? 0).toDouble());
-      return math.min(wanted, math.max(fallback, viewportMax * 0.9));
+      return math.min(wanted, math.max(fallback, fits));
     }
 
     final bodyW = _size != null
         ? _size!.width
         : (!_showTitleBar && !_showBorder
             ? rawW
-            : bodySize(rawW, 200, state.minimumSize?.x, viewport.maxWidth));
+            : bodySize(rawW, 200, state.minimumSize?.x, viewport.maxWidth - chromeEdge));
     final bodyH = _size != null
         ? _size!.height
         : (!_showTitleBar && !_showBorder
             ? rawH
-            : bodySize(rawH, 150, state.minimumSize?.y, viewport.maxHeight));
-
-    final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
-    final headerH = _showTitleBar ? titleBarH : 0.0;
+            : bodySize(
+                rawH, 150, state.minimumSize?.y, viewport.maxHeight - headerH - chromeEdge));
 
     final w = (isFullScreen || _maximized) ? viewport.maxWidth : bodyW;
     final h = (isFullScreen || _maximized) ? viewport.maxHeight : bodyH;
@@ -374,8 +383,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     /// manager places an off-screen window. A pane that already fits is left exactly where it is.
     Offset insideViewport(Offset wanted) {
       if (!viewport.maxWidth.isFinite || !viewport.maxHeight.isFinite) return wanted;
-      final maxX = math.max(0.0, viewport.maxWidth - w);
-      final maxY = math.max(0.0, viewport.maxHeight - frameH);
+      final maxX = math.max(0.0, viewport.maxWidth - w - chromeEdge);
+      final maxY = math.max(0.0, viewport.maxHeight - frameH - chromeEdge);
       return Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY));
     }
 
@@ -435,6 +444,23 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) sendBoundsToJava(initial: true);
       });
+    } else if (_size == null &&
+        !_interacting &&
+        !(isFullScreen || _maximized) &&
+        b != null &&
+        b.width > 0 &&
+        b.height > 0 &&
+        (bodyW.round() != b.width || bodyH.round() != b.height)) {
+      // Java set a size that is not drawn as such (taller than fits, say): it lays the shell out
+      // in that size unless told the drawn one. Once per size it set, so an application that keeps
+      // the size it asked for is told once and left alone.
+      final set = (b.x, b.y, b.width, b.height);
+      if (_drawnSizeReportedFor != set) {
+        _drawnSizeReportedFor = set;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) sendBoundsToJava();
+        });
+      }
     }
 
     void onMaximize() {
@@ -488,10 +514,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final minBodyH = (state.minimumSize?.y ?? 80).toDouble();
     final maxBodyH =
-        math.max(minBodyH, state.maximumSize?.y.toDouble() ?? viewport.maxHeight * 0.95);
+        math.max(minBodyH,
+            state.maximumSize?.y.toDouble() ?? viewport.maxHeight - headerH - chromeEdge);
     final minBodyW = (state.minimumSize?.x ?? 100).toDouble();
     final maxBodyW =
-        math.max(minBodyW, state.maximumSize?.x.toDouble() ?? viewport.maxWidth * 0.95);
+        math.max(minBodyW, state.maximumSize?.x.toDouble() ?? viewport.maxWidth - chromeEdge);
     final minFH = minBodyH + headerH;
     final maxFH = maxBodyH + headerH;
 
