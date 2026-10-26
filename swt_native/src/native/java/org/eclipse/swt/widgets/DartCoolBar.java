@@ -462,6 +462,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         System.arraycopy(originalItems, 0, newOriginals, 0, insertIndex);
         System.arraycopy(originalItems, insertIndex, newOriginals, insertIndex + 1, length - insertIndex);
         newOriginals[insertIndex] = item;
+        ((DartWidget) item.getImpl()).register();
         originalItems = newOriginals;
         layoutItems();
         getValue().markDirty(VCoolBar.ITEMS);
@@ -926,11 +927,11 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         int height = layoutItems();
         if ((getApi().style & SWT.VERTICAL) != 0) {
             Rectangle trim = computeTrim(0, 0, height, 0);
-            if (height != size.x)
+            if (trim.width != size.x)
                 super.setSize(trim.width, size.y);
         } else {
             Rectangle trim = computeTrim(0, 0, 0, height);
-            if (height != size.y)
+            if (trim.height != size.y)
                 super.setSize(size.x, trim.height);
         }
     }
@@ -1075,9 +1076,8 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     int getWidth() {
-        if ((getApi().style & SWT.VERTICAL) != 0)
-            return getSize().y;
-        return getSize().x;
+        Rectangle area = getClientArea();
+        return (getApi().style & SWT.VERTICAL) != 0 ? area.height : area.width;
     }
 
     /**

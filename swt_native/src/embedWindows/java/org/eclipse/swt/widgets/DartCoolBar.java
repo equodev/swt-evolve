@@ -177,6 +177,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         System.arraycopy(originalItems, 0, newOriginals, 0, insertIndex);
         System.arraycopy(originalItems, insertIndex, newOriginals, insertIndex + 1, length - insertIndex);
         newOriginals[insertIndex] = item;
+        ((DartWidget) item.getImpl()).register();
         originalItems = newOriginals;
         getValue().markDirty(VCoolBar.ITEMS);
     }
