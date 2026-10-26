@@ -182,6 +182,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void deregister() {
+        dev.equo.swt.FlutterBridge.releaseRegistrations(this);
         if (bridge != null)
             bridge.destroy(this);
     }

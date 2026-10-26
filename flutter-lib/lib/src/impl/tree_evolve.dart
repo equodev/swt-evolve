@@ -110,6 +110,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   void _registerGetIdFromPointListener() {
     final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
+    eventNames.add(eventName);
     EquoCommService.onRaw(eventName, (payload) {
       if (payload != null) {
         try {
@@ -140,6 +141,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   void _registerGetItemBoundsListener() {
     final eventName = "${state.swt}/${state.id}/GetItemBounds";
+    eventNames.add(eventName);
     EquoCommService.onRaw(eventName, (payload) {
       final responseEvent = "${state.swt}/${state.id}/GetItemBoundsResponse";
       if (payload == null) {
