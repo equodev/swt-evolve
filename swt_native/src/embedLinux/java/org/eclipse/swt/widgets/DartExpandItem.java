@@ -341,7 +341,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     public void setExpanded(boolean expanded) {
         boolean newValue = expanded;
         checkWidget();
-        if (!java.util.Objects.equals(this.expanded, newValue)) {
+        if (this.expanded != newValue) {
             getValue().markDirty(VExpandItem.EXPANDED);
         }
         this.expanded = newValue;
@@ -374,7 +374,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
-        if (!java.util.Objects.equals(this.height, height)) {
+        if (this.height != height) {
             getValue().markDirty(VExpandItem.HEIGHT);
         }
         if (height < 0)

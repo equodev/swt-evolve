@@ -473,28 +473,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   String _reportedStrip = '';
 
-  /// Tells Java where this side draws each tab, as `x,width` pairs in the folder's own coordinates
-  /// - which is what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides
-  /// which view a drag picked up - then, after a `;`, each tab's close button as `x,y,width,height`
-  /// (zeros for a tab drawn without one).
-  void _handleStripLayout(List<DrawnTab> tabs) {
+  /// Tells Java where this side draws each tab (see [stripReport]), only when it changed. False
+  /// when the tabs cannot be placed in this frame.
+  bool _handleStripLayout(List<DrawnTab> tabs) {
     final box = context.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) return;
-    final strip = <String>[];
-    final close = <String>[];
-    for (final tab in tabs) {
-      final local = _toLocal(box, tab.tab);
-      strip.add('${local.left.round()},${local.width.round()}');
-      final button = tab.close == null ? null : _toLocal(box, tab.close!);
-      close.add(button == null
-          ? '0,0,0,0'
-          : '${button.left.round()},${button.top.round()},'
-              '${button.width.round()},${button.height.round()}');
-    }
-    final report = '${strip.join(',')};${close.join(',')}';
-    if (report == _reportedStrip) return;
+    if (box is! RenderBox || !box.hasSize) return true;
+    final report = stripReport(box, tabs);
+    if (report == null) return false;
+    if (report == _reportedStrip) return true;
     _reportedStrip = report;
     widget.sendCTabFolderstripLaidOut(state, VEvent()..text = report);
+    return true;
   }
 
   /// Selects the tab a drag starts from, which a native CTabFolder does on mouse down
@@ -567,8 +556,9 @@ class _CTabBar extends StatefulWidget {
   final void Function(BuildContext, CTabFolderThemeExtension widgetTheme)? onChevronShowList;
 
 
-  /// Where each tab and its close button are drawn, for the side that answers hit tests.
-  final void Function(List<DrawnTab> tabs)? onStripLayout;
+  /// Where each tab and its close button are drawn, for the side that answers hit tests; false
+  /// when they cannot be placed in this frame.
+  final bool Function(List<DrawnTab> tabs)? onStripLayout;
 
   /// The point to report for a drag on a tab, given where that tab is drawn and where the press
   /// went down.
@@ -1847,13 +1837,44 @@ class _CTabInsertionMarkerPainter extends CustomPainter {
 /// Marks a tab's close button, so the strip report can find where it is drawn.
 const _tabCloseButton = #ctabCloseButton;
 
-/// Where a tab and its close button are drawn, in global coordinates.
+/// The render boxes a tab and its close button are drawn by.
 class DrawnTab {
-  final Rect tab;
-  final Rect? close;
+  final RenderBox tab;
+  final RenderBox? close;
 
   const DrawnTab(this.tab, this.close);
 }
+
+/// Where each of [tabs] is drawn in [folder], as `x,width` pairs in the folder's own coordinates -
+/// what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides which view a drag
+/// picked up - then, after a `;`, each tab's close button as `x,y,width,height` (zeros for a tab
+/// drawn without one).
+///
+/// Null when a tab cannot be placed: a folder laid out under unbounded constraints for a frame has
+/// an infinite size, and aligning its children in it puts NaN in every offset below it.
+@visibleForTesting
+String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
+  final strip = <String>[];
+  final close = <String>[];
+  for (final tab in tabs) {
+    final local = _rectIn(folder, tab.tab);
+    final button = tab.close == null ? null : _rectIn(folder, tab.close!);
+    if (!local.isFinite || (button != null && !button.isFinite)) return null;
+    strip.add('${local.left.round()},${local.width.round()}');
+    close.add(button == null
+        ? '0,0,0,0'
+        : '${button.left.round()},${button.top.round()},'
+            '${button.width.round()},${button.height.round()}');
+  }
+  return '${strip.join(',')};${close.join(',')}';
+}
+
+/// Where [child] is drawn within [folder], mapped without going through global coordinates: a panel
+/// squeezed into a slot smaller than its margins has an empty FittedBox above the folder, whose
+/// all-zero paint transform maps every point to the global origin or to NaN.
+Rect _rectIn(RenderBox folder, RenderBox child) => Rect.fromPoints(
+    child.localToGlobal(Offset.zero, ancestor: folder),
+    child.localToGlobal(child.size.bottomRight(Offset.zero), ancestor: folder));
 
 Rect _globalRect(RenderBox box) => Rect.fromPoints(
     box.localToGlobal(Offset.zero), box.localToGlobal(box.size.bottomRight(Offset.zero)));
@@ -1896,8 +1917,8 @@ class TabDragRow extends StatefulWidget {
   final ValueChanged<int>? onTabDragStarted;
   final VoidCallback? onDragStart;
 
-  /// Where each tab and its close button are drawn.
-  final void Function(List<DrawnTab> tabs)? onStripLayout;
+  /// Where each tab and its close button are drawn; false when they cannot be placed in this frame.
+  final bool Function(List<DrawnTab> tabs)? onStripLayout;
 
   /// The point to report for a drag on a tab, given where that tab is drawn and where the press
   /// went down, both in global coordinates.
@@ -1959,9 +1980,11 @@ class _TabDragRowState extends State<TabDragRow> {
       final box = _itemBox(i);
       if (box == null || !box.hasSize) return;
       final close = _closeButtonIn(box);
-      tabs.add(DrawnTab(_globalRect(box), close == null ? null : _globalRect(close)));
+      tabs.add(DrawnTab(box, close));
     }
-    report(tabs);
+    // The folder can be laid out again without this row being rebuilt or scrolled, which is all
+    // that otherwise asks for a report, so a frame that could not place the tabs asks again.
+    if (!report(tabs)) scheduleStripReport();
   }
 
   final GlobalKey _rowKey = GlobalKey();

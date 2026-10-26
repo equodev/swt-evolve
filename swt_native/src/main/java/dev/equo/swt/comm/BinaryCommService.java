@@ -35,7 +35,12 @@ public class BinaryCommService extends AbstractBinaryCommService {
         try {
             server.start();
         } catch (Exception e) {
-            try { server.stop(); } catch (Exception ignored) {}
+            try {
+                server.stop();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Exception ignored) {
+            }
             throw new RuntimeException("Failed to start WebSocket server", e);
         }
     }
@@ -105,6 +110,8 @@ public class BinaryCommService extends AbstractBinaryCommService {
     public void stop() {
         try {
             server.stop();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             System.err.println(logTag() + " Stop failed: " + e.getMessage());
         }

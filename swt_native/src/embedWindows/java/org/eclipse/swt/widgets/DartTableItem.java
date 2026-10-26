@@ -707,7 +707,7 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     void setChecked(boolean checked, boolean notify) {
         this.checked = checked;
-        if (!java.util.Objects.equals(this.checked, checked)) {
+        if (this.checked != checked) {
             getValue().markDirty(VTableItem.CHECKED);
         }
         if ((parent.style & SWT.VIRTUAL) != 0)
@@ -952,7 +952,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (!java.util.Objects.equals(this.grayed, grayed)) {
+        if (this.grayed != grayed) {
             getValue().markDirty(VTableItem.GRAYED);
         }
         if ((parent.style & SWT.CHECK) == 0)

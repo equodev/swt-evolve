@@ -117,17 +117,45 @@ Color legibleOn(Color color, Color ground, {required double minRatio}) {
   final start = lighten ? math.max(hsl.lightness, mirrored) : math.min(hsl.lightness, mirrored);
   if (contrastRatio(at(start), ground) >= minRatio) return at(start);
   if (contrastRatio(at(extreme), ground) < minRatio) return at(extreme);
-  var reads = extreme;
-  var fails = start;
+  return at(_bisectLightness(hsl,
+      holds: extreme, fails: start, test: (c) => contrastRatio(c, ground) >= minRatio));
+}
+
+// CIE 1976: below this luminance L* is linear in it.
+const double _cieEpsilon = 216 / 24389;
+const double _cieKappa = 24389 / 27;
+
+/// The CIE 1976 L* of [color], from 0 (black) to 100 (white).
+double lstar(Color color) {
+  final y = color.computeLuminance();
+  return y > _cieEpsilon ? 116 * math.pow(y, 1 / 3) - 16 : _cieKappa * y;
+}
+
+/// The spread between the strongest and the weakest channel of [color]: 0 for a grey.
+double chroma(Color color) =>
+    math.max(color.r, math.max(color.g, color.b)) - math.min(color.r, math.min(color.g, color.b));
+
+/// [color]'s hue and saturation at the HSL lightness whose L* is [target].
+Color withLstar(Color color, double target) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl
+      .withLightness(_bisectLightness(hsl, holds: 1, fails: 0, test: (c) => lstar(c) >= target))
+      .toColor();
+}
+
+/// The lightness between [holds], where [test] passes, and [fails], where it does not, closest to
+/// where it stops passing.
+double _bisectLightness(HSLColor hsl,
+    {required double holds, required double fails, required bool Function(Color) test}) {
   for (var i = 0; i < 16; i++) {
-    final mid = (reads + fails) / 2;
-    if (contrastRatio(at(mid), ground) >= minRatio) {
-      reads = mid;
+    final mid = (holds + fails) / 2;
+    if (test(hsl.withLightness(mid).toColor())) {
+      holds = mid;
     } else {
       fails = mid;
     }
   }
-  return at(reads);
+  return holds;
 }
 
 /// The text colour: [foreground] when the control [context] builds for honours the application's

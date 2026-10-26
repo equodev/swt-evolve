@@ -1963,7 +1963,7 @@ public class DartTable extends DartComposite implements ITable {
     public void select(int[] indices) {
         int[] newValue = indices;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
         if (indices == null)
@@ -2195,7 +2195,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, show)) {
+        if (this.headerVisible != show) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
         this.headerHeight = this.getHeaderHeight();
@@ -2262,7 +2262,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
         this.linesVisible = newValue;

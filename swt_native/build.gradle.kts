@@ -2,11 +2,13 @@ import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
+import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     java
     `java-library`
     jacoco
+    alias(libs.plugins.errorprone)
 }
 
 val eclipseUrl: String by project
@@ -315,6 +317,8 @@ sourceSets {
             if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
             // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
             if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
+            // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
             // tests covering that constructor cannot compile against older SWT.
             if (swtMinorNative < 129) {
@@ -427,6 +431,31 @@ if (chromiumMode) {
         "testRuntimeOnly"(libs.equo.chromium)
         "testRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
     }
+}
+
+dependencies { errorprone(libs.errorprone.core) }
+
+// Error Prone on the one compile holding all our code once: every native backend shares main/ and
+// native/, Windows adds our only per-OS file. Upstream copies are skipped; a Dart* finding is fixed
+// in the generator. -PerrorProne=false turns it off where CI runs it as a job of its own.
+val errorProne = findProperty("errorProne")?.toString() != "false"
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        enabled.set(errorProne && name == "compileNativeWindowsJava")
+        disableAllWarnings.set(true)
+        // Checks off or only warnings by default that found real defects here, or guard against
+        // common ones, as errors.
+        error(
+            "StringCaseLocaleUsage", "DefaultLocale", "ObjectEqualsForPrimitives",
+            "JavaTimeDefaultTimeZone", "UndefinedEquals", "CollectionUndefinedEquality",
+            "ToStringReturnsNull", "InterruptedExceptionSwallowed",
+            "FallThrough", "MissingCasesInEnumSwitch", "ModifiedButNotUsed",
+        )
+        // dsl-json's converters under build/generated are not ours either.
+        excludedPaths.set("(.*/src/native[A-Za-z]*/java/(?!dev/equo/)(?!.*/Dart[^/]*\\.java$)|.*/build/generated/).*")
+    }
+    // That compile is warning-free; keep it so.
+    if (errorProne && name == "compileNativeWindowsJava") options.compilerArgs.add("-Werror")
 }
 
 // Configure Java compilation

@@ -695,6 +695,20 @@ public class VGC extends VResource {
     public void setThemedCanvas(Boolean value) {
     }
 
+    public RGB[] getHoverFills() {
+        return ((DartGC) impl).wireHoverFills();
+    }
+
+    public void setHoverFills(RGB[] value) {
+    }
+
+    public RGB[] getSelectionFills() {
+        return ((DartGC) impl).wireSelectionFills();
+    }
+
+    public void setSelectionFills(RGB[] value) {
+    }
+
     public static final String XORMODE = "XORMode";
 
     public static final String ALPHA = "alpha";
@@ -717,6 +731,8 @@ public class VGC extends VResource {
 
     public static final String FOREGROUND = "foreground";
 
+    public static final String HOVER_FILLS = "hoverFills";
+
     public static final String INTERPOLATION = "interpolation";
 
     public static final String LINE_CAP = "lineCap";
@@ -730,6 +746,8 @@ public class VGC extends VResource {
     public static final String LINE_STYLE = "lineStyle";
 
     public static final String LINE_WIDTH = "lineWidth";
+
+    public static final String SELECTION_FILLS = "selectionFills";
 
     public static final String STYLE = "style";
 
@@ -797,6 +815,12 @@ public class VGC extends VResource {
                 return;
             case "themedCanvas":
                 Serializer.writeKeyValue(writer, "themedCanvas", getThemedCanvas());
+                return;
+            case "hoverFills":
+                Serializer.writeKeyValue(writer, "hoverFills", getHoverFills());
+                return;
+            case "selectionFills":
+                Serializer.writeKeyValue(writer, "selectionFills", getSelectionFills());
                 return;
         }
         super.writeProperty(writer, key);
