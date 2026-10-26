@@ -319,8 +319,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     boolean setScrollBarVisible(ScrollBar bar, boolean visible) {
-        if ((getApi().state & CANVAS) == 0)
-            return false;
         if (visible) {
             if ((bar.state & HIDDEN) == 0)
                 return false;
@@ -334,6 +332,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         } else {
         }
         bar.getImpl().sendEvent(visible ? SWT.Show : SWT.Hide);
+        if ((getApi().state & CANVAS) == 0)
+            return true;
         sendEvent(SWT.Resize);
         return true;
     }

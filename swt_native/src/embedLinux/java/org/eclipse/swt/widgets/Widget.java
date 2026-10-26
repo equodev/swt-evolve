@@ -548,6 +548,7 @@ public abstract class Widget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
+    @SuppressWarnings("removal")
     protected void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         getImpl().removeListener(eventType, listener);
     }

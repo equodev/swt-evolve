@@ -80,6 +80,8 @@ class LabelThemeExtension extends ThemeExtension<LabelThemeExtension> with _$Lab
   /// The thickness of the box a separator takes, across its line.
   final double separatorThickness;
 
+  final double minTextContrast;
+
   const LabelThemeExtension({
     required this.primaryTextColor,
     required this.secondaryTextColor,
@@ -121,6 +123,7 @@ class LabelThemeExtension extends ThemeExtension<LabelThemeExtension> with _$Lab
     required this.hoverTextDecoration,
     required this.decorationThickness,
     required this.separatorThickness,
+    required this.minTextContrast,
   });
 
   factory LabelThemeExtension.fromJson(Map<String, dynamic> json) =>

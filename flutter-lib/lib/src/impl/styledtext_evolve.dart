@@ -40,8 +40,10 @@ import 'utils/wheel_input.dart';
 /// selection and scroll offset are Java's and nothing here edits them.
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> implements RenderFactsSource {
+  /// With scroll bars the wheel scrolls the text, through [_onWheel]; without them a StyledText
+  /// reports it like any other control and passes it on.
   @override
-  bool get forwardsWheelFromWrap => false;
+  bool get forwardsWheelFromWrap => !hasStyle(state.style, SWT.H_SCROLL | SWT.V_SCROLL);
 
   // Keys are forwarded from [_onKeyEvent], which also keeps them away from Flutter's shortcuts.
   @override
@@ -94,6 +96,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         context: context,
         foreground: state.foreground,
         defaultColor: _styledTextTheme.foregroundColor,
+        minContrast: _styledTextTheme.minTextContrast,
       );
 
   /// The editor fill marks a place to type. A read-only StyledText is text to read, so it sits on the
@@ -255,6 +258,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   bool get _focused => _focusNode.hasFocus;
 
+  /// Java focuses a pressed StyledText (ControlHelper.pressed, StyledText.handleMouseDown) and asks
+  /// the client to move its keyboard focus there, onto [swtFocusNode].
+  @override
+  void takeFocusOnPress() {}
+
   void _onFocusChange() {
     if (!mounted) return;
     setCanvasEditorFocus(this, _focused);
@@ -317,14 +325,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       return KeyEventResult.ignored;
     }
     return KeyEventResult.handled;
-  }
-
-  /// The platform focuses a control on any button press, ahead of the MouseDown that
-  /// [ControlImpl.wrap] sends for the same press.
-  void _onPointerDown(PointerDownEvent event) {
-    if (scrollBarPointers.contains(event.pointer)) return;
-    widget.sendFocusFocusIn(state, null);
-    _focusNode.requestFocus();
   }
 
   /// Line count and longest line in one pass, over code units — `text[i]` allocates a
@@ -908,18 +908,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // repaints up to the nearest boundary above it.
     return RepaintBoundary(
       child: wrap(
-        Listener(
-          onPointerDown: _onPointerDown,
-          child: SizedBox(
-            width: bounds.width,
-            height: bounds.height,
-            child: Stack(
-              children: [
-                Positioned.fill(child: contentLayer),
-                ..._marginStrips(showVBar ? trackSize : 0, showHBar ? trackSize : 0),
-                Positioned.fill(child: interactionLayer),
-              ],
-            ),
+        SizedBox(
+          width: bounds.width,
+          height: bounds.height,
+          child: Stack(
+            children: [
+              Positioned.fill(child: contentLayer),
+              ..._marginStrips(showVBar ? trackSize : 0, showHBar ? trackSize : 0),
+              Positioned.fill(child: interactionLayer),
+            ],
           ),
         ),
       ),

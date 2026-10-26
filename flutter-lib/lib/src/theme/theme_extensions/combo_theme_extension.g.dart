@@ -55,6 +55,7 @@ ComboThemeExtension _$ComboThemeExtensionFromJson(
   animationDuration: Duration(
     microseconds: (json['animationDuration'] as num).toInt(),
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$ComboThemeExtensionToJson(
@@ -96,4 +97,5 @@ Map<String, dynamic> _$ComboThemeExtensionToJson(
   'dividerHeight': instance.dividerHeight,
   'dividerThickness': instance.dividerThickness,
   'animationDuration': instance.animationDuration.inMicroseconds,
+  'minTextContrast': instance.minTextContrast,
 };

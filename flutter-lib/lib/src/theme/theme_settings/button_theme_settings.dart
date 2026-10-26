@@ -140,6 +140,8 @@ ButtonThemeExtension _getButtonTheme({
     disabledForegroundColor: colorScheme.onSurfaceVariant,
     focusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
     focusRingWidth: 2.0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

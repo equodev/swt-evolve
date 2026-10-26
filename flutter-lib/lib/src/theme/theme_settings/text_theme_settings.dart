@@ -101,6 +101,8 @@ TextThemeExtension _getTextTheme({
 
     // Search field
     searchIconSize: 20.0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -116,6 +118,7 @@ TextStyle getTextFieldTextStyle(
           foreground: state.foreground,
           defaultColor: widgetTheme.textColor,
           context: context,
+          minContrast: widgetTheme.minTextContrast,
         )
       : widgetTheme.disabledTextColor;
 

@@ -104,19 +104,14 @@ public final class FormData {
     @JsonAttribute()
     public FormAttachment bottom;
 
-    @JsonAttribute()
     int cacheWidth = -1, cacheHeight = -1;
 
-    @JsonAttribute()
     int defaultWhint, defaultHhint, defaultWidth = -1, defaultHeight = -1;
 
-    @JsonAttribute()
     int currentWhint, currentHhint, currentWidth = -1, currentHeight = -1;
 
-    @JsonAttribute()
     FormAttachment cacheLeft, cacheRight, cacheTop, cacheBottom;
 
-    @JsonAttribute()
     boolean isVisited, needed;
 
     /**

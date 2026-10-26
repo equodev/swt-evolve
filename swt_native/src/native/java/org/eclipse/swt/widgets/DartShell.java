@@ -479,6 +479,22 @@ public class DartShell extends DartDecorations implements IShell {
     void center() {
         if (parent == null)
             return;
+        Rectangle rect = getBounds();
+        Rectangle parentRect = display.map(parent, null, parent.getClientArea());
+        int x = Math.max(parentRect.x, parentRect.x + (parentRect.width - rect.width) / 2);
+        int y = Math.max(parentRect.y, parentRect.y + (parentRect.height - rect.height) / 2);
+        Rectangle monitorRect = parent.getMonitor().getClientArea();
+        if (x + rect.width > monitorRect.x + monitorRect.width) {
+            x = Math.max(monitorRect.x, monitorRect.x + monitorRect.width - rect.width);
+        } else {
+            x = Math.max(x, monitorRect.x);
+        }
+        if (y + rect.height > monitorRect.y + monitorRect.height) {
+            y = Math.max(monitorRect.y, monitorRect.y + monitorRect.height - rect.height);
+        } else {
+            y = Math.max(y, monitorRect.y);
+        }
+        setLocation(x, y);
     }
 
     /**
@@ -547,7 +563,7 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public Control findBackgroundControl() {
-        return null;
+        return _background != null || backgroundImage != null ? this.getApi() : null;
     }
 
     @Override
@@ -751,7 +767,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public Point getMaximumSize() {
         checkWidget();
-        return this.maximumSize;
+        return ShellHelper.sizeLimit(this.maximumSize, Integer.MAX_VALUE);
     }
 
     /**
@@ -771,7 +787,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return this.minimumSize;
+        return ShellHelper.sizeLimit(this.minimumSize, 0);
     }
 
     /**
@@ -985,6 +1001,8 @@ public class DartShell extends DartDecorations implements IShell {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         // Print only the client area (children) without shell decorations
         Control[] children = _getChildren();
         for (Control child : children) {
@@ -1222,13 +1240,11 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.4
      */
     public void setAlpha(int alpha) {
-        int newValue = alpha;
         checkWidget();
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
-            getValue().markDirty(VShell.ALPHA);
-        }
         alpha &= 0xFF;
-        this.alpha = newValue;
+        if (this.alpha != alpha)
+            getValue().markDirty(VShell.ALPHA);
+        this.alpha = alpha;
     }
 
     @Override
@@ -1241,7 +1257,15 @@ public class DartShell extends DartDecorations implements IShell {
         } else {
         }
         {
+            if (resize) {
+                Point atLeast = ShellHelper.atLeastMinimum(this.getApi(), width, height);
+                width = atLeast.x;
+                height = atLeast.y;
+            }
+            Point before = move ? getApi().getLocation() : null;
             super.setBounds(x, y, width, height, move, resize);
+            if (before != null && (before.x != x || before.y != y))
+                moved = true;
             resized = true;
             if (isDisposed())
                 return;
@@ -1286,7 +1310,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setFullScreen(boolean fullScreen) {
         checkWidget();
-        if (!java.util.Objects.equals(this.fullScreen, fullScreen)) {
+        if (this.fullScreen != fullScreen) {
             getValue().markDirty(VShell.FULL_SCREEN);
         }
         if (_getFullScreen() == fullScreen)
@@ -1368,10 +1392,10 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.116
      */
     public void setMaximumSize(int width, int height) {
-        getValue().markDirty(VShell.MAXIMUM_SIZE);
-        Point newValue = new Point(width, height);
         checkWidget();
-        this.maximumSize = newValue;
+        getValue().markDirty(VShell.MAXIMUM_SIZE);
+        this.maximumSize = new Point(width, height);
+        ShellHelper.shrinkToMaximum(this.getApi(), this.maximumSize);
     }
 
     /**
@@ -1435,6 +1459,7 @@ public class DartShell extends DartDecorations implements IShell {
         checkWidget();
         getValue().markDirty(VShell.MINIMUM_SIZE);
         this.minimumSize = new Point(width, height);
+        ShellHelper.growToMinimum(this.getApi());
     }
 
     /**
@@ -1476,7 +1501,7 @@ public class DartShell extends DartDecorations implements IShell {
     public void setModified(boolean modified) {
         boolean newValue = modified;
         checkWidget();
-        if (!java.util.Objects.equals(this.modified, newValue)) {
+        if (this.modified != newValue) {
             getValue().markDirty(VShell.MODIFIED);
         }
         this.modified = newValue;
@@ -1530,6 +1555,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (region != null) {
             if (region.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
+            Rectangle bounds = region.getBounds();
+            setSize(bounds.x + bounds.width, bounds.y + bounds.height);
         }
         this.region = region;
         if (region != null) {

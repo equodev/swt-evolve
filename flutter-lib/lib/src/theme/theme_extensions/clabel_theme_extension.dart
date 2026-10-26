@@ -40,6 +40,8 @@ class CLabelThemeExtension extends ThemeExtension<CLabelThemeExtension> with _$C
   final MainAxisAlignment mainAxisAlignment;
   final CrossAxisAlignment crossAxisAlignment;
 
+  final double minTextContrast;
+
   const CLabelThemeExtension({
     required this.primaryTextColor,
     required this.disabledTextColor,
@@ -53,6 +55,7 @@ class CLabelThemeExtension extends ThemeExtension<CLabelThemeExtension> with _$C
     required this.textAlign,
     required this.mainAxisAlignment,
     required this.crossAxisAlignment,
+    required this.minTextContrast,
   });
 
   factory CLabelThemeExtension.fromJson(Map<String, dynamic> json) =>

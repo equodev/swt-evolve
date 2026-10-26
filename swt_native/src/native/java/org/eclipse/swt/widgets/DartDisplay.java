@@ -1473,7 +1473,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static boolean getSheetEnabled() {
-        return !"false".equals(System.getProperty("org.eclipse.swt.sheet"));
+        return false;
     }
 
     /**
@@ -3496,7 +3496,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.118
      */
     public <T, E extends Exception> T syncCall(SwtCallable<T, E> callable) throws E {
-        Objects.nonNull(callable);
+        Objects.requireNonNull(callable);
         AtomicReference<T> result = new AtomicReference<>();
         AtomicReference<Exception> ex = new AtomicReference<>();
         syncExec(() -> {
@@ -4057,6 +4057,17 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             this.deviceZoom = zoom;
             DPIUtil.setDeviceZoom(zoom);
         }
+    }
+
+    java.util.Locale clientLocale = java.util.Locale.ROOT;
+
+    void applyClientLocale(String tag) {
+        if (tag != null && !tag.isEmpty())
+            clientLocale = java.util.Locale.forLanguageTag(tag);
+    }
+
+    java.util.Locale textLocale() {
+        return dev.equo.swt.ConfigFlags.isDesktopMode() ? dev.equo.swt.Config.formatLocale() : clientLocale;
     }
 
     boolean performKeyEquivalent(Object window, Object nsEvent) {

@@ -102,9 +102,8 @@ void main() {
     );
     expect(
       tester.getSize(find.byType(FloatingShellChromeScope)).width,
-      lessThan(_viewport.width),
-      reason: 'the floating chrome clamps a window to 90% of the viewport, so a windowed shell is '
-          'narrower than the page it sits on',
+      lessThanOrEqualTo(_viewport.width),
+      reason: 'the floating chrome keeps a window inside the viewport, border included',
     );
   });
 

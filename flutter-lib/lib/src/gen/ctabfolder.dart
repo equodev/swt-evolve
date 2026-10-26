@@ -93,6 +93,7 @@ class VCTabFolder extends VComposite {
   bool? showChevron;
   int? showListPopupSeq;
   bool? single;
+  int? tabHeight;
   int? tabPosition;
   VControl? topRight;
   int? topRightAlignment;
@@ -122,6 +123,7 @@ class VCTabFolder extends VComposite {
       showChevron = other.showChevron;
       showListPopupSeq = other.showListPopupSeq;
       single = other.single;
+      tabHeight = other.tabHeight;
       tabPosition = other.tabPosition;
       topRight = other.topRight;
       topRightAlignment = other.topRightAlignment;
@@ -176,6 +178,8 @@ class VCTabFolder extends VComposite {
         showListPopupSeq = (json['showListPopupSeq'] as num?)?.toInt();
       case 'single':
         single = json['single'] as bool?;
+      case 'tabHeight':
+        tabHeight = (json['tabHeight'] as num?)?.toInt();
       case 'tabPosition':
         tabPosition = (json['tabPosition'] as num?)?.toInt();
       case 'topRight':
