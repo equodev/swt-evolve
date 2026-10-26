@@ -878,6 +878,7 @@ public class ControlHelper {
      * a microtask after the press, behind the MouseDown it caused.
      */
     public static void pressed(DartControl control, Event event) {
+        MenuHelper.forgetLoneAlt(control.getDisplay());
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;

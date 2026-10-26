@@ -1596,6 +1596,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Forget the shell the client just deactivated, unless another one has been activated since. */
     public void noteClientDeactivated(DartShell shell) {
+        MenuHelper.forgetLoneAlt(shell.getDisplay());
         if (clientActivated == shell)
             clientActivated = null;
     }

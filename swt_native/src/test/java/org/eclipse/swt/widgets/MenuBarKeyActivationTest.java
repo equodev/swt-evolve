@@ -181,6 +181,20 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("a mouse press between Alt's press and release keeps the menu bar inactive")
+    void mousePressEndsTheLoneAlt() {
+        menuBar();
+
+        press(focus, SWT.ALT);
+        Event click = new Event();
+        click.button = 1;
+        ControlHelper.pressed((DartControl) focus.getImpl(), click);
+        release(focus, SWT.ALT);
+
+        assertThat(activations()).isEmpty();
+    }
+
+    @Test
     @DisplayName("a KeyUp listener that disposes the focused control ends the release there")
     void releaseDisposingTheFocusedControl() {
         menuBar();

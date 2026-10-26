@@ -66,6 +66,11 @@ public class MenuHelper {
         control.getDisplay().setData(ALT_ALONE, key.keyCode == SWT.ALT ? Boolean.TRUE : null);
     }
 
+    /** A mouse press or the shell losing the keyboard ends a lone Alt, so its release does not activate the bar. */
+    static void forgetLoneAlt(Display display) {
+        display.setData(ALT_ALONE, null);
+    }
+
     /**
      * Once its KeyDown went through unvetoed, F10 with no modifier activates the menu bar, as on
      * Windows, and an Alt+letter no control took opens the menu bar title carrying it.
