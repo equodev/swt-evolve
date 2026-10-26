@@ -131,7 +131,7 @@ final class DebugLog {
     private static boolean isHidden(String key) {
         if (HIDE_KEYS.contains(key)) return true;
         if (HIDE_COLORS) {
-            String k = key.toLowerCase();
+            String k = key.toLowerCase(java.util.Locale.ROOT);
             return k.contains("color") || k.contains("foreground") || k.contains("background");
         }
         return false;

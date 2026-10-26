@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../theme_extensions/styledtext_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -37,5 +38,6 @@ StyledTextThemeExtension _getStyledTextTheme({
   return StyledTextThemeExtension(
     backgroundColor: isDark ? colorScheme.surface : colorSchemeExtension.neutral,
     foregroundColor: colorScheme.onSurface,
+    minTextContrast: kMinTextContrast,
   );
 }

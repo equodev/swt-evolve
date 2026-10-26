@@ -1257,13 +1257,13 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setDate(int year, int month, int day) {
         checkWidget();
-        if (!java.util.Objects.equals(this.year, year)) {
+        if (this.year != year) {
             getValue().markDirty(VDateTime.YEAR);
         }
-        if (!java.util.Objects.equals(this.month, month)) {
+        if (this.month != month) {
             getValue().markDirty(VDateTime.MONTH);
         }
-        if (!java.util.Objects.equals(this.day, day)) {
+        if (this.day != day) {
             getValue().markDirty(VDateTime.DAY);
         }
         if (!isValidDate(year, month, day))
@@ -1296,7 +1296,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setDay(int day) {
         checkWidget();
-        if (!java.util.Objects.equals(this.day, day)) {
+        if (this.day != day) {
             getValue().markDirty(VDateTime.DAY);
         }
         if (!isValidDate(getYear(), getMonth(), day))
@@ -1324,7 +1324,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setHours(int hours) {
         checkWidget();
-        if (!java.util.Objects.equals(this.hours, hours)) {
+        if (this.hours != hours) {
             getValue().markDirty(VDateTime.HOURS);
         }
         if (!isValidTime(Calendar.HOUR_OF_DAY, hours))
@@ -1359,7 +1359,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setMinutes(int minutes) {
         checkWidget();
-        if (!java.util.Objects.equals(this.minutes, minutes)) {
+        if (this.minutes != minutes) {
             getValue().markDirty(VDateTime.MINUTES);
         }
         if (!isValidTime(Calendar.MINUTE, minutes))
@@ -1390,7 +1390,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setMonth(int month) {
         checkWidget();
-        if (!java.util.Objects.equals(this.month, month)) {
+        if (this.month != month) {
             getValue().markDirty(VDateTime.MONTH);
         }
         if (!isValidDate(getYear(), month, getDay()))
@@ -1418,7 +1418,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setSeconds(int seconds) {
         checkWidget();
-        if (!java.util.Objects.equals(this.seconds, seconds)) {
+        if (this.seconds != seconds) {
             getValue().markDirty(VDateTime.SECONDS);
         }
         if (!isValidTime(Calendar.SECOND, seconds))
@@ -1447,13 +1447,13 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setTime(int hours, int minutes, int seconds) {
         checkWidget();
-        if (!java.util.Objects.equals(this.seconds, seconds)) {
+        if (this.seconds != seconds) {
             getValue().markDirty(VDateTime.SECONDS);
         }
-        if (!java.util.Objects.equals(this.minutes, minutes)) {
+        if (this.minutes != minutes) {
             getValue().markDirty(VDateTime.MINUTES);
         }
-        if (!java.util.Objects.equals(this.hours, hours)) {
+        if (this.hours != hours) {
             getValue().markDirty(VDateTime.HOURS);
         }
         if (!isValidTime(Calendar.HOUR_OF_DAY, hours))
@@ -1492,7 +1492,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setYear(int year) {
         checkWidget();
-        if (!java.util.Objects.equals(this.year, year)) {
+        if (this.year != year) {
             getValue().markDirty(VDateTime.YEAR);
         }
         if (!isValidDate(year, getMonth(), getDay()))

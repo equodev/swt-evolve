@@ -1451,6 +1451,7 @@ public interface IDisplay extends IDevice, ImplDisplay {
      * @deprecated this method should not be used as it needs to be called already
      *             during instantiation to take proper effect
      */
+    @Deprecated
     boolean setRescalingAtRuntime(boolean activate);
 
     Display getApi();

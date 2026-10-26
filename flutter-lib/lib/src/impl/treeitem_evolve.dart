@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/impl/tree_evolve.dart';
@@ -11,6 +12,7 @@ import '../impl/item_evolve.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
 import 'color_utils.dart';
+import 'control_evolve.dart';
 import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
@@ -25,8 +27,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   TreeItemContext? _context;
 
   bool _isHovered = false;
+
+  /// What is painted behind this row's text in the current build: its own background over the
+  /// tree's.
+  Color? _rowGround;
   Offset? _lastTapPosition;
   Offset? _lastTapGlobalPosition;
+  int? _secondaryPressPointer;
+  Offset? _secondaryPressAt;
   final DoubleTapDetector _rowTap = DoubleTapDetector();
 
   @override
@@ -168,21 +176,50 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return e;
   }
 
-  void _secondaryActivate({required int button}) {
-    final bool enabled = _context?.parentTreeValue.enabled ?? true;
-    final bool selected =
-        _context?.treeImpl?.isItemSelected(state.id) ?? false;
-    if (!enabled) return;
-    if (!selected) {
-      _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
-      final e = _createEvent();
-      e.count = 1;
-      e.button = button;
-      _context?.parentTree.sendSelectionSelection(
-        _context!.parentTreeValue,
-        e,
+  void _selectForContextMenu({required int button}) {
+    if (!(_context?.parentTreeValue.enabled ?? true)) return;
+    if (_context?.treeImpl?.isItemSelected(state.id) ?? false) return;
+    _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+    final e = _createEvent();
+    e.count = 1;
+    e.button = button;
+    _context?.parentTree.sendSelectionSelection(
+      _context!.parentTreeValue,
+      e,
+    );
+  }
+
+  /// Lets the tree select this item right before it sends MenuDetect: this pointer-down
+  /// reaches the item before the tree's own. The menu opens on the secondary release from here,
+  /// not from a tap recognizer: a click that dismisses an open popup loses the gesture arena to
+  /// it, and natively that same click still opens the new menu.
+  Widget _notingContextMenuPress(Widget child) => Listener(
+        onPointerDown: (PointerDownEvent e) {
+          final button = ControlImpl.swtButtonOf(e.buttons);
+          if (!ControlImpl.isMenuDetectTrigger(button)) return;
+          _context?.treeImpl?.selectBeforeMenuDetect =
+              () => _selectForContextMenu(button: button);
+          if (button != 3) return;
+          _secondaryPressPointer = e.pointer;
+          _secondaryPressAt = e.position;
+          _lastTapPosition = e.localPosition;
+          _lastTapGlobalPosition = e.position;
+        },
+        onPointerUp: (PointerUpEvent e) {
+          if (e.pointer != _secondaryPressPointer) return;
+          _secondaryPressPointer = null;
+          if ((e.position - _secondaryPressAt!).distance > kTouchSlop) return;
+          _openContextMenu();
+        },
+        onPointerCancel: (PointerCancelEvent e) {
+          if (e.pointer == _secondaryPressPointer) _secondaryPressPointer = null;
+        },
+        child: child,
       );
-    }
+
+  /// No selection here: the press made it before MenuDetect, and a listener may have changed it.
+  void _openContextMenu() {
+    if (!(_context?.parentTreeValue.enabled ?? true)) return;
     if (_lastTapGlobalPosition != null) {
       _context?.treeImpl?.openContextMenu(_lastTapGlobalPosition!);
     }
@@ -264,6 +301,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool nextItemSelected =
         _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
+    final bgColor = getTreeItemBackgroundColor(
+      state,
+      widgetTheme,
+      selected,
+      _isHovered && !selected,
+      enabled,
+    );
+    final rowGround = Color.alphaBlend(
+        bgColor, enabled ? widgetTheme.backgroundColor : widgetTheme.disabledBackgroundColor);
+    _rowGround = rowGround;
     final textColor = getTreeItemTextColor(
       context,
       state,
@@ -271,13 +318,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       selected,
       enabled,
       parentForeground: ParentForegroundScope.of(context),
-    );
-    final bgColor = getTreeItemBackgroundColor(
-      state,
-      widgetTheme,
-      selected,
-      _isHovered && !selected,
-      enabled,
+      background: rowGround,
     );
 
     double? totalTreeWidth = _context?.treeWidth;
@@ -993,18 +1034,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             );
           });
         },
-        child: GestureDetector(
+        child: _notingContextMenuPress(GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: (TapDownDetails details) {
             _lastTapPosition = details.localPosition;
             _lastTapGlobalPosition = details.globalPosition;
           },
+          // Claims the secondary tap so the tree's own menu detector does not open it twice.
           onSecondaryTapDown: (TapDownDetails details) {
             _lastTapPosition = details.localPosition;
             _lastTapGlobalPosition = details.globalPosition;
-          },
-          onSecondaryTap: () {
-            _secondaryActivate(button: 3);
           },
           onTap: () {
             if (!enabled) return;
@@ -1035,9 +1074,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 isControlPressed) {
               // macOS treats Ctrl+Click as a secondary click (it neither
               // toggles multi-selection — that's Cmd — nor counts toward a
-              // double-click): select the item, keeping an existing
-              // multi-selection it belongs to, and open the context menu.
-              _secondaryActivate(button: 1);
+              // double-click): the press already selected the item, so only
+              // open the context menu.
+              _openContextMenu();
               return;
             }
 
@@ -1133,7 +1172,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               image,
               hasMultiColumn,
             ),
-          ),
+          )),
         ),
       ),
     );
@@ -1157,6 +1196,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             context: context,
             foreground: cellValue(state.foregrounds, columnIndex) ?? state.foreground,
             defaultColor: textColor,
+            minContrast: theme.minTextContrast,
+            background: _rowGround ?? theme.backgroundColor,
           );
     final TextStyle baseStyle = hasMultiColumn
         ? (theme.itemTextStyleWithCols ?? theme.itemTextStyle ?? const TextStyle())

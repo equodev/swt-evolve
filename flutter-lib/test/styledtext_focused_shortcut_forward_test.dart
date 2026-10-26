@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
 
 const double _kWidth = 300;
@@ -62,7 +63,10 @@ void main() {
 
     await tester.pumpWidget(appWith(editor()));
     await tester.tapAt(tester.getCenter(find.byType(_CapturingStyledTextSwt)));
-    await tester.pump();
+    // Java focuses the pressed editor and asks the client to move its keyboard focus there.
+    FocusRequests.instance.request(7);
+    addTearDown(FocusRequests.instance.reset);
+    await tester.pumpAndSettle();
 
     expect(canvasEditorFocused, isTrue, reason: 'sanity: the clicked editor holds the keyboard');
 

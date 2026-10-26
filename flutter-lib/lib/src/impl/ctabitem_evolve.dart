@@ -8,6 +8,7 @@ import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
 import 'widget_config.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import '../theme/theme_extensions/ctabitem_theme_extension.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
@@ -25,7 +26,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     bool enabled,
   ) {
     if (image == null) return null;
-    final iconSize = folderTheme.tabIconSize;
+    final iconSize = ctabIconSize(image, folderTheme.tabIconSize);
     final imageKey = ImageUtils.stableImageKey(image);
     final futureKey =
         '${imageKey}_${iconSize}_${iconColor?.value ?? 'null'}_$enabled';
@@ -62,7 +63,6 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     CTabItemThemeExtension itemTheme,
     CTabFolderThemeExtension folderTheme,
   ) {
-    final text = stripAccelerators(state.text);
     final tabItemContext = TabItemContext.of(context);
     final isSelected = tabItemContext?.isSelected ?? false;
     final isEnabled = tabItemContext?.isEnabled ?? true;
@@ -84,6 +84,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
           : state.foreground ?? ParentForegroundScope.of(context),
       defaultColor: themeTextColor,
       context: context,
+      minContrast: itemTheme.minTextContrast,
     );
     final baseStyle = isSelected
         ? folderTheme.tabSelectedTextStyle
@@ -124,7 +125,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
             ),
           Padding(
             padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
-            child: Text(text, style: textStyle),
+            child: MnemonicText(state.text, style: textStyle),
           ),
         ],
       ),

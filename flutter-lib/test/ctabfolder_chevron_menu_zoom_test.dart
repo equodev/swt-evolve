@@ -14,8 +14,12 @@ import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
-VCTabFolder _folder() => VCTabFolder()
+import 'delivery/support/deliver.dart';
+
+VCTabFolder _folder({int seq = 0, int? showListPopupSeq}) => VCTabFolder()
   ..id = 1000
+  ..seq = seq
+  ..showListPopupSeq = showListPopupSeq
   ..style = SWT.NONE
   ..selection = 0
   ..items = List.generate(
@@ -38,6 +42,9 @@ Widget _host() => EvolveApp(
       ),
     );
 
+/// How many times Java has been asked for the folder's own list, as its showListPopupSeq.
+int _listsRequested = 0;
+
 void _drain(WidgetTester tester) {
   while (tester.takeException() != null) {}
 }
@@ -56,6 +63,10 @@ Future<Offset> _listGapAt(WidgetTester tester, double scale) async {
   final chevron = find.byIcon(Icons.expand_more);
   expect(chevron, findsOneWidget);
   await tester.tap(chevron);
+  await tester.pumpAndSettle();
+  // No CTabFolder2Listener took the chevron's showList, so Java asks for the folder's own list.
+  _listsRequested++;
+  await deliverWhole(_folder(seq: 10 * _listsRequested, showListPopupSeq: _listsRequested));
   await tester.pumpAndSettle();
   _drain(tester);
 

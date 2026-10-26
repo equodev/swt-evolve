@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -49,6 +51,15 @@ import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
 
+/// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
+Future<void> _loadWebFallbackFonts() async {
+  if (!kIsWeb) return;
+  await (FontLoader('Roboto')
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Bold.ttf')))
+      .load();
+}
+
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
 _WindowMetricsReporter? _windowMetricsReporter;
@@ -81,6 +92,7 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  await _loadWebFallbackFonts();
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();

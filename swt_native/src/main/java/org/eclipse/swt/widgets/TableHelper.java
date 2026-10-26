@@ -412,7 +412,7 @@ public class TableHelper {
                 System.arraycopy(newSelection, 0, finalSelection, 0, newCount);
             }
 
-            if (!java.util.Objects.equals(table.selection, finalSelection)) {
+            if (!Arrays.equals(table.selection, finalSelection)) {
                 table.getValue().markDirty(VTable.SELECTION);
             }
             table.selection = finalSelection;

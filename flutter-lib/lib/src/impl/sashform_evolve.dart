@@ -82,8 +82,6 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
         // the drag-end onWeightsChanged commit stays authoritative.
         onWeightsDragged: (newWeights) => _sendWeights(
             _mergeVisibleWeights(allWeights, visibleIndices, newWeights)),
-        onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
-        onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
         onFocusIn: () => widget.sendFocusFocusIn(state, null),
         onFocusOut: () => widget.sendFocusFocusOut(state, null),
       ),
@@ -133,8 +131,6 @@ class _SashFormLayout extends StatefulWidget {
   final SashThemeExtension sashTheme;
   final Function(List<int>) onWeightsChanged;
   final Function(List<int>) onWeightsDragged;
-  final VoidCallback onMouseEnter;
-  final VoidCallback onMouseExit;
   final VoidCallback onFocusIn;
   final VoidCallback onFocusOut;
 
@@ -147,8 +143,6 @@ class _SashFormLayout extends StatefulWidget {
     required this.sashTheme,
     required this.onWeightsChanged,
     required this.onWeightsDragged,
-    required this.onMouseEnter,
-    required this.onMouseExit,
     required this.onFocusIn,
     required this.onFocusOut,
   }) : super(key: key);
@@ -167,6 +161,14 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   // when the values move by a visible amount (>= _liveSyncMinDelta per mille).
   List<int>? _lastSentWeights;
   static const int _liveSyncMinDelta = 5;
+
+  /// The weights a drag reported while it moved and Java has not sent back yet, oldest first. Java
+  /// answers each report in turn, and an answer can arrive after the release: applied, it would move
+  /// the sash back from under a pointer that has already let go of it.
+  final List<List<int>> _unconfirmedWeights = [];
+
+  /// The weights the last drag ended on, which the application now holds.
+  List<int>? _committedWeights;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'SashForm');
   final FocusReport _focusReport = FocusReport();
@@ -197,6 +199,17 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     if (oldWidget.children.length != widget.children.length) {
       _initializePanelSizes();
     } else if (oldWidget.weights != widget.weights && !_isInLocalEditMode) {
+      final committed = _committedWeights;
+      final at = _unconfirmedWeights.indexWhere((sent) => _listsEqual(sent, widget.weights));
+      if (committed != null && _listsEqual(committed, widget.weights)) {
+        // The drag's own end, or Java's answer to it.
+      } else if (at >= 0) {
+        _unconfirmedWeights.removeRange(0, at + 1);
+        return;
+      } else {
+        _unconfirmedWeights.clear();
+        _committedWeights = null;
+      }
       final currentWeightsRounded = _panelSizes.map((f) => f.round()).toList();
       final weightsChanged = !_listsEqual(
         currentWeightsRounded,
@@ -227,7 +240,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        widget.onMouseEnter();
         if (_draggingSashIndex != null && _isDragPaused) {
           setState(() {
             _isDragPaused = false;
@@ -235,7 +247,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
         }
       },
       onExit: (_) {
-        widget.onMouseExit();
         if (_draggingSashIndex != null) {
           setState(() {
             _isDragPaused = true;
@@ -538,6 +549,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     }
     if (moved) {
       _lastSentWeights = live;
+      _unconfirmedWeights.add(live);
       widget.onWeightsDragged(live);
     }
   }
@@ -549,6 +561,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       _isDragPaused = false;
     });
 
-    widget.onWeightsChanged(_normalizedWeights());
+    final committed = _normalizedWeights();
+    _committedWeights = committed;
+    widget.onWeightsChanged(committed);
   }
 }

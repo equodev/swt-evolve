@@ -546,6 +546,7 @@ public class CTabFolder extends Composite {
      * @deprecated Curved tabs are no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-06")
+    @SuppressWarnings("removal")
     public boolean getSimple() {
         return getImpl().getSimple();
     }
@@ -1270,6 +1271,7 @@ public class CTabFolder extends Composite {
      * @deprecated Curved tabs are no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-06")
+    @SuppressWarnings("removal")
     public void setSimple(boolean simple) {
         getImpl().setSimple(simple);
     }

@@ -534,14 +534,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * </ul>
      */
     public void setHours(int hours) {
-        int newValue = hours;
         checkWidget();
-        if (!java.util.Objects.equals(this.hours, newValue)) {
-            getValue().markDirty(VDateTime.HOURS);
-        }
         if (hours < 0 || hours > 23)
             return;
-        this.hours = newValue;
+        if (this.hours != hours)
+            getValue().markDirty(VDateTime.HOURS);
+        this.hours = hours;
     }
 
     /**
@@ -558,14 +556,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * </ul>
      */
     public void setMinutes(int minutes) {
-        int newValue = minutes;
         checkWidget();
-        if (!java.util.Objects.equals(this.minutes, newValue)) {
-            getValue().markDirty(VDateTime.MINUTES);
-        }
         if (minutes < 0 || minutes > 59)
             return;
-        this.minutes = newValue;
+        if (this.minutes != minutes)
+            getValue().markDirty(VDateTime.MINUTES);
+        this.minutes = minutes;
     }
 
     /**
@@ -607,14 +603,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * </ul>
      */
     public void setSeconds(int seconds) {
-        int newValue = seconds;
         checkWidget();
-        if (!java.util.Objects.equals(this.seconds, newValue)) {
-            getValue().markDirty(VDateTime.SECONDS);
-        }
         if (seconds < 0 || seconds > 59)
             return;
-        this.seconds = newValue;
+        if (this.seconds != seconds)
+            getValue().markDirty(VDateTime.SECONDS);
+        this.seconds = seconds;
     }
 
     @Override
