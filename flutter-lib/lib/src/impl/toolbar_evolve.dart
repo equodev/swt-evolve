@@ -777,6 +777,9 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     super.dispose();
   }
 
+  void _openMenu() =>
+      ToolItemSwt(value: widget.toolItem).sendSelectionOpenMenu(widget.toolItem, toolItemGeometryEvent(context));
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
@@ -838,13 +841,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
       color: Colors.transparent,
       child: InkWell(
         focusNode: _arrowFocus,
-        onTap: enabled
-            ? () {
-                final itemWidget = ToolItemSwt(value: widget.toolItem);
-                itemWidget.sendSelectionOpenMenu(
-                    widget.toolItem, toolItemGeometryEvent(context));
-              }
-            : null,
+        onTap: enabled ? _openMenu : null,
         splashColor: widgetTheme.specialDropdownTextColor.withOpacity(
           widgetTheme.splashOpacity,
         ),
@@ -880,8 +877,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
 
     return openMenuOnDown(
       enabled: enabled,
-      openMenu: () => ToolItemSwt(value: widget.toolItem)
-          .sendSelectionOpenMenu(widget.toolItem, toolItemGeometryEvent(context)),
+      openMenu: _openMenu,
       child: IntrinsicWidth(
         child: IntrinsicHeight(
           child: Row(
