@@ -34,9 +34,20 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
   // Separator colors
   final Color separatorColor;
 
-  // Rim of the check and radio boxes a host toolkit draws in its own menus; MenuItem itself
-  // draws only a mark.
+  // Checkbox colors
+  final Color checkboxColor;
+  final Color checkboxSelectedColor;
+  final Color checkboxHoverColor;
   final Color checkboxBorderColor;
+  final Color checkboxCheckmarkColor;
+
+  // Radio button colors
+  final Color radioButtonColor;
+  final Color radioButtonSelectedColor;
+  final Color radioButtonHoverColor;
+  final Color radioButtonSelectedHoverColor;
+  final Color radioButtonBorderColor;
+  final Color radioButtonInnerColor;
 
   // Border styling
   final double borderRadius;
@@ -53,10 +64,13 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
 
   // Checkbox sizes
   final double checkboxSize;
+  final double checkboxBorderRadius;
+  final double checkboxBorderWidth;
   final double checkboxCheckmarkSize;
 
   // Radio button sizes
   final double radioButtonSize;
+  final double radioButtonBorderWidth;
   final double radioButtonInnerSize;
 
   // Disabled opacity
@@ -78,7 +92,17 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
     required this.iconColor,
     required this.disabledIconColor,
     required this.separatorColor,
+    required this.checkboxColor,
+    required this.checkboxSelectedColor,
+    required this.checkboxHoverColor,
     required this.checkboxBorderColor,
+    required this.checkboxCheckmarkColor,
+    required this.radioButtonColor,
+    required this.radioButtonSelectedColor,
+    required this.radioButtonHoverColor,
+    required this.radioButtonSelectedHoverColor,
+    required this.radioButtonBorderColor,
+    required this.radioButtonInnerColor,
     required this.borderRadius,
     required this.itemHeight,
     required this.minItemWidth,
@@ -89,8 +113,11 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
     required this.iconTextSpacing,
     required this.textAcceleratorSpacing,
     required this.checkboxSize,
+    required this.checkboxBorderRadius,
+    required this.checkboxBorderWidth,
     required this.checkboxCheckmarkSize,
     required this.radioButtonSize,
+    required this.radioButtonBorderWidth,
     required this.radioButtonInnerSize,
     required this.disabledOpacity,
     this.textStyle,

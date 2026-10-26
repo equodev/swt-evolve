@@ -38,8 +38,38 @@ MenuItemThemeExtension _$MenuItemThemeExtensionFromJson(
   separatorColor: const ColorConverter().fromJson(
     json['separatorColor'] as String,
   ),
+  checkboxColor: const ColorConverter().fromJson(
+    json['checkboxColor'] as String,
+  ),
+  checkboxSelectedColor: const ColorConverter().fromJson(
+    json['checkboxSelectedColor'] as String,
+  ),
+  checkboxHoverColor: const ColorConverter().fromJson(
+    json['checkboxHoverColor'] as String,
+  ),
   checkboxBorderColor: const ColorConverter().fromJson(
     json['checkboxBorderColor'] as String,
+  ),
+  checkboxCheckmarkColor: const ColorConverter().fromJson(
+    json['checkboxCheckmarkColor'] as String,
+  ),
+  radioButtonColor: const ColorConverter().fromJson(
+    json['radioButtonColor'] as String,
+  ),
+  radioButtonSelectedColor: const ColorConverter().fromJson(
+    json['radioButtonSelectedColor'] as String,
+  ),
+  radioButtonHoverColor: const ColorConverter().fromJson(
+    json['radioButtonHoverColor'] as String,
+  ),
+  radioButtonSelectedHoverColor: const ColorConverter().fromJson(
+    json['radioButtonSelectedHoverColor'] as String,
+  ),
+  radioButtonBorderColor: const ColorConverter().fromJson(
+    json['radioButtonBorderColor'] as String,
+  ),
+  radioButtonInnerColor: const ColorConverter().fromJson(
+    json['radioButtonInnerColor'] as String,
   ),
   borderRadius: (json['borderRadius'] as num).toDouble(),
   itemHeight: (json['itemHeight'] as num).toDouble(),
@@ -53,8 +83,11 @@ MenuItemThemeExtension _$MenuItemThemeExtensionFromJson(
   iconTextSpacing: (json['iconTextSpacing'] as num).toDouble(),
   textAcceleratorSpacing: (json['textAcceleratorSpacing'] as num).toDouble(),
   checkboxSize: (json['checkboxSize'] as num).toDouble(),
+  checkboxBorderRadius: (json['checkboxBorderRadius'] as num).toDouble(),
+  checkboxBorderWidth: (json['checkboxBorderWidth'] as num).toDouble(),
   checkboxCheckmarkSize: (json['checkboxCheckmarkSize'] as num).toDouble(),
   radioButtonSize: (json['radioButtonSize'] as num).toDouble(),
+  radioButtonBorderWidth: (json['radioButtonBorderWidth'] as num).toDouble(),
   radioButtonInnerSize: (json['radioButtonInnerSize'] as num).toDouble(),
   disabledOpacity: (json['disabledOpacity'] as num).toDouble(),
   textStyle: const TextStyleConverter().fromJson(
@@ -91,8 +124,34 @@ Map<String, dynamic> _$MenuItemThemeExtensionToJson(
     instance.disabledIconColor,
   ),
   'separatorColor': const ColorConverter().toJson(instance.separatorColor),
+  'checkboxColor': const ColorConverter().toJson(instance.checkboxColor),
+  'checkboxSelectedColor': const ColorConverter().toJson(
+    instance.checkboxSelectedColor,
+  ),
+  'checkboxHoverColor': const ColorConverter().toJson(
+    instance.checkboxHoverColor,
+  ),
   'checkboxBorderColor': const ColorConverter().toJson(
     instance.checkboxBorderColor,
+  ),
+  'checkboxCheckmarkColor': const ColorConverter().toJson(
+    instance.checkboxCheckmarkColor,
+  ),
+  'radioButtonColor': const ColorConverter().toJson(instance.radioButtonColor),
+  'radioButtonSelectedColor': const ColorConverter().toJson(
+    instance.radioButtonSelectedColor,
+  ),
+  'radioButtonHoverColor': const ColorConverter().toJson(
+    instance.radioButtonHoverColor,
+  ),
+  'radioButtonSelectedHoverColor': const ColorConverter().toJson(
+    instance.radioButtonSelectedHoverColor,
+  ),
+  'radioButtonBorderColor': const ColorConverter().toJson(
+    instance.radioButtonBorderColor,
+  ),
+  'radioButtonInnerColor': const ColorConverter().toJson(
+    instance.radioButtonInnerColor,
   ),
   'borderRadius': instance.borderRadius,
   'itemHeight': instance.itemHeight,
@@ -104,8 +163,11 @@ Map<String, dynamic> _$MenuItemThemeExtensionToJson(
   'iconTextSpacing': instance.iconTextSpacing,
   'textAcceleratorSpacing': instance.textAcceleratorSpacing,
   'checkboxSize': instance.checkboxSize,
+  'checkboxBorderRadius': instance.checkboxBorderRadius,
+  'checkboxBorderWidth': instance.checkboxBorderWidth,
   'checkboxCheckmarkSize': instance.checkboxCheckmarkSize,
   'radioButtonSize': instance.radioButtonSize,
+  'radioButtonBorderWidth': instance.radioButtonBorderWidth,
   'radioButtonInnerSize': instance.radioButtonInnerSize,
   'disabledOpacity': instance.disabledOpacity,
   'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),

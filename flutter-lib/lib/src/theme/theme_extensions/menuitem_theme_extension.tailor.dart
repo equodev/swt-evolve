@@ -22,7 +22,17 @@ mixin _$MenuItemThemeExtensionTailorMixin
   Color get iconColor;
   Color get disabledIconColor;
   Color get separatorColor;
+  Color get checkboxColor;
+  Color get checkboxSelectedColor;
+  Color get checkboxHoverColor;
   Color get checkboxBorderColor;
+  Color get checkboxCheckmarkColor;
+  Color get radioButtonColor;
+  Color get radioButtonSelectedColor;
+  Color get radioButtonHoverColor;
+  Color get radioButtonSelectedHoverColor;
+  Color get radioButtonBorderColor;
+  Color get radioButtonInnerColor;
   double get borderRadius;
   double get itemHeight;
   double get minItemWidth;
@@ -33,8 +43,11 @@ mixin _$MenuItemThemeExtensionTailorMixin
   double get iconTextSpacing;
   double get textAcceleratorSpacing;
   double get checkboxSize;
+  double get checkboxBorderRadius;
+  double get checkboxBorderWidth;
   double get checkboxCheckmarkSize;
   double get radioButtonSize;
+  double get radioButtonBorderWidth;
   double get radioButtonInnerSize;
   double get disabledOpacity;
   TextStyle? get textStyle;
@@ -53,7 +66,17 @@ mixin _$MenuItemThemeExtensionTailorMixin
     Color? iconColor,
     Color? disabledIconColor,
     Color? separatorColor,
+    Color? checkboxColor,
+    Color? checkboxSelectedColor,
+    Color? checkboxHoverColor,
     Color? checkboxBorderColor,
+    Color? checkboxCheckmarkColor,
+    Color? radioButtonColor,
+    Color? radioButtonSelectedColor,
+    Color? radioButtonHoverColor,
+    Color? radioButtonSelectedHoverColor,
+    Color? radioButtonBorderColor,
+    Color? radioButtonInnerColor,
     double? borderRadius,
     double? itemHeight,
     double? minItemWidth,
@@ -64,8 +87,11 @@ mixin _$MenuItemThemeExtensionTailorMixin
     double? iconTextSpacing,
     double? textAcceleratorSpacing,
     double? checkboxSize,
+    double? checkboxBorderRadius,
+    double? checkboxBorderWidth,
     double? checkboxCheckmarkSize,
     double? radioButtonSize,
+    double? radioButtonBorderWidth,
     double? radioButtonInnerSize,
     double? disabledOpacity,
     TextStyle? textStyle,
@@ -85,7 +111,24 @@ mixin _$MenuItemThemeExtensionTailorMixin
       iconColor: iconColor ?? this.iconColor,
       disabledIconColor: disabledIconColor ?? this.disabledIconColor,
       separatorColor: separatorColor ?? this.separatorColor,
+      checkboxColor: checkboxColor ?? this.checkboxColor,
+      checkboxSelectedColor:
+          checkboxSelectedColor ?? this.checkboxSelectedColor,
+      checkboxHoverColor: checkboxHoverColor ?? this.checkboxHoverColor,
       checkboxBorderColor: checkboxBorderColor ?? this.checkboxBorderColor,
+      checkboxCheckmarkColor:
+          checkboxCheckmarkColor ?? this.checkboxCheckmarkColor,
+      radioButtonColor: radioButtonColor ?? this.radioButtonColor,
+      radioButtonSelectedColor:
+          radioButtonSelectedColor ?? this.radioButtonSelectedColor,
+      radioButtonHoverColor:
+          radioButtonHoverColor ?? this.radioButtonHoverColor,
+      radioButtonSelectedHoverColor:
+          radioButtonSelectedHoverColor ?? this.radioButtonSelectedHoverColor,
+      radioButtonBorderColor:
+          radioButtonBorderColor ?? this.radioButtonBorderColor,
+      radioButtonInnerColor:
+          radioButtonInnerColor ?? this.radioButtonInnerColor,
       borderRadius: borderRadius ?? this.borderRadius,
       itemHeight: itemHeight ?? this.itemHeight,
       minItemWidth: minItemWidth ?? this.minItemWidth,
@@ -97,9 +140,13 @@ mixin _$MenuItemThemeExtensionTailorMixin
       textAcceleratorSpacing:
           textAcceleratorSpacing ?? this.textAcceleratorSpacing,
       checkboxSize: checkboxSize ?? this.checkboxSize,
+      checkboxBorderRadius: checkboxBorderRadius ?? this.checkboxBorderRadius,
+      checkboxBorderWidth: checkboxBorderWidth ?? this.checkboxBorderWidth,
       checkboxCheckmarkSize:
           checkboxCheckmarkSize ?? this.checkboxCheckmarkSize,
       radioButtonSize: radioButtonSize ?? this.radioButtonSize,
+      radioButtonBorderWidth:
+          radioButtonBorderWidth ?? this.radioButtonBorderWidth,
       radioButtonInnerSize: radioButtonInnerSize ?? this.radioButtonInnerSize,
       disabledOpacity: disabledOpacity ?? this.disabledOpacity,
       textStyle: textStyle ?? this.textStyle,
@@ -149,9 +196,55 @@ mixin _$MenuItemThemeExtensionTailorMixin
         t,
       )!,
       separatorColor: Color.lerp(separatorColor, other.separatorColor, t)!,
+      checkboxColor: Color.lerp(checkboxColor, other.checkboxColor, t)!,
+      checkboxSelectedColor: Color.lerp(
+        checkboxSelectedColor,
+        other.checkboxSelectedColor,
+        t,
+      )!,
+      checkboxHoverColor: Color.lerp(
+        checkboxHoverColor,
+        other.checkboxHoverColor,
+        t,
+      )!,
       checkboxBorderColor: Color.lerp(
         checkboxBorderColor,
         other.checkboxBorderColor,
+        t,
+      )!,
+      checkboxCheckmarkColor: Color.lerp(
+        checkboxCheckmarkColor,
+        other.checkboxCheckmarkColor,
+        t,
+      )!,
+      radioButtonColor: Color.lerp(
+        radioButtonColor,
+        other.radioButtonColor,
+        t,
+      )!,
+      radioButtonSelectedColor: Color.lerp(
+        radioButtonSelectedColor,
+        other.radioButtonSelectedColor,
+        t,
+      )!,
+      radioButtonHoverColor: Color.lerp(
+        radioButtonHoverColor,
+        other.radioButtonHoverColor,
+        t,
+      )!,
+      radioButtonSelectedHoverColor: Color.lerp(
+        radioButtonSelectedHoverColor,
+        other.radioButtonSelectedHoverColor,
+        t,
+      )!,
+      radioButtonBorderColor: Color.lerp(
+        radioButtonBorderColor,
+        other.radioButtonBorderColor,
+        t,
+      )!,
+      radioButtonInnerColor: Color.lerp(
+        radioButtonInnerColor,
+        other.radioButtonInnerColor,
         t,
       )!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
@@ -166,10 +259,19 @@ mixin _$MenuItemThemeExtensionTailorMixin
           ? textAcceleratorSpacing
           : other.textAcceleratorSpacing,
       checkboxSize: t < 0.5 ? checkboxSize : other.checkboxSize,
+      checkboxBorderRadius: t < 0.5
+          ? checkboxBorderRadius
+          : other.checkboxBorderRadius,
+      checkboxBorderWidth: t < 0.5
+          ? checkboxBorderWidth
+          : other.checkboxBorderWidth,
       checkboxCheckmarkSize: t < 0.5
           ? checkboxCheckmarkSize
           : other.checkboxCheckmarkSize,
       radioButtonSize: t < 0.5 ? radioButtonSize : other.radioButtonSize,
+      radioButtonBorderWidth: t < 0.5
+          ? radioButtonBorderWidth
+          : other.radioButtonBorderWidth,
       radioButtonInnerSize: t < 0.5
           ? radioButtonInnerSize
           : other.radioButtonInnerSize,
@@ -227,8 +329,48 @@ mixin _$MenuItemThemeExtensionTailorMixin
               other.separatorColor,
             ) &&
             const DeepCollectionEquality().equals(
+              checkboxColor,
+              other.checkboxColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxSelectedColor,
+              other.checkboxSelectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxHoverColor,
+              other.checkboxHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               checkboxBorderColor,
               other.checkboxBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxCheckmarkColor,
+              other.checkboxCheckmarkColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonColor,
+              other.radioButtonColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonSelectedColor,
+              other.radioButtonSelectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonHoverColor,
+              other.radioButtonHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonSelectedHoverColor,
+              other.radioButtonSelectedHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonBorderColor,
+              other.radioButtonBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonInnerColor,
+              other.radioButtonInnerColor,
             ) &&
             const DeepCollectionEquality().equals(
               borderRadius,
@@ -268,12 +410,24 @@ mixin _$MenuItemThemeExtensionTailorMixin
               other.checkboxSize,
             ) &&
             const DeepCollectionEquality().equals(
+              checkboxBorderRadius,
+              other.checkboxBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderWidth,
+              other.checkboxBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
               checkboxCheckmarkSize,
               other.checkboxCheckmarkSize,
             ) &&
             const DeepCollectionEquality().equals(
               radioButtonSize,
               other.radioButtonSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonBorderWidth,
+              other.radioButtonBorderWidth,
             ) &&
             const DeepCollectionEquality().equals(
               radioButtonInnerSize,
@@ -305,7 +459,17 @@ mixin _$MenuItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(iconColor),
       const DeepCollectionEquality().hash(disabledIconColor),
       const DeepCollectionEquality().hash(separatorColor),
+      const DeepCollectionEquality().hash(checkboxColor),
+      const DeepCollectionEquality().hash(checkboxSelectedColor),
+      const DeepCollectionEquality().hash(checkboxHoverColor),
       const DeepCollectionEquality().hash(checkboxBorderColor),
+      const DeepCollectionEquality().hash(checkboxCheckmarkColor),
+      const DeepCollectionEquality().hash(radioButtonColor),
+      const DeepCollectionEquality().hash(radioButtonSelectedColor),
+      const DeepCollectionEquality().hash(radioButtonHoverColor),
+      const DeepCollectionEquality().hash(radioButtonSelectedHoverColor),
+      const DeepCollectionEquality().hash(radioButtonBorderColor),
+      const DeepCollectionEquality().hash(radioButtonInnerColor),
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(itemHeight),
       const DeepCollectionEquality().hash(minItemWidth),
@@ -316,8 +480,11 @@ mixin _$MenuItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(iconTextSpacing),
       const DeepCollectionEquality().hash(textAcceleratorSpacing),
       const DeepCollectionEquality().hash(checkboxSize),
+      const DeepCollectionEquality().hash(checkboxBorderRadius),
+      const DeepCollectionEquality().hash(checkboxBorderWidth),
       const DeepCollectionEquality().hash(checkboxCheckmarkSize),
       const DeepCollectionEquality().hash(radioButtonSize),
+      const DeepCollectionEquality().hash(radioButtonBorderWidth),
       const DeepCollectionEquality().hash(radioButtonInnerSize),
       const DeepCollectionEquality().hash(disabledOpacity),
       const DeepCollectionEquality().hash(textStyle),
@@ -342,7 +509,24 @@ extension MenuItemThemeExtensionBuildContextProps on BuildContext {
   Color get iconColor => menuItemThemeExtension.iconColor;
   Color get disabledIconColor => menuItemThemeExtension.disabledIconColor;
   Color get separatorColor => menuItemThemeExtension.separatorColor;
+  Color get checkboxColor => menuItemThemeExtension.checkboxColor;
+  Color get checkboxSelectedColor =>
+      menuItemThemeExtension.checkboxSelectedColor;
+  Color get checkboxHoverColor => menuItemThemeExtension.checkboxHoverColor;
   Color get checkboxBorderColor => menuItemThemeExtension.checkboxBorderColor;
+  Color get checkboxCheckmarkColor =>
+      menuItemThemeExtension.checkboxCheckmarkColor;
+  Color get radioButtonColor => menuItemThemeExtension.radioButtonColor;
+  Color get radioButtonSelectedColor =>
+      menuItemThemeExtension.radioButtonSelectedColor;
+  Color get radioButtonHoverColor =>
+      menuItemThemeExtension.radioButtonHoverColor;
+  Color get radioButtonSelectedHoverColor =>
+      menuItemThemeExtension.radioButtonSelectedHoverColor;
+  Color get radioButtonBorderColor =>
+      menuItemThemeExtension.radioButtonBorderColor;
+  Color get radioButtonInnerColor =>
+      menuItemThemeExtension.radioButtonInnerColor;
   double get borderRadius => menuItemThemeExtension.borderRadius;
   double get itemHeight => menuItemThemeExtension.itemHeight;
   double get minItemWidth => menuItemThemeExtension.minItemWidth;
@@ -354,9 +538,14 @@ extension MenuItemThemeExtensionBuildContextProps on BuildContext {
   double get textAcceleratorSpacing =>
       menuItemThemeExtension.textAcceleratorSpacing;
   double get checkboxSize => menuItemThemeExtension.checkboxSize;
+  double get checkboxBorderRadius =>
+      menuItemThemeExtension.checkboxBorderRadius;
+  double get checkboxBorderWidth => menuItemThemeExtension.checkboxBorderWidth;
   double get checkboxCheckmarkSize =>
       menuItemThemeExtension.checkboxCheckmarkSize;
   double get radioButtonSize => menuItemThemeExtension.radioButtonSize;
+  double get radioButtonBorderWidth =>
+      menuItemThemeExtension.radioButtonBorderWidth;
   double get radioButtonInnerSize =>
       menuItemThemeExtension.radioButtonInnerSize;
   double get disabledOpacity => menuItemThemeExtension.disabledOpacity;

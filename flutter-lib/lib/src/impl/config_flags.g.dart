@@ -52,7 +52,8 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..csd_titlebar_color = json['csd_titlebar_color'] as String?
   ..system_menu_bar = json['system_menu_bar'] as bool?
   ..font_point_scale = (json['font_point_scale'] as num?)?.toDouble()
-  ..push_button_margin = (json['push_button_margin'] as num?)?.toInt();
+  ..push_button_margin = (json['push_button_margin'] as num?)?.toInt()
+  ..transparent_menu_check_box = json['transparent_menu_check_box'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -93,4 +94,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'system_menu_bar': ?instance.system_menu_bar,
   'font_point_scale': ?instance.font_point_scale,
   'push_button_margin': ?instance.push_button_margin,
+  'transparent_menu_check_box': ?instance.transparent_menu_check_box,
 };
