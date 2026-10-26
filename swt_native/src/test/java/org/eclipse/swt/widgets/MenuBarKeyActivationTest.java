@@ -98,6 +98,29 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("Alt+F after a lone Alt activated the bar and Escape left it opens File")
+    void altLetterAfterLoneAltAndEscapeOpensTheMenu() {
+        Menu bar = menuBar();
+
+        press(focus, SWT.ALT);
+        release(focus, SWT.ALT);
+        press(focus, SWT.ESC);
+        release(focus, SWT.ESC);
+        press(focus, SWT.ALT);
+        Event f = new Event();
+        f.keyCode = 'f';
+        f.character = 'f';
+        f.stateMask = SWT.ALT;
+        ControlHelper.routeKeyDown((DartControl) focus.getImpl(), f);
+        release(focus, 'f');
+        release(focus, SWT.ALT);
+
+        assertThat(bridge.comm.sent.stream().map(e -> e.event).filter(e -> e.endsWith("/openMenu")))
+                .containsExactly(FlutterBridge.eventName(bar.getItem(0).getImpl(), "openMenu"));
+        assertThat(activations()).hasSize(1);
+    }
+
+    @Test
     @DisplayName("a shell without a menu bar has nothing to activate")
     void noMenuBarNoActivation() {
         press(focus, SWT.F10);

@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/gen/decorations.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/menuitem.dart';
@@ -286,6 +287,42 @@ void main() {
       await _answerShow(tester, _fileMenuId);
 
       expectFileOpen();
+    });
+
+    testWidgets('after a lone Alt opened the bar and Escape closed it, Alt+F reaches Java', (tester) async {
+      EquoCommBase.recordSentFrames = true;
+      addTearDown(() => EquoCommBase.recordSentFrames = false);
+      setConfigFlags(ConfigFlags()..decorations_align = DecorationsAlign.vleft);
+      addTearDown(resetConfigFlags);
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: SizedBox(
+          width: viewportWidth,
+          height: viewportHeight,
+          child: Stack(children: [
+            Positioned.fill(child: DisplaySwt(value: VDisplay()..id = _displayId)),
+            Positioned.fill(
+              child: DecorationsSwt<VDecorations>(
+                  value: decorations(menuBar: _menuBar(), children: [mainToolbar()])),
+            ),
+          ]),
+        ),
+      ));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      await _fromJava(tester, 'Menu/$_barId/activate');
+      await _press(tester, LogicalKeyboardKey.escape);
+      expect(find.text('Edit'), findsNothing, reason: 'Escape must close the collapsed bar');
+      EquoCommService.commForTesting.clearSentFrames();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await tester.pumpAndSettle();
+
+      expect(_sent('Display/$_displayId/Key/KeyDown'), hasLength(2),
+          reason: 'Java resolves Alt+F, so both keys must reach it');
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyF);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
     });
 
     testWidgets('when Java answers after the keys are released', (tester) async {
