@@ -914,7 +914,7 @@ public class Serializer {
     private static boolean canReferenceResource(Object value) {
         if (!diffEnabled) return false;
         Integer given = resourceDelivery.get(value);
-        return given != null && given == target.get();
+        return given != null && given.equals(target.get());
     }
 
     /** Forgets that {@code value} was delivered, for a resource whose content has changed under it. */

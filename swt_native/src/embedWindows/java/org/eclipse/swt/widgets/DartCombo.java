@@ -192,11 +192,8 @@ public class DartCombo extends DartComposite implements ICombo {
         if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
         getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = string;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
+        items = ListItemsHelper.insert(items, index, string);
+        ComboHelper.itemInserted(this, index);
         ComboHelper.sendSegments(this, string);
         getValue().markDirty(VCombo.ITEMS);
     }
@@ -753,7 +750,7 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setListVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (!java.util.Objects.equals(this.listVisible, newValue)) {
+        if (this.listVisible != newValue) {
             getValue().markDirty(VCombo.LIST_VISIBLE);
         }
         this.listVisible = newValue;
@@ -1105,23 +1102,7 @@ public class DartCombo extends DartComposite implements ICombo {
         int count = getItemCount();
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length - 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
-        items = newItems;
-        if (index == selectedIndex) {
-            // Removing the selected item leaves nothing selected, as GTK and Win32 do, whatever
-            // the host; clearing it clears the shown text and fires Modify.
-            selectedIndex = -1;
-            if (text != null && !text.isEmpty()) {
-                text = "";
-                sendEvent(SWT.Modify);
-            }
-        } else if (index < selectedIndex) {
-            selectedIndex--;
-        }
-        getValue().markDirty(VCombo.ITEMS);
+        ComboHelper.removeAt(this, index);
     }
 
     void remove(int index, boolean notify) {

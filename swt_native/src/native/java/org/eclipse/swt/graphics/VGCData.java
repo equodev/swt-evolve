@@ -5,7 +5,6 @@ import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
 
-@CompiledJson()
 public class VGCData {
 
     protected VGCData() {
@@ -42,6 +41,24 @@ public class VGCData {
                 writer.writeNull();
             else
                 writer.serializeObject(api.getImpl());
+        }
+    }
+
+    @JsonConverter(target = VGCData.class)
+    public static class EmptyJson {
+
+        public static VGCData read(JsonReader<?> reader) throws IOException {
+            if (reader.wasNull())
+                return null;
+            reader.skip();
+            return new VGCData();
+        }
+
+        public static void write(JsonWriter writer, VGCData value) {
+            if (value == null)
+                writer.writeNull();
+            else
+                writer.writeAscii("{}");
         }
     }
 }

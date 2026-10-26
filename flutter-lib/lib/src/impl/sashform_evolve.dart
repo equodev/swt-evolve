@@ -162,6 +162,14 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   List<int>? _lastSentWeights;
   static const int _liveSyncMinDelta = 5;
 
+  /// The weights a drag reported while it moved and Java has not sent back yet, oldest first. Java
+  /// answers each report in turn, and an answer can arrive after the release: applied, it would move
+  /// the sash back from under a pointer that has already let go of it.
+  final List<List<int>> _unconfirmedWeights = [];
+
+  /// The weights the last drag ended on, which the application now holds.
+  List<int>? _committedWeights;
+
   final FocusNode _focusNode = FocusNode(debugLabel: 'SashForm');
   final FocusReport _focusReport = FocusReport();
 
@@ -191,6 +199,17 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     if (oldWidget.children.length != widget.children.length) {
       _initializePanelSizes();
     } else if (oldWidget.weights != widget.weights && !_isInLocalEditMode) {
+      final committed = _committedWeights;
+      final at = _unconfirmedWeights.indexWhere((sent) => _listsEqual(sent, widget.weights));
+      if (committed != null && _listsEqual(committed, widget.weights)) {
+        // The drag's own end, or Java's answer to it.
+      } else if (at >= 0) {
+        _unconfirmedWeights.removeRange(0, at + 1);
+        return;
+      } else {
+        _unconfirmedWeights.clear();
+        _committedWeights = null;
+      }
       final currentWeightsRounded = _panelSizes.map((f) => f.round()).toList();
       final weightsChanged = !_listsEqual(
         currentWeightsRounded,
@@ -530,6 +549,7 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     }
     if (moved) {
       _lastSentWeights = live;
+      _unconfirmedWeights.add(live);
       widget.onWeightsDragged(live);
     }
   }
@@ -541,6 +561,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       _isDragPaused = false;
     });
 
-    widget.onWeightsChanged(_normalizedWeights());
+    final committed = _normalizedWeights();
+    _committedWeights = committed;
+    widget.onWeightsChanged(committed);
   }
 }

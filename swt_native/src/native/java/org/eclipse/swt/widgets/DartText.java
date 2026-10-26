@@ -1294,7 +1294,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         checkWidget();
-        if (!java.util.Objects.equals(this.echoCharacter, echo)) {
+        if (this.echoCharacter != echo) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
         if ((getApi().style & SWT.MULTI) != 0)
@@ -1322,7 +1322,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
-        if (!java.util.Objects.equals(this.editable, newValue)) {
+        if (this.editable != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
         if (editable) {
@@ -1643,7 +1643,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, limit)) {
+        if (this.textLimit != limit) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
         if (limit == 0)
@@ -1724,6 +1724,23 @@ public class DartText extends DartScrollable implements IText {
         // Only multi-line controls are affected
         if ((getApi().style & SWT.MULTI) == 0)
             return;
+    }
+
+    String verifyText(String string, int start, int end) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        /*
+	 * It is possible (but unlikely), that application
+	 * code could have disposed the widget in the verify
+	 * event.  If this happens, answer null to cancel
+	 * the operation.
+	 */
+        sendEvent(SWT.Verify, event);
+        if (!event.doit || isDisposed())
+            return null;
+        return event.text;
     }
 
     int caretPosition;
@@ -1825,23 +1842,6 @@ public class DartText extends DartScrollable implements IText {
 
     void applySegments() {
         TextHelper.sendSegments(this);
-    }
-
-    String verifyText(String string, int start, int end) {
-        Event event = new Event();
-        event.text = string;
-        event.start = start;
-        event.end = end;
-        /*
-                     * It is possible (but unlikely), that application
-                     * code could have disposed the widget in the verify
-                     * event. If this happens, answer null to cancel
-                     * the operation.
-                     */
-        sendEvent(SWT.Verify, event);
-        if (!event.doit || isDisposed())
-            return null;
-        return event.text;
     }
 
     protected void _hookEvents() {
