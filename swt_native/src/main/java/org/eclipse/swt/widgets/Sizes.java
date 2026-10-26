@@ -1034,21 +1034,23 @@ public class Sizes {
 
     /**
      * Height of a tab, which places the tabs and decides what a point on them hits. {@code setTabHeight}
-     * fixes it as natively: {@code h + 1} (the line across the top of the tabs), and 0 for 0.
+     * fixes it as natively: {@code h + 1} (the line across the top of the tabs), and 0 for 0. With no
+     * fixed height, a tab image taller than the drawn icon grows it by the difference.
      */
     public static int cTabFolderTabHeight(DartCTabFolder widget) {
         int fixed = widget._fixedTabHeight();
-        if (fixed == SWT.DEFAULT) return CTABFOLDER_DEFAULT_TAB_HEIGHT;
+        if (fixed == SWT.DEFAULT) return CTABFOLDER_DEFAULT_TAB_HEIGHT + CTabFolderHelper.imageGrowth(widget);
         return fixed == 0 ? 0 : fixed + 1;
     }
 
     /**
      * Height of the strip the render side draws and the page is laid out below: the measured
-     * default, or the tab height {@code setTabHeight} fixed.
+     * default grown by a tall tab image, or the tab height {@code setTabHeight} fixed. The render
+     * side receives it and draws exactly this.
      */
     public static int cTabFolderTabStripHeight(DartCTabFolder widget) {
         return widget._fixedTabHeight() == SWT.DEFAULT
-                ? CTabFolderSizes.TAB_STRIP_HEIGHT
+                ? CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.imageGrowth(widget)
                 : cTabFolderTabHeight(widget);
     }
 
@@ -1068,6 +1070,7 @@ public class Sizes {
         int tabs = widget._displayedTabHeight() + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
+        if (widget._minimized()) return new Rectangle(border, top, 0, 0);
         return new Rectangle(border, top,
                 Math.max(0, b.width - border * 2),
                 Math.max(0, b.height - top - bottom));
