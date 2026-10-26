@@ -62,6 +62,9 @@ class ConfigFlags {
   /// The decimal separator of the JVM's locale, which a desktop client writes numbers with.
   String? decimal_separator;
 
+  /// The JVM's locale as a language tag, the user's locale on desktop.
+  String? locale;
+
   /// Logical pixels per SWT font point on the host the application runs on, as the Java side
   /// measured its text extents at. Not derivable here: this client's platform is the browser's.
   double? font_point_scale;

@@ -7,6 +7,7 @@ import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
+import 'utils/client_locale.dart';
 import 'utils/widget_utils.dart';
 
 const _kDtButtonWidth = 9.0;
@@ -248,7 +249,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     final month = _month;
     final day = _day;
 
-    final layout = _numericDateLayout(WidgetsBinding.instance.platformDispatcher.locale);
+    final layout = _numericDateLayout(userLocale());
     final byLetter = <String, _FieldDef>{
       'M': _FieldDef(
         value: month + 1,
@@ -515,8 +516,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
 final Map<String, Map<String, String>> _datePatterns = dateTimePatternMap();
 
 /// The order of the day, month and year fields ('d', 'M', 'y') and the separator between them in
-/// [locale]'s numeric date. Win32 takes them from the user's short-date format; on the web the
-/// user's locale is the browser's.
+/// [locale]'s numeric date. Win32 takes them from the user's short-date format; the user's locale
+/// is the browser's on the web and the JVM's on desktop.
 ({List<String> order, String separator}) _numericDateLayout(Locale locale) {
   final name = Intl.verifiedLocale(locale.toLanguageTag(), _datePatterns.containsKey,
       onFailure: (_) => 'en_US')!;

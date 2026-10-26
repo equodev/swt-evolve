@@ -8,6 +8,8 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/datetime.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 const double _width = 110;
 const double _height = 22;
@@ -90,5 +92,16 @@ void main() {
 
     final texts = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>();
     expect(texts.join(), contains('10/24/2026'));
+  });
+
+  testWidgets('on desktop the locale of the JVM decides the order, whatever the platform says', (tester) async {
+    tester.platformDispatcher.localeTestValue = const Locale('en', 'US');
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    setConfigFlags(ConfigFlags()..locale = 'de-DE');
+    addTearDown(resetConfigFlags);
+    await _pump(tester, _dropDown);
+
+    final texts = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>();
+    expect(texts.join(), contains('24.10.2026'));
   });
 }
