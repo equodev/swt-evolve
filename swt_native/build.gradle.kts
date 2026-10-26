@@ -339,6 +339,8 @@ sourceSets {
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
             // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
+            // Shell.setMaximumSize/getMaximumSize were added in 3.116.
+            if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
             // Text's paste goes through _paste(boolean) from 3.114.100 on, where the Verify fix and the clipboard recipe live.
             if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextPasteVerifyTest.java")
             if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextClipboardPasteTest.java")
