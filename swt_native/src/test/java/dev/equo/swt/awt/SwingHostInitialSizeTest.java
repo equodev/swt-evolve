@@ -10,11 +10,13 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SwingHostInitialSizeTest {
 
     private static final int VIEWPORT_HEIGHT = 100;
+    private static final int INNER_DIVIDER = 200;
+    private static final int OUTER_DIVIDER = 600;
 
     @Test
     void anIslandFrameKeepsAnEmptyTablesPreferredHeightAboveTheDivider() {
@@ -65,6 +69,40 @@ class SwingHostInitialSizeTest {
         assertTableAreaKept(split);
     }
 
+    @Test
+    void contentThatRepaintsFromItselfKeepsItsDividersWhenAddedBeforeTheFrameHasASize() {
+        JSplitPane inner = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JLabel("Selection"), new JLabel("Units"));
+        inner.setDividerLocation(INNER_DIVIDER);
+        JSplitPane outer = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inner, new JPanel());
+        outer.setDividerLocation(OUTER_DIVIDER);
+        JPanel applet = new JPanel(new BorderLayout());
+        applet.add(outer);
+        EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
+        JPanel frame = new JPanel(new BorderLayout());
+        frame.add(root);
+
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 0, 0));
+        root.host(applet);
+        paintFromItselfIfInTree(applet, frame);
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 384, 820));
+        layOutAndPaint(frame);
+
+        int units = inner.getBottomComponent().getHeight();
+        int expected = OUTER_DIVIDER - INNER_DIVIDER - 2 * outer.getDividerSize();
+        assertTrue(units >= expected, "middle pane " + units + " px high, expected at least " + expected);
+    }
+
+    /**
+     * An applet is its own repaint root: Swing paints it at its own bounds, with nothing above it
+     * consulted, as soon as it is part of a displayable tree. Here that tree is the frame's.
+     */
+    private static void paintFromItselfIfInTree(JPanel applet, JPanel frame) {
+        if (!SwingUtilities.isDescendingFrom(applet, frame)) return;
+        applet.setSize(applet.getPreferredSize());
+        layOut(applet);
+        paintInto(applet);
+    }
+
     private static JSplitPane splitWithEmptyTable() {
         JTable table = new JTable(new DefaultTableModel(new String[] {"Name", "Type", "Age", "Update Date"}, 0));
         table.setPreferredScrollableViewportSize(new Dimension(400, VIEWPORT_HEIGHT));
@@ -81,10 +119,14 @@ class SwingHostInitialSizeTest {
     private static void layOutAndPaint(JPanel frame) {
         layOut(frame);
         if (frame.getWidth() <= 0 || frame.getHeight() <= 0) return;
-        BufferedImage buffer = new BufferedImage(frame.getWidth(), frame.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        paintInto(frame);
+    }
+
+    private static void paintInto(JComponent c) {
+        BufferedImage buffer = new BufferedImage(c.getWidth(), c.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics g = buffer.getGraphics();
         try {
-            frame.paint(g);
+            c.paint(g);
         } finally {
             g.dispose();
         }
