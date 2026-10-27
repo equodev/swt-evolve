@@ -232,6 +232,11 @@ public class ConfigFlags {
      *  drawn. Set with {@code -Dswt.evolve.transparent_menu_check_box=true}. */
     public boolean transparent_menu_check_box;
 
+    /** Draws a bordered ({@code SWT.BORDER}) CTabFolder's outline as the native renderer does: one line
+     *  round the folder, joined over the selected tab. Off by default: the theme's flat frame is drawn.
+     *  Set with {@code -Dswt.use_swt_border=true}. */
+    public boolean use_swt_border;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -257,6 +262,7 @@ public class ConfigFlags {
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +
                 ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
+                ", use_swt_border=" + use_swt_border +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +

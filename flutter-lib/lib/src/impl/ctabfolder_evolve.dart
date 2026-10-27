@@ -40,7 +40,14 @@ import 'color_utils.dart';
 /// take. Java reserves the same width in `Sizes.getClientArea(DartCTabFolder)`, so a page laid out
 /// in the client area Java reports lands exactly inside this frame rather than under it.
 double ctabFolderBodyBorderWidth(int? style) =>
-    (style != null && (style & SWT.BORDER) != 0) ? 3 : 2;
+    ((style != null && (style & SWT.BORDER) != 0) ? ctabFolderOutlineWidth : 0) +
+    _ctabFolderHighlightMargin;
+
+/// Width of a bordered folder's outline, which native's renderer fixes at one pixel.
+const double ctabFolderOutlineWidth = 1;
+
+/// Band between the outline and the page, which native fills with the folder's ground.
+const double _ctabFolderHighlightMargin = 2;
 
 /// Java sends the strip height it reserves, and leaves it out at this default.
 const double _defaultTabStripHeight = 32;
@@ -192,6 +199,42 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             color: widgetTheme.tabContentBorderColor,
             width: ctabFolderBodyBorderWidth(state.style),
           );
+    // With use_swt_border, a bordered folder draws one outline, as native's renderer does: round the
+    // folder, along the strip's edge on the page side, and over the selected tab, which stays open
+    // into its page. Without it the theme's flat frame is drawn.
+    final bordered =
+        useSwtBorder && (state.borderVisible ?? (state.style & SWT.BORDER) != 0);
+    final BorderSide? outline = stripHeight == 0 || !bordered
+        ? null
+        : BorderSide(
+            // Opaque, so the line reads the same over the strip, the tabs and the page.
+            color: Color.alphaBlend(widgetTheme.outlineColor, widgetTheme.tabContentBackgroundColor),
+            width: ctabFolderOutlineWidth,
+          );
+    final frameInset = ctabFolderBodyBorderWidth(state.style);
+    // Behind the page is the folder's own ground. Native fills the band inside the outline with the
+    // selection background while the folder is highlighted and a tab is selected, and with that
+    // ground otherwise.
+    final highlighted = (state.highlightEnabled ?? false) &&
+        (state.highlight ?? false) &&
+        (state.selection ?? -1) >= 0 &&
+        tabItems.isNotEmpty;
+    final Color? folderGround = outline == null
+        ? null
+        : getBackgroundColor(
+                background: state.background,
+                defaultColor: widgetTheme.tabBarBackgroundColor,
+                context: context,
+              ) ??
+              widgetTheme.tabBarBackgroundColor;
+    final Color? marginColor = !highlighted || folderGround == null
+        ? folderGround
+        : getBackgroundColor(
+                background: state.selectionBackground,
+                defaultColor: widgetTheme.tabSelectedBackgroundColor,
+              ) ??
+              widgetTheme.tabSelectedBackgroundColor;
+    final stripClip = math.max(0.0, tabRowHeight - stripHeight);
 
     Widget column = Column(
       children: [
@@ -203,6 +246,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             tabItems: tabItems,
             tabHeight: tabRowHeight,
             useSimpleStyle: false,
+            outline: outline,
+            stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
             onTabSelected: _handleTabSelection,
             onTabClose: _handleTabClose,
@@ -223,14 +268,30 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         // fly-out gets a full client area and must show its content.
         Expanded(
           child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                left: bodyFrame,
-                right: bodyFrame,
-                top: isTabBottom ? bodyFrame : BorderSide.none,
-                bottom: isTabBottom ? BorderSide.none : bodyFrame,
-              ),
-            ),
+            // The outline is a line inside the frame Java reserves, painted over the band that fills
+            // the rest of it.
+            decoration: outline != null
+                ? BoxDecoration(
+                    color: folderGround,
+                    border: Border(
+                      left: BorderSide(color: marginColor!, width: frameInset),
+                      right: BorderSide(color: marginColor, width: frameInset),
+                      top: isTabBottom
+                          ? BorderSide(color: marginColor, width: frameInset)
+                          : BorderSide.none,
+                      bottom: isTabBottom
+                          ? BorderSide.none
+                          : BorderSide(color: marginColor, width: frameInset),
+                    ),
+                  )
+                : BoxDecoration(
+                    border: Border(
+                      left: bodyFrame,
+                      right: bodyFrame,
+                      top: isTabBottom ? bodyFrame : BorderSide.none,
+                      bottom: isTabBottom ? BorderSide.none : bodyFrame,
+                    ),
+                  ),
             child: IndexedStack(
               index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
               children: tabBodies,
@@ -245,6 +306,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             tabItems: tabItems,
             tabHeight: tabRowHeight,
             useSimpleStyle: false,
+            outline: outline,
+            stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
             onTabSelected: _handleTabSelection,
             onTabClose: _handleTabClose,
@@ -261,6 +324,16 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           )),
       ],
     );
+    if (outline != null) {
+      column = CustomPaint(
+        foregroundPainter: _FolderOutline(
+          outline,
+          radius: widgetTheme.tabBorderRadius,
+          stripAtBottom: isTabBottom,
+        ),
+        child: column,
+      );
+    }
 
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
@@ -561,6 +634,12 @@ class _CTabBar extends StatefulWidget {
   final List<CTabItem> tabItems;
   final double? tabHeight;
   final bool useSimpleStyle;
+  /// The folder's outline, which the strip carries along its page-side edge and over the selected
+  /// tab; null when the folder draws none.
+  final BorderSide? outline;
+  /// How much of the laid-out strip the folder clips off on its page side to fit a shorter
+  /// tabHeight; the outline runs along the edge that stays visible.
+  final double stripClip;
   final VComposite? topRightComposite;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<int> onTabClose;
@@ -591,6 +670,8 @@ class _CTabBar extends StatefulWidget {
     required this.tabItems,
     required this.tabHeight,
     required this.useSimpleStyle,
+    this.outline,
+    this.stripClip = 0,
     required this.topRightComposite,
     required this.onTabSelected,
     required this.onTabClose,
@@ -1235,7 +1316,33 @@ class _CTabBarState extends State<_CTabBar> {
       baseTextStyle: getCTabTextStyle(widgetTheme, isSelected, enabled),
     );
 
-    final border = Border(
+    final selectionBarSide = BorderSide(
+      color: backgroundColor,
+      width: (widget.state.selectionBarThickness != null && widget.state.selectionBarThickness! > 0)
+          ? widget.state.selectionBarThickness!.toDouble()
+          : widgetTheme.tabSelectedBorderWidth,
+    );
+    final outline = widget.outline;
+    final highlightSide = isSelected && enabled && showHighlight
+        ? BorderSide(color: widgetTheme.tabHighlightColor, width: widgetTheme.tabHighlightBorderWidth)
+        : null;
+    // Outlined, the selected tab is closed on three sides and open into its page; every other tab
+    // carries the outline along the strip's page-side edge.
+    final Border? outlined = outline == null
+        ? null
+        : isSelected
+        ? Border(
+            left: outline,
+            right: outline,
+            top: isTabBottom ? selectionBarSide : highlightSide ?? outline,
+            bottom: isTabBottom ? highlightSide ?? outline : selectionBarSide,
+          )
+        : Border(
+            right: BorderSide(color: borderColor, width: widgetTheme.tabBorderWidth),
+            top: isTabBottom ? outline : BorderSide.none,
+            bottom: isTabBottom ? BorderSide.none : outline,
+          );
+    final border = outlined ?? Border(
       top: !isTabBottom && isSelected && enabled && showHighlight
           ? BorderSide(
               color: widgetTheme.tabHighlightColor,
@@ -1304,6 +1411,7 @@ class _CTabBarState extends State<_CTabBar> {
         child: CustomPaint(
           foregroundPainter: _RectangularSides(
             border,
+            clipped: outline == null ? EdgeInsets.zero : _clippedEdge(isTabBottom),
             ring: getCTabFocusRingSide(
               widgetTheme,
               selected: isSelected,
@@ -1652,6 +1760,11 @@ class _CTabBarState extends State<_CTabBar> {
     }
   }
 
+  /// The part of the laid-out strip the folder clips off on its page side.
+  EdgeInsets _clippedEdge(bool isTabBottom) => isTabBottom
+      ? EdgeInsets.only(top: widget.stripClip)
+      : EdgeInsets.only(bottom: widget.stripClip);
+
   Widget _buildTabBarContainer({
     required CTabFolderThemeExtension widgetTheme,
     required double? height,
@@ -1659,6 +1772,7 @@ class _CTabBarState extends State<_CTabBar> {
     required bool isTabBottom,
   }) {
     final borderVisible = widget.state.borderVisible ?? true;
+    final outline = widget.outline;
     final decoration = BoxDecoration(
       // The band the tabs sit on is the folder's own ground: an application that coloured the
       // CTabFolder expects it here, not just behind the selected tab.
@@ -1668,7 +1782,7 @@ class _CTabBarState extends State<_CTabBar> {
             context: context,
           ) ??
           widgetTheme.tabBarBackgroundColor,
-      border: borderVisible
+      border: borderVisible && outline == null
           ? (isTabBottom
                 ? Border(
                     top: BorderSide(
@@ -1684,6 +1798,20 @@ class _CTabBarState extends State<_CTabBar> {
                   ))
           : null,
     );
+
+    // Painted under the tabs, so the selected tab's own ground leaves it open into its page.
+    if (outline != null) {
+      child = CustomPaint(
+        painter: _RectangularSides(
+          Border(
+            top: isTabBottom ? outline : BorderSide.none,
+            bottom: isTabBottom ? BorderSide.none : outline,
+          ),
+          clipped: _clippedEdge(isTabBottom),
+        ),
+        child: child,
+      );
+    }
 
     if (height != null) {
       return Container(height: height, decoration: decoration, child: child);
@@ -2447,18 +2575,22 @@ class TabItemContextProvider extends InheritedWidget {
 /// The tab's sides, drawn as straight strips the way Flutter's release build draws a
 /// non-uniform Border under a rounded corner (it ignores the radius for the sides); the debug
 /// build refuses that combination in a BoxDecoration, so the sides are painted here instead.
+/// A strip paints its page-side outline edge with it too.
 class _RectangularSides extends CustomPainter {
   final Border border;
   // Painted after the sides, which would otherwise cover it.
   final BorderSide? ring;
+  // Left out of the painted rect: the part of the tab or strip the folder clips off.
+  final EdgeInsets clipped;
 
-  const _RectangularSides(this.border, {this.ring});
+  const _RectangularSides(this.border, {this.ring, this.clipped = EdgeInsets.zero});
 
   @override
   void paint(Canvas canvas, Size size) {
+    final rect = clipped.deflateRect(Offset.zero & size);
     paintBorder(
       canvas,
-      Offset.zero & size,
+      rect,
       top: border.top,
       right: border.right,
       bottom: border.bottom,
@@ -2466,11 +2598,37 @@ class _RectangularSides extends CustomPainter {
     );
     final ring = this.ring;
     if (ring != null) {
-      paintBorder(canvas, Offset.zero & size, top: ring, right: ring, bottom: ring, left: ring);
+      paintBorder(canvas, rect, top: ring, right: ring, bottom: ring, left: ring);
     }
   }
 
   @override
   bool shouldRepaint(_RectangularSides oldDelegate) =>
-      oldDelegate.border != border || oldDelegate.ring != ring;
+      oldDelegate.border != border || oldDelegate.ring != ring || oldDelegate.clipped != clipped;
+}
+
+/// A bordered folder's outline: both sides the full height, past the strip, the corners on the
+/// strip's side rounded, and straight across the far edge of the page.
+class _FolderOutline extends CustomPainter {
+  final BorderSide side;
+  final double radius;
+  final bool stripAtBottom;
+
+  const _FolderOutline(this.side, {required this.radius, required this.stripAtBottom});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(side.width / 2);
+    final corner = Radius.circular(radius);
+    final shape = stripAtBottom
+        ? RRect.fromRectAndCorners(rect, bottomLeft: corner, bottomRight: corner)
+        : RRect.fromRectAndCorners(rect, topLeft: corner, topRight: corner);
+    canvas.drawRRect(shape, side.toPaint());
+  }
+
+  @override
+  bool shouldRepaint(_FolderOutline oldDelegate) =>
+      oldDelegate.side != side ||
+      oldDelegate.radius != radius ||
+      oldDelegate.stripAtBottom != stripAtBottom;
 }
