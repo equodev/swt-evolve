@@ -358,7 +358,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public boolean isShowing() {
         checkWidget();
-        return showing;
+        return CTabFolderHelper.isShowing(this);
     }
 
     /**
