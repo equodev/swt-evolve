@@ -85,6 +85,14 @@ class EscapeTraversalDoitFlutterTest {
     }
 
     @Test
+    @DisplayName("a NO_FOCUS Canvas without key listeners is offered Escape with doit=false, as on GTK and Cocoa; Win32 offers true")
+    void noFocusCanvasIsOfferedEscapeWithDoitFalseAsOnGtkAndCocoa() {
+        pressEscape(new Canvas(shell, SWT.NO_FOCUS));
+
+        assertThat(traversals).containsExactly("Canvas doit=false", "Shell doit=false");
+    }
+
+    @Test
     @DisplayName("a dialog stays open on Escape in a Canvas with a key listener, and closes on it in a StyledText")
     void dialogClosesOnEscapeOnlyWhenTheControlLetsItGo() {
         Shell dialog = new Shell(shell, SWT.DIALOG_TRIM);
