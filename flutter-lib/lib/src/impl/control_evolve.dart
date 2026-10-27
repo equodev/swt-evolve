@@ -124,6 +124,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     });
     FocusRequests.instance.addListener(_applyFocusRequest);
     _applyFocusRequest();
+    FocusRequests.instance.register(state.id, context);
     ActiveDragTracker.ensureInitialized();
   }
 
@@ -303,6 +304,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _hoverTimer?.cancel();
     _removeTooltip();
     FocusRequests.instance.removeListener(_applyFocusRequest);
+    FocusRequests.instance.unregister(state.id, context);
     HoverExclusivityArbiter.instance.unregister(this);
     super.dispose();
   }

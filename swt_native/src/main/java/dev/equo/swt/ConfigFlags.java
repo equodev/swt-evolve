@@ -53,6 +53,11 @@ public class ConfigFlags {
      *  hidden underneath that floating overlay. */
     public boolean ctabfolder_topright_auto_hide;
 
+    /** Default true: a CTabFolder whose tabs do not fit scrolls its tab strip. Set to false to lay
+     *  the tabs out as SWT does: they shrink towards minimumCharacters and the ones that still do
+     *  not fit go behind the chevron. */
+    public boolean ctabfolder_tab_scroll;
+
     public boolean image_disable_icons_replacement;
 
     public String assets_path;
@@ -239,6 +244,7 @@ public class ConfigFlags {
                 "mode=" + mode() +
                 ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", ctabfolder_topright_auto_hide=" + ctabfolder_topright_auto_hide +
+                ", ctabfolder_tab_scroll=" + ctabfolder_tab_scroll +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
                 ", disable_evolve_icons=" + disable_evolve_icons +

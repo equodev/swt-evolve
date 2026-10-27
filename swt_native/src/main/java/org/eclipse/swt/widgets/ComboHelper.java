@@ -225,6 +225,13 @@ public class ComboHelper {
             sendSegments(combo, combo.getText());
     }
 
+    /** Flutter draws the drop-down list, so only Flutter can say that it opened or closed. */
+    public static void listShownByFlutter(DartCombo combo, boolean shown) {
+        combo.listVisible = shown;
+        // Only a change from what Java last sent reaches Flutter, so Java's own close must follow this.
+        combo.getValue().markDirty(VCombo.LIST_VISIBLE);
+    }
+
     /** Asks the Segments listeners for the segments of {@code text}; the separators are not drawn. */
     public static void sendSegments(DartCombo combo, String text) {
         if (combo.isDisposed() || text == null || (!combo.hooks(SWT.Segments) && !combo.filters(SWT.Segments)))

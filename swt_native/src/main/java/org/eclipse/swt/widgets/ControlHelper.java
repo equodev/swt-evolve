@@ -206,7 +206,9 @@ public class ControlHelper {
      * spinner or scale steps its value.
      */
     private static void applyPlatformKey(DartControl control, Event key) {
-        if (control instanceof DartTable)
+        if (isMenuKey(key))
+            showMenuFromKeyboard(control);
+        else if (control instanceof DartTable)
             TableHelper.moveSelectionByKey((DartTable) control, key);
         else if (control instanceof DartList)
             ListHelper.moveSelectionByKey((DartList) control, key);
@@ -214,6 +216,57 @@ public class ControlHelper {
             SpinnerHelper.stepByKey((DartSpinner) control, key);
         else if (control instanceof DartScale)
             ScaleHelper.stepByKey((DartScale) control, key);
+    }
+
+    /** Shift+F10, which Win32 and GTK turn into a context-menu request (Cocoa has no such key). */
+    private static boolean isMenuKey(Event key) {
+        return key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == SWT.SHIFT;
+    }
+
+    /**
+     * A context-menu request from the keyboard (Shift+F10 or the Menu key), as Win32's showMenu
+     * handles it: MenuDetect with {@link SWT#MENU_KEYBOARD}, located under the selected item of an
+     * item view, then the control's menu unless a listener vetoed it. With no item to anchor to the
+     * menu opens at the pointer, where Menu.setVisible puts a menu without a location.
+     */
+    public static void showMenuFromKeyboard(DartControl control) {
+        Control api = control.getApi();
+        Point anchor = keyboardMenuAnchor(api);
+        Event event = new Event();
+        Point start = anchor != null ? anchor : api.getDisplay().getCursorLocation();
+        event.x = start.x;
+        event.y = start.y;
+        event.detail = SWT.MENU_KEYBOARD;
+        control.sendEvent(SWT.MenuDetect, event);
+        if (control.isDisposed() || !event.doit)
+            return;
+        Menu menu = api.getMenu();
+        if (menu == null || menu.isDisposed())
+            return;
+        Point requested = new Point(event.x, event.y);
+        if (anchor != null || !requested.equals(start))
+            menu.setLocation(requested);
+        menu.setVisible(true);
+    }
+
+    /** Below the middle of the selected item, kept inside the client area, in display coordinates. */
+    private static Point keyboardMenuAnchor(Control api) {
+        Rectangle bounds = null;
+        if (api instanceof Tree) {
+            TreeItem[] selection = ((Tree) api).getSelection();
+            if (selection.length > 0)
+                bounds = selection[0].getBounds();
+        } else if (api instanceof Table) {
+            TableItem[] selection = ((Table) api).getSelection();
+            if (selection.length > 0)
+                bounds = selection[0].getBounds();
+        }
+        if (bounds == null)
+            return null;
+        Rectangle client = ((Scrollable) api).getClientArea();
+        int x = Math.min(Math.max(client.x, bounds.x + bounds.width / 2), client.x + client.width);
+        int y = Math.min(Math.max(client.y, bounds.y + bounds.height), client.y + client.height);
+        return api.toDisplay(x, y);
     }
 
     /** Keeps the last KeyDown a control let through, for the edit it types; see {@link #takeTypingKey}. */
