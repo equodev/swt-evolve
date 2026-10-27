@@ -123,6 +123,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * @deprecated use #getFontList ()
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public FontData getFontData() {
         return fontData;
     }
@@ -242,6 +243,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * @deprecated use #setFontList (FontData [])
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void setFontData(FontData fontData) {
         this.fontData = fontData;
     }

@@ -344,6 +344,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
+    @SuppressWarnings("removal")
     public DartImage(Device device, Rectangle bounds, Image api) {
         super(device, api);
         if (bounds == null)
@@ -937,6 +938,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *             multiple monitors with different DPIs, hence deprecated.
      */
     @Deprecated(since = "2025-09", forRemoval = true)
+    @SuppressWarnings("removal")
     public Rectangle getBoundsInPixels() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -988,6 +990,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *             {@link #getImageData(int)} instead.
      */
     @Deprecated(since = "2025-09", forRemoval = true)
+    @SuppressWarnings("removal")
     public ImageData getImageDataAtCurrentZoom() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);

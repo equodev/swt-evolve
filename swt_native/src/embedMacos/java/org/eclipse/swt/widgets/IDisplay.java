@@ -1452,6 +1452,7 @@ public interface IDisplay extends IDevice {
      *             during instantiation to take proper effect
      */
     @Deprecated
+    @SuppressWarnings("removal")
     boolean setRescalingAtRuntime(boolean activate);
 
     Display getApi();

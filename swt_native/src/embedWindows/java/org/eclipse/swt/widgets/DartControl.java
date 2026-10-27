@@ -1138,6 +1138,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * migrate to the new API for that purpose.
      */
     @Deprecated(since = "2026-03", forRemoval = true)
+    @SuppressWarnings("removal")
     private void updateAutoScalingModeFromData() {
         Object propagateAutoscaleDisabled = getData(PROPOGATE_AUTOSCALE_DISABLED);
         boolean propagateAutoscaling = propagateAutoscaleDisabled == null || Boolean.parseBoolean(propagateAutoscaleDisabled.toString());
