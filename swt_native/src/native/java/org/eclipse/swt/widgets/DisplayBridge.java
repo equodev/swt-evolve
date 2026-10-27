@@ -1389,25 +1389,46 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return impl == DartCanvas.class || impl == DartComposite.class;
     }
 
-    /** For each shell, the shell that was active when it became active. */
-    private final java.util.Map<Shell, Shell> activatedFrom = new java.util.WeakHashMap<>();
+    /** The shells in the order they last took the focus, the most recent last. */
+    private final java.util.List<java.lang.ref.WeakReference<Shell>> activationOrder = new java.util.ArrayList<>();
     /** The shell focus was last in; kept when the focus is cleared, as a disposing shell's is. */
     private java.lang.ref.WeakReference<Shell> lastFocusShell = new java.lang.ref.WeakReference<>(null);
 
+    /** Whether {@code shell} holds the activation: the focus was last in it. */
+    public boolean isActiveShell(Shell shell) {
+        return shell != null && lastFocusShell.get() == shell;
+    }
+
     /**
      * The shell to return to when {@code shell} goes away, or null when it was not the active one:
-     * the shell it took over from, skipping any that are gone or hidden since, as a window manager does.
+     * the one active most recently before it that stays, as a window manager does, so neither a
+     * shell going with it nor a gone or hidden one.
      */
     public Shell shellToReturnTo(Shell shell) {
-        if (lastFocusShell.get() != shell)
+        if (!isActiveShell(shell))
             return null;
-        Shell before = activatedFrom.get(shell);
-        for (int hops = 0; before != null && hops < 64; hops++) {
-            if (before != shell && !before.isDisposed() && before.isVisible())
+        for (int i = activationOrder.size() - 1; i >= 0; i--) {
+            Shell before = activationOrder.get(i).get();
+            if (before != null && before != shell && !before.isDisposed() && before.isVisible() && !isInside(before, shell))
                 return before;
-            before = activatedFrom.get(before);
         }
         return null;
+    }
+
+    private static boolean isInside(Shell shell, Shell ancestor) {
+        for (Composite p = shell.getParent(); p != null; p = p.getParent()) {
+            if (p == ancestor)
+                return true;
+        }
+        return false;
+    }
+
+    private void noteActivated(Shell shell) {
+        activationOrder.removeIf(ref -> {
+            Shell s = ref.get();
+            return s == null || s == shell || s.isDisposed();
+        });
+        activationOrder.add(new java.lang.ref.WeakReference<>(shell));
     }
 
     /** The CCombo the control is, or is a part of (its field, arrow or list). */
@@ -1429,8 +1450,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     public boolean setFocus(DartControl widget) {
         Shell from = shellOf(focused), to = shellOf(widget);
-        if (from != null && to != null && from != to)
-            activatedFrom.put(to, from);
+        if (to != null && to != lastFocusShell.get())
+            noteActivated(to);
         if (to != null)
             lastFocusShell = new java.lang.ref.WeakReference<>(to);
         org.eclipse.swt.custom.CCombo leftCombo = cComboOf(focused);

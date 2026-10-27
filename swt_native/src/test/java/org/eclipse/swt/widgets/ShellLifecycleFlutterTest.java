@@ -359,9 +359,24 @@ class ShellLifecycleFlutterTest {
         List<Integer> events = new ArrayList<>();
         main.addListener(SWT.Activate, e -> events.add(e.type));
         parent.dispose();
-        runLoop();
         assertThat(child.isDisposed()).isTrue();
         assertThat(events).containsExactly(SWT.Activate);
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+    }
+
+    @Test
+    void aShellGoingWhileAnotherIsActiveActivatesNothing() {
+        Shell shell = dialog();
+        shell.open();
+        runLoop();
+        main.setActive();
+        runLoop();
+        List<Integer> events = new ArrayList<>();
+        main.addListener(SWT.Activate, e -> events.add(e.type));
+        shell.dispose();
+        runLoop();
+        assertThat(events).isEmpty();
     }
 
     @Test
