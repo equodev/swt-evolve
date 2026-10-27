@@ -560,18 +560,17 @@ public class ControlHelper {
                 return null;
             }
             Composite parent = current.getParent();
-            // Only a Group, and only the vertical trim. Sizes.getClientArea(DartGroup) reports the
-            // client origin as (GROUP_BORDER, 0) whenever the Group has a title, so the layout
-            // already gave the child the horizontal inset in its bounds, while the title height the
-            // Group draws above its content is reported by nobody -- without it every popup a JFace
-            // viewer opens inside a Group came up a title-height too high.
+            // Only a Dart-backed titled Group, and only the title row: getClientArea puts the client
+            // origin at (GROUP_BORDER, 0), so the row drawn above the content is in nobody's bounds.
+            // A native-backed Group in a mixed display lays its children out inside the client area
+            // the platform gives it, so their bounds already carry the row.
             //
             // Every other container lays its children out in its own coordinates, so their bounds
             // already carry whatever the container draws above them: a CTabFolder's page sits at
             // y = the tab strip's height, and computeTrim reports that same height again. Applying
             // this there adds the strip a second time, once per folder in the chain, and everything
             // mapped through it lands that much too low.
-            if (parent instanceof Group) {
+            if (parent.getImpl() instanceof DartGroup && !((Group) parent).getText().isEmpty()) {
                 y -= parent.computeTrim(0, 0, 0, 0).y;
             }
             // A Decorations' own menu strip sits outside its client area, as a native menu bar does,
