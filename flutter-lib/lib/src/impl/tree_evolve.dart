@@ -1755,6 +1755,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return KeyEventResult.ignored;
     }
 
+    // A key bubbling up from a control inside the tree, a cell editor's field, is that control's.
+    if (!node.hasPrimaryFocus) {
+      return KeyEventResult.ignored;
+    }
+
     if (state.enabled != true) {
       return KeyEventResult.ignored;
     }
