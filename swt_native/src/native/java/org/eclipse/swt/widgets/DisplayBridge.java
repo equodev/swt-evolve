@@ -1401,26 +1401,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /**
      * The shell to return to when {@code shell} goes away, or null when it was not the active one:
-     * the one active most recently before it that stays, as a window manager does, so neither a
-     * shell going with it nor a gone or hidden one.
+     * the one active most recently before it that is neither gone nor hidden, as a window manager does;
+     * the shells going with it are disposed by then.
      */
     public Shell shellToReturnTo(Shell shell) {
         if (!isActiveShell(shell))
             return null;
         for (int i = activationOrder.size() - 1; i >= 0; i--) {
             Shell before = activationOrder.get(i).get();
-            if (before != null && before != shell && !before.isDisposed() && before.isVisible() && !isInside(before, shell))
+            if (before != null && before != shell && !before.isDisposed() && before.isVisible())
                 return before;
         }
         return null;
-    }
-
-    private static boolean isInside(Shell shell, Shell ancestor) {
-        for (Composite p = shell.getParent(); p != null; p = p.getParent()) {
-            if (p == ancestor)
-                return true;
-        }
-        return false;
     }
 
     private void noteActivated(Shell shell) {
@@ -1449,7 +1441,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public boolean setFocus(DartControl widget) {
-        Shell from = shellOf(focused), to = shellOf(widget);
+        Shell to = shellOf(widget);
         if (to != null && to != lastFocusShell.get())
             noteActivated(to);
         if (to != null)
