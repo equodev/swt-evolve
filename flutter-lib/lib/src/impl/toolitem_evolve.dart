@@ -11,7 +11,6 @@ import '../gen/widgets.dart';
 import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
-import './utils/tab_only_focus_node.dart';
 import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import '../custom/main_toolbar_scope.dart';
@@ -26,8 +25,8 @@ import 'dart:ui';
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     extends ItemImpl<T, V> {
   bool _isHovered = false;
-  final _buttonFocus = TabOnlyFocusNode(debugLabel: 'ToolItem');
-  final _arrowFocus = TabOnlyFocusNode(debugLabel: 'ToolItem arrow');
+  final _buttonFocus = ToolItemFocusNode(debugLabel: 'ToolItem');
+  final _arrowFocus = ToolItemFocusNode(debugLabel: 'ToolItem arrow', arrow: true);
   Widget? _cachedImageWidget;
   VImage? _cachedImage;
   double? _cachedIconSize;
@@ -450,10 +449,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           ),
           // The separator has no height of its own: sized to the item's content, not to whatever
           // height the item is offered.
-          child: IntrinsicHeight(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [Flexible(child: mainContentButton), separator, dropdownArrow],
+          child: openMenuOnDown(
+            enabled: enabled,
+            openMenu: openMenu,
+            child: IntrinsicHeight(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Flexible(child: mainContentButton), separator, dropdownArrow],
+              ),
             ),
           ),
         ),
