@@ -214,6 +214,22 @@ class TreeColumnImplementationNativeTest {
     }
 
     @Test
+    @DisplayName("after a header drag, columns added and then one removed, the order still names every column once")
+    void columnsAddedAndRemovedAfterAHeaderDragKeepTheOrderWhole() {
+        TreeColumn[] columns = columns(50, 60);
+        columns[0].setMoveable(true);
+        fromFlutter(columns[0], "Control/Move", droppedAt(1));
+        runQueued();
+
+        new TreeColumn(tree, SWT.NONE);
+        TreeColumn last = new TreeColumn(tree, SWT.NONE);
+        assertThat(tree.getColumnOrder()).containsExactly(1, 0, 2, 3);
+
+        last.dispose();
+        assertThat(tree.getColumnOrder()).containsExactly(1, 0, 2);
+    }
+
+    @Test
     @DisplayName("an event that arrives after the column was disposed is dropped")
     void eventsForADisposedColumnAreDropped() {
         TreeColumn column = new TreeColumn(tree, SWT.NONE);
