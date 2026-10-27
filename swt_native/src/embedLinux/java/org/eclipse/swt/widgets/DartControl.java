@@ -182,6 +182,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void deregister() {
+        dev.equo.swt.FlutterBridge.releaseRegistrations(this);
         if (bridge != null)
             bridge.destroy(this);
     }
@@ -452,6 +453,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         return true;
     }
 
@@ -3438,8 +3441,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
@@ -3540,7 +3543,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
         checkWidget();
-        if (!java.util.Objects.equals(this.dragDetect, newValue)) {
+        if (this.dragDetect != newValue) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
         this.dragDetect = newValue;
@@ -3609,8 +3612,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
@@ -4053,7 +4056,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (!java.util.Objects.equals(getVisible(), newValue)) {
+        if (getVisible() != newValue) {
             getValue().markDirty(VControl.VISIBLE);
         }
         if (((getApi().state & HIDDEN) == 0) == visible)
@@ -4908,6 +4911,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Font getExplicitFont() {
         return font;
+    }
+
+    boolean mayFixFocus() {
+        return false;
     }
 
     public FlutterBridge getBridge() {

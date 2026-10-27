@@ -98,6 +98,11 @@ public class DartAccessible implements IAccessible {
             Relation relation = (Relation) object;
             return (relation.type == this.type) && (relation.target == this.target);
         }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(type, target);
+        }
     }
 
     /**

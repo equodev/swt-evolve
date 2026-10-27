@@ -2035,7 +2035,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, show)) {
+        if (this.linesVisible != show) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
         if (linesVisible == show)
@@ -2280,9 +2280,9 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
@@ -2320,9 +2320,9 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._headerForeground, newValue)) {
             getValue().markDirty(VTree.HEADER_FOREGROUND);
         }
@@ -2361,7 +2361,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, newValue)) {
+        if (this.headerVisible != newValue) {
             getValue().markDirty(VTree.HEADER_VISIBLE);
         }
         if (show) {
@@ -2484,7 +2484,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
         if (items == null)
@@ -2626,7 +2626,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortDirection(int direction) {
         checkWidget();
-        if (!java.util.Objects.equals(this.sortDirection, direction)) {
+        if (this.sortDirection != direction) {
             getValue().markDirty(VTree.SORT_DIRECTION);
         }
         if ((direction & (SWT.UP | SWT.DOWN)) == 0 && direction != SWT.NONE)

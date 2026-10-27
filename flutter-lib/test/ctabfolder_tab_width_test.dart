@@ -94,6 +94,18 @@ void main() {
     );
   });
 
+  testWidgets('the close button takes the room SWT gives it', (WidgetTester tester) async {
+    await pumpFolder(tester, _folder(['One tab'], close: true, id: 4));
+    final withClose = tester.getSize(_tabBox('One tab')).width;
+
+    await pumpFolder(tester, _folder(['One tab'], id: 5));
+    final withoutClose = tester.getSize(_tabBox('One tab')).width;
+
+    // CTabFolderRenderer.computeSize: INTERNAL_SPACING (4) + BUTTON_SIZE (16), on every platform.
+    // Java lays tabs out with this same width as CTabFolderSizes.TAB_CLOSE_EXTRA.
+    expect(withClose - withoutClose, moreOrLessEquals(20, epsilon: 0.5));
+  });
+
   testWidgets('two labels of the same length but different extents differ by exactly that',
       (WidgetTester tester) async {
     await pumpFolder(tester, _folder(['llllllllll', 'WWWWWWWWWW']));

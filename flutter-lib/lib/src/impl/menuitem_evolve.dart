@@ -19,6 +19,7 @@ import 'utils/menu_mnemonics.dart';
 import 'utils/pointer.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
+import 'widget_config.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     extends ItemImpl<T, V> {
@@ -709,6 +710,11 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   }
 }
 
+/// Set by `swt.evolve.transparent_menu_check_box`: CHECK and RADIO items draw only their mark, in
+/// the item text colour, as native menus do. A theme can get the same by making the box colours
+/// transparent.
+bool get _transparentMenuCheckBox => getConfigFlags().transparent_menu_check_box ?? false;
+
 class _MenuCheckbox extends StatefulWidget {
   final MenuItemThemeExtension widgetTheme;
   final bool isEnabled;
@@ -734,8 +740,17 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
     Color backgroundColor;
     Color borderColor;
 
-    backgroundColor = getMenuCheckboxBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
-    borderColor = getMenuCheckboxBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+    Color checkmarkColor;
+
+    if (_transparentMenuCheckBox) {
+      backgroundColor = Colors.transparent;
+      borderColor = Colors.transparent;
+      checkmarkColor = getMenuItemTextColor(widget.widgetTheme, isEnabled: widget.isEnabled);
+    } else {
+      backgroundColor = getMenuCheckboxBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+      borderColor = getMenuCheckboxBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+      checkmarkColor = widget.widgetTheme.checkboxCheckmarkColor;
+    }
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -758,7 +773,7 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
             ? Icon(
           Icons.check,
           size: widget.widgetTheme.checkboxCheckmarkSize,
-          color: widget.widgetTheme.checkboxCheckmarkColor,
+          color: checkmarkColor,
         )
             : null,
       ),
@@ -791,8 +806,17 @@ class _MenuRadioButtonState extends State<_MenuRadioButton> {
     Color backgroundColor;
     Color borderColor;
 
-    backgroundColor = getMenuRadioBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
-    borderColor = getMenuRadioBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+    Color innerColor;
+
+    if (_transparentMenuCheckBox) {
+      backgroundColor = Colors.transparent;
+      borderColor = Colors.transparent;
+      innerColor = getMenuItemTextColor(widget.widgetTheme, isEnabled: widget.isEnabled);
+    } else {
+      backgroundColor = getMenuRadioBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+      borderColor = getMenuRadioBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+      innerColor = widget.widgetTheme.radioButtonInnerColor;
+    }
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -815,7 +839,7 @@ class _MenuRadioButtonState extends State<_MenuRadioButton> {
             width: widget.widgetTheme.radioButtonInnerSize,
             height: widget.widgetTheme.radioButtonInnerSize,
             decoration: BoxDecoration(
-              color: widget.widgetTheme.radioButtonInnerColor,
+              color: innerColor,
               shape: BoxShape.circle,
             ),
           ),

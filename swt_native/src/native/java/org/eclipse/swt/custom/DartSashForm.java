@@ -302,6 +302,11 @@ public class DartSashForm extends DartComposite implements ISashForm {
             ((SashFormData) data1).weight = (((long) b1.height << 16) + area.height - 1) / area.height;
             ((SashFormData) data2).weight = (((long) b2.height << 16) + area.height - 1) / area.height;
         }
+        int[] __weights = getWeights();
+        if (!java.util.Arrays.equals(__weights, weights)) {
+            getValue().markDirty(VSashForm.WEIGHTS);
+            weights = __weights;
+        }
         if (correction || (event.doit && event.detail != SWT.DRAG)) {
             c1.setBounds(b1);
             sash.setBounds(event.x, event.y, event.width, event.height);
@@ -440,7 +445,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
      */
     public void setSashWidth(int width) {
         checkWidget();
-        if (!java.util.Objects.equals(this.getApi().SASH_WIDTH, width)) {
+        if (this.getApi().SASH_WIDTH != width) {
             getValue().markDirty(VSashForm.SASH_WIDTH);
         }
         if (getApi().SASH_WIDTH == width)
@@ -528,20 +533,8 @@ public class DartSashForm extends DartComposite implements ISashForm {
         return weights;
     }
 
-    @Override
-    public Control[] _displayedChildren() {
-        return getControls(false);
-    }
-
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                SashFormHelper.applyWeightsFromFlutter(this, e);
-            });
-        });
     }
 
     public SashForm getApi() {

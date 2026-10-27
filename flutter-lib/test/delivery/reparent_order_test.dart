@@ -2,15 +2,18 @@
 //
 // They are siblings, so nothing orders them. A departure is read out of what a frame stops
 // carrying, so the old parent's frame says the widget went away and the new parent's says it
-// arrived - and whichever is applied first has to leave the widget intact. What makes that possible
-// is the new parent describing the widget rather than naming it: a description carries a write
-// stamp, and the stamp is what tells a move from a disposal.
+// arrived - and whichever is applied first has to leave the widget intact. Two things make that
+// possible: a description carries a write stamp, which tells a move from a disposal, and a widget
+// let go of is only forgotten once every frame received with it is applied, so a new parent that
+// merely names it still finds it.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
@@ -145,5 +148,102 @@ void main() {
     await _deliver(_newParent, _newParentTakingIt(18, 20));
 
     expectTheMoveLanded('old parent first');
+  });
+
+  test('one run: the widget itself, then the old parent letting go, then the new parent naming it',
+      () async {
+    // How a move arrives when the client already holds everything that moves: one run of frames,
+    // in no order the sender decides. The moved widget is written first, so its stamp is older than
+    // the old parent's, and the new parent only names it. Applied in that order, the widget is
+    // held by nothing between the second frame and the third.
+    settle();
+    final sent = <String>[];
+    EquoCommBase.sendObserverForTesting = (actionId, _) => sent.add(actionId);
+    addTearDown(() => EquoCommBase.sendObserverForTesting = null);
+
+    await _deliver(EquoCommBase.batchEvent, [
+      [
+        _mover,
+        {
+          'swt': 'Composite',
+          'id': _moverId,
+          '_s': 21,
+          'style': SWT.NONE,
+          'children': [
+            {'swt': 'Label', 'id': _underMoverId, 'style': SWT.NONE, '_r': 1},
+          ],
+        },
+      ],
+      [_oldParent, _oldParentLettingGo(22)],
+      [
+        _newParent,
+        {
+          'swt': 'Composite',
+          'id': 7,
+          '_s': 23,
+          '_b': 3,
+          '_d': ['children'],
+          'children': [
+            {'swt': 'Composite', 'id': _moverId, 'style': SWT.NONE, '_r': 1},
+          ],
+        },
+      ],
+    ]);
+
+    expectTheMoveLanded('one run');
+    expect(sent, isNot(contains(EquoCommBase.widgetRefreshChannel)),
+        reason: 'nothing was missing, so nothing is asked for');
+  });
+
+  test('one run whose handler awaits between the old parent letting go and the new parent naming it',
+      () async {
+    // The run is applied in several microtask turns when an entry's handler awaits, so the
+    // widget stays unheld across them: only the end of the whole run may forget it.
+    settle();
+    final sent = <String>[];
+    EquoCommBase.sendObserverForTesting = (actionId, _) => sent.add(actionId);
+    final release = Completer<void>();
+    const awaiting = 'Test/awaits';
+    EquoCommService.onRaw(awaiting, (_) => release.future);
+    addTearDown(() {
+      EquoCommBase.sendObserverForTesting = null;
+      EquoCommService.remove(awaiting);
+    });
+
+    await _deliver(EquoCommBase.batchEvent, [
+      [
+        _mover,
+        {
+          'swt': 'Composite',
+          'id': _moverId,
+          '_s': 21,
+          'style': SWT.NONE,
+          'children': [
+            {'swt': 'Label', 'id': _underMoverId, 'style': SWT.NONE, '_r': 1},
+          ],
+        },
+      ],
+      [_oldParent, _oldParentLettingGo(22)],
+      [awaiting, <String, dynamic>{}],
+      [
+        _newParent,
+        {
+          'swt': 'Composite',
+          'id': 7,
+          '_s': 23,
+          '_b': 3,
+          '_d': ['children'],
+          'children': [
+            {'swt': 'Composite', 'id': _moverId, 'style': SWT.NONE, '_r': 1},
+          ],
+        },
+      ],
+    ]);
+    release.complete();
+    await Future<void>.delayed(Duration.zero);
+
+    expectTheMoveLanded('one run, awaiting halfway');
+    expect(sent, isNot(contains(EquoCommBase.widgetRefreshChannel)),
+        reason: 'nothing was missing, so nothing is asked for');
   });
 }

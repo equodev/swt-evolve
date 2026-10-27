@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Mocks;
+import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * A drag that starts on a close button is not a drag, as upstream decides it, but against the close
@@ -79,7 +81,10 @@ class CTabFolderDragDetectOverCloseRectTest {
 
     /** As the VM trace showed it: this side's layout put the selected tab's close button at 105. */
     private CTabFolder folderWithJavaCloseRectAt105() {
-        CTabFolder folder = new CTabFolder(Mocks.shell(), SWT.CLOSE);
+        Shell shell = Mocks.shell();
+        // Laying out the tabs parks hidden ones past the display's width.
+        when(shell.getDisplay().getBounds()).thenReturn(new Rectangle(0, 0, 1920, 1080));
+        CTabFolder folder = new CTabFolder(shell, SWT.CLOSE);
         CTabItem item = new CTabItem(folder, SWT.CLOSE);
         Rectangle close = ((DartCTabItem) item.getImpl()).closeRect;
         close.x = 105;

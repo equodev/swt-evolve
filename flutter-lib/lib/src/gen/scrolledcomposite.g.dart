@@ -61,7 +61,11 @@ VScrolledComposite _$VScrolledCompositeFromJson(Map<String, dynamic> json) =>
       ..expandHorizontal = json['expandHorizontal'] as bool?
       ..expandVertical = json['expandVertical'] as bool?
       ..minHeight = (json['minHeight'] as num?)?.toInt()
-      ..minWidth = (json['minWidth'] as num?)?.toInt();
+      ..minWidth = (json['minWidth'] as num?)?.toInt()
+      ..origin = json['origin'] == null
+          ? null
+          : VPoint.fromJson(json['origin'] as Map<String, dynamic>)
+      ..originRequest = (json['originRequest'] as num?)?.toInt();
 
 Map<String, dynamic> _$VScrolledCompositeToJson(VScrolledComposite instance) =>
     <String, dynamic>{
@@ -94,4 +98,6 @@ Map<String, dynamic> _$VScrolledCompositeToJson(VScrolledComposite instance) =>
       'expandVertical': ?instance.expandVertical,
       'minHeight': ?instance.minHeight,
       'minWidth': ?instance.minWidth,
+      'origin': ?instance.origin,
+      'originRequest': ?instance.originRequest,
     };

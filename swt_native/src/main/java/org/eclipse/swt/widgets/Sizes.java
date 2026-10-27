@@ -241,13 +241,12 @@ public class Sizes {
             }
             height = 32;
         } else {
+            // A drop-down date has the calendar button instead of the up/down buttons, and it is wider.
+            int buttons = (style & SWT.DROP_DOWN) != 0 ? 24 : 20;
             if ((style & SWT.SHORT) != 0) {
-                width = 80;   // MM + / + YYYY + spinner + border → 21+6+37+20+2 - 6
+                width = 60 + buttons;  // MM + / + YYYY + border → 21+6+37+2 - 6
             } else {
-                width = 107;  // MM + / + DD + / + YYYY + spinner + border → 21+6+21+6+37+20+2 - 6
-            }
-            if ((style & SWT.DROP_DOWN) != 0) {
-                width += 24;  // _DropDownArrow: buttonWidth(20) + 4
+                width = 87 + buttons;  // MM + / + DD + / + YYYY + border → 21+6+21+6+37+2 - 6
             }
             height = 32;
         }
@@ -390,8 +389,8 @@ public class Sizes {
 
     /** The longest value string the spinner's range can put in its text field. */
     private static String widestSpinnerValue(DartSpinner c) {
-        String min = SpinnerHelper.format(c._minimum(), c._digits());
-        String max = SpinnerHelper.format(c._maximum(), c._digits());
+        String min = SpinnerHelper.format(c._minimum(), c._digits(), SpinnerHelper.decimalSeparator(c));
+        String max = SpinnerHelper.format(c._maximum(), c._digits(), SpinnerHelper.decimalSeparator(c));
         return max.length() >= min.length() ? max : min;
     }
 
@@ -637,6 +636,7 @@ public class Sizes {
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
         // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
         if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
+        if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.computeTrim((DartComposite) widget, x, y, width, height);
         int menuBar = menuStripOutsideClientArea(widget);
         return new Rectangle(x, y - menuBar, width, height + menuBar);
     }
@@ -972,21 +972,23 @@ public class Sizes {
 
     /**
      * Height of a tab, which places the tabs and decides what a point on them hits. {@code setTabHeight}
-     * fixes it as natively: {@code h + 1} (the line across the top of the tabs), and 0 for 0.
+     * fixes it as natively: {@code h + 1} (the line across the top of the tabs), and 0 for 0. With no
+     * fixed height, a tab image taller than the drawn icon grows it by the difference.
      */
     public static int cTabFolderTabHeight(DartCTabFolder widget) {
         int fixed = widget._fixedTabHeight();
-        if (fixed == SWT.DEFAULT) return CTABFOLDER_DEFAULT_TAB_HEIGHT;
+        if (fixed == SWT.DEFAULT) return CTABFOLDER_DEFAULT_TAB_HEIGHT + CTabFolderHelper.imageGrowth(widget);
         return fixed == 0 ? 0 : fixed + 1;
     }
 
     /**
      * Height of the strip the render side draws and the page is laid out below: the measured
-     * default, or the tab height {@code setTabHeight} fixed.
+     * default grown by a tall tab image, or the tab height {@code setTabHeight} fixed. The render
+     * side receives it and draws exactly this.
      */
     public static int cTabFolderTabStripHeight(DartCTabFolder widget) {
         return widget._fixedTabHeight() == SWT.DEFAULT
-                ? CTabFolderSizes.TAB_STRIP_HEIGHT
+                ? CTabFolderSizes.TAB_STRIP_HEIGHT + CTabFolderHelper.imageGrowth(widget)
                 : cTabFolderTabHeight(widget);
     }
 
@@ -1006,6 +1008,7 @@ public class Sizes {
         int tabs = widget._displayedTabHeight() + CTabFolderHelper.wrappedHeight(widget, new Point(b.width, b.height));
         int top = onBottom ? border : tabs;
         int bottom = onBottom ? tabs : border;
+        if (widget._minimized()) return new Rectangle(border, top, 0, 0);
         return new Rectangle(border, top,
                 Math.max(0, b.width - border * 2),
                 Math.max(0, b.height - top - bottom));
@@ -1060,6 +1063,7 @@ public class Sizes {
         // A CoolBar inherits this method rather than declaring its own, so the call that reaches
         // here was resolved against DartScrollable and has to be handed to the bar's overload.
         if (widget instanceof DartCoolBar) return getClientArea((DartCoolBar) widget);
+        if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.getClientArea((DartComposite) widget);
         Rectangle b = widget.getBounds();
         int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;

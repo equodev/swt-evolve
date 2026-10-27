@@ -153,6 +153,11 @@ class DisplayWakeDeskFlutterTest {
         }
 
         @Override
+        protected int workAreaTop(org.eclipse.swt.graphics.Rectangle window) {
+            return 0;
+        }
+
+        @Override
         protected CommService comm() {
             return comm;
         }

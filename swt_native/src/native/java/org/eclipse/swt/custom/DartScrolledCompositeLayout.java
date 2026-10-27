@@ -123,6 +123,7 @@ class DartScrolledCompositeLayout extends DartLayout implements IScrolledComposi
                 contentRect.y = -vSelection;
             }
         }
+        ScrolledCompositeHelper.setIncrements(sc, hBar, vBar);
         ((DartScrolledComposite) sc.getImpl()).content.setBounds(contentRect);
         inLayout = false;
     }

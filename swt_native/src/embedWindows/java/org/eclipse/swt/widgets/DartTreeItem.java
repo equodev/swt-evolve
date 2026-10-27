@@ -884,9 +884,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VTreeItem.BACKGROUND);
         }
@@ -970,7 +970,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setChecked(boolean checked) {
         boolean newValue = checked;
         checkWidget();
-        if (!java.util.Objects.equals(this.checked, newValue)) {
+        if (this.checked != newValue) {
             getValue().markDirty(VTreeItem.CHECKED);
         }
         if ((parent.style & SWT.CHECK) == 0)
@@ -1004,7 +1004,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setExpanded(boolean expanded) {
         boolean newValue = expanded;
         checkWidget();
-        if (!java.util.Objects.equals(this.expanded, newValue)) {
+        if (this.expanded != newValue) {
             getValue().markDirty(VTreeItem.EXPANDED);
         }
         /* Expand or collapse the item */
@@ -1034,8 +1034,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VTreeItem.FONT);
         }
@@ -1143,9 +1143,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VTreeItem.FOREGROUND);
         }
@@ -1230,7 +1230,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setGrayed(boolean grayed) {
         boolean newValue = grayed;
         checkWidget();
-        if (!java.util.Objects.equals(this.grayed, newValue)) {
+        if (this.grayed != newValue) {
             getValue().markDirty(VTreeItem.GRAYED);
         }
         if ((parent.style & SWT.CHECK) == 0)

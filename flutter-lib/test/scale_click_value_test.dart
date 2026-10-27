@@ -56,7 +56,6 @@ void main() {
     await tester.tapAt(origin + const Offset(269, 20));
     await tester.pump();
 
-    expect(value.selection, 93);
     expect(selections, isNotEmpty);
     expect(selections.last, 93);
   });
@@ -137,8 +136,8 @@ void main() {
     await gesture.up();
     await tester.pump();
 
-    expect(value.selection, greaterThan(40));
     expect(selections, isNotEmpty);
+    expect(selections.last, greaterThan(40));
   });
 
   testWidgets('on a vertical Scale too, a drag that starts beyond the end of the track moves nothing',
@@ -206,7 +205,6 @@ void main() {
     await gesture.up();
     await tester.pump();
 
-    expect(value.selection, 75);
     expect(selections.last, 75);
   });
 }

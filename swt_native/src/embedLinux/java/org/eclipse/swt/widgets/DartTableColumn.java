@@ -523,7 +523,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         checkWidget();
-        if (!java.util.Objects.equals(this.resizable, newValue)) {
+        if (this.resizable != newValue) {
             getValue().markDirty(VTableColumn.RESIZABLE);
         }
         this.resizable = newValue;
@@ -623,7 +623,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        if (!java.util.Objects.equals(this.lastWidth, width)) {
+        if (this.lastWidth != width) {
             getValue().markDirty(VTableColumn.WIDTH);
         }
         if (width < 0)

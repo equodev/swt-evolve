@@ -76,6 +76,10 @@ abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, List<dynamic>> _pending = {};
 
+  /// The channels a handler is registered on.
+  @visibleForTesting
+  Iterable<String> get handledChannels => _handlers.keys;
+
   /// Channels whose held run overflowed and has had no whole frame since: the changes arriving
   /// after it describe a state this side no longer has, so they are not kept.
   final Set<String> _overflowed = {};
@@ -445,7 +449,41 @@ abstract class EquoCommBase {
     });
     if (!_applying) {
       _applying = true;
+      _applyingCount++;
       scheduleMicrotask(_drainApplyQueue);
+    }
+  }
+
+  /// How many connections have frames received and not yet applied. Static because what waits on
+  /// it, the widget registry, is one for the whole client.
+  static int _applyingCount = 0;
+  static final List<void Function()> _whenApplied = [];
+
+  /// Runs [callback] once every frame received so far has been applied: when the apply queue runs
+  /// dry, or in a microtask when nothing is waiting to be applied.
+  ///
+  /// A batch can await a handler halfway through, so the end of the current microtask is not the
+  /// end of the frames that arrived together.
+  static void whenApplied(void Function() callback) {
+    _whenApplied.add(callback);
+    if (_applyingCount == 0 && _whenApplied.length == 1) {
+      scheduleMicrotask(() {
+        if (_applyingCount == 0) _runWhenApplied();
+      });
+    }
+  }
+
+  static void _runWhenApplied() {
+    while (_whenApplied.isNotEmpty) {
+      final callbacks = List.of(_whenApplied);
+      _whenApplied.clear();
+      for (final callback in callbacks) {
+        try {
+          callback();
+        } catch (e, st) {
+          _logHandlerError('whenApplied', e, st);
+        }
+      }
     }
   }
 
@@ -459,6 +497,7 @@ abstract class EquoCommBase {
       }
     } finally {
       _applying = false;
+      if (--_applyingCount == 0) _runWhenApplied();
     }
   }
 

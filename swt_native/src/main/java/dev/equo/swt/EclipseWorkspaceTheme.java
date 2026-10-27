@@ -75,7 +75,7 @@ public final class EclipseWorkspaceTheme {
         if (themeId == null) {
             return null;
         }
-        String lower = themeId.toLowerCase();
+        String lower = themeId.toLowerCase(java.util.Locale.ROOT);
         // "System" means "follow the desktop", so it is the OS that holds the answer -- checked
         // before the substring matches below, which would otherwise classify a name like
         // "default (system)" on its other half.
@@ -93,7 +93,7 @@ public final class EclipseWorkspaceTheme {
 
     /** The desktop's own light/dark setting, or null when it cannot be read (a headless host). */
     private static String readOsAppearance() {
-        String os = System.getProperty("os.name", "").toLowerCase();
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         if (os.startsWith("mac")) {
             // AppleInterfaceStyle exists only while the desktop is dark; the read fails otherwise.
             String style = run("defaults", "read", "-g", "AppleInterfaceStyle");
@@ -118,7 +118,7 @@ public final class EclipseWorkspaceTheme {
         if (scheme == null || scheme.isEmpty()) {
             return null;
         }
-        return scheme.toLowerCase().contains("dark") ? "dark" : "light";
+        return scheme.toLowerCase(java.util.Locale.ROOT).contains("dark") ? "dark" : "light";
     }
 
     /**
@@ -137,6 +137,9 @@ public final class EclipseWorkspaceTheme {
                 return null;
             }
             return output;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
         } catch (Exception e) {
             return null;
         } finally {
