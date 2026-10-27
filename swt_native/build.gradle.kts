@@ -1090,8 +1090,10 @@ val chromiumImportPackage = "com.equo.chromium;resolution:=optional," +
         "com.equo.chromium.utils;resolution:=optional," +
         "com.equo.chromium.events;resolution:=optional"
 val fxImportPackges = "javafx.application;resolution:=optional," +
+        "javafx.geometry;resolution:=optional," +
         "javafx.scene;resolution:=optional," +
         "javafx.scene.image;resolution:=optional," +
+        "javafx.scene.transform;resolution:=optional," +
         "com.sun.javafx.cursor;resolution:=optional," +
         "com.sun.javafx.embed;resolution:=optional," +
         "com.sun.javafx.stage;resolution:=optional"

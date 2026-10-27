@@ -15,9 +15,12 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 
 import javafx.application.Platform;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
+import javafx.scene.transform.Scale;
 
 import com.sun.javafx.cursor.CursorFrame;
 import com.sun.javafx.embed.AbstractEvents;
@@ -65,8 +68,8 @@ import com.sun.javafx.stage.EmbeddedWindow;
  *       canvas is redrawn and {@link #paintControl} blits the cached frame.</li>
  * </ul>
  *
- * <p>v1 scope: a single interactive scene with pointer + key forwarding, resize
- * and lifecycle. HiDPI/popups/IME/DnD/animation-pumping are follow-ups.</p>
+ * <p>v1 scope: a single interactive scene with pointer + key forwarding, resize,
+ * lifecycle and HiDPI rasterisation. Popups/IME/DnD/animation-pumping are follow-ups.</p>
  */
 public class FXCanvas extends Canvas {
 
@@ -94,6 +97,7 @@ public class FXCanvas extends Canvas {
 
     // Latest rendered frame (ARGB, row-major), produced on the FX thread by a
     // snapshot and consumed on the SWT thread by paintControl. Guarded by 'this'.
+    // Its size is in pixels, the canvas's (pWidth/pHeight) in points: they differ on a scaled display.
     private int[] framePixels;
     private int frameWidth;
     private int frameHeight;
@@ -524,6 +528,11 @@ public class FXCanvas extends Canvas {
         }
     }
 
+    /** The pixels a canvas extent of {@code points} takes at {@code scale} pixels per point. */
+    static int pixelExtent(int points, double scale) {
+        return scale == 1.0 ? points : Math.max(1, (int) Math.round(points * scale));
+    }
+
     /** Renders the current scene synchronously. Must run on the FX thread. */
     private void snapshotNow() {
         Scene s = scene;
@@ -551,28 +560,42 @@ public class FXCanvas extends Canvas {
                 root.applyCss();
                 root.layout();
             }
-            WritableImage img = new WritableImage(w, h);
-            s.snapshot(img);
-            int[] px = new int[w * h];
-            img.getPixelReader().getPixels(0, 0, w, h,
-                    PixelFormat.getIntArgbInstance(), px, 0, w);
+            // The blit composites this frame at the pixel density the UI is drawn at, so a frame
+            // taken at the point size would be magnified there and come out soft.
+            double scale = root == null ? 1.0 : dev.equo.swt.Config.rasterScale();
+            int pw = pixelExtent(w, scale), ph = pixelExtent(h, scale);
+            WritableImage img = new WritableImage(pw, ph);
+            if (pw == w && ph == h) {
+                s.snapshot(img);
+            } else {
+                // Scene.snapshot() takes no transform, so the root is snapshotted instead, with the
+                // scene's fill behind it and a viewport (post-transform) pinned to the canvas.
+                SnapshotParameters params = new SnapshotParameters();
+                params.setTransform(new Scale(scale, scale));
+                params.setViewport(new Rectangle2D(0, 0, pw, ph));
+                params.setFill(s.getFill());
+                root.snapshot(params, img);
+            }
+            int[] px = new int[pw * ph];
+            img.getPixelReader().getPixels(0, 0, pw, ph,
+                    PixelFormat.getIntArgbInstance(), px, 0, pw);
             // Only repaint when the frame actually changed. Repainting on every
             // render would spam the SWT canvas with Paint events (and re-blits)
             // even when nothing on screen differs.
             boolean changed;
             synchronized (this) {
-                changed = frameWidth != w || frameHeight != h
+                changed = frameWidth != pw || frameHeight != ph
                         || framePixels == null || !java.util.Arrays.equals(framePixels, px);
                 if (changed) {
                     framePixels = px;
-                    frameWidth = w;
-                    frameHeight = h;
+                    frameWidth = pw;
+                    frameHeight = ph;
                 }
             }
             if (!changed) {
                 return;
             }
-            debugFrame(px, w, h);
+            debugFrame(px, pw, ph);
         } catch (Throwable t) {
             // A failed render should never take down the host app.
             System.err.println("[FXCanvas] snapshot failed: " + t);

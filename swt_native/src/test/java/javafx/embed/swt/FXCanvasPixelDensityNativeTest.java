@@ -3,7 +3,9 @@ package javafx.embed.swt;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import dev.equo.swt.AutoScalePolicy;
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.RecordingBridge;
@@ -29,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -44,7 +47,9 @@ import static org.mockito.Mockito.doAnswer;
  * that density: one taken at the point size is magnified there, and small text and shape edges come
  * out soft and stair-stepped.
  *
- * <p>The sizes are a reported case: a 373x573-point canvas on a 125% display.</p>
+ * <p>The sizes are a reported case: a 373x573-point canvas on a 125% display, in a browser tab. A
+ * desktop window that rounds 125% down to 100% draws its points 1:1 on the monitor's pixels, and the
+ * raster stays at the point size there.</p>
  */
 @Tag("native-unit")
 // OpenJFX publishes no win-aarch64 jars in any version (nor linux-aarch64 for 21.x).
@@ -53,10 +58,14 @@ class FXCanvasPixelDensityNativeTest {
 
     private static final int CANVAS_W = 373;
     private static final int CANVAS_H = 573;
+    private static final int SWATCH = 0xFF1E90FF;
+    private static final int FILL = 0xFFFFFFFF;
 
     private RecordingBridge bridge;
     private FXCanvas canvas;
     private int nativeZoomBefore;
+    private String modeBefore;
+    private String autoScaleBefore;
 
     @BeforeAll
     static void startToolkit() throws InterruptedException {
@@ -77,6 +86,10 @@ class FXCanvasPixelDensityNativeTest {
     @BeforeEach
     void setUp() {
         nativeZoomBefore = DPIUtil.getNativeDeviceZoom();
+        modeBefore = System.getProperty(ConfigFlags.MODE_PROPERTY);
+        autoScaleBefore = System.getProperty("swt.autoScale");
+        System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        System.clearProperty("swt.autoScale");
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
         Display display = DartMocks.dartDisplay();
@@ -94,7 +107,14 @@ class FXCanvasPixelDensityNativeTest {
         canvas.setScene(null);
         onFxThread(() -> { });
         displayAt(nativeZoomBefore);
+        restoreProperty(ConfigFlags.MODE_PROPERTY, modeBefore);
+        restoreProperty("swt.autoScale", autoScaleBefore);
         FlutterBridge.set(null);
+    }
+
+    private static void restoreProperty(String key, String value) {
+        if (value == null) System.clearProperty(key);
+        else System.setProperty(key, value);
     }
 
     private static void displayAt(int zoom) {
@@ -111,6 +131,28 @@ class FXCanvasPixelDensityNativeTest {
 
         assertThat(blit).as("frame drawn into the canvas: src w,h -> dest w,h")
                 .containsExactly(466, 716, CANVAS_W, CANVAS_H);
+        // The swatch is centred and half the canvas: x 116.5..349.5 once scaled, not 93..280.
+        assertThat(frameArgb(233, 358)).as("swatch centre").isEqualTo(SWATCH);
+        assertThat(frameArgb(345, 358)).as("inside the swatch's scaled right edge").isEqualTo(SWATCH);
+        assertThat(frameArgb(355, 358)).as("past the swatch's scaled right edge").isEqualTo(FILL);
+        assertThat(frameArgb(463, 713)).as("scene fill in the far corner").isEqualTo(FILL);
+    }
+
+    @Test
+    @DisplayName("a desktop window that rounds 125% down to 100% keeps the raster at the canvas size")
+    void aDesktopWindowAtAnIntegerZoomRasterisesAtThePointSize() throws InterruptedException {
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
+        int[][] blit = new int[1][];
+        AutoScalePolicy.runWith("integer", () -> {
+            displayAt(125);
+            try {
+                blit[0] = renderAndBlit();
+            } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+
+        assertThat(blit[0]).containsExactly(CANVAS_W, CANVAS_H, CANVAS_W, CANVAS_H);
     }
 
     @Test
@@ -156,6 +198,20 @@ class FXCanvasPixelDensityNativeTest {
             }
         } finally {
             gc.dispose();
+        }
+    }
+
+    private int frameArgb(int x, int y) {
+        try {
+            Field pixels = FXCanvas.class.getDeclaredField("framePixels");
+            Field width = FXCanvas.class.getDeclaredField("frameWidth");
+            pixels.setAccessible(true);
+            width.setAccessible(true);
+            synchronized (canvas) {
+                return ((int[]) pixels.get(canvas))[y * width.getInt(canvas) + x];
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
         }
     }
 
