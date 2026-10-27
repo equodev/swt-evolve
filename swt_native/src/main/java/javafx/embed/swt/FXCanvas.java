@@ -138,6 +138,7 @@ public class FXCanvas extends Canvas {
             fxHostUnavailable = true;
             warnUnavailable(t);
         }
+        installAwtDispatchMerge();
 
         addPaintListener(this::paintControl);
         addListener(SWT.Dispose, e -> dispose0());
@@ -432,6 +433,43 @@ public class FXCanvas extends Canvas {
      *
      * <p><b>No display server.</b> A CI worker has nothing for a native backend to talk to.</p>
      */
+    /**
+     * Claims the AWT dispatch slot for the SWT thread, which is what upstream {@code FXCanvas}
+     * achieves by running JavaFX on that thread and what a host in single-UI-thread mode relies
+     * on.
+     *
+     * <p>Evolve keeps JavaFX on its own thread (see {@link #needsMonocle()} — running it on the
+     * SWT thread is a measured dead end, Glass posts to a native run loop this display never
+     * services). But a host's AWT/SWT bridge does not ask where JavaFX runs; it asks
+     * {@code SwingUtilities.isEventDispatchThread()}, and on that answer it chooses between
+     * running its work inline on the SWT thread and posting it to whichever thread the dispatcher
+     * names. Measured in a host RCP product: answered "no", it posts to the JavaFX thread, that
+     * work calls {@code Display.syncExec}, and the SWT thread is already blocked waiting for it —
+     * a cycle with no monitors, so nothing reports a deadlock.
+     *
+     * <p>The two questions are separable, so this answers only the second one.
+     *
+     * <p><b>Why here and not earlier.</b> A host may issue an unguarded
+     * {@code SwingUtilities.invokeAndWait} from the SWT thread before any of this exists —
+     * measured, one does, to push its own {@code EventQueue} — and that call throws outright
+     * ({@code EventQueue.java:1353}) once the SWT thread answers as the dispatch thread. Upstream
+     * is safe from it because its dispatcher arrives with the first {@code FXCanvas}, after such
+     * set-up has run. Installing here inherits that ordering rather than inventing one.
+     *
+     * <p>Gated on the host asking for a single UI thread, so an ordinary SWT/JavaFX application
+     * neither loads AWT nor has its dispatch redirected. Fails closed.
+     */
+    private void installAwtDispatchMerge() {
+        if (fxHostUnavailable || !Boolean.getBoolean("javafx.embed.singleThread")) {
+            return;
+        }
+        try {
+            dev.equo.swt.awt.EvolveSwingHost.installDispatchMergeOn(getDisplay());
+        } catch (Throwable notInstallable) {
+            // An absent interop API leaves AWT dispatching however it would by default.
+        }
+    }
+
     private static boolean needsMonocle() {
         String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         if (os.contains("mac")) {

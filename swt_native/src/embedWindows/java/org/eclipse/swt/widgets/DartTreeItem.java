@@ -210,6 +210,17 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         cellFont = null;
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = false;
+        getValue().markDirty(VTreeItem.TEXT);
+        getValue().markDirty(VTreeItem.IMAGE);
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
+        getValue().markDirty(VTreeItem.BACKGROUND);
+        getValue().markDirty(VTreeItem.FOREGROUND);
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
     }
 

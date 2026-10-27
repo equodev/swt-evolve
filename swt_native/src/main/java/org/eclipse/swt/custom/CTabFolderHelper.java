@@ -125,21 +125,44 @@ public class CTabFolderHelper {
 
     /**
      * The strip, then after a {@code ;} each tab's drawn close button as {@code x, y, width, height}
-     * in the folder's own coordinates, with a zero width for a tab that shows none.
+     * in the folder's own coordinates, with a zero width for a tab that shows none, then after
+     * another {@code ;} the part of the strip that is shown, as {@code x, width}.
      */
     public static void handleStripLaidOut(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         if (e.text == null || e.text.isEmpty()) {
             stripLayout.remove(obj);
+            obj.shownStrip = null;
             obj.drawnCloseButtons = null;
             return;
         }
         String[] sections = e.text.split(";", -1);
         int[] strip = parseInts(sections[0]);
         int[] close = sections.length > 1 ? parseInts(sections[1]) : new int[0];
-        if (strip == null || close == null) return;
+        int[] viewport = sections.length > 2 ? parseInts(sections[2]) : new int[0];
+        if (strip == null || close == null || viewport == null) return;
         stripLayout.put(obj, strip);
+        obj.shownStrip = viewport.length == 2 ? viewport : null;
         obj.drawnCloseButtons = close;
+    }
+
+    /**
+     * Whether the tab is drawn whole inside the shown part of the strip. The render side scrolls the
+     * strip, so this side's own layout, which parks what does not fit off screen, does not say. The
+     * workbench lists the tabs that are not showing in bold in the chevron's list.
+     */
+    public static boolean isShowing(DartCTabItem item) {
+        CTabFolder parent = item.parent;
+        DartCTabFolder folder = (DartCTabFolder) parent.getImpl();
+        int[] drawn = stripLayout.get(folder);
+        int index = parent.indexOf(item.getApi());
+        if (drawn == null || index < 0 || 2 * index + 1 >= drawn.length) return item.showing;
+        int[] viewport = folder.shownStrip;
+        int left = viewport != null ? viewport[0] : 0;
+        int right = viewport != null ? viewport[0] + viewport[1] : parent.getSize().x;
+        int x = drawn[2 * index], width = drawn[2 * index + 1];
+        // Positions arrive rounded one by one, so a tab flush with an edge can overshoot it by one.
+        return width > 0 && x >= left - 1 && x + width <= right + 1;
     }
 
     private static int[] parseInts(String list) {

@@ -212,6 +212,12 @@ public class DartTableItem extends DartItem implements ITableItem {
         font = null;
         cellFont = null;
         strings = null;
+        getValue().markDirty(VTableItem.FONT);
+        getValue().markDirty(VTableItem.FONTS);
+        getValue().markDirty(VTableItem.TEXTS);
+        getValue().markDirty(VTableItem.BACKGROUNDS);
+        getValue().markDirty(VTableItem.FOREGROUNDS);
+        getValue().markDirty(VTableItem.PAINTED_TEXTS);
         dirty();
     }
 

@@ -4784,6 +4784,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     int[] drawnCloseButtons;
 
+    int[] shownStrip;
+
     int stripHeight;
 
     public int _displayedTabHeight() {
