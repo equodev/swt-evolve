@@ -1,12 +1,20 @@
 import 'dart:convert';
 
+import 'src/impl/gc_evolve.dart';
+import 'src/impl/gcdrawer_evolve.dart';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
+import 'src/comm/comm_frame.dart' show EquoCommBase;
+import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
 import 'src/gen/widget.dart';
+import 'src/testing/frame_stats.dart';
+import 'src/testing/render_facts.dart';
 import 'src/testing/tree_test_registry.dart';
 import 'test_harness_iframe_stub.dart'
     if (dart.library.js_interop) 'test_harness_iframe_web.dart';
@@ -32,6 +40,29 @@ part 'test_harness_actions.dart';
 /// pushed from Java actually reached and updated the rendered widget. `render`
 /// reports what only the rendered tree can answer; see [_renderFacts].
 void registerTestQueryChannel() {
+  // StyledText counters, reset on read so two calls bracket an action.
+  EquoCommService.onRaw("evolve.test.styledTextPerf", (dynamic req) {
+    final perfId = req is Map ? req['perfId'] : null;
+    EquoCommService.sendPayload("evolve.test.styledTextPerfResponse",
+        {'perfId': perfId, 'perf': styledTextPerfSnapshot()});
+  });
+  // Engine frame timings: `evolve.test.frameCost` {} (clears them) answers on
+  // `evolve.test.frameCostResponse` { "frames": [{ "build": ms, "raster": ms }] }.
+  EquoCommService.onRaw("evolve.test.frameCost", (dynamic req) {
+    final costId = req is Map ? req['costId'] : null;
+    // Registered on first use: this runs from main() before the binding exists.
+    _recordFrameTimings();
+    final frames = [
+      for (final t in _frameTimings)
+        {
+          'build': t.buildDuration.inMicroseconds / 1000.0,
+          'raster': t.rasterDuration.inMicroseconds / 1000.0,
+        },
+    ];
+    _frameTimings.clear();
+    EquoCommService.sendPayload(
+        "evolve.test.frameCostResponse", {'costId': costId, 'frames': frames});
+  });
   EquoCommService.onRaw("evolve.test.query", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int queryId = (map['queryId'] as num).toInt();
@@ -51,10 +82,47 @@ void registerTestQueryChannel() {
   EquoCommService.onRaw("evolve.test.frameSync", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int syncId = (map['syncId'] as num).toInt();
+    // Where the wait went, on one clock: queued behind the frames that came before this request,
+    // then until the frame began, then building and painting it.
+    final clock = EquoCommBase.clock;
+    final received = EquoCommBase.lastReceivedMicros;
+    final arrived = clock.elapsedMicroseconds;
+    var began = arrived;
+    SchedulerBinding.instance.scheduleFrameCallback((_) => began = clock.elapsedMicroseconds);
     scheduleFrameSync(() {
+      final painted = clock.elapsedMicroseconds;
       EquoCommService.sendPayload("evolve.test.frameSynced", {
         'syncId': syncId,
+        'queuedMicros': arrived - received,
+        'toVsyncMicros': began - arrived,
+        'vsyncToPaintedMicros': painted - began,
       });
+    });
+  });
+
+  // Frame statistics from the engine's own pipeline, the only rendering measurement comparable to a
+  // native toolkit's: a Java-side timer sees serialization, not the frame reaching the screen.
+  EquoCommService.onRaw("evolve.test.frameStats", (dynamic req) {
+    final map = (req as Map).cast<String, dynamic>();
+    final int statsId = (map['statsId'] as num).toInt();
+    final String action = (map['action'] as String?) ?? 'snapshot';
+    Map<String, dynamic> stats;
+    try {
+      if (action == 'start') {
+        FrameStats.start();
+      } else if (action == 'stop') {
+        FrameStats.stop();
+      }
+      // A ping times the transport: answering it must not cost anything of its own.
+      stats = action == 'ping' ? const <String, dynamic>{} : FrameStats.snapshot();
+    } catch (e) {
+      // Always answer: the comm layer isolates handler errors, so throwing here would leave the
+      // caller waiting on a timeout with nothing to diagnose.
+      stats = <String, dynamic>{'error': '$e'};
+    }
+    EquoCommService.sendPayload("evolve.test.frameStatsResponse", {
+      'statsId': statsId,
+      'stats': stats,
     });
   });
 
@@ -72,13 +140,36 @@ void registerTestQueryChannel() {
   // elsewhere) — lets a browser-side driver (Playwright etc.) assert on live Dart state
   // without going through Java/the comm WebSocket at all. See test_harness_jsapi_web.dart.
   registerTestQueryJsApi(
+    styledTextPerfJson: () => jsonEncode(styledTextPerfSnapshot()),
+    renderFactsJson: (int targetId) {
+      final facts = _renderFacts(targetId);
+      return facts == null ? null : jsonEncode(facts);
+    },
     queryStateJson: queryStateJson,
     queryAllStatesJson: queryAllStatesJson,
+    queryStatesJson: queryStatesJson,
+    queryPaintOpsJson: queryPaintOpsJson,
     queryTreeItemsJson: queryTreeItemsJson,
     expandTreeItem: expandTreeItem,
     queryPrimaryFocus: queryPrimaryFocus,
     scheduleFrameSync: scheduleFrameSync,
   );
+}
+
+/// The frames the engine has reported since they were last collected, newest last.
+final List<FrameTiming> _frameTimings = <FrameTiming>[];
+
+bool _timingsRegistered = false;
+
+void _recordFrameTimings() {
+  if (_timingsRegistered) return;
+  _timingsRegistered = true;
+  SchedulerBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+    _frameTimings.addAll(timings);
+    if (_frameTimings.length > 240) {
+      _frameTimings.removeRange(0, _frameTimings.length - 240);
+    }
+  });
 }
 
 /// Which SWT widget currently holds primary keyboard focus, as its `{swt}/{id}` semantics
@@ -115,6 +206,38 @@ String? queryStateJson(int targetId) {
   return jsonEncode(vstate);
 }
 
+/// The live `V*.toJson()` of the widgets named by [identifiers] (`{swt}/{id}`), keyed the same
+/// way, as a JSON-encoded object; an identifier with no mounted widget is left out. One walk of the
+/// tree, and only the requested states are encoded, so asking for a few widgets does not pay for
+/// serializing all of them the way [queryAllStatesJson] does.
+String queryStatesJson(List<String> identifiers) {
+  final wanted = identifiers.toSet();
+  final Map<String, dynamic> found = {};
+  final root = WidgetsBinding.instance.rootElement;
+  if (root == null || wanted.isEmpty) return jsonEncode(found);
+  void addWithItems(Map<String, dynamic> node) {
+    final key = '${node['swt']}/${node['id']}';
+    if (wanted.contains(key)) found[key] = node;
+    for (final item in _itemsOf(node)) {
+      addWithItems(item);
+    }
+  }
+
+  void visit(Element el) {
+    if (found.length == wanted.length) return;
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate != null) {
+        addWithItems(vstate.toJson() as Map<String, dynamic>);
+      }
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return jsonEncode(found);
+}
+
 /// Every mounted SWT widget's live `V*.toJson()`, keyed by its `{swt}/{id}` semantics
 /// identifier, as a JSON-encoded object. Items rendered inline by their parent (VTreeItem,
 /// VTabItem, VExpandItem, ...) have no [WidgetSwtState] of their own, but they ARE nested in
@@ -136,6 +259,48 @@ String queryAllStatesJson() {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
         addWithItems(vstate.toJson() as Map<String, dynamic>);
+      }
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return jsonEncode(all);
+}
+
+/// Every mounted GC's paint ops, keyed by `{swt}#{position in the widget tree}`, as a
+/// JSON-encoded object of string lists.
+///
+/// A GC's draw calls are not part of any widget's serialized state — they arrive on their own comm
+/// channel and end up in the drawer's shape list — so a control that paints through a PaintListener
+/// describes itself as an empty Canvas to [queryAllStatesJson]. This is the assertable form of what
+/// it actually drew, which a screenshot can otherwise only show as pixels.
+///
+/// Keyed by tree position rather than by widget id on purpose: ids are assigned per run, so an id
+/// would make two runs of the same snippet disagree on content that is identical. Callers that need
+/// the id have it from [queryAllStatesJson].
+String queryPaintOpsJson() {
+  final root = WidgetsBinding.instance.rootElement;
+  final Map<String, List<String>> all = {};
+  if (root == null) return jsonEncode(all);
+  int seen = 0;
+
+  void visit(Element el) {
+    if (el is StatefulElement && el.state is GCImpl) {
+      final GCImpl gc = el.state as GCImpl;
+      final dynamic vstate = gc.state;
+      if (vstate != null) {
+        final List<String> ops = [for (final Shape s in gc.paintOps) s.describe()];
+        // The key carries where this GC sits on screen, because its ops are in its own
+        // coordinates: without the origin a reader cannot place them on a screenshot, and a
+        // control that moved would describe itself exactly as one that did not.
+        final RenderObject? box = el.findRenderObject();
+        final Offset origin = box is RenderBox && box.hasSize
+            ? box.localToGlobal(Offset.zero)
+            : Offset.zero;
+        if (ops.isNotEmpty) {
+          all['${vstate.swt}#${seen++}@${origin.dx.round()},${origin.dy.round()}'] = ops;
+        }
       }
     }
     el.visitChildren(visit);
@@ -183,10 +348,53 @@ void scheduleFrameSync(void Function() onSynced) {
 ///     the user meets it, without asking the code under test what it computed. A widget can still
 ///     decline a gesture on its own (an Item's `build()` drops its `onTap`); that is not a refusal
 ///     by the tree and is not reported here — read the widget's own `enabled` off `state` for it.
+///   `rect` — the widget's rendered bounds in global (page) coordinates, where a test aims input.
+///   `facts` — what the widget says it paints, when its State is a [RenderFactsSource].
 Map<String, dynamic>? _renderFacts(int targetId) {
   final bool? takesInput = _takesInput(targetId);
   if (takesInput == null) return null;
-  return {'takesInput': takesInput};
+  final Element? host = _hostElementById(targetId);
+  final RenderObject? box = host?.renderObject;
+  final State? state = host is StatefulElement ? host.state : null;
+  final Map<String, double>? rect = box is RenderBox && box.hasSize ? _globalRect(box) : null;
+  return {
+    'takesInput': takesInput,
+    if (rect != null) 'rect': rect,
+    if (state is RenderFactsSource) 'facts': (state as RenderFactsSource).debugRenderFacts(),
+  };
+}
+
+/// Null when a degenerate transform (e.g. a zero scale) leaves no finite position; JSON has no NaN.
+Map<String, double>? _globalRect(RenderBox box) {
+  final Offset origin = box.localToGlobal(Offset.zero);
+  if (!origin.isFinite) return null;
+  return {
+    'x': origin.dx,
+    'y': origin.dy,
+    'width': box.size.width,
+    'height': box.size.height,
+  };
+}
+
+/// The mounted [WidgetSwtState] Element rendering the widget with [targetId], or null.
+Element? _hostElementById(int targetId) {
+  final root = WidgetsBinding.instance.rootElement;
+  if (root == null) return null;
+  Element? found;
+  void visit(Element el) {
+    if (found != null) return;
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic v = (el.state as WidgetSwtState).state;
+      if (v != null && v.id == targetId) {
+        found = el;
+        return;
+      }
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return found;
 }
 
 /// True when nothing between the root and [targetId]'s rendered position refuses pointers or

@@ -408,10 +408,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setDay(int day) {
         int newValue = day;
-        if (!java.util.Objects.equals(this.day, newValue)) {
+        checkWidget();
+        if (this.day != newValue) {
             getValue().markDirty(VDateTime.DAY);
         }
-        checkWidget();
         this.day = newValue;
     }
 
@@ -430,10 +430,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setHours(int hours) {
         int newValue = hours;
-        if (!java.util.Objects.equals(this.hours, newValue)) {
+        checkWidget();
+        if (this.hours != newValue) {
             getValue().markDirty(VDateTime.HOURS);
         }
-        checkWidget();
         if (hours < 0 || hours > 23)
             return;
         this.hours = newValue;
@@ -454,10 +454,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setMinutes(int minutes) {
         int newValue = minutes;
-        if (!java.util.Objects.equals(this.minutes, newValue)) {
+        checkWidget();
+        if (this.minutes != newValue) {
             getValue().markDirty(VDateTime.MINUTES);
         }
-        checkWidget();
         if (minutes < 0 || minutes > 59)
             return;
         this.minutes = newValue;
@@ -481,10 +481,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setMonth(int month) {
         int newValue = month;
-        if (!java.util.Objects.equals(this.month, newValue)) {
+        checkWidget();
+        if (this.month != newValue) {
             getValue().markDirty(VDateTime.MONTH);
         }
-        checkWidget();
         this.month = newValue;
     }
 
@@ -510,10 +510,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setSeconds(int seconds) {
         int newValue = seconds;
-        if (!java.util.Objects.equals(this.seconds, newValue)) {
+        checkWidget();
+        if (this.seconds != newValue) {
             getValue().markDirty(VDateTime.SECONDS);
         }
-        checkWidget();
         if (seconds < 0 || seconds > 59)
             return;
         this.seconds = newValue;
@@ -559,10 +559,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setYear(int year) {
         int newValue = year;
-        if (!java.util.Objects.equals(this.year, newValue)) {
+        checkWidget();
+        if (this.year != newValue) {
             getValue().markDirty(VDateTime.YEAR);
         }
-        checkWidget();
         if (year < MIN_YEAR || year > MAX_YEAR)
             return;
         this.year = newValue;
@@ -621,6 +621,10 @@ public class DartDateTime extends DartComposite implements IDateTime {
         return year;
     }
 
+    {
+        DateTimeHelper.startAtNow(this);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
@@ -636,17 +640,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (e != null) {
-                    if ((getApi().style & SWT.TIME) != 0) {
-                        hours = e.height;
-                        minutes = e.count;
-                        seconds = e.index;
-                    } else {
-                        year = e.x;
-                        month = e.y;
-                        day = e.width;
-                    }
-                }
+                DateTimeHelper.applySelection(this, e);
                 sendEvent(SWT.Selection, e);
             });
         });

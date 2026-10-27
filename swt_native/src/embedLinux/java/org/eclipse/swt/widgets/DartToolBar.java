@@ -173,7 +173,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
                 return super.computeTabList();
         }
         Widget[] result = {};
-        if (!isTabGroup() || !isEnabled() || !isVisible())
+        if (!isTabGroup() || !getApi().isEnabled() || !getApi().isVisible())
             return result;
         ToolItem[] list = tabList != null ? _getTabItemList() : items;
         for (int i = 0; i < list.length; i++) {
@@ -570,6 +570,16 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     public ToolItem[] _items() {
         return items;
+    }
+
+    @Override
+    public boolean forceFocus() {
+        checkWidget();
+        for (ToolItem item : items) {
+            if (item != null && !item.isDisposed() && (item.getStyle() & SWT.SEPARATOR) == 0 && item.getEnabled())
+                return super.forceFocus();
+        }
+        return false;
     }
 
     void addItem(ToolItem item) {

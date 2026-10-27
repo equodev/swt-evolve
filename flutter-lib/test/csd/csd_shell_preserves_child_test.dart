@@ -74,4 +74,30 @@ void main() {
           'recreating it drops the widget-update subscription (the tabs-blank regression)',
     );
   });
+
+  testWidgets('CsdShell keeps its child State when csd_placement flips (null -> overlay)',
+      (tester) async {
+    final log = <String>[];
+    late StateSetter rebuild;
+
+    configFlags = ConfigFlags();
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: StatefulBuilder(builder: (context, setState) {
+          rebuild = setState;
+          return CsdShell(child: _Probe(log));
+        }),
+      ),
+    ));
+    expect(log, ['init']);
+
+    // The desktop-native window's default: the title strip goes above the app.
+    configFlags = ConfigFlags()..csd_placement = 'overlay';
+    rebuild(() {});
+    await tester.pump();
+
+    expect(log, ['init'],
+        reason: 'adding the overlay title strip must not recreate the child below it');
+  });
 }

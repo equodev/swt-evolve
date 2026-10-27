@@ -4,33 +4,32 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Mocks;
+import org.eclipse.swt.widgets.Sash;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * Java half of the SashForm surface (a multi-pane app layout backed by a 3-pane SashForm):
- * when the user drags a divider, Flutter recomputes the panel weights locally
- * and must report them back; DartSashForm has to apply them, or its stale weights win at the next
- * Java-side layout (a window resize) and the user's drag is discarded — the reported symptom,
- * confirmed live in a running app (VSashForm.weights stayed [5,4,6] after a drag).
- *
- * Flutter reports the weights as a Selection event whose {@code text} is the comma-separated
- * weight list. Uses a {@link RecordingBridge} whose {@code RecordingComm} captures the
- * {@code comm().on(...)} handler DartSashForm registers, so the Dart→Java event can be fired
- * directly. Fails on current code: DartSashForm hooks no Selection handler at all.
+ * A drag on a SashForm's divider is its Sash's Selection: the form moves the panes to the sash
+ * and keeps their new weights, so a later layout (a window resize) does not undo the drag.
  */
 @ExtendWith(Mocks.class)
 class SashFormWeightsSyncTest {
 
     private RecordingBridge bridge;
+    private Mocks.Delivery delivery;
 
     @BeforeAll
     static void useEquo() {
@@ -46,72 +45,97 @@ class SashFormWeightsSyncTest {
     void setUp() {
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
+        delivery = Mocks.deliverEvents(Mocks.display());
     }
 
     @AfterEach
     void tearDown() {
+        delivery.close();
         FlutterBridge.set(null);
     }
 
-    private SashForm sashForm() {
-        Shell shell = Mocks.swtShell();
-        org.eclipse.swt.widgets.Display display = shell.getDisplay();
-        // The weights hook hops through asyncExec; run it inline on the mocked Display.
+    private SashForm laidOutForm() {
+        Shell shell = Mocks.shell();
+        Display display = shell.getDisplay();
+        // The Sash's Selection hook hops through asyncExec; run it inline on the mocked Display.
         doAnswer(inv -> {
             ((Runnable) inv.getArgument(0)).run();
             return null;
         }).when(display).asyncExec(any(Runnable.class));
         SashForm form = new SashForm(shell, SWT.HORIZONTAL);
+        form.setBounds(0, 0, 400, 300);
         new Composite(form, SWT.NONE);
         new Composite(form, SWT.NONE);
-        // Explicit array: setWeights takes int[] in older SWT and int... in newer ones, and the
-        // array form is the call that compiles against both.
+        // Explicit array: setWeights takes int[] in older SWT and int... in newer ones.
         form.setWeights(new int[] { 1, 1 });
+        form.layout();
         return form;
     }
 
-    private void fireWeightsFromFlutter(SashForm form, String weightsCsv) {
+    private static Sash sashOf(SashForm form) {
+        return (Sash) Arrays.stream(form.getChildren()).filter(c -> c instanceof Sash).findFirst().orElseThrow();
+    }
+
+    private void dragSashTo(Sash sash, int x) {
+        Rectangle bounds = sash.getBounds();
         Event e = new Event();
-        e.text = weightsCsv;
-        bridge.comm.fireContaining("SashForm/" + form.hashCode() + "/Selection/Selection", e);
+        e.x = x;
+        e.y = bounds.y;
+        e.width = bounds.width;
+        e.height = bounds.height;
+        bridge.comm.fireContaining("Sash/" + sash.hashCode() + "/Selection/Selection", e);
     }
 
     @Test
-    @DisplayName("helper applies weights directly")
-    void helperAppliesWeights() {
-        SashForm form = sashForm();
-        Event e = new Event();
-        e.text = "30,70";
-        SashFormHelper.applyWeightsFromFlutter((DartSashForm) form.getImpl(), e);
-        // getWeights() reports weights normalized to a total of 1000.
-        assertThat(form.getWeights()).containsExactly(300, 700);
+    @DisplayName("dragging the sash moves the panes on either side of it")
+    void draggingTheSashMovesThePanes() {
+        SashForm form = laidOutForm();
+        Control[] panes = ((DartSashForm) form.getImpl()).getControls(false);
+        Sash sash = sashOf(form);
+        Rectangle left = panes[0].getBounds();
+        Rectangle right = panes[1].getBounds();
+        Rectangle before = sash.getBounds();
+
+        dragSashTo(sash, before.x + 50);
+
+        assertThat(sash.getBounds().x).isEqualTo(before.x + 50);
+        assertThat(panes[0].getBounds().width).isEqualTo(left.width + 50);
+        assertThat(panes[1].getBounds().x).isEqualTo(right.x + 50);
+        assertThat(panes[1].getBounds().width).isEqualTo(right.width - 50);
+        assertThat(form.getWeights()[0]).isGreaterThan(form.getWeights()[1]);
     }
 
     @Test
-    @DisplayName("weights reported by a Flutter divider drag are applied")
-    void weightsFromFlutterAreApplied() {
-        SashForm form = sashForm();
+    @DisplayName("a sash drag sends Flutter the weights the form now answers")
+    void aDragSendsTheNewWeights() {
+        SashForm form = laidOutForm();
+        VSashForm value = ((DartSashForm) form.getImpl()).getValue();
+        value.clearDirty();
+        Sash sash = sashOf(form);
 
-        fireWeightsFromFlutter(form, "30,70");
+        dragSashTo(sash, sash.getBounds().x + 50);
 
-        assertThat(form.getWeights())
-                .as("the dragged weights must be applied to DartSashForm — otherwise the next "
-                        + "Java-side layout recomputes the panels from the stale weights and "
-                        + "discards the user's drag; getWeights() normalizes to a "
-                        + "total of 1000")
-                .containsExactly(300, 700);
+        assertThat(value.changedKeys()).contains(VSashForm.WEIGHTS);
+        assertThat(value.getWeights()).containsExactly(form.getWeights());
     }
 
     @Test
-    @DisplayName("malformed or mismatched weights are ignored, not fatal")
-    void malformedWeightsAreIgnored() {
-        SashForm form = sashForm();
+    @DisplayName("the panes keep the size a sash drag gave them through the next layout")
+    void aDragSurvivesTheNextLayout() {
+        SashForm form = laidOutForm();
+        Control[] panes = ((DartSashForm) form.getImpl()).getControls(false);
+        Sash sash = sashOf(form);
 
-        fireWeightsFromFlutter(form, "garbage");
-        fireWeightsFromFlutter(form, "1,2,3"); // wrong arity for 2 children
-        fireWeightsFromFlutter(form, "0,0");   // all-zero is invalid in SWT
+        dragSashTo(sash, sash.getBounds().x + 50);
+        assertThat(panes[0].getBounds()).isEqualTo(new Rectangle(0, 0, 248, 300));
+        int[] weights = form.getWeights();
+        form.layout();
 
-        assertThat(form.getWeights()).as("invalid payloads must leave the weights untouched")
-                .hasSize(2);
+        assertThat(form.getWeights()).containsExactly(weights);
+        // Native SashForm: onDragSash stores 16.16 weights 40633 and 24413 of the 400 px area; layout gives
+        // pane 0 40633 * 397 / 65046 = 247 px, so it lands a pixel short of the 248 the drag set.
+        assertThat(panes[0].getBounds()).isEqualTo(new Rectangle(0, 0, 247, 300));
+        assertThat(sash.getBounds()).isEqualTo(new Rectangle(247, 0, 3, 300));
+        assertThat(panes[1].getBounds()).isEqualTo(new Rectangle(250, 0, 150, 300));
     }
 }

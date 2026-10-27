@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 
@@ -119,10 +120,7 @@ public class VImage extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartImage.class, (JsonWriter.WriteObject<DartImage>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
+                Serializer.writeResourceWithReference(json, writer, impl);
             });
             json.registerReader(DartImage.class, (JsonReader.ReadObject<DartImage>) reader -> {
                 return null;

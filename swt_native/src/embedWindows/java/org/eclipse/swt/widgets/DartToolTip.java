@@ -251,8 +251,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public boolean isVisible() {
         checkWidget();
         if (item != null)
-            return getVisible() && item.getVisible();
-        return getVisible();
+            return getApi().getVisible() && item.getVisible();
+        return getApi().getVisible();
     }
 
     @Override
@@ -407,7 +407,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         message = string;
-        if (getVisible()) {
+        if (getApi().getVisible()) {
         }
     }
 
@@ -454,10 +454,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if (!java.util.Objects.equals(this.visible, visible)) {
+        if (this.visible != visible) {
             getValue().markDirty(VToolTip.VISIBLE);
         }
-        if (visible == getVisible())
+        if (visible == getApi().getVisible())
             return;
         if (item == null) {
             long hwndToolTip = hwndToolTip();

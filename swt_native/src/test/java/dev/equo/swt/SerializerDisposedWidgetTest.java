@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 @ExtendWith(Mocks.class)
 class SerializerDisposedWidgetTest extends SerializeTestBase {
@@ -26,7 +26,7 @@ class SerializerDisposedWidgetTest extends SerializeTestBase {
     // never given, so every later update read as computed from a state it did not hold.
     @Test
     void writeWithId_on_a_disposed_widget_does_not_emit_a_trailing_comma() {
-        Button w = new Button(swtShell(), SWT.NONE);
+        Button w = new Button(shell(), SWT.NONE);
         DartButton impl = (DartButton) w.getImpl();
         w.dispose();
 

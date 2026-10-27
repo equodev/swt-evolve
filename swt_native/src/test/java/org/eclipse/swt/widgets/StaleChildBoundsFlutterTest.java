@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
@@ -55,28 +55,8 @@ class StaleChildBoundsFlutterTest {
         }
     }
 
-    private static class HookBridge extends FlutterBridge {
-        final HookComm comm = new HookComm();
-
-        HookBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
-    }
-
-    private HookBridge bridge;
+    private RecordingBridge bridge;
+    private HookComm comm;
     private Display display;
 
     @BeforeAll
@@ -91,7 +71,8 @@ class StaleChildBoundsFlutterTest {
 
     @BeforeEach
     void setUp() {
-        bridge = new HookBridge();
+        comm = new HookComm();
+        bridge = new RecordingBridge(comm);
         FlutterBridge.set(bridge);
         display = new Display();
     }
@@ -116,7 +97,7 @@ class StaleChildBoundsFlutterTest {
         // Payload ids are the API widget's identity hash -- that is what FlutterBridge keys on.
         long id = widget.hashCode();
         JsonObject found = null;
-        for (RecordingComm.Frame frame : bridge.comm.sent) {
+        for (RecordingComm.Frame frame : comm.sent) {
             if (frame.json == null || frame.json.isEmpty()) continue;
             JsonObject root = JsonParser.parseString(frame.json).getAsJsonObject();
             if (root.has("id") && root.get("id").getAsLong() == id) {
@@ -134,7 +115,7 @@ class StaleChildBoundsFlutterTest {
     private Optional<JsonObject> lastStateAnywhereFor(Widget widget) {
         long id = widget.hashCode();
         JsonObject found = null;
-        for (RecordingComm.Frame frame : bridge.comm.sent) {
+        for (RecordingComm.Frame frame : comm.sent) {
             if (frame.json == null || frame.json.isEmpty()) continue;
             JsonObject hit = findById(JsonParser.parseString(frame.json).getAsJsonObject(), id);
             if (hit != null) found = hit;
@@ -175,7 +156,7 @@ class StaleChildBoundsFlutterTest {
 
         JsonObject state = lastStateAnywhereFor(grid)
                 .orElseThrow(() -> new AssertionError("the child's bounds never reached Dart; frames: "
-                        + bridge.comm.sent.stream().map(f -> f.event + "=" + f.json).toList()));
+                        + comm.sent.stream().map(f -> f.event + "=" + f.json).toList()));
         JsonObject bounds = state.getAsJsonObject("bounds");
         assertThat(bounds).as("child bounds as Dart last saw them").isNotNull();
         assertThat(bounds.get("width").getAsInt()).as("child width as Flutter will lay it out").isEqualTo(960);
@@ -194,10 +175,10 @@ class StaleChildBoundsFlutterTest {
         Composite first = new Composite(shell, SWT.NONE);
         Composite second = new Composite(shell, SWT.NONE);
         pump();
-        bridge.comm.sent.clear();
+        comm.sent.clear();
 
         // Dirty `second` from inside the flush -- the window between update()'s snapshot and its clear.
-        bridge.comm.onSend = () -> second.setBounds(0, 0, 300, 300);
+        comm.onSend = () -> second.setBounds(0, 0, 300, 300);
         first.setBounds(0, 0, 100, 100);
         FlutterBridge.update();
 

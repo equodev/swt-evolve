@@ -732,9 +732,9 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         Menu parentMenu = getParentMenu();
         if (parentMenu == null) {
-            return getEnabled() && parent.isEnabled();
+            return getApi().getEnabled() && parent.isEnabled();
         }
-        return getEnabled() && parentMenu.isEnabled();
+        return getApi().getEnabled() && parentMenu.isEnabled();
     }
 
     /**
@@ -753,7 +753,7 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible();
+        return getApi().getVisible();
     }
 
     boolean needsMenuCallback() {
@@ -782,7 +782,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void redraw() {
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         if ((getApi().style & SWT.BAR) != 0) {
             ((SwtDisplay) display.getImpl()).addBar(this.getApi());
@@ -1036,10 +1036,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        checkWidget();
+        if (this.enabled != newValue) {
             getValue().markDirty(VMenu.ENABLED);
         }
-        checkWidget();
         getApi().state &= ~DISABLED;
         this.enabled = newValue;
         if (!enabled)
@@ -1106,10 +1106,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setLocation(Point location) {
         Point newValue = location;
+        checkWidget();
         if (!java.util.Objects.equals(this.location, newValue)) {
             getValue().markDirty(VMenu.LOCATION);
         }
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location);
@@ -1168,10 +1168,10 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(this.visible, newValue)) {
+        checkWidget();
+        if (this.visible != newValue) {
             getValue().markDirty(VMenu.VISIBLE);
         }
-        checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         this.visible = newValue;

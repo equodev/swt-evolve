@@ -25,6 +25,24 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).background = value;
     }
 
+    public Color[] getBackgrounds() {
+        Color[] values = ((DartTreeItem) impl).cellBackground;
+        if (values == null)
+            return null;
+        Color[] result = new Color[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Color v = values[i];
+            if (v != null && !(v.getImpl() instanceof DartColor))
+                v = null;
+            result[i] = v;
+        }
+        return result;
+    }
+
+    public void setBackgrounds(Color[] value) {
+        ((DartTreeItem) impl).cellBackground = value;
+    }
+
     public boolean getChecked() {
         return ((DartTreeItem) impl).getChecked();
     }
@@ -54,12 +72,50 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).font = value;
     }
 
+    public Font[] getFonts() {
+        Font[] values = ((DartTreeItem) impl).cellFont;
+        if (values == null)
+            return null;
+        Font[] result = new Font[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Font v = values[i];
+            if (v != null && v.getImpl() instanceof SwtFont)
+                v = GraphicsUtils.copyFont(v);
+            if (v != null && !(v.getImpl() instanceof DartFont))
+                v = null;
+            result[i] = v;
+        }
+        return result;
+    }
+
+    public void setFonts(Font[] value) {
+        ((DartTreeItem) impl).cellFont = value;
+    }
+
     public Color getForeground() {
         return ((DartTreeItem) impl).foreground;
     }
 
     public void setForeground(Color value) {
         ((DartTreeItem) impl).foreground = value;
+    }
+
+    public Color[] getForegrounds() {
+        Color[] values = ((DartTreeItem) impl).cellForeground;
+        if (values == null)
+            return null;
+        Color[] result = new Color[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Color v = values[i];
+            if (v != null && !(v.getImpl() instanceof DartColor))
+                v = null;
+            result[i] = v;
+        }
+        return result;
+    }
+
+    public void setForegrounds(Color[] value) {
+        ((DartTreeItem) impl).cellForeground = value;
     }
 
     public boolean getGrayed() {
@@ -92,6 +148,13 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).items = value;
     }
 
+    public int[] getPaintedTexts() {
+        return ((DartTreeItem) impl).getPaintedTexts();
+    }
+
+    public void setPaintedTexts(int[] value) {
+    }
+
     public String[] getTexts() {
         return ((DartTreeItem) impl).getTexts();
     }
@@ -100,7 +163,16 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).strings = value;
     }
 
+    public int getItemCount() {
+        return ((DartTreeItem) impl)._itemCount();
+    }
+
+    public void setItemCount(int value) {
+    }
+
     public static final String BACKGROUND = "background";
+
+    public static final String BACKGROUNDS = "backgrounds";
 
     public static final String CHECKED = "checked";
 
@@ -108,13 +180,21 @@ public class VTreeItem extends VItem {
 
     public static final String FONT = "font";
 
+    public static final String FONTS = "fonts";
+
     public static final String FOREGROUND = "foreground";
+
+    public static final String FOREGROUNDS = "foregrounds";
 
     public static final String GRAYED = "grayed";
 
     public static final String IMAGES = "images";
 
+    public static final String ITEM_COUNT = "itemCount";
+
     public static final String ITEMS = "items";
+
+    public static final String PAINTED_TEXTS = "paintedTexts";
 
     public static final String TEXTS = "texts";
 
@@ -123,6 +203,9 @@ public class VTreeItem extends VItem {
         switch(key) {
             case "background":
                 Serializer.writeKeyValue(writer, "background", getBackground());
+                return;
+            case "backgrounds":
+                Serializer.writeKeyValue(writer, "backgrounds", getBackgrounds());
                 return;
             case "checked":
                 Serializer.writeKeyValue(writer, "checked", getChecked());
@@ -133,8 +216,14 @@ public class VTreeItem extends VItem {
             case "font":
                 Serializer.writeKeyValue(writer, "font", getFont());
                 return;
+            case "fonts":
+                Serializer.writeKeyValue(writer, "fonts", getFonts());
+                return;
             case "foreground":
                 Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "foregrounds":
+                Serializer.writeKeyValue(writer, "foregrounds", getForegrounds());
                 return;
             case "grayed":
                 Serializer.writeKeyValue(writer, "grayed", getGrayed());
@@ -145,8 +234,14 @@ public class VTreeItem extends VItem {
             case "items":
                 Serializer.writeKeyValue(writer, "items", getItems());
                 return;
+            case "paintedTexts":
+                Serializer.writeKeyValue(writer, "paintedTexts", getPaintedTexts());
+                return;
             case "texts":
                 Serializer.writeKeyValue(writer, "texts", getTexts());
+                return;
+            case "itemCount":
+                Serializer.writeKeyValue(writer, "itemCount", getItemCount());
                 return;
         }
         super.writeProperty(writer, key);

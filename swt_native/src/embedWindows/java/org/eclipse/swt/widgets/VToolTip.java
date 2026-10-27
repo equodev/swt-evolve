@@ -51,6 +51,7 @@ public class VToolTip extends VWidget {
         ((DartToolTip) impl).text = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartToolTip) impl).getVisible();
     }

@@ -7,6 +7,7 @@ part of 'image.dart';
 // **************************************************************************
 
 VImage _$VImageFromJson(Map<String, dynamic> json) => VImage()
+  ..id = (json['id'] as num?)?.toInt()
   ..filename = json['filename'] as String?
   ..height = (json['height'] as num?)?.toInt()
   ..imageData = json['imageData'] == null

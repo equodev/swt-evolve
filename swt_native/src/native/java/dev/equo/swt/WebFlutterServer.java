@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -104,12 +105,24 @@ public class WebFlutterServer {
 
     private HttpServer httpServer;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    /** One per server, so per Display: two sessions never share a proxied site's cookies. */
+    private final ProxyCookieJar proxyCookies = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
     /** The headless Chrome we launched (see {@link #launchHeadless}); reaped in {@link #stop}. */
     private HeadlessChrome headlessChrome;
+
+    /** Carries this server's port to the JVM an application relaunches itself into. */
+    static final String RELAUNCH_PORT = "dev.equo.swt.web.relaunchPort";
+    /** Identifies this server; a page compares it with what {@link #INSTANCE_PATH} answers to tell it was served by a previous one. */
+    private final String instance = java.util.UUID.randomUUID().toString();
+    static final String INSTANCE_PATH = "/equo-instance";
+    private final java.util.concurrent.CountDownLatch pageAsked = new java.util.concurrent.CountDownLatch(1);
+    private final int relaunchPort;
+    private boolean onRelaunchPort;
 
     private WebFlutterServer(Builder builder) {
         this.webDirectory = builder.webDirectory;
         this.httpPort = builder.httpPort;
+        this.relaunchPort = builder.relaunchPort;
         this.commPort = builder.commPort;
         this.widgetId = builder.widgetId;
         this.widgetName = builder.widgetName;
@@ -139,11 +152,13 @@ public class WebFlutterServer {
             throw new IOException("Web directory does not exist: " + webDirectory.getAbsolutePath());
         }
 
-        httpServer = HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
-        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics));
-        httpServer.createContext("/proxy", new ProxyHandler());
+        httpServer = bind();
+        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance));
+        httpServer.createContext(INSTANCE_PATH, this::answerInstance);
+        httpServer.createContext("/proxy", new ProxyHandler(proxyCookies));
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
+        httpServer.createContext(InlineDocumentHandler.PATH, new InlineDocumentHandler());
         // ProxyHandler's sibling-wait (see TARGET_AUTH_CACHE) can block a worker thread for up to a
         // few seconds while a concurrent request for the same target populates the auth cache. A
         // single page load fires a dozen-plus /proxy requests at once (the document, its stylesheet,
@@ -162,6 +177,68 @@ public class WebFlutterServer {
         LOG.info("WebFlutterServer started on http://localhost:" + actualPort);
 //        System.out.println("WebFlutterServer started on http://localhost:" + actualPort);
         return actualPort;
+    }
+
+    /** The configured port, else the one an application relaunched from; a taken relaunch port falls back to any. */
+    private HttpServer bind() throws IOException {
+        if (httpPort == 0 && relaunchPort > 0) {
+            try {
+                HttpServer server = HttpServer.create(new InetSocketAddress("localhost", relaunchPort), 0);
+                onRelaunchPort = true;
+                return server;
+            } catch (java.net.BindException taken) {
+                LOG.info("Relaunch port " + relaunchPort + " is taken, serving on another one");
+            }
+        }
+        return HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
+    }
+
+    private void answerInstance(HttpExchange exchange) throws IOException {
+        try {
+            pageAsked.countDown();
+            byte[] body = instance.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        } finally {
+            exchange.close();
+        }
+    }
+
+    /**
+     * Whether this server took over the port of the JVM the application relaunched from, so the
+     * page that JVM served may still be open and will reload into this one.
+     */
+    public boolean servesRelaunchedPage() {
+        return onRelaunchPort;
+    }
+
+    /** Waits for a page served by another server on this port to ask whether it is still current. */
+    public boolean awaitReturningPage(long timeoutMs) throws InterruptedException {
+        return pageAsked.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Records {@code port} in {@code eclipse.vmargs}, which is what an RCP application rebuilds its
+     * command line from when it relaunches itself, so the next JVM serves on the same port. Not when
+     * sessions share the JVM: its command line is not any one session's to set.
+     */
+    public static void carryPortAcrossRelaunch(int port) {
+        if (org.eclipse.swt.internal.cloudready.DefaultDisplayResolver.isSet()) return;
+        String vmargs = System.getProperty("eclipse.vmargs");
+        if (vmargs != null) System.setProperty("eclipse.vmargs", withRelaunchPort(vmargs, port));
+    }
+
+    static String withRelaunchPort(String vmargs, int port) {
+        StringBuilder out = new StringBuilder("-D" + RELAUNCH_PORT + "=" + port);
+        for (String line : vmargs.split("\n", -1)) {
+            if (line.startsWith("-D" + RELAUNCH_PORT + "=")) continue;
+            out.append('\n').append(line);
+        }
+        return out.toString();
     }
 
     /**
@@ -203,6 +280,11 @@ public class WebFlutterServer {
     public String getApplicationUrl() {
         int port = httpServer != null ? httpServer.getAddress().getPort() : httpPort;
         return "http://localhost:" + port;
+    }
+
+    /** The cookies of the sites this server's {@code /proxy} serves. */
+    public ProxyCookieJar getProxyCookies() {
+        return proxyCookies;
     }
 
     /**
@@ -259,7 +341,7 @@ public class WebFlutterServer {
     }
 
     private void launchBrowserWithCommand(String command, String url) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         ProcessBuilder pb;
         if (os.contains("mac")) {
             pb = new ProcessBuilder("open", "-a", command, url);
@@ -320,15 +402,17 @@ public class WebFlutterServer {
         private final String widgetName;
         private final boolean serveServiceWorker;
         private final boolean enableTestSemantics;
+        private final String instance;
 
         StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker,
-                boolean enableTestSemantics) {
+                boolean enableTestSemantics, String instance) {
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
             this.widgetId = widgetId;
             this.widgetName = widgetName;
             this.serveServiceWorker = serveServiceWorker;
             this.enableTestSemantics = enableTestSemantics;
+            this.instance = instance;
         }
 
         @Override
@@ -421,8 +505,14 @@ public class WebFlutterServer {
                             .replace("{{EQUO_COMM_URL}}", "")
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
                             .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
+                            .replace("{{EQUO_INSTANCE}}", instance != null ? instance : "")
                             .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()))
-                            .replace("{{EQUO_ENABLE_TEST_SEMANTICS}}", String.valueOf(enableTestSemantics));
+                            .replace("{{EQUO_ENABLE_TEST_SEMANTICS}}", String.valueOf(enableTestSemantics))
+                            // Browser-profiler marks: a runtime switch, since they are not free.
+                            .replace("{{EQUO_PERF}}",
+                                    String.valueOf(Boolean.getBoolean("dev.equo.swt.web.perf")))
+                            .replace("{{EQUO_PERF_DETAIL}}",
+                                    String.valueOf(Boolean.getBoolean("dev.equo.swt.web.perfDetail")));
                     byte[] bytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(200, bytes.length);
                     try (OutputStream os = exchange.getResponseBody()) {
@@ -559,7 +649,7 @@ public class WebFlutterServer {
         private static String getMimeType(String fileName) {
             int dot = fileName.lastIndexOf('.');
             if (dot >= 0 && dot < fileName.length() - 1) {
-                String ext = fileName.substring(dot + 1).toLowerCase();
+                String ext = fileName.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
                 return MIME_TYPES.getOrDefault(ext, DEFAULT_MIME);
             }
             return DEFAULT_MIME;
@@ -631,12 +721,28 @@ public class WebFlutterServer {
      * {@link BrowserFunctionRegistry} (which runs it on the SWT display thread)
      * and returns {@code {"value": <json>}} or {@code {"error": <message>}}. The
      * iframe is served from this origin (via the proxy), so no CORS is needed.
+     * A {@code GET ?browserId=<id>} returns {@code {"names": [...]}}, the functions
+     * registered on that Browser, for {@link BrowserFunctionBootstrap}.
      */
     private static class BrowserFunctionHandler implements HttpHandler {
+
+        private static final Pattern BROWSER_ID_PARAM = Pattern.compile("(?:^|&)browserId=(-?\\d+)(?:&|$)");
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
+                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    String query = exchange.getRequestURI().getRawQuery();
+                    Matcher m = BROWSER_ID_PARAM.matcher(query == null ? "" : query);
+                    if (!m.find()) {
+                        sendJson(exchange, 400, "{\"error\":\"bad request\"}");
+                        return;
+                    }
+                    long browserId = Long.parseLong(m.group(1));
+                    sendJson(exchange, 200, "{\"names\":"
+                            + EvalJson.encode(BrowserFunctionRegistry.namesFor(browserId)) + "}");
+                    return;
+                }
                 if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                     sendJson(exchange, 405, "{\"error\":\"method not allowed\"}");
                     return;
@@ -722,7 +828,7 @@ public class WebFlutterServer {
                     sendPlain(exchange, 404, "Not Found");
                     return;
                 }
-                serveResolvedFile(exchange, file, method);
+                serveResolvedFile(exchange, file, method, relative);
             } catch (Exception e) {
                 LOG.log(Level.WARNING, "local-file error for " + exchange.getRequestURI(), e);
                 try {
@@ -737,6 +843,13 @@ public class WebFlutterServer {
         /** Streams a file resolved by {@link LocalFileServing#resolve}. Shared by this handler's own
          *  requests and by {@link StaticFileHandler}'s root-path Referer fallback. */
         static void serveResolvedFile(HttpExchange exchange, File file, String method) throws IOException {
+            serveResolvedFile(exchange, file, method, null);
+        }
+
+        /** @param tokenRelativePath the file's path below its {@code /local-file/<token>/}, or
+         *  {@code null} when it is not being served from there */
+        static void serveResolvedFile(HttpExchange exchange, File file, String method,
+                String tokenRelativePath) throws IOException {
             String mimeType = StaticFileHandler.getMimeType(file.getName());
             exchange.getResponseHeaders().set("Content-Type", mimeType);
             exchange.getResponseHeaders().set("Cache-Control", "no-store");
@@ -748,7 +861,8 @@ public class WebFlutterServer {
                 return;
             }
 
-            byte[] rewritten = mimeType.startsWith("text/html") ? rewriteLocalResources(file) : null;
+            byte[] rewritten = mimeType.startsWith("text/html")
+                    ? rewriteLocalResources(file, tokenRelativePath) : null;
             if (rewritten != null) {
                 exchange.sendResponseHeaders(200, rewritten.length);
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -770,18 +884,24 @@ public class WebFlutterServer {
          * browser refuses ("Not allowed to load local resource"), so the page renders with blank
          * icons. Applications built on Eclipse's {@code FileLocator.toFileURL} write exactly that
          * markup, so a served page gets the same rewrite a {@code setText} document does. Returns
-         * {@code null} — serve the file as-is — when it references no local file, or is too large
-         * to be the kind of page this is for.
+         * {@code null} — serve the file as-is — when it is too large to be the kind of page this
+         * is for. A page served under its token also gets its {@code <base href>} made relative,
+         * see {@link LocalFileServing#relativizeBaseHref}, and every page gets
+         * {@link BrowserFunctionBootstrap}.
          * <p>
          * ISO-8859-1 maps bytes to chars one-to-one, so the rewrite (which only ever replaces ASCII
          * URLs) round-trips a document of any real encoding back to its own bytes.
          */
-        private static byte[] rewriteLocalResources(File file) {
+        private static byte[] rewriteLocalResources(File file, String tokenRelativePath) {
             if (file.length() > MAX_REWRITABLE_HTML_BYTES) return null;
             try {
                 String html = new String(Files.readAllBytes(file.toPath()), StandardCharsets.ISO_8859_1);
                 LocalFileServing.ServedHtml served = LocalFileServing.rewriteLocalResources(html);
-                return served == null ? null : served.html.getBytes(StandardCharsets.ISO_8859_1);
+                String out = served == null ? html : served.html;
+                if (tokenRelativePath != null) {
+                    out = LocalFileServing.relativizeBaseHref(out, tokenRelativePath);
+                }
+                return BrowserFunctionBootstrap.inject(out).getBytes(StandardCharsets.ISO_8859_1);
             } catch (IOException e) {
                 LOG.log(Level.FINE, "could not rewrite local resources in " + file, e);
                 return null;
@@ -809,6 +929,7 @@ public class WebFlutterServer {
 
         private File webDirectory;
         private int httpPort = 0; // 0 = ephemeral
+        private int relaunchPort;
         private int commPort;
         private long widgetId;
         private String widgetName = "";
@@ -948,6 +1069,8 @@ public class WebFlutterServer {
                 String fixedHttpPort = System.getProperty("dev.equo.swt.web.httpPort");
                 if (fixedHttpPort != null) {
                     httpPort = Integer.parseInt(fixedHttpPort);
+                } else {
+                    relaunchPort = Integer.getInteger(RELAUNCH_PORT, 0);
                 }
             }
             if (browserCommand == null) {

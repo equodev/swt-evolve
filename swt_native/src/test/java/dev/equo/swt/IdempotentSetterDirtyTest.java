@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.device;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * Re-applying a value a widget already has must not mark it dirty: every dirty() re-serializes the
@@ -26,7 +26,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void idempotentCTabFolderBackgroundDoesNotDirty() {
-        CTabFolder folder = new CTabFolder(swtShell(), SWT.BORDER);
+        CTabFolder folder = new CTabFolder(shell(), SWT.BORDER);
         folder.setBackground(new Color(device(), 10, 20, 30));
 
         FlutterBridge.clearDirty();
@@ -37,7 +37,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void changedCTabFolderBackgroundStillDirties() {
-        CTabFolder folder = new CTabFolder(swtShell(), SWT.BORDER);
+        CTabFolder folder = new CTabFolder(shell(), SWT.BORDER);
         folder.setBackground(new Color(device(), 10, 20, 30));
 
         FlutterBridge.clearDirty();
@@ -48,7 +48,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void idempotentToolItemTextDoesNotDirty() {
-        ToolBar bar = new ToolBar(swtShell(), SWT.FLAT);
+        ToolBar bar = new ToolBar(shell(), SWT.FLAT);
         ToolItem item = new ToolItem(bar, SWT.PUSH);
         item.setText("Run");
 
@@ -60,7 +60,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void changedToolItemTextStillDirties() {
-        ToolBar bar = new ToolBar(swtShell(), SWT.FLAT);
+        ToolBar bar = new ToolBar(shell(), SWT.FLAT);
         ToolItem item = new ToolItem(bar, SWT.PUSH);
         item.setText("Run");
 
@@ -72,7 +72,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void idempotentToolItemToolTipDoesNotDirty() {
-        ToolBar bar = new ToolBar(swtShell(), SWT.FLAT);
+        ToolBar bar = new ToolBar(shell(), SWT.FLAT);
         ToolItem item = new ToolItem(bar, SWT.PUSH);
         item.setToolTipText("Runs the suite");
 
@@ -84,7 +84,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void moveAboveKeepingOrderDoesNotDirtyParent() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Button a = new Button(parent, SWT.PUSH);
         Button b = new Button(parent, SWT.PUSH);
 
@@ -96,7 +96,7 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
 
     @Test
     void moveAboveChangingOrderStillDirtiesParent() {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Button a = new Button(parent, SWT.PUSH);
         Button b = new Button(parent, SWT.PUSH);
 

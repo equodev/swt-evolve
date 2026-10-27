@@ -70,6 +70,36 @@ VComposite _compositeWithChild() => VComposite()
       ..bounds = _rect(0, 45, 200, 15)
   ];
 
+/// Records MouseDoubleClick alongside the down/up pair: a bare Composite has no double-click of
+/// its own, so the interaction chrome is the only thing that can send it.
+class _DoubleClickCompositeSwt extends CompositeSwt<VComposite> {
+  const _DoubleClickCompositeSwt({required super.value, required this.calls});
+
+  final List<String> calls;
+
+  @override
+  void sendMouseMouseDown(VComposite val, VEvent? payload) =>
+      calls.add('down:${payload?.button}:${payload?.count}');
+
+  @override
+  void sendMouseMouseUp(VComposite val, VEvent? payload) =>
+      calls.add('up:${payload?.button}:${payload?.count}');
+
+  @override
+  void sendMouseMouseDoubleClick(VComposite val, VEvent? payload) =>
+      calls.add('dbl:${payload?.button}:${payload?.count}');
+}
+
+/// A Composite with no children: build() takes buildComposite()'s childless branch, where
+/// ControlImpl.wrap() owns the pointer and the interaction chrome wraps its result. The shape
+/// an application takes when it owner-draws its whole UI onto bare Composites.
+VComposite _childlessComposite() => VComposite()
+  ..id = 4
+  ..style = SWT.NONE
+  ..enabled = true
+  ..visible = true
+  ..bounds = _rect(0, 0, 200, 60);
+
 class _RecordingCanvasSwt extends CanvasSwt<VCanvas> {
   const _RecordingCanvasSwt({required super.value, required this.calls});
 
@@ -185,6 +215,47 @@ void main() {
     await tester.pump(Duration.zero);
 
     expect(calls, equals(['down:1:1', 'up:1:1']));
+  });
+
+  testWidgets('a left click on a childless Composite is reported once, not twice', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 200,
+        height: 60,
+        child: _DoubleClickCompositeSwt(value: _childlessComposite(), calls: calls),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await _click(tester, onParent, const Duration(seconds: 1));
+    await tester.pump(Duration.zero);
+
+    expect(calls, equals(['down:1:1', 'up:1:1']),
+        reason: 'wrap() and the interaction chrome both serve a childless Composite; forwarding '
+            'from both sends the press twice and the second copy carries count=2, which an '
+            'application that counts its own clicks reads as a double-click');
+  });
+
+  testWidgets('a childless Composite still gets its double-click', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 200,
+        height: 60,
+        child: _DoubleClickCompositeSwt(value: _childlessComposite(), calls: calls),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await _click(tester, onParent, const Duration(seconds: 1));
+    await _click(tester, onParent, const Duration(seconds: 1, milliseconds: 150));
+    await tester.pump(Duration.zero);
+
+    expect(calls, equals(['down:1:1', 'up:1:1', 'down:1:2', 'dbl:1:2', 'up:1:2']),
+        reason: 'ControlImpl.wrap() has no double-click of its own');
   });
 
   testWidgets('a middle click reports button=2, not the left button', (tester) async {

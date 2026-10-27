@@ -1,11 +1,13 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.GCImageDrawer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
-import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
@@ -48,10 +50,13 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
             if (widget instanceof DartCTabFolder) { DartCTabFolder t = (DartCTabFolder) widget; // workaround
-                t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
-                    Rectangle bounds = t.getBounds();
-                    bridge.setBoundsCTabFolder(t, bounds, true);
-                }));
+                t.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent e) {
+                        Rectangle bounds = t.getBounds();
+                        bridge.setBoundsCTabFolder(t, bounds, true);
+                    }
+                });
             }
             return bridge;
         }
@@ -102,10 +107,10 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             System.out.println("Eclipse theme ID from preferences: " + themeId);
 
             // Determine if it's dark or light based on theme ID
-            if (themeId.toLowerCase().contains("dark")) {
+            if (themeId.toLowerCase(java.util.Locale.ROOT).contains("dark")) {
                 return "dark";
-            } else if (themeId.toLowerCase().contains("light") ||
-                       themeId.toLowerCase().contains("default") || themeId.toLowerCase().contains("classic")) {
+            } else if (themeId.toLowerCase(java.util.Locale.ROOT).contains("light") ||
+                       themeId.toLowerCase(java.util.Locale.ROOT).contains("default") || themeId.toLowerCase(java.util.Locale.ROOT).contains("classic")) {
                 return "light";
             }
 
@@ -129,7 +134,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             return theme;
         }
         // Fallback to OS theme
-        boolean isDark = Display.isSystemDarkTheme();
+        boolean isDark = Config.systemDarkTheme();
         theme = isDark ? "dark" : "light";
         System.out.println("Using OS theme (fallback): " + theme);
         cachedTheme = theme;
@@ -143,7 +148,8 @@ public abstract class EmbeddedBridge extends FlutterBridge {
      * Usage in DartGC.init() when drawable is an Image:
      *   this.bridge = EmbeddedBridge.of(gcId, dartImage, onImageResult);
      */
-    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<byte[]> onImageResult) {
+    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<java.nio.ByteBuffer> onImageResult) {
+        // One drawer per GC, not per Image: sharing one leaves the sides disagreeing on which is live.
         GCImageDrawer drawer = new GCImageDrawer();
         drawer.initFlutterView(gcId, dartImage, onImageResult);
         return drawer;

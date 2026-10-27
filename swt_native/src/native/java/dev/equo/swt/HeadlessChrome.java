@@ -31,14 +31,27 @@ public final class HeadlessChrome implements AutoCloseable {
     private Process process;
     private Path profileDir;
 
+    /**
+     * Closes the browser when the JVM exits without anyone calling {@link #close}: an application
+     * ending in {@code System.exit}, a test JVM that never stops its server. Chrome does not die with
+     * its parent, so without this every such exit leaves a browser running.
+     */
+    private final Thread reaper = new Thread(this::close, "equo-chrome-reaper");
+
     private HeadlessChrome(Process process, Path profileDir) {
         this.process = process;
         this.profileDir = profileDir;
+        Runtime.getRuntime().addShutdownHook(reaper);
     }
 
     /** The launched process, so a caller can observe it (e.g. relaunch on a wedged boot). */
     public Process process() {
         return process;
+    }
+
+    /** The throwaway profile directory, where Chrome writes {@code DevToolsActivePort}. */
+    public Path profileDir() {
+        return profileDir;
     }
 
     /**
@@ -51,7 +64,7 @@ public final class HeadlessChrome implements AutoCloseable {
                 && new File(override).canExecute()) {
             return override;
         }
-        String os = System.getProperty("os.name", "").toLowerCase();
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         String[] candidates = os.contains("mac")
                 ? new String[]{"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
                                "/Applications/Chromium.app/Contents/MacOS/Chromium"}
@@ -77,6 +90,12 @@ public final class HeadlessChrome implements AutoCloseable {
      */
     public static HeadlessChrome launch(String binary, String url, boolean headless, boolean verbose, Io io)
             throws IOException {
+        return launch(binary, url, headless, verbose, io, new String[0]);
+    }
+
+    /** {@link #launch(String, String, boolean, boolean, Io)} with additional command-line switches. */
+    public static HeadlessChrome launch(String binary, String url, boolean headless, boolean verbose, Io io,
+            String... extraArgs) throws IOException {
         // Unique, throwaway profile per run so Chrome's per-user-data-dir singleton can't hand the URL
         // to an already-running instance, and an unclean exit can't leave a crash-restore flag.
         Path profileDir = Files.createTempDirectory("equo-chrome-profile-");
@@ -87,7 +106,13 @@ public final class HeadlessChrome implements AutoCloseable {
             cmd.add("--enable-logging=stderr");
             cmd.add("--v=1");
         }
-        cmd.add("--disable-gpu");
+        // CanvasKit without GL draws browser-decoded images as nothing; SwiftShader gives
+        // GPU-less machines a GL context.
+        if (Boolean.getBoolean("dev.equo.swt.web.softwareGl")) {
+            cmd.add("--use-gl=angle");
+            cmd.add("--use-angle=swiftshader");
+        }
+        cmd.add("--enable-unsafe-swiftshader");
         cmd.add("--no-first-run");
         cmd.add("--no-default-browser-check");
         cmd.add("--hide-crash-restore-bubble");
@@ -109,6 +134,7 @@ public final class HeadlessChrome implements AutoCloseable {
                 + "OptimizationHintsFetching,OptimizationTargetPrediction,Translate,MediaRouter,"
                 + "InterestFeedContentSuggestions,CalculateNativeWinOcclusion");
         cmd.add("--user-data-dir=" + profileDir);
+        for (String arg : extraArgs) cmd.add(arg);
         cmd.add(url);
         ProcessBuilder pb = new ProcessBuilder(cmd);
         if (io == Io.INHERIT) {
@@ -122,7 +148,7 @@ public final class HeadlessChrome implements AutoCloseable {
 
     /** Redirect.DISCARD is Java 9; the platform's null device is the same thing on every release. */
     private static final File NULL_DEVICE =
-            new File(System.getProperty("os.name", "").toLowerCase().contains("win") ? "NUL" : "/dev/null");
+            new File(System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win") ? "NUL" : "/dev/null");
 
     /**
      * Kills the helpers Chrome spawned. ProcessHandle arrived in Java 9 and the fragments built for
@@ -154,7 +180,14 @@ public final class HeadlessChrome implements AutoCloseable {
      * Idempotent.
      */
     @Override
-    public void close() {
+    public synchronized void close() {
+        if (Thread.currentThread() != reaper) {
+            try {
+                Runtime.getRuntime().removeShutdownHook(reaper);
+            } catch (IllegalStateException shuttingDown) {
+                // The JVM is already exiting; the hook runs this same close, which finds nothing left.
+            }
+        }
         if (process != null) {
             destroyDescendants(process);
             process.destroyForcibly();

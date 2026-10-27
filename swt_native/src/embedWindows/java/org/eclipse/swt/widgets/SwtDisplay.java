@@ -884,7 +884,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @see #syncExec
      */
     public void asyncExec(Runnable runnable) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer.asyncExec(runnable);
@@ -976,7 +976,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static void checkDisplay(Thread thread, boolean multiple) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (Display display : Displays) {
                 if (display != null) {
                     //$NON-NLS-1$
@@ -1344,7 +1344,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static void deregister(Display display) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (display == Displays[i])
                     Displays[i] = null;
@@ -1636,7 +1636,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @return the display for the given thread
      */
     public static Display findDisplay(Thread thread) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (Display display : Displays) {
                 if (display != null && ((SwtDisplay) display.getImpl()).thread == thread) {
                     return display;
@@ -1905,7 +1905,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @return the default display
      */
     public static Display getDefault() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (Default == null)
                 Default = new Display();
             return Default;
@@ -2125,7 +2125,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (getDepth() >= 24)
             return 32;
         //$NON-NLS-1$
-        TCHAR buffer1 = new TCHAR(0, "Control Panel\\Desktop\\WindowMetrics", true);
+        TCHAR buffer1 = new TCHAR("Control Panel\\Desktop\\WindowMetrics", true);
         long[] phkResult = new long[1];
         int result = OS.RegOpenKeyEx(OS.HKEY_CURRENT_USER, buffer1, 0, OS.KEY_READ, phkResult);
         if (result != 0)
@@ -2133,10 +2133,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         int depth = 4;
         int[] lpcbData = new int[1];
         //$NON-NLS-1$
-        TCHAR buffer2 = new TCHAR(0, "Shell Icon BPP", true);
+        TCHAR buffer2 = new TCHAR("Shell Icon BPP", true);
         result = OS.RegQueryValueEx(phkResult[0], buffer2, 0, null, (TCHAR) null, lpcbData);
         if (result == 0) {
-            TCHAR lpData = new TCHAR(0, lpcbData[0] / TCHAR.sizeof);
+            TCHAR lpData = new TCHAR(lpcbData[0] / TCHAR.sizeof);
             result = OS.RegQueryValueEx(phkResult[0], buffer2, 0, null, lpData, lpcbData);
             if (result == 0) {
                 try {
@@ -2177,7 +2177,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             ImageList list = imageList[i];
             if (list == null)
                 break;
-            if (list.isFittingFor(style, width, height, zoom)) {
+            if (list.isFittingFor(style, width, height)) {
                 list.addRef();
                 return list;
             }
@@ -2188,7 +2188,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(imageList, 0, newList, 0, length);
             imageList = newList;
         }
-        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, width, height, zoom);
         imageList[i] = list;
         list.addRef();
         return list;
@@ -2203,7 +2203,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             ImageList list = toolImageList[i];
             if (list == null)
                 break;
-            if (list.isFittingFor(style, width, height, zoom)) {
+            if (list.isFittingFor(style, width, height)) {
                 list.addRef();
                 return list;
             }
@@ -2214,7 +2214,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolImageList, 0, newList, 0, length);
             toolImageList = newList;
         }
-        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, width, height, zoom);
         toolImageList[i] = list;
         list.addRef();
         return list;
@@ -2229,7 +2229,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             ImageList list = toolDisabledImageList[i];
             if (list == null)
                 break;
-            if (list.isFittingFor(style, width, height, zoom)) {
+            if (list.isFittingFor(style, width, height)) {
                 list.addRef();
                 return list;
             }
@@ -2240,7 +2240,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolDisabledImageList, 0, newList, 0, length);
             toolDisabledImageList = newList;
         }
-        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, width, height, zoom);
         toolDisabledImageList[i] = list;
         list.addRef();
         return list;
@@ -2255,7 +2255,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             ImageList list = toolHotImageList[i];
             if (list == null)
                 break;
-            if (list.isFittingFor(style, width, height, zoom)) {
+            if (list.isFittingFor(style, width, height)) {
                 list.addRef();
                 return list;
             }
@@ -2266,7 +2266,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolHotImageList, 0, newList, 0, length);
             toolHotImageList = newList;
         }
-        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, width, height, zoom);
         toolHotImageList[i] = list;
         list.addRef();
         return list;
@@ -2524,7 +2524,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getSyncThread() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return ((SwtSynchronizer) synchronizer.getImpl()).syncThread;
@@ -2868,7 +2868,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getThread() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return thread;
@@ -3026,9 +3026,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         windowProc = windowCallback.getAddress();
         /* Remember the current thread id */
         threadId = OS.GetCurrentThreadId();
-        windowClass = new TCHAR(0, WindowName + WindowClassCount, true);
-        windowShadowClass = new TCHAR(0, WindowShadowName + WindowClassCount, true);
-        windowOwnDCClass = new TCHAR(0, WindowOwnDCName + WindowClassCount, true);
+        windowClass = new TCHAR(WindowName + WindowClassCount, true);
+        windowShadowClass = new TCHAR(WindowShadowName + WindowClassCount, true);
+        windowOwnDCClass = new TCHAR(WindowOwnDCName + WindowClassCount, true);
         WindowClassCount++;
         /* Register the SWT window class */
         long hInstance = OS.GetModuleHandle(null);
@@ -3048,7 +3048,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         /* Create the message only HWND */
         hwndMessage = OS.CreateWindowEx(0, windowClass, null, OS.WS_OVERLAPPED, 0, 0, 0, 0, 0, 0, hInstance, null);
         String title = "SWT_Window_" + APP_NAME;
-        OS.SetWindowText(hwndMessage, new TCHAR(0, title, true));
+        OS.SetWindowText(hwndMessage, new TCHAR(title, true));
         //$NON-NLS-1$
         messageCallback = new Callback(this, "messageProc", 4);
         messageProc = messageCallback.getAddress();
@@ -3065,15 +3065,15 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         idleHook = OS.SetWindowsHookEx(OS.WH_FOREGROUNDIDLE, foregroundIdleProc, 0, threadId);
         /* Register window messages */
         //$NON-NLS-1$
-        TASKBARCREATED = OS.RegisterWindowMessage(new TCHAR(0, "TaskbarCreated", true));
+        TASKBARCREATED = OS.RegisterWindowMessage(new TCHAR("TaskbarCreated", true));
         //$NON-NLS-1$
-        TASKBARBUTTONCREATED = OS.RegisterWindowMessage(new TCHAR(0, "TaskbarButtonCreated", true));
+        TASKBARBUTTONCREATED = OS.RegisterWindowMessage(new TCHAR("TaskbarButtonCreated", true));
         //$NON-NLS-1$
-        SWT_RESTORECARET = OS.RegisterWindowMessage(new TCHAR(0, "SWT_RESTORECARET", true));
+        SWT_RESTORECARET = OS.RegisterWindowMessage(new TCHAR("SWT_RESTORECARET", true));
         //$NON-NLS-1$
-        DI_GETDRAGIMAGE = OS.RegisterWindowMessage(new TCHAR(0, "ShellGetDragImage", true));
+        DI_GETDRAGIMAGE = OS.RegisterWindowMessage(new TCHAR("ShellGetDragImage", true));
         //$NON-NLS-1$
-        SWT_OPENDOC = OS.RegisterWindowMessage(new TCHAR(0, "SWT_OPENDOC", true));
+        SWT_OPENDOC = OS.RegisterWindowMessage(new TCHAR("SWT_OPENDOC", true));
         /* Initialize OLE */
         OS.OleInitialize(0);
         if (appName != null) {
@@ -3629,7 +3629,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (sharedData == 0)
             return null;
         int length = OS.wcslen(sharedData);
-        TCHAR buffer = new TCHAR(0, length);
+        TCHAR buffer = new TCHAR(length);
         int byteCount = buffer.length() * TCHAR.sizeof;
         OS.MoveMemory(buffer, sharedData, byteCount);
         String result = buffer.toString(0, length);
@@ -3804,7 +3804,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @since 3.0
      */
     public boolean post(Event event) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (event == null)
@@ -4010,7 +4010,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static void register(Display display) {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] == null) {
                     Displays[i] = display;
@@ -5023,7 +5023,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (synchronizer == this.synchronizer)
             return;
         Synchronizer oldSynchronizer;
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             oldSynchronizer = this.synchronizer;
             this.synchronizer = synchronizer;
         }
@@ -5149,7 +5149,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public void syncExec(Runnable runnable) {
         Synchronizer synchronizer;
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer = this.synchronizer;
@@ -5398,7 +5398,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @see #sleep
      */
     public void wake() {
-        synchronized (SwtDisplay.class) {
+        synchronized (SwtDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (thread == Thread.currentThread())

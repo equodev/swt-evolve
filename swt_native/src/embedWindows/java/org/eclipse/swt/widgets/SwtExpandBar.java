@@ -458,7 +458,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
             return false;
         if (hFont != 0)
             return false;
-        return OS.IsAppThemed();
+        return true;
     }
 
     void layoutItems(int index, boolean setScrollbar) {

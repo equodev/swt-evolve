@@ -15,6 +15,10 @@ import 'utils/image_utils.dart';
 
 class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     extends CompositeImpl<T, V> {
+  /// A click never focuses an ExpandBar natively, empty or not.
+  @override
+  void takeFocusOnPress() {}
+
   @override
   Widget buildComposite() {
     final children = state.children;
@@ -100,7 +104,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       result = IntrinsicHeight(child: result);
     }
 
-    return tagSemantics(result);
+    return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result)));
   }
 
   List<Widget> getExpandItems(
@@ -255,10 +259,12 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
 
     // Both states take the application's colour when it set one; only the theme default differs.
     final textColor = getForegroundColor(
+      context: context,
       foreground: widget.parentForeground,
       defaultColor: _isExpanded
           ? itemTheme.foregroundExpandedColor
           : itemTheme.foregroundColor,
+      minContrast: itemTheme.minTextContrast,
     );
 
     final iconColor = _isExpanded

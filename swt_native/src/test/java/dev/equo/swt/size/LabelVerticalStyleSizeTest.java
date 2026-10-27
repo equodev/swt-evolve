@@ -24,8 +24,8 @@ class LabelVerticalStyleSizeTest {
     private static DartLabel label(int style) {
         DartLabel label = mock(DartLabel.class);
         when(label.getStyle()).thenReturn(style);
-        when(label.getText()).thenReturn(MESSAGE);
-        when(label.getImage()).thenReturn(null);
+        when(label._displayedText()).thenReturn(MESSAGE);
+        when(label._displayedImage()).thenReturn(null);
         return label;
     }
 

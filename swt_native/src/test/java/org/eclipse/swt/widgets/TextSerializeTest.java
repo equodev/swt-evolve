@@ -11,7 +11,7 @@ class TextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Text() {
-        Text w = new Text(swtShell(), SWT.NONE);
+        Text w = new Text(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class TextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Text() {
-        Text w = new Text(swtShell(), SWT.NONE);
+        Text w = new Text(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -30,6 +30,7 @@ class TextSerializeTest extends SerializeTestBase {
                .containsEntry("message", json(w.getMessage()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("editable").equalsTo(w.getEditable(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
@@ -43,12 +44,11 @@ class TextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_Text() {
-        Text w = new Text(swtShell(), SWT.NONE);
+        Text w = new Text(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

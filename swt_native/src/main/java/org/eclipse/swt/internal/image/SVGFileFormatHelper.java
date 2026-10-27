@@ -24,6 +24,7 @@ public final class SVGFileFormatHelper {
     /** Placeholder sized from the SVG's own width/height or viewBox. */
     public static ImageData fallbackImageData(InputStream stream, boolean captureMarkup) {
         String svg = readSvgContent(stream);
+        checkWellFormed(svg);
         if (captureMarkup) {
             if (svg == null)
                 SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT, null, " [No SVG rasterizer found]");
@@ -37,11 +38,37 @@ public final class SVGFileFormatHelper {
     public static ImageData fallbackImageData(InputStream stream, int width, int height, boolean captureMarkup) {
         if (captureMarkup) {
             String svg = readSvgContent(stream);
+            checkWellFormed(svg);
             if (svg == null)
                 SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT, null, " [No SVG rasterizer found]");
             pendingSvgContent.set(svg);
         }
         return placeholderImageData(width > 0 ? width : 16, height > 0 ? height : 16);
+    }
+
+    /** Rejects markup a rasterizer could not read, as a real one would: not XML, or not an SVG. */
+    private static void checkWellFormed(String svg) {
+        if (svg == null)
+            return;
+        final String[] root = { null };
+        try {
+            javax.xml.parsers.SAXParserFactory factory = javax.xml.parsers.SAXParserFactory.newInstance();
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.newSAXParser().parse(new org.xml.sax.InputSource(new java.io.StringReader(svg)),
+                    new org.xml.sax.helpers.DefaultHandler() {
+                        @Override
+                        public void startElement(String uri, String localName, String qName,
+                                org.xml.sax.Attributes attributes) {
+                            if (root[0] == null) root[0] = qName;
+                        }
+                    });
+        } catch (Exception e) {
+            SWT.error(SWT.ERROR_INVALID_IMAGE, e);
+        }
+        if (root[0] == null || !(root[0].equals("svg") || root[0].endsWith(":svg")))
+            SWT.error(SWT.ERROR_INVALID_IMAGE);
     }
 
     private static String readSvgContent(InputStream stream) {

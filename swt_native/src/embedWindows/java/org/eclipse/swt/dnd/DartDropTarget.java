@@ -451,6 +451,9 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
             control.removeListener(SWT.Dispose, controlListener);
         controlListener = null;
         control.setData(DND.DROP_TARGET_KEY, null);
+        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartWidget) {
+            this.bridge.dirty((DartWidget) control.getImpl());
+        }
         transferAgents = null;
         control = null;
         this.Release();
@@ -666,14 +669,13 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.time = e.time;
-        event.x = e.x;
-        event.y = e.y;
+        setDisplayLocation(event, e);
         event.item = e.item != null ? e.item : resolveItem(e);
         event.operations = getStyle();
         event.dataTypes = computeMutualDataTypes(matchingDragSource());
         event.dataType = selectedDataType != null ? selectedDataType : (event.dataTypes.length > 0 ? event.dataTypes[0] : null);
         event.detail = eventType == DND.DragEnter ? DND.DROP_DEFAULT : (selectedOperation != DND.DROP_NONE ? selectedOperation : DND.DROP_DEFAULT);
-        event.feedback = dndFeedback;
+        event.feedback = DND.FEEDBACK_SELECT;
         return event;
     }
 
@@ -701,12 +703,17 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return mutual.toArray(new TransferData[0]);
     }
 
+    private void setDisplayLocation(DNDEvent event, Event e) {
+        org.eclipse.swt.graphics.Point onDisplay = control.toDisplay(e.x, e.y);
+        event.x = onDisplay.x;
+        event.y = onDisplay.y;
+    }
+
     private DNDEvent toDropEvent(Event e) {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.time = e.time;
-        event.x = e.x;
-        event.y = e.y;
+        setDisplayLocation(event, e);
         event.doit = true;
         int detail = e.detail != DND.DROP_NONE ? e.detail : selectedOperation;
         event.detail = detail == DND.DROP_DEFAULT ? resolveDefaultOperation() : detail;

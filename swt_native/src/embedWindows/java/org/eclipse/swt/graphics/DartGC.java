@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
+import org.eclipse.swt.graphics.Region.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.widgets.*;
@@ -1005,6 +1006,11 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (!simple) {
+            Rectangle imageBounds = srcImage.getBounds();
+            if (srcX + srcWidth > imageBounds.width || srcY + srcHeight > imageBounds.height)
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
         drawOp.image = GraphicsUtils.copyImageForDraw(display, srcImage);
         drawOp.srcX = srcX;
@@ -1053,11 +1059,30 @@ public final class DartGC extends DartResource implements IGC {
 		 * computed to pixels depending on the factor of the full image bounds to the
 		 * actual OS handle size that will be used.
 		 */
-            float scaleFactor = Math.min(1f * imageHandle.width() / fullImageBounds.width, 1f * imageHandle.height() / fullImageBounds.height);
-            int closestZoomOfHandle = Math.round(scaleFactor * 100);
-            if (closestZoomOfHandle != 100) {
+            float scaleFactorX = (1f * imageHandle.width()) / fullImageBounds.width;
+            float scaleFactorY = (1f * imageHandle.height()) / fullImageBounds.height;
+            int srcXPixels = Math.round(scaleFactorX * src.x);
+            int srcWidthPixels = Math.round(scaleFactorX * (src.x + src.width)) - srcXPixels;
+            int srcYPixels = Math.round(scaleFactorY * src.y);
+            int srcHeightPixels = Math.round(scaleFactorY * (src.y + src.height)) - srcYPixels;
+            Rectangle srcPixels = new Rectangle(srcXPixels, srcYPixels, srcWidthPixels, srcHeightPixels);
+            if (Math.abs(scaleFactorX - 1f) >= 0.01f || Math.abs(scaleFactorY - 1f) >= 0.01f) {
+                /*
+			 * This is a HACK! Due to rounding errors at fractional scale factors,
+			 * the coordinates may be slightly off. The workaround is to restrict
+			 * coordinates to the allowed bounds.
+			 */
+                int errX = srcPixels.x + srcPixels.width - imageHandle.width();
+                int errY = srcPixels.y + srcPixels.height - imageHandle.height();
+                if (errX != 0 || errY != 0) {
+                    if (errX <= Math.max(1, scaleFactorX) && errY <= Math.max(1, scaleFactorY)) {
+                        srcPixels.intersect(new Rectangle(0, 0, imageHandle.width(), imageHandle.height()));
+                    } else {
+                        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                    }
+                }
             }
-            return null;
+            return srcPixels;
         }
 
         private int calculateZoomForImage(int gcZoom, int srcWidth, int srcHeight, int destWidth, int destHeight) {
@@ -2569,7 +2594,7 @@ public final class DartGC extends DartResource implements IGC {
         checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
-        return SWT.DEFAULT;
+        return this.antialias;
     }
 
     /**
@@ -2640,15 +2665,20 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Rectangle getClipping() {
-        if (this.clipping == null) {
-            if (drawable instanceof Control) {
-                Rectangle b = ((Control) drawable).getBounds();
-                if (b != null)
-                    return new Rectangle(0, 0, b.width, b.height);
-            }
-            return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        Rectangle bounds = null;
+        if (drawable instanceof Control) {
+            Rectangle b = ((Control) drawable).getBounds();
+            if (b != null)
+                bounds = new Rectangle(0, 0, b.width, b.height);
+        } else if (drawable instanceof Image) {
+            bounds = ((Image) drawable).getBounds();
         }
-        return this.clipping;
+        Rectangle clip = this.clipping == null ? bounds : new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        if (clip == null)
+            return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        if (bounds != null && this.clipping != null)
+            clip = clip.intersection(bounds);
+        return GCHelper.isTransforming(transform) ? GCHelper.transformBounds(transform, clip, true) : clip;
     }
 
     Rectangle getClippingInPixels() {
@@ -2690,16 +2720,10 @@ public final class DartGC extends DartResource implements IGC {
 
     private class GetClippingOperation extends Operation {
 
-        private final Map<Integer, Long> zoomToRegionHandle = new HashMap<>();
+        private final SwtRegion.ZoomToRegionMap zoomToRegionHandle = new SwtRegion.ZoomToRegionMap();
 
         public GetClippingOperation(Region region) {
-            ((SwtRegion) region.getImpl()).set(zoom -> {
-                if (!zoomToRegionHandle.containsKey(zoom)) {
-                    System.err.println("No clipping handle for zoom " + zoom + " has been created on this GC");
-                    return zoomToRegionHandle.values().iterator().next();
-                }
-                return zoomToRegionHandle.get(zoom);
-            }, getZoom());
+            ((SwtRegion) region.getImpl()).set(zoomToRegionHandle, getZoom());
         }
 
         // Whenever the GC handle is recalculated for a new zoom, we compute and store the clipping
@@ -2707,7 +2731,7 @@ public final class DartGC extends DartResource implements IGC {
         // that clipping is set can retrieve it from the storage when required.
         @Override
         void apply() {
-            zoomToRegionHandle.computeIfAbsent(getZoom(), __ -> getClippingRegion());
+            zoomToRegionHandle.register(getZoom(), () -> getClippingRegion());
         }
 
         @Override
@@ -2854,7 +2878,7 @@ public final class DartGC extends DartResource implements IGC {
         checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
-        return SWT.DEFAULT;
+        return this.interpolation;
     }
 
     /**
@@ -3023,7 +3047,7 @@ public final class DartGC extends DartResource implements IGC {
         checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
-        return SWT.DEFAULT;
+        return this.textAntialias;
     }
 
     /**
@@ -3096,9 +3120,10 @@ public final class DartGC extends DartResource implements IGC {
             data.background = this.background.handle;
         }
         if (this.foreground == null) {
-            Color black = new Color(0, 0, 0);
-            data.foreground = black.handle;
-            this.foreground = black;
+            // A control GC starts from the foreground the application set on the control.
+            Color inheritedFg = GCHelper.ownForeground(drawable);
+            this.foreground = inheritedFg != null ? inheritedFg : new Color(0, 0, 0);
+            data.foreground = this.foreground.handle;
         }
         if (hDC == 0)
             hDC = 1;
@@ -3134,9 +3159,10 @@ public final class DartGC extends DartResource implements IGC {
             data.background = this.background.handle;
         }
         if (this.foreground == null) {
-            Color black = new Color(0, 0, 0);
-            data.foreground = black.handle;
-            this.foreground = black;
+            // A control GC starts from the foreground the application set on the control.
+            Color inheritedFg = GCHelper.ownForeground(drawable);
+            this.foreground = inheritedFg != null ? inheritedFg : new Color(0, 0, 0);
+            data.foreground = this.foreground.handle;
         }
         if (hDC == 0)
             hDC = 1;
@@ -3169,6 +3195,9 @@ public final class DartGC extends DartResource implements IGC {
                 this.font = data.font = Display.getCurrent().getSystemFont();
                 getValue().markDirty(VGC.FONT);
             }
+        } else if (this.font == null) {
+            this.font = data.font;
+            getValue().markDirty(VGC.FONT);
         }
         GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
         Image image = data.image;
@@ -3221,6 +3250,8 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public int hashCode() {
+        if (ownerDrawItem != null)
+            return ownerDrawItem.hashCode();
         if (gcImageId != 0)
             return gcImageId;
         if (drawable instanceof Control) {
@@ -3244,7 +3275,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean isClipped() {
-        return clipping != null && (clipping.width > 0 || clipping.height > 0);
+        return clipping != null && (paintDamage == null || !clipping.equals(paintDamage));
     }
 
     private void checkNonDisposed() {
@@ -3375,6 +3406,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setAntialias(int antialias) {
         int newValue = antialias;
+        if (this.antialias != newValue) {
+            getValue().markDirty(VGC.ANTIALIAS);
+        }
         checkNonDisposed();
         this.antialias = newValue;
         storeAndApplyOperationForExistingHandle(new SetAntialiasOperation(antialias));
@@ -3426,8 +3460,9 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAlpha(int alpha) {
+        alpha &= 0xFF;
         int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
+        if (this.alpha != newValue) {
             getValue().markDirty(VGC.ALPHA);
         }
         checkNonDisposed();
@@ -3495,7 +3530,6 @@ public final class DartGC extends DartResource implements IGC {
         SetBackgroundOperation(Color color) {
             RGB rgb = color.getRGB();
             this.color = new Color(rgb);
-            registerForDisposal(this.color);
         }
 
         @Override
@@ -3541,17 +3575,33 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetBackgroundPatternOperation(pattern));
     }
 
-    private class SetBackgroundPatternOperation extends Operation {
+    private abstract class PatternOperation extends Operation {
 
-        private final Pattern pattern;
+        private Pattern pattern;
+
+        PatternOperation(Pattern pattern) {
+            this.pattern = pattern;
+        }
+
+        protected Pattern getPattern() {
+            if (pattern != null && pattern.isDisposed()) {
+                // recreate locally managed pattern if the original was disposed
+                pattern = ((SwtPattern) pattern.getImpl()).copy();
+                registerForDisposal(pattern);
+            }
+            return pattern;
+        }
+    }
+
+    private class SetBackgroundPatternOperation extends PatternOperation {
 
         SetBackgroundPatternOperation(Pattern pattern) {
-            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
-            registerForDisposal(this.pattern);
+            super(pattern);
         }
 
         @Override
         void apply() {
+            Pattern pattern = getPattern();
             if (data.gdipGraphics == 0 && pattern == null)
                 return;
             if (data.backgroundPattern == pattern)
@@ -3612,6 +3662,21 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (GCHelper.isTransforming(transform)) {
+            Rectangle device = GCHelper.transformBounds(transform, new Rectangle(x, y, width, height), false);
+            x = device.x;
+            y = device.y;
+            width = device.width;
+            height = device.height;
+        }
         clearClipShape();
         getValue().markDirty(VGC.CLIPPING);
         Rectangle newValue = new Rectangle(x, y, width, height);
@@ -3763,7 +3828,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setFillRule(int rule) {
         int newValue = rule;
-        if (!java.util.Objects.equals(this.fillRule, newValue)) {
+        if (this.fillRule != newValue) {
             getValue().markDirty(VGC.FILL_RULE);
         }
         checkNonDisposed();
@@ -3867,7 +3932,6 @@ public final class DartGC extends DartResource implements IGC {
         SetForegroundOperation(Color color) {
             RGB rgb = color.getRGB();
             this.color = new Color(rgb);
-            registerForDisposal(this.color);
         }
 
         @Override
@@ -3912,17 +3976,15 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetForegroundPatternOperation(pattern));
     }
 
-    private class SetForegroundPatternOperation extends Operation {
-
-        private final Pattern pattern;
+    private class SetForegroundPatternOperation extends PatternOperation {
 
         SetForegroundPatternOperation(Pattern pattern) {
-            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
-            registerForDisposal(this.pattern);
+            super(pattern);
         }
 
         @Override
         void apply() {
+            Pattern pattern = getPattern();
             if (data.gdipGraphics == 0 && pattern == null)
                 return;
             if (data.foregroundPattern == pattern)
@@ -3963,6 +4025,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setInterpolation(int interpolation) {
         int newValue = interpolation;
+        if (this.interpolation != newValue) {
+            getValue().markDirty(VGC.INTERPOLATION);
+        }
         checkNonDisposed();
         this.interpolation = newValue;
         storeAndApplyOperationForExistingHandle(new SetInterpolationOperation(interpolation));
@@ -4020,9 +4085,9 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        LineAttributes newValue = attributes;
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        LineAttributes newValue = attributes;
         checkNonDisposed();
         this.lineAttributes = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineAttributesOperation(attributes));
@@ -4129,14 +4194,25 @@ public final class DartGC extends DartResource implements IGC {
         if (mask == 0)
             return;
         data.lineWidth = lineWidth;
+        this.lineWidth = (int) data.lineWidth;
+        getValue().markDirty(VGC.LINE_WIDTH);
         data.lineStyle = lineStyle;
+        getValue().markDirty(VGC.LINE_STYLE);
+        this.lineStyle = data.lineStyle;
         getValue().markDirty(VGC.LINE_STYLE);
         data.lineCap = cap;
         getValue().markDirty(VGC.LINE_CAP);
+        this.lineCap = data.lineCap;
+        getValue().markDirty(VGC.LINE_CAP);
         data.lineJoin = join;
         getValue().markDirty(VGC.LINE_JOIN);
+        this.lineJoin = data.lineJoin;
+        getValue().markDirty(VGC.LINE_JOIN);
         data.lineDashes = dashes;
+        this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+        getValue().markDirty(VGC.LINE_DASH);
         data.lineDashesOffset = dashOffset;
+        getValue().markDirty(VGC.LINE_DASH_OFFSET);
         data.lineMiterLimit = miterLimit;
         data.state &= ~mask;
     }
@@ -4159,7 +4235,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineCap(int cap) {
         int newValue = cap;
-        if (!java.util.Objects.equals(this.lineCap, newValue)) {
+        if (this.lineCap != newValue) {
             getValue().markDirty(VGC.LINE_CAP);
         }
         checkNonDisposed();
@@ -4211,7 +4287,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineDash(int[] dashes) {
         int[] newValue = dashes;
-        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         checkNonDisposed();
@@ -4272,7 +4348,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineJoin(int join) {
         int newValue = join;
-        if (!java.util.Objects.equals(this.lineJoin, newValue)) {
+        if (this.lineJoin != newValue) {
             getValue().markDirty(VGC.LINE_JOIN);
         }
         checkNonDisposed();
@@ -4322,7 +4398,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineStyle(int lineStyle) {
         int newValue = lineStyle;
-        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+        if (this.lineStyle != newValue) {
             getValue().markDirty(VGC.LINE_STYLE);
         }
         checkNonDisposed();
@@ -4384,7 +4460,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineWidth(int lineWidth) {
         int newValue = lineWidth;
-        if (!java.util.Objects.equals(this.lineWidth, newValue)) {
+        if (this.lineWidth != newValue) {
             getValue().markDirty(VGC.LINE_WIDTH);
         }
         checkNonDisposed();
@@ -4409,18 +4485,28 @@ public final class DartGC extends DartResource implements IGC {
         if (data.lineWidth == lineWidth)
             return;
         data.lineWidth = lineWidth;
+        this.lineWidth = (int) data.lineWidth;
+        getValue().markDirty(VGC.LINE_WIDTH);
         data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
     }
 
     /**
-     * If the argument is <code>true</code>, puts the receiver
-     * in a drawing mode where the resulting color in the destination
-     * is the <em>exclusive or</em> of the color values in the source
-     * and the destination, and if the argument is <code>false</code>,
-     * puts the receiver in a drawing mode where the destination color
-     * is replaced with the source color value.
+     * If the argument is <code>true</code>, puts the receiver in a drawing mode
+     * where the resulting color in the destination is the <em>exclusive or</em> of
+     * the color values in the source and the destination, and if the argument is
+     * <code>false</code>, puts the receiver in a drawing mode where the destination
+     * color is replaced with the source color value.
+     * <p>
+     * <b>IMPORTANT:</b> This operation may not work on every platform or with every
+     * configuration. Especially on Windows, GDI+ has no direct support for raster
+     * operations (ROPs). This means that advanced graphics must be <b>disabled</b>
+     * when using XOR mode. More specifically, this means that all operations that
+     * require advanced mode (e.g. {@link Transform}) can't be used in combination
+     * with XOR mode.
+     * </p>
      *
-     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise <em>source copy</em> mode is used
+     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise
+     *            <em>source copy</em> mode is used
      *
      * @exception SWTException <ul>
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
@@ -4428,7 +4514,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setXORMode(boolean xor) {
         boolean newValue = xor;
-        if (!java.util.Objects.equals(this.XORMode, newValue)) {
+        if (this.XORMode != newValue) {
             getValue().markDirty(VGC.XORMODE);
         }
         checkNonDisposed();
@@ -4684,9 +4770,12 @@ public final class DartGC extends DartResource implements IGC {
         return null;
     }
 
-    void refreshFor(Drawable drawable, DartImage.ImageHandle imageHandle) {
+    void reapplyTo(Drawable drawable, DartImage.ImageHandle imageHandle) {
         if (drawable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (!((SwtGCData) data.getImpl()).reapplicable) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         destroy();
         GCData newData = new GCData();
         ((SwtGCData) originalData.getImpl()).copyTo(newData);
@@ -4737,9 +4826,13 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     private void storeAndApplyOperationForExistingHandle(Operation operation) {
-        removePreviousOperationIfSupercededBy(operation);
-        operations.add(operation);
         operation.apply();
+        if (((SwtGCData) data.getImpl()).reapplicable) {
+            removePreviousOperationIfSupercededBy(operation);
+            operations.add(operation);
+        } else {
+            operation.disposeAll();
+        }
     }
 
     private void removePreviousOperationIfSupercededBy(Operation operation) {
@@ -4815,7 +4908,7 @@ public final class DartGC extends DartResource implements IGC {
 
     int alpha = 255;
 
-    int antialias;
+    int antialias = SWT.DEFAULT;
 
     Color background;
 
@@ -4835,7 +4928,7 @@ public final class DartGC extends DartResource implements IGC {
 
     Pattern foregroundPattern;
 
-    int interpolation;
+    int interpolation = SWT.DEFAULT;
 
     LineAttributes lineAttributes;
 
@@ -4851,7 +4944,7 @@ public final class DartGC extends DartResource implements IGC {
 
     int style;
 
-    int textAntialias;
+    int textAntialias = SWT.DEFAULT;
 
     Transform transform;
 
@@ -4959,6 +5052,24 @@ public final class DartGC extends DartResource implements IGC {
 
     org.eclipse.swt.graphics.Rectangle paintDamage;
 
+    private float bufferScale = 1f;
+
+    float wireBufferScale() {
+        return bufferScale;
+    }
+
+    Boolean wireThemedCanvas() {
+        return dev.equo.swt.Config.canvasColorsOverride(drawable);
+    }
+
+    RGB[] wireHoverFills() {
+        return dev.equo.swt.Config.canvasHoverFills(drawable);
+    }
+
+    RGB[] wireSelectionFills() {
+        return dev.equo.swt.Config.canvasSelectionFills(drawable);
+    }
+
     /**
      * Confines a clipping region to the area the in-flight Paint may touch. The platforms
      * enforce this below SWT — a paint context carries the damaged region as its system
@@ -4998,8 +5109,27 @@ public final class DartGC extends DartResource implements IGC {
      * A rectangular clip replaces any shape a previous setClipping put in force.
      */
     void clearClipShape() {
+        if (clippingPath != null)
+            getValue().markDirty(VGC.CLIPPING_PATH);
+        if (clippingRects != null)
+            getValue().markDirty(VGC.CLIPPING_RECTS);
+        if (clippingText != null) {
+            getValue().markDirty("clippingText");
+            clippingText.dispose();
+        }
         clippingPath = null;
         clippingRects = null;
+        clippingText = null;
+    }
+
+    Path clippingText;
+
+    Path wireClippingText() {
+        return clippingText;
+    }
+
+    float wireLineDashOffset() {
+        return data == null ? 0 : data.lineDashesOffset;
     }
 
     private Display display;
@@ -5017,6 +5147,14 @@ public final class DartGC extends DartResource implements IGC {
     public java.util.function.Consumer<String> textCapture;
 
     public boolean silentDispose;
+
+    org.eclipse.swt.widgets.Widget ownerDrawItem;
+
+    public void paintOwnerDrawnItem(org.eclipse.swt.widgets.Widget item) {
+        ownerDrawItem = item;
+        fullRepaint = true;
+        paintDamage = null;
+    }
 
     public boolean skipRenderOnDispose;
 
@@ -5037,11 +5175,12 @@ public final class DartGC extends DartResource implements IGC {
             // Display#sleep() blocks until an event arrives with no timeout of its own —
             // without this timerExec, a display with nothing else happening never wakes to
             // re-check the deadline below, and the wait hangs indefinitely instead of
-            // bailing after 5s (see DartImage#getImageData(int), which needs the same).
-            long deadline = System.nanoTime() + 5_000_000_000L;
+            // bailing (see DartImage#getImageData(int), which needs the same). 30s, as the
+            // pixel readback allows: a GPU-less browser can take seconds over a first render.
+            long deadline = System.nanoTime() + 30_000_000_000L;
             Runnable wakeOnTimeout = () -> {
             };
-            d.timerExec(5000, wakeOnTimeout);
+            d.timerExec(30000, wakeOnTimeout);
             try {
                 while (!snapshotFuture.isDone() && !d.isDisposed() && System.nanoTime() < deadline) {
                     if (!d.readAndDispatch())

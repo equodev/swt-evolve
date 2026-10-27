@@ -1,11 +1,38 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.size.Mnemonics;
 import dev.equo.swt.size.PointD;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 
 public class GCHelper {
+
+    public static Drawable drawableOf(DartGC gc) {
+        return gc == null ? null : gc.drawable;
+    }
+
+    /**
+     * What a GC's channel belongs to, and so what its described state is recorded against: the
+     * owner-drawn item it paints when it has one, else its drawable.
+     */
+    /**
+     * The foreground a GC on {@code drawable} starts from: the one the application set on the
+     * control, as native SWT's does. Null when it set none -- the control's own default follows
+     * the colour scheme, which may not suit a background the application painted itself.
+     */
+    public static Color ownForeground(Drawable drawable) {
+        if (!(drawable instanceof org.eclipse.swt.widgets.Control)) return null;
+        org.eclipse.swt.widgets.Control control = (org.eclipse.swt.widgets.Control) drawable;
+        if (control.getImpl() instanceof org.eclipse.swt.widgets.DartControl)
+            return ((org.eclipse.swt.widgets.DartControl) control.getImpl()).getOwnForeground();
+        return control.getForeground();
+    }
+
+    public static Object stateKeyOf(DartGC gc) {
+        if (gc == null) return null;
+        return gc.ownerDrawItem != null ? gc.ownerDrawItem : gc.drawable;
+    }
 
     public static FontMetrics createFontMetrics(Font font) {
         Font resolved = font != null ? font : systemFont();
@@ -15,6 +42,47 @@ public class GCHelper {
             impl.setMetrics(metrics[0], metrics[1], metrics[2], metrics[3]);
         }
         return impl.getApi();
+    }
+
+    /** Whether [t] moves anything: a clip set under it has to be carried into device space. */
+    public static boolean isTransforming(Transform t) {
+        return t != null && !t.isDisposed() && !t.isIdentity();
+    }
+
+    /**
+     * The bounds of a rectangle mapped through [t], or through its inverse. A clip is fixed in device
+     * space when it is set and reported back in the user space in force when it is read.
+     */
+    public static Rectangle transformBounds(Transform t, Rectangle r, boolean inverse) {
+        float[] m = new float[6];
+        t.getElements(m);
+        if (inverse) {
+            float det = m[0] * m[3] - m[1] * m[2];
+            if (det == 0) return new Rectangle(r.x, r.y, r.width, r.height);
+            m = new float[] { m[3] / det, -m[1] / det, -m[2] / det, m[0] / det,
+                    (m[2] * m[5] - m[3] * m[4]) / det, (m[1] * m[4] - m[0] * m[5]) / det };
+        }
+        float[] xs = { r.x, r.x + r.width, r.x, r.x + r.width };
+        float[] ys = { r.y, r.y, r.y + r.height, r.y + r.height };
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+        for (int i = 0; i < 4; i++) {
+            float x = m[0] * xs[i] + m[2] * ys[i] + m[4];
+            float y = m[1] * xs[i] + m[3] * ys[i] + m[5];
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+        }
+        int x0 = Math.round(minX), y0 = Math.round(minY);
+        return new Rectangle(x0, y0, Math.round(maxX) - x0, Math.round(maxY) - y0);
+    }
+
+    /** GCData keeps dashes as floats; the value sent to Flutter carries whole pixels. */
+    public static int[] toIntDashes(float[] dashes) {
+        if (dashes == null) return null;
+        int[] result = new int[dashes.length];
+        for (int i = 0; i < dashes.length; i++) result[i] = Math.round(dashes[i]);
+        return result;
     }
 
     private static Font systemFont() {
@@ -34,15 +102,10 @@ public class GCHelper {
             font = systemFont();
         }
         PointD size = FontMetricsUtil.getFontSize(line, font);
-        Display display = Display.getCurrent();
-        if (display != null) {
-            Point dpi = display.getDPI();
-            if (dpi != null && dpi.x > 0) {
-                double dpiScale = dpi.x / 72.0;
-                return new PointD(size.x() * dpiScale, size.y() * dpiScale);
-            }
-        }
-        return size;
+        // Through FontMetricsUtil rather than dpi/72 here: this extent is what decides where text
+        // wraps, and it has to agree with the size the text is painted at.
+        double dpiScale = FontMetricsUtil.dpiScale();
+        return dpiScale > 0 ? new PointD(size.x() * dpiScale, size.y() * dpiScale) : size;
     }
 
     /**
@@ -56,22 +119,8 @@ public class GCHelper {
 
         String text = string;
 
-        // Process DRAW_MNEMONIC: remove '&' characters (mnemonic markers)
         if ((flags & SWT.DRAW_MNEMONIC) != 0) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                if (c == '&' && i + 1 < text.length()) {
-                    char next = text.charAt(i + 1);
-                    if (next == '&') {
-                        sb.append('&');
-                        i++;
-                    }
-                    continue;
-                }
-                sb.append(c);
-            }
-            text = sb.toString();
+            text = Mnemonics.display(text);
         }
 
         // Process DRAW_TAB: replace tabs with spaces (8 spaces per tab)
@@ -84,10 +133,11 @@ public class GCHelper {
             String[] lines = text.split("\r\n|\r|\n", -1);
             double maxWidth = 0;
             double totalHeight = 0;
+            // Lines stack at the font's whole-pixel height, as getFontMetrics().getHeight() reports it.
             for (String line : lines) {
                 PointD size = computeLineExtent(line, font);
                 maxWidth = Math.max(maxWidth, size.x());
-                totalHeight += size.y();
+                totalHeight += Math.round(size.y());
             }
             if (string.isEmpty()) {
                 PointD size = computeLineExtent(" ", font);
@@ -101,7 +151,8 @@ public class GCHelper {
             PointD size = computeLineExtent(" ", font);
             return new Point(0, (int) Math.round(size.y()));
         }
-        return computeLineExtent(text, font).toPoint();
+        // Without DRAW_DELIMITER a line break is not one: it is drawn as a space.
+        return computeLineExtent(text.replaceAll("\r\n|\r|\n", " "), font).toPoint();
     }
 
     /**
@@ -134,7 +185,7 @@ public class GCHelper {
             return java.util.Objects.equals(resolvedDrawable, other.resolvedDrawable)
                 && java.util.Objects.equals(swtSource, other.swtSource)
                 && java.util.Objects.equals(dartImage, other.dartImage)
-                && java.util.Objects.equals(renderFuture, other.renderFuture);
+                && renderFuture == other.renderFuture;
         }
 
         @Override
@@ -191,10 +242,34 @@ public class GCHelper {
      */
     public static void updateImageFromPngBytes(Image dartImage, Image swtSource, byte[] pngBytes) {
         if (pngBytes == null) return;
+        updateImageFrom(dartImage, swtSource, new java.io.ByteArrayInputStream(pngBytes));
+    }
+
+    /**
+     * Same, from a buffer the comm lends for the call: the PNG is decoded where it arrived, so the
+     * payload is not copied out first.
+     */
+    public static void updateImageFromPngBytes(Image dartImage, Image swtSource, java.nio.ByteBuffer pngBytes) {
+        if (pngBytes == null || !pngBytes.hasRemaining()) return;
+        if (!pngBytes.hasArray()) {
+            byte[] copy = new byte[pngBytes.remaining()];
+            pngBytes.duplicate().get(copy);
+            updateImageFromPngBytes(dartImage, swtSource, copy);
+            return;
+        }
+        updateImageFrom(dartImage, swtSource, new java.io.ByteArrayInputStream(pngBytes.array(),
+                pngBytes.arrayOffset() + pngBytes.position(), pngBytes.remaining()));
+    }
+
+    private static void updateImageFrom(Image dartImage, Image swtSource, java.io.InputStream png) {
         try {
-            ImageData newData = new ImageData(new java.io.ByteArrayInputStream(pngBytes));
+            ImageData newData = new ImageData(png);
             if (dartImage.getImpl() instanceof DartImage) { DartImage di = (DartImage) dartImage.getImpl();
                 di._updateImageData(newData);
+                // The buffer now holds what the render side drew, so it may go on the wire again.
+                di.renderOwnsPixels = false;
+                // Its pixels changed, so a client that holds it by name has to be sent it again.
+                dev.equo.swt.Serializer.forgetResource(di.getValue());
             }
             if (swtSource != null && !(swtSource.getImpl() instanceof DartImage)) {
                 swtSource.getImpl()._updateImageData(newData);
@@ -228,6 +303,11 @@ public class GCHelper {
      * Pulls a client-owned image's pixels back over {@code comm} as PNG bytes, or {@code null} if
      * nothing is registered under that ref or it did not answer in time. The one place rendered
      * pixels cross back, reached only from {@code Image#getImageData()}.
+     *
+     * <p>The bytes are copied out of the comm's buffer rather than decoded in the dispatch: the
+     * decode costs tens to hundreds of times the copy (a 192 KB PNG: 6 us to copy, 785 us to
+     * decode), and doing it here would hold the connection's inbound dispatch for that long and
+     * count against the caller's timeout.
      */
     public static byte[] fetchRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
         byte[] png = requestRemotePixels(device, comm, remoteRef, timeoutMs);
@@ -312,6 +392,8 @@ public class GCHelper {
             future.complete(null);
             if (display != null && !display.isDisposed()) display.wake();
         });
+        // A readback answers for the state Java already holds, so what is pending goes out first.
+        dev.equo.swt.FlutterBridge.update();
         if (widget instanceof org.eclipse.swt.widgets.DartWidget)
             dev.equo.swt.FlutterBridge.send((org.eclipse.swt.widgets.DartWidget) widget, eventName, args);
         else if (widget instanceof DartResource)
@@ -330,7 +412,12 @@ public class GCHelper {
     private static Display displayOf(Object widget) {
         if (widget instanceof org.eclipse.swt.widgets.DartWidget)
             return ((org.eclipse.swt.widgets.DartWidget) widget).getDisplay();
-        if (widget instanceof DartGC) return ((DartGC) widget).getDisplay();
+        if (widget instanceof DartGC) {
+            // An Image's GC has no Display of its own. The wait still has to dispatch: on desktop
+            // the answer is computed only while this thread pumps the engine.
+            Display display = ((DartGC) widget).getDisplay();
+            return display != null ? display : Display.getCurrent();
+        }
         return null;
     }
 }

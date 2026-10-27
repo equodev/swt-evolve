@@ -68,9 +68,7 @@ class VToolItem extends VItem {
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
       case 'background':
-        background = json['background'] == null
-            ? null
-            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+        background = VColor.read(json['background']);
       case 'control':
         control = json['control'] == null
             ? null
@@ -82,9 +80,7 @@ class VToolItem extends VItem {
       case 'enabled':
         enabled = json['enabled'] as bool?;
       case 'foreground':
-        foreground = json['foreground'] == null
-            ? null
-            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+        foreground = VColor.read(json['foreground']);
       case 'hotImage':
         hotImage = json['hotImage'] == null
             ? null

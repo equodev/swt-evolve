@@ -54,6 +54,16 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     long boxHandle, groupHandle;
 
+    /**
+     * GTK4 only field, used to keep track of the box wrapping the image, see {@link #createHandle}
+     */
+    long imageBoxHandle;
+
+    /**
+     * GTK4 only, gap between the image and the text when SWT.RIGHT is set on the tool bar
+     */
+    static final int TEXT_IMAGE_SPACING = 4;
+
     ToolBar parent;
 
     Control control;
@@ -231,7 +241,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getEnabled()) {
+            if (getApi().getEnabled()) {
                 if ((getApi().style & SWT.SEPARATOR) != 0) {
                     if (control != null)
                         return control.getImpl().computeTabList();
@@ -507,7 +517,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     public boolean isTabGroup() {
@@ -539,7 +549,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     @Override
     void releaseHandle() {
         super.releaseHandle();
-        arrowHandle = labelHandle = imageHandle = eventHandle = 0;
+        arrowHandle = labelHandle = imageHandle = imageBoxHandle = eventHandle = 0;
     }
 
     @Override
@@ -635,8 +645,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.background, color)) {
             getValue().markDirty(VToolItem.BACKGROUND);
         }
@@ -709,8 +719,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.disabledImage, image)) {
             getValue().markDirty(VToolItem.DISABLED_IMAGE);
         }
@@ -745,7 +755,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setEnabled(boolean enabled) {
         checkWidget();
-        if (!java.util.Objects.equals(this.enabled, enabled)) {
+        if (this.enabled != enabled) {
             getValue().markDirty(VToolItem.ENABLED);
         }
         if (this.enabled == enabled)
@@ -798,8 +808,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.foreground, color)) {
             getValue().markDirty(VToolItem.FOREGROUND);
         }
@@ -831,8 +841,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.hotImage, image)) {
             getValue().markDirty(VToolItem.HOT_IMAGE);
         }
@@ -916,10 +926,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (this.selection != newValue) {
             getValue().markDirty(VToolItem.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = newValue;
@@ -1047,10 +1057,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         int newValue = width;
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        checkWidget();
+        if (this.width != newValue) {
             getValue().markDirty(VToolItem.WIDTH);
         }
-        checkWidget();
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
         if (width < 0)
@@ -1144,6 +1154,10 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public long _groupHandle() {
         return groupHandle;
+    }
+
+    public long _imageBoxHandle() {
+        return imageBoxHandle;
     }
 
     public ToolBar _parent() {

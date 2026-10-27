@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.device;
-import static org.eclipse.swt.widgets.Mocks.swtDisplay;
+import static org.eclipse.swt.widgets.Mocks.display;
 
 public class GraphicsUtilsTest extends SerializeTestBase {
 
@@ -99,10 +99,10 @@ public class GraphicsUtilsTest extends SerializeTestBase {
     public void should_copy_image() {
         // Create an ImageData with some test data
         ImageData imageData = new ImageData(10, 10, 24, new PaletteData(0xFF, 0xFF00, 0xFF0000));
-        Image original = new Image(swtDisplay(), imageData);
+        Image original = new Image(display(), imageData);
 
         // Copy it
-        Image copy = GraphicsUtils.copyImage(swtDisplay(), original);
+        Image copy = GraphicsUtils.copyImage(display(), original);
 
         // Verify copy is not null
         assertThat(copy).isNotNull();
@@ -115,7 +115,7 @@ public class GraphicsUtilsTest extends SerializeTestBase {
 
     @Test
     public void should_return_null_when_image_is_null() {
-        Image result = GraphicsUtils.copyImage(swtDisplay(), null);
+        Image result = GraphicsUtils.copyImage(display(), null);
         assertThat(result).isNull();
     }
 }

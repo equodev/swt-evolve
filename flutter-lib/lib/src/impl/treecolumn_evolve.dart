@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import '../gen/treecolumn.dart';
 import '../gen/event.dart';
+import '../gen/image.dart';
 import '../gen/swt.dart';
 import '../impl/item_evolve.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'tree_evolve.dart';
+import 'utils/image_utils.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     extends ItemImpl<T, V> {
   bool _isDragging = false;
-  double _startDragOffset = 0.0;
+  Offset? _dragPosition;
 
   double _calculateLeftPadding(bool isFirstColumn, TreeThemeExtension theme) {
     if (!isFirstColumn) return 0.0;
@@ -32,43 +35,61 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     return e;
   }
 
-  void _handleDragStart(LongPressStartDetails details) {
+  void _handleDragStart(DragStartDetails details) {
     setState(() {
       _isDragging = true;
-      _startDragOffset = details.localPosition.dx;
+      _dragPosition = details.globalPosition;
     });
   }
 
-  void _handleDragUpdate(
-    LongPressMoveUpdateDetails details,
-    TreeThemeExtension theme,
-    int width,
-  ) {
-    if (!_isDragging) return;
-
-    final dragDistance = details.localPosition.dx - _startDragOffset;
-    if (dragDistance.abs() > theme.columnDragThreshold) {
-      final e = _createEvent(
-        theme: theme,
-        width: width,
-        x: details.localPosition.dx.round(),
-        y: details.localPosition.dy.round(),
-      );
-      widget.sendControlMove(state, e);
-    }
+  void _handleDragUpdate(DragUpdateDetails details) {
+    _dragPosition = details.globalPosition;
   }
 
-  void _handleDragEnd() {
+  /// A native header drag reorders the columns where it is dropped; Java applies the order and sends
+  /// SWT.Move to the columns whose place changed.
+  void _handleDragEnd(int Function(Offset globalPosition)? dropIndexAt) {
+    final position = _dragPosition;
     setState(() {
       _isDragging = false;
-      _startDragOffset = 0.0;
+      _dragPosition = null;
     });
+    if (position == null || dropIndexAt == null) return;
+    widget.sendControlMove(state, VEvent()..index = dropIndexAt(position));
+  }
+
+  void _handleDragCancel() {
+    setState(() {
+      _isDragging = false;
+      _dragPosition = null;
+    });
+  }
+
+  /// The room between a header's image and its text.
+  static const double headerImageGap = 4.0;
+
+  Widget _buildHeaderImage(VImage image) {
+    final render = ImageUtils.buildVImageAsync(
+      image,
+      enabled: true,
+      useBinaryImage: true,
+      renderAsIcon: true,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(right: headerImageGap),
+      child: FutureBuilder<Widget?>(
+        future: render,
+        initialData: ImageUtils.resolvedRender(render),
+        builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
+      ),
+    );
   }
 
   Widget _buildColumnContent({
     required BuildContext context,
     required TreeThemeExtension theme,
     required String text,
+    required VImage? image,
     required Color textColor,
     required bool uppercase,
     required EdgeInsets adjustedPadding,
@@ -77,16 +98,28 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     required Color bgColor,
     required bool hasMultiColumn,
   }) {
-    final TextStyle effectiveStyle = hasMultiColumn
+    final cell = TreeHeaderCellProvider.of(context);
+    TextStyle effectiveStyle = hasMultiColumn
         ? (theme.headerTextStyleWithCols ?? theme.columnTextStyle ?? const TextStyle())
         : (theme.columnTextStyle ?? theme.headerTextStyle ?? const TextStyle())
             .copyWith(color: textColor);
+    // Tree.setHeaderForeground is the application's, and wins where its colours are honoured.
+    final Color headerColor = getForegroundColor(
+      context: context,
+      foreground: cell?.foreground,
+      defaultColor: effectiveStyle.color ?? textColor,
+      minContrast: theme.minTextContrast,
+      background: bgColor,
+    );
+    effectiveStyle = effectiveStyle.copyWith(color: headerColor);
+    final int sortDirection = cell?.sortDirection ?? SWT.NONE;
     return Container(
       padding: adjustedPadding,
       decoration: BoxDecoration(color: bgColor),
       child: Row(
         mainAxisAlignment: textAlignment,
         children: [
+          if (image != null) _buildHeaderImage(image),
           Expanded(
             child: Text(
               uppercase ? text.toUpperCase() : text,
@@ -96,6 +129,12 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (sortDirection == SWT.UP || sortDirection == SWT.DOWN)
+            Icon(
+              sortDirection == SWT.UP ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              size: (effectiveStyle.fontSize ?? 12) + 2,
+              color: headerColor,
+            ),
         ],
       ),
     );
@@ -123,7 +162,8 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final bool linesVisible = TreeLinesVisibleProvider.of(context);
     final bool isLastColumn = TreeColumnIsLastProvider.of(context);
 
-    final String text = state.text ?? "";
+    // A single & marks the header's mnemonic and is not drawn; && draws one.
+    final String text = stripAccelerators(state.text);
     final int? alignment = state.alignment;
     final bool moveable = state.moveable ?? false;
     final int width = state.width ?? widgetTheme.columnDefaultWidth.round();
@@ -165,17 +205,19 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
           final e = _createEvent(theme: widgetTheme, width: width);
           widget.sendSelectionSelection(state, e);
         },
-        onLongPressStart: moveable ? _handleDragStart : null,
-        onLongPressMoveUpdate: moveable
-            ? (details) => _handleDragUpdate(details, widgetTheme, width)
+        onHorizontalDragStart: moveable ? _handleDragStart : null,
+        onHorizontalDragUpdate: moveable ? _handleDragUpdate : null,
+        onHorizontalDragEnd: moveable
+            ? (_) => _handleDragEnd(TreeHeaderCellProvider.of(context)?.dropIndexAt)
             : null,
-        onLongPressEnd: moveable ? (_) => _handleDragEnd() : null,
+        onHorizontalDragCancel: moveable ? _handleDragCancel : null,
         child: Stack(
           children: [
             _buildColumnContent(
               context: context,
               theme: widgetTheme,
               text: text,
+              image: state.image,
               textColor: textColor,
               uppercase: hasMultiColumn,
               adjustedPadding: adjustedPadding,

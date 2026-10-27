@@ -86,8 +86,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public DartSpinner(Composite parent, int style, Spinner api) {
         super(parent, checkStyle(style), api);
-        maximum = 100;
-        increment = 1;
     }
 
     static int checkStyle(int style) {
@@ -541,7 +539,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setDigits(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.digits, value)) {
+        if (this.digits != value) {
             getValue().markDirty(VSpinner.DIGITS);
         }
         if (value < 0)
@@ -570,10 +568,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setIncrement(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.increment, newValue)) {
+        checkWidget();
+        if (this.increment != newValue) {
             getValue().markDirty(VSpinner.INCREMENT);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.increment = newValue;
@@ -593,11 +591,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setMaximum(int value) {
-        getValue().markDirty(VSpinner.MAXIMUM);
         checkWidget();
         if (value < this.minimum)
             return;
+        int pos = getSelection();
+        getValue().markDirty(VSpinner.MAXIMUM);
         this.maximum = value;
+        if (pos > value)
+            setSelection(value, true, true, false);
     }
 
     /**
@@ -614,11 +615,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setMinimum(int value) {
-        getValue().markDirty(VSpinner.MINIMUM);
         checkWidget();
         if (value > this.maximum)
             return;
+        int pos = getSelection();
+        getValue().markDirty(VSpinner.MINIMUM);
         this.minimum = value;
+        if (pos < value)
+            setSelection(value, true, true, false);
     }
 
     /**
@@ -635,7 +639,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setPageIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.pageIncrement, value)) {
+        if (this.pageIncrement != value) {
             getValue().markDirty(VSpinner.PAGE_INCREMENT);
         }
         if (value < 1)
@@ -690,14 +694,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * @since 3.4
      */
     public void setTextLimit(int limit) {
-        int newValue = limit;
-        if (!java.util.Objects.equals(this.textLimit, newValue)) {
-            getValue().markDirty(VSpinner.TEXT_LIMIT);
-        }
         checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
-        this.textLimit = newValue;
+        if (limit < 0)
+            limit = Spinner.LIMIT;
+        if (this.textLimit != limit)
+            getValue().markDirty(VSpinner.TEXT_LIMIT);
+        this.textLimit = limit;
     }
 
     @Override
@@ -729,20 +733,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setValues(int selection, int minimum, int maximum, int digits, int increment, int pageIncrement) {
         checkWidget();
-        if (maximum < minimum)
-            return;
-        if (digits < 0)
-            return;
-        if (increment < 1)
-            return;
-        if (pageIncrement < 1)
-            return;
-        this.minimum = minimum;
-        this.maximum = maximum;
-        this.increment = increment;
-        this.pageIncrement = pageIncrement;
-        this.digits = digits;
-        setSelection(selection);
+        SpinnerHelper.setValues(this, selection, minimum, maximum, digits, increment, pageIncrement);
     }
 
     @Override
@@ -799,9 +790,9 @@ public class DartSpinner extends DartComposite implements ISpinner {
         return event.text;
     }
 
-    int increment;
+    int increment = 1;
 
-    int maximum;
+    int maximum = 100;
 
     int minimum;
 
@@ -853,13 +844,23 @@ public class DartSpinner extends DartComposite implements ISpinner {
         return textLimit;
     }
 
+    String keptText;
+
+    String wireKeptText() {
+        return keptText;
+    }
+
+    java.util.Locale textLocale() {
+        return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Modify, e);
+                SpinnerHelper.editedInFlutter(this, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
@@ -868,15 +869,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
                     return;
                 if (!isActive())
                     return;
-                setSelection(e.index);
-                sendEvent(SWT.DefaultSelection, e);
+                SpinnerHelper.committedInFlutter(this, e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                setSelection(e.index);
+                SpinnerHelper.selectedInFlutter(this, e.index);
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {

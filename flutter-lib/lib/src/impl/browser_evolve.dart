@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:webview_all/webview_all.dart';
 
@@ -12,6 +13,8 @@ import '../gen/event.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import 'browser_app_base.dart';
+import 'browser_inline_documents.dart';
+import 'widget_config.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
 import 'key_mapping.dart';
@@ -35,6 +38,11 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   String? _loadedUrl;
   String? _loadedText;
   Completer<bool>? _locationChangingCompleter;
+  // The Windows webview answers a navigation request by cancelling the navigation and restarting it
+  // from its URL, which turns a form POST into a GET without its body. There only the loads started
+  // here ask Java (see [_load]).
+  static final bool _asksNavigationRequests =
+      kIsWeb || defaultTargetPlatform != TargetPlatform.windows;
   // Navigation is op-driven once the first "navigate" op arrives. The op carries
   // a monotonic seq so a re-navigation to the *same* URL still loads (the
   // state-driven path dedups same-URL pushes on both sides, which would
@@ -42,6 +50,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   int _lastNavSeq = 0;
   bool _opNavigated = false;
   bool _loadedLocalFile = false;
+  // Web: the /local-file/ URL the current file: document is served from (see _unproxyUrl).
+  String? _localFileServedUrl;
   // Whether the document being loaded is served from this origin (the
   // /local-file/ endpoint or the /proxy one), and so must end up readable.
   bool _expectSameOrigin = false;
@@ -50,8 +60,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // is unconditionally unsupported, so DOM-level eval is the only option, and it
   // only works when the content is same-origin (or served through the proxy).
   PlatformWebViewControllerCreationParams? _params;
-  // Web: the same-origin blob: URL the current setText document is served from (see _loadText).
-  String? _inlineDocumentUrl;
+  // Web: the same-origin URLs setText documents are served from (see _loadText).
+  late final InlineDocuments _inlineDocuments = InlineDocuments(browserInlineDocumentUrl,
+      browserRevokeInlineDocumentUrl, browserInlineDocumentEndpoint());
   // Names of registered BrowserFunctions. Each is exposed in the iframe page as
   // a JS shim that round-trips to Java; they must be re-injected after every
   // navigation (a fresh document loses the previous window's globals).
@@ -66,6 +77,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   @override
   void initState() {
     super.initState();
+    appScaleNotifier.addListener(_applyContentZoom);
 
     // On web, stamp the iframe name so a hosting Chromium standalone window can
     // identify this Browser's sub-frame for cancellable LocationListener.changing.
@@ -105,6 +117,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               Future.delayed(const Duration(milliseconds: 150), () {
                 if (mounted) _emitTitle();
               });
+              _applyContentZoom();
               // Re-expose BrowserFunctions in the freshly-loaded document.
               for (final name in _functionNames) {
                 _injectBrowserFunction(name);
@@ -124,30 +137,11 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               if (!_navigationRequested) return;
               widget.sendProgresscompleted(state, null);
             },
-            // Mirror SWT's cancellable LocationListener.changing: ask Java
-            // whether to proceed and honour event.doit. On native SWT this dispatch is
-            // synchronous and in-process, so it never blocks visible navigation; here it is a
-            // round trip over the comm channel, so every navigation -- including one with no
-            // LocationListener registered at all, the common case -- stalls for up to this
-            // timeout before proceeding. Java's asyncExec reply normally lands in single-digit
-            // milliseconds, so 300ms is generous headroom for real UI-thread queueing while
-            // bounding the worst case (previously 2s, and a Browser can issue several
-            // navigations back-to-back for one logical "open", each paying this wait).
-            onNavigationRequest: (request) async {
-              _locationChangingCompleter = Completer<bool>();
-              widget.sendLocationchanging(
-                  state, VEvent()..text = _unproxyUrl(request.url));
-              final doit = await _locationChangingCompleter!.future.timeout(
-                const Duration(milliseconds: 300),
-                onTimeout: () {
-                  _locationChangingCompleter = null;
-                  return true;
-                },
-              );
-              return doit
-                  ? NavigationDecision.navigate
-                  : NavigationDecision.prevent;
-            },
+            onNavigationRequest: _asksNavigationRequests
+                ? (request) async => await _locationChanging(request.url)
+                    ? NavigationDecision.navigate
+                    : NavigationDecision.prevent
+                : null,
           ),
         );
     // }
@@ -196,13 +190,14 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         if (uri != null && uri.hasScheme) {
           _loadedUrl = url;
           _loadedText = null;
+          _inlineDocuments.cancel();
           final postData = m["postData"] as String?;
           if (postData != null) {
             _loadedLocalFile = false;
             _expectSameOrigin = false;
             // POST bypasses the proxy (which is GET-only); the web backend's
             // own XHR carries the body.
-            _controller.loadRequest(
+            _load(
               uri,
               method: LoadRequestMethod.post,
               headers: _parseHeaders(m["headers"]),
@@ -211,14 +206,15 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
           } else if (kIsWeb && localFilePath != null && localFilePath.isNotEmpty) {
             _loadedLocalFile = true;
             _expectSameOrigin = true;
-            _controller.loadRequest(Uri.parse(localFileRewrite(localFilePath)));
+            _localFileServedUrl = localFileRewrite(localFilePath);
+            _load(Uri.parse(_localFileServedUrl!));
           } else {
             _loadedLocalFile = false;
             final headers = _parseHeaders(m["headers"]);
             final resolved =
                 _resolveLoadUri(url, uri, headers.isEmpty ? null : headers);
             _expectSameOrigin = resolved.toString() != url;
-            _controller.loadRequest(resolved);
+            _load(resolved);
           }
         }
       } else if (text != null) {
@@ -292,6 +288,34 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       }
     });
 
+    // The static Browser.getCookie/setCookie, routed through whichever Browser Java picked: cookies
+    // belong to the webview profile, not to this Browser.
+    _onOp("getCookie", (args) async {
+      final map = args as Map;
+      final value =
+          await browserGetCookie(map["name"] as String, map["url"] as String);
+      EquoCommService.sendPayload(
+        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
+        VEvent()..text = value,
+      );
+    });
+    _onOp("setCookie", (args) async {
+      final map = args as Map;
+      final set = await browserSetCookie(
+        map["name"] as String,
+        map["value"] as String,
+        map["domain"] as String,
+        map["path"] as String,
+        expires: (map["expires"] as num?)?.toDouble(),
+        secure: map["secure"] as bool? ?? false,
+        httpOnly: map["httpOnly"] as bool? ?? false,
+      );
+      EquoCommService.sendPayload(
+        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
+        VEvent()..text = '$set',
+      );
+    });
+
     _applyContent();
     // Same reasoning as _applyContent above: extraSetState never runs for the very
     // first snapshot, so a BrowserFunction already registered by the time this
@@ -312,32 +336,58 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
   }
 
-  /// Loads a `setText` document. On web it is served from a same-origin `blob:` URL so the page
-  /// is scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
+  /// Mirrors SWT's cancellable LocationListener.changing: asks Java whether the navigation to [url]
+  /// may proceed and honours event.doit. On native SWT this dispatch is synchronous and in-process,
+  /// so it never blocks visible navigation; here it is a round trip over the comm channel, so every
+  /// navigation -- including one with no LocationListener registered at all, the common case --
+  /// stalls for up to this timeout before proceeding. Java's asyncExec reply normally lands in
+  /// single-digit milliseconds, so 300ms is generous headroom for real UI-thread queueing while
+  /// bounding the worst case: a Browser can issue several navigations back-to-back for one logical
+  /// "open", each paying this wait.
+  Future<bool> _locationChanging(String url) {
+    _locationChangingCompleter = Completer<bool>();
+    widget.sendLocationchanging(state, VEvent()..text = _unproxyUrl(url));
+    return _locationChangingCompleter!.future.timeout(
+      const Duration(milliseconds: 300),
+      onTimeout: () {
+        _locationChangingCompleter = null;
+        return true;
+      },
+    );
+  }
+
+  /// Loads [uri] for a navigation Java asked for. Where the webview is not asked about its own
+  /// navigations, LocationListener.changing is asked here first.
+  Future<void> _load(Uri uri,
+      {LoadRequestMethod method = LoadRequestMethod.get,
+      Map<String, String> headers = const <String, String>{},
+      Uint8List? body}) async {
+    if (!_asksNavigationRequests && !await _locationChanging(uri.toString())) return;
+    await _controller.loadRequest(uri, method: method, headers: headers, body: body);
+  }
+
+  /// Loads a `setText` document. On web it is served from a same-origin URL so the page is
+  /// scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
   /// webviews render the string directly.
-  void _loadText(String html, {String? baseUrl}) {
-    final url = browserInlineDocumentUrl(html, baseUrl);
+  Future<void> _loadText(String html, {String? baseUrl}) async {
+    // False when a later setText or setUrl replaced this document while its URL was being made.
+    if (!await _inlineDocuments.make(html, baseUrl)) return;
+    final url = _inlineDocuments.current;
     if (url == null) {
       _expectSameOrigin = false;
       _controller.loadHtmlString(html, baseUrl: baseUrl);
       return;
     }
-    _releaseInlineDocument();
-    _inlineDocumentUrl = url;
     _expectSameOrigin = true;
-    _controller.loadRequest(Uri.parse(url));
-  }
-
-  void _releaseInlineDocument() {
-    final url = _inlineDocumentUrl;
-    if (url == null) return;
-    _inlineDocumentUrl = null;
-    browserRevokeInlineDocumentUrl(url);
+    _load(Uri.parse(url));
   }
 
   @override
   void dispose() {
-    _releaseInlineDocument();
+    appScaleNotifier.removeListener(_applyContentZoom);
+    _inlineDocuments.dispose();
+    unawaited(browserReleaseWebView(_controller));
+    _opTokens.forEach(EquoCommService.remove);
     super.dispose();
   }
 
@@ -363,10 +413,15 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// still coming. A genuinely cross-origin page is never readable and must
   /// still report, so it is not gated.
   bool _documentIsLive() {
+    // A load reported while a setText document has no URL yet is the document it replaces.
+    if (_inlineDocuments.pending) return false;
     if (!_expectSameOrigin || _params == null) return true;
     try {
-      browserEvalInFrame(_params, '1');
-      return true;
+      final href = browserEvalInFrame(_params, 'location.href');
+      // The placeholder about:blank shares our origin, so being readable does
+      // not make it the setText document.
+      final inline = _loadedText != null ? _inlineDocuments.current : null;
+      return inline == null || href == inline;
     } catch (_) {
       return false;
     }
@@ -375,10 +430,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   bool _isPlaceholderLoad(String? reportedUrl) {
     if (!_navigationRequested) return true;
     // A late placeholder load can still land just after a real navigation
-    // started. The native webviews report a setText document under about:blank
-    // too, so only URLs are checked.
+    // started. The native webviews report a setText document under
+    // about:blank too; on web it has its own URL instead.
     return reportedUrl == 'about:blank' &&
-        _loadedText == null &&
+        (_loadedText == null || _inlineDocuments.current != null || _inlineDocuments.pending) &&
         _loadedUrl != 'about:blank';
   }
 
@@ -437,6 +492,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       try {
         final b = browserEvalInFrame(_params, 'document.baseURI');
         if (b is String &&
+            !_inlineDocuments.isDocument(b) &&
             (b.startsWith('http://') || b.startsWith('https://')) &&
             !b.contains('/proxy?url=')) {
           return b;
@@ -451,9 +507,12 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// for Map payloads (`FlutterBridge.send(..., Map.of(...))`). This variant
   /// tolerates either form.
   void _onOp(String op, void Function(dynamic) handler) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/$op",
-        (raw) => handler(raw is String ? jsonDecode(raw) : raw));
+    final channel = "${state.swt}/${state.id}/$op";
+    _opTokens[channel] = EquoCommService.onRaw(
+        channel, (raw) => handler(raw is String ? jsonDecode(raw) : raw));
   }
+
+  final Map<String, Object> _opTokens = {};
 
   /// Parses SWT-style request headers (a list of "Name: value" strings, as
   /// passed to Browser.setUrl(url, postData, headers)) into a header map.
@@ -490,17 +549,35 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// Reverses [_resolveLoadUri]: if [url] is one of our `/proxy?url=<orig>`
   /// URLs, returns the original target so Location events report the real URL
   /// rather than the proxy wrapper. A `setText` document is reported as
-  /// `about:blank`, as native SWT does, not as the blob: URL it is served from.
+  /// `about:blank`, as native SWT does, not as the URL it is served from,
+  /// and a `file:` document as its `file:` URL, not its `/local-file/` path —
+  /// a LocationListener that opens http(s) locations externally would otherwise
+  /// cancel the local page and launch it in a new browser tab.
   /// Pass-through otherwise.
   String? _unproxyUrl(String? url) {
     if (url == null) return null;
-    if (url == _inlineDocumentUrl) return 'about:blank';
+    if (_inlineDocuments.isDocument(url)) return 'about:blank';
+    final local = _localFileUrl(url);
+    if (local != null) return local;
     final uri = Uri.tryParse(url);
     final orig = uri?.queryParameters['url'];
     if (uri != null && uri.path.endsWith('/proxy') && orig != null && orig.isNotEmpty) {
       return orig;
     }
     return url;
+  }
+
+  /// The `file:` URL a `/local-file/` [url] serves, resolved against the `file:` document Java
+  /// navigated to; null when [url] is not under that document's served directory.
+  String? _localFileUrl(String url) {
+    final served = _localFileServedUrl;
+    final file = _loadedUrl;
+    if (!_loadedLocalFile || served == null || file == null) return null;
+    if (url == served) return file;
+    final servedDir = served.substring(0, served.lastIndexOf('/') + 1);
+    if (!url.startsWith(servedDir)) return null;
+    final filePath = file.split(RegExp('[?#]')).first;
+    return filePath.substring(0, filePath.lastIndexOf('/') + 1) + url.substring(servedDir.length);
   }
 
   /// Installs the JS shim for a registered BrowserFunction into the iframe's
@@ -583,9 +660,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (uri != null && uri.hasScheme && url != _loadedUrl) {
       _loadedUrl = url;
       _loadedText = null;
+      _inlineDocuments.cancel();
       final resolved = _resolveLoadUri(url!, uri);
       _expectSameOrigin = resolved.toString() != url;
-      _controller.loadRequest(resolved);
+      _load(resolved);
     } else if (state.text != null && state.text != _loadedText) {
       // Like the file: url above: a document embedding file: sub-resources is only loadable in
       // the rewritten form the navigate op carries, so leave it to the op rather than rendering
@@ -641,8 +719,72 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     }
   }
 
+  /// Grows the page with the rest of the tree.
+  ///
+  /// [_unzoomed] hands the webview a viewport `zoom` times wider and takes the magnification back
+  /// out, so on its own the page would keep the size it has unzoomed — which is what native SWT
+  /// does, and which leaves the content looking small inside a UI drawn at 150 %. Zooming the
+  /// document by the same factor spends that wider viewport on larger type instead, at the full
+  /// pixel density the detour bought.
+  ///
+  /// Web has no `runJavaScript` (see the note on [_params]) and does not need this: its iframe is
+  /// magnified by the tree's own transform.
+  void _applyContentZoom() {
+    if (kIsWeb || !_navigationRequested) return;
+    final zoom = appScaleNotifier.value;
+    final factor = zoom > 0 ? zoom : 1.0;
+    try {
+      _controller.runJavaScript(
+          "document.documentElement.style.zoom=${factor.toStringAsFixed(6)};");
+    } catch (_) {
+      // No document to style yet; the next onPageFinished applies it.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return tagSemantics(WebViewWidget(controller: _controller));
+    return tagSemantics(ValueListenableBuilder<double>(
+      valueListenable: appScaleNotifier,
+      builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
+    ));
+  }
+
+  /// Renders the page at the pixel count it is displayed with, instead of stretching it.
+  ///
+  /// A native webview is composed as a texture sized for its own layout, so the tree's
+  /// magnification blows those pixels up rather than re-rendering the page. Laying the webview out
+  /// `zoom` times larger and scaling it back by the same factor leaves it exactly where it was on
+  /// screen while the texture carries `zoom` times the pixels. The page is then zoomed by the same
+  /// factor from the inside (see [_applyContentZoom]), so it ends up the size the rest of the tree
+  /// is drawn at — and sharp, which is the point of the detour.
+  ///
+  /// Web is left alone: there the webview is an `<iframe>`, a live document the browser re-renders
+  /// under the transform rather than a texture.
+  Widget _unzoomed(Widget webview, double zoom) {
+    if (kIsWeb || zoom <= 0 || zoom == 1.0) return webview;
+    return LayoutBuilder(builder: (context, constraints) {
+      if (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight) return webview;
+      // OverflowBox, not a plain SizedBox: a Transform does not change layout, so a child sized
+      // past its parent's constraints would simply be clamped back to them and then scaled down --
+      // leaving the page in 1/zoom of the space it was given.
+      return SizedBox(
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
+        child: ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: constraints.maxWidth * zoom,
+            maxWidth: constraints.maxWidth * zoom,
+            minHeight: constraints.maxHeight * zoom,
+            maxHeight: constraints.maxHeight * zoom,
+            child: Transform.scale(
+              scale: 1 / zoom,
+              alignment: Alignment.topLeft,
+              child: webview,
+            ),
+          ),
+        ),
+      );
+    });
   }
 }

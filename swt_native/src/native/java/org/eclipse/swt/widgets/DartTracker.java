@@ -445,31 +445,36 @@ public class DartTracker extends DartWidget implements ITracker {
         Control oldTrackingControl = ((DartDisplay) display.getImpl()).trackingControl;
         ((DartDisplay) display.getImpl()).trackingControl = null;
         openOnFlutter();
-        /* Tracker behaves like a Dialog with its own OS event loop. */
-        while (tracking && !cancelled) {
-            ((DartDisplay) display.getImpl()).addPool();
-            try {
-                if (parent != null && parent.isDisposed())
-                    break;
-                ((DartDisplay) display.getImpl()).runSkin();
-                ((DartDisplay) display.getImpl()).runDeferredLayouts();
-                if (!display.readAndDispatch()) {
-                    try {
-                        clientInput.tryAcquire(16, java.util.concurrent.TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException interrupted) {
-                        Thread.currentThread().interrupt();
+        try {
+            /* Tracker behaves like a Dialog with its own OS event loop. */
+            while (tracking && !cancelled) {
+                ((DartDisplay) display.getImpl()).addPool();
+                try {
+                    if (isDisposed())
+                        break;
+                    if (parent != null && parent.isDisposed())
+                        break;
+                    ((DartDisplay) display.getImpl()).runSkin();
+                    ((DartDisplay) display.getImpl()).runDeferredLayouts();
+                    if (!display.readAndDispatch()) {
+                        try {
+                            clientInput.tryAcquire(16, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
+                    if (clientCursor != null && resizeCursor == null) {
+                        ((DartDisplay) display.getImpl()).lockCursor = false;
+                        ((DartDisplay) display.getImpl()).lockCursor = true;
+                    }
+                    ((DartDisplay) display.getImpl()).runAsyncMessages(false);
+                } finally {
+                    ((DartDisplay) display.getImpl()).removePool();
                 }
-                if (clientCursor != null && resizeCursor == null) {
-                    ((DartDisplay) display.getImpl()).lockCursor = false;
-                    ((DartDisplay) display.getImpl()).lockCursor = true;
-                }
-                ((DartDisplay) display.getImpl()).runAsyncMessages(false);
-            } finally {
-                ((DartDisplay) display.getImpl()).removePool();
             }
+        } finally {
+            closeOnFlutter();
         }
-        closeOnFlutter();
         /*
 	* Cleanup: If this tracker was resizing then the last cursor that it created
 	* needs to be destroyed.
@@ -797,22 +802,20 @@ public class DartTracker extends DartWidget implements ITracker {
 
     private final java.util.concurrent.Semaphore clientInput = new java.util.concurrent.Semaphore(0);
 
-    private DartWidget flutterHost() {
-        if (parent == null || parent.isDisposed())
-            return null;
-        // The Shell rather than the immediate parent: the Shell is what subscribes to the
-        // Tracker channel and what knows how to convert a pointer position into display
-        // coordinates. A Tracker opened on a plain Composite -- an application dragging a
-        // toolbar out of its own dock does exactly that -- would otherwise announce itself
-        // on a channel nothing is listening to, and the loop would never see the pointer.
-        Shell shell = parent.getShell();
-        if (shell != null && !shell.isDisposed() && shell.getImpl() instanceof DartWidget)
-            return (DartWidget) shell.getImpl();
-        return parent.getImpl() instanceof DartWidget ? (DartWidget) parent.getImpl() : null;
-    }
+    private DartWidget announcedOn;
+
+    boolean pointerSeen;
+
+    private Display keysDisplay;
+
+    private ControlHelper.KeyCapture keysBefore;
 
     void openOnFlutter() {
-        DartWidget host = flutterHost();
+        pointerSeen = false;
+        keysDisplay = display;
+        keysBefore = ControlHelper.captureKeys(display, this::key);
+        DartWidget host = TrackerHelper.host(parent, display);
+        announcedOn = host;
         if (host == null)
             return;
         // Without the parent's bridge, commFor() falls back to a comm the client is not on,
@@ -823,12 +826,12 @@ public class DartTracker extends DartWidget implements ITracker {
             this.bridge = host.getBridge();
         if (!flutterHooked) {
             flutterHooked = true;
-            // _hookEvents() ran in the constructor, before the bridge above was in place, so
-            // its Move handler is bound to the wrong comm and never fires. Re-register it
-            // here, where the bridge is known, or the loop never learns where the pointer is.
+            // A Tracker makes no handle, so it is never registered and _hookEvents() never
+            // runs for it: what the loop hears from the client is hooked here, where the
+            // bridge is known.
             FlutterBridge.on(this, "Control", "Move", e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
-                    sendEvent(SWT.Move, e);
+                    mouse(e);
             }));
             FlutterBridge.on(this, "Tracker", "close", e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
@@ -854,12 +857,25 @@ public class DartTracker extends DartWidget implements ITracker {
     }
 
     void closeOnFlutter() {
-        DartWidget host = flutterHost();
-        if (host == null)
+        if (keysDisplay != null)
+            ControlHelper.captureKeys(keysDisplay, keysBefore);
+        keysDisplay = null;
+        keysBefore = null;
+        DartWidget host = announcedOn;
+        announcedOn = null;
+        if (host == null || host.isDisposed())
             return;
         Event e = new Event();
         e.itemId = FlutterBridge.id(this);
         FlutterBridge.sendNow(host, "Tracker/close", e);
+    }
+
+    void mouse(Event e) {
+        TrackerHelper.mouse(this, e);
+    }
+
+    boolean key(int type, Event event) {
+        return TrackerHelper.key(this, type, event);
     }
 
     @Override
@@ -867,6 +883,10 @@ public class DartTracker extends DartWidget implements ITracker {
         if ((eventType == SWT.Move || eventType == SWT.Resize) && event != null && getDisplay() != null) {
             ((DartDisplay) getDisplay().getImpl()).cursorLocation = new Point(event.x, event.y);
         }
+        // Before the workbench resolves the drop for this position, so it asks the window the
+        // pointer is over first.
+        if (eventType == SWT.Move && event != null && getBridge() instanceof DisplayBridge)
+            ((DisplayBridge) getBridge()).activateInlineWindowAt(new Point(event.x, event.y));
         // Every client event reaches the loop through here, so this is where it becomes
         // worth waking: the loop has nothing to do until the pointer has moved again.
         clientInput.release();

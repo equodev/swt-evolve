@@ -169,7 +169,7 @@ public class DartSynchronizer implements ISynchronizer {
      */
     public void syncExec(Runnable runnable) {
         RunnableLock lock = null;
-        synchronized (DartSynchronizer.class) {
+        synchronized (DartDevice.class) {
             if (display == null || display.isDisposed())
                 SWT.error(SWT.ERROR_DEVICE_DISPOSED);
             if (!((DartDisplay) display.getImpl()).isValidThread()) {

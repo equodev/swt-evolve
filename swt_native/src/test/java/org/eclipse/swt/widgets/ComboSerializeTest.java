@@ -11,7 +11,7 @@ class ComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Combo() {
-        Combo w = new Combo(swtShell(), SWT.NONE);
+        Combo w = new Combo(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Combo() {
-        Combo w = new Combo(swtShell(), SWT.NONE);
+        Combo w = new Combo(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -30,6 +30,7 @@ class ComboSerializeTest extends SerializeTestBase {
                                                                   .hasSameSizeAs(w.getItems()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("listVisible").equalsTo(w.getListVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
@@ -42,12 +43,11 @@ class ComboSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_Combo() {
-        Combo w = new Combo(swtShell(), SWT.NONE);
+        Combo w = new Combo(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

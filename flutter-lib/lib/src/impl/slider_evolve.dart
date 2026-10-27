@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
 import '../gen/slider.dart';
@@ -20,7 +22,8 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
     final pageIncrement = state.pageIncrement ?? widgetTheme.pageIncrement;
     final thumb = state.thumb ?? widgetTheme.thumb;
 
-    final currentValue = selection!.clamp(minimum, maximum).toDouble();
+    final travelMaximum = maximum - thumb < minimum ? minimum : maximum - thumb;
+    final currentValue = selection!.clamp(minimum, travelMaximum).toDouble();
 
     final enabled = state.enabled ?? true;
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
@@ -43,6 +46,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
     }
 
     final activeTrackColor = getSliderActiveTrackColor(
+      context,
       state,
       widgetTheme,
       enabled: enabled,
@@ -53,6 +57,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
       enabled: enabled,
     );
     final thumbColor = getSliderThumbColor(
+      context,
       state,
       widgetTheme,
       enabled: enabled,
@@ -62,7 +67,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
       _StyledSlider(
         value: currentValue,
         min: minimum.toDouble(),
-        max: maximum.toDouble(),
+        max: travelMaximum.toDouble(),
         enabled: enabled,
         width: width,
         height: height,
@@ -81,6 +86,9 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
           widget.sendSelectionSelection(state, e);
         },
         onChangeEnd: (value) {
+          // GTK ignores the second press of a double click on a range: one that moved nothing
+          // reports nothing.
+          if (isRepeatPress && value.round() == state.selection) return;
           state.selection = value.round();
           var e = VEvent()..index = state.selection;
           widget.sendSelectionDefaultSelection(state, e);
@@ -91,6 +99,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
 }
 
 Color getSliderActiveTrackColor(
+  BuildContext context,
   VSlider state,
   SliderThemeExtension widgetTheme, {
   required bool enabled,
@@ -99,8 +108,10 @@ Color getSliderActiveTrackColor(
     return widgetTheme.disabledActiveTrackColor;
   }
   return getForegroundColor(
+    context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.activeTrackColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -120,6 +131,7 @@ Color getSliderInactiveTrackColor(
 }
 
 Color getSliderThumbColor(
+  BuildContext context,
   VSlider state,
   SliderThemeExtension widgetTheme, {
   required bool enabled,
@@ -128,8 +140,10 @@ Color getSliderThumbColor(
     return widgetTheme.disabledThumbColor;
   }
   return getForegroundColor(
+    context: context,
     foreground: state.foreground,
     defaultColor: widgetTheme.thumbColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -178,6 +192,54 @@ class _StyledSlider extends StatefulWidget {
 
 class _StyledSliderState extends State<_StyledSlider> {
   double? _localValue;
+  bool _dragging = false;
+  Timer? _replay;
+  int? _sentSelection;
+
+  static const Duration _replayQuiet = Duration(milliseconds: 250);
+
+  /// A slider takes no keyboard focus from a click, as on every native, so the arrows a user
+  /// presses afterwards go to whatever holds the focus instead of moving it.
+  final FocusNode _focusNode = FocusNode(canRequestFocus: false, skipTraversal: true);
+
+  @override
+  void dispose() {
+    _replay?.cancel();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _awaitReplay() {
+    _replay?.cancel();
+    _replay = Timer(_replayQuiet, () {
+      if (!mounted) return;
+      setState(() {
+        _replay = null;
+        _localValue = null;
+      });
+    });
+  }
+
+  @override
+  void didUpdateWidget(_StyledSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_dragging) return;
+
+    if (widget.min != oldWidget.min || widget.max != oldWidget.max) {
+      _replay?.cancel();
+      _replay = null;
+      _localValue = null;
+      return;
+    }
+    if (widget.value == oldWidget.value) return;
+
+    if (_replay != null) {
+      _awaitReplay();
+      return;
+    }
+
+    _localValue = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,19 +261,36 @@ class _StyledSliderState extends State<_StyledSlider> {
         value: displayValue.clamp(widget.min, widget.max),
         min: widget.min,
         max: widget.max,
+        focusNode: _focusNode,
+        onChangeStart: widget.enabled
+            ? (_) {
+                _replay?.cancel();
+                _replay = null;
+                _dragging = true;
+                _sentSelection = null;
+              }
+            : null,
         onChanged: widget.enabled
             ? (value) {
                 setState(() {
                   _localValue = value;
                 });
+                final selection = value.round();
+                if (selection == _sentSelection) return;
+                _sentSelection = selection;
                 widget.onChanged(value);
               }
             : null,
         onChangeEnd: widget.enabled
             ? (value) {
+                final committed =
+                    value.roundToDouble().clamp(widget.min, widget.max);
                 setState(() {
-                  _localValue = null;
+                  _dragging = false;
+                  _localValue = committed;
                 });
+                _sentSelection = committed.round();
+                _awaitReplay();
                 widget.onChangeEnd(value);
               }
             : null,
@@ -221,7 +300,7 @@ class _StyledSliderState extends State<_StyledSlider> {
     Widget result;
     if (widget.isVertical) {
       result = RotatedBox(
-        quarterTurns: 3,
+        quarterTurns: 1,
         child: SizedBox(
           width: widget.height,
           height: widget.width,

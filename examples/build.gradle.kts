@@ -51,6 +51,7 @@ val coreCommandsVersion: String by project
 val equinoxCommonVersion: String by project
 val jfaceTextVersion: String by project
 val eclipseTextVersion: String by project
+val uiFormsVersion: String by project
 val nattableVersion: String by project
 
 val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
@@ -63,6 +64,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}")
     // JFace dependencies
     implementation("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
+        exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+    }
+    implementation("org.eclipse.platform:org.eclipse.ui.forms:$uiFormsVersion") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
     implementation("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
@@ -84,12 +88,13 @@ dependencies {
 
     // JavaFX (for FXCanvas / embedded-scene snippets). Classifier pulls the
     // platform-specific classes + native libraries. JavaFX 21 targets JDK 21.
+    // OpenJFX 21 publishes no linux-aarch64 (nor any win-aarch64) jars, so the FXCanvas snippets
+    // only run on the x64 and macOS hosts.
     val javafxVersion = libs.versions.javafx.get()
     val javafxClassifier = when {
         currentOs == "macos" && currentArch == "aarch64" -> "mac-aarch64"
         currentOs == "macos" -> "mac"
         currentOs == "windows" -> "win"
-        currentArch == "aarch64" -> "linux-aarch64"
         else -> "linux"
     }
     implementation("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
@@ -122,6 +127,21 @@ tasks.withType<JavaExec>().configureEach {
     }
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
             "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
+    // Forwarded when the caller sets them, because -D on the Gradle command line sets a property
+    // on the Gradle JVM, where nothing reads it, and the run then looks silently unconfigured.
+    // These are the switches a reproduction is driven with: `workbench.plainSwing` runs the
+    // workbench as an ordinary SWT_AWT application, which is the oracle every defect reproduced
+    // there is measured against, and `map.scriptedBandDrag` drives the gesture that found one.
+    for (name in listOf("workbench.plainSwing", "map.scriptedBandDrag", "map.statusFollowsPointer",
+            "tabs", "dev.equo.swing.traceFrames"))
+        System.getProperty(name)?.let { systemProperty(name, it) }
+    // And every switch of the two reproduction families by prefix rather than by name: `gl.` is
+    // the 3D-like canvas and its producer, `dev.equo.swing.nativeSurface` is the engine's own
+    // configuration of the route. Naming each one here meant a new switch looked ignored until
+    // somebody remembered this list, which happened.
+    System.getProperties().stringPropertyNames()
+        .filter { it.startsWith("gl.") || it.startsWith("dev.equo.swing.nativeSurface") }
+        .forEach { systemProperty(it, System.getProperty(it)) }
 }
 
 tasks.register<JavaExec>("runExample") {
@@ -181,7 +201,10 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         // (`pkill -f runWebExample`) reaps all of them.
         sessionId()?.let { systemProperty("dev.equo.session", it) }
         systemProperty("dev.equo.swt.crashReport.disabled", "true")
-        systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
+        // Off unless asked for (-Ddev.equo.swt.web.crossOriginIsolated=true): isolation is what gives
+        // the wasm renderer its threads, and what makes a Browser's iframe refuse external pages.
+        systemProperty("dev.equo.swt.web.crossOriginIsolated",
+            System.getProperty("dev.equo.swt.web.crossOriginIsolated") ?: "false")
         systemProperty("dev.equo.swt.mode", mode)
         // -Pdebug turns on the Java-side DebugLog (Config.isDebug): prints every `send:` of a widget's
         // V* payload to Flutter. That's the Java side of the Phase 3 Flutter-vs-V* cross-check. It can
@@ -197,17 +220,24 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
         // Forward the theming switches, so a snippet can be run the way a themed product runs:
         // an application that paints itself (e4 CSS) needs its own colors/fonts, not Evolve's theme.
-        // theme_color_* is a prefix -- one property per widget -- so it is matched, not listed.
-        for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts", "swt.evolve.force_theme",
-                "swt.evolve.theme_color", "swt.evolve.theme_name",
-                "swt.evolve.preserve_icon_colors", "swt.evolve.disable_evolve_icons")) {
+        for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts",
+                // Which shells get a window of their own -- see dev.equo.swt.WindowPolicy. Forwarded
+                // so MultiWindowSnippet can be run under each policy without editing anything.
+                "dev.equo.swt.windows", "dev.equo.swt.windows.dialogs", "dev.equo.swt.windows.modal",
+                // Client-Side Decorations. -Ddev.equo.swt.csd=false gives the window its system
+                // title bar and buttons back, which is the only way to exercise a window-manager
+                // close rather than the one Flutter draws.
+                "dev.equo.swt.csd", "dev.equo.swt.csd.os", "dev.equo.swt.csd.maximize",
+                // swt.autoScale picks the zoom the UI is drawn at, and updateOnRuntime is what
+                // rejects a mode monitor-specific scaling cannot honour -- so a snippet can be run
+                // at a zoom of its own.
+                "swt.autoScale", "swt.autoScale.updateOnRuntime")) {
             System.getProperty(name)?.let { systemProperty(name, it) }
         }
+        // Every swt.evolve.* config flag (theme_color_* included), so a snippet runs under any of them.
         System.getProperties().stringPropertyNames()
-            .filter { it.startsWith("swt.evolve.theme_color_") }
+            .filter { it.startsWith("swt.evolve.") }
             .forEach { systemProperty(it, System.getProperty(it)) }
-        // Forward the double-click window (ms) an external driver needs — see ConfigFlags#double_click_timeout_ms.
-        System.getProperty("swt.evolve.double_click_timeout_ms")?.let { systemProperty("swt.evolve.double_click_timeout_ms", it) }
         // -PdartDebug: run the Dart/Flutter rendering side in debug so its Dart VM Service is available
         // for DTD/MCP + flutter_driver. One flag for both render modes: desk builds the frameworks with
         // --debug (JIT) and FlutterLibraryLoader loads the Debug build-dir; web serves via a live
@@ -256,31 +286,73 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
     }
 
 // The screenshot capture forks one JVM per snippet. Resolving the classpath once and reusing it for
-// all of them saves a whole nested Gradle build each time, which dominated that job's runtime.
-tasks.register("webExampleClasspath") {
+// all of them saves a whole nested Gradle build each time, which dominated that job's runtime. The
+// desktop twin serves a host that launches snippets with JVM flags of its own.
+fun registerExampleClasspath(name: String, jarTaskName: String, fileName: String, renderMode: String) =
+    tasks.register(name) {
+        group = "examples"
+        description = "Writes the $renderMode example runtime classpath to a file, one entry per line."
+        val jar = project(":swt_native").tasks.named<Jar>(jarTaskName)
+        dependsOn(jar)
+        // The snippet classes are read out of sourceSets in doLast, which carries no task dependency of
+        // its own, so without this the file names a classes directory nothing ever compiled.
+        dependsOn(tasks.named("classes"))
+        val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
+            !(dep is ProjectDependency && dep.path == ":swt_native")
+        }
+        val mainOutput = sourceSets["main"].output
+        val outputFile = layout.buildDirectory.file(fileName)
+        outputs.file(outputFile)
+        doLast {
+            val entries = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
+            val file = outputFile.get().asFile
+            file.parentFile.mkdirs()
+            file.writeText(entries.files.joinToString("\n") { it.absolutePath })
+        }
+    }
+registerExampleClasspath("webExampleClasspath", "webJar", "web-example-classpath.txt", "browser-only")
+registerExampleClasspath("deskExampleClasspath", "${currentPlatform}Jar", "desk-example-classpath.txt", "desktop")
+
+registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
+registerFlutterExample("runDeskExample", "desktop")
+
+// What `runWebExample -PwebOnly=true` would launch, written as JSON so an external driver can fork the
+// example JVM itself instead of paying a nested Gradle build for it. The JVM arguments (system
+// properties included) are read from runWebExample itself, so the two cannot drift; the main class
+// and per-run properties (port, browser, ...) are left to the caller.
+tasks.register("webExampleLaunchSpec") {
     group = "examples"
-    description = "Writes runWebExample's browser-only runtime classpath to a file, one entry per line."
+    description = "Writes the java executable, working directory, JVM arguments and browser-only " +
+            "classpath runWebExample -PwebOnly=true would use, as JSON."
     val jar = project(":swt_native").tasks.named<Jar>("webJar")
-    dependsOn(jar)
-    // The snippet classes are read out of sourceSets in doLast, which carries no task dependency of
-    // its own, so without this the file names a classes directory nothing ever compiled.
-    dependsOn(tasks.named("classes"))
+    dependsOn(jar, tasks.named("classes"))
+    val runWebExample = tasks.named<JavaExec>("runWebExample")
     val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
         !(dep is ProjectDependency && dep.path == ":swt_native")
     }
     val mainOutput = sourceSets["main"].output
-    val outputFile = layout.buildDirectory.file("web-example-classpath.txt")
+    val outputFile = layout.buildDirectory.file("web-example-launch.json")
     outputs.file(outputFile)
+    outputs.upToDateWhen { false }
     doLast {
-        val entries = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
+        val run = runWebExample.get()
+        val classpath = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
+        // allJvmArgs holds the system properties and Gradle's defaults but, until the task runs, not
+        // the jvmArguments property (where jvmArgs(...) lands), so both are taken.
+        val jvmArgs = run.jvmArguments.get() +
+                run.jvmArgumentProviders.flatMap { it.asArguments() } +
+                run.allJvmArgs
+        val spec = mapOf(
+            "java" to run.javaLauncher.get().executablePath.asFile.absolutePath,
+            "workingDir" to run.workingDir.absolutePath,
+            "jvmArgs" to jvmArgs,
+            "classpath" to classpath.files.map { it.absolutePath },
+        )
         val file = outputFile.get().asFile
         file.parentFile.mkdirs()
-        file.writeText(entries.files.joinToString("\n") { it.absolutePath })
+        file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(spec)))
     }
 }
-
-registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
-registerFlutterExample("runDeskExample", "desktop")
 
 // Embedded: the per-widget native-SWT scenario (embed-<os>-<arch>.jar) -- a real native SWT shell
 // that renders Equo-enabled widgets (per Config.equoEnabled) through Flutter and everything else
@@ -306,4 +378,29 @@ tasks.register<JavaExec>("runEmbedExample") {
 
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+}
+
+// The oracle runs with no `-XstartOnFirstThread`: that flag is SWT's on macOS and it is exactly
+// what AWT cannot live with — Swing's own toolkit wants the primordial thread for AppKit, and with
+// the flag set it spins in `LWCToolkit.initAppkit` and never opens a window. A pure-Swing snippet
+// is the one example here that must not get it.
+tasks.register<JavaExec>("runPlainSwing") {
+    group = "examples"
+    description = "Run a plain-Swing example with no SWT flags. Usage: -PmainClass=…"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set(project.findProperty("mainClass")?.toString()
+            ?: "dev.equo.swing.PlainSwingWorkbenchSnippet")
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
+}
+
+
+// The oracle is launched with `java` directly, not through this task: a Gradle JavaExec does not
+// hand the application the primordial thread, and AWT on macOS spins in `LWCToolkit.initAppkit`
+// waiting for it. This prints what to put on `-cp`.
+tasks.register("printClasspath") {
+    group = "examples"
+    description = "The runtime class path, for launching a plain-Swing example with java directly."
+    val cp = sourceSets["main"].runtimeClasspath
+    doLast { println(cp.asPath) }
 }

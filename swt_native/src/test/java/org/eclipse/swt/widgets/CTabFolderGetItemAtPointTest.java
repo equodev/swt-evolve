@@ -12,8 +12,8 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
-import static org.eclipse.swt.widgets.Mocks.swtDisplay;
+import static org.eclipse.swt.widgets.Mocks.shell;
+import static org.eclipse.swt.widgets.Mocks.display;
 
 /**
  * The lookup the Eclipse workbench needs in order to reorder a view within its own stack.
@@ -29,7 +29,6 @@ import static org.eclipse.swt.widgets.Mocks.swtDisplay;
  * <p>The folder is deliberately placed away from the origin, so geometry that quietly ignores where
  * the folder sits cannot pass.
  */
-@DisabledOnOs(OS.LINUX)
 class CTabFolderGetItemAtPointTest extends SerializeTestBase {
 
     private static final int FOLDER_X = 254;
@@ -47,12 +46,12 @@ class CTabFolderGetItemAtPointTest extends SerializeTestBase {
      */
     @BeforeEach
     void giveTheDisplayAScreen() {
-        org.mockito.Mockito.when(swtDisplay().getBounds())
+        org.mockito.Mockito.when(display().getBounds())
                 .thenReturn(new Rectangle(0, 0, 1920, 1080));
     }
 
     private void createFolder() {
-        folder = new CTabFolder(swtShell(), SWT.NONE);
+        folder = new CTabFolder(shell(), SWT.NONE);
         folder.setBounds(FOLDER_X, FOLDER_Y, FOLDER_WIDTH, FOLDER_HEIGHT);
 
         first = new CTabItem(folder, SWT.NONE);

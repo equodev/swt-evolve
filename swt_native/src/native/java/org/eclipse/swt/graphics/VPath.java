@@ -23,13 +23,49 @@ public class VPath extends VResource {
         ((DartPath) impl).pathData = value;
     }
 
+    public String[] getTextStrings() {
+        return ((DartPath) impl).wireTextStrings();
+    }
+
+    public void setTextStrings(String[] value) {
+    }
+
+    public float[] getTextOrigins() {
+        return ((DartPath) impl).wireTextOrigins();
+    }
+
+    public void setTextOrigins(float[] value) {
+    }
+
+    public Font[] getTextFonts() {
+        return ((DartPath) impl).wireTextFonts();
+    }
+
+    public void setTextFonts(Font[] value) {
+    }
+
     public static final String PATH_DATA = "pathData";
+
+    public static final String TEXT_FONTS = "textFonts";
+
+    public static final String TEXT_ORIGINS = "textOrigins";
+
+    public static final String TEXT_STRINGS = "textStrings";
 
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
             case "pathData":
                 Serializer.writeKeyValue(writer, "pathData", getPathData());
+                return;
+            case "textStrings":
+                Serializer.writeKeyValue(writer, "textStrings", getTextStrings());
+                return;
+            case "textOrigins":
+                Serializer.writeKeyValue(writer, "textOrigins", getTextOrigins());
+                return;
+            case "textFonts":
+                Serializer.writeKeyValue(writer, "textFonts", getTextFonts());
                 return;
         }
         super.writeProperty(writer, key);

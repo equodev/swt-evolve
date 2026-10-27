@@ -165,7 +165,7 @@ bool Win32Window::Create(const std::wstring& title,
       window_class, title.c_str(), style,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
       Scale(size.width, scale_factor), Scale(size.height, scale_factor),
-      parentWnd, nullptr, GetModuleHandle(nullptr), this);
+      parentWnd ? parentWnd : owner_, nullptr, GetModuleHandle(nullptr), this);
 
   std::cout << "Win32Window::Create - Created window=" << window << " headless=" << (parentWnd ? "false" : "true") << std::endl;
 
@@ -266,7 +266,9 @@ Win32Window::MessageHandler(HWND hwnd,
         case WM_DESTROY: {
             OnDestroy();
             std::cout << "Win32Window: WM_DESTROY" << std::endl;
-            if (quit_on_close_) {
+            // Only the window that owns the application's exit may post this: WM_QUIT goes to the
+            // thread, not to a window, so every other window's pump sees it too -- see SetOwnsAppExit.
+            if (owns_app_exit_) {
                 PostQuitMessage(0);
             }
             return 0;
@@ -377,11 +379,30 @@ bool Win32Window::TakeCloseRequest() {
   return requested;
 }
 
+void Win32Window::SetOwner(HWND owner) {
+  owner_ = owner;
+  if (window_handle_ && !(GetWindowLong(window_handle_, GWL_STYLE) & WS_CHILD)) {
+    SetWindowLongPtr(window_handle_, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
+  }
+}
+
+// Windows destroys a window's owned windows along with it, which would free the Win32Window of a
+// detached shell that is still alive. They are handed to this window's own owner first; Java
+// re-owns them properly on its next sync.
+static BOOL CALLBACK ReownToGrandOwner(HWND hwnd, LPARAM lParam) {
+  HWND dying = reinterpret_cast<HWND>(lParam);
+  if (GetWindow(hwnd, GW_OWNER) == dying) {
+    SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(GetWindow(dying, GW_OWNER)));
+  }
+  return TRUE;
+}
+
 void Win32Window::Destroy() {
   if (window_handle_) {
     HWND hwnd = window_handle_;
     window_handle_ = nullptr;
 
+    EnumThreadWindows(GetCurrentThreadId(), ReownToGrandOwner, reinterpret_cast<LPARAM>(hwnd));
     ShowWindow(hwnd, SW_HIDE);
     SetParent(hwnd, HWND_MESSAGE);
     DestroyWindow(hwnd);
@@ -416,7 +437,7 @@ void Win32Window::SetChildContent(HWND content) {
 }
 
 void Win32Window::Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize) {
-  // Values from Java are in SWT points (logical pixels). Convert to physical
+  // Values from Java are in logical pixels, converted from SWT units there. Convert to physical
   // pixels for MoveWindow, which expects physical pixels in a DPI-aware process.
   // scale_factor_ is set in Create() and updated on WM_DPICHANGED.
   int px = Scale(origin.x, scale_factor_);
@@ -426,7 +447,26 @@ void Win32Window::Move(const Point& origin, const Size& size, const Point& vorig
   std::cout << "Win32Window::Move - origin=(" << origin.x << "," << origin.y
             << ") size=(" << size.width << "x" << size.height << ")"
             << " scale=" << scale_factor_ << " scaled=(" << px << "," << py << " " << pw << "x" << ph << ")" << std::endl;
-  MoveWindow(window_handle_, px, py, pw, ph, true);
+  // The rect from Java is the content rect; MoveWindow takes the frame rect, so grow it by the
+  // caption and borders of the window's own style. A child (embedded) window has none, so this
+  // is a no-op there. A frameless window's style still names a caption and borders, but
+  // WM_NCCALCSIZE gives their space to the client, so its frame rect already is the content rect.
+  RECT frame = {px, py, px + pw, py + ph};
+  if (!frameless_) {
+    DWORD style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_STYLE));
+    DWORD ex_style = static_cast<DWORD>(GetWindowLongPtr(window_handle_, GWL_EXSTYLE));
+    AdjustWindowRectExForDpi(&frame, style, FALSE, ex_style, GetDpiForWindow(window_handle_));
+    // Native SWT puts a shell's title bar at the y it is given, but this y is the content's, below
+    // the caption: wherever that title bar would still show, the caption goes on the screen too.
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!(style & WS_CHILD) &&
+        GetMonitorInfo(MonitorFromRect(&frame, MONITOR_DEFAULTTONEAREST), &monitor)) {
+      const LONG top = monitor.rcWork.top;
+      const LONG caption = py - frame.top;
+      if (frame.top < top && py > top - caption) OffsetRect(&frame, 0, top - frame.top);
+    }
+  }
+  MoveWindow(window_handle_, frame.left, frame.top, frame.right - frame.left, frame.bottom - frame.top, true);
   if (origin.x == vorigin.x && origin.y == vorigin.y && size.width == vsize.width && size.height == vsize.height) {
     return;
   }

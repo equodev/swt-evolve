@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:ui' show Offset;
+
+import 'dnd_session.dart' show ActiveDragTracker;
 
 typedef HoverChanged = void Function(bool hovering);
 
@@ -12,6 +15,13 @@ typedef HoverChanged = void Function(bool hovering);
 class HoverExclusivityArbiter {
   HoverExclusivityArbiter._();
   static final HoverExclusivityArbiter instance = HoverExclusivityArbiter._();
+
+  /// Where the pointer was, in global coordinates, on the latest crossing of the hover being
+  /// resolved, and null once it is. A control that loses the hover to a descendant has not been
+  /// crossed itself, so its own last crossing is stale: its MouseExit is placed from this instead, as
+  /// natively it is placed at the pointer's current position.
+  Offset? get pointerPosition => _pointerPosition;
+  Offset? _pointerPosition;
 
   final Map<Object, int> _activeDepths = {};
   final Map<Object, HoverChanged> _callbacks = {};
@@ -28,7 +38,9 @@ class HoverExclusivityArbiter {
     if (_winner == owner) _winner = null;
   }
 
-  void setActive(Object owner, int depth, bool active) {
+  /// [owner] at [depth] was crossed by the pointer, now at [globalPosition].
+  void setActive(Object owner, int depth, bool active, Offset globalPosition) {
+    _pointerPosition = globalPosition;
     if (active) {
       _activeDepths[owner] = depth;
     } else {
@@ -43,8 +55,23 @@ class HoverExclusivityArbiter {
     }
   }
 
+  void flushPending() {
+    if (_resolveScheduled) _resolve();
+  }
+
+  /// Settles what the pointer is over now that nothing holds it.
+  void settle() {
+    if (!_resolveScheduled) {
+      _resolveScheduled = true;
+      scheduleMicrotask(_resolve);
+    }
+  }
+
   void _resolve() {
     _resolveScheduled = false;
+    // A held button is SWT's implicit capture: nothing is entered or left until release, when
+    // [settle] resolves what the pointer ended up over.
+    if (ActiveDragTracker.isSuppressingHover) return;
     Object? newWinner;
     var bestDepth = -1;
     _activeDepths.forEach((owner, depth) {
@@ -53,10 +80,13 @@ class HoverExclusivityArbiter {
         newWinner = owner;
       }
     });
-    if (newWinner == _winner) return;
-    final oldWinner = _winner;
-    _winner = newWinner;
-    if (oldWinner != null) _callbacks[oldWinner]?.call(false);
-    if (newWinner != null) _callbacks[newWinner]?.call(true);
+    if (newWinner != _winner) {
+      final oldWinner = _winner;
+      _winner = newWinner;
+      if (oldWinner != null) _callbacks[oldWinner]?.call(false);
+      if (newWinner != null) _callbacks[newWinner]?.call(true);
+    }
+    // Kept no longer than this hover: in another view, a later one has coordinates of its own.
+    _pointerPosition = null;
   }
 }

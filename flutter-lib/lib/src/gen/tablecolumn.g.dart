@@ -16,6 +16,7 @@ VTableColumn _$VTableColumnFromJson(Map<String, dynamic> json) => VTableColumn()
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
   ..text = json['text'] as String?
   ..alignment = (json['alignment'] as num?)?.toInt()
+  ..moveable = json['moveable'] as bool?
   ..resizable = json['resizable'] as bool?
   ..width = (json['width'] as num?)?.toInt();
 
@@ -27,6 +28,7 @@ Map<String, dynamic> _$VTableColumnToJson(VTableColumn instance) =>
       'image': ?instance.image,
       'text': ?instance.text,
       'alignment': ?instance.alignment,
+      'moveable': ?instance.moveable,
       'resizable': ?instance.resizable,
       'width': ?instance.width,
     };

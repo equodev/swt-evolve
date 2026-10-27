@@ -522,7 +522,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @see #syncExec
      */
     public void asyncExec(Runnable runnable) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer.asyncExec(runnable);
@@ -834,7 +834,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static void deregister(Display display) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (display == Displays[i])
                     Displays[i] = null;
@@ -1006,7 +1006,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @return the display for the given thread
      */
     public static Display findDisplay(Thread thread) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 Display display = Displays[i];
                 if (display != null && ((DartDisplay) display.getImpl()).thread == thread) {
@@ -1038,7 +1038,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return shell;
             }
         }
-        Shell[] currentShells = getShells();
+        Shell[] currentShells = shellsInDrawOrder();
         for (int i = currentShells.length - 1; i >= 0; i--) {
             if (canBeActiveShell(currentShells[i])) {
                 return currentShells[i];
@@ -1271,7 +1271,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public int getDoubleClickTime() {
         checkDevice();
-        return 500;
+        return dev.equo.swt.Config.doubleClickTime();
     }
 
     /**
@@ -1473,7 +1473,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static boolean getSheetEnabled() {
-        return !"false".equals(System.getProperty("org.eclipse.swt.sheet"));
+        return false;
     }
 
     /**
@@ -1509,7 +1509,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getSyncThread() {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return ((DartSynchronizer) synchronizer.getImpl()).syncThread;
@@ -1590,14 +1590,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             // common case for owner-drawn content -- inherits both from here.
             case SWT.COLOR_WIDGET_FOREGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 0, 0, 0);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
             case SWT.COLOR_WIDGET_BACKGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 240, 240, 240);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
@@ -1606,14 +1606,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return new Color(this.getApi(), 0, 0, 0);
             case SWT.COLOR_LIST_FOREGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 0, 0, 0);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
             case SWT.COLOR_LIST_BACKGROUND:
                 {
-                    if (!isSystemDarkTheme())
+                    if (!Config.systemColorsAreDark())
                         return new Color(this.getApi(), 255, 255, 255);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
                     return new Color(this.getApi(), t.red(), t.green(), t.blue());
@@ -1753,10 +1753,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Menu getMenuBar() {
         checkDevice();
+        if (!Config.getConfigFlags().system_menu_bar)
+            return null;
         if (appMenuBar != null)
             return appMenuBar;
         appMenuBar = new Menu(this.getApi());
-        // the menubar will be updated when the Shell or the application activates.
         return appMenuBar;
     }
 
@@ -1850,7 +1851,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * </ul>
      */
     public Thread getThread() {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             return thread;
@@ -1877,8 +1878,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     int getToolTipTime() {
         checkDevice();
-        //TODO get OS value (NSTooltipManager?)
-        return 560;
+        return dev.equo.swt.Config.hoverDelay();
     }
 
     Widget getWidget(long id) {
@@ -2224,79 +2224,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.0
      */
     public boolean post(Event event) {
-        synchronized (DartDisplay.class) {
-            if (isDisposed())
-                error(SWT.ERROR_DEVICE_DISPOSED);
-            if (event == null)
-                error(SWT.ERROR_NULL_ARGUMENT);
-            long eventRef = 0;
-            boolean returnValue = false;
-            int[] deadKeyState = new int[1];
-            int type = event.type;
-            switch(type) {
-                case SWT.KeyDown:
-                case SWT.KeyUp:
-                    {
-                        short vKey = (short) DartDisplay.untranslateKey(event.keyCode);
-                        if (vKey == 0) {
-                            long keyLayout = getCurrentKeyLayout();
-                            if (keyLayout == 0)
-                                return false;
-                            int maxStringLength = 256;
-                            vKey = -1;
-                            char[] output = new char[maxStringLength];
-                            for (short i = 0; i <= 0x7F; i++) {
-                                deadKeyState[0] = 0;
-                                if (output[0] == event.character) {
-                                    vKey = i;
-                                    break;
-                                }
-                            }
-                            if (vKey == -1) {
-                                for (short i = 0; i <= 0x7F; i++) {
-                                    deadKeyState[0] = 0;
-                                    if (output[0] == event.character) {
-                                        vKey = i;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        /**
-                         * Bug(?) in UCKeyTranslate:  If event.keyCode doesn't map to a valid SWT constant and event.character is 0 we still need to post an event.
-                         * In Carbon, KeyTranslate eventually found a key that generated 0 but UCKeyTranslate never generates 0.
-                         * When that happens, post an event from key 127, which does nothing.
-                         */
-                        if (vKey == -1 && event.character == 0) {
-                            vKey = 127;
-                        }
-                        if (vKey != -1) {
-                        }
-                        break;
-                    }
-                case SWT.MouseDown:
-                case SWT.MouseMove:
-                case SWT.MouseUp:
-                    {
-                        if (type == SWT.MouseMove) {
-                        } else {
-                        }
-                        break;
-                    }
-                case SWT.MouseWheel:
-                    {
-                        break;
-                    }
-            }
-            if (eventRef != 0) {
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                }
-                returnValue = true;
-            }
-            return returnValue;
-        }
+        if (isDisposed())
+            error(SWT.ERROR_DEVICE_DISPOSED);
+        if (event == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        return DisplayInput.post(getApi(), event);
     }
 
     void postEvent(Event event) {
@@ -2500,13 +2432,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (to != null && to.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        Rectangle rectangle = new Rectangle(x, y, width, height);
         if (from == to)
-            return rectangle;
-        Point origin = DisplayHelper.mapOrigin(from, to, x, y);
-        rectangle.x = origin.x;
-        rectangle.y = origin.y;
-        return rectangle;
+            return new Rectangle(x, y, width, height);
+        return DisplayHelper.mapRectangle(from, to, x, y, width, height);
     }
 
     long observerProc(long observer, long activity, long info) {
@@ -2566,7 +2494,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static void register(Display display) {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] == null) {
                     Displays[i] = display;
@@ -3401,7 +3329,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (synchronizer == this.synchronizer)
             return;
         Synchronizer oldSynchronizer;
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             oldSynchronizer = this.synchronizer;
             this.synchronizer = synchronizer;
         }
@@ -3531,7 +3459,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public void syncExec(Runnable runnable) {
         Synchronizer synchronizer;
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             synchronizer = this.synchronizer;
@@ -3568,7 +3496,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.118
      */
     public <T, E extends Exception> T syncCall(SwtCallable<T, E> callable) throws E {
-        Objects.nonNull(callable);
+        Objects.requireNonNull(callable);
         AtomicReference<T> result = new AtomicReference<>();
         AtomicReference<Exception> ex = new AtomicReference<>();
         syncExec(() -> {
@@ -3686,7 +3614,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @see #sleep
      */
     public void wake() {
-        synchronized (DartDisplay.class) {
+        synchronized (DartDevice.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (thread == Thread.currentThread())
@@ -3697,10 +3625,13 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     void wakeThread() {
         _wakeSignal.release();
+        if (displayBridge != null && displayBridge.needsPump())
+            displayBridge.wake();
     }
 
     Control findControl(boolean checkTrim) {
-        return null;
+        Point cursor = getCursorLocation();
+        return cursor == null ? null : DisplayInput.controlAt(getApi(), cursor.x, cursor.y);
     }
 
     static boolean isActivateShellOnForceFocus() {
@@ -4096,7 +4027,13 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     boolean canBeActiveShell(Shell shell) {
-        return shell != null && !shell.isDisposed() && shell.getVisible() && (shell.getStyle() & SWT.NO_FOCUS) == 0;
+        if (shell == null || shell.isDisposed() || !shell.getVisible())
+            return false;
+        if ((shell.getStyle() & SWT.NO_FOCUS) != 0)
+            return false;
+        DartControl impl = (DartControl) shell.getImpl();
+        FlutterBridge bridge = impl.getBridge();
+        return bridge == null || bridge.hostsActiveWindow(shell);
     }
 
     void bootFailureCleanup() {
@@ -4120,6 +4057,17 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             this.deviceZoom = zoom;
             DPIUtil.setDeviceZoom(zoom);
         }
+    }
+
+    java.util.Locale clientLocale = java.util.Locale.ROOT;
+
+    void applyClientLocale(String tag) {
+        if (tag != null && !tag.isEmpty())
+            clientLocale = java.util.Locale.forLanguageTag(tag);
+    }
+
+    java.util.Locale textLocale() {
+        return dev.equo.swt.ConfigFlags.isDesktopMode() ? dev.equo.swt.Config.formatLocale() : clientLocale;
     }
 
     boolean performKeyEquivalent(Object window, Object nsEvent) {
@@ -4152,6 +4100,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         System.arraycopy(shells, 0, newShells, 0, shells.length);
         newShells[shells.length] = shell;
         shells = newShells;
+        Shell[] newDrawOrder = new Shell[drawOrder.length + 1];
+        System.arraycopy(drawOrder, 0, newDrawOrder, 0, drawOrder.length);
+        newDrawOrder[drawOrder.length] = shell;
+        drawOrder = newDrawOrder;
     }
 
     void removeShell(Shell shell) {
@@ -4163,6 +4115,39 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         for (Shell s : shells) if (s != shell)
             newShells[i++] = s;
         shells = newShells;
+        Shell[] newDrawOrder = new Shell[count];
+        i = 0;
+        for (Shell s : drawOrder) if (s != shell)
+            newDrawOrder[i++] = s;
+        drawOrder = newDrawOrder;
+    }
+
+    Shell[] drawOrder = new Shell[0];
+
+    public Shell[] shellsInDrawOrder() {
+        return drawOrder.clone();
+    }
+
+    void raiseShell(Shell shell) {
+        Shell[] newDrawOrder = new Shell[drawOrder.length];
+        int i = 0;
+        for (Shell s : drawOrder) if (!ownedBy(s, shell))
+            newDrawOrder[i++] = s;
+        for (Shell s : drawOrder) if (ownedBy(s, shell))
+            newDrawOrder[i++] = s;
+        if (java.util.Arrays.equals(newDrawOrder, drawOrder))
+            return;
+        drawOrder = newDrawOrder;
+        if (displayBridge != null)
+            displayBridge.sendDisplayUpdate(this);
+    }
+
+    private static boolean ownedBy(Shell s, Shell owner) {
+        for (Control c = s; c != null; c = ((DartControl) c.getImpl()).parent) {
+            if (c == owner)
+                return true;
+        }
+        return false;
     }
 
     Map<Runnable, TimerTask> _timerExecTasks = new HashMap<>();
@@ -4174,6 +4159,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     final java.util.concurrent.Semaphore _wakeSignal = new java.util.concurrent.Semaphore(0);
 
     static volatile long WEB_PARK_CAP_MS = 16;
+
+    volatile String clientPlatform;
+
+    boolean isMacWebClient() {
+        return "web".equals(org.eclipse.swt.SWT.getPlatform()) && ("macOS".equals(clientPlatform) || "iOS".equals(clientPlatform));
+    }
 
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();
 

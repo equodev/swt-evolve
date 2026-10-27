@@ -35,7 +35,7 @@ can assert that state pushed from Java actually reached and updated the rendered
 @RegisterExtension static Mocks mocks = Mocks.withNativeBridge(); // mocked Display/Shell, real bridge
 @RegisterExtension static WidgetFlutterHarness flutter = new WidgetFlutterHarness();
 
-Composite group = new Composite(Mocks.swtShell(), SWT.NONE);
+Composite group = new Composite(Mocks.shell(), SWT.NONE);
 Button r1 = new Button(group, SWT.RADIO);
 flutter.show(group);                  // boot renderer, await ClientReady, initial flush
 ((DartButton) r1.getImpl()).selectRadio();

@@ -1,9 +1,13 @@
 package dev.equo.swt;
 
 import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.JsonAttribute;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.TreeMap;
 import dev.equo.swt.DecorationsAlign;
+import org.eclipse.swt.graphics.RGB;
 
 @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class ConfigFlags {
@@ -49,6 +53,11 @@ public class ConfigFlags {
      *  hidden underneath that floating overlay. */
     public boolean ctabfolder_topright_auto_hide;
 
+    /** Default true: a CTabFolder whose tabs do not fit scrolls its tab strip. Set to false to lay
+     *  the tabs out as SWT does: they shrink towards minimumCharacters and the ones that still do
+     *  not fit go behind the chevron. */
+    public boolean ctabfolder_tab_scroll;
+
     public boolean image_disable_icons_replacement;
 
     public String assets_path;
@@ -73,7 +82,49 @@ public class ConfigFlags {
 
     public boolean disable_swt_canvas_colors;
 
+    /**
+     * {@link #disable_swt_canvas_colors} per control class
+     * ({@code -Dswt.evolve.disable_swt_canvas_colors_<fully.qualified.Class>=true|false}), keyed by
+     * the class name as written. It covers the controls of that class or a subclass of it, and every
+     * control they contain; the nearest listed control wins, and a control under none follows the
+     * global flag. Java-only: the client gets the outcome per GC as {@code VGC.themedCanvas}.
+     */
+    @JsonAttribute(ignore = true)
+    public Map<String, Boolean> disable_swt_canvas_colors_by_class;
+
+    /**
+     * The fill colors a control class paints a hover with
+     * ({@code -Dswt.evolve.canvas_hover_fills_<fully.qualified.Class>=RRGGBB,...}), keyed by the
+     * class name as written; resolved like {@link #disable_swt_canvas_colors_by_class}. Java-only:
+     * the client gets the outcome per GC as {@code VGC.hoverFills}.
+     */
+    @JsonAttribute(ignore = true)
+    public Map<String, RGB[]> canvas_hover_fills_by_class;
+
+    /** Like {@link #canvas_hover_fills_by_class}, for a selection ({@code canvas_selection_fills_<Class>}). */
+    @JsonAttribute(ignore = true)
+    public Map<String, RGB[]> canvas_selection_fills_by_class;
+
+    /** Drops what an application paints through a Control's own GC, leaving the control's own
+     *  rendering alone. A control that draws itself and is then painted over -- a check box whose
+     *  label the application redraws -- shows that drawing twice. Canvas and StyledText keep
+     *  painting their GC content whatever this says. */
+    public boolean disable_control_gc_overlay;
+
     public boolean use_swt_fonts;
+
+    /**
+     * Draws text in the foreground the application set rather than the theme's
+     * ({@code -Dswt.use_swt_font_colors}). Null follows {@link #use_swt_fonts}.
+     */
+    public Boolean use_swt_font_colors;
+
+    /**
+     * {@link #use_swt_font_colors} for one widget class, keyed by its lower-case SWT name
+     * ({@code -Dswt.evolve.use_swt_font_colors_tree=true}); it wins over the global value. An item follows
+     * the control that draws it: a TreeItem answers to {@code tree}.
+     */
+    public Map<String, Boolean> use_swt_font_colors_by_widget;
 
     public boolean use_special_dropdown_button;
 
@@ -114,6 +165,12 @@ public class ConfigFlags {
     public Boolean focus_indicators;
 
     public boolean show_scaling_control;
+
+    /** The zoom SWT draws its UI at, in percent — {@code swt.autoScale} already applied to the
+     *  monitor's own zoom. The render layer scales itself by this over the monitor zoom it reports,
+     *  so both halves of a mixed tree end up at the same size. 0 while it is still unknown. */
+    public int ui_zoom;
+
     public DecorationsAlign decorations_align;
 
     public boolean print_move;
@@ -133,12 +190,52 @@ public class ConfigFlags {
      *  the system bar belongs to the browser. */
     public boolean system_menu_bar;
 
+    /** The decimal separator of the JVM's locale, which a desktop client writes numbers with. A browser
+     *  client uses its own locale's instead, the one it reports to the Display. */
+    public String decimal_separator;
+
+    /** The JVM's locale as a language tag, which a desktop client writes dates in. A browser client uses its own. */
+    public String locale;
+
     /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
     public int double_click_timeout_ms;
+    /** How long the pointer rests before a control reports MouseHover and shows its tooltip, in
+     *  milliseconds; Display.getToolTipTime() answers it. */
+    public int hover_delay_ms;
     /** Explicit CSD title-bar colour (RRGGBB/AARRGGBB hex); overrides the theme's own. */
     public String csd_titlebar_color;
+
+    /** Logical pixels per SWT font point on this host, so the render side paints point-sized text
+     *  at the size {@link FontMetricsUtil#dpiScale()} measured it at. The client cannot derive it:
+     *  its own platform is the browser's, not the one the application is laid out for. Carries the
+     *  host's DPI only — {@link FontMetricsUtil#rawDpiScale()} — with the zoom left for each side to
+     *  divide by out of its own live copy. */
+    public double font_point_scale;
+
+    /** Transparent margin, in pixels, on each side of a push or toggle button: the preferred width
+     *  reserves it and the render side paints the button inside it. For an application that lays
+     *  its buttons out expecting a native frame wider than what the button draws, and overlaps
+     *  adjacent frames accordingly. 0 (the default) paints the button over its whole bounds.
+     *  Set with {@code -Dswt.evolve.push_button_margin=<px>}. */
+    public int push_button_margin;
+
+    /** Measures every {@code ToolItem} image as an icon of the theme's size, whatever the size of the
+     *  image, so every ToolBar draws its icons at that one size and none is shrunk to fit its bar.
+     *  Off by default: an item is measured from its image, as the platform does.
+     *  Set with {@code -Dswt.evolve.bigger_icon_size=true}. */
+    public boolean bigger_icon_size;
+
+    /** Draws a CHECK or RADIO menu item without its box or ring: only the mark, in the item text
+     *  colour, while the item is selected, as native menus do. Off by default: the theme's box is
+     *  drawn. Set with {@code -Dswt.evolve.transparent_menu_check_box=true}. */
+    public boolean transparent_menu_check_box;
+
+    /** Draws a bordered ({@code SWT.BORDER}) CTabFolder's outline as the native renderer does: one line
+     *  round the folder, joined over the selected tab. Off by default: the theme's flat frame is drawn.
+     *  Set with {@code -Dswt.use_swt_border=true}. */
+    public boolean use_swt_border;
 
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
@@ -152,12 +249,20 @@ public class ConfigFlags {
                 "mode=" + mode() +
                 ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", ctabfolder_topright_auto_hide=" + ctabfolder_topright_auto_hide +
+                ", ctabfolder_tab_scroll=" + ctabfolder_tab_scroll +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
                 ", disable_evolve_icons=" + disable_evolve_icons +
                 ", use_swt_colors=" + use_swt_colors +
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
+                ", disable_swt_canvas_colors_by_class=" + disable_swt_canvas_colors_by_class +
+                ", canvas_hover_fills_by_class=" + fills(canvas_hover_fills_by_class) +
+                ", canvas_selection_fills_by_class=" + fills(canvas_selection_fills_by_class) +
+                ", disable_control_gc_overlay=" + disable_control_gc_overlay +
                 ", use_swt_fonts=" + use_swt_fonts +
+                ", use_swt_font_colors=" + use_swt_font_colors +
+                ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
+                ", use_swt_border=" + use_swt_border +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +
@@ -174,8 +279,24 @@ public class ConfigFlags {
                 ", csd_os='" + csd_os + '\'' +
                 ", csd_maximize='" + csd_maximize + '\'' +
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
+                ", hover_delay_ms=" + hover_delay_ms +
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
+                ", font_point_scale=" + font_point_scale +
+                ", push_button_margin=" + push_button_margin +
+                ", bigger_icon_size=" + bigger_icon_size +
+                ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", system_menu_bar=" + system_menu_bar +
+                ", decimal_separator='" + decimal_separator + '\'' +
+                ", locale='" + locale + '\'' +
                 '}';
+    }
+
+    private static String fills(Map<String, RGB[]> byClass) {
+        if (byClass == null) return "null";
+        Map<String, String> printable = new TreeMap<>();
+        for (Map.Entry<String, RGB[]> entry : byClass.entrySet()) {
+            printable.put(entry.getKey(), Arrays.toString(entry.getValue()));
+        }
+        return printable.toString();
     }
 }

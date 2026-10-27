@@ -51,9 +51,21 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).isVisible = value;
     }
 
+    public Rectangle getBounds() {
+        return ((DartCaret) impl).getBounds();
+    }
+
+    public void setBounds(Rectangle value) {
+    }
+
+    public static final String BOUNDS = "bounds";
+
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
+            case "bounds":
+                Serializer.writeKeyValue(writer, "bounds", getBounds());
+                return;
         }
         super.writeProperty(writer, key);
     }

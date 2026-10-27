@@ -35,4 +35,8 @@ public final class SliderTheme {
         return new SliderTheme(TextStyle.def());
     }
 
+    public static SliderTheme getCompactTheme() {
+        return new SliderTheme(TextStyle.def());
+    }
+
 }

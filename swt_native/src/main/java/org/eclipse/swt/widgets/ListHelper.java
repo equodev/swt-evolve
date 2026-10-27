@@ -18,39 +18,61 @@ public class ListHelper {
         return fontData[0].getHeight() + 4;
     }
 
+    /**
+     * Up and Down move the selection to the row above or below, as the platform's list does for a
+     * key no listener vetoed, and report it as a Selection. A MULTI list moves from its first
+     * selected row and ends with that one row selected; Shift and Ctrl with an arrow are not handled.
+     */
+    public static void moveSelectionByKey(DartList list, Event key) {
+        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+            return;
+        int count = list.getItemCount();
+        if (count == 0)
+            return;
+        int current = list.getSelectionIndex();
+        int next;
+        switch (key.keyCode) {
+            case SWT.ARROW_UP:
+                next = current < 0 ? 0 : current - 1;
+                break;
+            case SWT.ARROW_DOWN:
+                next = current < 0 ? 0 : current + 1;
+                break;
+            default:
+                return;
+        }
+        next = Math.max(0, Math.min(count - 1, next));
+        if (next == current)
+            return;
+        Event selection = new Event();
+        selection.segments = new int[] { next };
+        sendSelection(list, selection, SWT.Selection);
+    }
+
     public static void sendSelection(DartList list, Event event, int selectionType) {
         list.setSelection(event.segments);
         list.sendSelectionEvent(selectionType, event, true);
     }
 
     public static void deselectIndex(DartList list, int index) {
+        deselectRange(list, index, index);
+    }
+
+    public static void deselectRange(DartList list, int start, int end) {
         int[] selection = list._selection();
-        int position = -1;
-        for (int i = 0; i < selection.length; i++) {
-            if (selection[i] == index) {
-                position = i;
-            }
-        }
-        if (position != -1) {
-            int[] newSelection = new int[selection.length - 1];
-            System.arraycopy(selection, 0, newSelection, 0, position);
-            System.arraycopy(selection, position + 1, newSelection, position, selection.length - position - 1);
+        int[] newSelection = ListItemsHelper.deselect(selection, start, end);
+        if (newSelection.length != selection.length) {
             list.selection = newSelection;
             list.getValue().markDirty(VList.SELECTION);
         }
     }
 
-    public static void deselectRange(DartList list, int start, int end) {
+    /** The items from {@code start} to {@code end} are about to go: their selection goes and the later ones move up. */
+    public static void itemsRemoved(DartList list, int start, int end) {
         int[] selection = list._selection();
-        int count = 0;
-        int[] newSelection = new int[selection.length];
-        for (int idx : selection) {
-            if (idx < start || idx > end) {
-                newSelection[count++] = idx;
-            }
-        }
-        if (count != selection.length) {
-            list.selection = Arrays.copyOf(newSelection, count);
+        int[] newSelection = ListItemsHelper.indicesAfterRemove(selection, start, end);
+        if (!Arrays.equals(newSelection, selection)) {
+            list.selection = newSelection;
             list.getValue().markDirty(VList.SELECTION);
         }
     }

@@ -68,7 +68,7 @@ void main() {
     await tester.pumpWidget(appWith(key, value(wrap: false)));
     // initState doesn't run extraSetState, so a second push builds the text shape.
     await tester.pumpWidget(appWith(key, value(wrap: false)));
-    await tester.pump();
+    await tester.pump(Duration.zero);
 
     expect(
       StyledTextImpl.debugGeometryPushes,
@@ -91,7 +91,8 @@ void main() {
 
     StyledTextImpl.debugGeometryPushes = 0;
     await deliverWhole(value(wrap: true)..seq = 2);
-    await tester.pump();
+    // The table is sent right after the frame it describes; elapsing zero time runs that send.
+    await tester.pump(Duration.zero);
 
     expect(
       StyledTextImpl.debugGeometryPushes,
@@ -145,7 +146,7 @@ void main() {
       await tester.pumpWidget(
         appWith(key, value(wrap: false, width: width), width: width),
       );
-      await tester.pump();
+      await tester.pump(Duration.zero);
     }
 
     expect(

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import '../gen/color.dart';
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
@@ -12,6 +15,30 @@ import 'utils/widget_utils.dart';
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
   @override
+  bool get keepsWheel => true;
+
+  bool _changedDuringPress = false;
+  bool _pressed = false;
+
+  /// Set by an [_InertMargin] for the press it took, which reaches it before this control's own
+  /// handler: a press beyond the ends of the track counts for nothing.
+  bool _pressOnMargin = false;
+
+  /// A Scale takes keyboard focus like any other control: clicking it focuses it, and the arrow,
+  /// page, home and end keys then move the value. Java routes a keystroke to whatever
+  /// getFocusControl() returns, so a Scale that never reports focus never receives one.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'Scale');
+
+  @override
+  FocusNode? get swtFocusNode => _focusNode;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ScaleThemeExtension>()!;
 
@@ -24,8 +51,26 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final size = getScaleSize(state, widgetTheme, isVertical: isVertical);
 
-    return wrap(
-      _ThemedScale(
+    return wrap(Listener(
+      onPointerDown: (e) {
+        _changedDuringPress = false;
+        // Only a press on the track counts; one beyond its ends does nothing (see _InertMargin).
+        _pressed = e.buttons == kPrimaryButton && !_pressOnMargin;
+        _pressOnMargin = false;
+      },
+      // A primary press that moves nothing still reports a Selection, ahead of its MouseUp, as a
+      // native Scale does for a click on its knob; this Listener is reached before the control's
+      // own. The second press of a double click reports none: Win32 and GTK leave it to the first.
+      onPointerUp: (_) {
+        final primary = _pressed;
+        _pressed = false;
+        if (!primary || _changedDuringPress || !enabled || isRepeatPress) return;
+        widget.sendSelectionSelection(state, VEvent()
+          ..index = state.selection
+          ..stateMask = SWT.BUTTON1);
+      },
+      onPointerCancel: (_) => _pressed = false,
+      child: _ThemedScale(
         background: state.background,
         foreground: state.foreground,
         value: currentValue,
@@ -36,29 +81,31 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         height: size.height,
         isVertical: isVertical,
         widgetTheme: widgetTheme,
+        onMarginPress: () => _pressOnMargin = true,
+        // The value is the application's: it changes when the application sends it back, which is
+        // how the slider below tells an answer to its own report from a value set by the application.
         onChanged: (value) {
-          state.selection = value.round();
+          _changedDuringPress = true;
           widget.sendSelectionSelection(
             state,
-            VEvent()..index = state.selection,
+            VEvent()
+              ..index = value.round()
+              ..stateMask = _pressed ? SWT.BUTTON1 : 0,
           );
         },
-        onChangeEnd: (value) {
-          state.selection = value.round();
-          widget.sendSelectionDefaultSelection(
-            state,
-            VEvent()..index = state.selection,
-          );
-        },
-        onHover: (isHovering) {
-          if (isHovering) {
-            widget.sendMouseTrackMouseEnter(state, null);
+        // No event of its own: a Scale sends Selection and nothing else, and the change that ends
+        // the gesture has already sent one through onChanged.
+        onChangeEnd: (_) {},
+        focusNode: _focusNode,
+        onFocusChanged: (hasFocus) {
+          if (hasFocus) {
+            widget.sendFocusFocusIn(state, null);
           } else {
-            widget.sendMouseTrackMouseExit(state, null);
+            widget.sendFocusFocusOut(state, null);
           }
         },
       ),
-    );
+    ));
   }
 }
 
@@ -77,7 +124,9 @@ class _ThemedScale extends StatefulWidget {
   final ScaleThemeExtension widgetTheme;
   final ValueChanged<double> onChanged;
   final ValueChanged<double> onChangeEnd;
-  final ValueChanged<bool> onHover;
+  final FocusNode focusNode;
+  final ValueChanged<bool> onFocusChanged;
+  final VoidCallback onMarginPress;
 
   const _ThemedScale({
     this.background,
@@ -91,8 +140,10 @@ class _ThemedScale extends StatefulWidget {
     required this.isVertical,
     required this.widgetTheme,
     required this.onChanged,
+    required this.onMarginPress,
     required this.onChangeEnd,
-    required this.onHover,
+    required this.focusNode,
+    required this.onFocusChanged,
   });
 
   @override
@@ -100,8 +151,62 @@ class _ThemedScale extends StatefulWidget {
 }
 
 class _ThemedScaleState extends State<_ThemedScale> {
+  /// The value this Scale last reported, shown until the application has it: the Slider steps its
+  /// keys from the value it shows, so a key pressed before the round trip completes would otherwise
+  /// step from the value before it.
   double? _localValue;
+
+  /// The values reported and not yet seen back from the application, oldest first.
+  final List<int> _unconfirmed = [];
+
+  /// Drops [_localValue] when the application never sends a reported value back: one it already
+  /// held, or one it changed before showing.
+  Timer? _confirmTimeout;
   bool _isHovered = false;
+
+  /// How far the pointer pressed on the knob is from the knob's value. A press on the knob moves
+  /// nothing and a drag moves the knob by where it was grabbed, as on GTK and Cocoa; the Slider
+  /// alone would jump the value to the pointer.
+  double _grabOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_reportFocus);
+  }
+
+  @override
+  void dispose() {
+    _confirmTimeout?.cancel();
+    widget.focusNode.removeListener(_reportFocus);
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_ThemedScale old) {
+    super.didUpdateWidget(old);
+    // Only a value the application sends says anything: a rebuild that brings the same one is no
+    // answer, even when it equals a value reported since.
+    if (_unconfirmed.isEmpty || widget.value == old.value) return;
+    final shown = widget.value.round();
+    final at = _unconfirmed.indexOf(shown);
+    if (at >= 0) {
+      _unconfirmed.removeRange(0, at + 1);
+    } else if (shown != old.value.round()) {
+      // A value this Scale never reported: the application set it.
+      _unconfirmed.clear();
+    }
+    if (_unconfirmed.isEmpty) _settle();
+  }
+
+  void _settle() {
+    _confirmTimeout?.cancel();
+    _confirmTimeout = null;
+    _unconfirmed.clear();
+    _localValue = null;
+  }
+
+  void _reportFocus() => widget.onFocusChanged(widget.focusNode.hasFocus);
 
   @override
   Widget build(BuildContext context) {
@@ -118,14 +223,11 @@ class _ThemedScaleState extends State<_ThemedScale> {
     );
 
     final scale = MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        widget.onHover(true);
-      },
-      onExit: (_) {
-        setState(() => _isHovered = false);
-        widget.onHover(false);
-      },
+      // Hover here only drives the thumb's own appearance. MouseEnter and MouseExit belong to
+      // ControlImpl.wrap(), which reports them for every control; sending them here as well is
+      // what made a Scale report entering twice.
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
       child: Stack(
         children: [
           Positioned.fill(
@@ -154,6 +256,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
 
   Widget _buildSlider(double displayValue) {
     final activeTrackColor = getScaleActiveTrackColor(
+      context,
       widget.widgetTheme,
       isEnabled: widget.enabled,
       foreground: widget.foreground,
@@ -163,6 +266,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
       isEnabled: widget.enabled,
     );
     final thumbColor = getScaleThumbColor(
+      context,
       widget.widgetTheme,
       isEnabled: widget.enabled,
       isHovered: _isHovered,
@@ -182,15 +286,52 @@ class _ThemedScaleState extends State<_ThemedScale> {
               : widget.widgetTheme.thumbRadius,
         ),
         tickMarkShape: SliderTickMarkShape.noTickMark,
+        // The track is inset by the overlay radius; tying it to the tick marks' padding keeps the
+        // value under the pointer where the ticks say it is.
+        overlayShape: RoundSliderOverlayShape(
+          overlayRadius: widget.widgetTheme.horizontalPadding,
+        ),
       ),
-      child: Slider(
-        value: displayValue.clamp(widget.min, widget.max),
-        min: widget.min,
-        max: widget.max,
-        onChanged: widget.enabled ? _handleChanged : null,
-        onChangeEnd: widget.enabled ? _handleChangeEnd : null,
+      child: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) => Listener(
+              onPointerDown: (e) => _grabOffset = _offsetFromKnob(e.localPosition.dx, constraints.maxWidth),
+              child: Slider(
+                value: displayValue.clamp(widget.min, widget.max),
+                min: widget.min,
+                max: widget.max,
+                focusNode: widget.focusNode,
+                onChanged: widget.enabled ? _handleChanged : null,
+                onChangeEnd: widget.enabled ? _handleChangeEnd : null,
+              ),
+            ),
+          ),
+          // Beyond the ends of the track a press moves nothing, as on Win32 and GTK; Flutter's
+          // Slider would take it as a press on the track's nearest end.
+          for (final left in [true, false])
+            Positioned(
+              left: left ? 0 : null,
+              right: left ? null : 0,
+              top: 0,
+              bottom: 0,
+              width: _marginWidth(left: left),
+              child: _InertMargin(onPress: widget.onMarginPress),
+            ),
+        ],
       ),
     );
+  }
+
+  /// The padding at one end of the track, up to where the knob begins: near that end the knob
+  /// reaches into the padding, and natively it can be grabbed anywhere on it.
+  double _marginWidth({required bool left}) {
+    final pad = widget.widgetTheme.horizontalPadding;
+    final length = widget.isVertical ? widget.height : widget.width;
+    if (widget.max <= widget.min || length <= 2 * pad) return pad;
+    final centre = _valueToX(widget.value, widget.min, widget.max, length, pad);
+    final edge = left ? centre - widget.widgetTheme.thumbRadius : length - centre - widget.widgetTheme.thumbRadius;
+    return math.max(0, math.min(pad, edge));
   }
 
   Widget _buildHorizontalScale(Widget scale) {
@@ -227,16 +368,44 @@ class _ThemedScaleState extends State<_ThemedScale> {
     );
   }
 
-  void _handleChanged(double value) {
+  /// The value under [x] minus the knob's value, when [x] is on the knob; 0 anywhere else.
+  double _offsetFromKnob(double x, double length) {
+    final pad = widget.widgetTheme.horizontalPadding;
+    final track = length - 2 * pad;
+    final range = widget.max - widget.min;
+    if (track <= 0 || range <= 0) return 0;
+    final current = (_localValue ?? widget.value).clamp(widget.min, widget.max).toDouble();
+    final knobX = _valueToX(current, widget.min, widget.max, length, pad);
+    final radius = math.max(widget.widgetTheme.thumbRadius, widget.widgetTheme.thumbHoverRadius);
+    if ((x - knobX).abs() > radius) return 0;
+    return (x - knobX) / track * range;
+  }
+
+  void _handleChanged(double raw) {
+    // Touching a Scale focuses it, as it does natively; Flutter's Slider does not do this itself.
+    if (!widget.focusNode.hasFocus) widget.focusNode.requestFocus();
+    final value = (raw - _grabOffset).clamp(widget.min, widget.max).toDouble();
+    if (value.round() == (_localValue ?? widget.value).round()) return;
     setState(() => _localValue = value);
+    _unconfirmed.add(value.round());
+    _confirmTimeout?.cancel();
+    _confirmTimeout = Timer(const Duration(seconds: 1), () {
+      if (mounted) setState(_settle);
+    });
     widget.onChanged(value);
   }
 
-  void _handleChangeEnd(double value) {
-    setState(() => _localValue = null);
+  void _handleChangeEnd(double raw) {
+    final value = _localValue ?? widget.value;
+    _grabOffset = 0;
+    if (_unconfirmed.isEmpty) setState(() => _localValue = null);
     widget.onChangeEnd(value);
   }
 }
+
+/// Where [value] sits along a track of [length] that the slider insets by [pad] at each end.
+double _valueToX(double value, double min, double max, double length, double pad) =>
+    pad + (value - min) / (max - min) * (length - 2 * pad);
 
 class _TickMarkPainter extends CustomPainter {
   final List<double> ticks;
@@ -268,9 +437,7 @@ class _TickMarkPainter extends CustomPainter {
     final halfTickHeight = tickHeight / 2;
 
     for (final tickValue in ticks) {
-      final position = (tickValue - min) / (max - min);
-      final x =
-          horizontalPadding + (position * (size.width - 2 * horizontalPadding));
+      final x = _valueToX(tickValue, min, max, size.width, horizontalPadding);
 
       canvas.drawLine(
         Offset(x, verticalCenter - halfTickHeight),
@@ -290,4 +457,19 @@ class _TickMarkPainter extends CustomPainter {
         oldDelegate.tickWidth != tickWidth ||
         oldDelegate.horizontalPadding != horizontalPadding;
   }
+}
+
+/// Takes the pointer so the Slider beneath never sees it, and reports the press through [onPress];
+/// the control's own handlers, which are ancestors, still see it.
+class _InertMargin extends StatelessWidget {
+  final VoidCallback onPress;
+
+  const _InertMargin({required this.onPress});
+
+  @override
+  Widget build(BuildContext context) => Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => onPress(),
+        child: const SizedBox.expand(),
+      );
 }

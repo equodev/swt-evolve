@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
 import '../gen/menu.dart';
+import 'utils/window_origin.dart';
 import '../gen/menuitem.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 import 'decorations_align.dart';
+import 'decorations_evolve.dart';
 import 'widget_config.dart';
 import 'utils/hosted_context_menu.dart';
+import 'utils/menu_mnemonics.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
 
@@ -27,6 +32,41 @@ class MenuState {
       }
     }
   }
+}
+
+/// Tracks whichever standalone popup Menu (POP_UP or DROP_DOWN style, built by
+/// [MenuImpl._buildPopupMenu]) is currently open, so a control that re-triggers its own "show"
+/// action can close it directly instead of asking Java to show it again.
+///
+/// Needed because [MenuAnchor.consumeOutsideTap] dismissal is built on [TapRegion], which only
+/// sees real pointer routing. Under forced accessibility (every E2E run), a tap on a
+/// semantics-tagged control -- including the arrow that opened this same popup -- is delivered as
+/// a [SemanticsAction] and never reaches [TapRegion] at all, so the popup never sees that tap as
+/// "outside" and never closes on its own; the arrow's own handler asks Java to show it again,
+/// which is a no-op because it is already visible.
+class OpenPopupMenuTracker {
+  static MenuImpl? _current;
+
+  /// Closes the currently tracked popup, if one is open. Returns whether it did.
+  static bool closeIfOpen() {
+    final current = _current;
+    if (current == null || !current.mounted) return false;
+    if (!current._menuController.isOpen) return false;
+    current._menuController.close();
+    return true;
+  }
+}
+
+/// Every mounted menu anchor's controller, so the Display can tell when a menu holds the keyboard.
+class OpenMenus {
+  static final Set<MenuController> _controllers = {};
+
+  static bool get any => _controllers.any((controller) => controller.isOpen);
+
+  /// Counts [controller]'s menu from its anchor's mount to its [remove].
+  static void add(MenuController controller) => _controllers.add(controller);
+
+  static void remove(MenuController controller) => _controllers.remove(controller);
 }
 
 class MenuChangeNotifier extends InheritedWidget {
@@ -77,6 +117,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   final FocusNode _popupAnchorFocusNode = FocusNode(debugLabel: 'MenuAnchor.popup');
   // The actual keyboard-entry point into the menu: see MenuChangeNotifier.autofocusItemFocusNode.
   final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'MenuItem.autofocus');
+  // Holds the open menu's items, so a menu made only of cascades can focus its first one.
+  final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'Menu.items');
   // True only while the open menu was opened by Java (the `visible && !isOpen` branch below). A
   // context menu opened imperatively from Dart (openContextMenuAt, on right-click) keeps
   // state.visible == false the whole time, so the symmetric close must NOT read that steady false
@@ -98,13 +140,24 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   bool _shownOnce = false;
   Offset? _pendingContextMenuPosition;
 
+  // Every mounted popup per menu: a control's own copy and the one its window renders once shown.
+  static final Map<String, Set<MenuImpl>> _mounted = {};
+
+  /// The other mounted copy of this menu that is already open, or about to be.
+  MenuImpl? get _presentingPeer {
+    for (final peer in _mounted[_rawChannel] ?? const <MenuImpl>{}) {
+      if (identical(peer, this) || !peer.mounted) continue;
+      if (peer._menuController.isOpen || peer._pendingContextMenuPosition != null) return peer;
+    }
+    return null;
+  }
+
   String? _rawChannel;
-  Object? _closeMenuToken;
-  Object? _shownToken;
 
   @override
   void initState() {
     super.initState();
+    OpenMenus.add(_menuController);
     _subscribeRawChannels();
   }
 
@@ -122,40 +175,49 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void _subscribeRawChannels() {
     final channel = "${state.swt}/${state.id}";
     _rawChannel = channel;
-    _closeMenuToken = EquoCommService.onRaw(
-      "$channel/closeMenu",
-          (_) {
-        if (_menuController.isOpen) {
-          _menuController.close();
-        }
-      },
-    );
-    _shownToken = EquoCommService.onRaw(
-      "$channel/shown",
-          (_) => _onMenuShown(),
-    );
+    final copies = _mounted.putIfAbsent(channel, () => {});
+    copies.add(this);
+    if (copies.length > 1) return;
+    // A channel holds one handler, so the copies share it: a second subscription would silence the first.
+    EquoCommService.onRaw("$channel/closeMenu", (_) {
+      for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
+        if (copy._menuController.isOpen) copy._menuController.close();
+      }
+    });
+    EquoCommService.onRaw("$channel/shown", (_) {
+      for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
+        copy._onMenuShown();
+      }
+    });
   }
 
   void _unsubscribeRawChannels() {
     final channel = _rawChannel;
     if (channel == null) return;
-    EquoCommService.remove("$channel/closeMenu", _closeMenuToken);
-    EquoCommService.remove("$channel/shown", _shownToken);
     _rawChannel = null;
-    _closeMenuToken = null;
-    _shownToken = null;
+    final copies = _mounted[channel];
+    if (copies == null || !copies.remove(this) || copies.isNotEmpty) return;
+    _mounted.remove(channel);
+    EquoCommService.remove("$channel/closeMenu");
+    EquoCommService.remove("$channel/shown");
   }
 
   @override
   void dispose() {
+    if (identical(OpenPopupMenuTracker._current, this)) {
+      OpenPopupMenuTracker._current = null;
+    }
+    OpenMenus.remove(_menuController);
     _unsubscribeRawChannels();
     _popupAnchorFocusNode.dispose();
     _firstItemFocusNode.dispose();
+    _itemsFocusNode.dispose();
     super.dispose();
   }
 
   void openContextMenuAt(BuildContext context, Offset position) {
     if (_menuController.isOpen || _pendingContextMenuPosition != null) return;
+    if (_presentingPeer != null) return;
     _pendingContextMenuPosition = position;
     _showSent = true;
     widget.sendMenuShow(state, null);
@@ -185,6 +247,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       if (!mounted || !_menuController.isOpen) return;
       if (_firstItemFocusNode.context != null) {
         _firstItemFocusNode.requestFocus();
+        return;
+      }
+      final items = _itemsFocusNode.traversalDescendants;
+      if (items.isNotEmpty) {
+        items.first.requestFocus();
       } else {
         _popupAnchorFocusNode.requestFocus();
       }
@@ -249,9 +316,13 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         widgetTheme.textStyle?.copyWith(color: textColor) ??
             TextStyle(color: textColor);
 
+    final stripHeight = DecorationsMenuData.of(context)?.stripHeight;
     Widget menuBar = AnimatedContainer(
       duration: widgetTheme.animationDuration,
-      height: widgetTheme.menuBarHeight,
+      // The height Java laid the strip out at, which follows the monitor's scale.
+      height: stripHeight != null && stripHeight > 0
+          ? stripHeight.toDouble()
+          : widgetTheme.menuBarHeight,
       decoration: BoxDecoration(
         color: backgroundColor,
         border: Border(
@@ -302,8 +373,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _shownOnce = false;
     }
 
+    // A right-click already put this menu up through the control's own copy: one menu, one panel.
     if (visible && !_menuController.isOpen && !_shownOnce &&
-        !HostedContextMenu.wraps(context)) {
+        !HostedContextMenu.wraps(context) && _presentingPeer == null) {
       _shownOnce = true;
       // Ask Java to fill the menu before opening it. SWT.Show is what a MenuManager with
       // setRemoveAllWhenShown empties and refills the menu on, and only the client fires it --
@@ -312,8 +384,12 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       // and the refill has not. Natively the platform fires Show as part of showing the menu
       // (win32 does it from WM_INITMENUPOPUP, inside TrackPopupMenu), which is the order this
       // restores. The right-click path already worked this way.
+      // location is a SCREEN point; the anchor below is filled to this window, so what it wants is
+      // a point inside it. Without the shift a popup opened over a window that is not at the screen
+      // origin lands off by exactly where that window sits.
+      final windowOrigin = WindowOriginScope.of(context);
       _pendingContextMenuPosition = location != null
-          ? Offset(location.x.toDouble(), location.y.toDouble())
+          ? Offset(location.x.toDouble(), location.y.toDouble()) - windowOrigin
           : const Offset(100, 100);
       _pendingOpenFromVisibleFlag = true;
       _showSent = true;
@@ -350,18 +426,21 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       alignmentOffset: Offset.zero,
       consumeOutsideTap: true,
       onOpen: () {
+        OpenPopupMenuTracker._current = this;
         if (_showSent) return;
         _showSent = true;
         widget.sendMenuShow(state, null);
       },
       onClose: () {
-        _sendPendingChanges();
+        if (identical(OpenPopupMenuTracker._current, this)) {
+          OpenPopupMenuTracker._current = null;
+        }
         _openedFromVisibleFlag = false;
         _pendingContextMenuPosition = null;
         _pendingOpenFromVisibleFlag = false;
         _shownOnce = false;
         _showSent = false;
-        if (visible) {
+        if (state.visible ?? false) {
           // Sync the SERIALIZED state too: build() reads state.visible, and with it stuck true
           // the open guard re-opens the menu on every rebuild (Java can't help — its own field
           // already went false on the Hide event, so a later setVisible(false) is a no-op that
@@ -373,6 +452,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         // on it left Java believing the popup was still up — and the Display skips re-showing a
         // popup it still counts as shown, which killed every later opening of that menu.
         widget.sendMenuHide(state, null);
+        // A chosen item is selected after its menus are hidden, as natively.
+        _sendPendingChanges();
       },
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
@@ -384,11 +465,15 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           // No extra Semantics wrapper: with the anchor untagged, each item's own tagSemantics
           // materializes on its own (a tagged anchor merges them away; an added wrapper here
           // duplicates every item node instead).
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: menuItems
-                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                .toList(),
+          child: MenuMnemonics(
+            focusNode: _itemsFocusNode,
+            close: _menuController.close,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: menuItems
+                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                  .toList(),
+            ),
           ),
         )),
       ],
@@ -497,10 +582,15 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   bool _pendingOpen = false;
   List<Widget> _menuChildren = const [SizedBox.shrink()];
   final MenuController _subMenuController = MenuController();
+  final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'MenuBar.items');
+  // Opened by Alt+letter: the keyboard moves onto the first item once the menu is up.
+  bool _focusFirstItemWhenOpen = false;
 
   @override
   void initState() {
     super.initState();
+    OpenMenus.add(_subMenuController);
+    if (widget.item.menu != null) MenuBarOpeners.add(widget.item, _openFromMnemonic);
     final preItems = widget.item.menu?.items;
     if (preItems != null && preItems.isNotEmpty) {
       _itemsLoaded = true;
@@ -511,7 +601,20 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   }
 
   @override
+  void didUpdateWidget(_MenuBarItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.id == widget.item.id && (oldWidget.item.menu == null) == (widget.item.menu == null)) {
+      return;
+    }
+    if (oldWidget.item.menu != null) MenuBarOpeners.remove(oldWidget.item, _openFromMnemonic);
+    if (widget.item.menu != null) MenuBarOpeners.add(widget.item, _openFromMnemonic);
+  }
+
+  @override
   void dispose() {
+    OpenMenus.remove(_subMenuController);
+    if (widget.item.menu != null) MenuBarOpeners.remove(widget.item, _openFromMnemonic);
+    _itemsFocusNode.dispose();
     if (widget.item.menu != null) {
       EquoCommService.remove("Menu/${widget.item.menu!.id}");
     }
@@ -537,11 +640,34 @@ class _MenuBarItemState extends State<_MenuBarItem> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && !_subMenuController.isOpen) {
             _subMenuController.open();
+            _focusFirstItemNextFrame();
           }
         });
       }
     });
     MenuSwt<VMenu>(value: subMenu).sendMenuShow(subMenu, null);
+  }
+
+  // Alt+letter on this title, resolved by Java: the menu opens with its first item current, as natively.
+  void _openFromMnemonic() {
+    if (!mounted || !(widget.item.enabled ?? false) || _subMenuController.isOpen) return;
+    _focusFirstItemWhenOpen = true;
+    if (_itemsLoaded) {
+      _subMenuController.open();
+      _focusFirstItemNextFrame();
+    } else {
+      _pendingOpen = true;
+      _requestItems();
+    }
+  }
+
+  void _focusFirstItemNextFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_focusFirstItemWhenOpen || !_subMenuController.isOpen) return;
+      _focusFirstItemWhenOpen = false;
+      final items = _itemsFocusNode.traversalDescendants;
+      if (items.isNotEmpty) items.first.requestFocus();
+    });
   }
 
   @override
@@ -576,15 +702,22 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           ),
         ),
         onOpen: widget.onMenuShow,
-        onClose: widget.onMenuHide,
+        onClose: () {
+          _focusFirstItemWhenOpen = false;
+          widget.onMenuHide();
+        },
         menuChildren: [
           pointerInterceptor(MenuChangeNotifier(
             registerPendingChange: widget.registerPendingChange,
             menuState: widget.menuState,
             closeMenu: _subMenuController.close,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: _menuChildren,
+            child: MenuMnemonics(
+              focusNode: _itemsFocusNode,
+              close: _subMenuController.close,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _menuChildren,
+              ),
             ),
           )),
         ],
@@ -616,8 +749,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
                 child: GestureDetector(
                   child: Padding(
                     padding: widget.widgetTheme.menuBarItemPadding,
-                    child: Text(
-                      stripAccelerators(widget.item.text),
+                    child: MnemonicText(
+                      widget.item.text,
                       style: widget.textStyle.copyWith(
                         color: enabled
                             ? widget.textColor
@@ -646,8 +779,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           child: GestureDetector(
             child: Padding(
               padding: widget.widgetTheme.menuBarItemPadding,
-              child: Text(
-                stripAccelerators(widget.item.text),
+              child: MnemonicText(
+                widget.item.text,
                 style: widget.textStyle.copyWith(
                   color: enabled
                       ? widget.textColor

@@ -43,7 +43,7 @@ class SpinnerWidthHintTest {
 
     @Test
     void widthHintSizesTheNumberAndTheStepperIsAddedOutsideIt() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Spinner spinner = new Spinner(shell, SWT.BORDER);
         spinner.setMaximum(1000);
 
@@ -54,8 +54,21 @@ class SpinnerWidthHintTest {
     }
 
     @Test
+    void naturalWidthCountsALongerMinimumToo() {
+        Shell shell = Mocks.shell();
+        Spinner plain = new Spinner(shell, SWT.BORDER);
+        plain.setMaximum(9);
+        Spinner negative = new Spinner(shell, SWT.BORDER);
+        negative.setMinimum(-1000000);
+        negative.setMaximum(9);
+
+        assertThat(negative.computeSize(SWT.DEFAULT, SWT.DEFAULT).x)
+                .isGreaterThan(plain.computeSize(SWT.DEFAULT, SWT.DEFAULT).x);
+    }
+
+    @Test
     void naturalWidthFollowsTheWidestValueTheRangeCanShow() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Spinner narrow = new Spinner(shell, SWT.BORDER);
         narrow.setMaximum(9);
         Spinner wide = new Spinner(shell, SWT.BORDER);
@@ -82,7 +95,7 @@ class SpinnerWidthHintTest {
     }
 
     private static int layOutHintedSpinner(int widthHint) {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite row = new Composite(shell, SWT.NONE);
         GridLayout layout = new GridLayout(2, false);
         layout.marginWidth = 0;

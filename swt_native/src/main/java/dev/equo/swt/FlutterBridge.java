@@ -1,9 +1,11 @@
 package dev.equo.swt;
 
+import dev.equo.swt.comm.AbstractBinaryCommService;
 import dev.equo.swt.comm.BinaryCommService;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.JettyBinaryCommService;
 import dev.equo.swt.comm.MessageBatch;
+import org.eclipse.swt.graphics.GCHelper;
 import dev.equo.swt.spi.FlutterBridgeSpi;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
@@ -65,7 +67,7 @@ public abstract class FlutterBridge {
     protected static CommService newComm() {
         String impl = System.getProperty("comm.impl", "java-websocket");
         CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
-        comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
+        comm.on(PROPERTY_SET_CHANNEL, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
         // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
@@ -73,7 +75,43 @@ public abstract class FlutterBridge {
         // Preferences dialog. Gated so it never registers in production. See TestUiRunner.
         if (Config.isDebug())
             comm.on(TestUiRunner.CHANNEL, Object.class, m -> TestUiRunner.handle(comm, m));
+        if (ECHO_TIMING)
+            comm.on(ECHO_CHANNEL, Object.class, m -> echoTiming(comm, m));
         return comm;
+    }
+
+    /** Echoes timing pings so a lockstep drag's round trip splits into legs. Off by default: a message per move. */
+    private static final boolean ECHO_TIMING = Boolean.getBoolean("dev.equo.swt.echoTiming");
+
+    static final String ECHO_CHANNEL = "swt.evolve.timing.ping";
+
+    /** Answered inline on the comm thread, so it times the wire without the event loop in it. */
+    static final String ECHO_BARE_CHANNEL = "swt.evolve.timing.bare";
+
+    private static void echoTiming(CommService comm, Object ping) {
+        long recvNs = System.nanoTime();
+        if (!(ping instanceof Map)) return;
+        Object seq = ((Map<?, ?>) ping).get("seq");
+        Object sentAt = ((Map<?, ?>) ping).get("t0");
+        // Answered before anything is queued: the transport floor, apart from the event-loop hand-off.
+        try {
+            serializeAndSend(comm, ECHO_BARE_CHANNEL, Java8.map("seq", seq));
+        } catch (IOException e) {
+            // Diagnostic only.
+        }
+        Display display = Display.getCurrent() != null ? Display.getCurrent() : Display.getDefault();
+        if (display == null || display.isDisposed()) return;
+        // Queued behind this move's work, so the span is Java's handling of the move.
+        display.asyncExec(() -> {
+            try {
+                serializeAndSend(comm, "swt.evolve.timing.pong", Java8.map(
+                        "seq", seq,
+                        "t0", sentAt,
+                        "javaMs", (System.nanoTime() - recvNs) / 1_000_000.0));
+            } catch (IOException e) {
+                // Diagnostic only.
+            }
+        });
     }
 
     /**
@@ -86,9 +124,36 @@ public abstract class FlutterBridge {
      */
     public static final String WIDGET_REFRESH_CHANNEL = "swt.evolve.widget.refresh";
 
+    /** Flutter sets properties the user changed (the theme picker); Java echoes them on {@link #PROPERTIES_CHANNEL}. */
+    static final String PROPERTY_SET_CHANNEL = "swt.evolve.property.set";
+    /** Java pushes the properties on it whenever a client needs them: when it connects, and after a property set. */
+    static final String PROPERTIES_CHANNEL = "swt.evolve.properties";
+
     /** Widgets/resources by {@link #id}, so a refresh request can find its target. */
     private static final java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.WeakReference<Object>> widgetsById =
             new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Re-describes the widget with this id to the client in full, as {@link #WIDGET_REFRESH_CHANNEL}
+     * does on request. Called where <em>this</em> side knows a client holds nothing for it: a shell
+     * just given a window of its own is rendered by a fresh client rooted at that shell, which has
+     * never been sent it.
+     */
+    public static void resendWidget(long id) {
+        handleWidgetRefresh(Long.toString(id));
+    }
+
+    /** Whether the table refresh requests are looked up in holds an entry for this {@link #id}. */
+    public static boolean holdsId(long id) {
+        return widgetsById.containsKey(id);
+    }
+
+    /** The live widget or resource with this {@link #id}, or null when there is none. */
+    public static Object findById(long id) {
+        java.lang.ref.WeakReference<Object> ref = widgetsById.get(id);
+        Object w = ref != null ? ref.get() : null;
+        return w == null || isDisposed(w) ? null : w;
+    }
 
     static void handleWidgetRefresh(String idText) {
         if (idText == null) return;
@@ -112,7 +177,9 @@ public abstract class FlutterBridge {
             Serializer.forgetDelivery(widget.getValue());
             bridge.dirty(widget);
         } else if (w instanceof DartResource) {
-            bridge.dirty((DartResource) w);
+            DartResource resource = (DartResource) w;
+            resource.getValue().sent(0, 0L);
+            bridge.dirty(resource);
         }
     }
 
@@ -177,11 +244,11 @@ public abstract class FlutterBridge {
         Object value = payload.get("url");
         if (!(value instanceof String)) return null;
         String url = ((String) value).trim();
-        String lower = url.toLowerCase();
+        String lower = url.toLowerCase(java.util.Locale.ROOT);
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
-    private static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
+    static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
         if (parsed == null) return;
         boolean changed = false;
         ConfigFlags current = getConfigFlags();
@@ -191,7 +258,7 @@ public abstract class FlutterBridge {
         if (changed) {
             // Echo the updated properties back on the comm they arrived on.
             try {
-                serializeAndSend(comm, "swt.evolve.properties", getConfigFlags());
+                serializeAndSend(comm, PROPERTIES_CHANNEL, getConfigFlags());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -315,6 +382,8 @@ public abstract class FlutterBridge {
     private static boolean carriesItsChildren(Object widget) {
         if (!(widget instanceof DartWidget)) return true;
         DartWidget w = (DartWidget) widget;
+        // A descendant with its own frame travels as a name, not in full.
+        if (describesItsOwnChange(widget)) return false;
         // Asked of the client this widget is written for. The filter runs before the walk that
         // names it, so there is no addressee in scope to inherit - and reading it as "no client"
         // would answer that every widget is sent whole, which drops the children of one that is
@@ -347,6 +416,36 @@ public abstract class FlutterBridge {
      * <p>These therefore go out whole. Naming the descendants instead is the shape the subtree work
      * takes, and until then this is the line between "smaller" and "wrong".
      */
+    /** Why a widget is about to travel whole; for the debug log only. */
+    private static String wholeSendReason(Object widget, CommService comm, Set<Object> carrying) {
+        if (!(widget instanceof DartWidget)) return "not a widget";
+        DartWidget w = (DartWidget) widget;
+        VWidget value = w.getValue();
+        if (value == null) return "no value yet";
+        if (value.sentSeq(comm == null ? 0 : comm.connectionId()) == 0) return "never delivered";
+        if (!value.anyDirty()) return "nothing named";
+        if (carrying.contains(widget)) return "carrying a descendant";
+        return "diff disabled";
+    }
+
+    /** The values of the widgets in {@code widgets}, for the serializer to recognise by identity. */
+    private static Set<VWidget> valuesOf(Set<Object> widgets) {
+        Set<VWidget> values = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Object widget : widgets) {
+            if (widget instanceof DartWidget) {
+                VWidget value = ((DartWidget) widget).getValue();
+                if (value != null) values.add(value);
+            }
+        }
+        return values;
+    }
+
+    /** False for a widget the client has never been given: there is nothing for a change to be relative to. */
+    private static boolean describesItsOwnChange(Object widget) {
+        return widget instanceof DartWidget
+                && Serializer.canDiff((DartWidget) widget, connectionOf(widget));
+    }
+
     private static Set<Object> ancestorsCarryingOthers(Set<Object> allDirty, Set<Object> beingSent) {
         Set<Object> carrying = new HashSet<>();
         for (Object widget : allDirty) {
@@ -457,9 +556,14 @@ public abstract class FlutterBridge {
             dirtySnapshot = new HashSet<>(dirty);
             dirty.clear();
         }
+        org.eclipse.swt.widgets.PaintPacing.flushing(dirtySnapshot);
         Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
         Set<Object> carryingDescendants = ancestorsCarryingOthers(dirtySnapshot, filteredDirty);
-        Serializer.describeInFull(pathsToDirty(dirtySnapshot));
+        // Only widgets without a frame of their own need the path down to them described.
+        Set<Object> carried = new HashSet<>(dirtySnapshot);
+        carried.removeAll(filteredDirty);
+        Serializer.describeInFull(pathsToDirty(carried));
+        Serializer.sendingSeparately(valuesOf(filteredDirty));
 
         for (Object widget : dirtySnapshot) {
             if (!filteredDirty.contains(widget)) {
@@ -521,8 +625,16 @@ public abstract class FlutterBridge {
                                         byte[] header = CommService.frameHeader(event);
                                         serializer.toDiff(header, (DartWidget) widget, (buffer, length) ->
                                                 sendBytes(comm, event, buffer, header.length, length));
-                                    } else
+                                    } else if (widget instanceof DartGC) {
+                                        byte[] header = CommService.frameHeader(event);
+                                        writeGCState(comm, (DartGC) widget, header, (buffer, length) ->
+                                                sendBytes(comm, event, buffer, header.length, length));
+                                    } else {
+                                        if (Config.isDebug())
+                                            DebugLog.logWholeSend(event, wholeSendReason(widget,
+                                                    comm, carryingDescendants));
                                         serializeAndSend(comm, event, getApi(widget));
+                                    }
                                 } catch (IOException e) {
                                     throw new java.io.UncheckedIOException(e);
                                 }
@@ -620,6 +732,7 @@ public abstract class FlutterBridge {
     protected void serializeAndSend(String eventName, Object args) throws IOException {
         serializeAndSend(comm(), eventName, args);
     }
+
 
     /**
      * State that belongs in the dirty set but is not a widget — today only the {@code Display},
@@ -805,6 +918,7 @@ public abstract class FlutterBridge {
                 cb.accept(new Event());
                 return;
             }
+            if ("Key".equals(listener)) ControlHelper.applyControlCharacter(ev);
             cb.accept(ev);
         });
     }
@@ -839,39 +953,10 @@ public abstract class FlutterBridge {
 
     public static void send(DartResource resource, String event, Object args) {
         CommService comm = commFor(resource);
-        if (getBridge(resource) instanceof GCImageDrawer) { GCImageDrawer drawer = (GCImageDrawer) getBridge(resource);
-            // Serialize eagerly (captures current GC state: colors, font, etc.) then
-            // queue the send so it is dispatched only after Flutter's GCDrawer.standalone
-            // has registered its listeners — fixing the macOS race condition where ops
-            // arrive before _registerOps() runs.
-            try {
-                String stateEventName = null;
-                byte[] stateBytes = null;
-                synchronized (dirty) {
-                    if (dirty.remove(resource)) {
-                        stateEventName = event(resource);
-                        stateBytes = serializer.to(getApi(resource));
-                    }
-                }
-                byte[] opBytes = serializer.to(args);
-
-                final String finalStateEvent = stateEventName;
-                final byte[] finalStateBytes = stateBytes;
-                final String opEvent = eventName(resource, event);
-                final byte[] finalOpBytes = opBytes;
-
-                drawer.queueOp(() -> {
-                    if (finalStateEvent != null) {
-                        comm.send(finalStateEvent, finalStateBytes);
-                    }
-                    comm.send(opEvent, finalOpBytes);
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return;
-        }
         if (resource instanceof DartGC) { DartGC gc = (DartGC) resource;
+            // Flutter never learns a silently disposed GC exists: its drawing would be sent on its
+            // drawable's channel and never committed.
+            if (gc.silentDispose) return;
             bufferOp(comm, gc, event, args);
             return;
         }
@@ -893,36 +978,361 @@ public abstract class FlutterBridge {
         }
     }
 
-    /** A GC's ops, held to one frame per paint. Flutter paints nothing until gcDispose anyway. */
-    private static final Map<DartGC, MessageBatch> opBatches =
+    /** A GC drawing into an Image is addressed to the Image's drawer, which outlives any one GC. */
+    private static String gcChannel(DartGC gc) {
+        FlutterBridge bridge = getBridge(gc);
+        if (bridge instanceof GCImageDrawer) {
+            return widgetName(gc) + "/" + ((GCImageDrawer) bridge).channelId();
+        }
+        return event(gc);
+    }
+
+    /** Resources written into a GC's buffered ops, credited only once the batch is sent. */
+    private static final Map<DartGC, java.util.List<Object>> opResources =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** A GC's ops, held to one frame per paint. Flutter paints nothing until gcDispose anyway. */
+    private static final Map<DartGC, OpBatch> opBatches =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * A batch and the thread writing it. A batch is written without locking, so only its owner may
+     * send it from an event-loop flush: Displays sharing a JVM each flush on their own thread, and
+     * one sending another's batch sends it mid-write and recycles it while it is still being filled.
+     */
+    private static final class OpBatch {
+        final MessageBatch batch = borrowBatch();
+        final Thread owner = Thread.currentThread();
+    }
 
     /** Cap on what one batch holds, so a GC that is never disposed cannot grow it without end. */
     private static final int MAX_BATCH_BYTES = 1 << 20;
 
     private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
-        MessageBatch batch = opBatches.computeIfAbsent(gc, g -> borrowBatch());
-        try {
-            // The GC's state has to precede the op drawn with it, and on the same frame.
-            synchronized (dirty) {
-                if (dirty.remove(gc)) addToBatch(batch, event(gc), getApi(gc));
+        OpBatch held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+        if (held.owner != Thread.currentThread()) {
+            // The GC changed threads: what the previous one drew goes first, then this one owns it.
+            if (opBatches.remove(gc, held)) sendOpBatch(gc, held.batch);
+            held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+        }
+        MessageBatch batch = held.batch;
+        String channel = gcChannel(gc);
+        // A control's overlay outlives its GCs; an image GC's drawer starts blank, so it has no target.
+        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
+        int connection = comm == null ? 0 : comm.connectionId();
+        boolean[] failed = { false };
+        // Per paint cycle: the description is staged at the first op and the send decided at the last.
+        long[] cycle = cycleHash(gc);
+        Serializer.targeting(connection, () -> {
+            try {
+                // The GC's state has to precede the op drawn with it, and on the same frame.
+                synchronized (dirty) {
+                    if (dirty.remove(gc)
+                            && stageGcState(batch, channel, target, gc, connection)) {
+                        cycle[STAGED] = 1;
+                    }
+                }
+                addToBatch(batch, channel + "/" + event, args, cycle);
+            } catch (IOException e) {
+                e.printStackTrace();
+                failed[0] = true;
             }
-            addToBatch(batch, eventName(gc, event), args);
-        } catch (IOException e) {
-            e.printStackTrace();
+            java.util.List<Object> written = Serializer.takeWrittenResources();
+            if (!written.isEmpty()) {
+                opResources.computeIfAbsent(gc, g -> new java.util.ArrayList<>()).addAll(written);
+            }
+        });
+        if (failed[0]) return;
+        if (!GC_DISPOSE.equals(event)) {
+            if (batch.byteSize() >= MAX_BATCH_BYTES) flushOpBatch(gc);
             return;
         }
-        if (GC_DISPOSE.equals(event) || batch.byteSize() >= MAX_BATCH_BYTES) flushOpBatch(gc);
+        cycleHashes.remove(gc);
+        long drawn = cycle[DRAWN];
+        boolean stateStaged = cycle[STAGED] != 0;
+        // A restated description always goes (the next clear clears to it); otherwise a repaint of
+        // what is already shown is dropped.
+        long[] shown = target == null ? null : cycleSent.get(target);
+        boolean repeat = !stateStaged && shown != null
+                && shown[0] == connection && shown[1] == drawn;
+        if (DROP_REPEATED_REPAINTS && repeat) {
+            // Nothing in this paint reaches the client, so nothing it wrote counts as held.
+            opResources.remove(gc);
+            OpBatch dropped = opBatches.remove(gc);
+            if (dropped != null) releaseBatch(dropped.batch);
+            org.eclipse.swt.widgets.PaintPacing.unchanged(target);
+            return;
+        }
+        if (target != null) cycleSent.put(target, new long[] { connection, drawn });
+        flushOpBatch(gc);
+    }
+
+    private static final byte[] NO_PREFIX = new byte[0];
+
+    /**
+     * The stamp of the GC state each drawable's channel was last given. Every GC of a control writes
+     * to the control's one channel, so a GC may send only what changed while no other GC of that
+     * control has written since.
+     */
+    private static final Map<Object, Long> gcStateSeq = new java.util.WeakHashMap<>();
+
+    /**
+     * Writes a GC's state as what changed since its channel last got it, or whole when the channel
+     * holds something else: a GC that has not written yet, or another GC of the same control.
+     */
+    private static void writeGCState(CommService comm, DartGC gc, byte[] prefix, Serializer.Lent sink) {
+        VResource value = gc.getValue();
+        int connection = comm == null ? 0 : comm.connectionId();
+        // Id 0 is shared by every GC on a drawable that is neither a control nor an image.
+        Object channel = id(gc) == 0 ? null : GCHelper.stateKeyOf(gc);
+        synchronized (gcStateSeq) {
+            Long held = channel == null ? null : gcStateSeq.get(channel);
+            long base = value.sentSeq(connection);
+            boolean diff = Serializer.mayDiffResources() && base != 0 && held != null && held == base
+                    && value.anyDirty();
+            if (!diff) Serializer.forgetSentProperties(value);
+            long seq = diff ? serializer.toDiff(prefix, gc, base, sink) : serializer.toStamped(prefix, gc, sink);
+            value.sent(connection, seq);
+            if (channel != null) gcStateSeq.put(channel, seq);
+            gcStateSent.remove(gcStateKey(gc));
+        }
+    }
+
+    /**
+     * Stages a paint's GC state: as a change when this GC was the last to describe itself on the
+     * channel, else named or whole ({@link #addGcStateIfChanged}). Either way the channel then holds
+     * this GC's whole state, which is what the next change is relative to.
+     */
+    private static boolean stageGcState(MessageBatch batch, String channel, Object target, DartGC gc,
+            int connection) throws IOException {
+        VResource value = gc.getValue();
+        Object drawable = id(gc) == 0 ? null : GCHelper.stateKeyOf(gc);
+        synchronized (gcStateSeq) {
+            Long held = drawable == null ? null : gcStateSeq.get(drawable);
+            long base = value.sentSeq(connection);
+            if (Serializer.mayDiffResources() && base != 0 && held != null && held == base
+                    && value.anyDirty()) {
+                long seq = serializer.toDiff(NO_PREFIX, gc, base, (buffer, length) -> {
+                    DebugLog.logSend(channel, buffer, 0, length);
+                    batch.add(channel, buffer, 0, length);
+                });
+                value.sent(connection, seq);
+                gcStateSeq.put(drawable, seq);
+                // The channel holds a state no whole description was hashed from.
+                gcStateSent.remove(gcStateKey(gc));
+                return seq != base;
+            }
+            Serializer.forgetSentProperties(value);
+            long stamp = addGcStateIfChanged(batch, channel, target, gc, connection);
+            // A reference, or nothing at all, still leaves the channel holding this GC's state.
+            long seq = stamp > 0 ? stamp : Serializer.nextWriteStamp();
+            value.sent(connection, seq);
+            if (drawable != null) gcStateSeq.put(drawable, seq);
+            return stamp != NOT_STAGED;
+        }
+    }
+
+    /** Per GC, not per drawable: two paints on different drawables can be buffered at once. */
+    private static long[] cycleHash(DartGC gc) {
+        return cycleHashes.computeIfAbsent(gc, g -> new long[] { EMPTY_CYCLE, 0 });
+    }
+
+    /** Slots in a cycle's record: what it has drawn, and whether it restated its description. */
+    private static final int DRAWN = 0;
+    private static final int STAGED = 1;
+
+    /**
+     * GCs are described whole, not diffed, and pooled GCs keep restating the same description.
+     *
+     * @return whether anything was staged.
+     */
+    /** {@link #addGcStateIfChanged}'s answer when the client already holds the description. */
+    private static final long NOT_STAGED = -1;
+
+    /** Where {@link #addGcStateIfChanged} records what it last staged for a GC. */
+    private static Object gcStateKey(DartGC gc) {
+        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
+        return target == null ? gc : target;
+    }
+
+    /**
+     * @return the write stamp of a whole description staged, 0 for a name staged, or
+     *     {@link #NOT_STAGED} when the client already holds this description.
+     */
+    private static long addGcStateIfChanged(MessageBatch batch, String channel, Object target,
+            DartGC gc, int connection) throws IOException {
+        long[] staged = { NOT_STAGED };
+        // Keyed on the control, not the channel (whose id a new control may reuse); an image GC's
+        // drawer starts blank, so it is keyed on the GC.
+        Object key = target == null ? gc : target;
+        serializer.to(getApi(gc), (buffer, length) -> {
+            // Hashed past the id, the only thing that differs between identically described GCs.
+            int from = 0;
+            while (from < length && buffer[from] != ',') from++;
+            long hash = 0xcbf29ce484222325L;
+            for (int i = from; i < length; i++) hash = (hash ^ (buffer[i] & 0xFF)) * 0x100000001b3L;
+            long[] seen = gcStateSent.get(key);
+            if (seen != null && seen[0] == connection && seen[1] == hash) return;
+            gcStateSent.put(key, new long[] { connection, hash });
+            Integer named = NAME_GC_STATE ? gcNames(connection).get(hash) : null;
+            if (named != null) {
+                byte[] ref = ("{\"id\":" + id(gc.getApi()) + ",\"swt\":\"GC\",\"_gr\":"
+                        + named + "}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                DebugLog.logSend(channel, ref, 0, ref.length);
+                batch.add(channel, ref, 0, ref.length);
+                staged[0] = 0;
+                return;
+            }
+            // Past the cap GCs are described in full; names already given stay valid.
+            if (NAME_GC_STATE && gcNames(connection).size() < GC_NAME_LIMIT) {
+                // Never reused, so an old name cannot come to mean something new to the client.
+                int name = gcNameCounter++;
+                gcNames(connection).put(hash, name);
+                byte[] tail = (",\"_gd\":" + name + "}")
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                staged[0] = serializer.toStamped(NO_PREFIX, gc, (whole, wholeLength) -> {
+                    byte[] def = new byte[wholeLength - 1 + tail.length];
+                    System.arraycopy(whole, 0, def, 0, wholeLength - 1);
+                    System.arraycopy(tail, 0, def, wholeLength - 1, tail.length);
+                    DebugLog.logSend(channel, def, 0, def.length);
+                    batch.add(channel, def, 0, def.length);
+                });
+                return;
+            }
+            staged[0] = serializer.toStamped(NO_PREFIX, gc, (whole, wholeLength) -> {
+                DebugLog.logSend(channel, whole, 0, wholeLength);
+                batch.add(channel, whole, 0, wholeLength);
+            });
+        });
+        return staged[0];
+    }
+
+    /** Description hash to name, per connection: a name means nothing to a client that was not told it. */
+    private static final Map<Long, Integer> gcNames = new java.util.HashMap<>();
+    private static int gcNamesConnection;
+    private static int gcNameCounter;
+
+    /** Bisect switch: {@code -Ddev.equo.swt.gc.dropBlank=false} also sends repaints of what is already shown. */
+    private static final boolean DROP_REPEATED_REPAINTS =
+            !"false".equals(System.getProperty("dev.equo.swt.gc.dropBlank"));
+
+    /** Off by default: a name whose description never reached the client leaves the GC with no colours. */
+    private static final boolean NAME_GC_STATE =
+            "true".equals(System.getProperty("dev.equo.swt.gc.nameState"));
+
+    /** How many descriptions are named; past this they travel whole. */
+    private static final int GC_NAME_LIMIT = 1024;
+
+    private static Map<Long, Integer> gcNames(int connection) {
+        if (connection != gcNamesConnection) {
+            gcNames.clear();
+            gcNameCounter = 0;
+            gcNamesConnection = connection;
+        }
+        return gcNames;
+    }
+
+    /**
+     * For a dropped batch, whose names were defined in frames that never travelled. The counter is
+     * not rewound, so names the client already holds keep their meaning.
+     */
+    private static void forgetGcNames() {
+        gcNames.clear();
+    }
+
+    /** The description last staged for a drawable, as a hash, so an identical one is not restated. */
+    private static final Map<Object, long[]> gcStateSent =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** The paint currently being buffered for a GC, as a running hash over the ops in it. */
+    private static final Map<DartGC, long[]> cycleHashes =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * The paint last sent per drawable. The dispose payload is hashed with the ops, so a match was
+     * applied the same way and re-applying it is a no-op.
+     */
+    private static final Map<Object, long[]> cycleSent =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** For a paint the client asked for: what it shows is no longer what was last sent. */
+    public static void forgetWhatIsShown(Object drawable) {
+        if (drawable == null) return;
+        cycleSent.remove(drawable);
+        gcStateSent.remove(drawable);
     }
 
     /** Terminates a paint: Flutter commits the staged ops when it arrives. */
     private static final String GC_DISPOSE = "gcDispose";
 
     private static void addToBatch(MessageBatch batch, String event, Object args) throws IOException {
+        addToBatch(batch, event, args, null);
+    }
+
+    private static void addToBatch(MessageBatch batch, String event, Object args, long[] cycle)
+            throws IOException {
         serializer.to(args, (buffer, length) -> {
             DebugLog.logSend(event, buffer, 0, length);
             batch.add(event, buffer, 0, length);
+            if (cycle != null) {
+                cycle[DRAWN] = fnv(fnv(cycle[DRAWN],
+                        event.getBytes(java.nio.charset.StandardCharsets.UTF_8), 0, event.length()),
+                        buffer, 0, length);
+            }
         });
+    }
+
+    /** FNV offset basis: the hash of a cycle that has buffered nothing. */
+    private static final long EMPTY_CYCLE = 0xcbf29ce484222325L;
+
+    private static long fnv(long hash, byte[] bytes, int offset, int length) {
+        for (int i = offset; i < offset + length; i++) {
+            hash = (hash ^ (bytes[i] & 0xFF)) * 0x100000001b3L;
+        }
+        return hash;
+    }
+
+    /** An image GC's paint is ended by its drawer, not by a {@code gcDispose}, so the drawer flushes it. */
+    public static void flushBufferedOps(GCImageDrawer drawer) {
+        DartGC gc = gcBuffering(drawer);
+        if (gc != null) flushOpBatch(gc);
+    }
+
+    /**
+     * Sends an image GC's ops with {@code event} as their last frame. The frame must be JSON: the
+     * client parses a batch whole.
+     *
+     * @return false when the GC buffered no ops for it to join.
+     */
+    public static boolean flushBufferedOpsWith(GCImageDrawer drawer, String event, byte[] json) {
+        DartGC gc = gcBuffering(drawer);
+        if (gc == null) return false;
+        OpBatch held = opBatches.get(gc);
+        if (held == null) return false;
+        held.batch.add(widgetName(gc) + "/" + drawer.channelId() + "/" + event, json);
+        flushOpBatch(gc);
+        return true;
+    }
+
+    /** Drops an image GC's buffered ops: its drawing was abandoned and will never be rendered. */
+    public static void discardBufferedOps(GCImageDrawer drawer) {
+        // Whatever these ops wrote never travels, so nothing in them is credited as held.
+        DartGC gc = gcBuffering(drawer);
+        if (gc == null) return;
+        opResources.remove(gc);
+        OpBatch held = opBatches.remove(gc);
+        if (held != null) releaseBatch(held.batch);
+        forgetGcNames();
+    }
+
+    /** The GC whose ops {@code drawer} will draw, if it has any buffered. */
+    private static DartGC gcBuffering(GCImageDrawer drawer) {
+        synchronized (opBatches) {
+            for (DartGC gc : opBatches.keySet()) {
+                if (getBridge(gc) == drawer) return gc;
+            }
+        }
+        return null;
     }
 
     /** Puts a GC's buffered ops on the wire, for a caller about to block on an answer to one. */
@@ -937,20 +1347,51 @@ public abstract class FlutterBridge {
     }
 
     private static void flushOpBatch(DartGC gc) {
-        MessageBatch batch = opBatches.remove(gc);
+        OpBatch held = opBatches.remove(gc);
+        sendOpBatch(gc, held == null ? null : held.batch);
+    }
+
+    /** Sends a batch already taken out of {@link #opBatches}, so no other thread can reach it. */
+    private static void sendOpBatch(DartGC gc, MessageBatch batch) {
+        java.util.List<Object> written = opResources.remove(gc);
         if (batch == null) return;
-        if (!batch.isEmpty()) commFor(gc).send(batch);
+        if (batch.isEmpty()) {
+            releaseBatch(batch);
+            return;
+        }
+        CommService comm = commFor(gc);
+        // The bytes are going out, so what they carried counts as held from here on.
+        if (written != null) Serializer.creditResources(written, comm == null ? 0 : comm.connectionId());
+        FlutterBridge bridge = getBridge(gc);
+        if (bridge instanceof GCImageDrawer) {
+            // Through the drawer's queue: the ops must not reach Flutter before GCDrawer.standalone
+            // registers its listeners. Raw-byte frames stay out of the batch, which is parsed as JSON.
+            ((GCImageDrawer) bridge).queueOp(() -> {
+                comm.send(batch);
+                releaseBatch(batch);
+            });
+            return;
+        }
+        comm.send(batch);
         releaseBatch(batch);
     }
 
-    /** Nothing may stay buffered across an event-loop turn, whatever disposed the GC or didn't. */
-    private static void flushOpBatches() {
+    /** Nothing this thread buffered may outlast its event-loop turn, whatever disposed the GC or didn't. */
+    static void flushOpBatches() {
         if (opBatches.isEmpty()) return;
-        List<DartGC> open;
+        Thread current = Thread.currentThread();
+        List<DartGC> gcs = new ArrayList<>();
+        List<MessageBatch> mine = new ArrayList<>();
         synchronized (opBatches) {
-            open = new ArrayList<>(opBatches.keySet());
+            for (java.util.Iterator<Map.Entry<DartGC, OpBatch>> it = opBatches.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<DartGC, OpBatch> entry = it.next();
+                if (entry.getValue().owner != current) continue;
+                gcs.add(entry.getKey());
+                mine.add(entry.getValue().batch);
+                it.remove();
+            }
         }
-        for (DartGC gc : open) flushOpBatch(gc);
+        for (int i = 0; i < gcs.size(); i++) sendOpBatch(gcs.get(i), mine.get(i));
     }
 
     // A send through the "dirty" branch above defers the actual wire send to an arbitrary
@@ -960,6 +1401,7 @@ public abstract class FlutterBridge {
     private static final java.util.Set<CompletableFuture<?>> pendingDeferredSends =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    @SuppressWarnings("CollectionUndefinedEquality") // a future is equal only to itself, which is what this set tracks
     private static void trackDeferredSend(CompletableFuture<Void> future) {
         pendingDeferredSends.add(future);
         future.whenComplete((r, e) -> pendingDeferredSends.remove(future));
@@ -992,7 +1434,18 @@ public abstract class FlutterBridge {
         }
     }
 
+    /** Sends {@code args} on {@code comm} under {@code eventName}, a channel no widget owns. */
+    public static void send(CommService comm, String eventName, Object args) {
+        try {
+            serializeAndSend(comm, eventName, args);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void send(DartWidget resource, String event, Object args) {
+        if (drawnByParent(resource))
+            return;
         CommService comm = commFor(resource);
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
@@ -1057,24 +1510,6 @@ public abstract class FlutterBridge {
             dirty(((DartResource) obj));
     }
 
-    /** The widget whose state the client itself is currently reporting, if any. */
-    private static final ThreadLocal<DartWidget> dirtySuppressedFor = new ThreadLocal<>();
-
-    /**
-     * Applies a change that originated on the client without echoing {@code widget}'s state back to
-     * it. Wrap only the sync itself: anything the change triggers that the client does <em>not</em>
-     * already know about still has to go out.
-     */
-    public static void withoutDirty(DartWidget widget, Runnable body) {
-        DartWidget previous = dirtySuppressedFor.get();
-        dirtySuppressedFor.set(widget);
-        try {
-            body.run();
-        } finally {
-            dirtySuppressedFor.set(previous);
-        }
-    }
-
     public void dirty(DartResource resource) {
         if (resource == null)
             return;
@@ -1086,15 +1521,22 @@ public abstract class FlutterBridge {
     }
 
     public void dirty(DartWidget widget) {
-        if (widget == null)
-            return;
-        if (widget == dirtySuppressedFor.get())
+        if (widget == null || drawnByParent(widget))
             return;
         registerForRefresh(widget);
         synchronized (dirty) {
             dirty.add(widget);
         }
         wakeForDirty();
+    }
+
+    /** A control its parent draws itself, such as a CCombo's field, has no client-side peer: nothing is sent for it. */
+    private static boolean drawnByParent(DartWidget widget) {
+        if (!(widget instanceof DartControl))
+            return false;
+        Composite parent = ((DartControl) widget)._parent();
+        return parent != null && parent.getImpl() instanceof DartComposite
+                && ((DartComposite) parent.getImpl())._drawsItself(((DartControl) widget).getApi());
     }
 
     /**
@@ -1114,6 +1556,8 @@ public abstract class FlutterBridge {
      * id yet — skip it; the next dirty() (any later state change or send) registers it.
      */
     private static void registerForRefresh(Object w) {
+        // A control's GC shares the control's id; recording it would shadow the control.
+        if (w instanceof DartGC) return;
         Object api = getApi(w);
         if (api != null)
             widgetsById.put((long) api.hashCode(), new java.lang.ref.WeakReference<>(w));
@@ -1161,12 +1605,27 @@ public abstract class FlutterBridge {
 
     public static String widgetName(Object w) {
         if (w instanceof DartWidget) {
-            return w.getClass().getSimpleName().substring(4);
+            return Config.presentedName((DartWidget) w, w.getClass().getSimpleName().substring(4));
         }
         if (w instanceof DartResource) {
             return w.getClass().getSimpleName().substring(4);
         }
         return w.getClass().getSimpleName();
+    }
+
+    static {
+        AbstractBinaryCommService.setAlternateName(FlutterBridge::alternateAddress);
+    }
+
+    /**
+     * A plain Composite is named Composite when its handlers are registered at construction and
+     * MainComposite once it becomes the main sash area ({@link Config#presentedName}), and it can
+     * go back. A message addressed under either name belongs to the same widget.
+     */
+    static String alternateAddress(String eventName) {
+        if (eventName.startsWith("MainComposite/")) return "Composite/" + eventName.substring("MainComposite/".length());
+        if (eventName.startsWith("Composite/")) return "MainComposite/" + eventName.substring("Composite/".length());
+        return null;
     }
 
     public static String eventName(Object w, String event) {
@@ -1186,6 +1645,29 @@ public abstract class FlutterBridge {
         comm().remove(event(control,"ClientReady"));
     }
 
+    /**
+     * Drops what a disposed {@code widget} left registered: every handler it registered, under
+     * either of its names, and its entry in the table refresh requests are looked up in. The comm is
+     * found as {@link #commFor} found it rather than through the widget's bridge: an Item has none,
+     * and its handlers would otherwise keep it, and all it refers to, reachable.
+     */
+    public static void releaseRegistrations(DartWidget widget) {
+        Object api = widget.getApi();
+        if (api != null) {
+            // Ids are identity hash codes, so another widget may hold this one's id by now.
+            widgetsById.computeIfPresent((long) api.hashCode(), (id, ref) -> {
+                Object held = ref.get();
+                return held == null || held == widget || held == api ? null : ref;
+            });
+        }
+        CommService comm = commFor(widget);
+        if (comm == null) return;
+        String owner = event(widget);
+        comm.removeOwner(owner);
+        String alternate = alternateAddress(owner);
+        if (alternate != null) comm.removeOwner(alternate);
+    }
+
     public void setBounds(DartControl control, Rectangle bounds) {
     }
 
@@ -1199,7 +1681,34 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /**
+     * Makes {@code control} its shell's active control, announcing SWT.Activate/Deactivate with
+     * {@code detail}, when the shell tracks that itself. False when it does not -- a native shell --
+     * and the caller has to announce the change on its own.
+     */
+    public boolean setActiveControl(DartControl control, int detail) {
+        return false;
+    }
+
+    /** Moves the client's keyboard focus onto {@code control}, which Java has just focused itself. */
+    public void focusClient(DartControl control) {
+    }
+
+    /** The client moved its focus to {@code control}: tracked like {@link #setFocus}, without echoing it back. */
+    public void clientFocused(DartControl control) {
+        setFocus(control);
+    }
+
     public boolean hasFocus(DartControl control) {
+        return false;
+    }
+
+    /**
+     * Makes {@code control} the active control of its shell, sending Deactivate to the chain that was active
+     * and Activate, carrying {@code detail}, to the new one. False when this bridge leaves activation to its
+     * caller.
+     */
+    public boolean activate(DartControl control, int detail) {
         return false;
     }
 
@@ -1212,8 +1721,32 @@ public abstract class FlutterBridge {
         return null;
     }
 
+    /**
+     * Whether the window hosting {@code shell} currently has the keyboard focus the OS grants.
+     *
+     * <p>True by default: a surface with no window of its own -- a page in a browser tab, an
+     * embedded view inside a native parent -- has no separate notion of being the active window, and
+     * the shell's own visibility is the best answer available. A surface that owns a top-level window
+     * overrides this, because there "visible" and "active" are different facts and a Display that
+     * conflates them reports an active shell while the user is in another application.
+     */
+    public boolean hostsActiveWindow(Object shell) {
+        return true;
+    }
+
+    /** Screen position of the window content that hosts {@code control}: what a point at (0, 0) of its
+     *  top-level shell maps to in display coordinates. */
     public Point getWindowOrigin(DartControl control) {
         return new Point(0, 0);
+    }
+
+    /**
+     * Whether {@code shell} is the top-level shell this bridge shows as its host window, drawn without
+     * a Flutter title bar; {@code null} when the bridge does not host shells and the caller must decide
+     * from the shell alone.
+     */
+    public Boolean hostsAsMainShell(Shell shell) {
+        return null;
     }
 
     public void setCursor(DartControl control, long cursor) {
@@ -1237,7 +1770,7 @@ public abstract class FlutterBridge {
 
     protected void broadcastSwtEvolveProperties() {
         try {
-            serializeAndSend("swt.evolve.properties", getConfigFlags());
+            serializeAndSend(PROPERTIES_CHANNEL, getConfigFlags());
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -3,7 +3,7 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 import 'package:webview_all/webview_all.dart'
-    show PlatformWebViewControllerCreationParams;
+    show PlatformWebViewControllerCreationParams, WebViewController;
 import 'package:webview_all_web/webview_all_web.dart';
 
 import 'browser_app_base.dart';
@@ -100,21 +100,51 @@ String localFileBaseRewrite(String? basePath) {
 
 /// Same-origin URL for a `setText` document. Rendering it from a `data:` URL (what the webview
 /// plugin's `loadHtmlString` does) gives the frame an opaque origin, so the embedding page cannot
-/// script it: execute/evaluate/BrowserFunction all fail with a cross-origin SecurityError. A `blob:`
-/// URL minted here carries this page's origin instead, and inside the document `location.origin` is
-/// the app's — which the BrowserFunction shim posts to (an `srcdoc` frame is scriptable too, but its
-/// `location.origin` is "null"). [baseUrl], when given, is injected as the document's `<base href>`,
-/// as `loadHtmlString` would.
+/// script it: execute/evaluate/BrowserFunction all fail with a cross-origin SecurityError. The app
+/// server serves it over http instead (`/inline-document`), so inside the document `location.origin`
+/// is the app's — which the BrowserFunction shim posts to (an `srcdoc` frame is scriptable too, but
+/// its `location.origin` is "null"). A `blob:` URL carries the app's origin as well, but some
+/// Chromium builds (151, for one) load it in a process of its own, where the page cannot script it;
+/// it is only the fallback for a document that endpoint does not take. [baseUrl], when given, is
+/// injected as the document's `<base href>`, as `loadHtmlString` would.
 ///
 /// The caller owns the URL: revoke it with [browserRevokeInlineDocumentUrl] once replaced.
-String browserInlineDocumentUrl(String html, String? baseUrl) {
-  final blob = web.Blob(
-      [_injectBaseUrl(html, baseUrl).toJS as JSAny].toJS,
+Future<String?> browserInlineDocumentUrl(String html, String? baseUrl) async {
+  final document = _injectBaseUrl(html, baseUrl);
+  final endpoint = browserInlineDocumentEndpoint();
+  try {
+    final response = await web.window
+        .fetch(
+            endpoint.toJS,
+            web.RequestInit(
+                method: 'POST',
+                body: document.toJS,
+                headers: {'Content-Type': 'text/html;charset=utf-8'}.jsify()
+                    as web.HeadersInit))
+        .toDart;
+    if (response.ok) return '${browserAppBaseUrl()}${(await response.text().toDart).toDart}';
+    web.console.warn('Browser.setText: $endpoint answered ${response.status}, '
+            'showing the document from a blob: URL'
+        .toJS);
+  } catch (e) {
+    web.console.warn(
+        'Browser.setText: $endpoint failed ($e), showing the document from a blob: URL'.toJS);
+  }
+  final blob = web.Blob([document.toJS as JSAny].toJS,
       web.BlobPropertyBag(type: 'text/html;charset=utf-8'));
   return web.URL.createObjectURL(blob);
 }
 
-void browserRevokeInlineDocumentUrl(String url) => web.URL.revokeObjectURL(url);
+/// Where the app server serves `setText` documents (see `InlineDocumentHandler`).
+String browserInlineDocumentEndpoint() => '${browserAppBaseUrl()}inline-document';
+
+void browserRevokeInlineDocumentUrl(String url) {
+  if (url.startsWith('blob:')) {
+    web.URL.revokeObjectURL(url);
+  } else {
+    web.window.fetch(url.toJS, web.RequestInit(method: 'DELETE')).toDart.ignore();
+  }
+}
 
 final RegExp _headTag = RegExp(r'<head[^>]*>', caseSensitive: false);
 
@@ -150,7 +180,21 @@ Object? browserEvalInFrame(
   final win = params.iFrame.contentWindow;
   if (win == null) throw StateError('iframe has no content window');
   final result = (win as JSObject).callMethod<JSAny?>('eval'.toJS, script.toJS);
-  return result.dartify();
+  return _dartifyFromFrame(result);
+}
+
+/// [JSAnyUtilityExtension.dartify] for a value made in another realm: an array from the iframe is
+/// not an instance of this page's Array, which the wasm build's dartify requires to see a list.
+/// Array.isArray is realm-independent, so arrays are walked here and everything else passed on.
+Object? _dartifyFromFrame(JSAny? value) {
+  if (value == null) return null;
+  final isArray = (globalContext['Array'] as JSObject)
+      .callMethod<JSBoolean>('isArray'.toJS, value)
+      .toDart;
+  if (!isArray) return value.dartify();
+  final array = value as JSObject;
+  final length = (array['length'] as JSNumber).toDartInt;
+  return [for (var i = 0; i < length; i++) _dartifyFromFrame(array[i.toString()])];
 }
 
 /// Reports keys typed inside the iframe to [onKey] and suppresses the same reserved shortcuts the
@@ -194,3 +238,13 @@ bool installBrowserFrameKeyHandling(
     return false;
   }
 }
+
+/// The web iframe is released with its element.
+Future<void> browserReleaseWebView(WebViewController controller) async {}
+
+/// Cookies of the iframe's origin are out of this page's reach.
+Future<String?> browserGetCookie(String name, String url) async => null;
+
+Future<bool> browserSetCookie(String name, String value, String domain, String path,
+        {double? expires, bool secure = false, bool httpOnly = false}) async =>
+    false;

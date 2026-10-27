@@ -1,9 +1,12 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterNative;
+import dev.equo.swt.ShellWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -38,12 +41,50 @@ public class DeskDisplayBridge extends DisplayBridge {
     private boolean windowClosed;
 
     /**
+     * Height of the chrome the render side draws inside the window's own content area -- the CSD
+     * title strip. The window's content is not the shell's client area when one is drawn, so the
+     * shell starts this far below the window origin. The client reports it with every viewport it
+     * sends, so it follows whatever the render side actually draws.
+     */
+    private int clientTopInset;
+
+    /**
      * True only while the shell close that {@link #onWindowCloseRequested} asked for is running.
      * The window follows an <em>accepted close gesture</em>, never the mere absence of shells: an
      * application that disposes a splash before opening its real shell leaves no top-level shell for
      * an instant, and tearing the window down there strands the app with no window at all.
      */
     private boolean closingOnRequest;
+
+    /**
+     * Screen origin of the window's content, as last pushed by {@link #forwardWindowBounds}. The main
+     * shell is slaved to (0, 0, viewport) once the client reports in, so this is the only place Java
+     * keeps where that shell really is on screen. (0, 0) until the app positions the window itself.
+     */
+    private Point windowOrigin = new Point(0, 0);
+
+    /** Whether a client has reported the real monitor yet; until then {@code display.bounds} is a placeholder. */
+    private boolean monitorReported;
+
+    /** Whether the window has been sized to the unsized main shell it first showed. */
+    private boolean windowSizedToUnsizedShell;
+
+    /** The last real viewport the window reported, or null until it reports one. */
+    private Rectangle windowViewport;
+
+    /**
+     * The shell the window's geometry was last settled with: sized to the viewport, or the one whose
+     * own resize was forwarded to the window. A main shell other than this one has just taken the
+     * window over.
+     */
+    private Shell windowShell;
+
+    /**
+     * Set while a posted wake is still in the OS event queue. One queued wake is enough to end the
+     * idle wait, and every extra one is an OS event the next pump dispatches, each closing an AppKit
+     * transaction the window server has to process.
+     */
+    private final java.util.concurrent.atomic.AtomicBoolean wakeQueued = new java.util.concurrent.atomic.AtomicBoolean();
 
     DeskDisplayBridge(DartDisplay display) {
         super(display);
@@ -59,13 +100,6 @@ public class DeskDisplayBridge extends DisplayBridge {
         registerDisplayKeyEvents(display);
 
         long displayId = display.getApi().hashCode();
-        int port = comm().getPort();
-        String theme = Display.isSystemDarkTheme() ? "dark" : "light";
-
-        // Paint the Display with the real widget background (matching the embedded path); passing 0
-        // here would make the Flutter theme render a pure-black Display background.
-        Color bg = display.getApi().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-        int backgroundColor = (bg.getRed() << 16) | (bg.getGreen() << 8) | bg.getBlue();
 
         // The default Display bounds (1920x1080) is just a placeholder; create the window at a sane
         // size and let the ClientReady handshake correct Display bounds to the real viewport size.
@@ -73,8 +107,21 @@ public class DeskDisplayBridge extends DisplayBridge {
         int width = (b != null && b.width > 0 && b.width <= 2560) ? b.width : 1280;
         int height = (b != null && b.height > 0 && b.height <= 1600) ? b.height : 800;
 
-        windowContext = FlutterNative.initialize(
-                port, 0, displayId, "Display", theme, backgroundColor, backgroundColor, width, height);
+        // Logical pixels, not converted: the client has not reported its monitor yet, so the UI
+        // scale is unknown here, and the shell is fitted to whatever viewport the window reports.
+        windowContext = openNativeWindow(0, displayId, "Display", width, height);
+    }
+
+    /** Opens one native top-level window hosting a Flutter client rooted at {@code widgetName/id}.
+     *  Seam: tests stand a window in without JNI. */
+    protected long openNativeWindow(long owner, long widgetId, String widgetName, int width, int height) {
+        // Paint the window with the real widget background (matching the embedded path); passing 0
+        // here would make the Flutter theme render a pure-black background.
+        Color bg = forDisplay.getApi().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+        int backgroundColor = (bg.getRed() << 16) | (bg.getGreen() << 8) | bg.getBlue();
+        String theme = Config.systemDarkTheme() ? "dark" : "light";
+        return FlutterNative.initialize(comm().getPort(), owner, widgetId, widgetName, theme,
+                backgroundColor, backgroundColor, width, height);
     }
 
     /**
@@ -101,11 +148,382 @@ public class DeskDisplayBridge extends DisplayBridge {
         super.onUpdate();
         if (boundShell == null || boundShell.isDisposed())
             bindWindowView();
+        Shell main = mainShell(forDisplay);
+        fitShellTakingOverWindow(main);
+        applyWindowOrigin(main, mainWindowOrigin());
+
+        // The pump drains the queued wake, so a wake after this point has to be posted again.
+        wakeQueued.set(false);
         int status = pumpWindow();
         if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
             onWindowCloseRequested();
         } else if (status < 0) {
             onWindowClosed();
+        }
+        pumpShellWindows();
+    }
+
+    // ---- one native window per detached shell (see WindowPolicy) ----------------------------------
+
+    /** The detached-shell windows, pumped alongside the Display's own. */
+    private final java.util.List<NativeShellWindow> shellWindowsToPump = new java.util.ArrayList<>();
+
+    @Override
+    protected boolean keepsMainShellOrigin() {
+        // The window has a real place on screen, and applyWindowOrigin keeps the shell told of it.
+        return true;
+    }
+
+    @Override
+    protected boolean supportsShellWindows() {
+        return hasNativeWindow();
+    }
+
+    @Override
+    protected ShellWindow createShellWindow(Shell shell) {
+        Rectangle bounds = shell.getBounds();
+        int width = bounds.width > 0 ? bounds.width : 640;
+        int height = bounds.height > 0 ? bounds.height : 480;
+        long owner = ownerWindowContext(shell);
+        long context = openNativeWindow(owner, shell.hashCode(), "Shell", Config.swtToLogical(width),
+                Config.swtToLogical(height));
+        if (context == 0) return null;
+        NativeShellWindow window = new NativeShellWindow(shell, context);
+        window.owner = owner;
+        shellWindowsToPump.add(window);
+        // The window gets the bounds the shell restores to; a shell never placed is cascaded.
+        Rectangle normal = restoredBounds(shell, bounds);
+        Rectangle placed = (normal.x != 0 || normal.y != 0) ? normal : cascade(normal);
+        window.setBounds(placed);
+        if (!shell.getMaximized() && !shell.getFullScreen()) shell.setLocation(placed.x, placed.y);
+        // Always set, even empty: the window was created titled with the client's widget name.
+        String title = shell.getText();
+        window.setTitle(title == null ? "" : title);
+        bindShellWindowView(shell, context);
+        return window;
+    }
+
+    /**
+     * Where a maximized shell goes back to when it is restored: the bounds it had before it was
+     * maximized, as native SWT keeps them, not the screen it fills now.
+     */
+    private static Rectangle restoredBounds(Shell shell, Rectangle bounds) {
+        if (!shell.getMaximized()) return bounds;
+        Rectangle normal = ((ImplShell) shell.getImpl())._normalBounds();
+        if (normal == null) normal = new Rectangle(0, 0, 0, 0);
+        return new Rectangle(normal.x, normal.y,
+                normal.width > 0 ? normal.width : 640, normal.height > 0 ? normal.height : 480);
+    }
+
+    // Every native call a detached window makes goes through one of these, so a test can stand a
+    // window in behind a fake handle without any of them reaching JNI.
+
+    /** Hands the window's view to its shell, so an application reaching for a handle finds one. */
+    protected void bindShellWindowView(Shell shell, long context) {
+        DisplayBridgePlatform.bindWindowView(shell, FlutterNative.getView(context));
+    }
+
+    /**
+     * The shell's own window when it has one, else the one its nearest windowed ancestor is drawn
+     * into, else the Display's.
+     */
+    @Override
+    public long nativeWindowHandle(Object shell) {
+        NativeShellWindow window = nearestWindow(shell instanceof Shell ? (Shell) shell : null);
+        if (window != null) return window.view();
+        return hasNativeWindow() ? mainWindowView() : 0;
+    }
+
+    /**
+     * The window a detached shell's window is owned by, the way a native child shell is owned by its
+     * parent's: the one its parent is drawn into. 0 for a parentless shell.
+     */
+    private long ownerWindowContext(Shell shell) {
+        Composite parent = shell.getParent();
+        if (parent == null) return 0;
+        NativeShellWindow window = nearestWindow(parent);
+        return window != null ? window.context : mainWindowContext();
+    }
+
+    /** The live window of {@code start} or of its nearest ancestor shell that has one, else null. */
+    private NativeShellWindow nearestWindow(Composite start) {
+        Composite current = start;
+        while (current instanceof Shell && !current.isDisposed()) {
+            if (current.getImpl() instanceof DartShell) {
+                ShellWindow window = shellWindowFor((DartShell) current.getImpl());
+                if (window instanceof NativeShellWindow && window.isAlive()) {
+                    return (NativeShellWindow) window;
+                }
+            }
+            current = current.getParent();
+        }
+        return null;
+    }
+
+    /**
+     * Re-owns a detached shell's window when the window its parent is drawn into changed since it
+     * opened: the parent got a window of its own later, or lost the one it had.
+     */
+    @Override
+    protected void refreshShellWindowOwner(Shell shell, ShellWindow window) {
+        if (!(window instanceof NativeShellWindow) || !window.isAlive()) return;
+        NativeShellWindow nativeWindow = (NativeShellWindow) window;
+        long owner = ownerWindowContext(shell);
+        if (owner == nativeWindow.owner) return;
+        nativeWindow.owner = owner;
+        setShellWindowOwner(nativeWindow.context, owner);
+    }
+
+    protected long shellWindowView(long context) {
+        return FlutterNative.getView(context);
+    }
+
+    protected long mainWindowView() {
+        return FlutterNative.getView(windowContext);
+    }
+
+    protected long mainWindowContext() {
+        return windowContext;
+    }
+
+    protected int pumpShellWindow(long context) {
+        return FlutterNative.pump(context);
+    }
+
+    protected void disposeShellWindow(long context) {
+        FlutterNative.dispose(context);
+    }
+
+    protected void setShellWindowTitle(long context, String title) {
+        FlutterNative.setTitle(context, title);
+    }
+
+    protected void setShellWindowBounds(long context, Rectangle b) {
+        // Same rule as the Display's own window: a shell that has not been laid out yet carries a
+        // placeholder size, and a window shrunk to a pixel never reports a viewport worth having, so
+        // nothing ever corrects it. Move it, but keep the size it already has.
+        if (b.width <= 1 || b.height <= 1) {
+            Rectangle w = toWindowUnits(b);
+            placeNativeWindow(context, new Rectangle(w.x, w.y, 0, 0));
+            return;
+        }
+        placeNativeWindow(context, toWindowUnits(b));
+    }
+
+    /**
+     * Seam: places and sizes a native window, in the window system's logical pixels; tests record
+     * the rectangle instead.
+     */
+    protected void placeNativeWindow(long context, Rectangle w) {
+        FlutterNative.setBounds(context, w.x, w.y, w.width, w.height, w.x, w.y, w.width, w.height);
+    }
+
+    /**
+     * A rectangle in SWT units, in the window system's logical pixels. Its edges are converted rather
+     * than its size, so two windows that touch in SWT units still touch on screen.
+     */
+    static Rectangle toWindowUnits(Rectangle swt) {
+        int x = Config.swtToLogical(swt.x);
+        int y = Config.swtToLogical(swt.y);
+        return new Rectangle(x, y,
+                Config.swtToLogical(swt.x + swt.width) - x, Config.swtToLogical(swt.y + swt.height) - y);
+    }
+
+    protected void setShellWindowState(long context, int state) {
+        FlutterNative.setState(context, state);
+    }
+
+    protected void setShellWindowOwner(long context, long owner) {
+        FlutterNative.setOwner(context, owner);
+    }
+
+    /** Test seam: shows or hides a detached window without taking it down. */
+    protected void setShellWindowVisible(long context, boolean visible) {
+        FlutterNative.setVisible(context, visible);
+    }
+
+    /** Where the Display's own window sits, or null when there is none (headless tests). */
+    protected org.eclipse.swt.graphics.Point mainWindowOrigin() {
+        return hasNativeWindow() ? shellWindowOrigin(windowContext) : null;
+    }
+
+    /**
+     * Where a window's SHELL sits on screen, or null when it cannot be told: the window's content
+     * origin moved down past the chrome the render side draws above the shell. Callers turn this into
+     * shell bounds, and a shell whose origin ignored the strip put every screen coordinate derived
+     * from it a strip-height too high -- far enough that a click aimed at a control by its own
+     * toDisplay landed outside it.
+     */
+    protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
+        long packed = nativeOrigin(context);
+        if (packed == FlutterNative.ORIGIN_UNKNOWN) return null;
+        return new org.eclipse.swt.graphics.Point(
+                Config.logicalToSwt(FlutterNative.originX(packed)),
+                Config.logicalToSwt(FlutterNative.originY(packed)) + clientTopInset);
+    }
+
+    /** Seam: tests stand in a window origin without JNI. */
+    protected long nativeOrigin(long context) {
+        return FlutterNative.getOrigin(context);
+    }
+
+
+
+    /** How many unplaced windows have been cascaded so far; see {@link #cascade}. */
+    private int cascaded;
+
+    /** Step between cascaded windows, and how many before starting over near the origin again. */
+    private static final int CASCADE_STEP = 28;
+    private static final int CASCADE_WRAP = 8;
+
+    /** A staggered position for a window the application never placed, near the Display's own. */
+    private Rectangle cascade(Rectangle size) {
+        int step = (cascaded++ % CASCADE_WRAP) * CASCADE_STEP;
+        Rectangle origin = forDisplay == null ? null : mainShellBoundsOrNull();
+        int x = (origin == null ? 80 : origin.x + 60) + step;
+        int y = (origin == null ? 80 : origin.y + 60) + step;
+        return new Rectangle(x, y, size.width, size.height);
+    }
+
+    private Rectangle mainShellBoundsOrNull() {
+        Shell main = mainShell(forDisplay);
+        return (main == null || main.isDisposed()) ? null : main.getBounds();
+    }
+
+    /** Round-robin cursor over {@link #shellWindowsToPump}; see {@link #pumpShellWindows}. */
+    private int nextShellWindowToPump;
+
+    /**
+     * Advances <em>one</em> detached shell's window per pass, in turn.
+     *
+     * <p>A pump is not per-window work: it drains the process-wide event queue and then spins the
+     * main run loop for a couple of milliseconds so the engines — which share the platform thread —
+     * get time to build a frame. One call gives every window that time. Calling it once per window
+     * drains an already-empty queue again and pays the spin again, so the cost of an event-loop turn
+     * grew with the number of open windows and the whole application slowed down as more were
+     * opened. Taking them in turn keeps that cost flat.
+     *
+     * <p>What <em>is</em> per-window is the close status, and that is the only reason each window
+     * still has to be asked at all. Learning it a few passes late is not observable: the loop turns
+     * continuously, and a close gesture is answered on the next pass either way.
+     */
+    private void pumpShellWindows() {
+        shellWindowsToPump.removeIf(window -> !window.isAlive());
+        if (shellWindowsToPump.isEmpty()) {
+            nextShellWindowToPump = 0;
+            return;
+        }
+        if (nextShellWindowToPump >= shellWindowsToPump.size()) nextShellWindowToPump = 0;
+        NativeShellWindow window = shellWindowsToPump.get(nextShellWindowToPump++);
+
+        // One window per pass, the same budget the pump already works to: a window the user moved
+        // reports its new origin on the next turn, the same freshness a close gets.
+        applyWindowOrigin(window.shell, window.origin());
+
+        int status = window.pump();
+        if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
+            closeShellFromWindow(window.shell);
+        } else if (status < 0) {
+            // The window is already gone. Report it as such and let the registry react, which is
+            // the one place that knows what losing a window means for the shell that was in it.
+            window.markGone();
+            shellWindowsToPump.remove(window);
+            if (forDisplay != null) sendDisplayUpdate(forDisplay);
+        }
+    }
+
+    /**
+     * The user asked a detached shell's window to close and the runner vetoed the OS teardown, so
+     * that window is still up. Same contract as the Display's own window, one shell out:
+     * {@code SWT.Close} while there is still something to render into, and the window follows only
+     * if the shell is actually disposed.
+     */
+    private void closeShellFromWindow(Shell shell) {
+        Display api = forDisplay == null ? null : forDisplay.getApi();
+        if (api == null || api.isDisposed()) return;
+        api.asyncExec(() -> {
+            if (api.isDisposed() || shell.isDisposed()) return;
+            shell.close();
+        });
+    }
+
+    /** Test seam: opens a window without JNI. */
+    protected NativeShellWindow newShellWindow(Shell shell, long context) {
+        return new NativeShellWindow(shell, context);
+    }
+
+    /** A detached shell's native top-level window. */
+    protected class NativeShellWindow implements ShellWindow {
+        final Shell shell;
+        private long context;
+        /** The context of the window that owns this one, 0 for none. */
+        private long owner;
+        private boolean gone;
+        /** A window is created showing, and is only told when that changes. */
+        private boolean shown = true;
+
+        NativeShellWindow(Shell shell, long context) {
+            this.shell = shell;
+            this.context = context;
+        }
+
+        int pump() {
+            return pumpShellWindow(context);
+        }
+
+        boolean isActive() {
+            return !gone && context != 0 && windowActive(context);
+        }
+
+        long view() {
+            return shellWindowView(context);
+        }
+
+        void markGone() {
+            gone = true;
+        }
+
+        @Override
+        public boolean isAlive() {
+            return context != 0 && !gone;
+        }
+
+        @Override
+        public void setTitle(String title) {
+            if (isAlive()) setShellWindowTitle(context, title);
+        }
+
+        @Override
+        public void setBounds(Rectangle bounds) {
+            if (isAlive()) setShellWindowBounds(context, bounds);
+        }
+
+        @Override
+        public void setState(int state) {
+            if (isAlive()) setShellWindowState(context, state);
+        }
+
+        @Override
+        public org.eclipse.swt.graphics.Point origin() {
+            return isAlive() ? shellWindowOrigin(context) : null;
+        }
+
+        @Override
+        public void setVisible(boolean visible) {
+            // Asked on every pass, so only a change crosses JNI.
+            if (visible == shown || !isAlive()) return;
+            shown = visible;
+            setShellWindowVisible(context, visible);
+        }
+
+        @Override
+        public void close() {
+            if (context == 0) return;
+            // Dispose whether or not the OS already took the window down: that shuts the window's
+            // own Flutter engine, which is what a bare close leaves running.
+            disposeShellWindow(context);
+            context = 0;
+            shellWindowsToPump.remove(this);
         }
     }
 
@@ -127,6 +545,36 @@ public class DeskDisplayBridge extends DisplayBridge {
         } else {
             Thread.sleep(millis);
         }
+    }
+
+    /**
+     * Posts into the OS event loop so {@link #sleep(int)} returns now. Work handed to the UI thread
+     * from elsewhere — every Flutter event, since the comm thread delivers them with
+     * {@code asyncExec} — otherwise waits out the deadline: SWT's wake permit is a Java semaphore,
+     * and the native wait cannot see it.
+     */
+    @Override
+    public void wake() {
+        if (hasNativeWindow() && wakeQueued.compareAndSet(false, true)) {
+            wakeNativeWindow();
+        }
+    }
+
+    /** Posts the wake into the OS event loop. Seam: tests stand a window in without JNI. */
+    protected void wakeNativeWindow() {
+        FlutterNative.wake(windowContext);
+    }
+
+    /**
+     * State dirtied off the UI thread has to interrupt the wait too, or the flush waits for it. The UI
+     * thread itself is not waiting while it dirties state, and its next readAndDispatch flushes it.
+     */
+    @Override
+    protected void wakeForDirty() {
+        DartDisplay display = forDisplay;
+        if (display != null && display.thread == Thread.currentThread())
+            return;
+        wake();
     }
 
     /**
@@ -224,6 +672,56 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
     }
 
+    @Override
+    protected void applyClientInsetTop(int insetTop) {
+        if (insetTop == clientTopInset)
+            return;
+        clientTopInset = insetTop;
+        // A shell placed before the strip's height was known has a window that much too short.
+        Shell main = forDisplay == null ? null : mainShell(forDisplay);
+        if (main != null && !main.getMaximized() && !main.getFullScreen())
+            forwardWindowBounds(windowBoundsFor(main.getBounds()));
+    }
+
+    /**
+     * The window a main shell's bounds call for: the shell is the area below the CSD strip (see
+     * {@link #shellWindowOrigin}), so its window is that much taller and starts that much higher.
+     * Sized to the shell alone, the window left the shell a strip-height short, and the next viewport
+     * report shrank it -- whenever that report happened to arrive.
+     *
+     * <p>Native SWT puts a shell's title bar at the y it is given, so wherever that bar would show
+     * on the screen, the strip does too: a window that would start above the top of the work area
+     * starts at it, and the shell moves down below the strip, keeping its size. A shell a strip or
+     * more above the top of the work area, whose title bar would be off it in native SWT too, is
+     * left there. The native window places a framed window's caption by the same rule.
+     */
+    Rectangle windowBoundsFor(Rectangle shell) {
+        if (shell == null || clientTopInset == 0) return shell;
+        int y = shell.y - clientTopInset;
+        int top = workAreaTop(new Rectangle(shell.x, y, shell.width, shell.height + clientTopInset));
+        if (y < top && shell.y > top - clientTopInset) y = top;
+        return new Rectangle(shell.x, y, shell.width, shell.height + clientTopInset);
+    }
+
+    /** Whether the native library answers {@link FlutterNative#getWorkAreaTop}; only Windows' does. */
+    private boolean canAskWorkArea = true;
+
+    /**
+     * Seam: the top of the work area of the monitor nearest {@code window}, in SWT units. 0 where
+     * the window system cannot tell, which is the top of the Display's own bounds on this surface.
+     */
+    protected int workAreaTop(Rectangle window) {
+        if (!canAskWorkArea || !hasWindowSurface()) return 0;
+        Rectangle w = toWindowUnits(window);
+        try {
+            int top = FlutterNative.getWorkAreaTop(mainWindowContext(), w.x, w.y, w.width, w.height);
+            return top == FlutterNative.WORK_AREA_UNKNOWN ? 0 : Config.logicalToSwt(top);
+        } catch (UnsatisfiedLinkError notInThisRunner) {
+            canAskWorkArea = false;
+            return 0;
+        }
+    }
+
     /**
      * Desk semantics: the Display is the <em>monitor</em>, governed independently of the window. The
      * reported {@code monitor} drives {@code display.bounds} (so {@code Display}/{@code Monitor} report
@@ -238,12 +736,44 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (monitor != null && !display.bounds.equals(monitor)) {
             display.bounds = monitor; // the Display is the screen, not the window
             changed = true;
+            if (!monitorReported) {
+                monitorReported = true;
+                resizeUnsizedShells(display);
+            }
         }
 
         Shell main = mainShell(display);
+        boolean realViewport = viewport.width > 1 && viewport.height > 1;
+        if (realViewport) {
+            windowViewport = viewport;
+        }
         if (main != null) {
             Rectangle current = main.getBounds();
-            boolean shellMatches = current != null && current.x == 0 && current.y == 0
+            // A window not sized yet reports a 1x1 viewport, and taking it as authoritative collapses
+            // the shell to match -- after which nothing reports anything else. Until the window has a
+            // real viewport the shell is the source of truth, so push its geometry out.
+            if (!realViewport) {
+                if (current != null && current.width > 1 && current.height > 1) {
+                    forwardWindowBounds(windowBoundsFor(current));
+                    changed = true;
+                }
+                return changed;
+            }
+            windowShell = main;
+            // A main shell nobody sized opens its window at its own size, 5/8 of the real monitor, as a
+            // native shell opens its window, instead of the size the window was created at before the
+            // monitor was known.
+            if (monitorReported && isUnsized(main) && !windowSizedToUnsizedShell) {
+                windowSizedToUnsizedShell = true;
+                Rectangle own = main.getBounds();
+                if (own.width != viewport.width || own.height != viewport.height) {
+                    forwardWindowBounds(windowBoundsFor(own));
+                    return true;
+                }
+            }
+            // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
+            // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
+            boolean shellMatches = current != null
                     && current.width == viewport.width && current.height == viewport.height;
             if (!shellMatches) {
                 applyClientBounds(() -> resizeMainShells(display, viewport));
@@ -252,6 +782,19 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
 
         return changed;
+    }
+
+    /**
+     * Fits a shell that takes the window over from another one -- a workbench replacing its window,
+     * say -- to the window's viewport. The window keeps its size through the hand-over, so it never
+     * reports the resize that would otherwise size the new shell.
+     */
+    private void fitShellTakingOverWindow(Shell main) {
+        if (main == null || main == windowShell || windowViewport == null) {
+            return;
+        }
+        windowShell = main;
+        applyClientBounds(() -> resizeMainShells(forDisplay, windowViewport));
     }
 
     /**
@@ -269,6 +812,70 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
     }
 
+    /** The shell last shown in the Display's window, or null before one has been or once it is
+     *  disposed. */
+    private Shell shownShell;
+
+    /** Whether any shell has been shown in the Display's window yet. */
+    private boolean shownAShell;
+
+    private boolean windowHidden;
+
+    /** The window follows its main shell's title, and a shell arriving from a window of its own
+     *  brings that window's geometry. A disposed holder never hides it. */
+    @Override
+    protected void syncDisplayWindow(DartDisplay display, java.util.Set<Shell> leftOwnWindow) {
+        if (shownShell != null && shownShell.isDisposed()) shownShell = null;
+        if (!hasNativeWindow()) return;
+        Shell main = mainShell(display);
+        if (main != null && !main.isDisposed() && main.getVisible() && main != shownShell) {
+            if (shownAShell) {
+                setMainWindowTitle(main.getText());
+                if (leftOwnWindow.contains(main)) takeOverWindowGeometry(main);
+            }
+            shownShell = main;
+            shownAShell = true;
+        }
+        boolean drawsAShell = drawsAnyShell(display);
+        boolean holderHidden = shownShell != null && !shownShell.getVisible();
+        boolean hide = !drawsAShell && holderHidden;
+        // Only an actual change crosses JNI. With nothing drawn and no hidden holder (its shell was
+        // disposed), the window keeps whatever it shows: the next shell is about to fill it.
+        boolean decided = hide || drawsAShell;
+        if (decided && hide != windowHidden) {
+            windowHidden = hide;
+            setShellWindowVisible(windowContext, !hide);
+        }
+    }
+
+    private boolean drawsAnyShell(DartDisplay display) {
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed() && shell.getVisible() && !isShellWindowed(shell))
+                return true;
+        }
+        return false;
+    }
+
+    /** Moves and sizes the window to where {@code shell}'s own window was. */
+    private void takeOverWindowGeometry(Shell shell) {
+        windowShell = shell;
+        int state = windowStateOf(shell);
+        // A minimized shell taking the window over is shown restored: it is the one left to see.
+        if (state == ShellWindow.STATE_FULLSCREEN || state == ShellWindow.STATE_MAXIMIZED) {
+            setShellWindowState(windowContext, state);
+        } else {
+            setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
+            // The shell measures the client area of the window it leaves, so the window grows by the
+            // strip the client draws above it (applyClientInsetTop) instead of the shell shrinking.
+            forwardWindowBounds(windowBoundsFor(shell.getBounds()));
+        }
+        bindWindowView();
+    }
+
+    private void setMainWindowTitle(String title) {
+        setShellWindowTitle(windowContext, title == null ? "" : title);
+    }
+
     /** Whether a live native top-level window backs this Display (false in headless tests, and once
      *  the user has closed the window — so window ops aren't forwarded to a closing/gone window). */
     protected boolean hasNativeWindow() {
@@ -282,8 +889,56 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     /** Pushes a genuine, user-/app-driven geometry to the native window. Seam for tests to observe. */
     protected void forwardWindowBounds(Rectangle bounds) {
-        FlutterNative.setBounds(windowContext, bounds.x, bounds.y, bounds.width, bounds.height,
-                bounds.x, bounds.y, bounds.width, bounds.height);
+        // A shell not laid out yet carries a placeholder size. A window collapsed to a pixel reports
+        // no viewport, so the handshake that would correct it never runs: keep the size it has.
+        if (bounds.width <= 1 || bounds.height <= 1) return;
+        windowOrigin = new Point(bounds.x, bounds.y);
+        placeNativeWindow(windowContext, toWindowUnits(bounds));
+    }
+
+    @Override
+    public boolean hostsActiveWindow(Object shell) {
+        if (!(shell instanceof Shell) || ((Shell) shell).isDisposed()) return false;
+        // A detached shell has a window of its own and answers for that one; every other shell is
+        // drawn inside the Display's window and answers for it.
+        for (NativeShellWindow w : shellWindowsToPump) {
+            if (w.shell == shell) return w.isActive();
+        }
+        return hasNativeWindow() && windowActive(windowContext);
+    }
+
+    /**
+     * Whether a bridge library old enough to predate {@link FlutterNative#isActive} is in use. Asked
+     * once: the symbol does not appear while the process runs.
+     */
+    private static boolean canAskWhetherActive = true;
+
+    /** Test seam: whether the OS gives this native window the keyboard focus. */
+    protected boolean windowActive(long context) {
+        if (!canAskWhetherActive)
+            return true;
+        try {
+            return FlutterNative.isActive(context);
+        } catch (UnsatisfiedLinkError builtBeforeThisQuestionExisted) {
+            // Fail open, which is what the Display answered before it asked at all. Answering "not
+            // active" instead would leave getActiveShell() permanently null against such a library,
+            // and every caller that reads it -- dialog parenting, focus restoration -- would see no
+            // active shell at all rather than an occasionally optimistic one.
+            canAskWhetherActive = false;
+            return true;
+        }
+    }
+
+    @Override
+    public Point getWindowOrigin(DartControl control) {
+        // Nothing to add: a desk shell's bounds are already where it is on screen, because
+        // applyWindowOrigin keeps them in step with the window the OS actually placed. The caller
+        // sums the shell's bounds and this origin, so answering with the window position counts it
+        // twice -- a control 20 px inside a shell at (100, 100) maps to 220 instead of 120, and every
+        // screen coordinate derived from it (a popup's location, a drag's target, a hit test) is off
+        // by a whole shell origin. The base class answers (0, 0) for a bridge whose shells are
+        // positioned inside a viewport instead; this override exists only to say that desk is not one.
+        return keepsMainShellOrigin() ? new Point(0, 0) : new Point(windowOrigin.x, windowOrigin.y);
     }
 
     /**
@@ -317,47 +972,61 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setWindowTitle(DartControl control, String title) {
         if (isMainWindow(control)) {
-            FlutterNative.setTitle(windowContext, title == null ? "" : title);
+            setMainWindowTitle(title);
+            return;
         }
+        super.setWindowTitle(control, title);
     }
 
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
-        if (!isMainWindow(control) || bounds == null) {
+        if (!isMainWindow(control)) {
+            super.setBounds(control, bounds);
             return;
         }
-        // Applying a client-reported resize (the main shell being slaved to the window viewport by
-        // applyClientViewport()/setVisible()): the window already has this size, so echoing it back
-        // fights the window manager and oscillates — the resize loop. Only genuine app-driven geometry
-        // reaches the OS window.
+        noteBoundsSet(control);
+        if (bounds == null) {
+            return;
+        }
+        // Geometry that came FROM the window must not be commanded back onto it -- that round trip is
+        // the resize loop. The client is still told: it is what positions a popup.
         if (applyingClientBounds) {
+            super.setBounds(control, bounds);
             return;
         }
         Shell shell = (Shell) ((DartShell) control).getApi();
         if (shell.getMaximized() || shell.getFullScreen()) {
             return;
         }
-        forwardWindowBounds(bounds);
+        windowShell = shell;
+        forwardWindowBounds(windowBoundsFor(bounds));
     }
 
     @Override
     public void setWindowMaximized(DartControl control, boolean maximized) {
         if (isMainWindow(control)) {
-            FlutterNative.setState(windowContext, maximized ? 1 : 0);
+            setShellWindowState(windowContext, maximized ? ShellWindow.STATE_MAXIMIZED : ShellWindow.STATE_NORMAL);
+            return;
         }
+        super.setWindowMaximized(control, maximized);
     }
 
     @Override
     public void setWindowMinimized(DartControl control, boolean minimized) {
         if (isMainWindow(control)) {
-            FlutterNative.setState(windowContext, minimized ? 2 : 0);
+            setShellWindowState(windowContext, minimized ? ShellWindow.STATE_MINIMIZED : ShellWindow.STATE_NORMAL);
+            return;
         }
+        super.setWindowMinimized(control, minimized);
     }
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        if (fullScreen) fillMonitorIfUnsized(control);
         if (isMainWindow(control)) {
-            FlutterNative.setState(windowContext, fullScreen ? 3 : 0);
+            setShellWindowState(windowContext, fullScreen ? ShellWindow.STATE_FULLSCREEN : ShellWindow.STATE_NORMAL);
+            return;
         }
+        super.setWindowFullScreen(control, fullScreen);
     }
 }

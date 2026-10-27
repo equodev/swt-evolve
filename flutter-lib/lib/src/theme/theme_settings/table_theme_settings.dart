@@ -64,6 +64,11 @@ TableThemeExtension _getTableTheme({
     rowHoverBackgroundColor: colorScheme.surfaceVariant,
     rowSelectedBorderColor: colorScheme.primary,
     rowSelectedBorderWidth: 2.0,
+
+    // Drag and drop
+    dropFeedbackLineWidth: 2.0,
+    dropFeedbackHighlightAlpha: 90,
+    dragImageOpacity: 0.85,
     
     // Header colors
     headerBackgroundColor: colorScheme.surfaceVariant,
@@ -133,6 +138,8 @@ TableThemeExtension _getTableTheme({
     eventDefaultX: 0,
     eventDefaultY: 0,
     eventDefaultDetail: 0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -161,17 +168,22 @@ Color getTableCellDefaultTextColor(
 }
 
 Color getTableRowTextColor(
+  BuildContext context,
   VTableItem state,
   TableThemeExtension widgetTheme,
   bool selected,
   bool enabled, {
   VColor? parentForeground,
+  Color? background,
 }) {
   return getForegroundColor(
+    context: context,
     // The row's own colour, else the Table's: an item with no colour of its own takes the
     // control's, the way SWT resolves it.
     foreground: state.foreground ?? parentForeground,
     defaultColor: getTableCellDefaultTextColor(widgetTheme, selected, enabled),
+    minContrast: widgetTheme.minTextContrast,
+    background: background,
   );
 }
 
@@ -200,14 +212,17 @@ Color getTableRowBackgroundColor(
 }
 
 Color getTableHeaderTextColor(
+  BuildContext context,
   VTable state,
   TableThemeExtension widgetTheme,
 ) {
   final defaultColor = widgetTheme.headerTextColor;
   
   return getForegroundColor(
+    context: context,
     foreground: state.headerForeground,
     defaultColor: defaultColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

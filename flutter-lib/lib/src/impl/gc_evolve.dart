@@ -8,6 +8,7 @@ import '../theme/theme_extensions/composite_theme_extension.dart';
 import 'canvas_evolve.dart';
 import 'control_evolve.dart';
 import 'gcdrawer_evolve.dart';
+import 'owner_draw_overlay.dart';
 
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
@@ -56,10 +57,16 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   void _notifyParentGCSubscribed() {
+    final row = _ownerDrawnRow();
+    if (row != null) {
+      row.onGCSubscribed();
+      return;
+    }
     context.visitAncestorElements((element) {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
+          _drawer.widgetContext = element;
           if (parentState is ControlImpl) parentState.onGCOverlaySubscribed();
           return false;
         }
@@ -73,6 +80,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     _drawer.dispose();
     super.dispose();
   }
+
+  /// What this GC currently paints, innermost shapes included. Read by the test harness: GC
+  /// content reaches the screen as pixels and appears in no widget's serialized state, so without
+  /// this a PaintListener's whole output is invisible to anything but a screenshot.
+  List<Shape> get paintOps =>
+      _drawer.shapes.isNotEmpty ? List.unmodifiable(_drawer.shapes) : List.unmodifiable(_snapshot);
 
   void clearShapes() {
     if (mounted) {
@@ -118,17 +131,28 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void _notifyParentGCReady() {
     final bool ready =
         _stateDelivered || _drawer.shapes.isNotEmpty || _snapshot.isNotEmpty;
+    final row = _ownerDrawnRow();
+    if (row != null) {
+      if (ready) row.onGCReady();
+      return;
+    }
     context.visitAncestorElements((element) {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
           if (ready) parentState.notifyGCReady(state as VGC);
-          _drawer.widgetBoundaryKey = parentState.widgetBoundaryKey;
+          _drawer.widgetContext = element;
           return false;
         }
       }
       return true;
     });
+  }
+
+  /// The owner-drawn Table/Tree row this GC paints, when it is one.
+  OwnerDrawnRowOverlayState? _ownerDrawnRow() {
+    final row = context.findAncestorStateOfType<OwnerDrawnRowOverlayState>();
+    return row != null && row.gcKey == widget.key ? row : null;
   }
 
   CanvasThemeExtension get _canvasTheme =>
@@ -162,8 +186,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       // every other control. The GC's colors stay with the shapes: taking them here made an
       // owner-drawn control erase in the application's color while the trim around it used the
       // theme's, leaving the control as a visible block against its host.
+      // A Canvas with no ground of its own erases to nothing rather than to the theme's drawing
+      // surface: that surface is not what the surrounding Composite paints, so erasing to it is
+      // what turns a Canvas the size of its own label into a block hugging the text.
       final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      if (canvasState != null) return canvasState.bg;
+      if (canvasState != null) return canvasState.ownGround ?? Colors.transparent;
       return Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
     }
     return Colors.transparent;
@@ -177,9 +204,13 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         : List.unmodifiable(_snapshot);
     // No shapes to paint over: skip the backdrop, it was redundantly occluding the
     // Control/Canvas's own background (including any inherited backgroundImage).
-    final Widget painted = CustomPaint(
-      size: bounds,
-      painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
+    // Its own layer: what Java paints into a control changes on Java's schedule, not its
+    // neighbours'.
+    final Widget painted = RepaintBoundary(
+      child: CustomPaint(
+        size: bounds,
+        painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
+      ),
     );
     // Expose any text painted via the GC (drawString/drawText) as an aria-label so
     // canvas-drawn controls (e.g. custom buttons) are identifiable in devtools / E2E,

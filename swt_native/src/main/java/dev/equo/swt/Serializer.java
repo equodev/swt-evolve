@@ -32,6 +32,26 @@ public class Serializer {
     private static final ThreadLocal<int[]> depth = ThreadLocal.withInitial(() -> new int[1]);
 
     /**
+     * How many of the widgets enclosing the current point of the walk are being described to a
+     * client that does not hold them. Above zero, nothing is named: the client lets go of a widget
+     * together with everything under it, so a name inside one it lacks is a name it cannot resolve,
+     * and each costs it a request.
+     */
+    private static final ThreadLocal<int[]> insideUnheld = new ThreadLocal<>();
+
+    /** How many widget payloads this thread is writing; above zero, getters are being read for the client. */
+    private static final ThreadLocal<int[]> writing = ThreadLocal.withInitial(() -> new int[1]);
+
+    /**
+     * Whether a widget is being described for the client right now. A getter that has side effects
+     * on the application (a virtual item's SetData) checks this to tell a read for the wire apart
+     * from one the application made.
+     */
+    public static boolean isWriting() {
+        return writing.get()[0] > 0;
+    }
+
+    /**
      * Values that must be described in full on this pass, whatever their own state says.
      *
      * <p>A widget can be unchanged and still be the only way a change travels: the send path drops
@@ -55,6 +75,18 @@ public class Serializer {
     /** Ends what {@link #describeInFull(java.util.Set)} began. */
     public static void describeNormally() {
         describeInFull.remove();
+        sentSeparately.remove();
+    }
+
+    private static final ThreadLocal<java.util.Set<VWidget>> sentSeparately = new ThreadLocal<>();
+
+    /**
+     * Declares the values this flush sends on their own channels: a changed widget among them may
+     * be named inside its ancestor, since its change is already on its way.
+     */
+    public static void sendingSeparately(java.util.Set<VWidget> values) {
+        if (values == null || values.isEmpty()) sentSeparately.remove();
+        else sentSeparately.set(values);
     }
 
     // A widget is serialized both on its own channel and nested inside an ancestor's tree, and
@@ -88,8 +120,31 @@ public class Serializer {
     private static final ThreadLocal<java.util.List<Object[]>> written =
             ThreadLocal.withInitial(java.util.ArrayList::new);
 
-    private static void noteWritten(Object impl, VWidget value, long seq) {
-        written.get().add(new Object[]{value, seq, impl});
+    private static void noteWritten(Object impl, VWidget value, long seq, boolean whole) {
+        // The names are snapshotted here, not read back when the frame is credited: a property
+        // changed in between belongs to the next frame.
+        written.get().add(
+                new Object[]{value, seq, impl, whole, new java.util.HashSet<>(value.changedKeys())});
+    }
+
+    /** The value whose partial update is being written, or null while writing whole widgets. */
+    private static final ThreadLocal<Object[]> updating = ThreadLocal.withInitial(() -> new Object[1]);
+
+    /**
+     * True while {@code value}'s own properties are written as a partial update. False for a widget
+     * described whole, even inside another's update: the far side takes that as a replacement.
+     */
+    public static boolean writingUpdateOf(Object value) {
+        return value != null && updating.get()[0] == value;
+    }
+
+    /** What the walk in progress asked to be told once its frame has reached its client. */
+    private static final ThreadLocal<java.util.List<java.util.function.IntConsumer>> onDelivery =
+            ThreadLocal.withInitial(java.util.ArrayList::new);
+
+    /** Runs {@code action} with the client's connection once the frame being written is delivered, never if it is dropped. */
+    public static void whenDelivered(java.util.function.IntConsumer action) {
+        onDelivery.get().add(action);
     }
 
     /**
@@ -145,9 +200,17 @@ public class Serializer {
             discardWritten();
             return;
         }
+        for (Object value : writtenResources.get()) {
+            resourceDelivery.put(value, connection);
+        }
+        writtenResources.get().clear();
         for (Object[] entry : written.get()) {
             VWidget value = (VWidget) entry[0];
-            value.sent(connection, (Long) entry[1]);
+            @SuppressWarnings("unchecked")
+            java.util.Set<String> carried = (java.util.Set<String>) entry[4];
+            value.sent(connection, (Long) entry[1], carried);
+            // Described whole: a change back to the last update's value is a real change again.
+            if ((Boolean) entry[3]) lastSent.remove(value);
             // A delivered widget can be named instead of described from here on, and a name is only
             // any use if the far side can ask for the thing behind it. Being asked for is answered
             // by a lookup the widget only ever entered by being scheduled - which a widget written
@@ -155,11 +218,34 @@ public class Serializer {
             FlutterBridge.registerDelivered(entry[2]);
         }
         written.get().clear();
+        java.util.List<java.util.function.IntConsumer> actions = onDelivery.get();
+        if (!actions.isEmpty()) {
+            java.util.List<java.util.function.IntConsumer> run = new java.util.ArrayList<>(actions);
+            actions.clear();
+            for (java.util.function.IntConsumer action : run) action.accept(connection);
+        }
+    }
+
+    /** Takes the resources the last walk wrote without crediting them, for a send buffered before it travels. */
+    public static java.util.List<Object> takeWrittenResources() {
+        java.util.List<Object> pending = writtenResources.get();
+        if (pending.isEmpty()) return java.util.Collections.emptyList();
+        java.util.List<Object> taken = new java.util.ArrayList<>(pending);
+        pending.clear();
+        return taken;
+    }
+
+    /** Credits resources taken by {@link #takeWrittenResources()} once their buffer has been sent. */
+    public static void creditResources(java.util.List<Object> values, int connection) {
+        if (connection == 0) return;
+        for (Object value : values) resourceDelivery.put(value, connection);
     }
 
     /** Discards what the last walk recorded — for a serialize done only to look at the state. */
     public static void discardWritten() {
         written.get().clear();
+        writtenResources.get().clear();
+        onDelivery.get().clear();
     }
 
     /** Receives a serialized buffer that is only lent: it goes back to the pool once this returns. */
@@ -188,15 +274,20 @@ public class Serializer {
      */
     public void to(byte[] prefix, Object p, Lent sink) throws IOException {
         written.get().clear();
+        onDelivery.get().clear();
         depth.get()[0] = 0;
+        Object outerUpdating = updating.get()[0];
+        updating.get()[0] = null;
         JsonWriter writer = borrowWriter();
         try {
             java.util.Map<Object, Object> outerScope = payloadScope.get();
             payloadScope.set(EMPTY_SCOPE);
+            writing.get()[0]++;
             try {
                 writePrefix(writer, prefix);
                 dsl.serialize(writer, p);
             } finally {
+                writing.get()[0]--;
                 if (outerScope == null) {
                     payloadScope.remove();
                 } else {
@@ -205,6 +296,7 @@ public class Serializer {
             }
             sink.accept(writer.getByteBuffer(), writer.size());
         } finally {
+            updating.get()[0] = outerUpdating;
             writerPool.get().addFirst(writer);
         }
     }
@@ -311,7 +403,7 @@ public class Serializer {
         }
         // Identity stub. A null here is undecodable where the reference sits inside a widget array
         // (children, items) and would abort the ancestor's payload; style is read off the api
-        // field, not a checkWidget()-guarded getter, so it is safe on a disposed widget.
+        // field, not getStyle(), which refuses a disposed widget as SWT's does.
         //
         // No write stamp, for the same reason a reference carries none: this says which widget, not
         // what it holds. Stamping it made the far side record a state it had not been given and
@@ -319,7 +411,7 @@ public class Serializer {
         // not hold, and the stub itself, being newer than everything, displaced the real widget.
         if (converter == null || disposed) {
             writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-            NumberConverter.serialize(api.getStyle(), writer);
+            NumberConverter.serialize(org.eclipse.swt.widgets.WidgetHelper.styleOf(api), writer);
             writer.writeByte((byte)'}');
             return;
         }
@@ -333,14 +425,22 @@ public class Serializer {
         // be relative to a state nobody was ever sent. The send path applies these once the bytes
         // are on their way; nested children are collected here too, since only this walk knows
         // which ones it wrote.
-        noteWritten(impl, value, seq);
+        boolean unheld = value.sentSeq(target.get()) == 0;
+        noteWritten(impl, value, seq, true);
         depth.get()[0]++;
+        int[] unheldCount = null;
+        if (unheld) {
+            unheldCount = insideUnheld.get();
+            if (unheldCount == null) insideUnheld.set(unheldCount = new int[1]);
+            unheldCount[0]++;
+        }
         try {
             if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
             else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
             else writer.getByteBuffer()[writer.size() - 1] = '}';
         } finally {
             depth.get()[0]--;
+            if (unheldCount != null) unheldCount[0]--;
         }
     }
 
@@ -350,7 +450,8 @@ public class Serializer {
      * <p>Four things have to hold. It has to be nested — the widget a frame is about is always
      * described in full, or the frame says nothing. The far side has to already hold it, which its
      * write stamp records: a widget that has been written has been delivered, on its own channel or
-     * inside an ancestor. Nothing about it can have changed, or the reference would be the only
+     * inside an ancestor; and none of the widgets it sits in may be one the far side lacks, see
+     * {@link #insideUnheld}. Nothing about it can have changed, or the reference would be the only
      * mention of a change and it would be lost. And nothing beneath it can be travelling through it
      * either — see {@link #describeInFull(java.util.Set)}.
      *
@@ -360,11 +461,15 @@ public class Serializer {
      * it holds.
      */
     private static boolean canReference(VWidget value, boolean stateless) {
-        if (!diffEnabled || depth.get()[0] == 0) return false;
+        if (!mayReference() || depth.get()[0] == 0) return false;
         if (value.sentSeq(target.get()) == 0) return false;
+        int[] unheldCount = insideUnheld.get();
+        if (!stateless && unheldCount != null && unheldCount[0] > 0) return false;
         java.util.Set<VWidget> required = describeInFull.get();
         if (required != null && required.contains(value)) return false;
-        return stateless || !value.anyDirty();
+        if (stateless || !value.anyDirty()) return true;
+        java.util.Set<VWidget> separate = sentSeparately.get();
+        return separate != null && separate.contains(value);
     }
 
     /**
@@ -388,6 +493,33 @@ public class Serializer {
      */
     public static final boolean diffEnabled = !"false".equalsIgnoreCase(System.getProperty("equo.swt.diff"));
 
+    /**
+     * How many clients each comm is currently serving.
+     *
+     * <p>Delivery is recorded against a connection id, and every client on one comm shares that id:
+     * a widget described to one is then recorded as delivered, and the next client is handed a name
+     * for something it was never given. It recovers by asking for the widget, but only after a round
+     * trip, and it does so for every widget it was named rather than described — which, with a window
+     * per shell, is most of them. So while any comm serves more than one client, nothing is named.
+     *
+     * <p>Kept per comm rather than as one flag because a second comm serving one client says nothing
+     * about the first, and the direction that is safe to be wrong in is describing too much.
+     */
+    private static final java.util.concurrent.ConcurrentHashMap<Object, Integer> clientsPerComm =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Records how many clients {@code comm} is serving; see {@link #clientsPerComm}. */
+    public static void clientsConnected(Object comm, int count) {
+        if (comm == null) return;
+        if (count <= 1) clientsPerComm.remove(comm);
+        else clientsPerComm.put(comm, count);
+    }
+
+    /** Whether a widget may travel as a name rather than as a description. */
+    private static boolean mayReference() {
+        return diffEnabled && clientsPerComm.isEmpty();
+    }
+
     /** Whether {@code impl} can be described by what changed rather than in full. */
     public static boolean canDiff(DartWidget impl) {
         return canDiff(impl, target.get());
@@ -396,10 +528,9 @@ public class Serializer {
     /**
      * Forgets that {@code value} was ever delivered, to anyone.
      *
-     * <p>For a client that says it does not hold a widget. Until this, asking for one re-sent it as
-     * what had changed since a state the asker did not have, with everything under it named rather
-     * than described - so the answer to "I do not have this" was a frame that named more things the
-     * asker did not have, and it asked again for each.
+     * <p>For a client that does not hold a widget, or may have let go of it: the next write describes
+     * it in full rather than by what changed since a state that client lacks, and everything under it
+     * with it (see {@link #insideUnheld}).
      */
     public static void forgetDelivery(VWidget value) {
         if (value != null) value.sent(0, 0L);
@@ -407,7 +538,9 @@ public class Serializer {
 
     /** Whether {@code impl} can be described to {@code connection} by what changed rather than in full. */
     public static boolean canDiff(DartWidget impl, int connection) {
-        if (!diffEnabled || impl == null) return false;
+        // Same reason a widget may not be named while several clients share a connection id: a change
+        // is relative to a state this client may never have been sent. See mayReference().
+        if (!mayReference() || impl == null) return false;
         VWidget value = impl.getValue();
         // Never sent whole, so there is no state on the far side for a change to be relative to.
         return value != null && value.sentSeq(connection) != 0 && value.anyDirty();
@@ -430,41 +563,217 @@ public class Serializer {
         return copy[0];
     }
 
+    /** Per value, the hash and connection of each property last sent. */
+    private static final java.util.Map<VWidget, java.util.Map<String, long[]>> lastSent =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * The changed properties whose bytes differ from what this client last received: written state
+     * is often re-derived identical, and even a small property alone costs a whole frame.
+     */
+    private static java.util.List<String> worthSending(VWidget value, JsonWriter scratch) {
+        java.util.List<String> keys = new java.util.ArrayList<>(value.changedKeys().size());
+        int connection = target.get();
+        for (String key : value.changedKeys()) {
+            scratch.reset();
+            value.writeDiff(scratch, java.util.Collections.singletonList(key));
+            int size = scratch.size();
+            long hash = hashOf(scratch.getByteBuffer(), size);
+            java.util.Map<String, long[]> seen =
+                    lastSent.computeIfAbsent(value, v -> new java.util.HashMap<>());
+            long[] previous = seen.get(key);
+            if (previous != null && previous[0] == connection && previous[1] == hash) {
+                continue;
+            }
+            seen.put(key, new long[] { connection, hash });
+            keys.add(key);
+        }
+        return keys;
+    }
+
+    /**
+     * The client changed {@code key} itself, so what it was last sent no longer says what it holds:
+     * the next change of that property is sent even when it matches that last value.
+     */
+    public static void clientChanged(VWidget value, String key) {
+        java.util.Map<String, long[]> seen = lastSent.get(value);
+        if (seen != null)
+            seen.remove(key);
+    }
+
+    /** {@link #lastSent} for resources, whose state a client may also be given whole or by name. */
+    private static final java.util.Map<VResource, java.util.Map<String, long[]>> lastSentResource =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** {@link #worthSending(VWidget, JsonWriter)} for a resource's changed properties. */
+    private static java.util.List<String> worthSending(VResource value, JsonWriter scratch) {
+        java.util.List<String> keys = new java.util.ArrayList<>(value.changedKeys().size());
+        int connection = target.get();
+        java.util.Map<String, long[]> seen = lastSentResource.computeIfAbsent(value, v -> new java.util.HashMap<>());
+        for (String key : value.changedKeys()) {
+            scratch.reset();
+            value.writeDiff(scratch, java.util.Collections.singletonList(key));
+            long hash = hashOf(scratch.getByteBuffer(), scratch.size());
+            long[] previous = seen.get(key);
+            if (previous != null && previous[0] == connection && previous[1] == hash) continue;
+            seen.put(key, new long[] { connection, hash });
+            keys.add(key);
+        }
+        return keys;
+    }
+
+    /**
+     * The client was given [value] whole (or by a name for its whole state): what it holds per
+     * property is no longer what the changes before recorded.
+     */
+    public static void forgetSentProperties(VResource value) {
+        lastSentResource.remove(value);
+    }
+
+    private static long hashOf(byte[] bytes, int length) {
+        long hash = 0xcbf29ce484222325L;
+        for (int i = 0; i < length; i++) {
+            hash = (hash ^ (bytes[i] & 0xFF)) * 0x100000001b3L;
+        }
+        return hash;
+    }
+
     /** {@link #toDiff(DartWidget)} behind {@code prefix}, lent to {@code sink} as {@link #to(byte[], Object, Lent)} does. */
     public void toDiff(byte[] prefix, DartWidget impl, Lent sink) {
         written.get().clear();
+        onDelivery.get().clear();
         depth.get()[0] = 0;
+        Object outerUpdating = updating.get()[0];
         JsonWriter writer = borrowWriter();
+        writing.get()[0]++;
         try {
             writePrefix(writer, prefix);
             VWidget value = impl.getValue();
+            updating.get()[0] = value;
             long seq = writeSeq.incrementAndGet();
             writer.writeByte((byte) '{');
             writeKeyValue(writer, "id", FlutterBridge.id(impl.getApi()));
             writeKeyValue(writer, "swt", swtWidgetName(impl, impl.getApi()));
             writeKeyValue(writer, "_s", seq);
             writeKeyValue(writer, "_b", value.sentSeq(target.get()));
+            // The widget being described is this one; everything its properties name is nested.
+            depth.get()[0]++;
+            java.util.List<String> keys;
+            byte[] body;
+            try {
+                JsonWriter scratch = borrowWriter();
+                try {
+                    keys = worthSending(value, scratch);
+                    scratch.reset();
+                    value.writeDiff(scratch, keys);
+                    body = java.util.Arrays.copyOf(scratch.getByteBuffer(), scratch.size());
+                } finally {
+                    writerPool.get().addFirst(scratch);
+                }
+            } finally {
+                depth.get()[0]--;
+            }
+            // Nothing new for the client: drop the frame, and keep the write stamp so the next
+            // update is still measured from the last frame this client received.
+            if (keys.isEmpty()) {
+                value.clearDirty();
+                onDelivery.get().clear();
+                return;
+            }
             writeKey(writer, "_d");
             writer.writeByte((byte) '[');
             boolean first = true;
-            for (String key : value.changedKeys()) {
+            for (String key : keys) {
                 if (!first) writer.writeByte((byte) ',');
                 first = false;
                 StringConverter.serialize(key, writer);
             }
             writer.writeByte((byte) ']');
             writer.writeByte((byte) ',');
-            // The widget being described is this one; everything its properties name is nested.
+            writer.writeAscii(body);
+            // Every pair leaves a trailing comma; the last one becomes the closing brace.
+            writer.getByteBuffer()[writer.size() - 1] = '}';
+            noteWritten(impl, value, seq, false);
+            sink.accept(writer.getByteBuffer(), writer.size());
+        } finally {
+            writing.get()[0]--;
+            updating.get()[0] = outerUpdating;
+            writerPool.get().addFirst(writer);
+        }
+    }
+
+    /** A fresh write stamp, for a state that reached the client without a stamped write. */
+    public static long nextWriteStamp() {
+        return writeSeq.incrementAndGet();
+    }
+
+    /** Whether a resource may be described by what changed, under the same rule as a widget. */
+    public static boolean mayDiffResources() {
+        return mayReference();
+    }
+
+    /**
+     * Writes {@code impl} whole behind {@code prefix}, with a write stamp of its own, and returns the
+     * stamp: the state a later {@link #toDiff(byte[], DartResource, long, Lent)} is relative to.
+     */
+    public long toStamped(byte[] prefix, DartResource impl, Lent sink) {
+        written.get().clear();
+        depth.get()[0] = 0;
+        JsonWriter writer = borrowWriter();
+        try {
+            writePrefix(writer, prefix);
+            Object value = impl.getValue();
+            long seq = writeBodyWithId(dsl, writer, FlutterBridge.id(impl), FlutterBridge.widgetName(impl),
+                    (FormatConverter) dsl.tryFindWriter(value.getClass()), value, null, true);
+            sink.accept(writer.getByteBuffer(), writer.size());
+            return seq;
+        } finally {
+            writerPool.get().addFirst(writer);
+        }
+    }
+
+    /**
+     * Writes {@code impl} behind {@code prefix} as the properties that changed since {@code base},
+     * the stamp of the state the far side holds, and returns the new stamp. Leaner than a widget's
+     * change: a resource's channel already names it and delivers in order, and its drawer merges
+     * whatever keys arrive, so the frame carries no id, stamps or changed names ({@code _d} only
+     * marks it a change) and its colours are packed.
+     */
+    public long toDiff(byte[] prefix, DartResource impl, long base, Lent sink) {
+        written.get().clear();
+        depth.get()[0] = 0;
+        JsonWriter writer = borrowWriter();
+        try {
+            writePrefix(writer, prefix);
+            VResource value = impl.getValue();
+            long seq = writeSeq.incrementAndGet();
+            writer.writeByte((byte) '{');
+            // The resource being described is this one; everything its properties name is nested.
             depth.get()[0]++;
+            java.util.List<String> keys;
             try {
-                value.writeDiff(writer);
+                JsonWriter scratch = borrowWriter();
+                try {
+                    keys = worthSending(value, scratch);
+                } finally {
+                    writerPool.get().addFirst(scratch);
+                }
+                // Nothing the client does not already hold: no frame, and the state it holds stays current.
+                if (keys.isEmpty()) return base;
+                writeKeyValue(writer, "_d", 0);
+                packColors.get()[0] = true;
+                try {
+                    value.writeDiff(writer, keys);
+                } finally {
+                    packColors.get()[0] = false;
+                }
             } finally {
                 depth.get()[0]--;
             }
             // Every pair leaves a trailing comma; the last one becomes the closing brace.
             writer.getByteBuffer()[writer.size() - 1] = '}';
-            noteWritten(impl, value, seq);
             sink.accept(writer.getByteBuffer(), writer.size());
+            return seq;
         } finally {
             writerPool.get().addFirst(writer);
         }
@@ -533,8 +842,20 @@ public class Serializer {
     public static void writeKeyValue(JsonWriter writer, String key, Object value) {
         writeKey(writer, key);
         if (value == null) writer.writeNull();
+        else if (value instanceof Color && packColors.get()[0]) writeArgb(writer, (Color) value);
         else writer.serializeObject(value);
         writer.writeByte((byte) ',');
+    }
+
+    /**
+     * Set while a resource's change is written: a colour it names directly goes as one ARGB number
+     * rather than an object, a GC changing colour on nearly every draw.
+     */
+    private static final ThreadLocal<boolean[]> packColors = ThreadLocal.withInitial(() -> new boolean[1]);
+
+    private static void writeArgb(JsonWriter writer, Color color) {
+        long argb = ((long) color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+        NumberConverter.serialize(argb, writer);
     }
 
     private static void writeKey(JsonWriter writer, String key) {
@@ -556,17 +877,67 @@ public class Serializer {
         // A composite whose layout is the e4 SashLayout and whose direct children are the
         // part-stacks is the main workbench area regardless of how deep the perspective nests
         // it -- serialize it as a MainComposite so the parts get the panel treatment
-        // (gap/border/shadow). The construction-time path check (Config.isMainComposite)
-        // misses perspectives that nest the sash container differently, and the layout is only
-        // set after construction, so this resolves it here at serialize time.
-        if (api instanceof Composite && Config.isMainSashComposite(((Composite) api))) { Composite composite = (Composite) api;
-            return "MainComposite";
-        }
-        return apiName;
+        // (gap/border/shadow). FlutterBridge.widgetName addresses it by the same rule.
+        String presentedAs = Config.presentedName(impl, apiName);
+        Config.describedAs(impl, presentedAs);
+        return presentedAs;
     }
 
     private static boolean isOwnPackage(Class<? extends Widget> aClass) {
         return aClass.getPackage().getName().startsWith("org.eclipse.swt") || aClass.getPackage().getName().startsWith("com.equo.chromium");
+    }
+
+    /** Per resource value, the client it has been given to; {@code getValue()} caches, so identity is the resource's. */
+    private static final java.util.Map<Object, Integer> resourceDelivery =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Resources this walk described, credited once the bytes are on their way. */
+    private static final ThreadLocal<java.util.List<Object>> writtenResources =
+            ThreadLocal.withInitial(java.util.ArrayList::new);
+
+    /**
+     * Writes a resource in full the first time this client sees it, and by name after that. Relies
+     * on resource content not changing, except a GC-drawn image, which {@link #forgetResource} drops.
+     */
+    public static <T extends DartResource> void writeResourceWithReference(DslJson json, JsonWriter writer, T impl) {
+        if (impl == null || impl.isDisposed()) {
+            writer.writeNull();
+            return;
+        }
+        Object value = impl.getValue();
+        if (canReferenceResource(value)) {
+            writer.writeByte((byte) '{');
+            writeKeyValue(writer, "id", FlutterBridge.id(impl));
+            writeKeyValue(writer, "swt", FlutterBridge.widgetName(impl));
+            writeReference(writer);
+            return;
+        }
+        // Record only what the client keeps: an empty image (pixels coming later under a render
+        // ref) is not kept, and naming it would hand the client a blank.
+        if (worthNaming(value)) writtenResources.get().add(value);
+        writeResourceWithId(json, writer, impl);
+    }
+
+    /** Whether {@code value} carries something the far side will keep and can be named by later. */
+    private static boolean worthNaming(Object value) {
+        if (!(value instanceof VImage)) return false;
+        VImage image = (VImage) value;
+        return image.getImageData() != null || image.getSvgContent() != null;
+    }
+
+    /**
+     * Whether this client already holds {@code value}. Nesting depth does not apply: a resource is
+     * never the subject of its frame, and GC ops do not count depth.
+     */
+    private static boolean canReferenceResource(Object value) {
+        if (!diffEnabled) return false;
+        Integer given = resourceDelivery.get(value);
+        return given != null && given.equals(target.get());
+    }
+
+    /** Forgets that {@code value} was delivered, for a resource whose content has changed under it. */
+    public static void forgetResource(Object value) {
+        if (value != null) resourceDelivery.remove(value);
     }
 
     public static <T extends DartResource> void writeResourceWithId(DslJson json, JsonWriter writer, T impl) {
@@ -601,9 +972,10 @@ public class Serializer {
      *     the same id is dropped. A body that changes after it is first sent therefore needs a
      *     stamp; one that never changes does not, and is cheaper without.
      */
-    private static void writeBodyWithId(DslJson json, JsonWriter writer, long id, String swtName,
+    private static long writeBodyWithId(DslJson json, JsonWriter writer, long id, String swtName,
                                          FormatConverter converter, Object value, Integer style,
                                          boolean stamped) {
+        long seq = 0;
         boolean alwaysSerialize = !json.omitDefaults;
         writer.writeByte((byte)'{');
         writer.writeByte((byte)'"'); writer.writeAscii(name_id); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
@@ -614,11 +986,12 @@ public class Serializer {
         if (stamped) {
             writer.writeByte((byte)',');
             writer.writeByte((byte)'"'); writer.writeAscii(name_seq); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-            NumberConverter.serialize(writeSeq.incrementAndGet(), writer);
+            seq = writeSeq.incrementAndGet();
+            NumberConverter.serialize(seq, writer);
         }
         if (converter == null) {
             writer.writeByte((byte)'}');
-            return;
+            return seq;
         }
         writer.writeByte((byte)',');
         if (style != null) {
@@ -629,6 +1002,7 @@ public class Serializer {
         if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';
+        return seq;
     }
 
 }

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * Regression: {@code Tree.getItem(Point)} used to derive the item from {@code point.y}
@@ -21,7 +21,6 @@ import static org.eclipse.swt.widgets.Mocks.swtShell;
  * {@code flutter-lib/test/tree_expander_geometry_test.dart}: with {@code TREE_WIDTH} the arrow of a
  * root item spans x in [16.25, 28.25) and, one level in, [32.25, 44.25).
  */
-@DisabledOnOs(OS.LINUX)
 class TreeGetItemOverExpanderTest extends SerializeTestBase {
 
     private static final int TREE_WIDTH = 300;
@@ -36,7 +35,7 @@ class TreeGetItemOverExpanderTest extends SerializeTestBase {
     private int rowHeight;
 
     private void createTree() {
-        tree = new Tree(swtShell(), SWT.BORDER);
+        tree = new Tree(shell(), SWT.BORDER);
         tree.setBounds(0, 0, TREE_WIDTH, 400);
 
         branch = new TreeItem(tree, SWT.NONE);

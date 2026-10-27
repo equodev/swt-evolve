@@ -108,7 +108,7 @@ public class SwtStackLayout extends SwtLayout implements IStackLayout {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;

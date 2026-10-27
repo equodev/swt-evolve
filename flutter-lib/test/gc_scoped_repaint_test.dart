@@ -51,11 +51,11 @@ void main() {
       deliver('GC/$id/drawLineintintintint',
           {'x1': line[0], 'y1': line[1], 'x2': line[2], 'y2': line[3]});
     }
-    deliver('GC/$id/setBackgroundColor', {'color': {'red': 221, 'green': 221, 'blue': 221}});
+    deliver('GC/$id/setBackgroundColor', {'color': {'r': 221, 'g': 221, 'b': 221}});
     deliver('GC/$id/fillRectangleintintintint',
         {'x': 0, 'y': 0, 'width': 99, 'height': 39});
     if (hover) {
-      deliver('GC/$id/setBackgroundColor', {'color': {'red': 51, 'green': 153, 'blue': 255}});
+      deliver('GC/$id/setBackgroundColor', {'color': {'r': 51, 'g': 153, 'b': 255}});
     }
     deliver('GC/$id/fillRectangleintintintint',
         {'x': 100, 'y': 0, 'width': 99, 'height': 39});
@@ -120,7 +120,7 @@ void main() {
     // frames composite on top of each other there.
     const transparent = Color(0x00000000);
     void fillCell(int id, {required int width, required int height}) {
-      deliver('GC/$id/setBackgroundColor', {'color': {'red': 200, 'green': 0, 'blue': 0}});
+      deliver('GC/$id/setBackgroundColor', {'color': {'r': 200, 'g': 0, 'b': 0}});
       deliver('GC/$id/fillRectangleintintintint',
           {'x': 100, 'y': 0, 'width': width, 'height': height});
     }

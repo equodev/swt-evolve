@@ -1,0 +1,142 @@
+package dev.equo.swt.awt;
+
+import org.eclipse.swt.graphics.Rectangle;
+import org.junit.jupiter.api.Test;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * The frame is created before the window opens, while the canvas still reports a 0x0 client area.
+ * A {@code JSplitPane} keeps recomputing its divider from its children's preferred sizes until it
+ * has been painted once, so if it is painted at a placeholder size its top component stays squeezed
+ * when the frame grows.
+ *
+ * <p>A panel stands in for the frame: constructing an AWT frame needs a display, and CI runs
+ * headless. {@link #resizeAndPaint} mirrors {@code JLightweightFrame.reshape}, which allocates no
+ * buffer, and so paints nothing, at 0x0. The tree is never shown, so it is laid out and painted on
+ * the test thread: on macOS this suite gives the main thread to Cocoa and the AWT event queue never
+ * runs.
+ */
+class SwingHostInitialSizeTest {
+
+    private static final int VIEWPORT_HEIGHT = 100;
+    private static final int INNER_DIVIDER = 200;
+    private static final int OUTER_DIVIDER = 600;
+
+    @Test
+    void anIslandFrameKeepsAnEmptyTablesPreferredHeightAboveTheDivider() {
+        JSplitPane split = splitWithEmptyTable();
+        JPanel frame = new JPanel(new BorderLayout());
+        frame.add(split);
+
+        EvolveSwingHost.sizeFrame(frame, new Rectangle(0, 0, 0, 0));
+        layOutAndPaint(frame);
+        EvolveSwingHost.sizeFrame(frame, new Rectangle(0, 0, 420, 468));
+        layOutAndPaint(frame);
+
+        assertTableAreaKept(split);
+    }
+
+    @Test
+    void aBlittedFrameKeepsAnEmptyTablesPreferredHeightAboveTheDivider() {
+        JSplitPane split = splitWithEmptyTable();
+        EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
+        root.add(split);
+        JPanel frame = new JPanel(new BorderLayout());
+        frame.add(root);
+
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 0, 0));
+        layOutAndPaint(frame);
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 420, 468));
+        layOutAndPaint(frame);
+
+        assertTableAreaKept(split);
+    }
+
+    @Test
+    void contentThatRepaintsFromItselfKeepsItsDividersWhenAddedBeforeTheFrameHasASize() {
+        JSplitPane inner = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JLabel("Selection"), new JLabel("Units"));
+        inner.setDividerLocation(INNER_DIVIDER);
+        JSplitPane outer = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inner, new JPanel());
+        outer.setDividerLocation(OUTER_DIVIDER);
+        JPanel applet = new JPanel(new BorderLayout());
+        applet.add(outer);
+        EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
+        JPanel frame = new JPanel(new BorderLayout());
+        frame.add(root);
+
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 0, 0));
+        root.host(applet);
+        paintFromItselfIfInTree(applet, frame);
+        EvolveSwingHost.sizeBlitFrame(frame, root, new Rectangle(0, 0, 384, 820));
+        layOutAndPaint(frame);
+
+        int units = inner.getBottomComponent().getHeight();
+        int expected = OUTER_DIVIDER - INNER_DIVIDER - 2 * outer.getDividerSize();
+        assertTrue(units >= expected, "middle pane " + units + " px high, expected at least " + expected);
+    }
+
+    /**
+     * An applet is its own repaint root: Swing paints it at its own bounds, with nothing above it
+     * consulted, as soon as it is part of a displayable tree. Here that tree is the frame's.
+     */
+    private static void paintFromItselfIfInTree(JPanel applet, JPanel frame) {
+        if (!SwingUtilities.isDescendingFrom(applet, frame)) return;
+        applet.setSize(applet.getPreferredSize());
+        layOut(applet);
+        paintInto(applet);
+    }
+
+    private static JSplitPane splitWithEmptyTable() {
+        JTable table = new JTable(new DefaultTableModel(new String[] {"Name", "Type", "Age", "Update Date"}, 0));
+        table.setPreferredScrollableViewportSize(new Dimension(400, VIEWPORT_HEIGHT));
+        return new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), new JLabel("Details"));
+    }
+
+    private static void assertTableAreaKept(JSplitPane split) {
+        int top = split.getTopComponent().getHeight();
+        assertTrue(top >= VIEWPORT_HEIGHT,
+                "table area " + top + " px high, expected at least its " + VIEWPORT_HEIGHT + " px viewport");
+    }
+
+    /** What {@code JLightweightFrame} does with a new size: lay out, then paint only if it allocated a buffer. */
+    private static void layOutAndPaint(JPanel frame) {
+        layOut(frame);
+        if (frame.getWidth() <= 0 || frame.getHeight() <= 0) return;
+        paintInto(frame);
+    }
+
+    private static void paintInto(JComponent c) {
+        BufferedImage buffer = new BufferedImage(c.getWidth(), c.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics g = buffer.getGraphics();
+        try {
+            c.paint(g);
+        } finally {
+            g.dispose();
+        }
+    }
+
+    /** {@code validate()} skips a tree that has no peer, so run each layout manager directly. */
+    private static void layOut(Container c) {
+        c.doLayout();
+        for (Component child : c.getComponents()) {
+            if (child instanceof Container) layOut((Container) child);
+        }
+    }
+}

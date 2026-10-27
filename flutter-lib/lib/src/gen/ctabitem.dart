@@ -59,15 +59,9 @@ class VCTabItem extends VItem {
             ? null
             : VFont.fromJson(json['font'] as Map<String, dynamic>);
       case 'foreground':
-        foreground = json['foreground'] == null
-            ? null
-            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+        foreground = VColor.read(json['foreground']);
       case 'selectionForeground':
-        selectionForeground = json['selectionForeground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionForeground'] as Map<String, dynamic>,
-              );
+        selectionForeground = VColor.read(json['selectionForeground']);
       case 'showClose':
         showClose = json['showClose'] as bool?;
       case 'showing':

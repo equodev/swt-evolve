@@ -1,0 +1,510 @@
+package dev.equo.swt.awt;
+
+import java.awt.Frame;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DartDisplay;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.SwingIsland;
+import dev.equo.swt.WindowPolicy;
+import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.RecordingComm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
+/**
+ * A secondary Swing window the client's mirror bundle routes to a Shell of its own: Java builds
+ * that Shell on the bundle's request, with a {@link SwingIsland} bound to the window the engine
+ * already has.
+ * swing-evolve's engine is not on this classpath: the Shell entry reaches nothing of it.
+ */
+class SwingIslandSurfaceTest {
+
+    private static final int PORT = 8765;
+
+    private MainShellBridge bridge;
+    private Display display;
+
+    /**
+     * A {@link RecordingBridge} that lets a test name the Shell the client would draw its viewport as,
+     * so {@link SwingIslandHost}'s view-origin lookup resolves to it as it does against the real
+     * display bridge in production. Names none by default, which is the headless default.
+     */
+    private static final class MainShellBridge extends RecordingBridge {
+        private Shell main;
+
+        @Override
+        public Boolean hostsAsMainShell(Shell shell) {
+            return main != null && shell == main ? Boolean.TRUE : super.hostsAsMainShell(shell);
+        }
+    }
+
+    @BeforeEach
+    void setUp() {
+        bridge = new MainShellBridge();
+        FlutterBridge.set(bridge);
+        display = new Display();
+        SwingIslandHost.listen(display, bridge.comm);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (display != null && !display.isDisposed()) display.dispose();
+        FlutterBridge.set(null);
+    }
+
+    private static Map<String, Object> request(int windowId, String kind, int hostOwnerId) {
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("windowId", windowId);
+        request.put("port", PORT);
+        request.put("kind", kind);
+        request.put("title", "Point Info");
+        request.put("resizable", true);
+        request.put("hostOwnerId", hostOwnerId);
+        request.put("x", 40);
+        request.put("y", 30);
+        request.put("w", 300);
+        request.put("h", 200);
+        return request;
+    }
+
+    /** The bundle's request, as it arrives from the client, and the asyncExec it queues. */
+    private Shell open(Map<String, Object> request) {
+        bridge.comm.fireContaining(SwingIslandHost.SURFACE_EVENT, request);
+        drain();
+        return SwingIslandHost.surfaceShell(display, (Integer) request.get("windowId"));
+    }
+
+    private void drain() {
+        while (display.readAndDispatch()) {}
+    }
+
+    private static SwingIsland islandIn(Shell shell) {
+        Control[] children = shell.getChildren();
+        assertThat(children).hasSize(1);
+        assertThat(children[0]).isInstanceOf(SwingIsland.class);
+        return (SwingIsland) children[0];
+    }
+
+    /** What Java answers the island's region with when it asks which window it mirrors. */
+    private Map<String, String> answerTo(SwingIsland island) {
+        String channel = FlutterBridge.eventName(island.getImpl(), SwingIslandHost.ISLAND_EVENT);
+        bridge.comm.sent.clear();
+        bridge.comm.fireContaining(channel, new byte[0]);
+        // The answer also says where the island is, deferred onto the Display; drained here so a
+        // throw on that path is a failing test rather than a line nobody ever runs.
+        drain();
+        return lastSentOn(channel);
+    }
+
+    private Map<String, String> lastSentOn(String channel) {
+        List<RecordingComm.Frame> frames = bridge.comm.sent.stream()
+                .filter(f -> f.event.equals(channel)).collect(Collectors.toList());
+        assertThat(frames).as("frames sent on " + channel).isNotEmpty();
+        return fields(frames.get(frames.size() - 1).json);
+    }
+
+    /** The JSON object's fields, as text: enough for the flat maps this entry sends. */
+    private static Map<String, String> fields(String json) {
+        String body = json.substring(json.indexOf('{') + 1, json.lastIndexOf('}'));
+        Map<String, String> fields = new LinkedHashMap<>();
+        for (String pair : body.split(",")) {
+            String[] kv = pair.split(":", 2);
+            fields.put(kv[0].trim().replace("\"", ""), kv[1].trim().replace("\"", ""));
+        }
+        return fields;
+    }
+
+    @Test
+    @DisplayName("a top-level frame gets a parentless trimmed Shell, holding an island bound to its window")
+    void topLevelFrame() {
+        int framesBefore = Frame.getFrames().length;
+
+        Shell shell = open(request(9, "frame", 0));
+
+        assertThat(shell).isNotNull();
+        assertThat(shell.getParent()).isNull();
+        assertThat(shell.getStyle() & SWT.SHELL_TRIM).isEqualTo(SWT.SHELL_TRIM);
+        assertThat(shell.getText()).isEqualTo("Point Info");
+        assertThat(shell.isVisible()).isTrue();
+        Map<String, String> answer = answerTo(islandIn(shell));
+        assertThat(answer).containsEntry("windowId", "9").containsEntry("port", String.valueOf(PORT))
+                .containsEntry("surface", "true");
+        assertThat(Frame.getFrames()).as("the window is the engine's; Java makes no AWT frame for it")
+                .hasSize(framesBefore);
+    }
+
+    @Test
+    @DisplayName("the bundle is told once the Shell is open, wherever it is drawn")
+    void openedIsAnnounced() {
+        bridge.comm.sent.clear();
+
+        open(request(9, "frame", 0));
+
+        assertThat(lastSentOn(SwingIslandHost.OPENED_EVENT)).containsEntry("windowId", "9");
+    }
+
+    @Test
+    @DisplayName("a Shell takes the size Java gives its window afterwards")
+    void resizeFollowsJava() {
+        Shell shell = open(request(9, "frame", 0));
+        Point location = shell.getLocation();
+
+        bridge.comm.fireContaining(SwingIslandHost.RESIZE_EVENT, Map.of("windowId", 9, "w", 500.0, "h", 250.0));
+        drain();
+
+        Rectangle area = shell.getClientArea();
+        assertThat(new Point(area.width, area.height)).isEqualTo(new Point(500, 250));
+        assertThat(shell.getLocation()).as("position is the host's after the first show").isEqualTo(location);
+    }
+
+    @Test
+    @DisplayName("a Swing window's Shell stays in the Display's window, whatever the multi-window mode")
+    void staysInline() {
+        String mode = System.getProperty(WindowPolicy.MODE_PROPERTY);
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        try {
+            Shell shell = open(request(9, "frame", 0));
+
+            assertThat(WindowPolicy.ownsWindow(shell, false))
+                    .as("a Shell drawn by another Flutter client would have no mirror to show")
+                    .isFalse();
+        } finally {
+            if (mode == null) System.clearProperty(WindowPolicy.MODE_PROPERTY);
+            else System.setProperty(WindowPolicy.MODE_PROPERTY, mode);
+        }
+    }
+
+    @Test
+    @DisplayName("the window's size is the Shell's client area, and a frame sits at its own position")
+    void bounds() {
+        Shell shell = open(request(9, "frame", 0));
+
+        Rectangle area = shell.getClientArea();
+        assertThat(new Point(area.width, area.height)).isEqualTo(new Point(300, 200));
+        assertThat(shell.getLocation()).isEqualTo(new Point(40, 30));
+    }
+
+    @Test
+    @DisplayName("a frame's position is relative to the view, so it opens inside a main Shell not at the origin")
+    void frameSitsInsideTheView() {
+        Shell main = new Shell(display);
+        main.setBounds(100, 70, 800, 600);
+        main.open();
+        bridge.main = main;
+
+        Shell shell = open(request(9, "frame", 0));
+
+        // Request x/y are 40/30 in the view; the client subtracts the main Shell's origin when it
+        // places a floating Shell, so Java adds it here for the two to cancel at the view position.
+        assertThat(shell.getLocation()).isEqualTo(new Point(140, 100));
+    }
+
+    @Test
+    @DisplayName("a frame that is not resizable cannot be resized or maximized")
+    void fixedFrame() {
+        Map<String, Object> request = request(9, "frame", 0);
+        request.put("resizable", false);
+
+        Shell shell = open(request);
+
+        assertThat(shell.getStyle() & (SWT.RESIZE | SWT.MAX)).isZero();
+        assertThat(shell.getStyle() & SWT.TITLE).isNotZero();
+    }
+
+    @Test
+    @DisplayName("a dialog owned by an island is parented to the island's Shell")
+    void dialogOwnedByIsland() {
+        Shell host = new Shell(display);
+        Composite embedded = new Composite(host, SWT.EMBEDDED);
+        embedded.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(embedded, SWT.NONE);
+        SwingIslandHost.mount(island, 3, PORT, false);
+
+        Shell dialog = open(request(5, "dialog", 3));
+
+        assertThat(dialog.getParent()).isSameAs(host);
+        assertThat(dialog.getStyle() & SWT.DIALOG_TRIM).isEqualTo(SWT.DIALOG_TRIM);
+        assertThat(dialog.getStyle() & SWT.RESIZE).as("the dialog is resizable").isNotZero();
+    }
+
+    @Test
+    @DisplayName("a window already mirrored by a live island is not mounted on a second one")
+    void oneWindowOneIsland() {
+        // Measured on an application with three editor parts, each hosting an island: three
+        // SwingIsland widgets, two registered windows, and one view drawn LIVE in two panes at
+        // once — the application's own toolbar buttons still driving the right view while its
+        // pixels appeared in someone else's pane. The registry is keyed by windowId, so the second
+        // mount overwrote the first entry while BOTH regions had already been told the same id.
+        Shell first = new Shell(display);
+        first.setLayout(new FillLayout());
+        SwingIsland islandOfFirst = new SwingIsland(first, SWT.NONE);
+        SwingIslandHost.mount(islandOfFirst, 3, PORT, false);
+
+        Shell second = new Shell(display);
+        second.setLayout(new FillLayout());
+        SwingIsland islandOfSecond = new SwingIsland(second, SWT.NONE);
+        SwingIslandHost.mount(islandOfSecond, 3, PORT, false);
+
+        Shell dialog = open(request(5, "dialog", 3));
+
+        assertThat(dialog.getParent()).as("window 3 still belongs to the island that took it")
+                .isSameAs(first);
+    }
+
+    @Test
+    @DisplayName("no Shell is built for a window a live island already mirrors")
+    void noShellForAWindowAnIslandHas() {
+        // Refusing the mount was half a fix. The Shell, its island and its region were already
+        // built, parented and opened by then, and the region was never told which window it
+        // mirrors: measured on the application, one
+        // "No handler for: SwingIsland/<id>/swingIsland" per refused island, naming exactly the
+        // ids the refusal lines named.
+        Shell host = new Shell(display);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+        SwingIslandHost.mount(island, 3, PORT, false);
+        int before = display.getShells().length;
+
+        bridge.comm.fireContaining(SwingIslandHost.SURFACE_EVENT, request(3, "frame", 0));
+        drain();
+
+        assertThat(SwingIslandHost.surfaceShell(display, 3))
+                .as("no Shell for a window that already has an island").isNull();
+        assertThat(display.getShells().length)
+                .as("and none was built and left behind either").isEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("and the client is told the window is an island, not left to time out")
+    void theRefusalIsAnswered() {
+        // Silence was the bug. The client gives a Shell request a deadline and *declines* an
+        // unanswered one — and a declined window is drawn in-view, inside whichever island is
+        // live. Measured in a snippet with four islands in two tab stacks: three windows whose
+        // regions had not mounted were refused here, and five seconds later all three were drawn
+        // in the one visible pane, stacked, all answering input together.
+        Shell host = new Shell(display);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+        SwingIslandHost.mount(island, 3, PORT, false);
+        bridge.comm.sent.clear();
+
+        bridge.comm.fireContaining(SwingIslandHost.SURFACE_EVENT, request(3, "frame", 0));
+        drain();
+
+        assertThat(bridge.comm.sent.stream().map(f -> f.event))
+                .as("the refusal says the window is an island")
+                .contains(SwingIslandHost.IS_ISLAND_EVENT);
+        assertThat(lastSentOn(SwingIslandHost.IS_ISLAND_EVENT)).containsEntry("windowId", "3");
+    }
+
+    @Test
+    @DisplayName("an island is not mounted on windowId 0, which is not a window")
+    void noIslandOnANonWindow() {
+        // WindowIds.of answers 0, never a valid id, for a window swing-evolve's toolkit has not
+        // peered — and describe() passed whatever it got straight into mount(). A region told 0
+        // asks the engine to mirror a window that does not exist.
+        Shell host = new Shell(display);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+
+        SwingIslandHost.mount(island, 0, PORT, false);
+        Shell dialog = open(request(5, "dialog", 0));
+
+        assertThat(dialog.getParent()).as("nothing was registered under 0, so nothing owns it")
+                .isNotSameAs(host);
+    }
+
+    @Test
+    @DisplayName("a dialog keeps its offset from the island that owns it")
+    void dialogKeepsItsOffset() {
+        Shell host = new Shell(display);
+        host.setBounds(100, 100, 800, 600);
+        host.setLayout(new FillLayout());
+        SwingIsland island = new SwingIsland(host, SWT.NONE);
+        host.layout(true);
+        SwingIslandHost.mount(island, 3, PORT, false);
+        Map<String, Object> request = request(5, "dialog", 3);
+        request.put("dx", 20.0);
+        request.put("dy", 10.0);
+
+        Shell dialog = open(request);
+
+        assertThat(dialog.getLocation()).isEqualTo(island.toDisplay(20, 10));
+    }
+
+    @Test
+    @DisplayName("a dialog owned by a window with a Shell of its own is parented to that Shell")
+    void dialogOwnedByShell() {
+        Shell frame = open(request(9, "frame", 0));
+        Map<String, Object> request = request(5, "dialog", 9);
+        request.put("resizable", false);
+
+        Shell dialog = open(request);
+
+        assertThat(dialog.getParent()).isSameAs(frame);
+        assertThat(dialog.getStyle() & SWT.RESIZE).isZero();
+    }
+
+    @Test
+    @DisplayName("an ownerless dialog is parented to the active Shell and centred on it")
+    void ownerlessDialog() {
+        Shell main = new Shell(display);
+        main.setBounds(100, 100, 800, 600);
+        main.open();
+
+        Shell dialog = open(request(5, "dialog", 0));
+
+        assertThat(dialog.getParent()).isSameAs(main);
+        Rectangle bounds = dialog.getBounds();
+        assertThat(new Point(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2))
+                .isEqualTo(new Point(500, 400));
+    }
+
+    @Test
+    @DisplayName("a modal dialog's Shell blocks the rest of the application")
+    void modalDialog() {
+        Shell main = new Shell(display);
+        main.open();
+        Map<String, Object> request = request(5, "dialog", 0);
+        request.put("modal", true);
+
+        Shell dialog = open(request);
+
+        assertThat(dialog.getStyle() & SWT.APPLICATION_MODAL).isNotZero();
+    }
+
+    @Test
+    @DisplayName("a modeless dialog's Shell blocks nothing")
+    void modelessDialog() {
+        Shell dialog = open(request(5, "dialog", 0));
+
+        assertThat(dialog.getStyle() & (SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL | SWT.SYSTEM_MODAL)).isZero();
+    }
+
+    @Test
+    @DisplayName("a Shell takes the title Java gives its window afterwards")
+    void titleFollowsJava() {
+        Shell shell = open(request(9, "frame", 0));
+
+        bridge.comm.fireContaining(SwingIslandHost.TITLE_EVENT, Map.of("windowId", 9, "title", "Properties (edited)"));
+        drain();
+
+        assertThat(shell.getText()).isEqualTo("Properties (edited)");
+    }
+
+    /**
+     * An application may block SWT itself while a modal AWT dialog is up: once the dialog shows, it
+     * opens an invisible modal Shell and swallows the activation of every Shell already visible,
+     * raising the dialog instead.
+     *
+     * <p>The dialog's input goes to the engine through its mirror, past SWT's own modality checks;
+     * what stops it is the client's modal scrim, drawn under the last modal Shell in the Display's
+     * order. So "takes input" is: drawn last of the modal Shells, and active.
+     */
+    @Test
+    @DisplayName("a modal dialog's Shell stays on top of, and takes input over, an application's own SWT blocker")
+    void modalDialogOverApplicationBlocker() {
+        Shell main = new Shell(display);
+        main.open();
+        Map<String, Object> request = request(5, "dialog", 0);
+        request.put("modal", true);
+        Shell dialog = open(request);
+
+        Set<Shell> visibleAtStart = Arrays.stream(display.getShells()).filter(Shell::isVisible)
+                .collect(Collectors.toSet());
+        AtomicInteger depth = new AtomicInteger();
+        AtomicInteger raises = new AtomicInteger();
+        Listener blockActivation = e -> {
+            if (!visibleAtStart.contains(e.widget)) return;
+            e.type = SWT.None;
+            if (depth.incrementAndGet() > 1) fail("raising the dialog activated a Shell again");
+            if (raises.incrementAndGet() > 10) fail("the dialog is raised over and over");
+            dialog.forceActive();
+            depth.decrementAndGet();
+        };
+        display.addFilter(SWT.Activate, blockActivation);
+        Shell limbo = new Shell(display);
+        limbo.setBounds(0, 10000, 0, 0);
+        Shell blocker = new Shell(limbo, SWT.APPLICATION_MODAL);
+        blocker.setBounds(0, 0, 2, 2);
+        blocker.setAlpha(0);
+        blocker.open();
+        drain();
+
+        Shell[] drawOrder = ((DartDisplay) display.getImpl()).shellsInDrawOrder();
+        Shell topModal = Arrays.stream(drawOrder)
+                .filter(s -> s.isVisible() && (s.getStyle() & SWT.APPLICATION_MODAL) != 0)
+                .reduce((first, second) -> second).orElseThrow();
+        assertThat(topModal).as("drawn last of the modal Shells, so the client's modal scrim is under it")
+                .isSameAs(dialog);
+        assertThat(display.getActiveShell()).isSameAs(dialog);
+        assertThat(raises.get()).isLessThanOrEqualTo(1);
+        display.removeFilter(SWT.Activate, blockActivation);
+    }
+
+    @Test
+    @DisplayName("an undecorated window has no trim")
+    void undecoratedWindow() {
+        Shell shell = open(request(6, "window", 0));
+
+        assertThat(shell.getStyle() & (SWT.TITLE | SWT.BORDER | SWT.RESIZE)).isZero();
+    }
+
+    @Test
+    @DisplayName("closing the Shell asks Java's window to close, and leaves the Shell to Java's decision")
+    void closeIsVetoedAndForwarded() {
+        Shell shell = open(request(9, "frame", 0));
+        bridge.comm.sent.clear();
+
+        shell.close();
+
+        assertThat(shell.isDisposed()).as("a DO_NOTHING_ON_CLOSE window must stay").isFalse();
+        assertThat(lastSentOn(SwingIslandHost.CLOSE_EVENT)).containsEntry("windowId", "9");
+    }
+
+    @Test
+    @DisplayName("the bundle's teardown disposes the Shell")
+    void disposeOnRequest() {
+        Shell shell = open(request(9, "frame", 0));
+
+        bridge.comm.fireContaining(SwingIslandHost.DISPOSE_EVENT, Map.of("windowId", 9));
+        drain();
+
+        assertThat(shell.isDisposed()).isTrue();
+        assertThat(SwingIslandHost.surfaceShell(display, 9)).isNull();
+    }
+
+    @Test
+    @DisplayName("a second request for one window replaces its Shell")
+    void reopenReplaces() {
+        Shell first = open(request(9, "frame", 0));
+
+        Shell second = open(request(9, "frame", 0));
+
+        assertThat(first.isDisposed()).isTrue();
+        assertThat(second.isDisposed()).isFalse();
+        assertThat(Arrays.stream(display.getShells()).filter(s -> !s.isDisposed())).containsExactly(second);
+    }
+}

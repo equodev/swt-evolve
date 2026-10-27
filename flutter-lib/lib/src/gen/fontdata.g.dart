@@ -8,13 +8,11 @@ part of 'fontdata.dart';
 
 VFontData _$VFontDataFromJson(Map<String, dynamic> json) => VFontData()
   ..height = (json['height'] as num).toInt()
-  ..locale = json['locale'] as String
   ..name = json['name'] as String
   ..style = (json['style'] as num).toInt();
 
 Map<String, dynamic> _$VFontDataToJson(VFontData instance) => <String, dynamic>{
   'height': instance.height,
-  'locale': instance.locale,
   'name': instance.name,
   'style': instance.style,
 };

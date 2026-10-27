@@ -179,8 +179,8 @@ public abstract class DartItem extends DartWidget implements IItem {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.image, image)) {
             getValue().markDirty(VItem.IMAGE);
         }
@@ -241,7 +241,6 @@ public abstract class DartItem extends DartWidget implements IItem {
         // Refresh the image
         Image image = getImage();
         if (image != null) {
-            setImage(null);
             setImage(image);
         }
     }

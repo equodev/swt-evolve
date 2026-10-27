@@ -9,13 +9,25 @@ class ConfigFlags {
 
   bool? ctabfolder_visible_controls;
   bool? ctabfolder_topright_auto_hide;
+  bool? ctabfolder_tab_scroll;
   bool? image_disable_icons_replacement;
   String? assets_path;
   bool? disable_evolve_icons;
   bool? gc_icons_replacement;
   bool? use_swt_colors;
   bool? disable_swt_canvas_colors;
+
+  /// Drops what an application paints over a control through its GC, so only what the control draws
+  /// for itself shows. Controls whose GC content is the control (Canvas, StyledText) ignore it.
+  bool? disable_control_gc_overlay;
   bool? use_swt_fonts;
+
+  /// Text in the foreground the application set rather than the theme's. Null follows
+  /// [use_swt_fonts]; see `useSwtFontColors`.
+  bool? use_swt_font_colors;
+
+  /// [use_swt_font_colors] per lower-case widget name, over the global value.
+  Map<String, bool>? use_swt_font_colors_by_widget;
   String? theme_name;
   String? force_theme;
   String? theme_color;
@@ -28,6 +40,11 @@ class ConfigFlags {
   bool? custom_tooltip;
   bool? notification_popup;
   bool? show_scaling_control;
+
+  /// The zoom SWT draws its UI at, in percent — `swt.autoScale` already applied to the monitor's
+  /// own zoom. This side draws at the monitor's zoom, so the ratio between them is what the whole
+  /// app has to be scaled by for both halves of a mixed tree to come out the same size.
+  int? ui_zoom;
   @JsonKey(fromJson: DecorationsAlign.fromJson, toJson: DecorationsAlign.toJson)
   DecorationsAlign? decorations_align;
   bool? print_move;
@@ -35,12 +52,35 @@ class ConfigFlags {
   String? csd_os;
   String? csd_maximize;
   int? double_click_timeout_ms;
+  int? hover_delay_ms;
 
   /// Explicit CSD title-bar colour as RRGGBB/AARRGGBB hex. Overrides the theme's own
   /// title-bar colour; unset falls back to the theme (see CsdOverlayStrip).
   String? csd_titlebar_color;
   /// True when the OS owns the menu bar (macOS desktop) and this side must not draw one.
   bool? system_menu_bar;
+
+  /// The decimal separator of the JVM's locale, which a desktop client writes numbers with.
+  String? decimal_separator;
+
+  /// The JVM's locale as a language tag, the user's locale on desktop.
+  String? locale;
+
+  /// Logical pixels per SWT font point on the host the application runs on, as the Java side
+  /// measured its text extents at. Not derivable here: this client's platform is the browser's.
+  double? font_point_scale;
+
+  /// Transparent margin on each side of a bezelled push or toggle button, configured on the Java
+  /// side (`swt.evolve.push_button_margin`). 0 paints the button over its whole bounds.
+  int? push_button_margin;
+
+  /// CHECK and RADIO menu items draw no box or ring, only the mark while selected
+  /// (`swt.evolve.transparent_menu_check_box`). Off by default: the theme's box is drawn.
+  bool? transparent_menu_check_box;
+
+  /// A bordered CTabFolder draws the native renderer's outline, joined over the selected tab
+  /// (`swt.use_swt_border`). Off by default: the theme's flat frame is drawn.
+  bool? use_swt_border;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

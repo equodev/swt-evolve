@@ -89,7 +89,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         // Touch BenchPayloads — its static initializer flips to MockFlutterBridge while it
         // builds real widget trees, so widget setters' dirty() calls don't leak through the
         // live socket. Re-assert the bench bridge as the default once construction is done.
-        BenchPayloads.SMALL.toString();
+        java.util.Objects.requireNonNull(BenchPayloads.SMALL);
         FlutterBridge.set(this);
         Config.defaultToEquo();
     }

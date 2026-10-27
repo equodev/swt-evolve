@@ -60,6 +60,24 @@ public final class BrowserScripting {
         });
         FlutterBridge.send(widget, "evaluate",
                 Java8.map("script", asFunctionBody(script), "reqId", reqId));
+        if (!awaitReply(display, future)) throw failed("no reply from the browser within " + TIMEOUT_MS + "ms");
+        try {
+            return future.get();
+        } catch (ExecutionException ex) {
+            if (ex.getCause() instanceof SWTException) throw (SWTException) ex.getCause();
+            throw failed(String.valueOf(ex.getCause()));
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw failed("interrupted while awaiting the result");
+        }
+    }
+
+    /**
+     * Pumps the SWT event loop until {@code future} completes or {@link #TIMEOUT_MS} passes: the
+     * comm delivers replies on the UI thread, so blocking on {@code future.get()} would deadlock.
+     * Returns whether the reply arrived.
+     */
+    static boolean awaitReply(Display display, CompletableFuture<?> future) {
         Display d = display != null ? display : Display.getCurrent();
         long end = System.currentTimeMillis() + TIMEOUT_MS;
         while (!future.isDone() && System.currentTimeMillis() < end) {
@@ -72,16 +90,7 @@ public final class BrowserScripting {
                 }
             }
         }
-        if (!future.isDone()) throw failed("no reply from the browser within " + TIMEOUT_MS + "ms");
-        try {
-            return future.get();
-        } catch (ExecutionException ex) {
-            if (ex.getCause() instanceof SWTException) throw (SWTException) ex.getCause();
-            throw failed(String.valueOf(ex.getCause()));
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw failed("interrupted while awaiting the result");
-        }
+        return future.isDone();
     }
 
     private static SWTException failed(String detail) {

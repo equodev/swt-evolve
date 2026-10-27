@@ -11,7 +11,7 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ScrolledComposite() {
-        ScrolledComposite w = new ScrolledComposite(swtShell(), SWT.NONE);
+        ScrolledComposite w = new ScrolledComposite(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,13 +20,14 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ScrolledComposite() {
-        ScrolledComposite w = new ScrolledComposite(swtShell(), SWT.NONE);
+        ScrolledComposite w = new ScrolledComposite(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ScrolledComposite")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alwaysShowScrollBars").equalsTo(w.getAlwaysShowScrollBars(), orAbsentIfFalse));
         assertJ.satisfies(node("content").equalsTo(w.getContent(), orAbsentIfNull));
@@ -34,6 +35,7 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("expandVertical").equalsTo(w.getExpandVertical(), orAbsentIfFalse));
         assertJ.satisfies(node("minHeight").equalsTo(w.getMinHeight(), orAbsentIf0));
         assertJ.satisfies(node("minWidth").equalsTo(w.getMinWidth(), orAbsentIf0));
+        assertJ.satisfies(node("origin").equalsTo(value(w).getOrigin(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
@@ -44,12 +46,11 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_ScrolledComposite() {
-        ScrolledComposite w = new ScrolledComposite(swtShell(), SWT.NONE);
+        ScrolledComposite w = new ScrolledComposite(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

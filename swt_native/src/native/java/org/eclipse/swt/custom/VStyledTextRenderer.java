@@ -211,40 +211,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lineSpacingComputing = value;
     }
 
-    public VStyledTextRenderer.VLineInfo[] getLines() {
-        DartStyledTextRenderer.LineInfo[] values = ((DartStyledTextRenderer) impl).lines;
-        if (values == null)
-            return null;
-        VStyledTextRenderer.VLineInfo[] result = new VStyledTextRenderer.VLineInfo[values.length];
-        for (int i = 0; i < values.length; i++) if (values[i] != null)
-            result[i] = new VStyledTextRenderer.VLineInfo(values[i]);
-        return result;
-    }
-
-    public void setLines(VStyledTextRenderer.VLineInfo[] value) {
-        if (value == null) {
-            ((DartStyledTextRenderer) impl).lines = null;
-            return;
-        }
-        DartStyledTextRenderer.LineInfo[] result = new DartStyledTextRenderer.LineInfo[value.length];
-        for (int i = 0; i < value.length; i++) {
-            if (value[i] != null) {
-                result[i] = new DartStyledTextRenderer.LineInfo();
-                result[i].flags = value[i].getFlags();
-                result[i].background = value[i].getBackground();
-                result[i].alignment = value[i].getAlignment();
-                result[i].indent = value[i].getIndent();
-                result[i].wrapIndent = value[i].getWrapIndent();
-                result[i].justify = value[i].getJustify();
-                result[i].segments = value[i].getSegments();
-                result[i].segmentsChars = value[i].getSegmentsChars();
-                result[i].tabStops = value[i].getTabStops();
-                result[i].verticalIndent = value[i].getVerticalIndent();
-            }
-        }
-        ((DartStyledTextRenderer) impl).lines = result;
-    }
-
     @JsonAttribute(ignore = true)
     public int getLinesInAverageLineHeight() {
         return ((DartStyledTextRenderer) impl).linesInAverageLineHeight;
@@ -272,14 +238,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).maxWidthLineIndex = value;
     }
 
-    public int[] getRanges() {
-        return ((DartStyledTextRenderer) impl).ranges;
-    }
-
-    public void setRanges(int[] value) {
-        ((DartStyledTextRenderer) impl).ranges = value;
-    }
-
     @JsonAttribute(ignore = true)
     public int[] getRedrawLines() {
         return ((DartStyledTextRenderer) impl).redrawLines;
@@ -300,14 +258,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).regularFont = value;
     }
 
-    public int getStyleCount() {
-        return ((DartStyledTextRenderer) impl).styleCount;
-    }
-
-    public void setStyleCount(int value) {
-        ((DartStyledTextRenderer) impl).styleCount = value;
-    }
-
     @JsonAttribute(ignore = true)
     public StyledText getStyledText() {
         StyledText val = ((DartStyledTextRenderer) impl).styledText;
@@ -320,6 +270,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).styledText = value;
     }
 
+    @JsonAttribute(ignore = true)
     public StyleRange[] getStyles() {
         StyleRange[] values = ((DartStyledTextRenderer) impl).styles;
         if (values == null)
@@ -385,6 +336,41 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).topIndex = value;
     }
 
+    public int[] getRanges() {
+        return ((DartStyledTextRenderer) impl).wireRanges();
+    }
+
+    public void setRanges(int[] value) {
+    }
+
+    public int getStyleCount() {
+        return ((DartStyledTextRenderer) impl).wireStyleCount();
+    }
+
+    public void setStyleCount(int value) {
+    }
+
+    public VStyledTextRenderer.VLineInfo[] getLines() {
+        return ((DartStyledTextRenderer) impl).wireLines();
+    }
+
+    public void setLines(VStyledTextRenderer.VLineInfo[] value) {
+    }
+
+    public int[] getLineSpacings() {
+        return ((DartStyledTextRenderer) impl).wireLineSpacings();
+    }
+
+    public void setLineSpacings(int[] value) {
+    }
+
+    public String[] getBulletTexts() {
+        return ((DartStyledTextRenderer) impl).wireBulletTexts();
+    }
+
+    public void setBulletTexts(String[] value) {
+    }
+
     @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
     public static class VLineSizeInfo {
 
@@ -417,7 +403,7 @@ public class VStyledTextRenderer {
         }
     }
 
-    @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
+    @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.MINIMAL)
     public static class VLineInfo {
 
         protected VLineInfo() {

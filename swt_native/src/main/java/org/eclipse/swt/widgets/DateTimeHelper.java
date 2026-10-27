@@ -29,4 +29,40 @@ public final class DateTimeHelper {
     public static boolean isValidDate(int year, int month, int day) {
         return month >= 0 && month <= 11 && day >= 1 && day <= daysInMonth(year, month);
     }
+
+    /**
+     * Takes the date (or time) the client carries in a Selection's geometry fields into the control,
+     * and clears those fields, so listeners see a Selection as the native sends it.
+     */
+    public static void applySelection(DartDateTime control, Event e) {
+        if (e == null)
+            return;
+        if ((control.getApi().style & org.eclipse.swt.SWT.TIME) != 0) {
+            control.hours = e.height;
+            control.minutes = e.count;
+            control.seconds = e.index;
+        } else {
+            control.year = e.x;
+            control.month = e.y;
+            control.day = e.width;
+        }
+        e.x = e.y = e.width = e.height = e.count = e.index = 0;
+    }
+
+    /**
+     * Sets the moment a native DateTime holds when the application has set none: today, and the
+     * current time, except a CALENDAR, whose time starts at 00:00:00 as on win32 and gtk (both keep a
+     * calendar's time in fields of their own, which start at zero). Gregorian whatever the locale, as
+     * the native controls and {@link #isValidDate} are.
+     */
+    public static void startAtNow(IDateTime dateTime) {
+        java.util.Calendar now = new java.util.GregorianCalendar();
+        dateTime.setDate(now.get(java.util.Calendar.YEAR), now.get(java.util.Calendar.MONTH),
+                now.get(java.util.Calendar.DAY_OF_MONTH));
+        if ((dateTime.getStyle() & org.eclipse.swt.SWT.CALENDAR) != 0)
+            dateTime.setTime(0, 0, 0);
+        else
+            dateTime.setTime(now.get(java.util.Calendar.HOUR_OF_DAY), now.get(java.util.Calendar.MINUTE),
+                    now.get(java.util.Calendar.SECOND));
+    }
 }

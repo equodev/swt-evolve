@@ -1,11 +1,14 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/custom/main_composite.dart';
 import 'package:swtflutter/src/custom/ewt_evolve.dart';
+import 'package:swtflutter/src/custom/swing_island_evolve.dart';
 import 'package:swtflutter/src/custom/csd/csd_scaffold.dart';
 import 'package:swtflutter/src/custom/csd/csd_state.dart';
 import 'package:swtflutter/src/custom/csd/equo_window.dart';
@@ -26,11 +29,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
+import 'native_platform.dart' if (dart.library.js_interop) 'web_platform.dart';
+import 'src/impl/window_commands_native.dart'
+    if (dart.library.js_interop) 'src/impl/window_commands_web.dart';
 
 import 'src/comm/comm.dart';
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
+import 'src/impl/client_ready.dart';
 import 'src/impl/display_evolve.dart';
 import 'src/impl/focus_requests.dart';
 import 'fontSize.dart' as font_size;
@@ -38,17 +44,26 @@ import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
 import 'bench.dart' as bench;
 import 'test_harness.dart' as test_harness;
+import 'semantics_ghost_guard_stub.dart'
+    if (dart.library.js_interop) 'semantics_ghost_guard_web.dart';
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
+import 'src/impl/utils/swt_zoom_scale.dart';
+import 'src/impl/utils/traversal_veto_scope.dart';
 
-// Last theme config printed, so the line is emitted on every real change instead of once.
-// The flags arrive over the socket after the first build, so a once-only log always
-// reported them as null -- useless for diagnosing a product's configured theme.
-String? _loggedThemeConfig;
+/// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
+Future<void> _loadWebFallbackFonts() async {
+  if (!kIsWeb) return;
+  await (FontLoader('Roboto')
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Bold.ttf')))
+      .load();
+}
+
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
-_DisplayMetricsReporter? _displayMetricsReporter;
+_WindowMetricsReporter? _windowMetricsReporter;
 
 void main(List<String> args) async {
   int? port = getPort(args);
@@ -78,6 +93,7 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  await _loadWebFallbackFonts();
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
@@ -92,6 +108,7 @@ void main(List<String> args) async {
   if (enableTestSemantics) {
     SemanticsBinding.instance.ensureSemantics();
   }
+  startSemanticsGhostNodeGuard();
   // Every topology, not just under a Display: the Image channels are keyed by remoteRef rather than
   // by widget, and an off-screen engine never reaches the Display branch below.
   _registerImageReleaseListener();
@@ -133,13 +150,25 @@ void main(List<String> args) async {
   unawaited(initSwtEvolveProperties());
   FocusRequests.listen();
 
-  if (widgetName == "Display") {
+  // This client is a window in its own right: the Display's window, or a shell Java put in a
+  // window of its own (see WindowPolicy). Both get the window chrome, the window-state listeners
+  // and the viewport handshake. Every other client — the size bridges, a child browser view — is
+  // a view inside someone else's window and gets none of it.
+  final bool isWindowRoot = widgetName == "Display" || widgetName == "Shell";
+
+  if (isWindowRoot) {
     csdMainWindowId = widgetId;
     // Track window focus so the macOS controls grey out when the window is inactive.
     EquoWindow.installWindowStateListeners(
       (active) => csdWindowActive.value = active,
     );
+  }
+  if (widgetName == "Display") {
+    // Display-scoped, both of them: GC/create and the window commands are one channel for the
+    // whole session, so a detached window listening too would draw every GC a second time and
+    // race this one to open every window.
     _registerGcCreateListener();
+    registerWindowCommands(widgetId);
   }
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
@@ -149,12 +178,12 @@ void main(List<String> args) async {
       contentWidget: contentWidget,
       theme: theme,
       backgroundColor: backgroundColor,
-      isMainWindow: widgetName == "Display",
+      isMainWindow: isWindowRoot,
     ),
   );
 
-  if (widgetName == "Display") {
-    _displayMetricsReporter ??= _DisplayMetricsReporter(widgetId);
+  if (isWindowRoot) {
+    _windowMetricsReporter ??= _WindowMetricsReporter(widgetName, widgetId);
   } else {
     sendClientReady(widgetName, widgetId);
   }
@@ -164,10 +193,12 @@ void main(List<String> args) async {
 // gcDispose handler removes it.
 final Map<int, GCDrawer> _activeGcDrawers = {};
 
-// ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web; read the hi/lo
-// uint32 halves instead (see bench.dart's _setInt64BE for the matching write-side rationale).
+// ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web, so the value is read
+// as its two 32-bit halves and combined arithmetically: on web, bit operators work on 32 bits and
+// `hi << 32` is 0. The high half is signed because the value can be negative: a GC id is a Java
+// identity hash, which some JVMs give the full 32-bit range, sent sign-extended to 64 bits.
 int _readInt64BE(ByteData v, int offset) =>
-    (v.getUint32(offset, Endian.big) << 32) | v.getUint32(offset + 4, Endian.big);
+    v.getInt32(offset, Endian.big) * 0x100000000 + v.getUint32(offset + 4, Endian.big);
 
 void _registerGcCreateListener() {
   // Raw-bytes path: Java sends the gcId as 8 big-endian bytes, no JSON round-trip.
@@ -226,16 +257,25 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
   }
 }
 
-class _DisplayMetricsReporter {
-  _DisplayMetricsReporter(this.widgetId) {
+/// The viewport handshake for a client that is a window of its own.
+///
+/// [widgetName] is what that window is rooted at — `Display` for the application's own window,
+/// `Shell` for one Java detached into a window of its own — and every channel below is addressed
+/// to it, because that is the widget whose geometry this window reports and whose teardown its
+/// closing means.
+class _WindowMetricsReporter {
+  _WindowMetricsReporter(this.widgetName, this.widgetId) {
     observeViewportChanges(_sendCurrentSize);
     observeWindowClose(_sendWindowClose);
     EquoCommService.onReconnect(_resyncAfterReconnect);
     // Config flags land after the first frame, so the first report is made before
     // csd_placement is known. Re-report when they arrive, or the inset above is missed.
     configFlagsVersion.addListener(_sendCurrentSize);
+    // The area SWT lays out in is the view over the scale, so a new scale is a new area.
+    appScaleNotifier.addListener(_sendCurrentSize);
   }
 
+  final String widgetName;
   final int widgetId;
   bool _windowCloseSent = false;
 
@@ -245,8 +285,8 @@ class _DisplayMetricsReporter {
   // properties and re-serialize the whole Display — the same resync a page refresh gets —
   // and cancels any tab-close it had deferred.
   void _resyncAfterReconnect() {
-    _displayClientReadySent = false;
-    _sendWindowSizedClientReady("Display", widgetId);
+    _clientReady.restart();
+    _sendWindowSizedClientReady(widgetName, widgetId);
   }
 
   // The window/tab is tearing down (pagehide/beforeunload): ask Java to close the SWT shells (no-op on
@@ -258,14 +298,17 @@ class _DisplayMetricsReporter {
   void _sendWindowClose() {
     if (_windowCloseSent) return;
     _windowCloseSent = true;
-    print('[WinUnload] Display/$widgetId');
-    EquoCommService.send("Display/$widgetId/WinUnload");
+    print('[WinUnload] $widgetName/$widgetId');
+    EquoCommService.send("$widgetName/$widgetId/WinUnload");
   }
 
   void _sendCurrentSize() {
-    final rounded = _currentLogicalViewSize();
+    // A metrics change can be a move to a monitor at another zoom. When the scale moves, its
+    // listener above has already reported the area it leaves.
+    if (refreshAppScale()) return;
+    final rounded = currentSwtViewSize();
     if (rounded == null) return;
-    _sendWindowSizedClientReady("Display", widgetId, sizeOverride: rounded);
+    _sendWindowSizedClientReady(widgetName, widgetId, sizeOverride: rounded);
   }
 }
 
@@ -286,11 +329,15 @@ Size _withoutCsdChrome(double width, double height) {
   return Size(width.roundToDouble(), (h > 0 ? h : height).roundToDouble());
 }
 
-Size? _currentLogicalViewSize() {
+/// The area the app lays out in, which is what SWT is told. In SWT units rather than the view's
+/// own: the whole tree is drawn at [appScaleNotifier]'s factor, so it lays out in the view over it.
+@visibleForTesting
+Size? currentSwtViewSize() {
   final viewportSize = getViewportSize();
   if (viewportSize != null &&
       _isFinitePositiveSize(viewportSize.width, viewportSize.height)) {
-    return _withoutCsdChrome(viewportSize.width, viewportSize.height);
+    final size = logicalToSwtSize(viewportSize);
+    return _withoutCsdChrome(size.width, size.height);
   }
   final dispatcher = WidgetsBinding.instance.platformDispatcher;
   if (dispatcher.views.isEmpty) {
@@ -300,7 +347,7 @@ Size? _currentLogicalViewSize() {
   if (view.devicePixelRatio <= 0) {
     return null;
   }
-  final size = view.physicalSize / view.devicePixelRatio;
+  final size = logicalToSwtSize(view.physicalSize / view.devicePixelRatio);
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
@@ -322,45 +369,26 @@ Size? _currentLogicalMonitorSize() {
   if (display.devicePixelRatio <= 0) {
     return null;
   }
-  final size = display.size / display.devicePixelRatio;
+  final size = logicalToSwtSize(display.size / display.devicePixelRatio);
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
 }
 
-bool _displayClientReadySent = false;
-
-/// Device zoom in percent (100 = no scaling), from devicePixelRatio. 0 when unknown.
-int _currentDeviceZoomPercent() {
-  final dispatcher = WidgetsBinding.instance.platformDispatcher;
-  if (dispatcher.views.isEmpty) {
-    return 0;
-  }
-  final dpr = dispatcher.views.first.devicePixelRatio;
-  return dpr > 0 ? (dpr * 100).round() : 0;
-}
+final _clientReady = ClientReadyReporter();
 
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
-  final size = sizeOverride ?? _currentLogicalViewSize();
-  final bool isFirst = !_displayClientReadySent;
-  _displayClientReadySent = true;
-  final int w = size?.width.toInt() ?? 1280;
-  final int h = size?.height.toInt() ?? 720;
+  final size = sizeOverride ?? currentSwtViewSize();
   // The monitor the window is on (0 when unknown → Java keeps its default/viewport).
   final monitor = _currentLogicalMonitorSize();
-  final int mw = monitor?.width.toInt() ?? 0;
-  final int mh = monitor?.height.toInt() ?? 0;
-  final int zoom = _currentDeviceZoomPercent();
-  print('[ClientReady] Display/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
-  EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
-    'width': w,
-    'height': h,
-    'isFirst': isFirst,
-    'displayWidth': mw,
-    'displayHeight': mh,
-    'zoom': zoom,
-  });
+  _clientReady.report(widgetName, widgetId,
+      width: size?.width.toInt() ?? 1280,
+      height: size?.height.toInt() ?? 720,
+      displayWidth: monitor?.width.toInt() ?? 0,
+      displayHeight: monitor?.height.toInt() ?? 0,
+      zoom: monitorZoomPercent(),
+      insetTop: csdContentInsetTop().round());
 }
 
 Future<void> initSwtEvolveProperties() async {
@@ -411,6 +439,7 @@ Widget? customWidget(Map<String, dynamic> child) {
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "MainComposite" => MainComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "SwingIsland" => SwingIslandSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
     "Display" => DisplaySwt(key: ValueKey(id), value: VDisplay()..swt = "Display"..id = id),
     _ => null
   };
@@ -429,6 +458,7 @@ Widget? customWidgetFromValue(VWidget child) {
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: child as VComposite),
     "MainComposite" => MainComposite(key: ValueKey(id), value: child as VComposite),
     "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: child as VComposite),
+    "SwingIsland" => SwingIslandSwt(key: ValueKey(id), value: child as VComposite),
     _ => null
   };
 }
@@ -473,8 +503,8 @@ class EvolveApp extends StatelessWidget {
             'force_theme=${flags.force_theme}, '
             'effective_theme_mode=${effectiveThemeMode.name}, '
             'theme_color=${flags.theme_color}, theme_colors_by_widget=${flags.theme_colors_by_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}';
-        if (themeConfig != _loggedThemeConfig) {
-          _loggedThemeConfig = themeConfig;
+        if (themeConfig != loggedThemeConfig) {
+          loggedThemeConfig = themeConfig;
           print(themeConfig);
         }
         final ThemeData lightTheme;
@@ -487,6 +517,7 @@ class EvolveApp extends StatelessWidget {
               overrideColorScheme: namedTheme.lightColorScheme,
               overrideColorSchemeExtension: namedTheme.lightColorSchemeExtension
                   ?? createColorSchemeExtension(namedTheme.lightColorScheme),
+              overrideTypeSizes: namedTheme.typeScale?.apply,
             ),
             dark: false,
           );
@@ -496,6 +527,7 @@ class EvolveApp extends StatelessWidget {
               overrideColorScheme: darkScheme,
               overrideColorSchemeExtension: namedTheme.darkColorSchemeExtension
                   ?? createColorSchemeExtension(darkScheme),
+              overrideTypeSizes: namedTheme.typeScale?.apply,
             ),
             dark: true,
           );
@@ -519,31 +551,19 @@ class EvolveApp extends StatelessWidget {
           darkTheme: darkTheme,
           themeMode: effectiveThemeMode,
           debugShowCheckedModeBanner: false,
+          actions: {...WidgetsApp.defaultActions, ...TraversalVetoScope.appActions},
+          builder: (ctx, navigator) => SwtZoomScale(child: navigator!),
           home: Scaffold(
             backgroundColor: effectiveThemeMode == ThemeMode.dark
                 ? darkTheme.scaffoldBackgroundColor
                 : lightTheme.scaffoldBackgroundColor,
-            body: _maybeWrapCsd(
-              ValueListenableBuilder<double>(
-                valueListenable: appScaleNotifier,
-                builder: (ctx, scale, _) {
-                  // Skip the Transform entirely at the (overwhelmingly common) default
-                  // scale: this RenderTransform wraps the whole app, and keeping a
-                  // permanently-inert one around isn't free.
-                  if (scale == 1.0) return contentWidget;
-                  return Transform.scale(
-                    scale: scale,
-                    alignment: Alignment.topLeft,
-                    child: contentWidget,
-                  );
-                },
-              ),
-            ),
+            body: _maybeWrapCsd(contentWidget),
           ),
         );
       },
     );
   }
+
 }
 
 ThemeMode? parseForcedThemeMode(String? forceTheme) {

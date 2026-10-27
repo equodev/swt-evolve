@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
@@ -27,8 +28,8 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.image.*;
+import org.eclipse.swt.widgets.*;
 import dev.equo.swt.*;
-import org.eclipse.swt.widgets.Display;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -115,7 +116,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     static final int DEFAULT_SCANLINE_PAD = 4;
 
-    private List<Consumer<Image>> onDisposeListeners;
+    private java.util.List<Consumer<Image>> onDisposeListeners;
 
     private final ImageHandleManager imageHandleManager = new ImageHandleManager();
 
@@ -146,12 +147,21 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return zoomLevelToImageHandle.isEmpty();
         }
 
-        List<InternalImageHandle> getAllImageHandles() {
+        java.util.List<InternalImageHandle> getAllImageHandles() {
             return zoomLevelToImageHandle.values().stream().collect(Collectors.toList());
         }
 
         Set<Integer> getAllZooms() {
             return zoomLevelToImageHandle.keySet();
+        }
+
+        Integer getNearestAvailableZoom(int zoom) {
+            TreeSet<Integer> availableZooms = new TreeSet<>(getAllZooms());
+            if (availableZooms.contains(zoom)) {
+                return zoom;
+            }
+            Integer higher = availableZooms.higher(zoom);
+            return higher != null ? higher : availableZooms.lower(zoom);
         }
 
         void destroyHandles(Predicate<Integer> filter) {
@@ -182,30 +192,42 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private class HandleAtSize {
 
+        record TemporaryHandleForZoom(DestroyableImageHandle handle, int zoom) {
+        }
+
         private InternalImageHandle handleContainer = null;
 
-        private DestroyableImageHandle temporaryHandleContainer = null;
+        private TemporaryHandleForZoom temporaryHandleContainer = null;
 
         private int requestedWidth = -1;
 
         private int requestedHeight = -1;
 
         public void destroy() {
-            if (temporaryHandleContainer != null) {
-                temporaryHandleContainer.destroy();
-                temporaryHandleContainer = null;
+            TemporaryHandleForZoom previousHandle = reset();
+            if (previousHandle != null) {
+                previousHandle.handle().destroy();
             }
+        }
+
+        private TemporaryHandleForZoom reset() {
+            TemporaryHandleForZoom previousHandle = temporaryHandleContainer;
+            temporaryHandleContainer = null;
             handleContainer = null;
             requestedWidth = -1;
             requestedHeight = -1;
+            return previousHandle;
         }
 
         public ImageHandle refresh(int width, int height) {
             if (!isReusable(width, height)) {
-                destroy();
+                TemporaryHandleForZoom previousHandle = reset();
                 requestedWidth = width;
                 requestedHeight = height;
-                handleContainer = createHandleAtExactSize(width, height).orElseGet(() -> getOrCreateImageHandleAtClosestSize(width, height));
+                handleContainer = createHandleAtExactSize(width, height).orElseGet(() -> getOrCreateImageHandleAtClosestSize(width, height, previousHandle));
+                if (previousHandle != null && previousHandle.handle() != handleContainer) {
+                    previousHandle.handle().destroy();
+                }
             }
             return handleContainer;
         }
@@ -221,15 +243,40 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return Optional.empty();
         }
 
-        private InternalImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint) {
+        private InternalImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint, TemporaryHandleForZoom previousHandle) {
             Rectangle bounds = getBounds(100);
             int imageZoomForWidth = 100 * widthHint / bounds.width;
             int imageZoomForHeight = 100 * heightHint / bounds.height;
-            int imageZoom = DPIUtil.getZoomForAutoscaleProperty(Math.max(imageZoomForWidth, imageZoomForHeight));
+            return temporaryHandleContainer.handle();
+        }
+
+        private InternalImageHandle getPersistentHandle(int imageZoom, int nearestAvailableZoom) {
             InternalImageHandle bestFittingHandle = imageHandleManager.get(imageZoom);
-            if (bestFittingHandle == null) {
+            if (bestFittingHandle != null) {
+                return bestFittingHandle;
             }
-            return bestFittingHandle;
+            if (getShellZooms().contains(imageZoom)) {
+                return getHandleInternal(imageZoom, imageZoom);
+            }
+            bestFittingHandle = imageHandleManager.get(nearestAvailableZoom);
+            if (bestFittingHandle != null) {
+                return bestFittingHandle;
+            }
+            if (nearestAvailableZoom == 100) {
+                return getHandleInternal(100, 100);
+            }
+            return null;
+        }
+
+        private Set<Integer> getShellZooms() {
+            if (getDevice() instanceof Display display) {
+                try {
+                    return Arrays.stream(display.getShells()).map(Shell::getZoom).collect(Collectors.toSet());
+                } catch (SWTException e) {
+                    return Collections.emptySet();
+                }
+            }
+            return Collections.emptySet();
         }
     }
 
@@ -248,16 +295,27 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * by creating a GC and using any of its drawing operations,
      * as shown in the following example:
      * <pre>
-     *    Image i = new Image(device, width, height);
+     *    Image i = new Image(device, imageWidth, imageHeight);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, imageWidth, imageHeight);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), imageWidth, imageHeight);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -275,12 +333,13 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *    <li>ERROR_NO_HANDLES if a handle could not be obtained for image creation</li>
      * </ul>
      *
+     * @see #Image(Device, ImageGcDrawer, int, int)
      * @see #dispose()
      */
     public DartImage(Device device, int width, int height, Image api) {
         super(device, api);
         init();
-        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        this.imageData = GraphicsUtils.blankImageData(width, height);
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
 
@@ -389,14 +448,25 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * <pre>
      *    Image i = new Image(device, boundsRectangle);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, boundsRectangle.width, boundsRectangle.height);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), boundsRectangle.width, boundsRectangle.height);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -416,7 +486,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *
      * @see #dispose()
      *
-     * @deprecated use {@link Image#Image(Device, int, int)} instead
+     * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
     public DartImage(Device device, Rectangle bounds, Image api) {
@@ -651,6 +721,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (imageFileNameProvider.getImagePath(100) == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ": ImageFileNameProvider [" + imageFileNameProvider + "] returns null fileName at 100% zoom.");
         }
+        this.imageData = new ImageData(imageFileNameProvider.getImagePath(100));
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -686,9 +757,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageDataProvider imageDataProvider, Image api) {
         super(device, api);
-        if (imageDataProvider.getImageData(100) == null) {
+        ImageData data = imageDataProvider.getImageData(100);
+        if (data == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ": ImageDataProvider [" + imageDataProvider + "] returns null ImageData at 100% zoom.");
         }
+        this.imageData = GraphicsUtils.copyImageData(data);
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -882,6 +955,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         return null;
     }
 
+    InternalImageHandle getHandleInternal(int targetZoom, int nativeZoom) {
+        return null;
+    }
+
     void executeOnImageHandleAtBestFittingSize(Consumer<ImageHandle> handleAtSizeConsumer, int destWidth, int destHeight) {
         ImageHandle imageHandle = lastRequestedHandle.refresh(Math.max(1, destWidth), Math.max(1, destHeight));
         handleAtSizeConsumer.accept(imageHandle);
@@ -902,6 +979,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
+        org.eclipse.swt.internal.StrictChecks.runWithStrictChecksDisabled(() -> {
+            Image imageToDraw = new Image(gc.getDevice(), (ImageDataProvider) zoom -> imageData);
+            Rectangle source = imageToDraw.getBounds();
+            gc.drawImage(imageToDraw, 0, 0, source.width, source.height, 0, 0, width, height);
+            imageToDraw.dispose();
+        });
     }
 
     void addOnDisposeListener(Consumer<Image> onDisposeListener) {
@@ -1112,10 +1195,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                         // widget/event on it instead of using an isolated per-image engine (see
                         // DisplayBridge#sharedCommFor / GCImageDrawer#resolveSharedComm) — under CI load
                         // it can queue behind unrelated traffic, so this bound is generous either way.
-                        long deadline = System.nanoTime() + 5_000_000_000L;
+                        long deadline = System.nanoTime() + 30_000_000_000L;
                         Runnable wakeOnTimeout = () -> {
                         };
-                        display.timerExec(5000, wakeOnTimeout);
+                        display.timerExec(30000, wakeOnTimeout);
                         try {
                             while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
                                 // GC(Image) uses an off-screen Flutter engine whose startup and
@@ -1132,7 +1215,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                         }
                     } else {
                         try {
-                            f.get(2000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                            f.get(30000, java.util.concurrent.TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
@@ -1147,12 +1230,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         _ensureRemotePixels();
         // Return a defensive copy: getImageData() must not hand out the backing store, so a
         // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
-        if (zoom == 100)
+        // A buffer allocated at the raster scale (see _allocateScratchBuffer) is stored at that
+        // zoom; every other image at 100%.
+        int storedZoom = 100;
+        if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
-        // The image is stored at 100%; scale to the requested zoom (matches upstream, which
-        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already
-        // returns a fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
-        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
+        // Scale to the requested zoom (matches upstream, which falls back to
+        // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
+        // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
+        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, storedZoom);
     }
 
     /**
@@ -1695,6 +1781,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return false;
         }
 
+        abstract int nearestAvailableZoom(int zoom);
+
         /**
          * Returns image data at the best-fitting available zoom for the given zoom.
          * The returned data will have a potential gray/disable style applied.
@@ -1706,8 +1794,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         abstract AbstractImageProviderWrapper createCopy(Image image);
 
         ElementAtZoom<ImageData> getClosestAvailableImageData(int zoom) {
-            TreeSet<Integer> availableZooms = new TreeSet<>(imageHandleManager.getAllZooms());
-            int closestZoom = Optional.ofNullable(availableZooms.higher(zoom)).orElse(availableZooms.lower(zoom));
+            int closestZoom = imageHandleManager.getNearestAvailableZoom(zoom);
             ImageData imageData = imageHandleManager.get(closestZoom).getImageData();
             return new ElementAtZoom<>(imageData, closestZoom);
         }
@@ -1786,6 +1873,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             ImageData resizedData = newImageData(zoomContext.targetZoom());
             return newImageHandle(resizedData, zoomContext);
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return zoomForHandle;
+        }
     }
 
     private abstract class ImageFromImageDataProviderWrapper extends AbstractImageProviderWrapper {
@@ -1856,6 +1948,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         AbstractImageProviderWrapper createCopy(Image image) {
             return ((DartImage) image.getImpl()).new PlainImageDataProviderWrapper(this.imageDataAtBaseZoom);
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return baseZoom;
+        }
     }
 
     private class MaskedImageDataProviderWrapper extends ImageFromImageDataProviderWrapper {
@@ -1888,6 +1985,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         @Override
         AbstractImageProviderWrapper createCopy(Image image) {
             return ((DartImage) image.getImpl()).new MaskedImageDataProviderWrapper(this.srcAt100, this.maskAt100);
+        }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return 100;
         }
     }
 
@@ -1933,6 +2035,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             }
             return Optional.empty();
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            if (ImageDataLoader.isDynamicallySizable(new ByteArrayInputStream(this.inputStreamData))) {
+                return zoom;
+            }
+            return 0;
+        }
     }
 
     private class PlainImageProviderWrapper extends AbstractImageProviderWrapper {
@@ -1967,6 +2077,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
         @Override
         protected long configureGCData(GCData data) {
+            ((SwtGCData) data.getImpl()).reapplicable = true;
             return configureGC(data, new ZoomContext(DPIUtil.getDeviceZoom(), DPIUtil.getNativeDeviceZoom()));
         }
 
@@ -1995,6 +2106,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
             return getClosestAvailableImageData(zoom);
+        }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            if (imageHandleManager.isEmpty()) {
+                return 100;
+            }
+            return imageHandleManager.getNearestAvailableZoom(zoom);
         }
 
         @Override
@@ -2148,6 +2267,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
 
         @Override
+        int nearestAvailableZoom(int zoom) {
+            if (provider instanceof ImageDataAtSizeProvider) {
+                return zoom;
+            }
+            return DPIUtil.validateAndGetImagePathAtZoom(provider, zoom).zoom();
+        }
+
+        @Override
         public int hashCode() {
             return Objects.hash(provider, styleFlag);
         }
@@ -2165,7 +2292,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 		* Windows 7 when the image has a position offset in the first frame.
 		* The fix is to not use GDI+ image loading in this case.
 		*/
-            if (filename.toLowerCase().endsWith(".gif"))
+            if (filename.toLowerCase(java.util.Locale.ROOT).endsWith(".gif"))
                 gdip = false;
             if (!gdip)
                 return null;
@@ -2221,6 +2348,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             }
             return Optional.empty();
         }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            if (provider instanceof ImageDataAtSizeProvider) {
+                return zoom;
+            }
+            return DPIUtil.validateAndGetImageDataAtZoom(provider, zoom).zoom();
+        }
     }
 
     private class ImageGcDrawerWrapper extends DynamicImageProviderWrapper {
@@ -2263,6 +2398,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
             return new ElementAtZoom<>(loadImageData(new ZoomContext(zoom)), zoom);
+        }
+
+        @Override
+        int nearestAvailableZoom(int zoom) {
+            return zoom;
         }
 
         private ImageData loadImageData(ZoomContext zoomContext) {
@@ -2553,7 +2693,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array()));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array())));
             }
         }
     }
@@ -2567,8 +2707,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.remoteRef = ref;
     }
 
+    boolean renderOwnsPixels;
+
+    public void _renderOwnsPixels() {
+        renderOwnsPixels = true;
+    }
+
     public ImageData _imageDataForWire() {
-        return remoteRef != null ? null : imageData;
+        return (remoteRef != null || renderOwnsPixels) ? null : imageData;
     }
 
     public int _wireWidth() {
@@ -2592,7 +2738,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     private void _ensureRemotePixels() {
         if (!remotePixelsStale || remoteRef == null || remoteComm == null)
             return;
-        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 5000);
+        // Generous: a GPU-less browser can take seconds to answer the first read of a kind of
+        // image, and an answer that arrives after the bound is lost.
+        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 30000);
         if (png == null || png.length == 0) {
             SWT.error(SWT.ERROR_IO, null, " [the render side did not return the pixels for image " + remoteRef + "]");
             return;

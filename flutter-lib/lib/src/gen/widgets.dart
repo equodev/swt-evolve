@@ -137,6 +137,7 @@ VWidget _mapWidgetValue(Map<String, dynamic> child) {
     "ControlEditor" => VControlEditor.fromJson(child),
     "MainComposite" => VComposite.fromJson(child),
     "EwtWidget" => VComposite.fromJson(child),
+    "SwingIsland" => VComposite.fromJson(child),
     "SideBar" => VComposite.fromJson(child),
     "MainToolbar" => VComposite.fromJson(child),
     "StatusBar" => VComposite.fromJson(child),

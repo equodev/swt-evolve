@@ -304,7 +304,7 @@ public class DartProgressBar extends DartControl implements IProgressBar {
         return bits;
     }
 
-    int maximum;
+    int maximum = 100;
 
     int minimum;
 

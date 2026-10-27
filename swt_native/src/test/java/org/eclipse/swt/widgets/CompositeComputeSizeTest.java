@@ -57,7 +57,7 @@ class CompositeComputeSizeTest {
 
     @Test
     void preferredHeightIsTheLaidOutHeightAcrossTheDefaultHeightValue() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
 
         for (int inner = 50; inner <= 58; inner++) {
             int margins = 2 * new GridLayout().marginHeight;
@@ -75,7 +75,7 @@ class CompositeComputeSizeTest {
      */
     @Test
     void thePreferredHeightCoversTheChildrenTheLayoutPositions() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite clientBar = barWithContentHeight(shell, 54);
 
         clientBar.layout(true, true);

@@ -292,7 +292,6 @@ public class DartText extends DartScrollable implements IText {
         applySegments();
         if (string.length() != 0) {
             getValue().markDirty(VText.TEXT);
-            sendEvent(SWT.Modify);
         }
     }
 
@@ -344,7 +343,7 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         Point sel = getSelection();
         if (sel != null && sel.x != sel.y) {
-            setSelection(sel.x);
+            setSelection(sel.y);
         }
     }
 
@@ -504,7 +503,8 @@ public class DartText extends DartScrollable implements IText {
             line++;
         int lh = (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize("Ag", getFont()).y());
         int x = lineBefore.isEmpty() ? 0 : (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize(lineBefore, getFont()).x());
-        return new Point(x, line * (lh > 0 ? lh : 1));
+        // Relative to the visible area, as the text view scrolls it.
+        return new Point(x, line * (lh > 0 ? lh : 1) - getTopPixel());
     }
 
     Point getCaretLocationInPixels() {
@@ -526,10 +526,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCaretPosition() {
         checkWidget();
-        if (selection != null) {
-            return selection.x;
-        }
-        return 0;
+        return TextHelper.getCaretPosition(this);
     }
 
     /**
@@ -996,8 +993,6 @@ public class DartText extends DartScrollable implements IText {
             super.updateTextDirection(AUTO_TEXT_DIRECTION);
         }
         applySegments();
-        if (string.length() != 0)
-            sendEvent(SWT.Modify);
     }
 
     @Override
@@ -1228,10 +1223,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         char newValue = echo;
-        if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
+        checkWidget();
+        if (this.echoCharacter != newValue) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
-        checkWidget();
         if ((getApi().style & SWT.MULTI) != 0)
             return;
         allowPasswordChar = true;
@@ -1251,10 +1246,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
-        if (!java.util.Objects.equals(this.editable, newValue)) {
+        checkWidget();
+        if (this.editable != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
-        checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
         if (!editable)
             getApi().style |= SWT.READ_ONLY;
@@ -1398,8 +1393,15 @@ public class DartText extends DartScrollable implements IText {
         int min = Math.min(Math.max(Math.min(start, end), 0), length);
         int max = Math.min(Math.max(Math.max(start, end), 0), length);
         Point newValue = new Point(min, max);
+        // A partial update carries only the properties it names, so a selection change
+        // that records nothing leaves the client re-applying the range it was last
+        // told - the select-all a dialog opens with, re-asserted over the caret after
+        // every keystroke.
         if (!java.util.Objects.equals(this.selection, newValue)) {
             getValue().markDirty(VText.SELECTION);
+        }
+        if (this.caretPosition != min) {
+            getValue().markDirty(VText.CARET_POSITION);
         }
         this.selection = newValue;
         // the caret is in the start of the selection
@@ -1509,11 +1511,11 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setText(String string) {
+        checkWidget();
         String newValue = string;
         if (!java.util.Objects.equals(this.text, newValue)) {
             getValue().markDirty(VText.TEXT);
         }
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         string = SwtDisplay.withCrLf(string);
@@ -1588,10 +1590,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         int newValue = limit;
-        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+        checkWidget();
+        if (this.textLimit != newValue) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
-        checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         this.textLimit = newValue;
@@ -1938,27 +1940,27 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 if (!isActive())
                     return;
-                if (!isDisposed()) {
-                    if (e.detail == SWT.ICON_CANCEL) {
-                        if (getCharCount() != 0) {
-                            setText("");
-                        }
-                        if (!isDisposed()) {
-                            sendEvent(SWT.DefaultSelection, e);
-                        }
-                        return;
-                    }
-                    if (!traverse(SWT.TRAVERSE_RETURN)) {
-                        Event crEvent = new Event();
-                        crEvent.keyCode = SWT.CR;
-                        crEvent.character = '\r';
-                        sendEvent(SWT.KeyDown, crEvent);
+                if (e.detail == SWT.ICON_CANCEL) {
+                    if (getCharCount() != 0) {
+                        setText("");
                     }
                     if (!isDisposed()) {
                         sendEvent(SWT.DefaultSelection, e);
                     }
+                    return;
+                }
+                if (!traverse(SWT.TRAVERSE_RETURN)) {
+                    Event crEvent = new Event();
+                    crEvent.keyCode = SWT.CR;
+                    crEvent.character = '\r';
+                    sendEvent(SWT.KeyDown, crEvent);
+                }
+                if (!isDisposed()) {
+                    sendEvent(SWT.DefaultSelection, e);
                 }
             });
         });
@@ -1971,9 +1973,13 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    sendEvent(SWT.Verify, e);
+                if (isDisposed())
+                    return;
+                if (TextHelper.proposesNoChange(e)) {
+                    TextHelper.clientCaretMoved(this, e.start, e.index);
+                    return;
                 }
+                sendEvent(SWT.Verify, e);
             });
         });
     }

@@ -491,7 +491,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.moveable, moveable)) {
+        if (this.moveable != moveable) {
             getValue().markDirty(VTreeColumn.MOVEABLE);
         }
         this.moveable = moveable;
@@ -511,6 +511,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setResizable(boolean resizable) {
         checkWidget();
+        if (this.resizable != resizable) {
+            getValue().markDirty(VTreeColumn.RESIZABLE);
+        }
         this.resizable = resizable;
     }
 
@@ -579,7 +582,8 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
 
     void setWidthInPixels(int width) {
         int newValue = width;
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        boolean widthChanged = this.width != newValue;
+        if (this.width != newValue) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
         if (width < 0)
@@ -590,6 +594,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         ((DartControl) parent.getImpl()).forceResize();
         this.width = newValue;
         ((DartTree) parent.getImpl()).setScrollWidth();
+        if (widthChanged) {
+            sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     void updateToolTip(int index) {
@@ -658,7 +666,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Move, e);
+                ColumnHelper.movedByUser(getApi(), e.index);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {
@@ -666,7 +674,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
                 if (isDisposed())
                     return;
                 setWidth(e.width);
-                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

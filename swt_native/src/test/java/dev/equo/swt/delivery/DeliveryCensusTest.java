@@ -76,7 +76,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("1 - one property on a leaf Label")
     void oneLeafProperty() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("before");
@@ -89,7 +89,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("2 - one child changed inside a large subtree")
     void oneChildInLargeSubtree() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         List<Label> leaves = leaves(parent, LARGE_SUBTREE_LEAVES);
         settle(parent);
@@ -101,7 +101,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("2b - one child added to an established subtree")
     void oneChildAddedToLargeSubtree() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         leaves(parent, LARGE_SUBTREE_LEAVES);
         settle(parent);
@@ -114,7 +114,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("2c - one child removed from an established subtree")
     void oneChildRemovedFromLargeSubtree() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         List<Label> leaves = leaves(parent, LARGE_SUBTREE_LEAVES);
         settle(parent);
@@ -126,7 +126,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("3 - a layout pass over a large subtree")
     void layoutPass() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         List<Label> leaves = leaves(parent, LARGE_SUBTREE_LEAVES);
         settle(parent);
@@ -139,7 +139,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("4 - one cell changed in a 1000-row Table")
     void oneCellInLargeTable() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Table table = new Table(shell, SWT.NONE);
         List<TableItem> rows = new ArrayList<>();
         for (int i = 0; i < TABLE_ROWS; i++) {
@@ -156,7 +156,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("5 - first delivery of a new subtree")
     void firstDeliveryOfNewSubtree() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         settle(parent);
 
@@ -169,7 +169,7 @@ class DeliveryCensusTest {
     @Test
     @DisplayName("6 - worst case: every leaf changed")
     void everythingChanged() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         List<Label> leaves = leaves(parent, LARGE_SUBTREE_LEAVES);
         settle(parent);
@@ -201,7 +201,7 @@ class DeliveryCensusTest {
                     "List", "Canvas", "Group", "Table", "Tree", "ToolBar", "StyledText");
 
     private void measureSingleProperty(String type) {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Control leaf = newLeaf(type, parent);
         if (leaf == null) {

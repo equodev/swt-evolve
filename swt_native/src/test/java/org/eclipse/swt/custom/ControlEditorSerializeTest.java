@@ -11,7 +11,7 @@ class ControlEditorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ControlEditor() {
-        ControlEditor w = new ControlEditor(swtShell());
+        ControlEditor w = new ControlEditor(shell());
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.isNotEmpty();
@@ -19,7 +19,7 @@ class ControlEditorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ControlEditor() {
-        ControlEditor w = new ControlEditor(swtShell());
+        ControlEditor w = new ControlEditor(shell());
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

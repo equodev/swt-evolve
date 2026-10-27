@@ -2,10 +2,11 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.ConfigFlags;
+import dev.equo.swt.Java8;
+import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 
 import java.util.concurrent.Executors;
@@ -36,10 +37,12 @@ public class WebDisplayBridge extends DisplayBridge {
      * {@code beforeunload} time, so instead of closing immediately we wait this long: if the page was
      * merely refreshing, the reloaded client reconnects and re-sends {@code ClientReady} within the
      * window (see {@link #onDisplayClientReady}) and the close is cancelled; a genuine close lets the
-     * timer elapse and tears the shells down. Tuned to comfortably cover a Flutter-web reboot; override
-     * with {@code -Ddev.equo.swt.web.refreshGraceMs} (0 disables deferral — close immediately again).
+     * timer elapse and tears the shells down. It has to cover a cold Flutter-web boot of the whole
+     * tree, not of a snippet: an IDE-sized client takes 10-14 s to paint and reconnect, and a grace
+     * that expires first turns every refresh into a shutdown. Override with
+     * {@code -Ddev.equo.swt.web.refreshGraceMs} (0 disables deferral — close immediately again).
      */
-    private static final long REFRESH_GRACE_MS = Long.getLong("dev.equo.swt.web.refreshGraceMs", 3000);
+    private static final long REFRESH_GRACE_MS = Long.getLong("dev.equo.swt.web.refreshGraceMs", 20000);
 
     /** Single daemon thread that fires deferred tab-closes; created lazily, shut down with the Display. */
     private ScheduledExecutorService closeScheduler;
@@ -51,6 +54,62 @@ public class WebDisplayBridge extends DisplayBridge {
     WebDisplayBridge(DartDisplay display) {
         super(display);
         DisplayBridgePlatform.init();
+        // In a browser the splash is drawn like any other shell; the launcher's own window is left
+        // on the desktop with no event loop behind it.
+        DisplayBridgePlatform.dismissLauncherSplash();
+    }
+
+    /** How long a paste waits for the browser to hand over its clipboard. */
+    private static final long CLIPBOARD_READ_TIMEOUT_MS = Long.getLong("dev.equo.swt.web.clipboardTimeoutMs", 5000);
+
+    private final java.util.Map<String, java.util.concurrent.CompletableFuture<String>> clipboardReads =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private long clipboardDisplayId;
+
+    private void registerClipboard(long displayId) {
+        clipboardDisplayId = displayId;
+        comm().on("Display/" + displayId + "/Clipboard/contents", java.util.Map.class, reply -> {
+            if (reply == null) return;
+            java.util.concurrent.CompletableFuture<String> read = clipboardReads.remove(String.valueOf(reply.get("reqId")));
+            if (read != null) read.complete(reply.get("text") instanceof String ? (String) reply.get("text") : null);
+        });
+    }
+
+    /** The browser's clipboard is the user's. */
+    @Override
+    public void writeClipboardText(String text) {
+        try {
+            serializeAndSend("Display/" + clipboardDisplayId + "/Clipboard/write", dev.equo.swt.Java8.map("text", text));
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Blocks without pumping the event loop: a paste runs inside a KeyDown dispatch, and pumping would
+     * deliver the rest of the keystroke before the paste's edits. The answer arrives on the comm thread.
+     */
+    @Override
+    public String readClipboardText() {
+        String reqId = java.util.UUID.randomUUID().toString();
+        java.util.concurrent.CompletableFuture<String> read = new java.util.concurrent.CompletableFuture<>();
+        clipboardReads.put(reqId, read);
+        try {
+            serializeAndSend("Display/" + clipboardDisplayId + "/Clipboard/read", dev.equo.swt.Java8.map("reqId", reqId));
+        } catch (java.io.IOException e) {
+            clipboardReads.remove(reqId);
+            return null;
+        }
+        try {
+            return read.get(CLIPBOARD_READ_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            return null;
+        } finally {
+            clipboardReads.remove(reqId);
+        }
     }
 
     /**
@@ -66,6 +125,17 @@ public class WebDisplayBridge extends DisplayBridge {
         WebDisplayBridge bridge = (WebDisplayBridge) dartDisplay.displayBridge;
         if (bridge.webServer == null) return null;
         return bridge.webServer.getApplicationUrl();
+    }
+
+    /** The cookie jar of the Display's web server, or null off the web or before it started. */
+    static dev.equo.swt.ProxyCookieJar lookupProxyCookies(Object displayObj) {
+        if (!(displayObj instanceof Display)) return null;
+        Display display = (Display) displayObj;
+        if (!(display.getImpl() instanceof DartDisplay)) return null;
+        DartDisplay dartDisplay = (DartDisplay) display.getImpl();
+        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge)) return null;
+        WebDisplayBridge bridge = (WebDisplayBridge) dartDisplay.displayBridge;
+        return bridge.webServer != null ? bridge.webServer.getProxyCookies() : null;
     }
 
     /**
@@ -91,6 +161,7 @@ public class WebDisplayBridge extends DisplayBridge {
         registerDisplayClientReady(display);
         registerDisplayKeyEvents(display);
         registerWindowControls(display);
+        registerClipboard(displayId);
 
         int port = comm.getPort();
 
@@ -126,6 +197,7 @@ public class WebDisplayBridge extends DisplayBridge {
         webServer = serverBuilder.build();
         try {
             webServer.start();
+            WebFlutterServer.carryPortAcrossRelaunch(webServer.getPort());
             if (isChromium) {
                 try {
                     chromiumLauncher = new ChromiumStandaloneLauncher();
@@ -138,6 +210,8 @@ public class WebDisplayBridge extends DisplayBridge {
                     e.printStackTrace();
                     webServer.launchBrowser();
                 }
+            } else if (webServer.servesRelaunchedPage()) {
+                launchBrowserUnlessThePageReturns(webServer);
             } else {
                 webServer.launchBrowser();
             }
@@ -147,7 +221,29 @@ public class WebDisplayBridge extends DisplayBridge {
 
         FlutterBridgeSpi.registerWebServerUrlLookup(WebDisplayBridge::lookupWebServerUrl);
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
+        dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
+    }
+
+    /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */
+    private static final long RETURNING_PAGE_WAIT_MS = 5_000;
+
+    /**
+     * The page the previous JVM served reloads into this one when it is still open, so a browser is
+     * only opened when no page asks within the wait: the user had closed it.
+     */
+    private static void launchBrowserUnlessThePageReturns(WebFlutterServer server) {
+        Thread waiter = new Thread(() -> {
+            try {
+                if (!server.awaitReturningPage(RETURNING_PAGE_WAIT_MS)) server.launchBrowser();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.io.IOException e) {
+                System.err.println("[WebDisplayBridge] Could not open a browser on " + server.getApplicationUrl() + ": " + e);
+            }
+        }, "relaunch-browser");
+        waiter.setDaemon(true);
+        waiter.start();
     }
 
     /**
@@ -177,6 +273,175 @@ public class WebDisplayBridge extends DisplayBridge {
         comm.on(win + "WinRestore", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
         comm.on(win + "WinClose", String.class, s -> onClientWindowClosed());
         comm.on(win + "WinUnload", String.class, s -> scheduleDeferredClose());
+        // A browser refused the window (popup blocker, or the user's browser opened nothing). The
+        // shell has to go back to being drawn inside this one, or it would exist nowhere at all.
+        // Read as a plain Object: that reader is registered for every comm, whereas a payload class
+        // of our own needs one generated for it, and without it this never arrives at all.
+        comm.on(win + "WindowOpenFailed", Object.class, payload -> {
+            long shellId = shellIdOf(payload);
+            if (shellId != 0) winApi.asyncExec(() -> onShellWindowRejected(shellId));
+        });
+    }
+
+    // ---- one browser window per detached shell (see WindowPolicy) ---------------------------------
+
+    /** The {@code shellId} in a window payload, or 0 when it carries none. Package-private so a test
+     *  can put a really-decoded payload through it. */
+    static long shellIdOf(Object payload) {
+        if (payload instanceof java.util.Map<?, ?>) {
+            Object shellId = ((java.util.Map<?, ?>) payload).get("shellId");
+            if (shellId instanceof Number) return ((Number) shellId).longValue();
+        }
+        return 0;
+    }
+
+    /** Shells whose window the browser refused, so the policy is not asked about them again. */
+    private final java.util.Set<Long> rejectedShellWindows =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * Only with a served application: opening a second window means pointing a browser at a URL, and
+     * under the {@code flutter run} dev path there is no {@code WebFlutterServer} to name one.
+     */
+    @Override
+    protected boolean supportsShellWindows() {
+        return webServer != null;
+    }
+
+    @Override
+    protected boolean windowEligible(Shell shell) {
+        if (shell != null && rejectedShellWindows.contains((long) shell.hashCode())) return false;
+        return super.windowEligible(shell);
+    }
+
+    @Override
+    protected ShellWindow createShellWindow(Shell shell) {
+        Rectangle bounds = shell.getBounds();
+        String url = shellWindowUrl(webServer.getApplicationUrl(), shell.hashCode(),
+                effectiveTheme(), isTestSemanticsEnabled());
+        WebShellWindow window = new WebShellWindow(shell);
+        window.command("OpenWindow", Java8.map(
+                "shellId", (long) shell.hashCode(),
+                "url", url,
+                "x", bounds.x,
+                "y", bounds.y,
+                "width", bounds.width > 0 ? bounds.width : 640,
+                "height", bounds.height > 0 ? bounds.height : 480,
+                "title", shell.getText() == null ? "" : shell.getText()));
+        // The window the user closes is the one that tells us; the shell has no other way to hear it.
+        comm().on("Shell/" + shell.hashCode() + "/WinUnload", String.class,
+                s -> closeShellFromWindow(shell));
+        return window;
+    }
+
+    /**
+     * The address a detached shell's window is opened at: the same application, rooted at that shell
+     * rather than at the Display.
+     *
+     * <p>The theme is carried in the URL as well as being pushed over the comm, because the client
+     * paints its first frames before anything arrives on the socket. Without it the window opens
+     * light and then corrects itself, which against a dark application reads as a broken window
+     * rather than as a flash.
+     */
+    static String shellWindowUrl(String baseUrl, long shellId, String theme, boolean testSemantics) {
+        String url = baseUrl + "/?widgetName=Shell&widgetId=" + shellId + "&theme=" + theme;
+        if (testSemantics) url += "&enableTestSemantics=true";
+        return url;
+    }
+
+    /** Whether the served page is asked to build the semantics tree (the E2E runtime toggle). */
+    private static boolean isTestSemanticsEnabled() {
+        return Boolean.getBoolean("dev.equo.swt.web.enableTestSemantics");
+    }
+
+    /** The theme a new window should open in: what the application forces, else the system's. */
+    private static String effectiveTheme() {
+        String forced = dev.equo.swt.Config.getConfigFlags().force_theme;
+        if (forced != null) {
+            String normalized = forced.trim().toLowerCase();
+            if ("dark".equals(normalized) || "light".equals(normalized)) return normalized;
+        }
+        return dev.equo.swt.Config.systemDarkTheme() ? "dark" : "light";
+    }
+
+    /** The browser would not open the window: remember it, and re-push so the shell is drawn inline. */
+    private void onShellWindowRejected(long shellId) {
+        if (!rejectedShellWindows.add(shellId)) return;
+        System.err.println("[WebDisplayBridge] the browser refused a window for Shell/" + shellId
+                + " (popup blocked?); drawing it inside the main window instead");
+        if (forDisplay != null && !forDisplay.getApi().isDisposed()) sendDisplayUpdate(forDisplay);
+    }
+
+    /** The user closed a detached shell's browser window. */
+    private void closeShellFromWindow(Shell shell) {
+        Display api = forDisplay == null ? null : forDisplay.getApi();
+        if (api == null || api.isDisposed()) return;
+        api.asyncExec(() -> {
+            if (api.isDisposed() || shell.isDisposed()) return;
+            shell.close();
+            // The window is gone either way, so a vetoed close would strand the shell unreachable.
+            if (!shell.isDisposed()) shell.dispose();
+        });
+    }
+
+    /** A detached shell's browser window, driven entirely by commands to the client that opened it. */
+    private class WebShellWindow implements ShellWindow {
+        private final Shell shell;
+        private boolean open = true;
+
+        WebShellWindow(Shell shell) {
+            this.shell = shell;
+        }
+
+        void command(String name, java.util.Map<String, Object> payload) {
+            if (forDisplay == null) return;
+            try {
+                serializeAndSend("Display/" + forDisplay.getApi().hashCode() + "/" + name, payload);
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public boolean isAlive() {
+            return open;
+        }
+
+        @Override
+        public void setTitle(String title) {
+            command("WindowTitle", Java8.map("shellId", (long) shell.hashCode(), "title", title));
+        }
+
+        @Override
+        public void setBounds(Rectangle bounds) {
+            command("WindowBounds", Java8.map(
+                    "shellId", (long) shell.hashCode(),
+                    "x", bounds.x, "y", bounds.y,
+                    "width", bounds.width, "height", bounds.height));
+        }
+
+        @Override
+        public void setState(int state) {
+            command("WindowState", Java8.map(
+                    "shellId", (long) shell.hashCode(), "state", state));
+        }
+
+        @Override
+        public void setVisible(boolean visible) {
+            // A browser window cannot be hidden and brought back: the platform has no such gesture,
+            // and a tab that is closed is gone. Left showing, which is the lesser wrong -- the shell
+            // it renders is hidden, so the window is empty rather than stale.
+            if (visible) command("WindowState", Java8.map(
+                    "shellId", (long) shell.hashCode(), "state", ShellWindow.STATE_NORMAL));
+        }
+
+        @Override
+        public void close() {
+            if (!open) return;
+            open = false;
+            comm().remove("Shell/" + shell.hashCode() + "/WinUnload");
+            command("CloseWindow", Java8.map("shellId", (long) shell.hashCode()));
+        }
     }
 
     /** Whether the Phase 2 dev/introspection path is active (serve via `flutter run`, VM Service on). */
@@ -303,41 +568,11 @@ public class WebDisplayBridge extends DisplayBridge {
      * A refreshed browser client has reconnected and re-sent ClientReady within the grace window: it was
      * a refresh, not a close, so cancel the deferred tab-close armed by {@link #scheduleDeferredClose}.
      */
+    // A refreshed client paints nothing it is not asked for: each control's GC overlay asks for its
+    // first paint once it is listening, so a paint fired here, before that, would only be repeated.
     @Override
     protected void onDisplayClientReady(boolean first) {
         cancelDeferredClose();
-        // On refresh, a fresh client reconnects with the widget-tree state but not the one-shot GC
-        // paints Java already fired — re-fire them so custom-drawn content isn't blank.
-        if (!first) {
-            refirePaintsForFreshClient();
-        }
-    }
-
-    /** Re-fire SWT.Paint for every custom-painted control in the tree, on the Display thread. */
-    private void refirePaintsForFreshClient() {
-        DartDisplay display = forDisplay;
-        if (display == null) return;
-        Display api = display.getApi();
-        if (api == null || api.isDisposed()) return;
-        api.asyncExec(() -> {
-            if (api.isDisposed()) return;
-            for (Shell shell : api.getShells()) {
-                refirePaints(shell);
-            }
-        });
-    }
-
-    private void refirePaints(Control c) {
-        if (c == null || c.isDisposed()) return;
-        // Only paint-listening controls emit GC ops; skip the rest to avoid needless GC churn.
-        if (c.isListening(SWT.Paint) && c.getImpl() instanceof DartControl) {
-            ControlHelper.paint((DartControl) c.getImpl());
-        }
-        if (c instanceof Composite) {
-            for (Control child : ((Composite) c).getChildren()) {
-                refirePaints(child);
-            }
-        }
     }
 
     private void onClientWindowClosed() {
@@ -411,6 +646,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
+        noteBoundsSet(control);
         if (!isChromiumWindow(control) || bounds == null)
             return;
         // The main shell is slaved to the Chromium viewport: applyClientViewport()/setVisible() resize

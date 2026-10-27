@@ -7,7 +7,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import '../comm/v_registry.dart';
 import '../gen/control.dart';
+import '../gen/cursor.dart';
 import '../gen/rectangle.dart';
 import '../gen/droptarget.dart';
 import '../gen/event.dart';
@@ -16,9 +18,13 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../impl/focus_requests.dart';
+import '../impl/image_mouse_cursor.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
+import 'utils/perf_marks.dart';
+import 'utils/round_trip_timing.dart';
+import 'utils/text_utils.dart';
 import 'utils/hosted_context_menu.dart';
 import '../custom/rich_tooltip.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
@@ -27,6 +33,7 @@ import 'utils/dnd_session.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/region_clip.dart';
+import 'utils/wheel_input.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
@@ -45,7 +52,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Duration? _lastClickStamp;
   Offset? _lastClickPosition;
   int _lastMouseMoveMs = 0;
+
+  Offset? _lastPointerCrossing;
   int _lastDragMoveMs = 0;
+
+  /// Where in the view the held pointer was last reported, by its press or a move, in whole
+  /// pixels. In view coordinates because a control moved along with the pointer reports the same
+  /// local position for a pointer that did move.
+  Offset? _lastHeld;
   int? _dragDetectPointer;
   Offset? _dragDetectOrigin;
   bool _dragDetectSent = false;
@@ -56,8 +70,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   static const int _dragMoveThrottleMs = 15;
   // Win32's SM_CXDRAG/SM_CYDRAG default, which is what SWT's own drag detection uses.
   static const double _dragThresholdPx = 4.0;
-  // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
-  static const int _hoverDelayMs = 560;
+  /// How long the pointer rests before a control reports MouseHover and shows its tooltip:
+  /// Display.getToolTipTime(), configurable ([hoverDelay]).
+  static int get hoverDelayMs => hoverDelay.inMilliseconds;
   Timer? _hoverTimer;
 
   // The control's own tooltip is placed by hand, in an overlay, at the pointer. See
@@ -87,14 +102,29 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     super.initState();
     _resolveSentinelBounds(state);
     HoverExclusivityArbiter.instance.register(this, (hovering) {
+      final global = HoverExclusivityArbiter.instance.pointerPosition;
+      final box = context.findRenderObject();
+      final at = global != null && box is RenderBox && box.attached
+          ? box.globalToLocal(global)
+          : _lastPointerCrossing;
+      final event = at == null
+          ? null
+          : (VEvent()
+            ..x = at.dx.round()
+            ..y = at.dy.round());
       if (hovering) {
-        widget.sendMouseTrackMouseEnter(state, null);
+        widget.sendMouseTrackMouseEnter(state, event);
+        // A pointer that enters and comes to rest sends no hover event after the one that brought
+        // it in, so the stillness that makes a MouseHover due has to start counting here.
+        if (event != null) _resetHoverTimer(state, event);
       } else {
-        widget.sendMouseTrackMouseExit(state, null);
+        _hoverTimer?.cancel();
+        widget.sendMouseTrackMouseExit(state, event);
       }
     });
     FocusRequests.instance.addListener(_applyFocusRequest);
     _applyFocusRequest();
+    FocusRequests.instance.register(state.id, context);
     ActiveDragTracker.ensureInitialized();
   }
 
@@ -109,13 +139,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     final node = swtFocusNode;
     if (node == null) return;
     if (!FocusRequests.instance.claim(state.id)) return;
-    if (node.context != null) {
-      node.requestFocus();
-      return;
-    }
-    // Java can focus a control in the same pass that creates it, so the request routinely arrives
-    // before this one's first build -- the node has no context yet and requestFocus() is dropped.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // After the next frame: Java often creates or moves the control in the same pass that focuses it,
+    // and focusing a text field opens the platform input connection at its current layout position.
+    afterNextFrame(() {
       if (mounted) swtFocusNode?.requestFocus();
     });
   }
@@ -127,6 +153,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // Bounds arrive here, not through didUpdateWidget: a parent's copy of a child carries identity
     // only, so a changed value reaches the widget on its own channel.
     if (_gcOverlaySubscribed) _requestInitialPaint();
+    // Hiding drops the MouseRegion without an exit, so nothing else would end the hover.
+    if (state.visible == false) {
+      _hoverTimer?.cancel();
+      _removeTooltip();
+    }
   }
 
   @override
@@ -156,7 +187,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   bool _gcOverlaySubscribed = false;
 
   void onGCOverlaySubscribed() {
-    if (_gcOverlaySubscribed) return;
+    // A second subscription is a new, empty overlay: the previous one was dropped along with a
+    // hidden subtree, and Java does not know its drawing went with it.
+    if (_gcOverlaySubscribed) {
+      requestFullRepaint();
+      return;
+    }
     _gcOverlaySubscribed = true;
     _requestInitialPaint();
   }
@@ -199,18 +235,29 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return mask;
   }
 
+  void takeFocusOnPress() {}
+
+  /// The pointer crossed this control's bounds at [depth], [entering] or leaving it.
+  void crossPointer(PointerEvent event, int depth, bool entering) {
+    _lastPointerCrossing = event.localPosition;
+    HoverExclusivityArbiter.instance.setActive(this, depth, entering, event.position);
+  }
+
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
+    HoverExclusivityArbiter.instance.flushPending();
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastMouseMoveMs >= _mouseMoveThrottleMs) {
       _lastMouseMoveMs = now;
       event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
+      // After the send, not around it: this times the round trip the move starts.
+      RoundTripTiming.trace();
     }
   }
 
   void _resetHoverTimer(V state, VEvent event) {
     _hoverTimer?.cancel();
-    _hoverTimer = Timer(const Duration(milliseconds: _hoverDelayMs), () {
+    _hoverTimer = Timer(hoverDelay, () {
       if (!mounted) return;
       widget.sendMouseTrackMouseHover(state, event);
       _showTooltipAtPointer();
@@ -234,8 +281,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return;
     _removeTooltip();
+    // The hover arrives in the view's coordinates and the panel is laid out inside the overlay,
+    // which the app's zoom Transform sits above -- the two only coincide at zoom 1.
+    final overlayBox = overlay.context.findRenderObject() as RenderBox?;
+    final anchor = overlayBox?.globalToLocal(pointer) ?? pointer;
     final entry = OverlayEntry(
-      builder: (overlayContext) => _tooltipOverlay(overlayContext, message, pointer),
+      builder: (overlayContext) => _tooltipOverlay(overlayContext, message, anchor),
     );
     _tooltipEntry = entry;
     overlay.insert(entry);
@@ -253,16 +304,23 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _hoverTimer?.cancel();
     _removeTooltip();
     FocusRequests.instance.removeListener(_applyFocusRequest);
+    FocusRequests.instance.unregister(state.id, context);
     HoverExclusivityArbiter.instance.unregister(this);
     super.dispose();
   }
 
-  void sendThrottledDragMove(V state, VEvent event, int buttons) {
+  void sendThrottledDragMove(V state, VEvent event, PointerMoveEvent e) {
+    // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
+    // with the press.
+    final held = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
+    if (_lastHeld == held) return;
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
       _lastDragMoveMs = now;
-      event.stateMask = moveStateMask(buttons);
+      _lastHeld = held;
+      event.stateMask = moveStateMask(e.buttons);
       widget.sendMouseMoveMouseMove(state, event);
+      RoundTripTiming.trace();
     }
   }
 
@@ -287,8 +345,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       state,
       VEvent()
         ..x = localPosition.dx.round()
-        ..y = localPosition.dy.round()
-        ..button = 3,
+        ..y = localPosition.dy.round(),
     );
   }
 
@@ -356,6 +413,20 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return null;
   }
 
+  /// Pointers pressed on this control's own scroll bars, which are not forwarded as mouse events:
+  /// a native scroll bar is outside the client area.
+  final Set<int> scrollBarPointers = {};
+
+  /// Whether this press continues the click chain [registerPointerDown] counts: same button, inside
+  /// the double-click window. Answers before the press is registered, for a handler nested inside
+  /// the control's own, which is reached first.
+  bool continuesClickChain(PointerDownEvent e) =>
+      _lastClickStamp != null &&
+      _lastClickPosition != null &&
+      swtButtonOf(e.buttons) == _lastButton &&
+      e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
+      (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
+
   /// Records the SWT button/count pair a pointer-down carries, chaining consecutive same-button
   /// downs inside the double-click window. Both interaction chromes funnel through here — [wrap]
   /// below and wrapCompositeInteractionChrome() in composite_evolve.dart, which serves a Composite
@@ -363,19 +434,42 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// pointer.
   void registerPointerDown(PointerDownEvent e) {
     final button = swtButtonOf(e.buttons);
-    final chained = _lastClickStamp != null &&
-        _lastClickPosition != null &&
-        button == _lastButton &&
-        e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
-        (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
-    _clickCount = chained ? _clickCount + 1 : 1;
+    _clickCount = continuesClickChain(e) ? _clickCount + 1 : 1;
     _lastClickStamp = e.timeStamp;
     _lastClickPosition = e.position;
     _lastButton = button;
     _dragDetectPointer = e.pointer;
     _dragDetectOrigin = e.localPosition;
+    _lastHeld = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
     _dragDetectSent = false;
+    final box = _ownBox();
+    if (box != null) _pressOrigins[e.pointer] = box.localToGlobal(Offset.zero);
   }
+
+  /// Where this control's top-left was in the view when each held pointer went down.
+  final Map<int, Offset> _pressOrigins = {};
+
+  RenderBox? _ownBox() {
+    if (!mounted) return null;
+    final box = context.findRenderObject();
+    return box is RenderBox && box.hasSize && box.attached ? box : null;
+  }
+
+  /// [e]'s position relative to where this control is now, as SWT reports MouseMove and MouseUp.
+  ///
+  /// Flutter delivers every event of a held pointer through the transforms it hit-tested at the
+  /// press, so [PointerEvent.localPosition] stays relative to where the control was then. A
+  /// listener that moves the control under the pointer (a pane resized from its own edge) would
+  /// otherwise read the whole distance it moved it a second time, on every move.
+  Offset heldLocal(PointerEvent e) {
+    final origin = _pressOrigins[e.pointer];
+    final box = origin == null ? null : _ownBox();
+    if (box == null) return e.localPosition;
+    return e.localPosition + box.globalToLocal(origin!);
+  }
+
+  /// Forgets the press of [e]'s pointer once it is released or cancelled.
+  void releasePointer(PointerEvent e) => _pressOrigins.remove(e.pointer);
 
   /// Whether a drag over this control is announced from its own pointer handling. False for a
   /// control that runs its own Draggable and raises DragDetect from there, or the gesture would be
@@ -407,6 +501,17 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         ..button = swtButton
         ..stateMask = swtStateMask(released: false, flutterButtons: e.buttons),
     );
+  }
+
+  final DragDetectGate _dragDetectGate = DragDetectGate();
+
+  VEvent dragDetectPayload() {
+    final at = _dragDetectOrigin ?? _lastPointerCrossing;
+    return VEvent()
+      ..x = (at?.dx ?? 0).round()
+      ..y = (at?.dy ?? 0).round()
+      ..button = swtButton
+      ..stateMask = swtStateMask(released: false);
   }
 
   void forgetDragDetect(int pointer) {
@@ -470,6 +575,25 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// `count == 1` must see a plain click as one.
   int get swtClickCount => _clickCount == 0 ? 1 : _clickCount;
 
+  /// Whether the press in flight continues a click chain: the second press of a double click, or a
+  /// later one. Natively it reports no Selection of its own on a Scale or Slider.
+  bool get isRepeatPress => swtClickCount > 1;
+
+  /// The second press of a chain delivers MouseDoubleClick right after its MouseDown, with the
+  /// same position and button, as every native does; a third press is a plain MouseDown again.
+  void sendDoubleClickOnSecondPress(VEvent press) {
+    if (swtClickCount != 2) return;
+    widget.sendMouseMouseDoubleClick(
+      state,
+      VEvent()
+        ..button = press.button
+        ..x = press.x
+        ..y = press.y
+        ..count = 2
+        ..stateMask = press.stateMask,
+    );
+  }
+
   MouseCursor swtCursorToFlutter(int style) {
     switch (style) {
       case 0: return SystemMouseCursors.basic;           // CURSOR_ARROW
@@ -487,6 +611,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
+  /// The cursor [cursor] shows, or null when it leaves it to the controls around this one.
+  MouseCursor? mouseCursorOf(VCursor? cursor) {
+    if (cursor == null) return null;
+    final style = cursor.cursorStyle;
+    if (style != null && style >= 0) return swtCursorToFlutter(style);
+    if (cursor.image != null) return imageMouseCursorOf(cursor) ?? SystemMouseCursors.basic;
+    return null;
+  }
+
   /// Whether this control forwards MouseDown from the interaction chrome
   /// (the Listener added in wrap() and wrapCompositeInteractionChrome).
   /// TableImpl overrides this to false because each cell has its own
@@ -499,10 +632,75 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// otherwise every keystroke reaches SWT KeyDown listeners twice.
   bool get forwardsKeysFromWrap => true;
 
+  /// Whether [wrap] reports the mouse wheel. A control that reports it from its own handler (Canvas,
+  /// a StyledText with scroll bars) overrides this to false.
+  bool get forwardsWheelFromWrap => true;
+
+  /// Whether a wheel over this control ends with it: a List, Table or Tree keeps it (Win32 and
+  /// Cocoa), and a Scale or Combo (Win32); any other control passes it on, and its parents report it
+  /// too.
+  bool get keepsWheel => false;
+
+  /// Whether a right press focuses this control as a left one does: a native edit field's does.
+  bool get takesFocusOnSecondaryPress => false;
+
+  /// The wheel event a control below has kept, by its untransformed original: every listener on the
+  /// pointer's path receives its own transformed copy of the same event.
+  static PointerEvent? _keptWheel;
+
+  /// Whether [e] is within this control's own bounds.
+  bool isOverSelf(PointerEvent e) {
+    final size = context.size;
+    return size != null && (Offset.zero & size).contains(e.localPosition);
+  }
+
+  /// Whether a control below the pointer already kept [event].
+  static bool wheelKeptBelow(PointerEvent event) =>
+      identical(event.original ?? event, _keptWheel) ||
+      (swipeBeingReported != null && identical(swipeBeingReported, _keptWheel));
+
+  /// Marks [event] as kept by a control on the pointer's path, so the controls above it do not
+  /// report it again.
+  static void markWheelKept(PointerEvent event) => _keptWheel = swipeBeingReported ?? event.original ?? event;
+
+  /// The pointer event the deepest control on its path has taken, by its untransformed original.
+  static PointerEvent? _takenPointer;
+
+  /// Whether a control below the pointer already took [event]; when none has, this one takes it.
+  /// SWT reports a press, a move, a release or a hover to the one control under the pointer, and
+  /// every control on the path receives its own copy of the event, the deepest first.
+  static bool pointerTakenBelow(PointerEvent event) {
+    final original = event.original ?? event;
+    if (identical(original, _takenPointer)) return true;
+    _takenPointer = original;
+    return false;
+  }
+
+  /// Reports the mouse wheel to Java at [localPosition]: SWT.MouseWheel for its vertical part,
+  /// positive up, and SWT.MouseHorizontalWheel for its horizontal part, positive left.
+  void reportWheel(PointerSignalEvent event, Offset localPosition) {
+    if (event is! PointerScrollEvent || wheelKeptBelow(event)) return;
+    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0))) {
+      widget.sendMouseWheelMouseWheel(
+        state,
+        wheel
+          ..x = localPosition.dx.round()
+          ..y = localPosition.dy.round(),
+      );
+    }
+    if (keepsWheel) markWheelKept(event);
+  }
+
   bool get wrapsWholeWidgetForDnd => true;
 
   Widget wrapDnd(Widget content) {
     if (state.dragSource != true && state.dropTargetId == null) return content;
+    // A DragSource drags from anywhere inside the control. What a self-drawn control renders under
+    // the Draggable (a Canvas's empty box; its GC paint sits outside) does not hit-test, so without
+    // this the press never reaches the Draggable.
+    if (state.dragSource == true) {
+      content = MetaData(behavior: HitTestBehavior.opaque, child: content);
+    }
     content = wrapDropTarget<DndDragPayload>(
       child: content,
       state: state,
@@ -519,6 +717,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       data: DndDragPayload(sourceControlId: state.id),
       widget: widget,
       state: state,
+      // Native SWT gives a plain control's drag no image, only the cursor.
+      feedbackBuilder: (_) => const SizedBox.shrink(),
+      dragDetectEvent: dragDetectPayload,
+      dragDetectGate: _dragDetectGate,
     );
   }
 
@@ -564,17 +766,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   Widget wrap(Widget widget) {
+    // Every Control build ends here, so this counts real rebuilds, which a duration mark cannot see.
+    perfCount('${state.swt}.build');
     final hoverDepth = ControlNestingScope.depthOf(context);
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
     }
-    widget = tagSemantics(widget);
 
-    if (state.cursor?.cursorStyle != null) {
-      widget = MouseRegion(
-        cursor: swtCursorToFlutter(state.cursor!.cursorStyle!),
-        child: widget,
-      );
+    final mouseCursor = mouseCursorOf(state.cursor);
+    if (mouseCursor != null) {
+      widget = MouseRegion(cursor: mouseCursor, child: widget);
     }
 
     if (state.style.has(SWT.BORDER)) {
@@ -595,10 +796,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // widget's GC channels whatever its enablement, so the GC has to be mounted and subscribed on
       // this branch too. Without it, everything a Canvas draws for itself is dropped -- a ui.forms
       // Hyperlink, which applications create disabled, renders as an empty row.
-      return RegionClip.maybe(
-          state.region,
-          blockWhenDisabled(
-              Opacity(opacity: AppOpacities.disabled, child: wrapWithGCOverlay(widget))));
+      return SwtControlScope(
+          swt: state.swt,
+          child: RegionClip.maybe(
+              state.region,
+              blockWhenDisabled(
+                  Opacity(
+                      opacity: AppOpacities.disabled,
+                      child: tagSemantics(wrapWithGCOverlay(widget))))));
     }
 
     if (state.menu != null) {
@@ -607,6 +812,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
+    // Tagged outside the GC overlay: the text the GC draws is the node's name only as a descendant.
+    widget = tagSemantics(widget);
 
     // Skipped when a whole-tree Display forwards keys from a single top-level handler (see
     // [displayLevelKeyForwardingActive]) — otherwise the same key would reach Java twice. Still
@@ -626,8 +833,42 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       );
     }
 
-    widget = Listener(
+    widget = _pointerListener(_pointerRegion(hoverDepth, widget));
+
+    return SwtControlScope(
+      swt: state.swt,
+      child: ControlNestingScope(
+        depth: hoverDepth + 1,
+        child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
+      ),
+    );
+  }
+
+  /// The pointer events a native control reports on its own: MouseDown and MouseUp, MouseEnter and
+  /// MouseExit settled by [HoverExclusivityArbiter], MouseMove while the pointer is over it,
+  /// MouseHover once it rests -- none while it is disabled, and none for a child's pointer. [wrap]
+  /// applies it; a control that builds its own tree instead has to call this, or it reports none of
+  /// them.
+  Widget trackPointer(Widget child) {
+    final hoverDepth = ControlNestingScope.depthOf(context);
+    return ControlNestingScope(
+      depth: hoverDepth + 1,
+      child: blockWhenDisabled(_pointerListener(_pointerRegion(hoverDepth, child))),
+    );
+  }
+
+  Widget _pointerListener(Widget child) {
+    return Listener(
+      onPointerSignal: (e) {
+        if (forwardsWheelFromWrap) reportWheel(e, e.localPosition);
+      },
+      onPointerPanZoomUpdate: (e) {
+        if (!forwardsWheelFromWrap || wheelKeptBelow(e)) return;
+        panAsScroll(e, (wheel) => reportWheel(wheel, wheel.localPosition));
+        if (keepsWheel) markWheelKept(e);
+      },
       onPointerDown: (e) {
+        if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
         registerPointerDown(e);
         if (forwardsControlMouseDown) {
           final event = VEvent()
@@ -636,7 +877,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ..y = e.localPosition.dy.round()
             ..count = swtClickCount
             ..stateMask = swtStateMask(released: false, flutterButtons: e.buttons);
-          this.widget.sendMouseMouseDown(state, event);
+          widget.sendMouseMouseDown(state, event);
+          sendDoubleClickOnSecondPress(event);
+        }
+        // After MouseDown: Java orders the press's activation and focus ahead of the MouseDown it
+        // delivers (ControlHelper.pressed), and a focus reported first would arrive as a separate,
+        // earlier change. Only the primary button focuses this way, as natively, unless the control
+        // is an edit field that a right press focuses too.
+        if (e.buttons == kPrimaryButton || (e.buttons == kSecondaryButton && takesFocusOnSecondaryPress)) {
+          takeFocusOnPress();
         }
         // After MouseDown, never before: a tool that tracks the secondary press picks the
         // item under the cursor there, and a menu built ahead of it describes the previous
@@ -646,50 +895,69 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         }
       },
       onPointerUp: (e) {
+        if (pointerTakenBelow(e)) return;
         forgetDragDetect(e.pointer);
+        final pos = heldLocal(e);
+        releasePointer(e);
+        if (scrollBarPointers.remove(e.pointer)) return;
         final event = VEvent()
           ..button = swtButton
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
+          ..x = pos.dx.round()
+          ..y = pos.dy.round()
           ..count = swtClickCount
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
-        this.widget.sendMouseMouseUp(state, event);
+        widget.sendMouseMouseUp(state, event);
+        // A mouse rests where the release left it; the hover starts counting from there. A touch
+        // leaves nothing under the pointer.
+        if (e.kind == PointerDeviceKind.mouse && isOverSelf(e)) {
+          _lastHoverPosition = e.position;
+          _resetHoverTimer(state, VEvent()
+            ..x = event.x
+            ..y = event.y);
+        }
       },
-      onPointerCancel: (e) => forgetDragDetect(e.pointer),
+      onPointerCancel: (e) {
+        forgetDragDetect(e.pointer);
+        releasePointer(e);
+        scrollBarPointers.remove(e.pointer);
+      },
       onPointerMove: (e) {
+        if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
+        // No hover while a button is held: the pointer is moving, not resting.
+        _hoverTimer?.cancel();
         maybeSendDragDetect(e);
+        final pos = heldLocal(e);
+        final event = VEvent()
+          ..x = pos.dx.round()
+          ..y = pos.dy.round();
+        sendThrottledDragMove(state, event, e);
+      },
+      child: child,
+    );
+  }
+
+  Widget _pointerRegion(int hoverDepth, Widget child) {
+    return MouseRegion(
+      onEnter: (e) {
+        _lastHoverPosition = e.position;
+        crossPointer(e, hoverDepth, true);
+      },
+      onExit: (e) {
+        _hoverTimer?.cancel();
+        _removeTooltip();
+        crossPointer(e, hoverDepth, false);
+      },
+      onHover: (e) {
+        if (pointerTakenBelow(e)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        sendThrottledDragMove(state, event, e.buttons);
+        _lastHoverPosition = e.position;
+        _removeTooltip();
+        sendThrottledMouseMove(state, event, e.buttons);
+        _resetHoverTimer(state, event);
       },
-      child: MouseRegion(
-        onEnter: (_) {
-          if (ActiveDragTracker.isSuppressingHover) return;
-          HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
-        },
-        onExit: (_) {
-          _hoverTimer?.cancel();
-          _removeTooltip();
-          if (ActiveDragTracker.isSuppressingHover) return;
-          HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
-        },
-        onHover: (e) {
-          final event = VEvent()
-            ..x = e.localPosition.dx.round()
-            ..y = e.localPosition.dy.round();
-          _lastHoverPosition = e.position;
-          _removeTooltip();
-          sendThrottledMouseMove(state, event, e.buttons);
-          _resetHoverTimer(state, event);
-        },
-        child: widget,
-      ),
-    );
-
-    return ControlNestingScope(
-      depth: hoverDepth + 1,
-      child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
+      child: child,
     );
   }
 
@@ -742,7 +1010,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             child: DefaultTextStyle(
               style: (tooltipTheme?.messageTextStyle ?? const TextStyle())
                   .copyWith(decoration: TextDecoration.none),
-              child: Text(message, maxLines: tooltipTheme?.messageMaxLines),
+              child: Text(stripAccelerators(message), maxLines: tooltipTheme?.messageMaxLines),
             ),
               ),
         ),
@@ -770,6 +1038,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // joined the gesture arena and its menu could not open. Translucent keeps the hit passing
       // through to whatever is behind, so a nested control still wins the arena over its parent.
       behavior: HitTestBehavior.translucent,
+      // The tap callbacks below are pointer plumbing for the menu. Left in the semantics tree they
+      // give the control a tap action, and the web engine then answers every click on it with a
+      // position-less semantic tap, so the control never sees its MouseDown/MouseUp.
+      excludeFromSemantics: true,
       onSecondaryTapUp: (details) => openMenuAt(details.localPosition),
       onTapUp: (details) {
         // macOS treats Ctrl+Click as a secondary click.
@@ -781,11 +1053,23 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       child: Stack(
         children: [
           child,
-          HostedContextMenu(child: MenuSwt(key: _menuKey, value: menu)),
+          _contextMenuFor(menu),
         ],
       ),
     );
   }
+
+  /// Reuses the widget for the same menu: rebuilding the anchor re-lays out its overlay.
+  Widget _contextMenuFor(VMenu menu) {
+    final channel = VRegistry.channelOf(menu);
+    final held = _contextMenu;
+    if (held != null && held.channel == channel) return held.widget;
+    final widget = HostedContextMenu(child: MenuSwt(key: _menuKey, value: menu));
+    _contextMenu = (channel: channel, widget: widget);
+    return widget;
+  }
+
+  ({String channel, Widget widget})? _contextMenu;
 }
 
 /// Places a tooltip the way the platform does: top-left corner just below and right of the

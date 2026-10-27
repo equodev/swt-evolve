@@ -31,9 +31,10 @@ public class ConfigDyn {
         // as it does for every other widget.
         if (forceEclipse || (defaultImpl == Impl.eclipse && isForced(Composite.class) != Impl.equo))
             return new SwtComposite(parent, style, composite);
-        if (Config.isEquo(composite.getClass(), parent))
-            return new DartComposite(parent, style, composite);
-        else
+        if (Config.isEquo(composite.getClass(), parent)) {
+            IWidget island = swingIslandFor(parent, style, composite);
+            return island != null ? island : new DartComposite(parent, style, composite);
+        } else
             return new SwtComposite(parent, style, composite);
     }
 

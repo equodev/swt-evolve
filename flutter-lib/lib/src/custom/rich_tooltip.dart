@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../gen/toolitem.dart';
+import '../impl/utils/text_utils.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'main_toolbar_scope.dart';
@@ -78,7 +79,7 @@ class RichToolTipData {
   /// Splits an item's label and tooltip into the card's parts, or null when there is nothing at all
   /// to show. An item with only a label gets [_sampleBody] rather than one word in a box.
   static RichToolTipData? of({String? text, String? toolTipText}) {
-    var body = toolTipText?.trim() ?? '';
+    var body = _stripMnemonics(toolTipText);
     String? shortcut;
     final match = _trailingShortcut.firstMatch(body);
     if (match != null) {
@@ -111,22 +112,7 @@ class RichToolTipData {
     );
   }
 
-  /// SWT marks the mnemonic with `&`; `&&` is a literal ampersand.
-  static String _stripMnemonics(String? raw) {
-    if (raw == null || raw.isEmpty) return '';
-    final out = StringBuffer();
-    for (var i = 0; i < raw.length; i++) {
-      if (raw[i] == '&') {
-        if (i + 1 < raw.length && raw[i + 1] == '&') {
-          out.write('&');
-          i++;
-        }
-        continue;
-      }
-      out.write(raw[i]);
-    }
-    return out.toString().trim();
-  }
+  static String _stripMnemonics(String? raw) => stripAccelerators(raw).trim();
 
   @override
   bool operator ==(Object other) =>
@@ -223,7 +209,12 @@ class _RichToolTipState extends State<RichToolTip> {
   double _horizontalShift(TooltipThemeExtension theme) {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return 0;
-    final itemLeft = box.localToGlobal(Offset.zero).dx;
+    // Against the overlay rather than the view, so the edge and the width below are read in the
+    // same space: the app is drawn through a Transform the overlay sits inside.
+    final overlayBox = Overlay.maybeOf(context, rootOverlay: true)
+        ?.context
+        .findRenderObject() as RenderBox?;
+    final itemLeft = box.localToGlobal(Offset.zero, ancestor: overlayBox).dx;
     final windowWidth = MediaQuery.maybeSizeOf(context)?.width;
     if (windowWidth == null) return 0;
 

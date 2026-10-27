@@ -25,14 +25,19 @@ class VTreeItem extends VItem {
     swt = "TreeItem";
   }
 
+  int? itemCount;
   VColor? background;
+  List<VColor?>? backgrounds;
   bool? checked;
   bool? expanded;
   VFont? font;
+  List<VFont?>? fonts;
   VColor? foreground;
+  List<VColor?>? foregrounds;
   bool? grayed;
   List<VImage?>? images;
   List<VTreeItem>? items;
+  List<int>? paintedTexts;
   List<String?>? texts;
 
   @override
@@ -40,14 +45,19 @@ class VTreeItem extends VItem {
     super.copyFrom(other);
     if (other is VTreeItem) {
       background = other.background;
+      backgrounds = other.backgrounds;
       checked = other.checked;
       expanded = other.expanded;
       font = other.font;
+      fonts = other.fonts;
       foreground = other.foreground;
+      foregrounds = other.foregrounds;
       grayed = other.grayed;
       images = other.images;
       items = other.items;
+      paintedTexts = other.paintedTexts;
       texts = other.texts;
+      itemCount = other.itemCount;
     }
   }
 
@@ -55,9 +65,11 @@ class VTreeItem extends VItem {
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
       case 'background':
-        background = json['background'] == null
-            ? null
-            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+        background = VColor.read(json['background']);
+      case 'backgrounds':
+        backgrounds = (json['backgrounds'] as List<dynamic>?)
+            ?.map((e) => VColor.read(e))
+            .toList();
       case 'checked':
         checked = json['checked'] as bool?;
       case 'expanded':
@@ -66,10 +78,19 @@ class VTreeItem extends VItem {
         font = json['font'] == null
             ? null
             : VFont.fromJson(json['font'] as Map<String, dynamic>);
+      case 'fonts':
+        fonts = (json['fonts'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VFont.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       case 'foreground':
-        foreground = json['foreground'] == null
-            ? null
-            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+        foreground = VColor.read(json['foreground']);
+      case 'foregrounds':
+        foregrounds = (json['foregrounds'] as List<dynamic>?)
+            ?.map((e) => VColor.read(e))
+            .toList();
       case 'grayed':
         grayed = json['grayed'] as bool?;
       case 'images':
@@ -83,10 +104,16 @@ class VTreeItem extends VItem {
         items = (json['items'] as List<dynamic>?)
             ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
             .toList();
+      case 'paintedTexts':
+        paintedTexts = (json['paintedTexts'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
       case 'texts':
         texts = (json['texts'] as List<dynamic>?)
             ?.map((e) => e as String?)
             .toList();
+      case 'itemCount':
+        itemCount = (json['itemCount'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

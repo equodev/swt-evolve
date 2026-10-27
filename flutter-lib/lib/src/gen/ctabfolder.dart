@@ -34,6 +34,10 @@ class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
     sendEvent(val, "CTabFolder/reorderItems", payload);
   }
 
+  void sendCTabFolderstripLaidOut(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder/stripLaidOut", payload);
+  }
+
   void sendCTabFolder2close(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/close", payload);
   }
@@ -89,6 +93,7 @@ class VCTabFolder extends VComposite {
   bool? showChevron;
   int? showListPopupSeq;
   bool? single;
+  int? tabHeight;
   int? tabPosition;
   VControl? topRight;
   int? topRightAlignment;
@@ -118,6 +123,7 @@ class VCTabFolder extends VComposite {
       showChevron = other.showChevron;
       showListPopupSeq = other.showListPopupSeq;
       single = other.single;
+      tabHeight = other.tabHeight;
       tabPosition = other.tabPosition;
       topRight = other.topRight;
       topRightAlignment = other.topRightAlignment;
@@ -156,11 +162,7 @@ class VCTabFolder extends VComposite {
       case 'selection':
         selection = (json['selection'] as num?)?.toInt();
       case 'selectionBackground':
-        selectionBackground = json['selectionBackground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionBackground'] as Map<String, dynamic>,
-              );
+        selectionBackground = VColor.read(json['selectionBackground']);
       case 'selectionBarThickness':
         selectionBarThickness = (json['selectionBarThickness'] as num?)
             ?.toInt();
@@ -169,17 +171,15 @@ class VCTabFolder extends VComposite {
             ? null
             : VImage.fromJson(json['selectionBgImage'] as Map<String, dynamic>);
       case 'selectionForeground':
-        selectionForeground = json['selectionForeground'] == null
-            ? null
-            : VColor.fromJson(
-                json['selectionForeground'] as Map<String, dynamic>,
-              );
+        selectionForeground = VColor.read(json['selectionForeground']);
       case 'showChevron':
         showChevron = json['showChevron'] as bool?;
       case 'showListPopupSeq':
         showListPopupSeq = (json['showListPopupSeq'] as num?)?.toInt();
       case 'single':
         single = json['single'] as bool?;
+      case 'tabHeight':
+        tabHeight = (json['tabHeight'] as num?)?.toInt();
       case 'tabPosition':
         tabPosition = (json['tabPosition'] as num?)?.toInt();
       case 'topRight':

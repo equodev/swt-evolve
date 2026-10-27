@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -156,6 +157,11 @@ public class DartCanvas extends DartComposite implements ICanvas {
     }
 
     @Override
+    boolean hooksPaint() {
+        return super.hooksPaint();
+    }
+
+    @Override
     void redrawWidget(int x, int y, int width, int height, boolean redrawAll, boolean all, boolean trim) {
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)
@@ -221,7 +227,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
         int deltaX = destX - x, deltaY = destY - y;
         if (deltaX == 0 && deltaY == 0)
             return;
-        if (!isVisible())
+        if (!getApi().isVisible())
             return;
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)
@@ -310,6 +316,9 @@ public class DartCanvas extends DartComposite implements ICanvas {
      */
     public void setCaret(Caret caret) {
         checkWidget();
+        if (!java.util.Objects.equals(this.caret, caret)) {
+            getValue().markDirty(VCanvas.CARET);
+        }
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
         this.caret = newCaret;

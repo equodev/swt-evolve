@@ -66,13 +66,20 @@ ListThemeExtension _getListTheme({
     
     // Animation
     animationDuration: const Duration(milliseconds: 150),
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
-Color getListItemTextColor(ListThemeExtension widgetTheme, bool isSelected, bool enabled,
+Color getListItemTextColor(BuildContext context, ListThemeExtension widgetTheme,
+    bool isSelected, bool enabled,
     {VColor? foreground}) {
   if (!enabled) return widgetTheme.disabledTextColor;
   final defaultColor =
       isSelected ? widgetTheme.selectedItemTextColor : widgetTheme.textColor;
-  return getForegroundColor(foreground: foreground, defaultColor: defaultColor);
+  return getForegroundColor(
+      context: context,
+      foreground: foreground,
+      defaultColor: defaultColor,
+      minContrast: widgetTheme.minTextContrast);
 }

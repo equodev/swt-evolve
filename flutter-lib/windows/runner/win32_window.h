@@ -42,6 +42,12 @@ class Win32Window {
   // snapping and the maximize animation keep working. Must be called before |Create|.
   void SetFrameless(bool frameless);
 
+  // Makes the top-level window an owned one: it stays above |owner|, minimizes and restores with it
+  // and has no taskbar or Alt+Tab entry of its own; nullptr makes it unowned. Before |Create| it is
+  // the owner the window is created with; after, it re-owns the live window. Ignored for an
+  // embedded (child) window.
+  void SetOwner(HWND owner);
+
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
 
@@ -56,12 +62,23 @@ class Win32Window {
 
   void Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize);
 
+  // Physical pixels per logical pixel, the factor Move scales by.
+  double scale_factor() const { return scale_factor_; }
+
   // Returns the backing Window handle to enable clients to set icon and other
   // window properties. Returns nullptr if the window has been destroyed.
   HWND GetHandle();
 
   // If true, closing this window will quit the application.
   void SetQuitOnClose(bool quit_on_close);
+
+  // Whether destroying this window ends the process. True for exactly one window -- the one hosting
+  // the Display. PostQuitMessage is per *thread*, not per window, so a detached shell's window
+  // posting it puts WM_QUIT in the queue every other window pumps, and the Display's own pump reads
+  // it as "I am gone" and takes the whole application down with it. Closing one detached window then
+  // closes the app, with nothing in the log to say why, because it is an orderly shutdown.
+  void SetOwnsAppExit(bool owns_app_exit) { owns_app_exit_ = owns_app_exit; }
+  bool OwnsAppExit() const { return owns_app_exit_; }
 
   // Returns whether the user asked to close this window since the last call, clearing the flag.
   // WM_CLOSE on such a window is vetoed rather than obeyed (see MessageHandler), so the owner can
@@ -109,12 +126,16 @@ class Win32Window {
 
   bool quit_on_close_ = false;
 
+  bool owns_app_exit_ = false;
+
   bool close_requested_ = false;
 
   bool headless_ = false;
 
   // True for the desktop-native Display window, whose title bar is drawn by Flutter (CSD).
   bool frameless_ = false;
+
+  HWND owner_ = nullptr;
 
   // DPI of the monitor this window is on. Set in Create(), updated on
   // WM_DPICHANGED. Used in Move() to scale logical pixels to physical pixels.

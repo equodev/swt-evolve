@@ -26,6 +26,9 @@ class FrameCoalescingTest {
 
     private static final int BURST = 200;
 
+    /** FlutterBridge's push interval: a Table is pushed at most once per this many nanoseconds. */
+    private static final long FRAME_NANOS = 16_000_000L;
+
     private RecordingBridge bridge;
 
     @BeforeAll
@@ -55,23 +58,27 @@ class FrameCoalescingTest {
         Table table = newTable();
         Thread.sleep(PAST_THE_FRAME_MS);
 
+        // Taken before the first push, so every push of the burst is at least a frame past it.
+        long burstStart = System.nanoTime();
         table.setSelection(0);
         FlutterBridge.updateFrame();
         int afterFirst = framesFor(table);
         assertThat(afterFirst).as("the first change goes out on the turn it happened").isPositive();
 
         for (int i = 1; i <= BURST; i++) {
-            table.setSelection(i % 30);
+            table.setSelection(i % 29);
             FlutterBridge.updateFrame();
         }
-        // An order of magnitude, not an exact count: how many frames the burst spans depends on the
-        // machine, so "no extra push at all" fails whenever the loop straddles a frame boundary.
+        long burstFrames = (System.nanoTime() - burstStart) / FRAME_NANOS;
+        // Bounded by the frames the burst spanned, which depends on the machine's speed.
         assertThat(framesFor(table) - afterFirst)
-                .as("%d changes must cost a push per frame, nowhere near %d pushes", BURST, BURST)
-                .isLessThan(BURST / 10);
+                .as("%d changes spanning %d frames must cost at most a push per frame",
+                        BURST, burstFrames)
+                .isLessThanOrEqualTo((int) burstFrames);
 
         int beforeHeld = framesFor(table);
-        table.setSelection(7);
+        // A value the burst never set: one the client already holds is rightly not sent again.
+        table.setSelection(29);
         FlutterBridge.updateFrame();
         Thread.sleep(PAST_THE_FRAME_MS);
         FlutterBridge.updateFrame();
@@ -83,7 +90,7 @@ class FrameCoalescingTest {
     @Test
     @DisplayName("a widget other than Table is never held back")
     void onlyTableIsCoalesced() throws InterruptedException {
-        Label label = new Label(Mocks.swtShell(), 0);
+        Label label = new Label(Mocks.shell(), 0);
         label.setData("dev.equo.swt.new", false);
         FlutterBridge.update();
         Thread.sleep(PAST_THE_FRAME_MS);
@@ -121,7 +128,7 @@ class FrameCoalescingTest {
 
     /** A Table past its first send, so later changes are pushes on its own channel. */
     private static Table newTable() {
-        Table table = new Table(Mocks.swtShell(), 0);
+        Table table = new Table(Mocks.shell(), 0);
         for (int i = 0; i < 30; i++) new TableItem(table, 0);
         table.setData("dev.equo.swt.new", false);
         FlutterBridge.update();

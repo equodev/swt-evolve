@@ -77,8 +77,8 @@ ScaleThemeExtension _getScaleTheme({
     minVerticalWidth: 40.0,
     minVerticalHeight: 120.0,
 
-    // Padding
-    horizontalPadding: 24.0,
+    // Track inset from each end, as GTK and Cocoa place it: a click maps to the same value.
+    horizontalPadding: 12.0,
 
     // Default scale values
     defaultMinimum: 0,
@@ -86,11 +86,14 @@ ScaleThemeExtension _getScaleTheme({
     defaultSelection: 0,
     defaultIncrement: 1,
     defaultPageIncrement: 10,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
 // Helper to get track colors based on state
 Color getScaleActiveTrackColor(
+  BuildContext context,
   ScaleThemeExtension widgetTheme, {
   required bool isEnabled,
   VColor? foreground,
@@ -101,8 +104,10 @@ Color getScaleActiveTrackColor(
   // Follows the application's foreground the way Slider's thumb already does: the two are
   // sibling widgets and looked like they belonged to different themes.
   return getForegroundColor(
+    context: context,
     foreground: foreground,
     defaultColor: widgetTheme.activeTrackColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -118,6 +123,7 @@ Color getScaleInactiveTrackColor(
 
 // Helper to get thumb color based on state
 Color getScaleThumbColor(
+  BuildContext context,
   ScaleThemeExtension widgetTheme, {
   required bool isEnabled,
   required bool isHovered,
@@ -127,8 +133,10 @@ Color getScaleThumbColor(
     return widgetTheme.disabledThumbColor;
   }
   return getForegroundColor(
+    context: context,
     foreground: foreground,
     defaultColor: isHovered ? widgetTheme.thumbHoverColor : widgetTheme.thumbColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

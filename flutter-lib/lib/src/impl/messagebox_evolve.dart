@@ -125,15 +125,15 @@ List<Widget> _buildButtons(
   const buttonMask = SWT.OK | SWT.CANCEL | SWT.YES | SWT.NO | SWT.ABORT | SWT.RETRY | SWT.IGNORE;
   return switch (style & buttonMask) {
     SWT.OK => [primary('OK', SWT.OK)],
-    (SWT.OK | SWT.CANCEL) => [secondary('Cancel', SWT.CANCEL), primary('OK', SWT.OK)],
-    (SWT.YES | SWT.NO) => [secondary('No', SWT.NO), primary('Yes', SWT.YES)],
-    (SWT.YES | SWT.NO | SWT.CANCEL) => [
+    const (SWT.OK | SWT.CANCEL) => [secondary('Cancel', SWT.CANCEL), primary('OK', SWT.OK)],
+    const (SWT.YES | SWT.NO) => [secondary('No', SWT.NO), primary('Yes', SWT.YES)],
+    const (SWT.YES | SWT.NO | SWT.CANCEL) => [
         secondary('Cancel', SWT.CANCEL),
         secondary('No', SWT.NO),
         primary('Yes', SWT.YES),
       ],
-    (SWT.RETRY | SWT.CANCEL) => [secondary('Cancel', SWT.CANCEL), primary('Retry', SWT.RETRY)],
-    (SWT.ABORT | SWT.RETRY | SWT.IGNORE) => [
+    const (SWT.RETRY | SWT.CANCEL) => [secondary('Cancel', SWT.CANCEL), primary('Retry', SWT.RETRY)],
+    const (SWT.ABORT | SWT.RETRY | SWT.IGNORE) => [
         secondary('Abort', SWT.ABORT),
         secondary('Retry', SWT.RETRY),
         primary('Ignore', SWT.IGNORE),

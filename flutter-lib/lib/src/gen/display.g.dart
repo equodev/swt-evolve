@@ -25,7 +25,11 @@ VDisplay _$VDisplayFromJson(Map<String, dynamic> json) => VDisplay()
       ? null
       : ConfigFlags.fromJson(json['config'] as Map<String, dynamic>)
   ..activeShellId = (json['activeShellId'] as num?)?.toInt()
-  ..mainShellId = (json['mainShellId'] as num?)?.toInt();
+  ..mainShellId = (json['mainShellId'] as num?)?.toInt()
+  ..focusHolderId = (json['focusHolderId'] as num?)?.toInt()
+  ..windowedShellIds = (json['windowedShellIds'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList();
 
 Map<String, dynamic> _$VDisplayToJson(VDisplay instance) => <String, dynamic>{
   'swt': ?instance.swt,
@@ -37,4 +41,6 @@ Map<String, dynamic> _$VDisplayToJson(VDisplay instance) => <String, dynamic>{
   'config': ?instance.config,
   'activeShellId': ?instance.activeShellId,
   'mainShellId': ?instance.mainShellId,
+  'focusHolderId': ?instance.focusHolderId,
+  'windowedShellIds': ?instance.windowedShellIds,
 };

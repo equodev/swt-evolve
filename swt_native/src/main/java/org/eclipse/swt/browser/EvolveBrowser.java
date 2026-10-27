@@ -1,11 +1,16 @@
 package org.eclipse.swt.browser;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 
+import dev.equo.swt.BrowserCookies;
 import dev.equo.swt.BrowserScripting;
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.FlutterBridge;
@@ -27,6 +32,29 @@ public class EvolveBrowser extends WebBrowser {
     private String visibilityKey;
     private String closeKey;
 
+    // Any of these can serve the static cookie calls: cookies belong to the webview profile.
+    private static final Set<EvolveBrowser> live = new LinkedHashSet<>();
+
+    static {
+        NativeGetCookie = () -> {
+            EvolveBrowser any = anyLive();
+            if (any != null)
+                CookieValue = BrowserCookies.get(any.getDartWidget(), any.display, CookieName, CookieUrl);
+        };
+        NativeSetCookie = () -> {
+            EvolveBrowser any = anyLive();
+            if (any != null)
+                CookieResult = BrowserCookies.set(any.getDartWidget(), any.display, CookieValue, CookieUrl);
+        };
+    }
+
+    private static EvolveBrowser anyLive() {
+        for (EvolveBrowser b : live) {
+            if (!b.browser.isDisposed()) return b;
+        }
+        return null;
+    }
+
     private DartWidget getDartWidget() {
         return (DartWidget) browser.getImpl();
     }
@@ -45,6 +73,8 @@ public class EvolveBrowser extends WebBrowser {
     @Override
     public void create(Composite parent, int style) {
         display = browser.getDisplay();
+        live.add(this);
+        browser.addListener(SWT.Dispose, e -> live.remove(this));
         // Desktop-webview BrowserFunction calls arrive here (fire-and-forget); see
         // BrowserScripting.listenForFunctionCalls. No-op on the web backend.
         BrowserScripting.listenForFunctionCalls(getDartWidget(), display);

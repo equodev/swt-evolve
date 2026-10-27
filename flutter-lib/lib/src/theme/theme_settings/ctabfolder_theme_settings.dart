@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/widget_utils.dart';
 import '../../impl/widget_config.dart';
 import '../theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -95,15 +96,18 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     // Tab content area
     tabContentBackgroundColor: colorScheme.surface,
     tabContentBorderColor: colorSchemeExtension.surfaceBorderEnabled,
+    outlineColor: colorScheme.outlineVariant,
     
     // Tab sizes
     tabIconSize: 16.0,
+    // CTabFolderRenderer's BUTTON_SIZE: what SWT gives a tab's close button.
     tabCloseIconSize: 16.0,
     controlButtonSize: 14.0,
     
     // Tab spacing
     tabIconTextSpacing: 14.0,
-    tabCloseButtonSpacing: 14.0,
+    // CTabFolderRenderer's INTERNAL_SPACING between the label and the close button.
+    tabCloseButtonSpacing: 4.0,
     
     // Tab icon/text padding
     tabIconBottomPadding: 1.0,
@@ -142,6 +146,8 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     // Chevron overflow menu
     chevronMenuItemHeight: 28.0,
     chevronMenuItemPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

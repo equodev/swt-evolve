@@ -15,7 +15,7 @@ extern "C" {
 
 // JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds —
 // an embedded view inside a native SWT parent, or a standalone top-level Display window.
-JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled);
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled, jboolean impeller_enabled);
 
 JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetView(JNIEnv* env, jclass cls, jlong context);
 
@@ -29,7 +29,22 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass 
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv* env, jclass cls, jlong context, jint millis);
 
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_Wake(JNIEnv* env, jclass cls, jlong context);
+
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jclass cls, jlong context, jstring title);
+
+// Declared here, like every other entry point: JNIEXPORT only exports the symbol, and it is this
+// block's `extern "C"` that keeps the name undecorated. A definition the header does not reach
+// still compiles and still exports -- under its C++-mangled name, which the JVM never looks up.
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, jclass cls, jlong context);
+
+JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_GetWorkAreaTop(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height);
+
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv* env, jclass cls, jlong context);
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible);
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv* env, jclass cls, jlong context, jlong owner);
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state);
 

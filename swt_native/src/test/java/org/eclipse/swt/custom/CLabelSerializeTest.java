@@ -11,7 +11,7 @@ class CLabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_CLabel() {
-        CLabel w = new CLabel(swtShell(), SWT.NONE);
+        CLabel w = new CLabel(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class CLabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_CLabel() {
-        CLabel w = new CLabel(swtShell(), SWT.NONE);
+        CLabel w = new CLabel(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -28,6 +28,7 @@ class CLabelSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "CLabel")
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("backgroundImage").equalsTo(value(w).getBackgroundImage(), orAbsentIfNull));
@@ -36,6 +37,7 @@ class CLabelSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("leftMargin").equalsTo(w.getLeftMargin(), orAbsentIf0));
         assertJ.satisfies(node("rightMargin").equalsTo(w.getRightMargin(), orAbsentIf0));
         assertJ.satisfies(node("topMargin").equalsTo(w.getTopMargin(), orAbsentIf0));
+        assertJ.satisfies(node("caret").equalsTo(w.getCaret(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
@@ -46,12 +48,11 @@ class CLabelSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_CLabel() {
-        CLabel w = new CLabel(swtShell(), SWT.NONE);
+        CLabel w = new CLabel(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

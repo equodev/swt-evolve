@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.ExceptionStash;
+import org.eclipse.swt.internal.*;
 import java.util.Objects;
 import dev.equo.swt.*;
 
@@ -148,13 +148,14 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -217,10 +218,9 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        Control control = findBackgroundControl();
-        if (control != null) {
-        } else {
-        }
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        CompositeHelper.fillBackground(this, gc, x, y, width, height, offsetX, offsetY);
     }
 
     public Composite findDeferredControl() {
@@ -853,7 +853,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void setBackgroundMode(int mode) {
         checkWidget();
-        if (!java.util.Objects.equals(this.backgroundMode, mode)) {
+        if (this.backgroundMode != mode) {
             getValue().markDirty(VComposite.BACKGROUND_MODE);
         }
         backgroundMode = mode;
@@ -872,11 +872,6 @@ public class DartComposite extends DartScrollable implements IComposite {
                 return true;
         }
         return super.setFocus();
-    }
-
-    @Override
-    void setIsStyledText() {
-        isStyledText = true;
     }
 
     /**
@@ -1115,6 +1110,14 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     Object contentView() {
         return getBridge().container(this);
+    }
+
+    public Control[] _displayedChildren() {
+        return _getChildren();
+    }
+
+    public boolean _drawsItself(Control child) {
+        return false;
     }
 
     private boolean hasLayoutableClientArea() {

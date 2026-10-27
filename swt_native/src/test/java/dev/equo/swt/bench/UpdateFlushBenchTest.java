@@ -65,7 +65,7 @@ class UpdateFlushBenchTest {
     void setUp() {
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
-        shell = Mocks.swtShell();
+        shell = Mocks.shell();
     }
 
     @AfterEach

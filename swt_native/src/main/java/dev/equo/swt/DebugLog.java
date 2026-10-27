@@ -92,6 +92,12 @@ final class DebugLog {
         System.out.println("recv: " + eventName + ": " + event);
     }
 
+    /** Why a widget travelled whole; in the log a whole frame only lacks {@code _d}. */
+    static void logWholeSend(String eventName, String reason) {
+        if (!shouldLog(eventName)) return;
+        System.out.println("whole: " + eventName + ": " + reason);
+    }
+
     /** {@link #logRecv} for a raw payload receiver (no {@code V*} object to render). */
     static void logRecvPayload(String eventName, String payload) {
         if (!shouldLog(eventName)) return;
@@ -125,7 +131,7 @@ final class DebugLog {
     private static boolean isHidden(String key) {
         if (HIDE_KEYS.contains(key)) return true;
         if (HIDE_COLORS) {
-            String k = key.toLowerCase();
+            String k = key.toLowerCase(java.util.Locale.ROOT);
             return k.contains("color") || k.contains("foreground") || k.contains("background");
         }
         return false;

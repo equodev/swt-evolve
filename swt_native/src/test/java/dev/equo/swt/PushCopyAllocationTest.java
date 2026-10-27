@@ -1,15 +1,13 @@
 package dev.equo.swt;
 
 import dev.equo.swt.comm.BinaryCommService;
-import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Mocks;
-import org.eclipse.swt.widgets.Shell;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.junit.jupiter.api.AfterAll;
@@ -43,14 +41,14 @@ class PushCopyAllocationTest {
 
     private static final int TEXT_CHARS = 64 * 1024;
     private static final int WARMUP = 30;
-    private static final int RUNS = 30;
+    private static final int RUNS = 200;
 
     private static final com.sun.management.ThreadMXBean THREADS =
             (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
 
     private BinaryCommService comm;
     private Client client;
-    private WireBridge bridge;
+    private RecordingBridge bridge;
 
     @BeforeAll
     static void useEquo() {
@@ -69,8 +67,8 @@ class PushCopyAllocationTest {
         assertThat(client.connectBlocking(5, TimeUnit.SECONDS)).isTrue();
         // The server registers the session on its own thread; a frame arriving proves it has.
         comm.send("probe");
-        client.awaitBytes(1);
-        bridge = new WireBridge(comm);
+        client.awaitFrames(1);
+        bridge = new RecordingBridge(comm);
         FlutterBridge.set(bridge);
     }
 
@@ -100,7 +98,7 @@ class PushCopyAllocationTest {
 
     @Test
     void flushOfSeveralWidgets_copiesThePayloadOnlyForTheTransport() {
-        Composite parent = new Composite(Mocks.swtShell(), SWT.NONE);
+        Composite parent = new Composite(Mocks.shell(), SWT.NONE);
         double copies = copiesPerWireByte(chars -> {
             Button first = button(parent, chars);
             Button second = button(parent, chars);
@@ -129,7 +127,8 @@ class PushCopyAllocationTest {
         });
         String json = "\"" + "x".repeat(2 * TEXT_CHARS) + "\"";
         assertThat(client.lastEvent()).isEqualTo(MessageBatch.EVENT);
-        assertThat(client.lastPayload()).isEqualTo("[[\"GC/1/drawText\"," + json + "],[\"GC/1/drawText\"," + json + "]]");
+        // A repeated channel travels as the index of the entry that named it (see MessageBatch).
+        assertThat(client.lastPayload()).isEqualTo("[[\"GC/1/drawText\"," + json + "],[0," + json + "]]");
         assertThat(copies).as("payload copies per push, batch of owned payloads").isLessThan(1.5);
     }
 
@@ -137,9 +136,9 @@ class PushCopyAllocationTest {
     void loneFrameInABatch_travelsAsItself() {
         MessageBatch batch = new MessageBatch();
         batch.add("Button/7", "{\"text\":\"ok\"}".getBytes(StandardCharsets.UTF_8));
-        long before = client.received.get();
+        long before = client.frames.get();
         comm.send(batch);
-        client.awaitBytes(before + 1);
+        client.awaitFrames(before + 1);
         assertThat(client.lastEvent()).isEqualTo("Button/7");
         assertThat(client.lastPayload()).isEqualTo("{\"text\":\"ok\"}");
     }
@@ -153,8 +152,8 @@ class PushCopyAllocationTest {
 
     /** Extra bytes allocated per extra byte on the wire, between a push and the same push twice as large. */
     private double copiesPerWireByte(IntFunction<Runnable> pushOfSize) {
-        long[] small = fewestAllocated(pushOfSize.apply(TEXT_CHARS));
-        long[] large = fewestAllocated(pushOfSize.apply(2 * TEXT_CHARS));
+        long[] small = meanAllocated(pushOfSize.apply(TEXT_CHARS));
+        long[] large = meanAllocated(pushOfSize.apply(2 * TEXT_CHARS));
         assertThat(large[1] - small[1]).as("the larger push put more on the wire").isGreaterThan(TEXT_CHARS / 2);
         double copies = (large[0] - small[0]) / (double) (large[1] - small[1]);
         System.out.printf("[push-copies] allocated=%d/%d wire=%d/%d copies=%.2f%n",
@@ -162,73 +161,56 @@ class PushCopyAllocationTest {
         return copies;
     }
 
-    /** The fewest bytes one run allocated on this thread, and the bytes that run put on the wire. */
-    private long[] fewestAllocated(Runnable push) {
+    /**
+     * The bytes one run allocated on this thread on average, and the bytes a run put on the wire.
+     * An average and not the fewest of the runs: OpenJ9 advances the thread's allocated-bytes count
+     * only when the thread takes a new allocation cache, so a single run reads 0 or a whole cache's
+     * worth, and only the sum over many runs is the bytes they allocated.
+     */
+    private long[] meanAllocated(Runnable push) {
         for (int i = 0; i < WARMUP; i++) measure(push);
-        long[] best = {Long.MAX_VALUE, 0};
+        long allocated = 0;
+        long wire = 0;
         for (int i = 0; i < RUNS; i++) {
             long[] m = measure(push);
-            if (m[0] < best[0]) best = m;
+            allocated += m[0];
+            wire = m[1];
         }
-        return best;
+        return new long[]{allocated / RUNS, wire};
     }
 
     private long[] measure(Runnable push) {
         long receivedBefore = client.received.get();
+        long framesBefore = client.frames.get();
         long before = THREADS.getCurrentThreadAllocatedBytes();
         push.run();
         long allocated = THREADS.getCurrentThreadAllocatedBytes() - before;
-        long wire = client.awaitBytes(receivedBefore + 1) - receivedBefore;
+        client.awaitFrames(framesBefore + 1);
+        long wire = client.received.get() - receivedBefore;
         return new long[]{allocated, wire};
-    }
-
-    /** A bridge whose comm is a real socket rather than a recording, so the transport's copy counts. */
-    private static final class WireBridge extends FlutterBridge {
-        private final CommService comm;
-
-        WireBridge(CommService comm) {
-            this.comm = comm;
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 
     private static final class Client extends WebSocketClient {
         final AtomicLong received = new AtomicLong();
+        final AtomicLong frames = new AtomicLong();
         private volatile byte[] last;
 
         Client(URI uri) {
             super(uri);
         }
 
-        /** Waits until at least {@code atLeast} bytes have arrived and nothing more is on its way. */
-        long awaitBytes(long atLeast) {
+        /** Waits until at least {@code atLeast} frames have arrived; every push here is one frame. */
+        synchronized void awaitFrames(long atLeast) {
             long deadline = System.currentTimeMillis() + 5000;
-            long seen = -1;
-            while (System.currentTimeMillis() < deadline) {
-                long now = received.get();
-                if (now >= atLeast && now == seen) return now;
-                seen = now;
+            long left;
+            while (frames.get() < atLeast && (left = deadline - System.currentTimeMillis()) > 0) {
                 try {
-                    Thread.sleep(20);
+                    wait(left);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    break;
+                    return;
                 }
             }
-            return received.get();
         }
 
         String lastEvent() {
@@ -257,6 +239,10 @@ class PushCopyAllocationTest {
             bytes.get(frame);
             last = frame;
             received.addAndGet(frame.length);
+            synchronized (this) {
+                frames.incrementAndGet();
+                notifyAll();
+            }
         }
 
         @Override

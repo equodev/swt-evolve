@@ -11,6 +11,8 @@ import '../gen/widgets.dart';
 import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
+import './utils/text_utils.dart';
+import './utils/viewport_clip.dart';
 import './utils/widget_utils.dart';
 import '../custom/main_toolbar_scope.dart';
 import '../custom/rich_tooltip.dart';
@@ -18,16 +20,26 @@ import '../custom/toast.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'toolbar_evolve.dart';
+import 'menu_evolve.dart' show OpenPopupMenuTracker;
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     extends ItemImpl<T, V> {
   bool _isHovered = false;
+  final _buttonFocus = ToolItemFocusNode(debugLabel: 'ToolItem');
+  final _arrowFocus = ToolItemFocusNode(debugLabel: 'ToolItem arrow', arrow: true);
   Widget? _cachedImageWidget;
   VImage? _cachedImage;
   double? _cachedIconSize;
   Color? _cachedIconColor;
   bool? _cachedEnabled;
+
+  @override
+  void dispose() {
+    _buttonFocus.dispose();
+    _arrowFocus.dispose();
+    super.dispose();
+  }
 
   double _calculateIconSize(BoxConstraints? constraints, double defaultSize) {
     if (constraints == null) return defaultSize;
@@ -38,15 +50,15 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   }
 
   /// Hover feedback asked for by applications whose toolbars are dense enough that the background
-  /// highlight alone is easy to miss. A paint-time [Transform.scale], so the item keeps the box
-  /// `Sizes.computeSize` laid the toolbar out from and hovering never reflows it.
+  /// highlight alone is easy to miss. The item keeps the box `Sizes.computeSize` laid the toolbar
+  /// out from, so hovering never reflows it.
   Widget _applyHoverZoom(Widget icon, bool enabled) {
     final theme = Theme.of(context).extension<ToolItemThemeExtension>()!;
     if (!theme.hoverZoomEnabled) return icon;
-    return AnimatedScale(
-      scale: enabled && _isHovered ? theme.hoverZoomScale : 1.0,
+    return _HoverZoom(
+      zoomed: enabled && _isHovered,
+      scale: theme.hoverZoomScale,
       duration: theme.hoverZoomDuration,
-      curve: Curves.easeOut,
       child: icon,
     );
   }
@@ -108,9 +120,12 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         disabledOpacity: widgetTheme.disabledOpacity,
       ),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done &&
-            snapshot.hasData) {
-          final widget = snapshot.data ?? const SizedBox.shrink();
+        if (snapshot.connectionState == ConnectionState.done) {
+          final widget = snapshot.data;
+          if (widget == null) {
+            // Nothing could be drawn for this image; the item still keeps its footprint.
+            return SizedBox(width: iconSize, height: iconSize);
+          }
           _cachedImageWidget = widget;
           return widget;
         }
@@ -131,11 +146,34 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     );
   }
 
-  /// True when the icon pack answered for this image: the replacement arrives as SVG content, and
-  /// the resolver drops the filename once it has.
-  static bool _isReplaced(VImage? image) => image?.svgContent?.isNotEmpty ?? false;
+  /// True when Evolve substitutes its own artwork for this image, by either route: an external pack
+  /// is resolved in Java and arrives as SVG content, while the bundled set and the icon map are
+  /// resolved here, by filename. The second answer is asynchronous, so [_warmReplacements] has to
+  /// have run for it to be known — until then this reads false and the item draws what it always did.
+  bool _isReplaced(VImage? image) {
+    if (image == null) return false;
+    if (image.svgContent?.isNotEmpty ?? false) return true;
+    return ImageUtils.replacedByName(image.filename) ?? false;
+  }
+
+  /// Resolves the by-filename answer for every image this item can draw, so the choice made on the
+  /// first hover is already informed. Rebuilds once per newly resolved name.
+  void _warmReplacements() {
+    for (final image in [state.image, state.hotImage, state.disabledImage]) {
+      final filename = image?.filename;
+      if (filename == null || filename.isEmpty) continue;
+      if ((image!.svgContent?.isNotEmpty ?? false) ||
+          ImageUtils.replacedByName(filename) != null) {
+        continue;
+      }
+      ImageUtils.resolveReplacedByName(filename).then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   VImage? _getImageForState(bool enabled) {
+    _warmReplacements();
     if (!enabled && state.disabledImage != null) {
       // An application names its disabled icon as a second file, which the pack often has no
       // counterpart for. Drawing it would put the application's own artwork next to siblings that
@@ -145,7 +183,10 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       return useOwn ? state.disabledImage : state.image;
     }
     if (enabled && _isHovered && state.hotImage != null) {
-      return state.hotImage;
+      // As the disabled state above: the pack rarely covers the application's second, hot filename,
+      // and hover feedback is the zoom and the highlight, never a different picture.
+      final useOwn = _isReplaced(state.hotImage) || !_isReplaced(state.image);
+      return useOwn ? state.hotImage : state.image;
     }
     return state.image;
   }
@@ -208,6 +249,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     Widget button = Material(
       color: Colors.transparent,
       child: InkWell(
+        focusNode: _buttonFocus,
         onTap: enabled ? onTap : null,
         splashColor: widgetTheme.hoverColor.withOpacity(
           widgetTheme.splashOpacity,
@@ -254,7 +296,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         child: child,
       ) ??
       Tooltip(
-        message: message,
+        message: stripAccelerators(message),
         preferBelow: widgetTheme.tooltipPreferBelow,
         verticalOffset: widgetTheme.tooltipVerticalOffset,
         margin: widgetTheme.tooltipMargin,
@@ -290,6 +332,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           ? widgetTheme.enabledColor
           : widgetTheme.disabledColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
@@ -326,6 +369,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       Widget mainContentButton = Material(
         color: Colors.transparent,
         child: InkWell(
+          focusNode: _buttonFocus,
           onTap: enabled
               ? () {
                   setState(() => _isHovered = false);
@@ -350,10 +394,18 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       Widget dropdownArrow = Material(
         color: Colors.transparent,
         child: InkWell(
+          focusNode: _arrowFocus,
           onTap: enabled
               ? () {
                   setState(() => _isHovered = false);
-                  openMenu();
+                  // The pointer-based dismiss (MenuAnchor.consumeOutsideTap) only sees real
+                  // pointer routing. Under forced accessibility this same arrow's second tap is
+                  // delivered as a SemanticsAction, which bypasses that entirely and reaches here
+                  // instead of being consumed as an outside tap -- close directly rather than
+                  // asking Java to show an already-visible menu again, which is a no-op.
+                  if (!OpenPopupMenuTracker.closeIfOpen()) {
+                    openMenu();
+                  }
                 }
               : null,
           splashColor: widgetTheme.hoverColor.withOpacity(
@@ -396,9 +448,17 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [Flexible(child: mainContentButton), separator, dropdownArrow],
+          // The separator has no height of its own: sized to the item's content, not to whatever
+          // height the item is offered.
+          child: openMenuOnDown(
+            enabled: enabled,
+            openMenu: openMenu,
+            child: IntrinsicHeight(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Flexible(child: mainContentButton), separator, dropdownArrow],
+              ),
+            ),
           ),
         ),
       );
@@ -477,6 +537,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           ? widgetTheme.enabledColor
           : widgetTheme.disabledColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textStyle = getTextStyle(
@@ -498,18 +559,21 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           final image = _getImageForState(enabled);
           final isChecked = state.selection ?? false;
 
-          Widget iconOrImage;
+          final Widget child;
           if (image != null) {
-            iconOrImage = _buildImageWidget(
-              image,
-              enabled,
-              constraints,
-              effectiveDefaultIconSize,
-              textColor,
-              widgetTheme,
+            child = _buildChildContent(
+              image: image,
+              enabled: enabled,
+              constraints: constraints,
+              defaultIconSize: effectiveDefaultIconSize,
+              iconColor: textColor,
+              widgetTheme: widgetTheme,
+              text: text,
+              textStyle: textStyle,
+              textOnRight: textOnRight,
             );
           } else {
-            iconOrImage = _applyHoverZoom(
+            final glyph = _applyHoverZoom(
               Icon(
                 isChecked ? Icons.check_box : Icons.check_box_outline_blank,
                 size: widgetTheme.iconSize,
@@ -517,21 +581,17 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               ),
               enabled,
             );
-          }
-
-          final Widget child;
-          if (text != null && text.isNotEmpty) {
-            child = Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconOrImage,
-                const SizedBox(width: 4),
-                Text(text, textAlign: TextAlign.center, style: textStyle),
-              ],
-            );
-          } else {
-            child = iconOrImage;
+            child = (text != null && text.isNotEmpty)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      glyph,
+                      const SizedBox(width: 4),
+                      Text(text, textAlign: TextAlign.center, style: textStyle),
+                    ],
+                  )
+                : glyph;
           }
 
           final toolbarTheme = Theme.of(
@@ -567,18 +627,21 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           final image = _getImageForState(enabled);
           final isSelected = state.selection ?? false;
 
-          Widget iconOrImage;
+          final Widget child;
           if (image != null) {
-            iconOrImage = _buildImageWidget(
-              image,
-              enabled,
-              constraints,
-              effectiveDefaultIconSize,
-              textColor,
-              widgetTheme,
+            child = _buildChildContent(
+              image: image,
+              enabled: enabled,
+              constraints: constraints,
+              defaultIconSize: effectiveDefaultIconSize,
+              iconColor: textColor,
+              widgetTheme: widgetTheme,
+              text: text,
+              textStyle: textStyle,
+              textOnRight: textOnRight,
             );
           } else {
-            iconOrImage = _applyHoverZoom(
+            final glyph = _applyHoverZoom(
               Icon(
                 isSelected
                     ? Icons.radio_button_checked
@@ -588,21 +651,17 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               ),
               enabled,
             );
-          }
-
-          final Widget child;
-          if (text != null && text.isNotEmpty) {
-            child = Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconOrImage,
-                const SizedBox(width: 4),
-                Text(text, textAlign: TextAlign.center, style: textStyle),
-              ],
-            );
-          } else {
-            child = iconOrImage;
+            child = (text != null && text.isNotEmpty)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      glyph,
+                      const SizedBox(width: 4),
+                      Text(text, textAlign: TextAlign.center, style: textStyle),
+                    ],
+                  )
+                : glyph;
           }
 
           return _buildToolbarButton(
@@ -729,5 +788,111 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   void openMenu() {
     EvolveNotification.maybeRaiseFor(context, state);
     widget.sendSelectionOpenMenu(state, toolItemGeometryEvent(context));
+  }
+}
+
+/// Grows [child] around its centre while [zoomed]. A grown icon reaches past its item, and every
+/// control up to the Shell is clipped to its own bounds, as in SWT, so for as long as it is grown it
+/// is drawn in the [Overlay] instead, over the spot it occupies at rest, clipped only to the scroll
+/// viewports around it. That spot keeps the rest size meanwhile.
+class _HoverZoom extends StatefulWidget {
+  const _HoverZoom({
+    required this.zoomed,
+    required this.scale,
+    required this.duration,
+    required this.child,
+  });
+
+  final bool zoomed;
+  final double scale;
+  final Duration duration;
+  final Widget child;
+
+  @override
+  State<_HoverZoom> createState() => _HoverZoomState();
+}
+
+class _HoverZoomState extends State<_HoverZoom> with SingleTickerProviderStateMixin {
+  final _portal = OverlayPortalController();
+  final _restKey = GlobalKey();
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration)..addStatusListener(_onStatus);
+
+  /// The size [widget.child] had at rest, held while the child is drawn in the overlay.
+  Size? _restSize;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.zoomed) _syncAfterFrame();
+  }
+
+  @override
+  void didUpdateWidget(_HoverZoom oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.duration = widget.duration;
+    if (widget.zoomed != oldWidget.zoomed) _syncAfterFrame();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// The overlay is shown outside the build that changed [widget.zoomed], once the rest size of the
+  /// child has been laid out.
+  void _syncAfterFrame() => WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
+
+  void _sync() {
+    if (!mounted) return;
+    if (!widget.zoomed) {
+      _controller.reverse();
+      return;
+    }
+    if (!_portal.isShowing) {
+      final size = _restKey.currentContext?.size;
+      if (size == null) return;
+      setState(() => _restSize = size);
+      _portal.show();
+    }
+    _controller.forward();
+  }
+
+  void _onStatus(AnimationStatus status) {
+    if (status != AnimationStatus.dismissed || !mounted || !_portal.isShowing) return;
+    setState(() => _restSize = null);
+    _portal.hide();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = _controller
+        .drive(CurveTween(curve: Curves.easeOut))
+        .drive(Tween(begin: 1.0, end: widget.scale));
+    final restSize = _restSize;
+    return OverlayPortal.overlayChildLayoutBuilder(
+      controller: _portal,
+      overlayChildBuilder: (_, info) {
+        Widget grown = IgnorePointer(
+          child: SizedBox.fromSize(
+            size: info.childSize,
+            child: ScaleTransition(scale: scale, child: widget.child),
+          ),
+        );
+        final rest = context.findRenderObject();
+        final viewport =
+            rest is RenderBox && rest.hasSize ? visibleViewportRect(context, rest) : null;        if (viewport != null) {
+          grown = ClipRect(clipper: FixedRectClipper(viewport), child: grown);
+        }
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Transform(transform: info.childPaintTransform, child: grown),
+        );
+      },
+      child: restSize == null
+          ? KeyedSubtree(key: _restKey, child: widget.child)
+          : SizedBox.fromSize(size: restSize),
+    );
   }
 }

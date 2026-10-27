@@ -23,7 +23,6 @@ TextShape _shape({TextEditingState? editingState, CaretInfo? caret}) =>
       _text,
       Offset.zero,
       const TextStyle(fontSize: 10, height: 1.0),
-      null, // clipRect
       null, // textSpan
       caret,
       false, // wordWrap
@@ -36,7 +35,7 @@ TextShape _shape({TextEditingState? editingState, CaretInfo? caret}) =>
       _lineHeight,
     );
 
-TextEditingState _indentLineOne() => const TextEditingState(
+TextEditingState _indentLineOne() => TextEditingState(
   characterRanges: [],
   lineProperties: {1: LineProperties(verticalIndent: _vIndent)},
 );

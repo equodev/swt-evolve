@@ -11,7 +11,7 @@ class LinkSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Link() {
-        Link w = new Link(swtShell(), SWT.NONE);
+        Link w = new Link(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class LinkSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Link() {
-        Link w = new Link(swtShell(), SWT.NONE);
+        Link w = new Link(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -28,6 +28,7 @@ class LinkSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Link")
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("linkForeground").equalsTo(w.getLinkForeground(), orAbsentIfNull));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
@@ -39,12 +40,11 @@ class LinkSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_Link() {
-        Link w = new Link(swtShell(), SWT.NONE);
+        Link w = new Link(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

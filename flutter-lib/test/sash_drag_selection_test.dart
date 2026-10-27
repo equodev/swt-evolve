@@ -18,6 +18,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sash.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 /// Same as the generated SashSwt, except sendEvent captures outgoing events
 /// instead of handing them to EquoCommService (which needs a live transport
@@ -102,5 +103,55 @@ void main() {
             'original position');
     expect(last.width, 10);
     expect(last.height, 260);
+  });
+
+  testWidgets('a zoomed sash moves as far as the pointer, in SWT units',
+      (WidgetTester tester) async {
+    // The drag is read off the pointer in the view's pixels while the sash's bounds are in SWT
+    // units. At 1.0 they coincide; at any other scale a missed conversion moves the sash a
+    // different distance than the pointer travelled.
+    Future<int> movedAt(double scale) async {
+      setAppScaleOverride(scale);
+      addTearDown(() => setAppScaleOverride(null));
+      final selections = <VEvent>[];
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: SizedBox(
+          width: 390,
+          height: 260,
+          child: Stack(
+            children: [
+              Positioned(
+                left: 195,
+                top: 0,
+                width: 10,
+                height: 260,
+                child: _CapturingSashSwt(
+                  // A widget of its own per run: the previous one keeps the position it was dragged to.
+                  value: _verticalSash()..id = 7 + (scale * 10).round(),
+                  onEvent: (ev, payload) {
+                    if (ev == 'Selection/Selection' && payload != null) selections.add(payload);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(_CapturingSashSwt)));
+      await gesture.moveBy(const Offset(30, 0));
+      await tester.pump();
+      await gesture.moveBy(const Offset(30, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      return selections.last.x! - 195;
+    }
+
+    // The pointer travels 60 of the view's pixels: 60 SWT units at 1.0, 40 at 1.5.
+    expect(await movedAt(1.0), closeTo(60, 1));
+    expect(await movedAt(1.5), closeTo(40, 1));
   });
 }

@@ -35,4 +35,8 @@ public final class ScaleTheme {
         return new ScaleTheme(TextStyle.def());
     }
 
+    public static ScaleTheme getCompactTheme() {
+        return new ScaleTheme(TextStyle.def());
+    }
+
 }

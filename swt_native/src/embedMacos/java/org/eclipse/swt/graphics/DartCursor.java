@@ -199,6 +199,17 @@ public final class DartCursor extends DartResource implements ICursor {
     }
 
     void createNSCursor(int hotspotX, int hotspotY, byte[] buffer, int width, int height, boolean hasAlpha) {
+        ImageData imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        byte[] alphaData = hasAlpha ? new byte[width * height] : null;
+        for (int p = 0, i = 0; p < width * height; p++, i += 4) {
+            imageData.setPixel(p % width, p / width, ((buffer[i + 1] & 0xFF) << 16) | ((buffer[i + 2] & 0xFF) << 8) | (buffer[i + 3] & 0xFF));
+            if (alphaData != null)
+                alphaData[p] = buffer[i];
+        }
+        imageData.alphaData = alphaData;
+        this.image = new Image(device, imageData);
+        this.hotspotX = hotspotX;
+        this.hotspotY = hotspotY;
     }
 
     /**
@@ -332,6 +343,9 @@ public final class DartCursor extends DartResource implements ICursor {
 
     @Override
     void destroy() {
+        if (image != null)
+            image.dispose();
+        image = null;
     }
 
     /**
@@ -398,10 +412,22 @@ public final class DartCursor extends DartResource implements ICursor {
 
     int cursorStyle = -1;
 
+    int hotspotX;
+
+    int hotspotY;
+
     Image image;
 
     public int _cursorStyle() {
         return cursorStyle;
+    }
+
+    public int _hotspotX() {
+        return hotspotX;
+    }
+
+    public int _hotspotY() {
+        return hotspotY;
     }
 
     public Image _image() {

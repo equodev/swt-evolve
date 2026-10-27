@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_time_patterns.dart';
+import 'package:intl/intl.dart';
 import '../gen/datetime.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
+import 'utils/client_locale.dart';
 import 'utils/widget_utils.dart';
 
 const _kDtButtonWidth = 9.0;
 const _kDtIconSize = 9.0;
-const _kDtDropDownWidth = 9.0;
+// A drop-down date's calendar button is as wide as a Win32 scroll bar (SM_CXVSCROLL), as there.
+const _kDtCalendarButtonWidth = 17.0;
+const _kDtCalendarIconSize = 16.0;
 
 class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     extends CompositeImpl<T, V> {
@@ -22,6 +27,13 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
   bool _calendarDropped = false;
 
   int _maxDigits(_FieldDef f) => f.max >= 1000 ? 4 : 2;
+
+  // The calendar popup is an OverlayEntry outside this subtree, so it is rebuilt with the control.
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _calendarOverlay?.markNeedsBuild();
+  }
 
   @override
   void dispose() {
@@ -45,6 +57,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         foreground: state.foreground,
         defaultColor: fallback,
         context: context,
+        minContrast: Theme.of(context).extension<SpinnerThemeExtension>()!.minTextContrast,
       );
 
   // The palette a CALENDAR-style DateTime paints with: it is a Control in the tree, so it follows
@@ -60,17 +73,16 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     );
   }
 
-  void _openCalendarOverlay({
-    required int year,
-    required int month,
-    required int day,
-    required bool enabled,
-    required ColorScheme colorScheme,
-  }) {
+  void _openCalendarOverlay({required ColorScheme colorScheme}) {
     _closeCalendarOverlay();
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    final offset = renderBox.localToGlobal(Offset.zero);
+    // Measured against the overlay the entry is inserted into, not the view: the app is drawn
+    // through a Transform the overlay sits inside, so the two spaces differ once SWT asks for a
+    // zoom of its own.
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     final size = renderBox.size;
 
     _calendarOverlay = OverlayEntry(
@@ -92,11 +104,11 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
               elevation: 4,
               borderRadius: BorderRadius.circular(4),
               child: _CalendarWidget(
-                year: year,
-                month: month,
-                selectedDay: day,
+                year: _year,
+                month: _month,
+                selectedDay: _day,
                 showWeekNumbers: false,
-                enabled: enabled,
+                enabled: state.enabled ?? true,
                 colorScheme: colorScheme,
                 onDaySelected: (y, m, d) {
                   setState(() {
@@ -233,13 +245,13 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     final isShort = hasStyle(style, SWT.SHORT);
     final hasDropDown = hasStyle(style, SWT.DROP_DOWN);
 
-    final now = DateTime.now();
-    final year = state.year ?? now.year;
-    final month = state.month ?? now.month - 1;
-    final day = state.day ?? now.day;
+    final year = _year;
+    final month = _month;
+    final day = _day;
 
-    final fields = <_FieldDef>[
-      _FieldDef(
+    final layout = _numericDateLayout(userLocale());
+    final byLetter = <String, _FieldDef>{
+      'M': _FieldDef(
         value: month + 1,
         min: 1,
         max: 12,
@@ -250,7 +262,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         },
       ),
       if (!isShort)
-        _FieldDef(
+        'd': _FieldDef(
           value: day,
           min: 1,
           max: _daysInMonth(year, month),
@@ -260,7 +272,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
             widget.sendSelectionSelection(state, _makeSelectionEvent());
           },
         ),
-      _FieldDef(
+      'y': _FieldDef(
         value: year,
         min: 1752,
         max: 9999,
@@ -270,7 +282,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
           widget.sendSelectionSelection(state, _makeSelectionEvent());
         },
       ),
-    ];
+    };
+    final fields = [for (final letter in layout.order) ?byLetter[letter]];
 
     // Upstream SWT opens the drop-down calendar in the platform's own colors, not the cell's, even
     // when the field itself follows the table -- so this one keeps the app theme.
@@ -280,9 +293,9 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       theme,
       enabled,
       fields,
-      '/',
-      extraTrailing: hasDropDown
-          ? _DropDownArrow(
+      layout.separator,
+      calendarButton: hasDropDown
+          ? _CalendarButton(
               enabled: enabled,
               isOpen: _calendarDropped,
               theme: theme,
@@ -292,13 +305,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                   _closeCalendarOverlay();
                 } else {
                   setState(() => _calendarDropped = true);
-                  _openCalendarOverlay(
-                    year: year,
-                    month: month,
-                    day: day,
-                    enabled: enabled,
-                    colorScheme: colorScheme,
-                  );
+                  _openCalendarOverlay(colorScheme: colorScheme);
                 }
               },
             )
@@ -313,7 +320,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     bool enabled,
     List<_FieldDef> fields,
     String separator, {
-    Widget? extraTrailing,
+    Widget? calendarButton,
   }) {
     final selIdx = _selectedField.clamp(0, fields.length - 1);
     final background = _ground(
@@ -396,6 +403,10 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
 
     return Focus(
       focusNode: _focusNode,
+      // Java routes the keys it is forwarded to its focus control, so it must know this one has it.
+      onFocusChange: (focused) => focused
+          ? widget.sendFocusFocusIn(state, null)
+          : widget.sendFocusFocusOut(state, null),
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
         final idx = _selectedField.clamp(0, fields.length - 1);
@@ -462,8 +473,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                     )
                   else
                     fieldRow(),
-                  spinnerButtons(),
-                  if (extraTrailing != null) extraTrailing,
+                  // A drop-down date is set from its calendar, so the button replaces the stepper.
+                  calendarButton ?? spinnerButtons(),
                 ],
               ),
             ),
@@ -482,6 +493,10 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     f.onChanged(next);
   }
 
+  int get _year => state.year ?? DateTime.now().year;
+  int get _month => state.month ?? DateTime.now().month - 1;
+  int get _day => state.day ?? DateTime.now().day;
+
   int _daysInMonth(int year, int month) => DateTime(year, month + 2, 0).day;
 
   VEvent _makeSelectionEvent() {
@@ -494,6 +509,37 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       ..count = state.minutes ?? now.minute
       ..index = state.seconds ?? now.second;
   }
+}
+
+// ── Numeric date layout ──────────────────────────────────────────────────
+
+final Map<String, Map<String, String>> _datePatterns = dateTimePatternMap();
+
+/// The order of the day, month and year fields ('d', 'M', 'y') and the separator between them in
+/// [locale]'s numeric date. Win32 takes them from the user's short-date format; the user's locale
+/// is the browser's on the web and the JVM's on desktop.
+({List<String> order, String separator}) _numericDateLayout(Locale locale) {
+  final name = Intl.verifiedLocale(locale.toLanguageTag(), _datePatterns.containsKey,
+      onFailure: (_) => 'en_US')!;
+  final pattern = _datePatterns[name]?['yMd'] ?? 'M/d/y';
+  final order = <String>[];
+  final separators = <String>[];
+  var pending = StringBuffer();
+  for (final char in pattern.split('')) {
+    if (char == 'd' || char == 'M' || char == 'y') {
+      if (order.isEmpty || order.last != char) {
+        if (order.isNotEmpty) separators.add(pending.toString());
+        order.add(char);
+      }
+      pending = StringBuffer();
+    } else {
+      pending.write(char);
+    }
+  }
+  if (order.length != 3 || separators.isEmpty || separators.first.isEmpty) {
+    return (order: const ['M', 'd', 'y'], separator: '/');
+  }
+  return (order: order, separator: separators.first);
 }
 
 // ── Field definition ──────────────────────────────────────────────────────
@@ -586,15 +632,15 @@ class _FieldSeparator extends StatelessWidget {
   }
 }
 
-// ── Drop-down arrow button ─────────────────────────────────────────────────
+// ── Calendar button ────────────────────────────────────────────────────────
 
-class _DropDownArrow extends StatefulWidget {
+class _CalendarButton extends StatefulWidget {
   final bool enabled;
   final bool isOpen;
   final SpinnerThemeExtension theme;
   final VoidCallback onTap;
 
-  const _DropDownArrow({
+  const _CalendarButton({
     required this.enabled,
     required this.isOpen,
     required this.theme,
@@ -602,10 +648,10 @@ class _DropDownArrow extends StatefulWidget {
   });
 
   @override
-  State<_DropDownArrow> createState() => _DropDownArrowState();
+  State<_CalendarButton> createState() => _CalendarButtonState();
 }
 
-class _DropDownArrowState extends State<_DropDownArrow> {
+class _CalendarButtonState extends State<_CalendarButton> {
   bool _isHovered = false;
 
   @override
@@ -615,9 +661,10 @@ class _DropDownArrowState extends State<_DropDownArrow> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: widget.enabled ? widget.onTap : null,
         child: Container(
-          width: _kDtDropDownWidth,
+          width: _kDtCalendarButtonWidth,
           decoration: BoxDecoration(
             color: _isHovered && widget.enabled
                 ? t.buttonHoverColor
@@ -629,7 +676,7 @@ class _DropDownArrowState extends State<_DropDownArrow> {
           child: Center(
             child: Icon(
               widget.isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: _kDtIconSize,
+              size: _kDtCalendarIconSize,
               color: widget.enabled ? t.iconColor : t.disabledIconColor,
             ),
           ),
@@ -686,7 +733,9 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
   @override
   void didUpdateWidget(_CalendarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.year != widget.year || oldWidget.month != widget.month) {
+    if (oldWidget.year != widget.year ||
+        oldWidget.month != widget.month ||
+        oldWidget.selectedDay != widget.selectedDay) {
       _displayYear = widget.year;
       _displayMonth = widget.month;
     }

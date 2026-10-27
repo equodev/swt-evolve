@@ -64,6 +64,7 @@ SpinnerThemeExtension _$SpinnerThemeExtensionFromJson(
   defaultPageIncrement: (json['defaultPageIncrement'] as num).toInt(),
   defaultDigits: (json['defaultDigits'] as num).toInt(),
   defaultTextLimit: (json['defaultTextLimit'] as num).toInt(),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$SpinnerThemeExtensionToJson(
@@ -114,4 +115,5 @@ Map<String, dynamic> _$SpinnerThemeExtensionToJson(
   'defaultPageIncrement': instance.defaultPageIncrement,
   'defaultDigits': instance.defaultDigits,
   'defaultTextLimit': instance.defaultTextLimit,
+  'minTextContrast': instance.minTextContrast,
 };

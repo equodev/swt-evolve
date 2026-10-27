@@ -2,6 +2,8 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <climits>
+#include <cmath>
 #include <string>
 #include <iostream>
 #include <memory>
@@ -18,6 +20,9 @@ extern "C" __declspec(dllexport) void DummyExportedFunction()
 }
 
 static FlutterWindow* s_first_engine = nullptr;
+
+// Whether some window has already been made responsible for ending the process (see SetOwnsAppExit).
+static bool s_app_exit_owner_assigned = false;
 
 // External app-bundle base directory set from Java (dev.equo.ewt.bundleDir). When non-empty
 // it overrides the GetDllPath() "next to myself" lookup so the bridge can boot a bundle it
@@ -78,6 +83,16 @@ static std::wstring BundleBase() {
     return g_bundle_override.empty() ? GetDllPath() : g_bundle_override;
 }
 
+// Impeller compiles its pipelines on every engine start, on the UI thread. Java turns it off when
+// shells get windows of their own, each with its own engine; text is then measured off it too.
+static flutter::DartProject EngineProject(bool impeller) {
+    flutter::DartProject project(BundleBase() + L"\\data");
+    if (!impeller) {
+        project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
+    }
+    return project;
+}
+
 // Stores the external bundle base so BundleBase() points the engine at it.
 extern "C" JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetBundleDir(JNIEnv* env, jclass cls, jstring dir) {
@@ -106,14 +121,14 @@ int pumpMessages(int maxMessages) {
     return count;
 }
 
-void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName, std::string theme, int backgroundColor, int parentBackgroundColor) {
+void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName, std::string theme, int backgroundColor, int parentBackgroundColor, bool impeller) {
     std::cout<<"InitializeFlutterWindow"<<std::endl;
   // Attach to console when present (e.g., 'flutter run') or create a new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
     CreateAndAttachConsole();
   }
 
-  flutter::DartProject project(BundleBase() + L"\\data");
+  flutter::DartProject project = EngineProject(impeller);
 
   std::vector<std::string> arguments = {std::to_string(port), std::to_string(widgetId), widgetName, theme, std::to_string(backgroundColor), std::to_string(parentBackgroundColor)};
   project.set_dart_entrypoint_arguments(std::move(arguments));
@@ -155,7 +170,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 }
 
 // Creates a visible top-level window hosting the whole Display (desktop-native, 100% Flutter).
-FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled) {
+FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled, bool impeller) {
     std::cout << "FlutterNative.createDisplayWindow port:" << port << " id:" << displayId
               << " name:" << widgetName << " " << width << "x" << height << std::endl;
 
@@ -165,7 +180,7 @@ FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widg
     // COM is required by the Flutter Windows embedder/plugins. Harmless if already initialized.
     ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-    flutter::DartProject project(BundleBase() + L"\\data");
+    flutter::DartProject project = EngineProject(impeller);
 
     // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg]. Passing the real
     // widget background (not 0) avoids the Flutter theme rendering a pure-black Display background.
@@ -185,14 +200,24 @@ FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widg
     // embedded views have no chrome to begin with. With CSD off nothing would draw a replacement,
     // so the OS frame has to stay.
     window->SetFrameless(csdEnabled);
-    // parentWnd = nullptr, headless = false -> a visible top-level window (WS_OVERLAPPEDWINDOW). The
-    // window shows itself once Flutter's first frame is ready (FlutterWindow::OnCreate -> Show()).
+    window->SetOwner(owner);
+    // parentWnd = nullptr, headless = false -> a visible top-level window (WS_OVERLAPPEDWINDOW), owned
+    // by |owner| when there is one. The window shows itself once Flutter's first frame is ready
+    // (FlutterWindow::OnCreate -> Show()).
     if (!window->Create(Utf16FromUtf8(widgetName), origin, size, nullptr, false)) {
         std::cout << "createDisplayWindow - failed to create window" << std::endl;
         return nullptr;
     }
-    // Closing the window posts WM_QUIT, which the pump reports back as -1 so the SWT side can match.
+    // Closing the window is a request, not a fact: WM_CLOSE is vetoed so SWT.Close can run while the
+    // window is still up (see Win32Window::MessageHandler). Every top-level window wants that.
     window->SetQuitOnClose(true);
+    // Ending the process when destroyed is a different thing, and belongs to exactly one window --
+    // the first, which hosts the Display. A detached shell's window must not take the application
+    // down with it; see Win32Window::SetOwnsAppExit.
+    if (!s_app_exit_owner_assigned) {
+        s_app_exit_owner_assigned = true;
+        window->SetOwnsAppExit(true);
+    }
     return window;
 }
 
@@ -207,7 +232,7 @@ struct Surface {
 // JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds.
 // =================================================================================================
 
-JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled) {
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled, jboolean impeller_enabled) {
     const char* name_c = env->GetStringUTFChars(widget_name, nullptr);
     std::string nameStr(name_c);
     env->ReleaseStringUTFChars(widget_name, name_c);
@@ -219,10 +244,13 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, 
     FlutterWindow* window;
     bool isWindow;
     if (width > 0 && height > 0) {
-        window = createDisplayWindow(port, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE);
+        // For a window, |parent| is the surface of the window that owns this one, or 0 for none.
+        Surface* owner = reinterpret_cast<Surface*>(parent);
+        HWND ownerWnd = (owner && owner->window) ? owner->window->GetHandle() : nullptr;
+        window = createDisplayWindow(port, ownerWnd, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE, impeller_enabled == JNI_TRUE);
         isWindow = true;
     } else {
-        window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color));
+        window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color, impeller_enabled == JNI_TRUE));
         isWindow = false;
     }
     if (!window) {
@@ -275,25 +303,47 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv* env,
 JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass cls, jlong context) {
     MSG msg;
     int count = 0;
+    Surface* s = reinterpret_cast<Surface*>(context);
+    const bool owns_exit = s && s->window && s->window->OwnsAppExit();
     while (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
-            return -1;
+            // The queue is the thread's, so this message reaches whichever window pumps next rather
+            // than the one it is about. Only the window that owns the application's exit may take it
+            // as its own death; anyone else puts it back, or the owner never sees it and the process
+            // stays up with no window.
+            if (owns_exit) {
+                return -1;
+            }
+            ::PostQuitMessage(0);
+            break;
         }
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
         count++;
     }
-    Surface* s = reinterpret_cast<Surface*>(context);
     if (s && s->window && s->window->TakeCloseRequest()) {
         return -2;
     }
     return count;
 }
 
+// The thread parked in WaitEvents, so Wake knows where to post. Written before each wait and read
+// from another thread; a stale or zero value costs a failed post, never a wrong wake-up.
+static volatile DWORD g_wait_thread_id = 0;
+
 // Blocks until a message/input is available or up to |millis| ms, WITHOUT removing it (the idle sleep).
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv* env, jclass cls, jlong context, jint millis) {
     DWORD timeout = millis < 0 ? 0 : (DWORD)millis;
+    g_wait_thread_id = ::GetCurrentThreadId();
     ::MsgWaitForMultipleObjectsEx(0, nullptr, timeout, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+}
+
+// Ends a WaitEvents in progress from another thread — the SWT wake permit is a Java semaphore the
+// Win32 wait cannot observe. A posted thread message satisfies QS_POSTMESSAGE, which QS_ALLINPUT
+// covers, which is how native SWT's Display#wake does it.
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_Wake(JNIEnv* env, jclass cls, jlong context) {
+    DWORD target = g_wait_thread_id;
+    if (target != 0) ::PostThreadMessage(target, WM_NULL, 0, 0);
 }
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jclass cls, jlong context, jstring title) {
@@ -308,6 +358,67 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jcl
 }
 
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen (approximated as maximized).
+// The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
+// LLONG_MIN when there is no window. In logical pixels, the units SetBounds takes, so a position
+// read back can be set again unchanged.
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv* env, jclass cls, jlong context) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return LLONG_MIN;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return LLONG_MIN;
+    POINT origin = {0, 0};
+    if (!::ClientToScreen(hwnd, &origin)) return LLONG_MIN;
+    const double scale = s->window->scale_factor();
+    const LONG x = static_cast<LONG>(std::lround(origin.x / scale));
+    const LONG y = static_cast<LONG>(std::lround(origin.y / scale));
+    return (static_cast<jlong>(x) << 32)
+            | (static_cast<jlong>(static_cast<uint32_t>(y)));
+}
+
+// The top of the work area of the monitor nearest a window rect, in the logical pixels SetBounds
+// takes, or INT_MIN when there is no window. The monitor is the one Win32Window::Move measures a
+// caption against, so a strip placed from Java and a caption placed here stop at the same edge.
+JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_GetWorkAreaTop(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return INT_MIN;
+    const double scale = s->window->scale_factor();
+    RECT rect = {static_cast<LONG>(x * scale), static_cast<LONG>(y * scale),
+                 static_cast<LONG>((x + width) * scale), static_cast<LONG>((y + height) * scale)};
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!::GetMonitorInfo(::MonitorFromRect(&rect, MONITOR_DEFAULTTONEAREST), &monitor)) return INT_MIN;
+    return static_cast<jint>(std::lround(monitor.rcWork.top / scale));
+}
+
+// Whether this window is the one the OS gives keyboard input to. The foreground window is the
+// right test rather than GetActiveWindow, which is per-thread and answers for a thread whose
+// windows are all in the background.
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv* env, jclass cls, jlong context) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return JNI_FALSE;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return JNI_FALSE;
+    HWND fg = ::GetForegroundWindow();
+    return (fg == hwnd || ::IsChild(hwnd, fg)) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv* env, jclass cls, jlong context, jboolean visible) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return;
+    // Hide, never destroy: a shell is hidden and re-shown freely during a layout, and rebuilding
+    // the window each time would cost a new engine and lose the window's position.
+    ::ShowWindow(hwnd, visible ? SW_SHOW : SW_HIDE);
+}
+
+// |owner| is the surface of the window that now owns this one, or 0 for none.
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv* env, jclass cls, jlong context, jlong owner) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window || !s->isWindow) return;
+    Surface* o = reinterpret_cast<Surface*>(owner);
+    s->window->SetOwner((o && o->window) ? o->window->GetHandle() : nullptr);
+}
+
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return;

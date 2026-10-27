@@ -3,11 +3,13 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Natively a modal dialog swallows the rest of the gesture that opened it: the operating system
@@ -132,6 +134,26 @@ class ModalShellSwallowsInputFlutterTest {
         assertThat(clicks[0])
                 .as("a control inside the modal shell is not blocked by it")
                 .isEqualTo(1);
+    }
+
+    /** A cell editor is disposed by the Enter that commits it, while that Enter's DefaultSelection is still queued. */
+    @Test
+    void inputQueuedForADisposedControl_isDroppedWithoutError() {
+        openDisplay();
+
+        Shell main = new Shell(display);
+        Text text = new Text(main, SWT.SINGLE);
+        CTabFolder folder = new CTabFolder(main, SWT.NONE);
+        main.open();
+
+        flutterSends(text, "Selection", "DefaultSelection");
+        flutterSends(folder, "Selection", "DefaultSelection");
+        text.dispose();
+        folder.dispose();
+
+        assertThatCode(this::drain)
+                .as("delivering to a disposed control must not ask it for its shell")
+                .doesNotThrowAnyException();
     }
 
     /**

@@ -29,7 +29,6 @@ import static org.mockito.Mockito.doAnswer;
  * zero-rectangle default is indistinguishable from an empty region the application asked for, and
  * SWT's own {@code Rectangle.intersection} returns exactly that for disjoint rectangles.
  */
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class GCUnsetClippingTest {
 
@@ -62,7 +61,7 @@ class GCUnsetClippingTest {
 
     /** A GC on a Dart-backed Canvas — the drawable an application paints through. */
     private GC freshGc() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         doAnswer(inv -> {
             asyncQueue.add(inv.getArgument(0));

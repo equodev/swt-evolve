@@ -11,7 +11,7 @@ class ProgressBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ProgressBar() {
-        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,13 +20,14 @@ class ProgressBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ProgressBar() {
-        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ProgressBar")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("maximum").equalsTo(w.getMaximum(), orAbsentIf0));
         assertJ.satisfies(node("minimum").equalsTo(w.getMinimum(), orAbsentIf0));
@@ -40,12 +41,11 @@ class ProgressBarSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_ProgressBar() {
-        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

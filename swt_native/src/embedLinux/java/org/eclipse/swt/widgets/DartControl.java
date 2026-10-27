@@ -182,6 +182,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void deregister() {
+        dev.equo.swt.FlutterBridge.releaseRegistrations(this);
         if (bridge != null)
             bridge.destroy(this);
     }
@@ -452,6 +453,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
         return true;
     }
 
@@ -516,7 +519,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Widget[] computeTabList() {
         if (isTabGroup()) {
-            if (getVisible() && getEnabled()) {
+            if (getApi().getVisible() && getApi().getEnabled()) {
                 return new Widget[] { this.getApi() };
             }
         }
@@ -648,6 +651,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return computeSizeInPixels(wHint, hHint, changed);
     }
 
@@ -889,7 +893,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (move && !sameOrigin) {
             Control control = findBackgroundControl();
             if (control != null && control.getImpl()._backgroundImage() != null) {
-                if (isVisible())
+                if (getApi().isVisible())
                     redrawWidget(0, 0, 0, 0, true, true, true);
             }
             if (sendMove)
@@ -1367,6 +1371,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @return the origin of the Control's SWTFixed container relative to the Shell
      */
     Point getControlOrigin() {
+        Shell shell = getShell();
+        /*
+	 * A popover-backed Shell renders in its own surface positioned (via oldX/oldY) within
+	 * the nearest real top-level window's content. translate_coordinates only yields the
+	 * offset within the popover, so add the placement of each popover-backed ancestor to
+	 * keep display coordinates consistent with that window (e.g. so a sibling popup can be
+	 * laid out next to it via toDisplay, including the javadoc popup parented to the
+	 * content-assist proposal popup).
+	 */
+        while (((SwtShell) shell.getImpl()).popover) {
+            Shell parentShell = shell.getImpl()._parent() != null ? shell.getImpl()._parent().getShell() : null;
+            if (parentShell == null || parentShell == shell)
+                break;
+            shell = parentShell;
+        }
         return null;
     }
 
@@ -2082,7 +2101,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         /* there will not be any */
         if (labelRelation != null) {
-            _getAccessible().removeRelation(ACC.RELATION_LABELLED_BY, ((DartControl) labelRelation.getImpl())._getAccessible());
+            if (accessible != null && labelRelation.getImpl()._accessible() != null) {
+                accessible.removeRelation(ACC.RELATION_LABELLED_BY, labelRelation.getImpl()._accessible());
+            }
             labelRelation = null;
         }
     }
@@ -2318,7 +2339,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         Shell shell = getShell();
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
-        if (!isEnabled() || !isVisible())
+        if (!getApi().isEnabled() || !getApi().isVisible())
             return false;
         if (display.getActiveShell() != shell && !SwtDisplay.isActivateShellOnForceFocus())
             return false;
@@ -2783,7 +2804,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
 	*/
-        if (!isVisible())
+        if (!getApi().isVisible())
             return false;
         Control control = this.getApi();
         while (control != null) {
@@ -2840,7 +2861,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isEnabled() {
         checkWidget();
-        return getEnabled() && parent.isEnabled();
+        return getApi().getEnabled() && parent.isEnabled();
     }
 
     boolean isFocusAncestor(Control control) {
@@ -2886,7 +2907,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public boolean isVisible() {
         checkWidget();
-        return getVisible() && parent.isVisible();
+        return getApi().getVisible() && parent.isVisible();
     }
 
     public Decorations menuShell() {
@@ -3420,8 +3441,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
@@ -3459,8 +3480,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         boolean newValue = capture;
-        this.capture = newValue;
         checkWidget();
+        this.capture = newValue;
         /* FIXME !!!!! */
         /*
 	if (capture) {
@@ -3521,10 +3542,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
-        if (!java.util.Objects.equals(this.dragDetect, newValue)) {
+        checkWidget();
+        if (this.dragDetect != newValue) {
             getValue().markDirty(VControl.DRAG_DETECT);
         }
-        checkWidget();
         this.dragDetect = newValue;
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
@@ -3591,8 +3612,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
@@ -3927,7 +3948,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         int newValue = textDirection;
-        this.textDirection = newValue;
         checkWidget();
         textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
         updateTextDirection(textDirection);
@@ -3936,6 +3956,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             getApi().state &= ~HAS_AUTO_DIRECTION;
         }
+        this.textDirection = newValue;
     }
 
     /**
@@ -4012,8 +4033,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTouchEnabled(boolean enabled) {
         boolean newValue = enabled;
-        this.touchEnabled = newValue;
         checkWidget();
+        this.touchEnabled = newValue;
     }
 
     /**
@@ -4034,10 +4055,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(getVisible(), newValue)) {
+        checkWidget();
+        if (getVisible() != newValue) {
             getValue().markDirty(VControl.VISIBLE);
         }
-        checkWidget();
         if (((getApi().state & HIDDEN) == 0) == visible)
             return;
         if (visible) {
@@ -4436,7 +4457,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean translateMnemonic(Event event, Control control) {
         if (control == this.getApi())
             return false;
-        if (!isVisible() || !isEnabled())
+        if (!getApi().isVisible() || !getApi().isEnabled())
             return false;
         event.doit = this.getApi() == ((SwtDisplay) display.getImpl()).mnemonicControl || mnemonicMatch(event.character);
         return traverse(event);
@@ -4634,6 +4655,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void update(boolean all, boolean flush) {
+        // flushExposes drains X11 Expose events and is a no-op on GTK4, which uses a
     }
 
     public void updateBackgroundMode() {
@@ -4844,6 +4866,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    PaintState paintState;
+
+    Event typingKey;
+
     int resolveTextDirection() {
         /*
                      * For generic Controls do nothing here. Text-enabled Controls will resolve
@@ -4879,8 +4905,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return null;
     }
 
+    public Color getOwnForeground() {
+        return getForeground();
+    }
+
     public Font getExplicitFont() {
         return font;
+    }
+
+    boolean mayFixFocus() {
+        return false;
     }
 
     public FlutterBridge getBridge() {
@@ -4913,6 +4947,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return;
                 if (!isActive())
                     return;
+                if (!hooks(SWT.DragDetect) || !getDragDetect())
+                    return;
                 sendEvent(SWT.DragDetect, e);
             });
         });
@@ -4923,7 +4959,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 FlutterBridge bridge = getBridge();
                 boolean hadFocus = bridge != null && bridge.hasFocus(this);
                 if (bridge != null)
-                    bridge.setFocus(this);
+                    bridge.clientFocused(this);
                 if (!hadFocus) {
                     sendFocusEvent(SWT.FocusIn);
                     ControlHelper.sendActivateToAncestors(this);
@@ -4935,9 +4971,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 if (isDisposed())
                     return;
                 sendFocusEvent(SWT.FocusOut);
-                FlutterBridge bridge = getBridge();
-                if (bridge != null)
-                    bridge.clearFocus(this);
+                getDisplay().asyncExec(() -> {
+                    if (isDisposed())
+                        return;
+                    FlutterBridge bridge = getBridge();
+                    if (bridge != null)
+                        bridge.clearFocus(this);
+                });
             });
         });
         FlutterBridge.on(this, "Gesture", "Gesture", e -> {
@@ -4996,6 +5036,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return;
                 if (!isActive())
                     return;
+                ControlHelper.pressed(this, e);
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseDown, e);
             });
         });
@@ -5040,7 +5083,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.MouseWheel, e);
+                ControlHelper.handleMouseWheel(this, e);
             });
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {

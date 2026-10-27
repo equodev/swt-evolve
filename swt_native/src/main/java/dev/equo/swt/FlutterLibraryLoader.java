@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.ServiceLoader;
@@ -52,8 +53,10 @@ public class FlutterLibraryLoader {
     private static final String LINUX_WEBVIEW_PLUGIN_NAME = "libwebview_all_linux_plugin.so";
     private static final String WIN_LIB1_NAME = "flutter_windows.dll";
     private static final String WIN_LIB_NAME = "flutter_bridge.dll";
-    public static final String LINUX_X64_RELEASE = "linux/x64/" + BUILD_MODE_LOWER;
-    public static final String WIN_X64_RELEASE = "windows/x64/runner/" + BUILD_MODE_CAP;
+    // Flutter's own name for the target arch in its build output dirs (build/linux/<arch>, build/windows/<arch>).
+    private static final String FLUTTER_ARCH = "aarch64".equals(System.getProperty("os.arch")) ? "arm64" : "x64";
+    public static final String LINUX_RELEASE = "linux/" + FLUTTER_ARCH + "/" + BUILD_MODE_LOWER;
+    public static final String WIN_RELEASE = "windows/" + FLUTTER_ARCH + "/runner/" + BUILD_MODE_CAP;
 
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
@@ -176,9 +179,9 @@ public class FlutterLibraryLoader {
             loadLibrary(libFile.getAbsolutePath());
         } else {
             String bundleLib = LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP;
-            loadOSLibraries(LINUX_X64_RELEASE, bundleLib + LINUX_ENGINE_LIB_NAME);
-            loadOSLibraries(LINUX_X64_RELEASE, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME);
-            loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
+            loadOSLibraries(LINUX_RELEASE, bundleLib + LINUX_ENGINE_LIB_NAME);
+            loadOSLibraries(LINUX_RELEASE, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME);
+            loadOSLibraries(LINUX_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
         }
     }
 
@@ -198,10 +201,10 @@ public class FlutterLibraryLoader {
             loadLibrary(libWebFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
-            loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB1_NAME);
-            loadOSLibraries(WIN_X64_RELEASE, SEP + "WebView2Loader.dll");
-            loadOSLibraries(WIN_X64_RELEASE, SEP + "webview_all_windows_plugin.dll");
-            loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB_NAME);
+            loadOSLibraries(WIN_RELEASE, SEP + WIN_LIB1_NAME);
+            loadOSLibraries(WIN_RELEASE, SEP + "WebView2Loader.dll");
+            loadOSLibraries(WIN_RELEASE, SEP + "webview_all_windows_plugin.dll");
+            loadOSLibraries(WIN_RELEASE, SEP + WIN_LIB_NAME);
         }
     }
 
@@ -250,9 +253,7 @@ public class FlutterLibraryLoader {
                         ensureDirectoryExists(targetFile);
                     } else {
                         ensureDirectoryExists(targetFile.getParentFile());
-                        try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                            Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        }
+                        extractAtomically(jarFile, entry, targetFile);
                     }
                 }
             }
@@ -322,7 +323,7 @@ public class FlutterLibraryLoader {
         if (osName.equalsIgnoreCase(OS_LINUX)) return OS_LINUX;
         if (osName.equalsIgnoreCase("Mac OS X")) return OS_MACOSX;
         if (osName.startsWith(OS_WINDOWS_PREFIX)) return OS_WIN;
-        return osName.toLowerCase().replaceAll("\\s+", "");
+        return osName.toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", "");
     }
 
     private static String getArch() {
@@ -334,8 +335,34 @@ public class FlutterLibraryLoader {
         return findFlutterBuildDirectory() != null;
     }
 
+    /**
+     * Writes the entry next to its target and moves it into place, so a process starting at the
+     * same time never loads a half-written file. If the move fails while the target exists (another
+     * process put it there first, and it may already be loaded), that file is used.
+     */
+    private static void extractAtomically(JarFile jarFile, JarEntry entry, File targetFile) throws IOException {
+        Path target = targetFile.toPath();
+        Path temp = Files.createTempFile(target.getParent(), targetFile.getName(), ".part");
+        try {
+            try (InputStream inputStream = jarFile.getInputStream(entry)) {
+                Files.copy(inputStream, temp, StandardCopyOption.REPLACE_EXISTING);
+            }
+            try {
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException moveFailed) {
+                if (!Files.isRegularFile(target)) {
+                    throw moveFailed;
+                }
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+    }
+
     private static void ensureDirectoryExists(File directory) throws IOException {
-        if (!directory.exists() && !directory.mkdirs()) {
+        // mkdirs() is also false when another process created the directory first, e.g. two apps
+        // starting together on a fresh machine; only a directory that still is not there is a failure.
+        if (!directory.mkdirs() && !directory.isDirectory()) {
             throw new IOException("Failed to create directory: " + directory.getAbsolutePath());
         }
     }
@@ -420,9 +447,9 @@ public class FlutterLibraryLoader {
         // "Invalid ELF path". Only the Linux path is verified; Win/mac follow their own layout.
         String bundleBase;
         if (OS_LINUX.equals(os)) {
-            bundleBase = new File(dir, LINUX_X64_RELEASE).getAbsolutePath();
+            bundleBase = new File(dir, LINUX_RELEASE).getAbsolutePath();
         } else if (OS_WIN.equals(os)) {
-            bundleBase = new File(dir, WIN_X64_RELEASE).getAbsolutePath();
+            bundleBase = new File(dir, WIN_RELEASE).getAbsolutePath();
         } else { // macOS
             bundleBase = new File(dir, SWTFLUTTER_APP_CONTENTS).getAbsolutePath();
         }

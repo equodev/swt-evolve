@@ -11,7 +11,7 @@ class CComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_CCombo() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class CComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_CCombo() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -30,6 +30,7 @@ class CComboSerializeTest extends SerializeTestBase {
                                                                   .hasSameSizeAs(w.getItems()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("listVisible").equalsTo(w.getListVisible(), orAbsentIfFalse));
@@ -45,12 +46,11 @@ class CComboSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_CCombo() {
-        CCombo w = new CCombo(swtShell(), SWT.NONE);
+        CCombo w = new CCombo(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

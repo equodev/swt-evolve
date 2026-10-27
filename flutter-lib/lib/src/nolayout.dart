@@ -4,26 +4,11 @@ import 'gen/composite.dart';
 import 'gen/control.dart';
 import 'gen/rectangle.dart';
 import 'comm/v_registry.dart';
-import 'gen/toolbar.dart';
 import 'gen/widget.dart';
 import 'gen/widgets.dart';
 import 'gen/widgets.dart' as gen;
 import 'impl/utils/widget_utils.dart';
 import 'theme/theme_extensions/composite_theme_extension.dart';
-import 'theme/theme_extensions/toolitem_theme_extension.dart';
-
-/// The child's own bounds grown by [margin] on every side.
-class _InflatedBounds extends CustomClipper<Rect> {
-  const _InflatedBounds(this.margin);
-
-  final double margin;
-
-  @override
-  Rect getClip(Size size) => (Offset.zero & size).inflate(margin);
-
-  @override
-  bool shouldReclip(_InflatedBounds oldClipper) => oldClipper.margin != margin;
-}
 
 
 class NoLayout extends StatelessWidget {
@@ -52,7 +37,7 @@ class NoLayout extends StatelessWidget {
       child: CustomMultiChildLayout(
         delegate: _AbsoluteLayoutDelegate(children, composite,
             relayout: VRegistry.instance
-                .changesOn(children.map(VRegistry.channelOf))),
+                .boundsChangesOn(children.map(VRegistry.channelOf))),
         children: [
           for (var child in children.reversed)
             LayoutId(
@@ -63,29 +48,10 @@ class NoLayout extends StatelessWidget {
               id: child.id,
               child: isPanelLayout
                   ? _wrapAsPanel(_buildChild(child), theme!)
-                  : _clipToBounds(context, child, _buildChild(child)),
+                  : ClipRect(child: _buildChild(child)),
             )
         ],
       ),
-    );
-  }
-
-  /// A control is clipped to its own bounds, which is what SWT does: a child that reaches past its
-  /// parent is cut at the parent's edge, not drawn beyond it.
-  ///
-  /// A ToolBar is the one exception. The hover zoom is a paint-time transform, so a bar sized to
-  /// exactly its icons -- a one-item ToolBar in a GridLayout cell, say -- would have the grown icon
-  /// cut off at that boundary instead of growing; its clip is inflated by the room the zoom needs.
-  /// Only a ToolBar gets that. Inflating every child let any control bleed [_InflatedBounds.margin]
-  /// past its parent, which is how a 2px-tall Composite leaked a slice of a 20px child that SWT
-  /// clips away completely.
-  static Widget _clipToBounds(BuildContext context, VControl child, Widget built) {
-    if (child is! VToolBar) return ClipRect(child: built);
-    final theme = Theme.of(context).extension<ToolItemThemeExtension>();
-    if (theme == null || !theme.hoverZoomEnabled) return ClipRect(child: built);
-    return ClipRect(
-      clipper: _InflatedBounds(theme.defaultIconSize * (theme.hoverZoomScale - 1) / 2),
-      child: built,
     );
   }
 
@@ -135,7 +101,7 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   /// [child] is the widget itself, not a copy of it: the list this delegate was built from holds
   /// the objects the registry holds, so what it reads here is whatever that child was last told —
   /// including by an update the composite never heard about. Keeping up with those is what
-  /// [VRegistry.changesOn] is passed as `relayout` for.
+  /// [VRegistry.boundsChangesOn] is passed as `relayout` for.
   VRectangle? _boundsOf(VControl child) => child.bounds;
 
   /// The declared bounds, grown to at least cover every child's own bottom-right

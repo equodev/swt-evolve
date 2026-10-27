@@ -192,11 +192,10 @@ public class DartCombo extends DartComposite implements ICombo {
         if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
         getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = string;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
+        items = ListItemsHelper.insert(items, index, string);
+        ComboHelper.itemInserted(this, index);
+        ComboHelper.sendSegments(this, string);
+        getValue().markDirty(VCombo.ITEMS);
     }
 
     /**
@@ -750,10 +749,10 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setListVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(this.listVisible, newValue)) {
+        checkWidget();
+        if (this.listVisible != newValue) {
             getValue().markDirty(VCombo.LIST_VISIBLE);
         }
-        checkWidget();
         this.listVisible = newValue;
     }
 
@@ -1103,27 +1102,7 @@ public class DartCombo extends DartComposite implements ICombo {
         int count = getItemCount();
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        getValue().markDirty(VCombo.ITEMS);
-        String[] newItems = new String[items.length - 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
-        items = newItems;
-        if (index == selectedIndex) {
-            // GTK/Win32 clear the selection when the selected item is removed; Cocoa reselects the
-            // item now at that index. getPlatform() reflects the host, matching the parity tests.
-            if ("cocoa".equals(SWT.getPlatform()) && index < items.length) {
-                selectedIndex = index;
-            } else {
-                selectedIndex = -1;
-                // Clearing the selection clears the shown text and fires Modify.
-                if (text != null && !text.isEmpty()) {
-                    text = "";
-                    sendEvent(SWT.Modify);
-                }
-            }
-        } else if (index < selectedIndex) {
-            selectedIndex--;
-        }
+        ComboHelper.removeAt(this, index);
     }
 
     void remove(int index, boolean notify) {
@@ -1198,6 +1177,7 @@ public class DartCombo extends DartComposite implements ICombo {
             return;
         if ((getApi().style & SWT.H_SCROLL) != 0)
             setScrollWidth(0);
+        getValue().markDirty(VCombo.ITEMS);
     }
 
     /**
@@ -1596,9 +1576,9 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setText(String string) {
         //String newValue = string;
         ;
+        checkWidget();
         //if (!java.util.Objects.equals(this.text, newValue)) {    getValue().markDirty(VCombo.TEXT);}
         ;
-        checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1819,6 +1799,8 @@ public class DartCombo extends DartComposite implements ICombo {
         }
     }
 
+    int caretPosition;
+
     boolean listVisible;
 
     Point selection;
@@ -1879,6 +1861,10 @@ public class DartCombo extends DartComposite implements ICombo {
         return stateFlagsUsable;
     }
 
+    public int _caretPosition() {
+        return caretPosition;
+    }
+
     public boolean _listVisible() {
         return listVisible;
     }
@@ -1899,6 +1885,13 @@ public class DartCombo extends DartComposite implements ICombo {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "List", "Visible", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                ComboHelper.listShownByFlutter(this, e.detail != 0);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
@@ -1944,6 +1937,10 @@ public class DartCombo extends DartComposite implements ICombo {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (ComboHelper.proposesNoChange(e)) {
+                    ComboHelper.clientCaretMoved(this, e.start, e.index);
+                    return;
+                }
                 sendEvent(SWT.Verify, e);
             });
         });

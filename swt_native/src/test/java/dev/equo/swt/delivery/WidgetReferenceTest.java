@@ -76,7 +76,7 @@ class WidgetReferenceTest {
     @Test
     @DisplayName("a delivered, unchanged child is named rather than described")
     void unchangedChildIsAReference() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label child = new Label(parent, SWT.NONE);
         child.setText("established");
@@ -93,7 +93,7 @@ class WidgetReferenceTest {
     @Test
     @DisplayName("a reference carries no write stamp, so it cannot displace what is held")
     void aReferenceCarriesNoStamp() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label child = new Label(parent, SWT.NONE);
         deliver(parent);
@@ -106,7 +106,7 @@ class WidgetReferenceTest {
     @Test
     @DisplayName("a child that changed is described in full")
     void changedChildIsWrittenWhole() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label child = new Label(parent, SWT.NONE);
         child.setText("before");
@@ -123,7 +123,7 @@ class WidgetReferenceTest {
     @Test
     @DisplayName("a child the far side has never seen is described in full")
     void undeliveredChildIsWrittenWhole() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         deliver(parent);
 
@@ -139,7 +139,7 @@ class WidgetReferenceTest {
     @Test
     @DisplayName("the widget a frame is about is always described in full")
     void theSubjectOfAFrameIsNeverAReference() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         label.setText("established");
@@ -156,7 +156,7 @@ class WidgetReferenceTest {
     @Test
     @DisplayName("naming the unchanged is what makes a structural change affordable")
     void addingAChildDoesNotRedescribeItsSiblings() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         for (int i = 0; i < 50; i++) new Label(parent, SWT.NONE).setText("row " + i);
         deliver(parent);
@@ -178,6 +178,10 @@ class WidgetReferenceTest {
 
     /** Puts the whole subtree on the wire, so later writes have something to refer back to. */
     private void deliver(Widget widget) {
+        // Building the tree leaves its host Shell dirty, and this backend has the host Dart-backed
+        // too: a widget with a dirty ancestor is expected to travel inside it, so its own frame is
+        // suppressed and nothing is ever stamped delivered. Drain that first.
+        FlutterBridge.update();
         // A widget the client has never seen is not sent on its own channel - it is expected to
         // arrive inside its parent - so the tree is declared known before the flush that stamps it.
         markKnown(widget);

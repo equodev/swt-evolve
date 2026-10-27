@@ -1,0 +1,326 @@
+package org.eclipse.swt.widgets;
+
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.RecordingComm;
+import org.eclipse.swt.SWT;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Focus Java takes on its own has to reach the render side. On the whole-tree surface the client owns
+ * the real keyboard focus, so tracking the focus holder in Java alone leaves a control Java focused
+ * — a JFace cell editor opened by {@code TableViewer.editElement}, a part activation — rendered but
+ * unable to receive a keystroke until the user clicks it.
+ *
+ * <p>Same shape as {@link DisplayConfigFlagsFlutterTest}: a {@code @Tag("flutter-it")} test driven by
+ * the {@code nativeTest} task, with a {@link RecordingComm} standing in for the Flutter client.
+ */
+@Tag("flutter-it")
+class ControlFocusRequestFlutterTest {
+
+    private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+    private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
+
+    private Display display;
+
+    @AfterEach
+    void tearDown() {
+        if (display != null && !display.isDisposed())
+            display.dispose();
+        FlutterBridge.set(null);
+    }
+
+    @Test
+    void aCellEditorAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Text editor = cellEditorOn(newTable(), 0);
+        web.comm.sent.clear();
+
+        assertThat(editor.setFocus()).as("the editor accepts focus").isTrue();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the cell editor")
+                .containsExactly(String.valueOf(editor.hashCode()));
+    }
+
+    @Test
+    void anEditorAnOwnerDrawnCanvasPlacesOverItsContentAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Canvas grid = new Canvas(openShell(), SWT.NONE);
+        grid.setFocus();
+        // The shape of a custom-drawn grid's inline editor: a Text created on the grid itself, placed
+        // over a cell and force-focused in the same mouse-down that selected the cell.
+        Text editor = new Text(grid, SWT.SINGLE);
+        editor.setBounds(40, 20, 100, 19);
+        web.comm.sent.clear();
+
+        assertThat(editor.forceFocus()).as("the editor accepts focus").isTrue();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the grid's editor")
+                .containsExactly(String.valueOf(editor.hashCode()));
+    }
+
+    @Test
+    void anEditorWrappedInACompositeOnAnOwnerDrawnCanvasAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Canvas grid = new Canvas(openShell(), SWT.NONE);
+        grid.setFocus();
+        // A grid's cell editor that frames its field: the Text sits in a Composite the editor placed
+        // over the cell, sometimes two deep, rather than on the grid itself.
+        Composite frame = new Composite(grid, SWT.NONE);
+        frame.setBounds(40, 20, 100, 25);
+        Composite inner = new Composite(frame, SWT.NONE);
+        Text editor = new Text(inner, SWT.SINGLE | SWT.BORDER);
+        web.comm.sent.clear();
+
+        assertThat(editor.forceFocus()).as("the editor accepts focus").isTrue();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the framed editor")
+                .containsExactly(String.valueOf(editor.hashCode()));
+    }
+
+    @Test
+    void anOrdinaryFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text plain = new Text(shell, SWT.SINGLE);
+        web.comm.sent.clear();
+
+        plain.setFocus();
+
+        // Pushing focus at every control Java focuses breaks dialogs that manage their own: the
+        // Eclipse IDE New Project wizard drops from 10/10 to 5 failures, its field's keystrokes
+        // landing out of order. Only the cell editor -- created, placed and focused in one
+        // event-loop pass, with no gesture the render side could have seen -- is pushed.
+        assertThat(focusRequests(web))
+                .as("an ordinary field is not pushed at the client")
+                .isEmpty();
+    }
+
+    @Test
+    void anOrdinaryFieldIsNamedAsTheFocusHolder() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        new Button(shell, SWT.PUSH);
+        web.comm.sent.clear();
+
+        first.setFocus();
+
+        // SWT traverses from the focus control: the client starts Tab from this field even though its
+        // own keyboard focus was never moved onto it.
+        assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
+                .as("the client is told which control Java holds the focus on")
+                .containsExactly(String.valueOf(first.hashCode()));
+    }
+
+    @Test
+    void theDisplayStateCarriesTheFocusHolderSoAReloadNeedsNoSeparateMessage() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        web.sendDisplayUpdate((DartDisplay) display.getImpl());
+
+        assertThat(web.comm.sent.stream().filter(f -> f.event.startsWith("Display/")
+                        && f.json.contains("\"focusHolderId\":" + first.hashCode())))
+                .as("the Display state names the focus holder")
+                .isNotEmpty();
+        assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
+                .as("no separate holder message alongside it")
+                .isEmpty();
+    }
+
+    @Test
+    void focusRequestFollowsTheEditorJavaFocusesLast() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Table table = newTable();
+        Text first = cellEditorOn(table, 0);
+        Text second = cellEditorOn(table, 1);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        second.setFocus();
+
+        assertThat(focusRequests(web))
+                .as("only the newly focused editor is requested")
+                .containsExactly(String.valueOf(second.hashCode()));
+    }
+
+    @Test
+    void theFieldAPopupDialogFocusesAsItOpensAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        web.comm.sent.clear();
+
+        // The shape of Eclipse's Quick Access: a JFace PopupDialog that opens its shell, then focuses
+        // the filter field in its title area.
+        Text[] filter = new Text[1];
+        new org.eclipse.jface.dialogs.PopupDialog(main, SWT.RESIZE, true, true, false, true, true, null, null) {
+            @Override
+            protected Control createTitleControl(Composite parent) {
+                filter[0] = new Text(parent, SWT.NONE);
+                return filter[0];
+            }
+
+            @Override
+            protected Control getFocusControl() {
+                return filter[0];
+            }
+        }.open();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the field the new shell opened on")
+                .containsExactly(String.valueOf(filter[0].hashCode()));
+    }
+
+    @Test
+    void theFirstShellOpeningOnAFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = new Shell(display);
+        Text field = new Text(shell, SWT.SINGLE);
+        shell.setSize(400, 300);
+
+        shell.open();
+
+        assertThat(display.getFocusControl()).as("sanity: the shell opened on its field").isSameAs(field);
+        assertThat(focusRequests(web))
+                .as("only a shell activated over another active one is pushed")
+                .isEmpty();
+    }
+
+    @Test
+    void aSecondTopLevelShellOpeningOnAFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        web.comm.sent.clear();
+
+        Shell other = new Shell(display);
+        Text field = new Text(other, SWT.SINGLE);
+        other.setSize(400, 300);
+        other.open();
+
+        assertThat(display.getFocusControl()).as("sanity: the new shell opened on its field").isSameAs(field);
+        assertThat(focusRequests(web))
+                .as("a top-level shell is not a popup of the active one")
+                .isEmpty();
+    }
+
+    @Test
+    void aFieldFocusedLaterInTheSameShellIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        Text second = new Text(shell, SWT.SINGLE);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        second.setFocus();
+
+        assertThat(focusRequests(web))
+                .as("only a move that activates a shell is pushed")
+                .isEmpty();
+    }
+
+    @Test
+    void aPrimaryPressOnAStyledTextActivatesAndFocusesItAheadOfItsMouseDown() {
+        assertThat(pressStyledText(1)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "FocusIn", "MouseDown", "client focus");
+    }
+
+    @Test
+    void aSecondaryPressOnAStyledTextFocusesItFromItsOwnMouseDown() {
+        assertThat(pressStyledText(3)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "MouseDown", "FocusIn", "client focus");
+    }
+
+    /** What reaches a StyledText, and the client, from a press of {@code button} the client reports. */
+    private java.util.List<String> pressStyledText(int button) {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text field = new Text(shell, SWT.SINGLE);
+        org.eclipse.swt.custom.StyledText styled = new org.eclipse.swt.custom.StyledText(shell, SWT.NONE);
+        field.setFocus();
+        java.util.List<String> events = new java.util.ArrayList<>();
+        // Filters, as the input parity recorder uses: they see the MouseDown ahead of the StyledText's
+        // own listener, which focuses it on any button.
+        display.addFilter(SWT.Activate, e -> { if (e.widget == styled) events.add("Activate detail=" + e.detail); });
+        display.addFilter(SWT.FocusIn, e -> { if (e.widget == styled) events.add("FocusIn"); });
+        display.addFilter(SWT.MouseDown, e -> { if (e.widget == styled) events.add("MouseDown"); });
+        web.comm.sent.clear();
+
+        Event press = new Event();
+        press.button = button;
+        web.comm.fireContaining(FlutterBridge.event((DartWidget) styled.getImpl(), "Mouse", "MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+
+        if (focusRequests(web).equals(java.util.List.of(String.valueOf(styled.hashCode()))))
+            events.add("client focus");
+        return events;
+    }
+
+    // ---- harness ----------------------------------------------------------------------------------
+
+    /** The control ids named by every {@code swt.evolve.focus} frame sent so far, in order. */
+    private static java.util.List<String> focusRequests(TestWebBridge web) {
+        return ids(web, FOCUS_CHANNEL);
+    }
+
+    /** The control ids named by every frame sent on {@code channel} so far, in order. */
+    private static java.util.List<String> ids(TestWebBridge web, String channel) {
+        return web.comm.sent.stream()
+                .filter(f -> f.event.equals(channel))
+                .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
+                .toList();
+    }
+
+    private Table newTable() {
+        Shell shell = openShell();
+        Table table = new Table(shell, SWT.NONE);
+        new TableColumn(table, SWT.NONE);
+        new TableColumn(table, SWT.NONE);
+        new TableItem(table, SWT.NONE);
+        return table;
+    }
+
+    /** The Text a TableEditor places over a cell -- the shape JFace's TextCellEditor produces. */
+    private Text cellEditorOn(Table table, int column) {
+        Text text = new Text(table, SWT.SINGLE);
+        org.eclipse.swt.custom.TableEditor editor = new org.eclipse.swt.custom.TableEditor(table);
+        editor.setEditor(text, table.getItem(0), column);
+        return text;
+    }
+
+    private Shell openShell() {
+        Shell shell = new Shell(display);
+        shell.setSize(400, 300);
+        shell.open();
+        return shell;
+    }
+
+    /** See {@code DisplayConfigFlagsFlutterTest.install} — a Display whose bridge is the test bridge. */
+    private <B extends DisplayBridge> B install(Function<DartDisplay, B> factory) {
+        FlutterBridge.set(new RecordingBridge());
+        display = new Display();
+        FlutterBridge.set(null);
+        DartDisplay dd = (DartDisplay) display.getImpl();
+        B bridge = factory.apply(dd);
+        dd.setBridge(bridge);
+        bridge.start(dd);
+        return bridge;
+    }
+
+}

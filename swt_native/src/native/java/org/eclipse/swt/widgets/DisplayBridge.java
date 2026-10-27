@@ -3,7 +3,11 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowBridge;
+import dev.equo.swt.WindowPolicy;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -26,12 +30,34 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Display-wide: a focus request can name a control the client has not built yet. */
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+    /** The client's answer to a focus request, sent as it receives the request: {@code {seq}}. */
+    private static final String FOCUS_SEEN_CHANNEL = "swt.evolve.focus.seen";
+    /** Display-wide: which control Java holds as its focus control, without moving the client's. */
+    private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
 
     protected DartDisplay forDisplay;
     private DartControl focused = null;
     /** Last control the client was asked to focus, so one focus move is not sent twice: a single
      *  {@code Control.forceFocus()} reaches {@link #setFocus} again through the shell's restoreFocus. */
     private DartControl focusRequested = null;
+    /** Last control the client was told holds the focus, on {@link #FOCUS_HOLDER_CHANNEL} or in the Display state. */
+    private DartControl focusHolderSent = null;
+
+    /**
+     * The control the client was last asked to focus and has not reported back yet, or null.
+     *
+     * <p>The client reports its focus as it changes, so a report can already be in flight when Java
+     * asks for a different control. That report still names the control the client had before the
+     * request; applying it moves the focus straight back off the one just asked for.
+     */
+    private DartControl pendingClientFocus = null;
+    /** The number of the last focus request sent, which the client echoes once it has received it. */
+    private long focusRequestSeq;
+    /** The control the client last reported focused, whether or not the report was applied. */
+    private DartControl clientReportedFocus = null;
+    /** What the client had last reported focused when the pending request went out: the only control
+     *  a report older than that request can name. */
+    private DartControl clientFocusAtRequest = null;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
 
@@ -42,6 +68,28 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * Single-threaded: only ever read/written on the Display's UI thread.
      */
     protected boolean applyingClientBounds;
+
+    /**
+     * Shells hosted in a window of their own, in open order. Empty under the default single-window
+     * policy, which is what keeps every question below off the normal path.
+     */
+    private final java.util.LinkedHashMap<Shell, ShellWindow> shellWindows =
+            new java.util.LinkedHashMap<>();
+
+    /** Whether a client has reported its viewport yet; until then the Display's bounds are a default.
+     *  Display thread only. */
+    private boolean clientViewportApplied;
+
+    /** {@code Event.detail} of the bounds a client reports once it has first drawn a shell. */
+    public static final int INITIAL_CLIENT_BOUNDS = 1;
+
+    /** Shown shells moved by {@link #repositionShells} whose initial client bounds have not arrived
+     *  yet. Display thread only. */
+    private final java.util.Set<Shell> repositionedShells =
+            java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /** Integer centering, {@code (outer - inner) / 2}, leaves the odd pixel on either side. */
+    private static final int CENTERING_SLACK = 1;
 
     protected DisplayBridge(DartDisplay display) {
         this.forDisplay = display;
@@ -117,7 +165,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     dartDisplay.addShell((Shell) dartShell.getApi());
                     if (injected == null) {
                         if (dartShell.parent == null) {
-                            dartShell.bounds = dartDisplay.bounds;
+                            DisplayBridge surface = dartDisplay.displayBridge;
+                            // No surface (a harness that clears the bridge once the Display exists): nothing draws it.
+                            if (surface != null) surface.sizeNewTopLevelShell(dartShell);
+                            else dartShell.bounds = dartDisplay.bounds;
                         } else if (dartShell.bounds.width == 0 && dartShell.bounds.height == 0) {
                             Rectangle db = dartDisplay.bounds;
                             int w = Math.max(400, db.width * 3 / 5);
@@ -132,6 +183,52 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
         if (injected != null) return injected;
         return null;
+    }
+
+    /**
+     * Top-level shells still at the size {@link #sizeNewTopLevelShell} gave them: the application has
+     * not set their bounds. Display thread only.
+     */
+    private final java.util.Set<Shell> unsizedShells =
+            java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /**
+     * Gives a new top-level shell the size a native one opens at, 5/8 of the monitor, centered on it,
+     * and sends it sized: a shell sent unsized is drawn at a placeholder size, which the client then
+     * reports back as the shell's own. Before any client has reported, the monitor is a placeholder,
+     * so {@link #resizeUnsizedShells} applies it again from the real one.
+     */
+    void sizeNewTopLevelShell(DartShell shell) {
+        shell.bounds = fiveEighths(forDisplay.bounds);
+        shell.laidOut = true;
+        unsizedShells.add(shell.getApi());
+    }
+
+    private static Rectangle fiveEighths(Rectangle monitor) {
+        int width = monitor.width * 5 / 8, height = monitor.height * 5 / 8;
+        return new Rectangle(monitor.x + (monitor.width - width) / 2, monitor.y + (monitor.height - height) / 2,
+                width, height);
+    }
+
+    /** Whether {@code shell} still has the size it was created with, the application never having set one. */
+    protected boolean isUnsized(Shell shell) {
+        return unsizedShells.contains(shell);
+    }
+
+    /** The application set {@code control}'s bounds: if it is a top-level shell, it is no longer unsized. */
+    protected void noteBoundsSet(DartControl control) {
+        if (!applyingClientBounds && control instanceof DartShell) unsizedShells.remove(((DartShell) control).getApi());
+    }
+
+    /** Re-applies 5/8 of the now real monitor ({@code display.bounds}) to the shells nobody has sized. */
+    protected void resizeUnsizedShells(DartDisplay display) {
+        applyClientBounds(() -> {
+            for (Shell shell : new java.util.ArrayList<>(unsizedShells)) {
+                if (shell.isDisposed()) continue;
+                Rectangle sized = fiveEighths(display.bounds);
+                if (!sized.equals(shell.getBounds())) shell.setBounds(sized);
+            }
+        });
     }
 
     /**
@@ -154,11 +251,73 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     protected void registerDisplayClientReady(DartDisplay display) {
         long displayId = display.getApi().hashCode();
+        relayoutWhenUiScaleSettles(display);
+        // Queued ahead of everything else the client is sent: what it draws before its ClientReady,
+        // a GC's paint included, is measured with these flags on this side.
+        broadcastSwtEvolveProperties();
+        registerClientReadyHandler(display, displayId);
+        registerFocusRequestSeen(display);
+    }
+
+    /**
+     * The client received focus request {@code seq}. The channel is ordered, so every focus report
+     * read before this was sent before the client knew of the request, and every one after it is
+     * newer. Queued on the Display thread like those reports, so it lands between the same two.
+     */
+    private void registerFocusRequestSeen(DartDisplay display) {
+        comm().on(FOCUS_SEEN_CHANNEL, java.util.Map.class, seen -> {
+            Display api = display.getApi();
+            Object seq = seen == null ? null : seen.get("seq");
+            if (api == null || api.isDisposed() || !(seq instanceof Number))
+                return;
+            long answered = ((Number) seq).longValue();
+            api.asyncExec(() -> {
+                if (answered == focusRequestSeq)
+                    pendingClientFocus = null;
+            });
+        });
+    }
+
+    /**
+     * Lays the shells out again once the client has reported its monitor.
+     *
+     * <p>The widget tree is built before that report arrives, so anything that measured text on the
+     * way up did so at a scale that has since changed — and a layout is computed once and kept. Text
+     * is *painted* from the current scale, so type comes out the right size inside line boxes broken
+     * for the old one: a paragraph that wraps early and leaves a gutter. Measured at
+     * `swt.autoScale=150`: the first four extents of a wrapped paragraph came back at dpiScale
+     * 1.3333, the zoom arrived four lines later, and every later extent read 0.8889 — correct, and
+     * too late to affect where the lines had already been broken.
+     */
+    private void relayoutWhenUiScaleSettles(DartDisplay display) {
+        dev.equo.swt.Config.addUiScaleListener(() -> {
+            Display api = display.getApi();
+            if (api == null || api.isDisposed()) return;
+            try {
+                api.asyncExec(() -> {
+                    if (api.isDisposed()) return;
+                    for (Shell shell : api.getShells()) {
+                        if (shell.isDisposed()) continue;
+                        // The menu strip is sized at the monitor's scale (Sizes.menuStripHeight).
+                        if (shell.getImpl() instanceof DartDecorations)
+                            ((DartDecorations) shell.getImpl()).getValue().markDirty(VDecorations.MENU_STRIP_HEIGHT);
+                        shell.layout(true, true);
+                        shell.redraw();
+                    }
+                });
+            } catch (org.eclipse.swt.SWTException disposed) {
+                // The display went away between the check and asyncExec.
+            }
+        });
+    }
+
+    private void registerClientReadyHandler(DartDisplay display, long displayId) {
         // Completing clientReady + pushing swt.evolve.properties on the first ClientReady is handled
         // by the shared FlutterBridge.onClientReady template; here we only do the Display-specific
         // work: sync Display bounds to the reported viewport and push the (first/next) update.
         onClientReady("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
+            display.clientPlatform = p.targetPlatform;
             // A client that reconnects reporting p.isFirst=true — a fresh Flutter instance re-established
             // the socket (e.g. a browser refresh) but is NOT the bridge's first ClientReady — needs the
             // swt.evolve properties re-pushed, or its theme/config init is lost on refresh.
@@ -170,12 +329,26 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
             Display api = display.getApi();
             Runnable apply = () -> {
+                // A refreshed page draws every shell from the bounds held here, so no report it sends is stale.
+                if (!first && p.isFirst) repositionedShells.clear();
+                int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
+                // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
+                // this one, and the UI zoom is what that call just derived.
+                dev.equo.swt.Config.setClientDeviceZoom(p.zoom);
+                // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
+                // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
+                // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.
+                if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
+                    broadcastSwtEvolveProperties();
+                }
+                display.applyClientLocale(p.locale);
+                applyClientInsetTop(p.insetTop);
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
-                // Push on the very first ClientReady (it bootstraps the Flutter tree); otherwise only
-                // when something actually changed, so a repeated identical viewport doesn't feed a loop.
-                if (changed || first) sendDisplayUpdate(display);
+                // Only for a client that holds nothing (first ClientReady, or a page refresh): a
+                // viewport change resizes shells, which travel on their own; the Display has no bounds.
+                if (first || p.isFirst) sendDisplayUpdate(display);
             };
             // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
             // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
@@ -188,6 +361,27 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.getThread() == Thread.currentThread()) apply.run();
             else api.asyncExec(apply);
         });
+    }
+
+    public void writeClipboardText(String text) {
+        writeSystemClipboardText(text);
+    }
+
+    /** The JVM's own clipboard, for a Display with no bridge of its own (a test harness injects one). */
+    public static void writeSystemClipboardText(String text) {
+        try {
+            SystemClipboard.write(text);
+        } catch (LinkageError noDesktopModule) {
+        }
+    }
+
+    /** Null when there is no text or it cannot be read. */
+    public String readClipboardText() {
+        try {
+            return SystemClipboard.read();
+        } catch (LinkageError noDesktopModule) {
+            return null;
+        }
     }
 
     /**
@@ -208,34 +402,56 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyDown, ev));
         comm().on("Display/" + displayId + "/Key/KeyUp", Event.class,
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyUp, ev));
+        // The Menu key has no SWT key code: natively it reaches the control as a context-menu
+        // request, never as a KeyDown.
+        comm().on("Display/" + displayId + "/MenuKey", Event.class, ev -> {
+            Display api = display.getApi();
+            if (api == null || api.isDisposed())
+                return;
+            api.asyncExec(() -> {
+                if (api.isDisposed())
+                    return;
+                Control focus = api.getFocusControl();
+                if (focus != null && !focus.isDisposed() && focus.getImpl() instanceof DartControl)
+                    ControlHelper.showMenuFromKeyboard((DartControl) focus.getImpl());
+            });
+        });
     }
 
     private void routeKeyToFocused(DartDisplay display, int type, Event ev) {
         Display api = display.getApi();
         if (api == null || api.isDisposed())
             return;
+        if (display.isMacWebClient())
+            ControlHelper.applyClientModifier(ev);
+        ControlHelper.applyControlCharacter(ev);
         // Arrives on the comm thread; hop to the Display thread like every other inbound event.
         api.asyncExec(() -> {
             if (api.isDisposed())
                 return;
             Control focus = api.getFocusControl();
-            if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl))
+            boolean dartFocus = focus != null && !focus.isDisposed() && focus.getImpl() instanceof DartControl;
+            if (ControlHelper.capturedKey(api, type, ev)) {
+                // The focus control's client holds the keystroke for a verdict it would otherwise get below.
+                if (dartFocus && type == org.eclipse.swt.SWT.KeyDown && focus.isListening(org.eclipse.swt.SWT.KeyDown)
+                        && !ControlHelper.isModifierKey(ev.keyCode))
+                    dev.equo.swt.FlutterBridge.send((DartControl) focus.getImpl(), "key/verdict", dev.equo.swt.Java8.map("doit", false));
+                return;
+            }
+            if (!dartFocus)
                 return;
             DartControl dc = (DartControl) focus.getImpl();
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
-                ev.doit = true;
-                ControlHelper.sendDisplayRoutedKeyDown(dc, ev);
-                if (vetoable) {
+                ControlHelper.RoutedKey routed = ControlHelper.routeKeyDown(dc, ev);
+                // A modifier press edits nothing, so the client holds no proposal for it to answer.
+                if (vetoable && !ControlHelper.isModifierKey(ev.keyCode)) {
                     dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
-                            dev.equo.swt.Java8.map("doit", ev.doit));
+                            dev.equo.swt.Java8.map("doit", routed.delivered && routed.keyDoit));
                 }
-                // Surface the traversal (Tab/arrows/Esc/Enter/Page) as SWT.Traverse too, so a Display
-                // Traverse filter (Eclipse command bindings) and TraverseListeners see it.
-                boolean traverseDoit = ControlHelper.sendFlutterTraverse(dc, ev);
                 // The client traverses at Display level, so the verdict goes there, not to the control.
                 if (ControlHelper.isGatedTraversal(ev)) {
-                    sendDisplayGate(display, "traverse/verdict", "doit", traverseDoit);
+                    sendDisplayGate(display, "traverse/verdict", "doit", routed.traverseDoit);
                 }
             } else {
                 dc.sendEvent(org.eclipse.swt.SWT.KeyUp, ev);
@@ -257,6 +473,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 : null;
     }
 
+    /** The chrome the client draws above the app content, as it reports it. Only a surface whose
+     *  window has its own screen position needs it. */
+    protected void applyClientInsetTop(int insetTop) {
+    }
+
     /**
      * Apply a client-reported geometry. Web surface (the default here): the browser viewport
      * <em>is</em> the Display, so sync {@code display.bounds} to the viewport and slave the
@@ -270,9 +491,78 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (!isFirst && display.bounds.equals(viewport)) {
             return false; // idempotent: same viewport as before — no churn, no echo
         }
+        java.util.Map<Shell, Rectangle> placedOnDefault = clientViewportApplied ? null : shellBounds(display);
+        Rectangle defaultBounds = display.bounds;
+        boolean firstReport = !clientViewportApplied;
+        clientViewportApplied = true;
         display.bounds = viewport;
+        if (firstReport) resizeUnsizedShells(display);
         applyClientBounds(() -> resizeMainShells(display, viewport));
+        if (placedOnDefault != null) repositionShells(display, placedOnDefault, defaultBounds);
         return true;
+    }
+
+    private static java.util.Map<Shell, Rectangle> shellBounds(DartDisplay display) {
+        java.util.Map<Shell, Rectangle> bounds = new java.util.LinkedHashMap<>();
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed()) bounds.put(shell, shell.getBounds());
+        }
+        return bounds;
+    }
+
+    /**
+     * Moves the shells placed before any client reported its viewport, so against the Display's default
+     * bounds. A shell centered on its reference is centered on that reference's new bounds: the
+     * reference is its parent shell, or the Display when there is none or nothing has sized the
+     * parent. Any other shell keeps its position, moved only as far as needed to stay inside the
+     * viewport. A shell placed outside its reference is left alone.
+     */
+    private void repositionShells(DartDisplay display, java.util.Map<Shell, Rectangle> placed, Rectangle defaultBounds) {
+        Shell main = mainShell(display);
+        Rectangle viewport = display.bounds;
+        // Read before any move below: moving a shell counts as sizing it.
+        java.util.Set<Shell> unsized = new java.util.HashSet<>(unsizedShells);
+        for (java.util.Map.Entry<Shell, Rectangle> entry : placed.entrySet()) {
+            Shell shell = entry.getKey();
+            if (shell.isDisposed() || shell == main || shellWindows.containsKey(shell)) continue;
+            Rectangle at = entry.getValue();
+            Shell parent = shell.getParent() instanceof Shell ? (Shell) shell.getParent() : null;
+            boolean inParent = parent != null && !parent.isDisposed() && placed.containsKey(parent)
+                    && !unsized.contains(parent);
+            Rectangle before = inParent ? placed.get(parent) : defaultBounds;
+            Rectangle after = inParent ? parent.getBounds() : viewport;
+            if (before.equals(after) || !before.contains(at.x, at.y)) continue;
+            int x = inside(recentered(at.x, at.width, before.x, before.width, after.x, after.width),
+                    at.width, viewport.x, viewport.width);
+            int y = inside(recentered(at.y, at.height, before.y, before.height, after.y, after.height),
+                    at.height, viewport.y, viewport.height);
+            if (x == at.x && y == at.y) continue;
+            shell.setLocation(x, y);
+            // The client draws only shown shells, so only those can have been drawn from the old position.
+            if (shell.getVisible()) repositionedShells.add(shell);
+        }
+    }
+
+    /**
+     * Whether the position in a client's report of {@code shell}'s bounds is to be ignored: the report
+     * it makes once it has first drawn a shell {@link #repositionShells} moved, which it may have drawn
+     * from the position before the move. Its size still applies.
+     */
+    public boolean ignoresClientPosition(Shell shell, int detail) {
+        return detail == INITIAL_CLIENT_BOUNDS && repositionedShells.remove(shell);
+    }
+
+    /** {@code pos} on one axis: centered in {@code [newStart, newStart+newLength)} when it was centered
+     *  in {@code [start, start+length)}, unchanged otherwise. */
+    private static int recentered(int pos, int size, int start, int length, int newStart, int newLength) {
+        int lead = pos - start;
+        int trail = start + length - pos - size;
+        return Math.abs(lead - trail) <= CENTERING_SLACK ? newStart + (newLength - size) / 2 : pos;
+    }
+
+    /** {@code pos} moved only as far as needed for {@code size} to fit in {@code [min, min+span)}. */
+    private static int inside(int pos, int size, int min, int span) {
+        return Math.max(min, Math.min(pos, min + span - size));
     }
 
     /** Runs {@code apply} (which resizes shells) with the window-echo suppressed. */
@@ -350,14 +640,27 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // event pump — so the window stayed blank. Buffering the pre-connect state avoids that race and
         // gives Flutter content the moment it connects (which also keeps its runloop live).
         try {
+            // Before the value is built: what it names as windowed has to be the windows that exist.
+            java.util.Set<Shell> leftOwnWindow = syncShellWindows();
             VDisplay vd = VDisplay.of(display);
             vd.activeShellId = publishedActiveShell = activeShellId();
-            vd.mainShellId = mainShellId(display);
+            vd.mainShellId = publishedMainShell = mainShellId(display);
+            vd.windowedShellIds = windowedShellIds();
+            vd.focusHolderId = liveId(focusHolderSent = focused);
             serializeAndSend("Display/" + vd.id, vd);
+            syncShellPopups();
+            syncDisplayWindow(display, leftOwnWindow);
             FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /** Brings the Display's own window in line with the shell now drawn in it. Nothing to do on a
+     *  surface whose Display window is not one the bridge controls.
+     *
+     *  @param leftOwnWindow the live shells whose own window this pass closed */
+    protected void syncDisplayWindow(DartDisplay display, java.util.Set<Shell> leftOwnWindow) {
     }
 
     /** Slave the main shell to {@code viewport} (wrapped by the caller in {@link #applyClientBounds}
@@ -370,14 +673,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         }
         Rectangle shellBounds = shell.getBounds();
+        int x = keepsMainShellOrigin() && shellBounds != null ? shellBounds.x : 0;
+        int y = keepsMainShellOrigin() && shellBounds != null ? shellBounds.y : 0;
         boolean matchesViewport =
                 shellBounds != null
-                        && shellBounds.x == 0
-                        && shellBounds.y == 0
                         && shellBounds.width == viewport.width
                         && shellBounds.height == viewport.height;
         if (!matchesViewport) {
-            shell.setBounds(0, 0, viewport.width, viewport.height);
+            shell.setBounds(x, y, viewport.width, viewport.height);
         }
     }
 
@@ -387,29 +690,118 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
 
     /** The top-level, display-tracking shell that drives (and is slaved to) the viewport, or null.
-     *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT} over construction order; falls
-     *  back to the first trackable shell when no such shell exists yet. */
+     *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT}, then the first visible trackable
+     *  shell, then the first trackable one. Visibility outranks construction order because a pre-e4
+     *  workbench creates a top-level shell it never shows ahead of its window.
+     *
+     *  <p>A hidden holder yields the window to a visible window-eligible top-level, which keeps it
+     *  until it is hidden itself. */
     protected Shell mainShell(DartDisplay display) {
-        Shell firstTrackable = null;
+        if (displayWindowTaker != null) {
+            if (!displayWindowTaker.isDisposed() && displayWindowTaker.getVisible()) {
+                return displayWindowTaker;
+            }
+            displayWindowTaker = null;
+        }
+        Shell holder = shellHoldingDisplayWindow(display);
+        if (holder != null && holder.getVisible()) {
+            return holder;
+        }
+        for (Shell shell : trackableShells(display)) {
+            if (shell.getVisible() && windowEligible(shell)) {
+                displayWindowTaker = shell;
+                return shell;
+            }
+        }
+        return holder;
+    }
+
+    /** The shell that took the Display's window from a hidden holder, while it is still visible. */
+    private Shell displayWindowTaker;
+
+    private java.util.List<Shell> trackableShells(DartDisplay display) {
+        java.util.List<Shell> trackable = new java.util.ArrayList<>();
         for (Shell shell : display._shells()) {
-            if (shell == null || shell.isDisposed() || !shouldTrackDisplayBounds(shell)) {
+            if (shell != null && !shell.isDisposed() && shouldTrackDisplayBounds(shell)) {
+                trackable.add(shell);
+            }
+        }
+        return trackable;
+    }
+
+    private Shell shellHoldingDisplayWindow(DartDisplay display) {
+        Shell firstVisible = null;
+        Shell firstTrackable = null;
+        for (Shell shell : trackableShells(display)) {
+            // A shell already hosted in a window of its own drives that window, never this one.
+            // Asked as a fact rather than through the policy, which would ask back who is main.
+            if (shellWindows.containsKey(shell)) {
                 continue;
             }
             Layout layout = shell.getLayout();
             if (layout != null && E4_MAIN_SHELL_LAYOUT.equals(layout.getClass().getName())) {
                 return shell;
             }
+            if (firstVisible == null && shell.getVisible()) {
+                firstVisible = shell;
+            }
             if (firstTrackable == null) {
                 firstTrackable = shell;
             }
         }
-        return firstTrackable;
+        return firstVisible != null ? firstVisible : firstTrackable;
     }
 
     /** Whether {@code shell} is the one {@link #mainShell} returns — the single shell that drives
      *  (and is slaved to) the native/host window. */
     protected boolean isMainShell(DartDisplay display, Shell shell) {
         return shell != null && !shell.isDisposed() && shell == mainShell(display);
+    }
+
+    @Override
+    public Boolean hostsAsMainShell(Shell shell) {
+        return forDisplay != null && isMainShell(forDisplay, shell);
+    }
+
+    @Override
+    public boolean rootsAWindow(Object shell) {
+        if (!(shell instanceof Shell)) return false;
+        Shell s = (Shell) shell;
+        return hostsAsMainShell(s) || isShellWindowed(s);
+    }
+
+    private static final int MODAL_MASK = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
+
+    /**
+     * Activates the window under a dragging pointer when it is one drawn inside this one.
+     *
+     * <p>The workbench resolves a drop by asking its windows in the order they were last activated,
+     * which on a desktop is the order they are stacked in. A window drawn inside this one stays in
+     * front of the main shell whatever was activated last, so a drag that started in the main shell
+     * was resolved against it even over a window drawn on top, and nothing could be dropped there.
+     * Activating the window the pointer is over keeps that order the order the user sees.
+     */
+    public void activateInlineWindowAt(Point point) {
+        DartDisplay display = forDisplay;
+        if (display == null || point == null)
+            return;
+        Shell[] shells = display.shellsInDrawOrder();
+        // Drawn in this order, so the last one containing the point is the one in front.
+        for (int i = shells.length - 1; i >= 0; i--) {
+            Shell shell = shells[i];
+            if (shell.isDisposed() || !shell.isVisible() || isMainShell(display, shell)
+                    || shellWindows.containsKey(shell))
+                continue;
+            int style = shell.getStyle();
+            boolean titled = (style & SWT.NO_TRIM) == 0 && (style & (SWT.TITLE | SWT.CLOSE)) != 0;
+            if (!titled || (style & SWT.ON_TOP) != 0 || (style & MODAL_MASK) != 0)
+                continue;
+            if (!shell.getBounds().contains(point))
+                continue;
+            if (display.getActiveShell() != shell)
+                shell.setActive();
+            return;
+        }
     }
 
     /** {@link #mainShell} as the client sees it: its id, or 0 when it is not among the shells
@@ -448,6 +840,339 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return false;
         }
         return true;
+    }
+
+    // ---- shells hosted in a window of their own (see WindowPolicy) --------------------------------
+
+    /** Whether this surface can host a shell in a window of its own. */
+    protected boolean supportsShellWindows() {
+        return false;
+    }
+
+    /** Creates the window hosting {@code shell}, or null when the surface could not. */
+    protected ShellWindow createShellWindow(Shell shell) {
+        return null;
+    }
+
+    /** Keeps the owner of {@code shell}'s window in line with where its parent is drawn now. */
+    protected void refreshShellWindowOwner(Shell shell, ShellWindow window) {
+    }
+
+    /** Whether {@code shell} is one {@link WindowPolicy} puts in a window of its own. */
+    protected boolean ownsWindow(Shell shell) {
+        return windowEligible(shell) && !isMainShell(forDisplay, shell);
+    }
+
+    /** Whether {@code shell} may have a window of its own, whichever shell is the main one. Asks
+     *  nothing of {@link #mainShell}, which calls it. */
+    protected boolean windowEligible(Shell shell) {
+        return !lostWindows.contains(shell) && WindowPolicy.ownsWindow(shell, false);
+    }
+
+    /** The window hosting {@code control}'s shell, or null when it is drawn inside the Display's. */
+    protected ShellWindow shellWindowFor(DartControl control) {
+        if (!(control instanceof DartShell)) return null;
+        return shellWindows.get((Shell) ((DartShell) control).getApi());
+    }
+
+    /** Test seam: the shells currently hosted in a window of their own, in open order. */
+    protected java.util.Set<Shell> windowedShells() {
+        return java.util.Collections.unmodifiableSet(shellWindows.keySet());
+    }
+
+    /**
+     * Brings the set of open windows in line with what the policy now says, opening one for every
+     * eligible visible shell and closing the ones whose shell is gone, hidden or no longer eligible.
+     *
+     * <p>Driven from {@link #pushDisplayState}, so the ids the client is told about are the windows
+     * that actually exist: a shell the client leaves out of its own stack must have a window to be
+     * drawn in, or it would be rendered nowhere at all.
+     *
+     * @return the live shells whose window was closed because they no longer own one
+     */
+    private java.util.Set<Shell> syncShellWindows() {
+        if (forDisplay == null) return java.util.Collections.emptySet();
+        // Nothing can be eligible and nothing is open: the overwhelmingly common case, skipped whole.
+        if (shellWindows.isEmpty() && (!supportsShellWindows() || WindowPolicy.isSingleWindow())) {
+            return java.util.Collections.emptySet();
+        }
+        java.util.Set<Shell> leftOwnWindow =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+        shellWindows.entrySet().removeIf(entry -> {
+            Shell shell = entry.getKey();
+            ShellWindow window = entry.getValue();
+            if (!window.isAlive()) {
+                onShellWindowLost(shell);
+                return true;
+            }
+            if (shell.isDisposed() || !ownsWindow(shell)) {
+                closeShellWindow(shell, window);
+                if (!shell.isDisposed()) leftOwnWindow.add(shell);
+                return true;
+            }
+            // Hidden is not gone. A toolkit hides and re-shows a shell while it lays out -- the
+            // Eclipse workbench does it to a detached part -- and taking the window down for it
+            // rebuilds the window on the next pass, since a window closed here is not recorded as
+            // lost. That is an endless create/destroy cycle, one new engine per turn.
+            window.setVisible(shell.getVisible());
+            refreshShellWindowOwner(shell, window);
+            return false;
+        });
+
+        if (!supportsShellWindows()) return leftOwnWindow;
+        for (Shell shell : forDisplay._shells()) {
+            if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
+            if (shellWindows.containsKey(shell) || !ownsWindow(shell)) continue;
+            // Before the window opens: its client reports from its own thread as soon as its view has
+            // metrics, while the engine is still being created.
+            registerShellClientReady(shell);
+            ShellWindow window = null;
+            try {
+                window = createShellWindow(shell);
+            } finally {
+                if (window == null) offChannel(shellClientReadyChannel(shell));
+            }
+            if (window == null) continue;
+            shellWindows.put(shell, window);
+            // setMaximized and friends only reach a window that exists, so a state set before open()
+            // is applied here.
+            int state = windowStateOf(shell);
+            if (state != ShellWindow.STATE_NORMAL) window.setState(state);
+        }
+        return leftOwnWindow;
+    }
+
+    /**
+     * Teaches {@code shell} where its window actually is.
+     *
+     * <p>Applied under {@link #applyClientBounds} and only on a change, which is what keeps it from
+     * being echoed straight back to the OS as a move -- the resize loop with a different axis.
+     */
+    protected void applyWindowOrigin(Shell shell, org.eclipse.swt.graphics.Point origin) {
+        if (origin == null || shell == null || shell.isDisposed()) return;
+        Rectangle bounds = shell.getBounds();
+        if (bounds == null || (bounds.x == origin.x && bounds.y == origin.y)) return;
+        applyClientBounds(() -> shell.setBounds(origin.x, origin.y, bounds.width, bounds.height));
+    }
+
+    /**
+     * The shell last published as the main one. Read rather than recomputed: working it out walks
+     * every shell and asks each for its layout, and this is reached from inside that very walk
+     * (a coordinate conversion during serialization), where the answer would be half-formed -- which
+     * is how the workbench shell came to be treated as detached and the application drew nothing.
+     */
+    private volatile long publishedMainShell;
+
+    @Override
+    public boolean rendersAsMainWindow(Object shell) {
+        if (!(shell instanceof Shell)) return false;
+        Shell s = (Shell) shell;
+        return !s.isDisposed() && s.hashCode() == publishedMainShell && !isShellWindowed(s);
+    }
+
+    /**
+     * Whether the main shell keeps its own origin when it is slaved to the viewport.
+     *
+     * <p>Only where a window has a position of its own to keep. A page has none -- it <em>is</em> the
+     * viewport, and its main shell belongs at (0,0) -- while a desktop window sits wherever the OS
+     * put it, and pinning its shell to the origin makes every screen coordinate derived from it (a
+     * popup's location, a drag's drop target) wrong by exactly that distance.
+     */
+    protected boolean keepsMainShellOrigin() {
+        return false;
+    }
+
+    /** Whether {@code shell} is drawn in a window of its own rather than inside the Display's. */
+    boolean isShellWindowed(Shell shell) {
+        return shellWindows.containsKey(shell);
+    }
+
+    /**
+     * The shell a popup menu was opened over, or null when it cannot be told.
+     *
+     * <p>The control the menu was opened for, not {@link Menu#getParent()}: a popup's parent is the
+     * Decorations it was constructed against, which for a menu shared between shells is not the one
+     * it is currently showing over.
+     */
+    static Shell popupShell(Menu menu) {
+        if (menu == null || menu.isDisposed() || !(menu.getImpl() instanceof DartMenu)) return null;
+        Control owner = ((DartMenu) menu.getImpl()).findOwnerControl();
+        if (owner != null && !owner.isDisposed()) return owner.getShell();
+        Decorations parent = menu.getParent();
+        return parent == null || parent.isDisposed() ? null : parent.getShell();
+    }
+
+    /** The popups a windowed shell has to draw itself, in Display order, or an empty array. */
+    private Menu[] popupsFor(Shell shell) {
+        Menu[] all = forDisplay == null ? null : forDisplay.popups;
+        if (all == null) return new Menu[0];
+        java.util.ArrayList<Menu> mine = new java.util.ArrayList<>();
+        for (Menu menu : all) {
+            if (menu != null && !menu.isDisposed() && popupShell(menu) == shell) mine.add(menu);
+        }
+        return mine.toArray(new Menu[0]);
+    }
+
+    /** What each windowed shell was last told its popups were, so a settled set is not re-sent. */
+    private final java.util.Map<Shell, java.util.List<Long>> sentShellPopups =
+            new java.util.IdentityHashMap<>();
+
+    /**
+     * Hands every windowed shell the popups opened over it, on its own channel.
+     *
+     * <p>A popup is drawn by the client that owns the window it was opened over, and the shell's
+     * client cannot learn of one any other way: popups hang off the Display, not off the shell's
+     * widget tree, so nothing carries them into the shell's own frame.
+     */
+    private void syncShellPopups() {
+        if (shellWindows.isEmpty() && sentShellPopups.isEmpty()) return;
+        sentShellPopups.keySet().removeIf(shell -> !shellWindows.containsKey(shell));
+        for (Shell shell : shellWindows.keySet()) {
+            if (shell.isDisposed()) continue;
+            Menu[] popups = popupsFor(shell);
+            java.util.List<Long> ids = new java.util.ArrayList<>(popups.length);
+            for (Menu menu : popups) ids.add((long) menu.hashCode());
+            // Sent on every Display push otherwise, which is every frame — and a popup that is
+            // still up is still in the list.
+            if (ids.equals(sentShellPopups.get(shell))) continue;
+            sentShellPopups.put(shell, ids);
+            VShellPopups payload = new VShellPopups();
+            payload.shellId = shell.hashCode();
+            payload.popups = popups;
+            try {
+                // Described in full, not referenced: a popup the Display's client was already sent
+                // counts as delivered, and this client — which has never seen it — cannot resolve a
+                // reference to something it was never given.
+                for (Menu menu : popups) {
+                    if (menu.getImpl() instanceof DartMenu) {
+                        dev.equo.swt.Serializer.forgetDelivery(((DartMenu) menu.getImpl()).getValue());
+                    }
+                }
+                serializeAndSend("Shell/" + payload.shellId + "/Popups", payload);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Shells whose window went away on its own. Kept so the pass below does not hand the shell a
+     * fresh window each time — reopening a window the user just closed is the one reaction that is
+     * certainly wrong.
+     */
+    private final java.util.Set<Shell> lostWindows =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * The window hosting {@code shell} is gone without this side asking — the user closed it, or the
+     * OS took it down. The shell has nowhere left to be drawn, so it goes with it. Posted rather than
+     * run here: this is reached from a serialization flush, which is no place to dispose a widget.
+     */
+    private void onShellWindowLost(Shell shell) {
+        if (shell.isDisposed() || !lostWindows.add(shell)) return;
+        Display api = forDisplay == null ? null : forDisplay.getApi();
+        if (api == null || api.isDisposed()) return;
+        api.asyncExec(() -> {
+            if (shell.isDisposed()) return;
+            shell.close();
+            // A veto has nothing left to render into, so it cannot be honoured here.
+            if (!shell.isDisposed()) shell.dispose();
+        });
+    }
+
+    private void closeShellWindow(Shell shell, ShellWindow window) {
+        if (!shell.isDisposed()) offChannel(shellClientReadyChannel(shell));
+        window.close();
+    }
+
+    /** Takes down the window hosting {@code shell}, if it has one. */
+    private void closeShellWindow(Shell shell) {
+        ShellWindow window = shellWindows.remove(shell);
+        if (window != null && window.isAlive()) closeShellWindow(shell, window);
+        lostWindows.remove(shell);
+    }
+
+    static String shellClientReadyChannel(Shell shell) {
+        return "Shell/" + shell.hashCode() + "/ClientReady";
+    }
+
+    /**
+     * Wires the handshake for a shell rendered in its own window: that window reports its viewport,
+     * and the shell is slaved to it exactly as the main shell is slaved to the Display's window.
+     * The resize is flagged so it is not echoed back as a window resize — the same loop, one window out.
+     */
+    private void registerShellClientReady(Shell shell) {
+        Display api = forDisplay.getApi();
+        comm().on(shellClientReadyChannel(shell), ClientReadyPayload.class, p -> {
+            if (p == null) return;
+            Runnable apply = () -> {
+                if (shell.isDisposed()) return;
+                // A window of its own is a client of its own, and it has been sent nothing: it needs
+                // the same configuration bootstrap the Display's client gets on its first
+                // handshake, or it renders the whole shell against default theme and flags.
+                broadcastSwtEvolveProperties();
+                sendShellState(shell);
+                if (p.width <= 0 || p.height <= 0) return;
+                Rectangle current = shell.getBounds();
+                if (current.width == p.width && current.height == p.height) return;
+                applyClientBounds(() -> shell.setBounds(current.x, current.y, p.width, p.height));
+            };
+            if (api.isDisposed()) return;
+            if (api.getThread() == Thread.currentThread()) apply.run();
+            else api.asyncExec(apply);
+        });
+    }
+
+    /**
+     * Describes {@code shell} in full on its own channel, for the client that draws it in a window
+     * of its own.
+     *
+     * <p>That client is rooted at the shell and never listens on {@code Display/{id}}, so the
+     * Display frame — the only thing a shell is normally delivered inside — reaches it and is
+     * dropped. Nor does asking for a refresh help: a shell delivered only inside the Display has
+     * never been sent on its own channel, so the flush still counts it as new and holds it back for
+     * an ancestor to carry, and the ancestor is the one frame this client ignores. Left to either of
+     * those, a detached window renders nothing at all.
+     *
+     * <p>Delivery is forgotten first so this is a description rather than a name: whatever the shell
+     * was sent before went to the client drawing the Display, and means nothing to this one.
+     */
+    private void sendShellState(Shell shell) {
+        if (!(shell.getImpl() instanceof DartShell)) return;
+        DartShell impl = (DartShell) shell.getImpl();
+        try {
+            dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
+            // The api widget, not its value: that is what carries the id and the type name into the
+            // frame, and a client whose only knowledge of this shell is the frame cannot decode one
+            // without them. The ordinary flush sends the same thing for the same reason.
+            serializeAndSend("Shell/" + shell.hashCode(), shell);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * The shells the client must leave out of the Display's own window because each is drawn in a
+     * window of its own. Null when there are none, so the common frame is unchanged.
+     */
+    private long[] windowedShellIds() {
+        if (shellWindows.isEmpty()) return null;
+        long[] ids = new long[shellWindows.size()];
+        int n = 0;
+        for (Shell shell : shellWindows.keySet()) {
+            if (!shell.isDisposed() && shell.getVisible()) ids[n++] = shell.hashCode();
+        }
+        if (n == 0) return null;
+        return n == ids.length ? ids : java.util.Arrays.copyOf(ids, n);
+    }
+
+    /** Takes every extra window down. Called with the Display, before the surface itself goes. */
+    protected void closeShellWindows() {
+        for (java.util.Map.Entry<Shell, ShellWindow> entry : shellWindows.entrySet()) {
+            if (entry.getValue().isAlive()) closeShellWindow(entry.getKey(), entry.getValue());
+        }
+        shellWindows.clear();
     }
 
     public String registerBrowserHtml(long browserId, String html) {
@@ -492,16 +1217,32 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Thread.sleep(millis);
     }
 
+    /**
+     * Ends an idle {@link #sleep(int)} from another thread. Only a surface parked inside an OS event
+     * loop needs it: SWT's wake signal is a Java semaphore, which that wait cannot observe, so the
+     * wake has to reach the native loop itself. A surface that parks on the semaphore is already
+     * woken by it, hence the no-op default.
+     */
+    public void wake() {
+    }
+
     @Override
     public void destroy(DartWidget control) {
         if (control instanceof DartShell && forDisplay != null) {
-            forDisplay.removeShell((Shell) ((DartShell) control).getApi());
+            Shell shell = (Shell) ((DartShell) control).getApi();
+            forDisplay.removeShell(shell);
+            // Reached while the shell is being released, before isDisposed() flips: the sync inside
+            // the push below would still find it visible and eligible, and leave its window standing
+            // with nothing in it. This is the point that knows the shell is going.
+            closeShellWindow(shell);
+            if (shell == displayWindowTaker) displayWindowTaker = null;
             sendDisplayUpdate(forDisplay);
         }
     }
 
     /** Tears down the Display's surface and comm. Subclasses override to add surface-specific cleanup. */
     public void destroyDisplay() {
+        closeShellWindows();
         if (comm != null) {
             comm.stop();
             comm = null;
@@ -536,11 +1277,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <em>after</em> the display update that introduced it — without this the client would never hear
      * that the shell became active.
      */
-    private void publishActiveShell() {
+    private boolean publishActiveShell() {
         if (forDisplay == null || activeShellId() == publishedActiveShell)
-            return;
+            return false;
         sendDisplayUpdate(forDisplay);
         publishMenuBar();
+        return true;
     }
 
     /**
@@ -602,7 +1344,131 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             new FocusGate("modify", org.eclipse.swt.SWT.Verify, DartText.class));
 
     @Override
+    public void clientFocused(DartControl widget) {
+        // A disabled control never holds the focus in SWT, whichever node of it the client focused.
+        Control api = widget == null ? null : widget.getApi();
+        if (api != null && !api.isDisposed() && !api.isEnabled())
+            return;
+        boolean stale = reportPrecedesPendingRequest(widget);
+        clientReportedFocus = widget;
+        if (stale)
+            return;
+        if (api != null && !api.isDisposed() && declinesClientFocus(api))
+            return;
+        // The client reports the CCombo it focused; Java's focus is already on the CCombo's field.
+        if (heldByItsField(widget))
+            return;
+        focusRequested = widget;
+        setFocus(widget);
+    }
+
+    @Override
+    public boolean setActiveControl(DartControl control, int detail) {
+        Shell shell = control.getApi().getShell();
+        if (!(shell.getImpl() instanceof DartShell))
+            return false;
+        ((DartShell) shell.getImpl()).setActiveControl(control.getApi(), detail);
+        return true;
+    }
+
+    @Override
+    public void focusClient(DartControl widget) {
+        requestClientFocus(widget, true);
+    }
+
+    /**
+     * Whether a bare Canvas or Composite turns down the focus the client gave it. The client focuses
+     * any empty surface it is pressed or tabbed onto; natively one takes the focus only while it hooks
+     * key events (Composite's button-press and traversal both check hooksKeys), so one with no key
+     * listener leaves it where it was, and none takes it with NO_FOCUS. A shell is a Canvas too, and
+     * keeps its own; the native controls that extend Composite (Table, Spinner, TabFolder...) take
+     * theirs regardless.
+     */
+    static boolean declinesClientFocus(Control api) {
+        if (!isPaintedSurface(api) || api instanceof Decorations)
+            return false;
+        if (((Composite) api).getChildren().length > 0 || (api.getStyle() & org.eclipse.swt.SWT.EMBEDDED) != 0)
+            return false;
+        if ((api.getStyle() & org.eclipse.swt.SWT.NO_FOCUS) != 0)
+            return true;
+        return !api.isListening(org.eclipse.swt.SWT.KeyDown) && !api.isListening(org.eclipse.swt.SWT.KeyUp);
+    }
+
+    /**
+     * Whether the control is a Canvas or a plain Composite, natively a bare surface rather than one of
+     * the native controls. Decided by the implementation, which an application subclass of the API
+     * class does not change. SashForm, ScrolledComposite, ViewForm and CBanner are plain Composites
+     * natively too, but stay out: declining leaves the client's own focus on the surface, and for them
+     * that strands the keyboard.
+     */
+    private static boolean isPaintedSurface(Control api) {
+        if (!(api instanceof Composite))
+            return false;
+        Class<?> impl = ((Composite) api).getImpl().getClass();
+        return impl == DartCanvas.class || impl == DartComposite.class;
+    }
+
+    /** The shells in the order they last took the focus, the most recent last. */
+    private final java.util.List<java.lang.ref.WeakReference<Shell>> activationOrder = new java.util.ArrayList<>();
+    /** The shell focus was last in; kept when the focus is cleared, as a disposing shell's is. */
+    private java.lang.ref.WeakReference<Shell> lastFocusShell = new java.lang.ref.WeakReference<>(null);
+
+    /** Whether {@code shell} holds the activation: the focus was last in it. */
+    public boolean isActiveShell(Shell shell) {
+        return shell != null && lastFocusShell.get() == shell;
+    }
+
+    /**
+     * The shell to return to when {@code shell} goes away, or null when it was not the active one:
+     * the one active most recently before it that is neither gone nor hidden, as a window manager does;
+     * the shells going with it are disposed by then.
+     */
+    public Shell shellToReturnTo(Shell shell) {
+        if (!isActiveShell(shell))
+            return null;
+        for (int i = activationOrder.size() - 1; i >= 0; i--) {
+            Shell before = activationOrder.get(i).get();
+            if (before != null && before != shell && !before.isDisposed() && before.isVisible())
+                return before;
+        }
+        return null;
+    }
+
+    private void noteActivated(Shell shell) {
+        activationOrder.removeIf(ref -> {
+            Shell s = ref.get();
+            return s == null || s == shell || s.isDisposed();
+        });
+        activationOrder.add(new java.lang.ref.WeakReference<>(shell));
+    }
+
+    /** The CCombo the control is, or is a part of (its field, arrow or list). */
+    private static org.eclipse.swt.custom.CCombo cComboOf(DartControl control) {
+        Control c = control == null ? null : control.getApi();
+        while (c != null && !c.isDisposed()) {
+            if (c instanceof org.eclipse.swt.custom.CCombo && c.getImpl() instanceof org.eclipse.swt.custom.DartCCombo)
+                return (org.eclipse.swt.custom.CCombo) c;
+            c = c.getParent();
+        }
+        return null;
+    }
+
+    private static Shell shellOf(DartControl control) {
+        Control api = control == null ? null : control.getApi();
+        return api == null || api.isDisposed() ? null : api.getShell();
+    }
+
+    @Override
     public boolean setFocus(DartControl widget) {
+        Shell to = shellOf(widget);
+        if (to != null && to != lastFocusShell.get())
+            noteActivated(to);
+        if (to != null)
+            lastFocusShell = new java.lang.ref.WeakReference<>(to);
+        org.eclipse.swt.custom.CCombo leftCombo = cComboOf(focused);
+        boolean leavesCCombo = leftCombo != null && leftCombo != cComboOf(widget);
+        if (leavesCCombo)
+            org.eclipse.swt.custom.CComboHelper.focusLeft((org.eclipse.swt.custom.DartCCombo) leftCombo.getImpl());
         focused = widget;
         Control api = widget == null ? null : widget.getApi();
         boolean live = api != null && !api.isDisposed();
@@ -619,9 +1485,46 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             sendDisplayGate(forDisplay, "traverse/vetoable", "value",
                     live && api.isListening(org.eclipse.swt.SWT.Traverse));
         }
-        publishActiveShell();
-        requestClientFocus(widget);
+        long previousActiveShellId = publishedActiveShell;
+        boolean activeShellChanged = publishActiveShell();
+        // Flutter's focus would otherwise stay on the CCombo, whose field reopens its list on an arrow key.
+        // The client cannot tell which field a shell Java opened over the active one landed on (a popup's filter).
+        if (activeShellChanged && live && api instanceof Text && !leavesCCombo
+                && opensOver(api.getShell(), previousActiveShellId))
+            requestActivatedShellFocus(widget);
+        else
+            requestClientFocus(widget, leavesCCombo);
+        publishFocusHolder(widget);
+        if (forDisplay != null)
+            forDisplay.checkFocus();
         return true;
+    }
+
+    /**
+     * Tells the client which control is the focus control. A focus Java takes on its own does not move
+     * the client's keyboard focus for an ordinary control (see {@link #requestClientFocus}), yet SWT
+     * traverses from the focus control, so the client starts Tab from the one named here whenever its
+     * own focus is not inside it. The Display state carries it too, so nothing is sent when a Display
+     * push already did. Queued like a focus request: the control may not have been sent yet.
+     */
+    private static long liveId(DartControl widget) {
+        Control api = widget == null ? null : widget.getApi();
+        return api == null || api.isDisposed() ? 0 : FlutterBridge.id(widget);
+    }
+
+    private void publishFocusHolder(DartControl widget) {
+        Control api = widget == null ? null : widget.getApi();
+        if (api == null || api.isDisposed() || widget == focusHolderSent)
+            return;
+        focusHolderSent = widget;
+        long id = FlutterBridge.id(widget);
+        FlutterBridge.update().whenComplete((result, error) -> {
+            try {
+                serializeAndSend(FOCUS_HOLDER_CHANNEL, dev.equo.swt.Java8.map("id", id));
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -637,19 +1540,64 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <p>A focus that started on the client comes back through here too (the FocusIn handler tracks
      * it the same way); the cell-editor guard below is what keeps that from re-pushing anything.
      */
-    private void requestClientFocus(DartControl widget) {
+    /**
+     * Whether the report naming {@code widget} was sent before the client received the focus request
+     * still standing, in which case it names the focus the client held before it and applying it
+     * would undo the request. Every such report is dropped, however many were in flight; a report
+     * naming any other control -- one built since, say -- came after the request and is applied. The
+     * request stands until the client says it has received it, which it does whether or not any
+     * control takes the focus, or until the requested control itself reports the focus.
+     */
+    private boolean reportPrecedesPendingRequest(DartControl widget) {
+        DartControl pending = pendingClientFocus;
+        if (pending == null)
+            return false;
+        Control api = pending.getApi();
+        if (pending == widget || api == null || api.isDisposed()) {
+            pendingClientFocus = null;
+            return false;
+        }
+        return widget == clientFocusAtRequest;
+    }
+
+    /**
+     * Like {@link #requestClientFocus}, without the stale-report guard: a client already on the field
+     * reports nothing, so the guard would drop the user's next move instead.
+     */
+    private void requestActivatedShellFocus(DartControl widget) {
+        if (widget == focusRequested)
+            return;
+        focusRequested = widget;
+        sendFocusRequest(widget);
+    }
+
+    /** Whether {@code shell} is a child of the shell that was active, as a popup opened from it is. */
+    private static boolean opensOver(Shell shell, long previousActiveShellId) {
+        Composite parent = shell.getParent();
+        return previousActiveShellId != 0 && parent != null && !parent.isDisposed()
+                && parent.getShell().hashCode() == previousActiveShellId;
+    }
+
+    private void requestClientFocus(DartControl widget, boolean always) {
         Control api = widget == null ? null : widget.getApi();
         if (api == null || api.isDisposed())
             return;
-        if (!isCellEditorControl(api))
+        if (!always && !isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText))
             return;
         if (widget == focusRequested)
             return;
         focusRequested = widget;
+        pendingClientFocus = widget;
+        clientFocusAtRequest = clientReportedFocus;
+        sendFocusRequest(widget);
+    }
+
+    private void sendFocusRequest(DartControl widget) {
         long id = FlutterBridge.id(widget);
+        long seq = ++focusRequestSeq;
         FlutterBridge.update().whenComplete((result, error) -> {
             try {
-                serializeAndSend(FOCUS_CHANNEL, dev.equo.swt.Java8.map("id", id));
+                serializeAndSend(FOCUS_CHANNEL, dev.equo.swt.Java8.map("id", id, "seq", seq));
             } catch (java.io.IOException e) {
                 e.printStackTrace();
             }
@@ -658,7 +1606,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /**
      * Whether {@code control} is the control a {@link org.eclipse.swt.custom.TableEditor} or
-     * {@link org.eclipse.swt.custom.TreeEditor} just placed over a cell.
+     * {@link org.eclipse.swt.custom.TreeEditor} just placed over a cell, or sits inside an owner-drawn
+     * {@link Canvas} -- the way a custom-drawn grid places its inline editor over a cell it paints,
+     * either directly or framed by Composites the editor creates over the cell. A shell is a
+     * {@code Canvas} too, but its children are ordinary fields, so the search stops there.
      *
      * <p>Moving the client's focus is deliberately limited to that case. Pushing it for every control
      * Java focuses is measurably unsafe today: the Eclipse IDE New Project wizard, driven through the
@@ -666,10 +1617,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * and the cause is the focus move itself rather than the transport (a run with the transport intact
      * and only the move disabled is green). A cell editor is the case the render side genuinely cannot
      * resolve on its own -- it is created, placed and focused inside one event-loop pass, with no user
-     * gesture anywhere -- so it is the one that is honoured until the general case is understood.
+     * gesture anywhere -- so it is the one that is honoured until the general case is understood. A
+     * StyledText is honoured too: an editor is focused by its part's activation, and without the
+     * client's focus it shows no caret and composes no input. A Text that a shell activation lands on
+     * is honoured too (a popup's filter): the client hears which shell became active, never which field.
      */
     private static boolean isCellEditorControl(Control control) {
         Composite parent = control.getParent();
+        for (Composite ancestor = parent; ancestor != null && !(ancestor instanceof Decorations);
+                ancestor = ancestor.getParent()) {
+            if (ancestor instanceof Canvas)
+                return true;
+        }
         if (parent instanceof Table && ((Table) parent).getImpl() instanceof DartTable) {
             DartTable dartTable = (DartTable) ((Table) parent).getImpl();
             for (org.eclipse.swt.custom.TableEditor editor : dartTable._editors()) {
@@ -689,7 +1648,24 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public boolean hasFocus(DartControl widget) {
-        return widget == focused;
+        return widget == focused || heldByItsField(widget);
+    }
+
+    /** Whether {@code widget} holds the focus through its field, as a CCombo does. */
+    private boolean heldByItsField(DartControl widget) {
+        return focused != null && widget != null
+                && org.eclipse.swt.custom.CComboHelper.focusedThroughField(focused.getApi(), widget.getApi());
+    }
+
+    /** The shell's setActiveControl, which the focus changes tracked here already go through. */
+    @Override
+    public boolean activate(DartControl control, int detail) {
+        Control api = control.getApi();
+        Shell shell = api.getShell();
+        if (shell == null || shell.isDisposed() || !(shell.getImpl() instanceof DartShell))
+            return false;
+        ((DartShell) shell.getImpl()).setActiveControl(api, detail);
+        return true;
     }
 
     /** The control that currently holds focus (Java-tracked; there is no OS focus on the web). */
@@ -697,16 +1673,53 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return (focused != null && !focused.getApi().isDisposed()) ? focused.getApi() : null;
     }
 
+    /** The shell the client last reported activating, so a cleared focus can be handed back to it. */
+    private DartShell clientActivated;
+
+    /** Remember the shell the client just activated. */
+    public void noteClientActivated(DartShell shell) {
+        clientActivated = shell;
+    }
+
+    /** Forget the shell the client just deactivated, unless another one has been activated since. */
+    public void noteClientDeactivated(DartShell shell) {
+        if (clientActivated == shell)
+            clientActivated = null;
+    }
+
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
     public void clearFocus(DartControl widget) {
-        if (focused == widget) {
+        // A shown popup menu takes the keyboard without moving the focus control, as natively.
+        if (focused == widget && !popupMenuShown()) {
             focused = null;
-            publishActiveShell();
+            // The client reports a control losing the focus without reporting who took it, so the
+            // clear can land after the activation that would have named the new holder. Leaving
+            // nobody focused while a shell is active is a state SWT never reaches, and an
+            // application that reads getFocusControl() to decide whether the focus left it acts on
+            // it -- an autocomplete popup hides itself on the very click meant to pick from it.
+            if (clientActivated != null && !clientActivated.getApi().isDisposed()
+                    && clientActivated.getApi().getVisible()) {
+                clientActivated._takeFocusHolder(true);
+            }
+            if (focused == null)
+                publishActiveShell();
+            if (forDisplay != null)
+                forDisplay.checkFocus();
         }
         // The client moved focus off it, so focusing it again later is a real move to send.
         if (focusRequested == widget) {
             focusRequested = null;
         }
+    }
+
+    private boolean popupMenuShown() {
+        if (forDisplay == null)
+            return false;
+        for (Menu menu : forDisplay.shownPopups) {
+            if (menu != null && !menu.isDisposed())
+                return true;
+        }
+        return false;
     }
 
     @Override
@@ -735,24 +1748,59 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     public void setZOrder(DartControl control, Control sibling, boolean above) {
     }
 
-    // Window ops (WindowBridge): no-op by default; the surfaces that own a real OS window override.
+    // Window ops (WindowBridge). A shell in a window of its own is driven through that window on
+    // every surface, so it is handled here; the Display's own window is the surface's business, and
+    // the surfaces that have one override these and fall back to super for the rest.
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
+        noteBoundsSet(control);
+        // Applying a client-reported resize: the window already has this geometry, so echoing it
+        // back fights the window manager -- the same loop the main shell avoids.
+        if (applyingClientBounds || bounds == null) return;
+        ShellWindow window = shellWindowFor(control);
+        if (window != null) window.setBounds(bounds);
     }
 
     @Override
     public void setWindowMaximized(DartControl control, boolean maximized) {
+        setShellWindowState(control, maximized, ShellWindow.STATE_MAXIMIZED);
     }
 
     @Override
     public void setWindowMinimized(DartControl control, boolean minimized) {
+        setShellWindowState(control, minimized, ShellWindow.STATE_MINIMIZED);
     }
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        if (fullScreen) fillMonitorIfUnsized(control);
+        setShellWindowState(control, fullScreen, ShellWindow.STATE_FULLSCREEN);
+    }
+
+    /** A full-screen shell covers the monitor: one nobody sized is not left where it was centered. */
+    protected void fillMonitorIfUnsized(DartControl control) {
+        if (!(control instanceof DartShell) || !isUnsized(((DartShell) control).getApi())) return;
+        Rectangle monitor = forDisplay.bounds;
+        control.bounds = new Rectangle(monitor.x, monitor.y, monitor.width, monitor.height);
+        control.getValue().markDirty(VControl.BOUNDS);
+    }
+
+    /** The window state {@code shell} asks for. */
+    static int windowStateOf(Shell shell) {
+        if (shell.getMinimized()) return ShellWindow.STATE_MINIMIZED;
+        if (shell.getFullScreen()) return ShellWindow.STATE_FULLSCREEN;
+        if (shell.getMaximized()) return ShellWindow.STATE_MAXIMIZED;
+        return ShellWindow.STATE_NORMAL;
+    }
+
+    private void setShellWindowState(DartControl control, boolean on, int state) {
+        ShellWindow window = shellWindowFor(control);
+        if (window != null) window.setState(on ? state : ShellWindow.STATE_NORMAL);
     }
 
     @Override
     public void setWindowTitle(DartControl control, String title) {
+        ShellWindow window = shellWindowFor(control);
+        if (window != null) window.setTitle(title == null ? "" : title);
     }
 }

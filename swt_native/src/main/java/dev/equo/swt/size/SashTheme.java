@@ -35,4 +35,8 @@ public final class SashTheme {
         return new SashTheme(TextStyle.def());
     }
 
+    public static SashTheme getCompactTheme() {
+        return new SashTheme(TextStyle.def());
+    }
+
 }

@@ -33,7 +33,9 @@ public final class FlutterNative {
      * Creates a Flutter surface and returns its native handle.
      * <ul>
      *   <li>{@code width > 0 && height > 0} → a top-level <b>window</b> hosting the whole Display
-     *       (desktop-native). {@code parent} is ignored; {@code widgetId} is the Display id.</li>
+     *       (desktop-native). {@code parent} is the surface of the window that owns this one, or 0
+     *       for an unowned window (the Win32 and Cocoa runners honour it); {@code widgetId} is the id of
+     *       the Display or Shell the window is rooted at.</li>
      *   <li>otherwise → an <b>embedded</b> view inside {@code parent} (or an offscreen view if
      *       {@code parent == 0}, the limbo case).</li>
      * </ul>
@@ -46,7 +48,22 @@ public final class FlutterNative {
         // leave a window with no title bar, no buttons and nothing to drag.
         boolean csdEnabled = !"false".equals(Config.getConfigFlags().csd_placement);
         return Initialize(port, parent, widgetId, widgetName, theme,
-                backgroundColor, parentBackgroundColor, width, height, csdEnabled);
+                backgroundColor, parentBackgroundColor, width, height, csdEnabled, impellerEnabled());
+    }
+
+    /** {@code -Ddev.equo.swt.impeller=true|false} forces the Windows engines' renderer either way. */
+    public static final String IMPELLER_PROPERTY = "dev.equo.swt.impeller";
+
+    /**
+     * Whether the Windows engines render with Impeller, which compiles its pipelines on every engine
+     * start, on the UI thread. On unless shells can get windows of their own: each of those starts an
+     * engine. The measuring engines follow the same choice, so text is measured by the renderer that
+     * paints it. Other runners ignore it.
+     */
+    static boolean impellerEnabled() {
+        String forced = System.getProperty(IMPELLER_PROPERTY);
+        if (forced != null && !forced.trim().isEmpty()) return Boolean.parseBoolean(forced.trim());
+        return WindowPolicy.isSingleWindow();
     }
 
     /** Native view handle of a surface: the embedded view, or a window's content view. */
@@ -62,7 +79,9 @@ public final class FlutterNative {
     /**
      * Sets a surface's bounds. For an <b>embedded</b> surface {@code (x,y,w,h)} is the container and
      * {@code (vx,vy,vw,vh)} the hosted view (they differ only for CTabFolder). For a <b>window</b>
-     * surface {@code (x,y,w,h)} is the window geometry and the view rect is ignored.
+     * surface {@code (x,y,w,h)} is the window's <em>content</em> rect in screen points, top-left
+     * origin on the primary screen, decorations excluded, on every platform; the view rect is
+     * ignored. That is the origin {@code DeskDisplayBridge} reports for {@code toDisplay}.
      */
     public static void setBounds(long context, int x, int y, int w, int h,
                                  int vx, int vy, int vw, int vh) {
@@ -92,6 +111,16 @@ public final class FlutterNative {
         WaitEvents(context, millis);
     }
 
+    /**
+     * Ends a {@link #waitEvents} early, by giving the OS loop something to return for: an
+     * application-defined event on Cocoa, a context wakeup on GTK, a thread message on Win32 — what
+     * native SWT's {@code Display#wake} posts. Callable from any thread, which is the whole point:
+     * the UI thread is the one blocked inside the wait.
+     */
+    public static void wake(long context) {
+        Wake(context);
+    }
+
     /** Sets a window surface's title. No-op for an embedded surface. */
     public static void setTitle(long context, String title) {
         SetTitle(context, title);
@@ -100,6 +129,72 @@ public final class FlutterNative {
     /** Window state: {@code 0} = restore/normal, {@code 1} = maximized, {@code 2} = minimized, {@code 3} = fullscreen. */
     public static void setState(long context, int state) {
         SetState(context, state);
+    }
+
+    /**
+     * Shows or hides the window, keeping it and its engine alive either way.
+     *
+     * <p>A hidden shell has to stop showing a window, but destroying it is the wrong answer: a
+     * toolkit hides and re-shows a shell freely during a layout, and each round trip would cost a
+     * window rebuild -- a new engine, a lost position, and a client that has to be described from
+     * scratch.
+     */
+    public static void setVisible(long context, boolean visible) {
+        SetVisible(context, visible);
+    }
+
+    /**
+     * Re-owns a window surface: {@code owner} is the surface of the window that now owns it, as in
+     * {@link #initialize}, or 0 for none. No-op for an embedded surface.
+     */
+    public static void setOwner(long context, long owner) {
+        SetOwner(context, owner);
+    }
+
+    /** No window, or one whose position cannot be told. */
+    /**
+     * Whether this surface's window currently has keyboard focus from the OS, i.e. is the key or
+     * foreground window. False for a surface with no window of its own.
+     *
+     * <p>A Display cannot answer {@code getActiveShell()} from its own state: a shell being visible
+     * says nothing about whether the OS considers its window active, and treating the two as the
+     * same makes {@code setFocus()} succeed on a window the user is not looking at.
+     */
+    public static boolean isActive(long context) {
+        return IsActive(context);
+    }
+
+    public static final long ORIGIN_UNKNOWN = Long.MIN_VALUE;
+
+    /**
+     * Where the window's <em>content</em> starts on screen, packed as {@code (x << 32) | (y &
+     * 0xFFFFFFFF)}, or {@link #ORIGIN_UNKNOWN}.
+     *
+     * <p>Content rather than frame, so the title bar is already accounted for: a window-local point
+     * plus this origin is a screen point, with nothing left to correct.
+     */
+    public static long getOrigin(long context) {
+        return GetOrigin(context);
+    }
+
+    /** The x of a {@link #getOrigin} result. */
+    public static int originX(long packed) {
+        return (int) (packed >> 32);
+    }
+
+    /** The y of a {@link #getOrigin} result. */
+    public static int originY(long packed) {
+        return (int) packed;
+    }
+
+    public static final int WORK_AREA_UNKNOWN = Integer.MIN_VALUE;
+
+    /**
+     * The top of the work area of the monitor nearest the window rect {@code (x, y, w, h)}, in the
+     * units {@link #setBounds} takes, or {@link #WORK_AREA_UNKNOWN}. Windows runner only.
+     */
+    public static int getWorkAreaTop(long context, int x, int y, int w, int h) {
+        return GetWorkAreaTop(context, x, y, w, h);
     }
 
     /**
@@ -112,13 +207,25 @@ public final class FlutterNative {
         SetBundleDir(bundleDir);
     }
 
+    private static native void SetVisible(long context, boolean visible);
+
+    private static native void SetOwner(long context, long owner);
+
+    private static native long GetOrigin(long context);
+
+    private static native int GetWorkAreaTop(long context, int x, int y, int w, int h);
+
+    private static native boolean IsActive(long context);
+
+
     private static native void SetBundleDir(String bundleDir);
 
     // ---- JNI peers (symbols exported by flutter_bridge.swift / .cpp / .cc) ----
 
     private static native long Initialize(int port, long parent, long widgetId, String widgetName,
                                            String theme, int backgroundColor, int parentBackgroundColor,
-                                           int width, int height, boolean csdEnabled);
+                                           int width, int height, boolean csdEnabled,
+                                           boolean impellerEnabled);
 
     private static native long GetView(long context);
 
@@ -132,6 +239,8 @@ public final class FlutterNative {
     private static native int Pump(long context);
 
     private static native void WaitEvents(long context, int millis);
+
+    private static native void Wake(long context);
 
     private static native void SetTitle(long context, String title);
 

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * A CTabFolder draws a frame around the page it shows, so its client area is inset from its own
@@ -21,7 +21,6 @@ import static org.eclipse.swt.widgets.Mocks.swtShell;
  * <p>The numbers are what stock SWT 3.124.200 reports on Windows for a folder of the same bounds:
  * 2 px on each of left/right/bottom, 3 px with {@code SWT.BORDER}.
  */
-@DisabledOnOs(OS.LINUX)
 class CTabFolderClientAreaBorderTest extends SerializeTestBase {
 
     private static final int W = 600;
@@ -44,7 +43,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
 
     @Test
     void thePageIsInsetFromTheFoldersLeftEdge() {
-        Rectangle client = folder(swtShell(), SWT.NONE).getClientArea();
+        Rectangle client = folder(shell(), SWT.NONE).getClientArea();
 
         assertThat(client.x)
                 .as("a page laid out at x = 0 sits on top of the frame the folder draws, and every "
@@ -54,7 +53,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
 
     @Test
     void thePageIsInsetFromBothSidesEqually() {
-        Rectangle client = folder(swtShell(), SWT.NONE).getClientArea();
+        Rectangle client = folder(shell(), SWT.NONE).getClientArea();
 
         assertThat(W - client.x - client.width)
                 .as("the right inset must match the left one, or the page runs under the frame")
@@ -63,7 +62,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
 
     @Test
     void thePageIsInsetFromTheFoldersBottomEdge() {
-        CTabFolder folder = folder(swtShell(), SWT.NONE);
+        CTabFolder folder = folder(shell(), SWT.NONE);
         Rectangle client = folder.getClientArea();
 
         assertThat(H - client.y - client.height).isEqualTo(BODY_BORDER);
@@ -71,7 +70,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
 
     @Test
     void aStyledBorderWidensTheFrame() {
-        Rectangle client = folder(swtShell(), SWT.BORDER).getClientArea();
+        Rectangle client = folder(shell(), SWT.BORDER).getClientArea();
 
         assertThat(client.x).isEqualTo(BODY_BORDER_STYLED);
         assertThat(W - client.x - client.width).isEqualTo(BODY_BORDER_STYLED);
@@ -80,7 +79,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
 
     @Test
     void tabsOnTheBottomKeepTheSameSideInsets() {
-        CTabFolder folder = folder(swtShell(), SWT.NONE);
+        CTabFolder folder = folder(shell(), SWT.NONE);
         folder.setTabPosition(SWT.BOTTOM);
         Rectangle client = folder.getClientArea();
 
@@ -95,7 +94,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
     void aFolderSizedToItsPageLeavesRoomForTheFrame() {
         // The other direction of the same number: a folder laid out at its preferred size has to be
         // wide enough that its page still gets the width the page asked for, frame included.
-        CTabFolder folder = folder(swtShell(), SWT.NONE);
+        CTabFolder folder = folder(shell(), SWT.NONE);
         Composite page = (Composite) folder.getItem(0).getControl();
         int pageWidth = page.computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
 
@@ -111,7 +110,7 @@ class CTabFolderClientAreaBorderTest extends SerializeTestBase {
         // A layout that sizes a folder to its page round-trips through these two. If they disagree
         // the folder grows or shrinks by the difference every time it is laid out.
         for (int style : new int[] { SWT.NONE, SWT.BORDER }) {
-            CTabFolder folder = folder(swtShell(), style);
+            CTabFolder folder = folder(shell(), style);
             Rectangle client = folder.getClientArea();
             Rectangle trim = folder.computeTrim(client.x, client.y, client.width, client.height);
 

@@ -1,6 +1,5 @@
-// A focused StyledText forwards every keystroke it sees, editing or not: focus alone claims
-// keyboard ownership, which makes it the only path to Java. Clicking an editor whose text shape
-// has not arrived yet leaves precisely that state — focused, but not editing.
+// Without a whole-tree Display to forward keys, a focused StyledText forwards every keystroke it
+// sees, including shortcuts it has no binding for.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +11,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
 
 const double _kWidth = 300;
@@ -61,18 +61,14 @@ void main() {
           ),
         );
 
-    // A single push: initState doesn't run extraSetState, so no text shape exists yet and the
-    // click below focuses the editor without entering an edit — where a workbench-opened editor
-    // sits before anyone types into it.
     await tester.pumpWidget(appWith(editor()));
     await tester.tapAt(tester.getCenter(find.byType(_CapturingStyledTextSwt)));
-    await tester.pump();
+    // Java focuses the pressed editor and asks the client to move its keyboard focus there.
+    FocusRequests.instance.request(7);
+    addTearDown(FocusRequests.instance.reset);
+    await tester.pumpAndSettle();
 
-    // Java's state push then lands and builds the text shape; that alone starts no edit either.
-    await tester.pumpWidget(appWith(editor()));
-
-    expect(focusedEditorHandlesOwnKeys, isTrue,
-        reason: 'sanity: the focused editor owns the keyboard, so nothing else forwards for it');
+    expect(canvasEditorFocused, isTrue, reason: 'sanity: the clicked editor holds the keyboard');
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.keyS);

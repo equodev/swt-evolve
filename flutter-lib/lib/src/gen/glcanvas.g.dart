@@ -52,7 +52,10 @@ VGLCanvas _$VGLCanvasFromJson(Map<String, dynamic> json) => VGLCanvas()
   ..backgroundMode = (json['backgroundMode'] as num?)?.toInt()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList();
+      .toList()
+  ..caret = json['caret'] == null
+      ? null
+      : VCaret.fromJson(json['caret'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VGLCanvasToJson(VGLCanvas instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -78,4 +81,5 @@ Map<String, dynamic> _$VGLCanvasToJson(VGLCanvas instance) => <String, dynamic>{
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
+  'caret': ?instance.caret,
 };

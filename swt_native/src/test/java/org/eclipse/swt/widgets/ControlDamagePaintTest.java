@@ -29,8 +29,7 @@ import static org.mockito.Mockito.doAnswer;
  * coalesced through {@code asyncExec}, which the test captures and pumps.
  */
 // The chain under test (ControlHelper.markDamaged/paint/firePaint and the generated redraw and
-// setter bodies) is shared code, identical on every backend; one platform pins it.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
+// setter bodies) is shared code, identical on every backend.
 @ExtendWith(Mocks.class)
 class ControlDamagePaintTest {
 
@@ -50,9 +49,9 @@ class ControlDamagePaintTest {
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
-        shell = Mocks.swtShell();
+        shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
             return ev != null && ev.type == SWT.Paint ? inv.callRealMethod() : null;

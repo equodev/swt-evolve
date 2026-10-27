@@ -48,11 +48,16 @@ bool _hasColoredBackdrop(WidgetTester tester, Color color) =>
         .widgetList<DecoratedBox>(find.byType(DecoratedBox))
         .any((w) => (w.decoration as BoxDecoration?)?.color == color);
 
+/// Fully transparent fills do not count: Flutter's own route-transition machinery
+/// (DualTransitionBuilder -> FadeTransition -> SlideTransition) contributes a `ColoredBox` with
+/// alpha 0, which hides nothing. Only a fill that would actually cover the GC drawing matters.
+bool _isOpaqueEnough(Color? color) => color != null && color.a > 0;
+
 bool _hasAnyOpaqueBackdrop(WidgetTester tester) =>
-    tester.widgetList<ColoredBox>(find.byType(ColoredBox)).isNotEmpty ||
+    tester.widgetList<ColoredBox>(find.byType(ColoredBox)).any((w) => _isOpaqueEnough(w.color)) ||
     tester
         .widgetList<DecoratedBox>(find.byType(DecoratedBox))
-        .any((w) => (w.decoration as BoxDecoration?)?.color != null);
+        .any((w) => _isOpaqueEnough((w.decoration as BoxDecoration?)?.color));
 
 void main() {
   setUp(resetConfigFlags);

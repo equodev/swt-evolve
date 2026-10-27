@@ -269,6 +269,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 System.arraycopy(styles, modifyEnd >> 1, tmpStyles, (modifyStart + mergeCount) >> 1, styleCount - (modifyEnd >> 1));
             }
             ranges = tmpRanges;
+            StyledTextHelper.markRendererDirty(this);
             styles = tmpStyles;
         } else {
             if (rangeCount > modifyEnd) {
@@ -281,14 +282,17 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             for (int i = 0; i < mergeCount; i += 2) {
                 if (j > 0 && ranges[j - 2] + ranges[j - 1] == mergeRanges[i] && mergeStyles[i >> 1].similarTo(styles[(j - 2) >> 1])) {
                     ranges[j - 1] += mergeRanges[i + 1];
+                    StyledTextHelper.markRendererDirty(this);
                 } else {
                     styles[j >> 1] = mergeStyles[i >> 1];
                     ranges[j++] = mergeRanges[i];
                     ranges[j++] = mergeRanges[i + 1];
+                    StyledTextHelper.markRendererDirty(this);
                 }
             }
             if (endStyle != null && ranges[j - 2] + ranges[j - 1] == endStart && endStyle.similarTo(styles[(j - 2) >> 1])) {
                 ranges[j - 1] += endLength;
+                StyledTextHelper.markRendererDirty(this);
                 modifyEnd += 2;
                 mergeCount += 2;
             }
@@ -302,6 +306,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             System.arraycopy(mergeStyles, 0, styles, modifyStart >> 1, mergeCount >> 1);
         }
         styleCount += grow >> 1;
+        StyledTextHelper.markRendererDirty(this);
         return grow;
     }
 
@@ -346,6 +351,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             System.arraycopy(mergeStyles, 0, styles, modifyStart, mergeCount);
         }
         styleCount += grow;
+        StyledTextHelper.markRendererDirty(this);
         return grow;
     }
 
@@ -428,6 +434,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             if (info != null) {
                 info.flags &= ~BACKGROUND;
                 info.background = null;
+                StyledTextHelper.markRendererDirty(this);
                 if (info.flags == 0)
                     lines[i] = null;
             }
@@ -441,6 +448,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             LineInfo info = lines[i];
             if (info != null) {
                 info.flags &= ~(ALIGNMENT | INDENT | VERTICAL_INDENT | WRAP_INDENT | JUSTIFY | TABSTOPS);
+                StyledTextHelper.markRendererDirty(this);
                 if (info.flags == 0)
                     lines[i] = null;
             }
@@ -478,6 +486,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         boldFont = italicFont = boldItalicFont = null;
         reset();
         content = null;
+        StyledTextHelper.markRendererDirty(this);
         device = null;
         styledText = null;
     }
@@ -714,6 +723,13 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     int getHeight() {
+        {
+            if (styledText != null && styledText.getImpl() instanceof DartStyledText) {
+                Integer measured = StyledTextHelper.measuredContentHeight((DartStyledText) styledText.getImpl());
+                if (measured != null)
+                    return measured + ((DartStyledText) styledText.getImpl()).topMargin + ((DartStyledText) styledText.getImpl()).bottomMargin;
+            }
+        }
         int defaultLineHeight = getLineHeight();
         if (((DartStyledText) styledText.getImpl()).isFixedLineHeight()) {
             return lineCount * defaultLineHeight + ((DartStyledText) styledText.getImpl()).topMargin + ((DartStyledText) styledText.getImpl()).bottomMargin;
@@ -1271,12 +1287,16 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             }
             if (bullets == null || bulletsIndices == null) {
                 bullets = new Bullet[CACHE_SIZE];
+                StyledTextHelper.markRendererDirty(this);
                 bulletsIndices = new int[CACHE_SIZE];
+                StyledTextHelper.markRendererDirty(this);
             }
             int index = lineIndex - topIndex;
             if (0 <= index && index < CACHE_SIZE) {
                 bullets[index] = bullet;
+                StyledTextHelper.markRendererDirty(this);
                 bulletsIndices[index] = event.bulletIndex;
+                StyledTextHelper.markRendererDirty(this);
             }
         } else {
             if (lines != null) {
@@ -1302,7 +1322,9 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             }
             if (bulletsIndices != null) {
                 bullets = null;
+                StyledTextHelper.markRendererDirty(this);
                 bulletsIndices = null;
+                StyledTextHelper.markRendererDirty(this);
             }
             if (bullets != null) {
                 for (Bullet b : bullets) {
@@ -1484,6 +1506,13 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     int getWidth() {
+        {
+            if (styledText != null && styledText.getImpl() instanceof DartStyledText) {
+                Integer measured = StyledTextHelper.measuredContentWidth(this, (DartStyledText) styledText.getImpl());
+                if (measured != null)
+                    return measured;
+            }
+        }
         return maxWidth;
     }
 
@@ -1497,13 +1526,18 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
         topIndex = -1;
         stylesSetCount = styleCount = lineCount = 0;
+        StyledTextHelper.markRendererDirty(this);
         ranges = null;
+        StyledTextHelper.markRendererDirty(this);
         styles = null;
         stylesSet = null;
         lines = null;
+        StyledTextHelper.markRendererDirty(this);
         lineSizes = null;
         bullets = null;
+        StyledTextHelper.markRendererDirty(this);
         bulletsIndices = null;
+        StyledTextHelper.markRendererDirty(this);
         redrawLines = null;
         hasLinks = false;
     }
@@ -1553,6 +1587,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     void setContent(StyledTextContent content) {
         reset();
         this.content = content;
+        StyledTextHelper.markRendererDirty(this);
         lineCount = content.getLineCount();
         lineSizes = new LineSizeInfo[lineCount];
         maxWidth = 0;
@@ -1580,6 +1615,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 boldItalicFont.dispose();
             boldFont = italicFont = boldItalicFont = null;
             regularFont = font;
+            StyledTextHelper.markRendererDirty(this);
             StyledTextHelper.updateRendererFontMetrics(this, font, tabs);
         }
     }
@@ -1590,9 +1626,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= ALIGNMENT;
             lines[i].alignment = alignment;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1602,9 +1640,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= BACKGROUND;
             lines[i].background = background;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1612,12 +1652,14 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         if (bulletsIndices != null) {
             bulletsIndices = null;
             bullets = null;
+            StyledTextHelper.markRendererDirty(this);
         }
         if (bullets == null) {
             if (bullet == null)
                 return;
             bullets = new Bullet[1];
             bullets[0] = bullet;
+            StyledTextHelper.markRendererDirty(this);
         }
         int index = 0;
         while (index < bullets.length) {
@@ -1631,8 +1673,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 System.arraycopy(bullets, 0, newBulletsList, 0, bullets.length);
                 newBulletsList[index] = bullet;
                 bullets = newBulletsList;
+                StyledTextHelper.markRendererDirty(this);
             }
             bullet.addIndices(startLine, count);
+            StyledTextHelper.markRendererDirty(this);
         } else {
             updateBullets(startLine, count, 0, false);
             ((DartStyledText) styledText.getImpl()).redrawLinesBullet(redrawLines);
@@ -1646,9 +1690,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= INDENT;
             lines[i].indent = indent;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1657,10 +1703,13 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             lines = new LineInfo[lineCount];
         if (lines[lineIndex] == null) {
             lines[lineIndex] = new LineInfo();
+            StyledTextHelper.markRendererDirty(this);
         }
         lines[lineIndex].flags |= VERTICAL_INDENT;
+        StyledTextHelper.markRendererDirty(this);
         int delta = verticalLineIndent - lines[lineIndex].verticalIndent;
         lines[lineIndex].verticalIndent = verticalLineIndent;
+        StyledTextHelper.markRendererDirty(this);
         LineSizeInfo info = getLineSize(lineIndex);
         if (!info.needsRecalculateHeight()) {
             info.height += delta;
@@ -1673,9 +1722,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= WRAP_INDENT;
             lines[i].wrapIndent = wrapIndent;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1685,9 +1736,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= JUSTIFY;
             lines[i].justify = justify;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1697,9 +1750,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= SEGMENTS;
             lines[i].segments = segments;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1709,9 +1764,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= SEGMENT_CHARS;
             lines[i].segmentsChars = segmentChars;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
@@ -1721,20 +1778,25 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         for (int i = startLine; i < startLine + count; i++) {
             if (lines[i] == null) {
                 lines[i] = new LineInfo();
+                StyledTextHelper.markRendererDirty(this);
             }
             lines[i].flags |= TABSTOPS;
             lines[i].tabStops = tabStops;
+            StyledTextHelper.markRendererDirty(this);
         }
     }
 
     void setLineSpacingProvider(StyledTextLineSpacingProvider lineSpacingProvider) {
         this.lineSpacingProvider = lineSpacingProvider;
+        StyledTextHelper.markRendererDirty(this);
     }
 
     void setStyleRanges(int[] newRanges, StyleRange[] newStyles) {
         if (newStyles == null) {
             stylesSetCount = styleCount = 0;
+            StyledTextHelper.markRendererDirty(this);
             ranges = null;
+            StyledTextHelper.markRendererDirty(this);
             styles = null;
             stylesSet = null;
             hasLinks = false;
@@ -1770,18 +1832,22 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         if (styleCount == 0) {
             if (newRanges != null) {
                 ranges = new int[newRanges.length];
+                StyledTextHelper.markRendererDirty(this);
                 System.arraycopy(newRanges, 0, ranges, 0, ranges.length);
             }
             styles = new StyleRange[newStyles.length];
             System.arraycopy(newStyles, 0, styles, 0, styles.length);
             styleCount = newStyles.length;
+            StyledTextHelper.markRendererDirty(this);
             return;
         }
         if (newRanges != null && ranges == null) {
             ranges = new int[styles.length << 1];
+            StyledTextHelper.markRendererDirty(this);
             for (int i = 0, j = 0; i < styleCount; i++) {
                 ranges[j++] = styles[i].start;
                 ranges[j++] = styles[i].length;
+                StyledTextHelper.markRendererDirty(this);
             }
         }
         if (newRanges == null && ranges != null) {
@@ -1924,6 +1990,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                     LineInfo[] newLines = new LineInfo[lineCount + delta + GROW];
                     System.arraycopy(lines, 0, newLines, 0, lineCount);
                     lines = newLines;
+                    StyledTextHelper.markRendererDirty(this);
                 }
             }
             System.arraycopy(lineSizes, startIndex, lineSizes, endIndex, lineCount - startIndex);
@@ -1954,8 +2021,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                                 layouts[i] = null;
                                 if (bullets != null && bulletsIndices != null) {
                                     bullets[endIndex] = bullets[i];
+                                    StyledTextHelper.markRendererDirty(this);
                                     bulletsIndices[endIndex] = bulletsIndices[i];
                                     bullets[i] = null;
+                                    StyledTextHelper.markRendererDirty(this);
                                 }
                             } else {
                                 if (layouts[i] != null)
@@ -1975,8 +2044,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                                 layouts[i] = null;
                                 if (bullets != null && bulletsIndices != null) {
                                     bullets[endIndex] = bullets[i];
+                                    StyledTextHelper.markRendererDirty(this);
                                     bulletsIndices[endIndex] = bulletsIndices[i];
                                     bullets[i] = null;
+                                    StyledTextHelper.markRendererDirty(this);
                                 }
                             } else {
                                 if (layouts[i] != null)
@@ -2000,9 +2071,11 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                     System.arraycopy(lines, startIndex, lines, endIndex, lineCount - startIndex);
                     for (int i = startLine; i < endIndex; i++) {
                         lines[i] = null;
+                        StyledTextHelper.markRendererDirty(this);
                     }
                     for (int i = lineCount + delta; i < lineCount; i++) {
                         lines[i] = null;
+                        StyledTextHelper.markRendererDirty(this);
                     }
                 }
             }
@@ -2028,6 +2101,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             return;
         for (Bullet bullet : bullets) {
             int[] lines = bullet.removeIndices(startLine, replaceLineCount, newLineCount, update);
+            StyledTextHelper.markRendererDirty(this);
             if (lines != null) {
                 if (redrawLines == null) {
                     redrawLines = lines;
@@ -2047,6 +2121,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         if (removed > 0) {
             if (removed == bullets.length) {
                 bullets = null;
+                StyledTextHelper.markRendererDirty(this);
             } else {
                 Bullet[] newBulletsList = new Bullet[bullets.length - removed];
                 for (int i = 0, j = 0; i < bullets.length; i++) {
@@ -2055,6 +2130,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                         newBulletsList[j++] = bullet;
                 }
                 bullets = newBulletsList;
+                StyledTextHelper.markRendererDirty(this);
             }
         }
     }
@@ -2073,12 +2149,14 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             if (modifyStart == modifyEnd && ranges[modifyStart] < start && end < ranges[modifyEnd] + ranges[modifyEnd + 1]) {
                 if (newCharCount == 0) {
                     ranges[modifyStart + 1] -= replaceCharCount;
+                    StyledTextHelper.markRendererDirty(this);
                     modifyEnd += 2;
                 } else {
                     if (rangeCount + 2 > ranges.length) {
                         int[] newRanges = new int[ranges.length + (GROW << 1)];
                         System.arraycopy(ranges, 0, newRanges, 0, rangeCount);
                         ranges = newRanges;
+                        StyledTextHelper.markRendererDirty(this);
                         StyleRange[] newStyles = new StyleRange[styles.length + GROW];
                         System.arraycopy(styles, 0, newStyles, 0, styleCount);
                         styles = newStyles;
@@ -2088,6 +2166,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                     ranges[modifyStart + 3] = ranges[modifyStart] + ranges[modifyStart + 1] - end;
                     ranges[modifyStart + 2] = start + newCharCount;
                     ranges[modifyStart + 1] = start - ranges[modifyStart];
+                    StyledTextHelper.markRendererDirty(this);
                     styles[(modifyStart >> 1) + 1] = styles[modifyStart >> 1];
                     rangeCount += 2;
                     styleCount++;
@@ -2096,25 +2175,30 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 if (offset != 0) {
                     for (int i = modifyEnd; i < rangeCount; i += 2) {
                         ranges[i] += offset;
+                        StyledTextHelper.markRendererDirty(this);
                     }
                 }
             } else {
                 if (ranges[modifyStart] < start && start < ranges[modifyStart] + ranges[modifyStart + 1]) {
                     ranges[modifyStart + 1] = start - ranges[modifyStart];
+                    StyledTextHelper.markRendererDirty(this);
                     modifyStart += 2;
                 }
                 if (modifyEnd < rangeCount && ranges[modifyEnd] < end && end < ranges[modifyEnd] + ranges[modifyEnd + 1]) {
                     ranges[modifyEnd + 1] = ranges[modifyEnd] + ranges[modifyEnd + 1] - end;
                     ranges[modifyEnd] = end;
+                    StyledTextHelper.markRendererDirty(this);
                 }
                 if (offset != 0) {
                     for (int i = modifyEnd; i < rangeCount; i += 2) {
                         ranges[i] += offset;
+                        StyledTextHelper.markRendererDirty(this);
                     }
                 }
                 System.arraycopy(ranges, modifyEnd, ranges, modifyStart, rangeCount - modifyEnd);
                 System.arraycopy(styles, modifyEnd >> 1, styles, modifyStart >> 1, styleCount - (modifyEnd >> 1));
                 styleCount -= (modifyEnd - modifyStart) >> 1;
+                StyledTextHelper.markRendererDirty(this);
             }
         } else {
             int modifyStart = getRangeIndex(start, -1, styleCount);
@@ -2162,6 +2246,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 }
                 System.arraycopy(styles, modifyEnd, styles, modifyStart, styleCount - modifyEnd);
                 styleCount -= modifyEnd - modifyStart;
+                StyledTextHelper.markRendererDirty(this);
             }
         }
     }
@@ -2298,6 +2383,54 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     public boolean _fixedPitch() {
         return fixedPitch;
+    }
+
+    StyleRange[] wireStyles() {
+        return StyledTextHelper.wireStyles(this);
+    }
+
+    int[] wireLineSpacings() {
+        if (content == null || styledText == null)
+            return null;
+        int count = content.getLineCount();
+        int[] spacings = new int[count];
+        boolean any = false;
+        for (int i = 0; i < count; i++) {
+            spacings[i] = getLineSpacing(i);
+            if (spacings[i] != 0)
+                any = true;
+        }
+        return any ? spacings : null;
+    }
+
+    String[] wireBulletTexts() {
+        return StyledTextHelper.wireBulletTexts(this);
+    }
+
+    int[] wireRanges() {
+        return StyledTextHelper.wireRanges(this);
+    }
+
+    int wireStyleCount() {
+        return StyledTextHelper.wireStyleCount(this);
+    }
+
+    VStyledTextRenderer.VLineInfo[] wireLines() {
+        return StyledTextHelper.wireLines(this);
+    }
+
+    public void _growLineSizes(int count) {
+        if (lineSizes == null || lineSizes.length < count) {
+            LineSizeInfo[] newLineSizes = new LineSizeInfo[count];
+            if (lineSizes != null) {
+                System.arraycopy(lineSizes, 0, newLineSizes, 0, lineCount);
+            }
+            lineSizes = newLineSizes;
+        }
+    }
+
+    public boolean _isWidthCalculated(int line) {
+        return lineSizes != null && line >= 0 && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth();
     }
 
     public StyledTextRenderer getApi() {

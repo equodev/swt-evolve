@@ -121,7 +121,8 @@ ButtonThemeExtension _getButtonTheme({
     radioButtonTextSpacing: 8.0,
     
     // Dropdown Button sizes
-    dropdownButtonIconSize: 24.0,
+    // With the 1px border on each side, an ARROW button is Sizes.SCROLL_BAR_SIZE (17), a scroll bar arrow as natively.
+    dropdownButtonIconSize: 15.0,
     
     // Checkbox sizes
     checkboxSize: 16.8,
@@ -139,6 +140,8 @@ ButtonThemeExtension _getButtonTheme({
     disabledForegroundColor: colorScheme.onSurfaceVariant,
     focusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
     focusRingWidth: 2.0,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 

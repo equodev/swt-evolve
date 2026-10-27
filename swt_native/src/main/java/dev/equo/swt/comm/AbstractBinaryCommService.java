@@ -1,5 +1,6 @@
 package dev.equo.swt.comm;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.Serializer;
 
 import java.io.IOException;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Transport-agnostic core of the binary comm protocol shared by every {@link CommService}
@@ -22,7 +25,12 @@ import java.util.function.Consumer;
 public abstract class AbstractBinaryCommService implements CommService {
 
     protected final Serializer serializer = new Serializer();
-    private final Map<String, TypedHandler<?>> typedHandlers = new ConcurrentHashMap<>();
+    /**
+     * Handlers by owner ({@code Type/id}, the name up to its second slash), then by the rest of the
+     * name: a widget's handlers are all dropped with it in one removal (see {@link #removeOwner}).
+     */
+    private final Map<String, Map<String, TypedHandler<?>>> typedHandlers = new ConcurrentHashMap<>();
+    private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
 
@@ -34,6 +42,23 @@ public abstract class AbstractBinaryCommService implements CommService {
      */
     private final java.util.concurrent.atomic.AtomicInteger connection =
             new java.util.concurrent.atomic.AtomicInteger(1);
+
+    /** Wire bytes each way, for measuring what a paint or an event costs in traffic. */
+    private final java.util.concurrent.atomic.LongAdder bytesSent = new java.util.concurrent.atomic.LongAdder();
+    private final java.util.concurrent.atomic.LongAdder bytesReceived = new java.util.concurrent.atomic.LongAdder();
+
+    public long bytesSent() {
+        return bytesSent.sum();
+    }
+
+    public long bytesReceived() {
+        return bytesReceived.sum();
+    }
+
+    /** Whether a client has connected; until one does, every frame sent is buffered for it. */
+    public boolean hasClient() {
+        return firstClientConnected;
+    }
 
     @Override
     public int connectionId() {
@@ -48,12 +73,14 @@ public abstract class AbstractBinaryCommService implements CommService {
     @Override
     public void send(String eventName, byte[] payload) {
         byte[] frame = encodeFrame(eventName, payload);
+        bytesSent.add(frame.length);
         if (heldForFirstClient(frame, 0, frame.length, false)) return;
         broadcast(frame, 0, frame.length);
     }
 
     @Override
     public void sendFrame(byte[] frame, int offset, int length) {
+        bytesSent.add(length);
         if (heldForFirstClient(frame, offset, length, true)) return;
         broadcast(frame, offset, length);
     }
@@ -78,12 +105,47 @@ public abstract class AbstractBinaryCommService implements CommService {
 
     @Override
     public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
-        typedHandlers.put(eventName, new TypedHandler<>(cls, callback));
+        int split = ownerEnd(eventName);
+        TypedHandler<T> handler = new TypedHandler<>(cls, callback);
+        typedHandlers.compute(eventName.substring(0, split), (owner, named) -> {
+            if (named == null) named = new ConcurrentHashMap<>(8);
+            named.put(eventName.substring(split), handler);
+            return named;
+        });
     }
 
     @Override
     public void remove(String eventName) {
-        typedHandlers.remove(eventName);
+        int split = ownerEnd(eventName);
+        typedHandlers.computeIfPresent(eventName.substring(0, split), (owner, named) -> {
+            named.remove(eventName.substring(split));
+            return named.isEmpty() ? null : named;
+        });
+    }
+
+    @Override
+    public void removeOwner(String owner) {
+        typedHandlers.remove(owner);
+    }
+
+    /** Where the owner part of {@code eventName} ends: at its second slash, or its end. */
+    private static int ownerEnd(String eventName) {
+        int first = eventName.indexOf('/');
+        if (first < 0) return eventName.length();
+        int second = eventName.indexOf('/', first + 1);
+        return second < 0 ? eventName.length() : second;
+    }
+
+    private TypedHandler<?> handlerFor(String eventName) {
+        int split = ownerEnd(eventName);
+        Map<String, TypedHandler<?>> named = typedHandlers.get(eventName.substring(0, split));
+        return named == null ? null : named.get(eventName.substring(split));
+    }
+
+    /** State kept for as long as this connection lives, under [key]; [create] makes it on first use. */
+    @SuppressWarnings("unchecked")
+    public <T> T attachment(Object key, java.util.function.Supplier<T> create) {
+        return (T) attachments.computeIfAbsent(key, k -> create.get());
     }
 
     /**
@@ -109,8 +171,12 @@ public abstract class AbstractBinaryCommService implements CommService {
         }
     }
 
-    /** Subclasses call this with each received binary frame (which may be a slice of a buffer). */
+    /**
+     * Subclasses call this with each received binary frame. {@code data[0, offset + length)} is
+     * handed over: decoding may overwrite it, so it must not be read again or shared.
+     */
     protected void onBinaryMessage(byte[] data, int offset, int length) {
+        bytesReceived.add(length);
         if (length < NAME_LENGTH_BYTES) return;
         int nameLen = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
         if (length < NAME_LENGTH_BYTES + nameLen) return;
@@ -120,18 +186,38 @@ public abstract class AbstractBinaryCommService implements CommService {
         dispatch(eventName, data, payloadStart, payloadLen);
     }
 
+    /**
+     * The other name a message may be registered under when none is registered under the one it
+     * arrived with, or null. A widget's handlers are registered under the name it had when it was
+     * built, while the client addresses it by the name its latest description carries.
+     */
+    private static volatile UnaryOperator<String> alternateName = name -> null;
+
+    public static void setAlternateName(UnaryOperator<String> resolver) {
+        alternateName = resolver;
+    }
+
     private void dispatch(String eventName, byte[] data, int offset, int length) {
-        TypedHandler<?> typed = typedHandlers.get(eventName);
+        TypedHandler<?> typed = handlerFor(eventName);
+        if (typed == null) {
+            String alternate = alternateName.apply(eventName);
+            if (alternate != null) typed = handlerFor(alternate);
+        }
         if (typed != null) {
             typed.handle(data, offset, length, serializer, logTag());
             return;
         }
-        System.err.println(logTag() + " No handler for: " + eventName);
-        // Show which same-type handlers ARE registered here: distinguishes "wrong widget id"
-        // (siblings listed) from "this widget type never registered" (nothing listed) at a glance.
+        // The same-type count distinguishes "wrong widget id" (siblings exist) from "this widget
+        // type never registered" (none). The list itself runs to hundreds of lines per miss, so it
+        // is printed only in debug mode.
         String typePrefix = eventName.substring(0, eventName.indexOf('/') + 1);
-        typedHandlers.keySet().stream().filter(k -> k.startsWith(typePrefix)).sorted()
-                .forEach(k -> System.err.println(logTag() + "   registered: " + k));
+        List<String> sameType = typedHandlers.entrySet().stream().filter(e -> e.getKey().startsWith(typePrefix))
+                .flatMap(e -> e.getValue().keySet().stream().map(rest -> e.getKey() + rest)).sorted()
+                .collect(Collectors.toList());
+        System.err.println(logTag() + " No handler for: " + eventName + " (" + sameType.size() + " registered for "
+                + typePrefix + "*)");
+        if (Config.isDebug())
+            sameType.forEach(k -> System.err.println(logTag() + "   registered: " + k));
     }
 
     /**
@@ -156,6 +242,12 @@ public abstract class AbstractBinaryCommService implements CommService {
 
         @SuppressWarnings("unchecked")
         void handle(byte[] data, int offset, int length, Serializer serializer, String tag) {
+            // ByteBuffer.class is the passthrough that copies nothing: the frame is ours for the
+            // length of the dispatch, so a handler that reads it here and keeps nothing takes a view.
+            if (cls == java.nio.ByteBuffer.class) {
+                callback.accept((T) java.nio.ByteBuffer.wrap(data, offset, length));
+                return;
+            }
             // byte[].class is a passthrough: deliver the raw frame bytes (a copy, since the handler
             // may outlive this dispatch) with no deserialization — used for already-binary payloads.
             if (cls == byte[].class) {
@@ -167,7 +259,11 @@ public abstract class AbstractBinaryCommService implements CommService {
                 return;
             }
             try {
-                T value = serializer.from(cls, data, offset, length);
+                // dsl-json's byte reader only starts at index 0. The frame is ours and its name has
+                // been read, so blanking everything before the body lets the parser skip it as
+                // whitespace instead of the body being copied out.
+                Arrays.fill(data, 0, offset, (byte) ' ');
+                T value = serializer.from(cls, data, 0, offset + length);
                 callback.accept(value);
             } catch (IOException e) {
                 System.err.println(tag + " Deserialization failed: " + e.getMessage());

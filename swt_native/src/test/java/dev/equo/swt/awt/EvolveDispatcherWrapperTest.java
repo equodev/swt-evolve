@@ -5,12 +5,16 @@ import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.awt.AWTEvent;
+import java.awt.EventQueue;
 import java.awt.SecondaryLoop;
+import java.awt.event.ActionEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,7 +31,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void isDispatchThreadMatchesTheDisplaysOwnThread() throws InterruptedException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
         assertThat(wrapper.isDispatchThread()).isTrue();
@@ -41,7 +45,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void isDispatchThreadIsFalseOnceTheDisplayIsDisposed() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.isDisposed()).thenReturn(true);
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
@@ -50,7 +54,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void scheduleDispatchRunsThroughTheDisplaysAsyncExec() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
         Runnable task = () -> {};
@@ -61,7 +65,7 @@ class EvolveDispatcherWrapperTest {
 
     @Test
     void scheduleDispatchIsANoOpOnceTheDisplayIsDisposed() {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.isDisposed()).thenReturn(true);
         EvolveSwingHost.EvolveDispatcherWrapper wrapper = new EvolveSwingHost.EvolveDispatcherWrapper(display);
 
@@ -79,7 +83,7 @@ class EvolveDispatcherWrapperTest {
     @Test
     void scheduleDispatchRetriesInsteadOfLosingTheTaskWhenTheDisplayIsNotYetInitialized()
             throws InterruptedException, java.lang.reflect.InvocationTargetException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         AtomicBoolean firstAttempt = new AtomicBoolean(true);
         CountDownLatch dispatched = new CountDownLatch(2);
         org.mockito.Mockito.doAnswer(inv -> {
@@ -105,7 +109,7 @@ class EvolveDispatcherWrapperTest {
      */
     @Test
     void secondaryLoopEnterBlocksUntilExitIsCalledFromAnotherThread() throws InterruptedException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         // Unstubbed readAndDispatch()/sleep() both default to false on a Mockito mock, which would
         // busy-spin enter()'s loop; give sleep() a small real pause so the loop behaves like a real
         // Display parking between empty polls.
@@ -136,15 +140,59 @@ class EvolveDispatcherWrapperTest {
         assertThat(enterReturned.get()).isTrue();
     }
 
+    /** An event dispatched off the Display's thread is handed to the installed wrapper, not run in place. */
+    @Test
+    void installingTheWrapperRoutesTheQueuesDispatchThroughTheDisplay() throws InterruptedException {
+        Display display = Mocks.display();
+        ForwardingQueue queue = new ForwardingQueue();
+        EvolveSwingHost.setFwDispatcher(queue, new EvolveSwingHost.EvolveDispatcherWrapper(display));
+
+        // The mock's Display thread is this one, so here the event is dispatched in place.
+        queue.dispatch(new ActionEvent(new Object(), ActionEvent.ACTION_PERFORMED, ""));
+        verify(display, never()).asyncExec(org.mockito.ArgumentMatchers.any());
+
+        Thread other = new Thread(() -> queue.dispatch(new ActionEvent(new Object(), ActionEvent.ACTION_PERFORMED, "")));
+        other.start();
+        other.join();
+
+        verify(display).asyncExec(org.mockito.ArgumentMatchers.any());
+    }
+
+    /** A wrapper left bound to a disposed Display is replaced by one for the live Display. */
+    @Test
+    void ensureDispatcherInstalledReplacesAWrapperBoundToADisposedDisplay() {
+        Display disposed = Mocks.display();
+        when(disposed.isDisposed()).thenReturn(true);
+        Display live = org.mockito.Mockito.mock(Display.class);
+        when(live.getThread()).thenReturn(Thread.currentThread());
+        EventQueue queue = java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue();
+        try {
+            EvolveSwingHost.setFwDispatcher(queue, new EvolveSwingHost.EvolveDispatcherWrapper(disposed));
+            assertThat(EventQueue.isDispatchThread()).isFalse();
+
+            EvolveSwingHost.ensureDispatcherInstalled(live);
+
+            assertThat(EventQueue.isDispatchThread()).isTrue();
+        } finally {
+            EvolveSwingHost.setFwDispatcher(queue, null);
+        }
+    }
+
+    private static final class ForwardingQueue extends EventQueue {
+        void dispatch(AWTEvent event) {
+            dispatchEvent(event);
+        }
+    }
+
     @Test
     void secondaryLoopExitBeforeEnterReturnsFalse() {
-        SecondaryLoop loop = new EvolveSwingHost.EvolveSecondaryLoop(Mocks.swtDisplay());
+        SecondaryLoop loop = new EvolveSwingHost.EvolveSecondaryLoop(Mocks.display());
         assertThat(loop.exit()).isFalse();
     }
 
     @Test
     void secondaryLoopEnterTwiceRejectsTheSecondCall() throws InterruptedException {
-        Display display = Mocks.swtDisplay();
+        Display display = Mocks.display();
         when(display.sleep()).thenAnswer(inv -> {
             Thread.sleep(2);
             return true;

@@ -1,6 +1,5 @@
 package dev.equo.swt;
 
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Button;
@@ -8,26 +7,34 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+/**
+ * {@link Config}'s choice between the Dart and the native implementation of a class. The part that
+ * needs a native widget, which only the embedded backend hosts, is {@code ConfigHybridTest} there.
+ */
 public class ConfigTest {
 
     private static Config.Impl initialDefault;
+    private static boolean initialForceEclipse;
+    /** The dev.equo.swt.* properties as this class found them: the test task sets some for every test. */
+    private static Map<String, String> initialProperties;
 
     @BeforeAll
-    static void keep_the_process_default() {
-        // Config.defaultImpl is process-wide state, and the per-test hooks below pin it to `eclipse`.
-        // Restoring it after the class keeps later test classes on the default they were written for.
+    static void keep_the_process_state() {
+        // Config's state is process-wide, and the per-test hooks below pin it. Restoring it after the
+        // class keeps later test classes on the state they were written for.
         initialDefault = Config.defaultImpl;
+        initialForceEclipse = Config.forceEclipse;
+        initialProperties = new HashMap<>();
+        System.getProperties().forEach((k, v) -> {
+            if (k.toString().startsWith(Config.PROPERTY_PREFIX)) initialProperties.put(k.toString(), v.toString());
+        });
     }
 
     @AfterAll
@@ -36,30 +43,34 @@ public class ConfigTest {
     }
 
     @BeforeEach
-    void defaults_swt() {
-        // Reset the global default too (not just the per-widget map): its static initial value is
-        // `equo`, so a default-reliant test that runs first (order varies by JVM/OS) would otherwise
-        // see `equo` instead of `eclipse` and fail. Symmetric with @AfterEach.
-        Config.defaultImpl = Config.Impl.eclipse;
-        Config.reset();
+    void restore_config_before() {
+        restoreConfig();
     }
 
     @AfterEach
-    void reset() {
-        Config.defaultImpl = Config.Impl.eclipse;
+    void restore_config_after() {
+        restoreConfig();
+    }
+
+    private static void restoreConfig() {
+        // `equo` is Config's default; a class that ran earlier in this fork may have left `eclipse`.
+        Config.defaultToEquo();
+        Config.forceEclipse = initialForceEclipse;
+        // Config.reset() clears every dev.equo.swt.* property, the test task's included: put those back.
         Config.reset();
+        initialProperties.forEach(System::setProperty);
     }
 
     @Test
     void should_default_to_swt() {
-        System.clearProperty("dev.equo.swt.Point");
         Config.defaultToEclipse();
         assertThat(Config.defaultImpl).isEqualTo(Config.Impl.eclipse);
-        assertThat(Config.isEquo(Point.class)).isFalse();
+        assertThat(Config.isEquo(CTabItem.class)).isFalse();
     }
 
     @Test
     void should_default_to_equo() {
+        Config.defaultToEclipse();
         Config.defaultToEquo();
         assertThat(Config.defaultImpl).isEqualTo(Config.Impl.equo);
         assertThat(Config.isEquo(CTabItem.class)).isTrue();
@@ -89,8 +100,38 @@ public class ConfigTest {
         assertThat(Config.isEquo(Point.class)).isFalse();
     }
 
+    @Test
+    void clear_drops_the_choice_for_its_class() {
+        Config.useEquo(Point.class);
+        Config.clear(Point.class);
+        assertThat(Config.isEquo(Point.class)).isFalse();
+    }
+
+    @Test
+    void reset_drops_every_per_class_choice() {
+        Config.useEquo(Point.class);
+        Config.useEclipse(Button.class);
+        Config.reset();
+        assertThat(Config.isEquo(Point.class)).isFalse();
+        assertThat(Config.isEquo(Button.class)).isTrue();
+    }
+
+    @Test
+    void force_eclipse_beats_every_other_choice() {
+        Config.forceEquo();
+        Config.useEquo(Button.class);
+        Config.forceEclipse();
+        assertThat(Config.isEquo(Button.class)).isFalse();
+        assertThat(Config.isEquo(Button.class, Mocks.shell())).isFalse();
+    }
+
     @Nested
     class EquoWidgetDefaults {
+
+        @Test
+        void button_should_default_to_equo() {
+            assertThat(Config.isEquo(Button.class)).isTrue();
+        }
 
         @Test
         void button_should_default_to_swt_with_config() {
@@ -99,13 +140,8 @@ public class ConfigTest {
         }
 
         @Test
-        void button_should_default_to_equo_with_config() {
-            Config.useEquo(Button.class);
-            assertThat(Config.isEquo(Button.class)).isTrue();
-        }
-
-        @Test
-        void button_should_default_to_equo_with_property() {
+        void button_should_be_equo_with_property_when_the_default_is_eclipse() {
+            Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Button", Config.Impl.equo.name());
             assertThat(Config.isEquo(Button.class)).isTrue();
         }
@@ -120,11 +156,6 @@ public class ConfigTest {
 
     @Nested
     class GlobalDefaultRespect {
-
-        @AfterEach
-        void cleanup() {
-            Config.defaultToEclipse();
-        }
 
         @Test
         void should_respect_global_eclipse_default_for_button() {
@@ -160,22 +191,53 @@ public class ConfigTest {
         }
     }
 
+    /** How a class that picks its implementation by its parent is answered under a Dart one. */
     @Nested
-    class WithParent {
+    class UnderADartParent {
+
         @Test
-        void should_default_to_swt_for_widget() {
-            assertThat(Config.isEquo(CTabFolder.class, Mocks.swtShell())).isFalse();
+        void a_child_is_dart_even_when_the_default_is_eclipse() {
+            Config.defaultToEclipse();
+            assertThat(Config.isEquo(Button.class, Mocks.shell())).isTrue();
         }
 
+        @Test
+        void a_class_set_to_eclipse_stays_native() {
+            Config.useEclipse(Button.class);
+            assertThat(Config.isEquo(Button.class, Mocks.shell())).isFalse();
+        }
+
+        @Test
+        void an_id_property_chooses_for_that_one_widget() {
+            Shell shell = Mocks.shell();
+            System.setProperty(Config.PROPERTY_PREFIX + Config.getId(Button.class, shell), "eclipse");
+            assertThat(Config.isEquo(Button.class, shell)).isFalse();
+            assertThat(Config.isEquo(Label.class, shell)).isTrue();
+        }
+
+        @Test
+        void file_dialogs_stay_native_once_a_display_bridge_runs() {
+            // DisplayBridge sets dev.equo.swt.desktop=false for the backend that ships.
+            System.setProperty("dev.equo.swt.desktop", "false");
+            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isFalse();
+            assertThat(Config.isEquo(DirectoryDialog.class, Mocks.shell())).isFalse();
+
+            System.setProperty("dev.equo.swt.desktop", "true");
+            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isTrue();
+        }
+
+        @Test
+        void the_parent_data_chooses_for_its_children() {
+            Shell shell = Mocks.shell();
+            when(shell.getData(Config.getKey(Button.class))).thenReturn(Config.Impl.eclipse);
+            assertThat(Config.isEquo(Button.class, shell)).isFalse();
+            when(shell.getData(Config.getKey(Button.class))).thenReturn("eclipse");
+            assertThat(Config.isEquo(Button.class, shell)).isFalse();
+        }
     }
 
     @Nested
     class DependentWidgetActivation {
-
-        @AfterEach
-        void cleanup() {
-            Config.defaultToEclipse();
-        }
 
         // Tree group tests
         @Test
@@ -262,7 +324,6 @@ public class ConfigTest {
 
         // Explicit disable should override group activation
         @Test
-        @Disabled
         void explicit_disable_should_override_group_activation() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "equo");
@@ -273,7 +334,6 @@ public class ConfigTest {
         }
 
         @Test
-        @Disabled
         void explicit_disable_of_parent_should_not_affect_child_group_activation() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "eclipse");
@@ -466,66 +526,6 @@ public class ConfigTest {
 
             assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/2/" + C + "/2/Button/3");
         }
-
-        @Nested
-        @DisabledOnOs(OS.LINUX)
-        @Tag("metal")
-        class SwtAndDartMatchesWithTracker {
-
-            private IdWidgetTracker tracker;
-            private Display display;
-
-            @BeforeEach
-            void tracker() {
-                FlutterLibraryLoader.initialize();
-                display = new Display();
-                tracker = new IdWidgetTracker();
-                tracker.startTracking();
-            }
-
-            @AfterEach
-            void stop() {
-                tracker.stopTracking();
-                display.dispose();
-            }
-
-            @ParameterizedTest
-            @ValueSource(classes = {Optional.class, Composite.class})
-            void composite_should_match_ids(Class<?> useEquo) {
-                Config.useEquo(useEquo);
-                Shell s = new Shell(display);
-
-                assertThat(Config.getId(Composite.class, s)).isEqualTo("/Shell/-1/Composite/1");
-
-                Composite c1 = new Composite(s, SWT.NONE);
-                assertThat(c1.getImpl()).isInstanceOf((useEquo == Composite.class) ? DartComposite.class : SwtComposite.class);
-                assertThat(tracker.getWidgetId(c1)).as("tracker id !=").isEqualTo("/Shell/-1/Composite/1");
-                assertThat(Config.getId(Composite.class, s)).isEqualTo("/Shell/-1/Composite/2");
-                assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/Composite/1/Composite/1");
-            }
-
-            @ParameterizedTest
-            @ValueSource(classes = {Optional.class, Composite.class, CTabFolder.class})
-            void composite_in_ctabfolder_should_match_ids(Class<?> useEquo) {
-                Config.useEclipse(CTabFolder.class);
-                Config.useEquo(useEquo);
-                Shell s = new Shell(display);
-                assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/1");
-                CTabFolder c1 = new CTabFolder(s, SWT.NONE);
-                assertThat(c1.getImpl()).isInstanceOf((useEquo == CTabFolder.class) ? DartCTabFolder.class : SwtCTabFolder.class);
-
-                assertThat(tracker.getWidgetId(c1)).as("tracker id !=").isEqualTo("/Shell/-1/CTabFolder/1");
-                assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/2");
-                assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/CTabFolder/1/Composite/1");
-
-                Composite c2 = new Composite(c1, SWT.NONE);
-                assertThat(c2.getImpl()).isInstanceOf((useEquo == Composite.class) ? DartComposite.class : SwtComposite.class);
-
-                assertThat(tracker.getWidgetId(c2)).as("tracker id !=").isEqualTo("/Shell/-1/CTabFolder/1/Composite/1");
-                assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/CTabFolder/1/Composite/2");
-            }
-        }
-
     }
 
 }

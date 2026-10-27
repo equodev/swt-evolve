@@ -29,10 +29,6 @@ import static org.mockito.Mockito.doAnswer;
  * {@code setSelection(int, int, boolean, boolean)} — which is why this is asserted per version
  * rather than once.
  */
-// Same platform pin as StyledTextKeyboardCaretSyncTest: on the Linux/Windows embed backends
-// StyledText.setText routes renderer font metrics into real GTK/Pango / GDI, which cannot run
-// under the mocked headless display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextSelectionTerminationTest {
 
@@ -60,7 +56,7 @@ class StyledTextSelectionTerminationTest {
     }
 
     private StyledText styledText() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         doAnswer(inv -> {
             asyncQueue.add(inv.getArgument(0));

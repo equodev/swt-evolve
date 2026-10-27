@@ -1,26 +1,28 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.internal.gtk.GTK;
 
 /**
  * Per-OS native init shared by the two Display surfaces on Linux — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
  * GTK (and its SWT lock functions) once for the Display thread.
  */
 final class DisplayBridgePlatform {
+
+    static final String LOAD_LIBRARY = "dev.equo.swt.loadLibrary";
+
     private DisplayBridgePlatform() {
     }
 
     static void init() {
         // When the native SWT library isn't loaded (headless web/test, e.g. -Ddev.equo.swt.loadLibrary=false)
         // the GTK calls below would throw UnsatisfiedLinkError; pure-web/browser needs no GTK init anyway.
-        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+        if (nativeLibraryOff())
             return;
-        if (!GTK.GTK4) {
+        if (!GTKWrapper.IS_GTK4) {
             GTKWrapper.setupThreadLocking();
         }
         boolean init;
-        if (GTK.GTK4) {
+        if (GTKWrapper.IS_GTK4) {
             init = GTKWrapper.gtk_init_check();
         } else {
             init = GTKWrapper.gtk_init_check(new long[] { 0 }, null);
@@ -44,5 +46,19 @@ final class DisplayBridgePlatform {
 
     /** Nothing to bind: a Shell here is drawn by Flutter and has no native view of its own. */
     static void bindWindowView(Control control, long view) {
+    }
+
+    /**
+     * Leaves the launcher's splash window to the launcher: not handled on GTK yet.
+     *
+     * @return false, nothing is dismissed
+     */
+    static boolean dismissLauncherSplash() {
+        return false;
+    }
+
+    /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
+    private static boolean nativeLibraryOff() {
+        return "false".equals(System.getProperty(LOAD_LIBRARY));
     }
 }

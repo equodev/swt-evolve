@@ -111,7 +111,9 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
   // Ring around a focused button
   final Color focusRingColor;
   final double focusRingWidth;
-  
+
+  final double minTextContrast;
+
   const ButtonThemeExtension({
     required this.buttonPressDelay,
     required this.enableTapAnimation,
@@ -175,6 +177,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.disabledForegroundColor,
     required this.focusRingColor,
     required this.focusRingWidth,
+    required this.minTextContrast,
   });
 
   factory ButtonThemeExtension.fromJson(Map<String, dynamic> json) =>

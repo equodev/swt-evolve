@@ -35,4 +35,8 @@ public final class TextTheme {
         return new TextTheme(new TextStyle("Inter", 14, false, 500));
     }
 
+    public static TextTheme getCompactTheme() {
+        return new TextTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
+    }
+
 }

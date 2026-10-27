@@ -68,6 +68,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   // Tab content area
   final Color tabContentBackgroundColor;
   final Color tabContentBorderColor;
+  // Outline of a bordered folder, in the colour of a Group's frame
+  final Color outlineColor;
   
   // Tab sizes
   final double tabIconSize;
@@ -116,6 +118,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   final double chevronMenuItemHeight;
   final EdgeInsets chevronMenuItemPadding;
 
+  final double minTextContrast;
+
   const CTabFolderThemeExtension({
     required this.tabBarBackgroundColor,
     required this.tabBarBorderColor,
@@ -148,6 +152,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     this.tabSelectedTextStyle,
     required this.tabContentBackgroundColor,
     required this.tabContentBorderColor,
+    required this.outlineColor,
     required this.tabIconSize,
     required this.tabCloseIconSize,
     required this.controlButtonSize,
@@ -173,6 +178,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.tabDragThreshold,
     required this.chevronMenuItemHeight,
     required this.chevronMenuItemPadding,
+    required this.minTextContrast,
   });
 
   factory CTabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>

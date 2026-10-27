@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../nolayout.dart';
+import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/decorations.dart';
 import '../gen/event.dart';
@@ -11,12 +12,14 @@ import '../gen/widget.dart';
 import '../styles.dart';
 import '../impl/control_evolve.dart';
 import '../impl/gc_evolve.dart';
+import '../impl/gcdrawer_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
 
@@ -24,7 +27,18 @@ import '../theme/theme_settings/composite_theme_settings.dart';
 /// Returns true if [pos] falls inside the bounds of any child control.
 /// Used to replicate SWT behaviour where mouse events on a child widget do
 /// not propagate to the parent composite.
-bool _hitsAnyChild(VComposite state, Offset pos) {
+///
+/// [childInset] is how far inside its own bounds a child is actually painted. It is zero for an
+/// ordinary composite, but a composite that lays its children out as panels (NoLayout's
+/// `_wrapAsPanel`) leaves a ring of parent background inside every child rectangle. The control
+/// the user sees under a pointer in that ring is the parent, so the ring must not read as child.
+///
+/// Only the press passes it. Forwarding *hover* across the ring as well re-arms the sash cursor
+/// after the MouseExit that should have cleared it: the last hover before the pointer crosses into
+/// the painted child still lands within SashLayout's grab tolerance, and it races that exit through
+/// asyncExec. Leaving hover on the layout rectangle keeps a 5px gap between the last forwarded move
+/// and the exit, which is what makes the reset reliable.
+bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
   final children = state.children;
   if (children == null || children.isEmpty) return false;
   for (final child in children) {
@@ -34,7 +48,7 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
     final rect = Rect.fromLTWH(
       b.x.toDouble(), b.y.toDouble(),
       b.width.toDouble(), b.height.toDouble(),
-    );
+    ).deflate(childInset);
     if (rect.contains(pos)) return true;
   }
   return false;
@@ -43,6 +57,13 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
   final hoverDepth = ControlNestingScope.depthOf(impl.context);
+  // How far inside its own bounds each child is painted, for the press alone (see _hitsAnyChild).
+  // The e4 workbench divider is that ring plus the band between two part stacks, and SashLayout
+  // engages the resize from a MouseDown on the container, so the ring has to reach it.
+  final panelTheme = impl.laysOutChildrenAsPanels
+      ? Theme.of(impl.context).extension<CompositeThemeExtension>()
+      : null;
+  final childInset = panelTheme?.panelChildGap ?? 0.0;
 
   if (state.menu != null && (state.children?.isNotEmpty ?? false)) {
     content = impl.applyMenu(content);
@@ -52,24 +73,23 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   // outer wrapper. Adding/removing a wrapper widget on cursor-change would
   // change the root widget type returned by build(), deactivating all child
   // elements (CTabFolder, Canvas, Tree, …) and destroying their state.
-  final cursor = state.cursor?.cursorStyle != null
-      ? impl.swtCursorToFlutter(state.cursor!.cursorStyle!)
-      : MouseCursor.defer;
+  final cursor = impl.mouseCursorOf(state.cursor) ?? MouseCursor.defer;
+
+  final forwardsPointer = state.children?.isNotEmpty ?? false;
 
   Widget listener = MouseRegion(
     cursor: cursor,
     // A childless Composite reaches ControlImpl.wrap() (which already sends these); this
     // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
-    onEnter: (_) =>
-        HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true),
-    onExit: (_) =>
-        HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false),
+    onEnter: (e) => impl.crossPointer(e, hoverDepth, true),
+    onExit: (e) => impl.crossPointer(e, hoverDepth, false),
     onHover: (e) {
+      if (!forwardsPointer) return;
       // Only the control under the pointer reports the move; its ancestors stay silent.
       // Nested MouseRegions all fire onHover for the same point, which is the very thing
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
       // the same rule. See onPointerMove below for what leaving it out costs.
-      if (_hitsAnyChild(state, e.localPosition)) return;
+      if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition)) return;
       final event = VEvent()
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
@@ -77,49 +97,48 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
+      onPointerSignal: (e) {
+        if (forwardsPointer && impl.forwardsWheelFromWrap) impl.reportWheel(e, e.localPosition);
+      },
       onPointerDown: (e) {
-        if (_hitsAnyChild(state, e.localPosition)) return;
+        // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
+        // composite, not with an ancestor further up.
+        if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
         if (!impl.forwardsControlMouseDown) return;
-        // Captured so onPointerUp can forward it regardless of where the pointer ends up.
-        impl.capturedPointerDowns.add(e.pointer);
-        impl.registerPointerDown(e);
         final pos = e.localPosition;
-        impl.widget.sendMouseMouseDown(
-          state,
-          VEvent()
+        if (forwardsPointer) {
+          // Captured so onPointerUp can forward it regardless of where the pointer ends up.
+          impl.capturedPointerDowns.add(e.pointer);
+          impl.registerPointerDown(e);
+          final press = VEvent()
             ..x = pos.dx.round()
             ..y = pos.dy.round()
             ..button = impl.swtButton
             ..count = impl.swtClickCount
             ..stateMask =
-                impl.swtStateMask(released: false, flutterButtons: e.buttons),
-        );
-        // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
-        // "has children" path bypasses it, so MenuDetect never fired over the composite's
-        // own area -- the gap a container with a lazily-built context menu falls into.
-        // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
-        if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
-          impl.handleMenuDetect(e.pointer, e.localPosition);
-        }
-        if (!impl.forwardsCompositeDoubleClick) return;
-        if (impl.dblTap.registerTap(position: pos) == 2) {
-          impl.widget.sendMouseMouseDoubleClick(
-            state,
-            VEvent()
-              ..x = pos.dx.round()
-              ..y = pos.dy.round()
-              ..button = 1
-              ..count = 2,
-          );
+                impl.swtStateMask(released: false, flutterButtons: e.buttons);
+          impl.widget.sendMouseMouseDown(state, press);
+          impl.sendDoubleClickOnSecondPress(press);
+          // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
+          // "has children" path bypasses it, so MenuDetect never fired over the composite's
+          // own area -- the gap a container with a lazily-built context menu falls into.
+          // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
+          if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
+            impl.handleMenuDetect(e.pointer, e.localPosition);
+          }
         }
       },
       onPointerUp: (e) {
+        if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
-        if (!impl.capturedPointerDowns.remove(e.pointer)) return;
+        final takenBelow = ControlImpl.pointerTakenBelow(e);
+        final pos = impl.heldLocal(e);
+        impl.releasePointer(e);
+        if (!impl.capturedPointerDowns.remove(e.pointer) || takenBelow) return;
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
+          ..x = pos.dx.round()
+          ..y = pos.dy.round()
           ..button = impl.swtButton
           ..count = impl.swtClickCount
           ..stateMask =
@@ -127,10 +146,13 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.widget.sendMouseMouseUp(state, event);
       },
       onPointerCancel: (e) {
+        if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
+        impl.releasePointer(e);
         impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
+        if (!forwardsPointer) return;
         impl.maybeSendDragDetect(e);
         // Same exclusivity as onPointerDown above, which already refuses a press that landed
         // on a child. Without it every composite between the Shell and the control under the
@@ -142,14 +164,19 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // A pointer this composite captured keeps reporting wherever it travels, mirroring
         // onPointerUp: SWT sends moves to the control holding the capture, not to whatever
         // the pointer has since wandered over.
-        if (!impl.capturedPointerDowns.contains(e.pointer) &&
-            _hitsAnyChild(state, e.localPosition)) {
+        if (ControlImpl.pointerTakenBelow(e)) return;
+        final pos = impl.heldLocal(e);
+        if (!impl.capturedPointerDowns.contains(e.pointer) && _hitsAnyChild(state, pos)) {
           return;
         }
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
-        impl.sendThrottledDragMove(state, event, e.buttons);
+          ..x = pos.dx.round()
+          ..y = pos.dy.round();
+        impl.sendThrottledDragMove(state, event, e);
+      },
+      onPointerPanZoomUpdate: (e) {
+        if (!forwardsPointer || !impl.forwardsWheelFromWrap || ControlImpl.wheelKeptBelow(e)) return;
+        panAsScroll(e, (wheel) => impl.reportWheel(wheel, wheel.localPosition));
       },
       child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),
@@ -192,16 +219,71 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 }
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
-    extends ScrollableImpl<T, V> {
+    extends ScrollableImpl<T, V> implements GCGround {
   final DoubleTapDetector dblTap = DoubleTapDetector();
+
+  Color? _renderedGround;
+
+  @override
+  VColor? get swtGround => state.background;
+
+  @override
+  Color? get renderedGround => _renderedGround;
+
+  final FocusNode _surfaceFocus = FocusNode(debugLabel: 'CompositeSurface');
+
+  bool get _isSurface => state.children?.isEmpty ?? true;
+
+  /// Only a childless Composite mounts this node. One focused while it still has children takes the
+  /// focus once they are gone: an unmounted node keeps the request until it is mounted.
+  @override
+  FocusNode? get swtFocusNode => _surfaceFocus;
+
+  /// Whether this composite's children are drawn as inset panels rather than at their own
+  /// bounds -- the [SashPanelMarker] its build path installs, read from somewhere hit-testing
+  /// can also reach it.
+  bool get laysOutChildrenAsPanels => false;
+
+  bool _surfaceFocusReported = false;
+
+  void _reportSurfaceFocusIn() {
+    if (_surfaceFocusReported) return;
+    _surfaceFocusReported = true;
+    widget.sendFocusFocusIn(state, null);
+  }
+
+  void _handleSurfaceFocusChange() {
+    if (_surfaceFocus.hasFocus) {
+      _reportSurfaceFocusIn();
+    } else if (_surfaceFocusReported) {
+      _surfaceFocusReported = false;
+      widget.sendFocusFocusOut(state, null);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _surfaceFocus.addListener(_handleSurfaceFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _surfaceFocus.removeListener(_handleSurfaceFocusChange);
+    _surfaceFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  void takeFocusOnPress() {
+    if (!_isSurface || _surfaceFocus.hasFocus) return;
+    if ((state.style & SWT.NO_FOCUS) != 0) return;
+    _surfaceFocus.requestFocus();
+    _reportSurfaceFocusIn();
+  }
 
   /// Pointer ids whose MouseDown this composite (not a descendant) forwarded to Java.
   final Set<int> capturedPointerDowns = {};
-
-  /// Whether this composite forwards MouseDoubleClick from the interaction
-  /// chrome. CanvasImpl overrides this to false because it forwards its own
-  /// double-click in build(); forwarding here too would double-fire.
-  bool get forwardsCompositeDoubleClick => true;
 
   @override
   Widget build(BuildContext context) {
@@ -216,10 +298,28 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     return Stack(
       children: [
         child,
+        if (gcOverlay != null && paintsGCOverlay)
+          Positioned.fill(child: IgnorePointer(child: gcWidget))
+        else
+          Offstage(child: gcWidget),
+      ],
+    );
+  }
+
+  @visibleForTesting
+  Widget stackGCUnderChildren(
+      Widget Function(Widget) paintBackground, Widget children) {
+    final gc = gcOverlay ?? (VGC()..id = state.id);
+    final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
+
+    return Stack(
+      children: [
+        Positioned.fill(child: paintBackground(const SizedBox.expand())),
         if (gcOverlay != null)
           Positioned.fill(child: IgnorePointer(child: gcWidget))
         else
           Offstage(child: gcWidget),
+        children,
       ],
     );
   }
@@ -233,22 +333,26 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     // state.background already resolves inheritance (DartControl.getBackground(), Java side)
     // and always wins when set; ParentBackgroundScope.backgroundOf only fills in the default
     // for a Composite with no color of its own (e.g. a control hosted on a ToolBar band).
+    // Inside a trim bar that default is the bar's ground at any depth: the scope above stops at
+    // each INHERIT_NONE Composite, and a contribution nested two levels down would otherwise paint
+    // the generic Composite color as a block across the bar.
     final backgroundColor = getCompositeBackgroundColor(
       context,
       state,
       widgetTheme,
       isEnabled: enabled,
-      parentBackground: ParentBackgroundScope.backgroundOf(context),
+      parentBackground:
+          ParentBackgroundScope.backgroundOf(context) ?? ToolbarAreaMarker.backgroundOf(context),
     );
     final decorationImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
+    // Inherited backgroundImage is already painted once by the ancestor that owns it
+    // (ShellImpl.buildComposite); stay transparent so it isn't occluded by our own fill.
+    final showsInheritedImage = state.backgroundImage == null &&
+        ParentBackgroundScope.backgroundImageOf(context) != null;
+    _renderedGround = decorationImage == null && !showsInheritedImage ? backgroundColor : null;
 
     Widget paintBackground(Widget child) {
-      // Inherited backgroundImage is already painted once by the ancestor that owns it
-      // (ShellImpl.buildComposite); stay transparent so it isn't occluded by our own fill.
-      if (state.backgroundImage == null &&
-          ParentBackgroundScope.backgroundImageOf(context) != null) {
-        return child;
-      }
+      if (showsInheritedImage) return child;
       if (decorationImage == null) return ColoredBox(color: backgroundColor, child: child);
       return DecoratedBox(
         decoration: BoxDecoration(color: backgroundColor, image: decorationImage),
@@ -257,7 +361,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     }
 
     if (children == null || children.isEmpty) {
-      final content = wrap(paintBackground(const SizedBox.expand()));
+      final content = Focus(
+        focusNode: _surfaceFocus,
+        child: wrap(paintBackground(const SizedBox.expand())),
+      );
       // Hidden Composite: the chrome Listener sits outside wrap()'s Visibility gate, so it would keep
       // stealing clicks from a shown sibling stacked at the same bounds (e.g. a CTabFolder page).
       if (state.visible != null && !state.visible!) return content;
@@ -283,16 +390,13 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       return const SizedBox.shrink();
     }
 
-    final Widget inner;
-    if (isPanelChild) {
-      inner = paintBackground(SashPanelMarker(active: false, child: rawLayout));
-    } else {
-      inner = paintBackground(rawLayout);
-    }
+    final Widget inner = isPanelChild
+        ? SashPanelMarker(active: false, child: rawLayout)
+        : rawLayout;
 
     // wrapCompositeInteractionChrome(), unlike wrap() above, never applies wrapDnd() —
     // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
-    final gcWrapped = wrapWithGCOverlay(inner);
+    final gcWrapped = stackGCUnderChildren(paintBackground, inner);
     final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
     return blockWhenDisabled(wrapCompositeInteractionChrome(this, dndWrapped));
   }

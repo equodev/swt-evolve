@@ -210,6 +210,17 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         cellFont = null;
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = false;
+        getValue().markDirty(VTreeItem.TEXT);
+        getValue().markDirty(VTreeItem.IMAGE);
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
+        getValue().markDirty(VTreeItem.BACKGROUND);
+        getValue().markDirty(VTreeItem.FOREGROUND);
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
     }
 
@@ -670,7 +681,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return new Rectangle(0, 0, 0, 0);
+        if (!((DartTree) parent.getImpl()).checkData(this.getApi(), true))
+            error(SWT.ERROR_WIDGET_DISPOSED);
+        return Sizes.getImageBounds(this, index);
     }
 
     Rectangle getImageBoundsInPixels(int index) {
@@ -882,12 +895,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VTreeItem.BACKGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -903,6 +916,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             cached = true;
         this._background = newValue;
         redraw();
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
     }
 
     /**
@@ -940,11 +954,15 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             cellBackground = new int[count];
             for (int i = 0; i < count; i++) {
                 cellBackground[i] = -1;
+                getValue().markDirty(VTreeItem.BACKGROUND);
+                getValue().markDirty(VTreeItem.BACKGROUNDS);
             }
         }
         if (cellBackground[index] == pixel)
             return;
         cellBackground[index] = pixel;
+        getValue().markDirty(VTreeItem.BACKGROUND);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = true;
         redraw(index, true, true);
@@ -962,10 +980,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setChecked(boolean checked) {
         boolean newValue = checked;
-        if (!java.util.Objects.equals(this.checked, newValue)) {
+        checkWidget();
+        if (this.checked != newValue) {
             getValue().markDirty(VTreeItem.CHECKED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (checked) {
@@ -996,10 +1014,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setExpanded(boolean expanded) {
         boolean newValue = expanded;
-        if (!java.util.Objects.equals(this.expanded, newValue)) {
+        checkWidget();
+        if (this.expanded != newValue) {
             getValue().markDirty(VTreeItem.EXPANDED);
         }
-        checkWidget();
         /* Expand or collapse the item */
         ((DartTree) parent.getImpl()).ignoreExpand = true;
         ((DartTree) parent.getImpl()).ignoreExpand = false;
@@ -1027,8 +1045,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
             getValue().markDirty(VTreeItem.FONT);
         }
@@ -1055,6 +1073,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if ((parent.style & SWT.VIRTUAL) == 0 && !cached && !((DartTree) parent.getImpl()).painted) {
             return;
         }
+        getValue().markDirty(VTreeItem.FONTS);
     }
 
     /**
@@ -1094,6 +1113,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldFont == font)
             return;
         cellFont[index] = font == null ? font : DartFont.win32_new(font, getApi().nativeZoom);
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1133,12 +1154,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VTreeItem.FOREGROUND);
         }
-        checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -1154,6 +1175,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             cached = true;
         this._foreground = newValue;
         redraw();
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
     }
 
     /**
@@ -1191,11 +1213,15 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             cellForeground = new int[count];
             for (int i = 0; i < count; i++) {
                 cellForeground[i] = -1;
+                getValue().markDirty(VTreeItem.FOREGROUND);
+                getValue().markDirty(VTreeItem.FOREGROUNDS);
             }
         }
         if (cellForeground[index] == pixel)
             return;
         cellForeground[index] = pixel;
+        getValue().markDirty(VTreeItem.FOREGROUND);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = true;
         redraw(index, true, false);
@@ -1214,10 +1240,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setGrayed(boolean grayed) {
         boolean newValue = grayed;
-        if (!java.util.Objects.equals(this.grayed, newValue)) {
+        checkWidget();
+        if (this.grayed != newValue) {
             getValue().markDirty(VTreeItem.GRAYED);
         }
-        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (grayed) {
@@ -1508,11 +1534,15 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     Color _background;
 
+    Color[] backgrounds;
+
     boolean checked;
 
     boolean expanded;
 
     Color _foreground;
+
+    Color[] foregrounds;
 
     boolean grayed;
 
@@ -1562,6 +1592,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return _background;
     }
 
+    public Color[] _backgrounds() {
+        return backgrounds;
+    }
+
     public boolean _checked() {
         return checked;
     }
@@ -1572,6 +1606,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     public Color __foreground() {
         return _foreground;
+    }
+
+    public Color[] _foregrounds() {
+        return foregrounds;
     }
 
     public boolean _grayed() {
@@ -1593,6 +1631,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public String[] getTexts() {
         return TreeHelper.getTexts(this);
     }
+
+    public int[] getPaintedTexts() {
+        return TreeHelper.getPaintedTexts(this);
+    }
+
+    boolean ownerDrawOverlay;
 
     public void setImages(Image[] value) {
         TreeHelper.setImages(value, this);

@@ -27,6 +27,11 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final Color itemHoverBackgroundColor;
   final Color itemSelectedBorderColor;
   final double itemSelectedBorderWidth;
+
+  // Drag and drop
+  final double dropFeedbackLineWidth;
+  final int dropFeedbackHighlightAlpha;
+  final double dragImageOpacity;
   
   // Header colors
   final Color headerBackgroundColor;
@@ -143,7 +148,9 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final int eventDefaultX;
   final int eventDefaultY;
   final int eventDefaultDetail;
-  
+
+  final double minTextContrast;
+
   const TreeThemeExtension({
     required this.backgroundColor,
     required this.disabledBackgroundColor,
@@ -155,6 +162,9 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.itemHoverBackgroundColor,
     required this.itemSelectedBorderColor,
     required this.itemSelectedBorderWidth,
+    required this.dropFeedbackLineWidth,
+    required this.dropFeedbackHighlightAlpha,
+    required this.dragImageOpacity,
     required this.headerBackgroundColor,
     required this.headerTextColor,
     required this.headerBorderColor,
@@ -241,6 +251,7 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.eventDefaultX,
     required this.eventDefaultY,
     required this.eventDefaultDetail,
+    required this.minTextContrast,
   });
 
   factory TreeThemeExtension.fromJson(Map<String, dynamic> json) =>

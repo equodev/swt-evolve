@@ -38,6 +38,10 @@ class TableSwt<V extends VTable> extends CompositeSwt<V> {
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
+
+  void sendSetDataSetData(V val, VEvent? payload) {
+    sendEvent(val, "SetData/SetData", payload);
+  }
 }
 
 @JsonSerializable()
@@ -48,6 +52,7 @@ class VTable extends VComposite {
   }
 
   int? itemCount;
+  List<int>? columnOrder;
   List<VTableColumn>? columns;
   List<VTableEditor>? editors;
   VColor? headerBackground;
@@ -56,11 +61,13 @@ class VTable extends VComposite {
   List<VTableItem>? items;
   bool? linesVisible;
   List<int>? selection;
+  int? topIndex;
 
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VTable) {
+      columnOrder = other.columnOrder;
       columns = other.columns;
       editors = other.editors;
       headerBackground = other.headerBackground;
@@ -69,6 +76,7 @@ class VTable extends VComposite {
       items = other.items;
       linesVisible = other.linesVisible;
       selection = other.selection;
+      topIndex = other.topIndex;
       itemCount = other.itemCount;
     }
   }
@@ -76,6 +84,10 @@ class VTable extends VComposite {
   @override
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
+      case 'columnOrder':
+        columnOrder = (json['columnOrder'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
       case 'columns':
         columns = (json['columns'] as List<dynamic>?)
             ?.map((e) => VTableColumn.fromJson(e as Map<String, dynamic>))
@@ -85,13 +97,9 @@ class VTable extends VComposite {
             ?.map((e) => VTableEditor.fromJson(e as Map<String, dynamic>))
             .toList();
       case 'headerBackground':
-        headerBackground = json['headerBackground'] == null
-            ? null
-            : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>);
+        headerBackground = VColor.read(json['headerBackground']);
       case 'headerForeground':
-        headerForeground = json['headerForeground'] == null
-            ? null
-            : VColor.fromJson(json['headerForeground'] as Map<String, dynamic>);
+        headerForeground = VColor.read(json['headerForeground']);
       case 'headerVisible':
         headerVisible = json['headerVisible'] as bool?;
       case 'items':
@@ -104,6 +112,8 @@ class VTable extends VComposite {
         selection = (json['selection'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
             .toList();
+      case 'topIndex':
+        topIndex = (json['topIndex'] as num?)?.toInt();
       case 'itemCount':
         itemCount = (json['itemCount'] as num?)?.toInt();
       default:

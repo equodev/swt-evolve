@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../comm/comm.dart';
+import '../comm/v_registry.dart';
+import '../gen/menu.dart';
+import '../gen/widgets.dart' as gen;
 import '../gen/colordialog.dart';
 import '../gen/dialog.dart';
 import '../gen/event.dart';
@@ -13,13 +17,20 @@ import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
+import '../impl/key_forwarding.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
 import '../impl/utils/region_clip.dart';
+import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/tracker_session.dart';
+import '../impl/utils/window_origin.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
+
+/// `VEvent.detail` of the bounds a shell reports once it is first drawn (Java's
+/// `DisplayBridge.INITIAL_CLIENT_BOUNDS`).
+const int initialClientBounds = 1;
 
 class FloatingShellChromeScope extends InheritedWidget {
   final BoxConstraints viewportConstraints;
@@ -51,15 +62,12 @@ class FloatingShellChromeScope extends InheritedWidget {
 
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
   Offset? _offset;
-
-  /// How much frame this Shell draws above its content, which a pointer position has to be
-  /// measured past: it arrives global to the window, and the bounds Java sends start at the
-  /// content. Kept from the last build, which is where the layout decides it.
-  double _headerH = 0;
   Size? _size;
   bool _maximized = false;
   bool _interacting = false;
   bool _initialBoundsSent = false;
+  /// The bounds Java last set that the drawn size was reported against (see build).
+  (int, int, int, int)? _drawnSizeReportedFor;
   final Set<int> _openedDialogIds = {};
 
   final ValueNotifier<double> _opacityNotifier = ValueNotifier(1.0);
@@ -81,20 +89,47 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
     TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
+    _popupsToken = EquoCommService.onRaw(_popupsChannel, _receivePopups);
+  }
+
+  /// Popups opened over this shell, when this client is the window drawing it. Empty in every other
+  /// client: Java sends them only to the window that owns the control they were opened for (see
+  /// `DisplayBridge.syncShellPopups`), because a popup hangs off the Display rather than off this
+  /// shell's widget tree and nothing else would carry it here.
+  List<VMenu> _popups = const [];
+  Object? _popupsToken;
+
+  String get _popupsChannel => 'Shell/${state.id}/Popups';
+
+  void _receivePopups(dynamic payload) {
+    final menus = <VMenu>[];
+    if (payload is Map && payload['popups'] is List) {
+      for (final raw in payload['popups'] as List) {
+        if (raw is Map<String, dynamic>) menus.add(VMenu.fromJson(raw));
+      }
+    }
+    // Registering is what puts the menu and its items in the registry; holding is what lets a popup
+    // that closed stop being held, instead of being kept for the life of the session.
+    for (final menu in menus) {
+      VRegistry.instance.register(menu);
+    }
+    VRegistry.instance.holds(_popupsChannel, menus);
+    if (!mounted) return;
+    setState(() => _popups = menus);
   }
 
   /// Where a window-global pointer position falls in the coordinate space Java works in: measured
-  /// from the content's own origin, then shifted by where this Shell sits. Read from the render
-  /// tree rather than derived from the frame's parts, so border, title bar and maximized state are
-  /// all already accounted for.
+  /// from this Shell's own top-left, then shifted by where this Shell sits. Read from the render
+  /// tree rather than derived from the frame's parts, so maximized state is already accounted for,
+  /// and through the Shell's own transform, so the result is in SWT units at any zoom.
+  ///
+  /// The top-left is the frame's, title bar included: Java's bounds for a shell start there too, and
+  /// its toDisplay adds the title bar to reach the client area.
   Offset _toDisplay(Offset windowPosition) {
-    if (!mounted) return windowPosition;
+    if (!mounted) return logicalToSwt(windowPosition);
     final box = context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return windowPosition;
-    // The Shell's own top-left, plus whatever frame it draws above its content: what is left is
-    // measured from the same origin the bounds Java sends are measured from.
-    final content = box.localToGlobal(Offset.zero) + Offset(0, _headerH);
-    final local = windowPosition - content;
+    if (box == null || !box.hasSize) return logicalToSwt(windowPosition);
+    final local = box.globalToLocal(windowPosition);
     final b = state.bounds;
     if (b == null) return local;
     return Offset(local.dx + b.x.toDouble(), local.dy + b.y.toDouble());
@@ -112,6 +147,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   @override
   void dispose() {
+    EquoCommService.remove(_popupsChannel, _popupsToken);
+    VRegistry.instance.holds(_popupsChannel, const []);
     _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
     _focusScopeNode.dispose();
@@ -131,9 +168,13 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   KeyEventResult _handleShellKey(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      widget.sendKeyKeyDown(state, VEvent()
-        ..keyCode = SWT.ESC
-        ..character = SWT.ESC);
+      // The Display already forwards every key in the whole-tree backend; a second KeyDown here
+      // would deliver the Escape to Java twice.
+      if (!displayLevelKeyForwardingActive) {
+        widget.sendKeyKeyDown(state, VEvent()
+          ..keyCode = SWT.ESC
+          ..character = SWT.ESC);
+      }
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -195,6 +236,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   int get _style => state.style;
   bool get _hasTitle => (_style & SWT.TITLE) != 0;
+  /// An ON_TOP shell is a popup its owner shows without handing over activation, so a click inside
+  /// it must not activate it either: activating deactivates the owner, and an owner that closes on
+  /// Deactivate -- a command palette, whose field and list are two such shells -- tears the popup
+  /// down before the click that was meant for it is dispatched.
+  bool get _isOnTop => (_style & SWT.ON_TOP) != 0;
   bool get _hasClose => (_style & SWT.CLOSE) != 0;
   bool get _hasMax => (_style & SWT.MAX) != 0;
   bool get _hasResize => (_style & SWT.RESIZE) != 0;
@@ -244,17 +290,44 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   @override
   Widget build(BuildContext context) {
+    // Shell builds its own tree and never routes through ControlImpl.wrap(), so a hidden shell
+    // would keep painting and swallowing pointer input over whatever it covers.
+    if (state.visible != null && !state.visible!) {
+      return const SizedBox.shrink();
+    }
     final scope = FloatingShellChromeScope.maybeOf(context);
     if (scope == null) {
-      return FocusScope(
-        node: _focusScopeNode,
-        onKeyEvent: _handleShellKey,
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) {
-            if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
-          },
-          child: super.build(context),
+      // No chrome scope above: this shell is the root of its own window, so it is also the only
+      // thing that can host a popup opened over it. Inside the Display's window the Display draws
+      // the popups instead, and _popups stays empty there.
+      Widget content = super.build(context);
+      // This shell IS the window, so its bounds are where the window sits on screen: publish that
+      // for anything consuming a screen coordinate inside it (a popup's location, a drop target).
+      final b0 = state.bounds;
+      final windowOrigin =
+          b0 == null ? Offset.zero : Offset(b0.x.toDouble(), b0.y.toDouble());
+      if (_popups.isNotEmpty) {
+        content = Stack(children: [
+          Positioned.fill(child: content),
+          for (final popup in _popups)
+            KeyedSubtree(
+              key: ValueKey(popup.id),
+              child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
+            ),
+        ]);
+      }
+      return WindowOriginScope(
+        origin: windowOrigin,
+        child: FocusScope(
+          node: _focusScopeNode,
+          onKeyEvent: _handleShellKey,
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) {
+              if (!_isOnTop && !_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+            },
+            child: content,
+          ),
         ),
       );
     }
@@ -264,40 +337,81 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final isFullScreen = state.fullScreen == true;
     final b = state.bounds;
 
+    final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
+    final headerH = _showTitleBar ? titleBarH : 0.0;
+    // What the frame adds around the body on each axis: the border drawn around a floating pane.
+    final chromeEdge =
+        _showFloatingBorder && state.region == null ? 2 * theme.dialogBorderWidth : 0.0;
+
     final rawW = (b?.width ?? 400).toDouble();
     final rawH = (b?.height ?? 300).toDouble();
+    // A trimmed shell is drawn at the size the application set, as a native one is; a floor is the
+    // application's to set (setMinimumSize). Only a dimension Java has not set yet (0, or -1 before
+    // the shell is sized) gets one here, since drawn at that size the shell would not be there.
+    // The ceiling is what fits in the viewport under the title bar and inside the border: Java sizes
+    // a shell against the monitor, which on this surface is the viewport, and its bounds include
+    // neither.
+    double bodySize(double raw, double fallback, int? minimum, double fits) {
+      final wanted = math.max(raw > 0 ? raw : fallback, (minimum ?? 0).toDouble());
+      return math.min(wanted, math.max(fallback, fits));
+    }
+
     final bodyW = _size != null
         ? _size!.width
         : (!_showTitleBar && !_showBorder
             ? rawW
-            : rawW.clamp(200.0, math.max(200.0, viewport.maxWidth * 0.9)).toDouble());
+            : bodySize(rawW, 200, state.minimumSize?.x, viewport.maxWidth - chromeEdge));
     final bodyH = _size != null
         ? _size!.height
         : (!_showTitleBar && !_showBorder
             ? rawH
-            : rawH.clamp(150.0, math.max(150.0, viewport.maxHeight * 0.9)).toDouble());
-
-    final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
-    final headerH = _showTitleBar ? titleBarH : 0.0;
-    _headerH = headerH;
+            : bodySize(
+                rawH, 150, state.minimumSize?.y, viewport.maxHeight - headerH - chromeEdge));
 
     final w = (isFullScreen || _maximized) ? viewport.maxWidth : bodyW;
     final h = (isFullScreen || _maximized) ? viewport.maxHeight : bodyH;
     final frameH = headerH + h;
 
+    /// Where a pane asked to sit at [wanted] is actually drawn.
+    ///
+    /// The position comes from the application, and an application built for real windows measures
+    /// one against the monitor — which on the desktop surface is the screen, several times larger
+    /// than the window every shell is drawn inside. The e4 workbench detaching a view is exactly
+    /// that: it places the new shell at `Control.toDisplay` of the part stack, then keeps it on the
+    /// *monitor*. A pane laid out past the edge is clipped away by the stack that holds it, so it
+    /// is not drawn small or half — it is not on screen at all. Moved inside, the way a window
+    /// manager places an off-screen window. A pane that already fits is left exactly where it is.
+    Offset insideViewport(Offset wanted) {
+      if (!viewport.maxWidth.isFinite || !viewport.maxHeight.isFinite) return wanted;
+      final maxX = math.max(0.0, viewport.maxWidth - w - chromeEdge);
+      final maxY = math.max(0.0, viewport.maxHeight - frameH - chromeEdge);
+      return Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY));
+    }
+
+    // A floating shell's bounds are a SCREEN position; this offset is measured from the window
+    // drawing it, so the window's own origin comes off.
+    final windowOrigin = WindowOriginScope.of(context);
+
     Offset resolvedOffset() {
       if (isFullScreen || _maximized) return Offset.zero;
       if (_offset != null) return _offset!;
-      if (b != null && (b.x != 0 || b.y != 0)) {
-        return Offset(b.x.toDouble(), b.y.toDouble());
+      // An untrimmed shell counts as placed wherever its bounds are: the application anchors it to
+      // a control and calls setLocation, and anchored at the window's top-left that location IS the
+      // origin -- which the (0,0) test below would otherwise read as never having been placed.
+      if (b != null && (b.x != 0 || b.y != 0 || _noTrim)) {
+        final wanted = Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
+        // A region is read against the shell's own origin (see below), so moving the shell moves
+        // what the region marks: that one is placed where it was asked, wherever that is.
+        return state.region != null ? wanted : insideViewport(wanted);
       }
       // A shell clipped to a region means its position, including the origin: the region's
       // rectangles are given in this shell's own coordinates and describe areas of the window
       // behind it. Centring one larger than the viewport -- the workbench sizes its drop feedback
       // to its own window, not to the client's -- moves those rectangles off the zone they mark.
       if (b != null && state.region != null) {
-        return Offset(b.x.toDouble(), b.y.toDouble());
+        return Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
       }
+      // What is left is a shell nobody placed: a dialog opened at the platform's default.
       return Offset(
         (viewport.maxWidth - bodyW) / 2,
         (viewport.maxHeight - headerH - bodyH) / 2,
@@ -306,8 +420,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final offset = resolvedOffset();
 
-    void sendBoundsToJava() {
-      final pos = (isFullScreen || _maximized) ? Offset.zero : (_offset ?? offset);
+    void sendBoundsToJava({bool initial = false}) {
+      // Back to SCREEN space, where Java keeps a shell's bounds: reporting the drawn offset would
+      // have the window's origin taken off a second time on the next update.
+      final drawn = (isFullScreen || _maximized) ? Offset.zero : (_offset ?? offset);
+      final pos = drawn + windowOrigin;
       widget.sendShellSetBounds(
         state,
         VEvent()
@@ -316,15 +433,34 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
           ..width =
               (isFullScreen || _maximized) ? viewport.maxWidth.round() : bodyW.round()
           ..height =
-              (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round(),
+              (isFullScreen || _maximized) ? viewport.maxHeight.round() : bodyH.round()
+          // Java ignores the position in this one for a shell it moved after this frame's bounds were sent.
+          ..detail = initial ? initialClientBounds : null,
       );
     }
 
     if (!_initialBoundsSent) {
       _initialBoundsSent = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) sendBoundsToJava();
+        if (mounted) sendBoundsToJava(initial: true);
       });
+    } else if (_size == null &&
+        !_interacting &&
+        !(isFullScreen || _maximized) &&
+        b != null &&
+        b.width > 0 &&
+        b.height > 0 &&
+        (bodyW.round() != b.width || bodyH.round() != b.height)) {
+      // Java set a size that is not drawn as such (taller than fits, say): it lays the shell out
+      // in that size unless told the drawn one. Once per size it set, so an application that keeps
+      // the size it asked for is told once and left alone.
+      final set = (b.x, b.y, b.width, b.height);
+      if (_drawnSizeReportedFor != set) {
+        _drawnSizeReportedFor = set;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) sendBoundsToJava();
+        });
+      }
     }
 
     void onMaximize() {
@@ -377,9 +513,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     );
 
     final minBodyH = (state.minimumSize?.y ?? 80).toDouble();
-    final maxBodyH = state.maximumSize?.y.toDouble() ?? viewport.maxHeight * 0.95;
+    final maxBodyH =
+        math.max(minBodyH,
+            state.maximumSize?.y.toDouble() ?? viewport.maxHeight - headerH - chromeEdge);
     final minBodyW = (state.minimumSize?.x ?? 100).toDouble();
-    final maxBodyW = state.maximumSize?.x.toDouble() ?? viewport.maxWidth * 0.95;
+    final maxBodyW =
+        math.max(minBodyW, state.maximumSize?.x.toDouble() ?? viewport.maxWidth - chromeEdge);
     final minFH = minBodyH + headerH;
     final maxFH = maxBodyH + headerH;
 
@@ -394,40 +533,42 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         onResize: (delta, edge) => setState(() {
           final curW  = _size?.width ?? bodyW;
           final curFH = (_size?.height ?? bodyH) + headerH;
+          final loW  = math.min(minBodyW, curW);
+          final loFH = math.min(minFH, curFH);
 
           double newW  = curW,  newFH = curFH;
           double odx   = 0,     ody   = 0;
 
           switch (edge) {
             case _ResizeEdge.right:
-              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
+              newW  = (curW + delta.dx).clamp(loW, maxBodyW);
             case _ResizeEdge.left:
-              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
+              newW  = (curW - delta.dx).clamp(loW, maxBodyW);
               odx   = -(newW - curW);
             case _ResizeEdge.bottom:
-              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              newFH = (curFH + delta.dy).clamp(loFH, maxFH);
             case _ResizeEdge.top:
-              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              newFH = (curFH - delta.dy).clamp(loFH, maxFH);
               ody   = -(newFH - curFH);
             case _ResizeEdge.se:
-              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              newW  = (curW + delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH + delta.dy).clamp(loFH, maxFH);
             case _ResizeEdge.sw:
-              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              newW  = (curW - delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH + delta.dy).clamp(loFH, maxFH);
               odx   = -(newW - curW);
             case _ResizeEdge.ne:
-              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              newW  = (curW + delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH - delta.dy).clamp(loFH, maxFH);
               ody   = -(newFH - curFH);
             case _ResizeEdge.nw:
-              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              newW  = (curW - delta.dx).clamp(loW, maxBodyW);
+              newFH = (curFH - delta.dy).clamp(loFH, maxFH);
               odx   = -(newW - curW);
               ody   = -(newFH - curFH);
           }
           _offset = (_offset ?? offset) + Offset(odx, ody);
-          _size   = Size(newW, (newFH - headerH).clamp(minBodyH, maxBodyH));
+          _size   = Size(newW, (newFH - headerH).clamp(loFH - headerH, maxBodyH));
         }),
         onResizeEnd: () {
           setState(() => _interacting = false);
@@ -475,7 +616,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) {
-          if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+          if (!_isOnTop && !_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
         },
         child: dialog,
       ),
@@ -486,9 +627,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // opened it keeps focus and can drive the popup from its own VerifyKeyListener.
     if (!_autoFocusRequested && scope.activeShellId == state.id) {
       _autoFocusRequested = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focusScopeNode.nextFocus();
-      });
+      // Two frames: a control Java focused lands at the end of the first, and nextFocus would skip it.
+      WidgetsBinding.instance.addPostFrameCallback((_) => afterNextFrame(() {
+            // Only when no control in the shell holds the keyboard: the scope itself or nothing.
+            final noControlFocused = !_focusScopeNode.hasFocus || _focusScopeNode.hasPrimaryFocus;
+            if (mounted && noControlFocused) _focusScopeNode.nextFocus();
+          }));
     }
 
     // Always wrap in Opacity, never conditionally on opacity < 1.0 -- branching the widget
@@ -506,7 +650,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     return Positioned(
       left: offset.dx,
       top: offset.dy,
-      child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+      child: RepaintBoundary(
+        child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+      ),
     );
   }
 }

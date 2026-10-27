@@ -785,6 +785,7 @@ ThemeData createLightNonDefaultTheme(
   int? backgroundColor, {
   ColorScheme? overrideColorScheme,
   ColorSchemeExtension? overrideColorSchemeExtension,
+  TextTheme Function(TextTheme base)? overrideTypeSizes,
 }) {
   final bool useDarkTheme = getCurrentTheme();
   final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
@@ -792,7 +793,8 @@ ThemeData createLightNonDefaultTheme(
   final colorScheme = overrideColorScheme ?? createLightColorScheme();
   final colorSchemeExtension = overrideColorSchemeExtension ?? createColorSchemeExtension();
 
-  final materialTextTheme = createMaterialTextTheme(colorScheme);
+  final base = createMaterialTextTheme(colorScheme);
+  final materialTextTheme = overrideTypeSizes?.call(base) ?? base;
   final textThemeExtension = getTextLightTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -1292,6 +1294,7 @@ ThemeData createDarkNonDefaultTheme(
   int? backgroundColor, {
   ColorScheme? overrideColorScheme,
   ColorSchemeExtension? overrideColorSchemeExtension,
+  TextTheme Function(TextTheme base)? overrideTypeSizes,
 }) {
   final bool useDarkTheme = getCurrentTheme();
   final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
@@ -1299,7 +1302,8 @@ ThemeData createDarkNonDefaultTheme(
   final colorScheme = overrideColorScheme ?? createDarkColorScheme();
   final colorSchemeExtension = overrideColorSchemeExtension ?? createColorSchemeExtension();
 
-  final materialTextTheme = createMaterialTextTheme(colorScheme);
+  final base = createMaterialTextTheme(colorScheme);
+  final materialTextTheme = overrideTypeSizes?.call(base) ?? base;
   final textThemeExtension = getTextDarkTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,

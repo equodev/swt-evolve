@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/item.dart';
 import '../gen/event.dart';
@@ -13,7 +14,10 @@ import '../styles.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
+import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/focus_report.dart';
+import 'utils/tab_only_focus_node.dart';
 
 VEvent? toolItemGeometryEvent(BuildContext context) {
   final itemBox = context.findRenderObject();
@@ -31,6 +35,29 @@ VEvent? toolItemGeometryEvent(BuildContext context) {
     ..width = (bottomRight.dx - topLeft.dx).round()
     ..height = (bottomRight.dy - topLeft.dy).round();
 }
+
+/// A tool item's focus stop. [arrow] marks a DROP_DOWN item's arrow, which belongs to the same
+/// item as the stop before it.
+class ToolItemFocusNode extends TabOnlyFocusNode {
+  ToolItemFocusNode({super.debugLabel, this.arrow = false});
+
+  final bool arrow;
+}
+
+/// Down on a focused DROP_DOWN item opens its menu, as on a native ToolBar.
+Widget openMenuOnDown({required bool enabled, required VoidCallback openMenu, required Widget child}) =>
+    Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (!enabled || event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.arrowDown) {
+          return KeyEventResult.ignored;
+        }
+        openMenu();
+        return KeyEventResult.handled;
+      },
+      child: child,
+    );
 
 /// Carries toolbar layout config down to ToolItem children.
 /// [textOnRight]: true when the ToolBar has SWT.RIGHT style (icon left, text right).
@@ -54,6 +81,70 @@ class ToolBarConfig extends InheritedWidget {
 
 class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     extends CompositeImpl<T, V> {
+  /// A click never focuses a ToolBar natively, empty or not.
+  @override
+  void takeFocusOnPress() {}
+
+  final FocusReport _focusReport = FocusReport();
+  final FocusNode _barNode = FocusNode(debugLabel: 'ToolBar', canRequestFocus: false, skipTraversal: true);
+
+  bool _ownsItem(FocusNode? node) =>
+      node is ToolItemFocusNode && node.context?.findAncestorStateOfType<ToolBarImpl>() == this;
+
+  /// The ToolBar holds the focus while one of its own items does; a control hosted in a separator
+  /// item reports its own focus.
+  void _onFocusChange() {
+    _focusReport.update(_ownsItem(FocusManager.instance.primaryFocus),
+        focusIn: () => widget.sendFocusFocusIn(state, null),
+        focusOut: () => widget.sendFocusFocusOut(state, null));
+  }
+
+  /// With an item focused, Left/Right move to the previous/next enabled item, wrapping around as on
+  /// Windows. The arrow keys never walk the focus out of the bar.
+  KeyEventResult _onItemKey(FocusNode node, KeyEvent event) {
+    final primary = FocusManager.instance.primaryFocus;
+    if (!_ownsItem(primary)) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final int step;
+    if (key == LogicalKeyboardKey.arrowRight) {
+      step = 1;
+    } else if (key == LogicalKeyboardKey.arrowLeft) {
+      step = -1;
+    } else if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.arrowDown) {
+      return KeyEventResult.handled;
+    } else {
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyUpEvent) return KeyEventResult.handled;
+    final direction = StyleBits(state.style).has(SWT.RIGHT_TO_LEFT) ? -step : step;
+    TabOnlyFocusNode.keyMove(() {
+      final stops = _barNode.descendants.where(_ownsItem).cast<ToolItemFocusNode>().toList();
+      var index = stops.indexOf(primary as ToolItemFocusNode);
+      if (primary.arrow && index > 0) index--;
+      for (var i = 1; i < stops.length; i++) {
+        final next = stops[(index + direction * i) % stops.length];
+        if (!next.arrow && next.canRequestFocus) {
+          next.requestFocus();
+          break;
+        }
+      }
+    });
+    return KeyEventResult.handled;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_onFocusChange);
+    _barNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
@@ -65,7 +156,10 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final hasShadowOut = style.has(SWT.SHADOW_OUT);
     final isRightToLeft = style.has(SWT.RIGHT_TO_LEFT);
     final textOnRight = style.has(SWT.RIGHT);
-    final toolItems = getToolItems(context);
+    final entries = _toolItemEntries(context);
+    final toolItems = entries.map((e) => e.widget).nonNulls.toList();
+    final wrappedRows =
+        shouldWrap && !isVertical ? _wrappedRows(entries) : null;
 
     final isInToolbarArea = ToolbarAreaMarker.of(context);
     // A nested bar (e.g. the CTabFolder topRight slot) sits inside a composite that already
@@ -120,6 +214,36 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
               },
             );
           }
+        } else if (wrappedRows != null && wrappedRows.length > 1) {
+          // Each row fills its own share of the bar, so items sit where Java's toDisplay puts them.
+          final rowCount = wrappedRows.length;
+          final rowHeight = (state.bounds!.height - 2 * (rowCount - 1)) / rowCount;
+          bar = Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 2,
+            children: [
+              for (final row in wrappedRows)
+                SizedBox(
+                  width: state.bounds!.width.toDouble(),
+                  height: rowHeight > 0 ? rowHeight : 0,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: isRightToLeft
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      textDirection: isRightToLeft
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: row,
+                    ),
+                  ),
+                ),
+            ],
+          );
         } else {
           final itemRow = isVertical
               ? Column(
@@ -212,7 +336,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
                   child: ParentForegroundScope(
                     foreground: state.foreground,
                     font: state.font,
-                    child: bar,
+                    child: Focus(focusNode: _barNode, onKeyEvent: _onItemKey, child: bar),
                   ),
                 ),
               ),
@@ -223,7 +347,11 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     );
   }
 
-  List<Widget> getToolItems(BuildContext context) {
+  List<Widget> getToolItems(BuildContext context) =>
+      _toolItemEntries(context).map((e) => e.widget).nonNulls.toList();
+
+  /// Every item with its widget, null for one that draws nothing but still takes room in Java's layout.
+  List<({VToolItem item, Widget? widget})> _toolItemEntries(BuildContext context) {
     if (state.items == null) {
       return [];
     }
@@ -256,25 +384,50 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     );
 
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
-    final result = <Widget>[];
+    final result = <({VToolItem item, Widget? widget})>[];
     var contentIndex = 0;
     for (final item in allItems) {
+      Widget? widget;
       if ((item.style & SWT.SEPARATOR) != 0) {
         // A SEPARATOR ToolItem carrying setControl() hosts a real control — combos,
         // text fields, nested toolbars. Collapsing it to a divider drops that whole
         // subtree, so let the item build itself instead.
         if (item.control != null) {
-          result.add(ToolItemSwt(value: item));
+          widget = ToolItemSwt(value: item);
         } else {
-          result.add(_buildToolBarSeparator(isVertical, toolbarTheme));
+          widget = _buildToolBarSeparator(isVertical, toolbarTheme);
         }
       } else if (item.image != null || item.text != null) {
         if (contentIndex < contentWidgets.length) {
-          result.add(contentWidgets[contentIndex++]);
+          widget = contentWidgets[contentIndex++];
         }
       }
+      result.add((item: item, widget: widget));
     }
     return result;
+  }
+
+  /// The rows Java's layout wraps a horizontal SWT.WRAP bar into, by each item's serialized width.
+  List<List<Widget>>? _wrappedRows(
+      List<({VToolItem item, Widget? widget})> entries) {
+    final bounds = state.bounds;
+    if (!hasBounds(bounds)) return null;
+    final rows = <List<Widget>>[[]];
+    var x = 0;
+    for (var i = 0; i < entries.length; i++) {
+      final item = entries[i].item;
+      var width = item.width ?? 0;
+      // Java's thickness for a separator the application gave no width.
+      if ((item.style & SWT.SEPARATOR) != 0 && width <= 0) width = 8;
+      if (i != 0 && x + width > bounds!.width) {
+        rows.add([]);
+        x = 0;
+      }
+      x += width;
+      final widget = entries[i].widget;
+      if (widget != null) rows.last.add(widget);
+    }
+    return rows;
   }
 
   Widget _buildToolBarSeparator(bool isVertical, ToolBarThemeExtension theme) {
@@ -413,6 +566,16 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
       );
     }
 
+    // Shrunk into its own measured width: the bar's FittedBox factor is shared with hosted controls,
+    // which already paint at their Java size, so alone it draws icons larger in a bar hosting one.
+    final measuredWidth = toolItem.width;
+    if (measuredWidth != null && measuredWidth > 0) {
+      result = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: measuredWidth.toDouble()),
+        child: FittedBox(fit: BoxFit.scaleDown, child: result),
+      );
+    }
+
     return result;
   }
 }
@@ -472,24 +635,19 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
       baseTextStyle: widgetTheme.fontStyle,
     );
 
-    final keywordTextPainter = TextPainter(
-      text: TextSpan(text: widgetTheme.segmentKeywordText, style: textStyle),
-      textDirection: TextDirection.ltr,
-    );
-    keywordTextPainter.layout();
-
-    final debugTextPainter = TextPainter(
-      text: TextSpan(text: widgetTheme.segmentDebugText, style: textStyle),
-      textDirection: TextDirection.ltr,
-    );
-    debugTextPainter.layout();
+    final keywordTextSize = FontUtils.measureTextWidget(
+        widgetTheme.segmentKeywordText, textStyle,
+        maxLines: null);
+    final debugTextSize = FontUtils.measureTextWidget(
+        widgetTheme.segmentDebugText, textStyle,
+        maxLines: null);
 
     final keywordWidth =
-        keywordTextPainter.width + widgetTheme.segmentPadding.horizontal;
+        keywordTextSize.width + widgetTheme.segmentPadding.horizontal;
     final debugWidth =
-        debugTextPainter.width + widgetTheme.segmentPadding.horizontal;
+        debugTextSize.width + widgetTheme.segmentPadding.horizontal;
     final backgroundHeight =
-        keywordTextPainter.height + widgetTheme.segmentPadding.vertical;
+        keywordTextSize.height + widgetTheme.segmentPadding.vertical;
 
     final selectedWidth = keywordSelected ? keywordWidth : debugWidth;
     final leftPosition = keywordSelected ? 0.0 : keywordWidth;
@@ -609,6 +767,19 @@ class _SpecialDropdownWidget extends StatefulWidget {
 }
 
 class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
+  final _buttonFocus = ToolItemFocusNode(debugLabel: 'ToolItem');
+  final _arrowFocus = ToolItemFocusNode(debugLabel: 'ToolItem arrow', arrow: true);
+
+  @override
+  void dispose() {
+    _buttonFocus.dispose();
+    _arrowFocus.dispose();
+    super.dispose();
+  }
+
+  void _openMenu() =>
+      ToolItemSwt(value: widget.toolItem).sendSelectionOpenMenu(widget.toolItem, toolItemGeometryEvent(context));
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
@@ -625,6 +796,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     Widget mainContentButton = Material(
       color: Colors.transparent,
       child: InkWell(
+        focusNode: _buttonFocus,
         onTap: enabled
             ? () {
                 final itemWidget = ToolItemSwt(value: widget.toolItem);
@@ -668,13 +840,8 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     Widget dropdownArrow = Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: enabled
-            ? () {
-                final itemWidget = ToolItemSwt(value: widget.toolItem);
-                itemWidget.sendSelectionOpenMenu(
-                    widget.toolItem, toolItemGeometryEvent(context));
-              }
-            : null,
+        focusNode: _arrowFocus,
+        onTap: enabled ? _openMenu : null,
         splashColor: widgetTheme.specialDropdownTextColor.withOpacity(
           widgetTheme.splashOpacity,
         ),
@@ -708,12 +875,16 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
       ),
     );
 
-    return IntrinsicWidth(
-      child: IntrinsicHeight(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [mainContentButton, separator, dropdownArrow],
+    return openMenuOnDown(
+      enabled: enabled,
+      openMenu: _openMenu,
+      child: IntrinsicWidth(
+        child: IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [mainContentButton, separator, dropdownArrow],
+          ),
         ),
       ),
     );

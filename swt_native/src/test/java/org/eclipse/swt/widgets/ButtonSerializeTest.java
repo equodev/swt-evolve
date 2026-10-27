@@ -11,7 +11,7 @@ class ButtonSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Button() {
-        Button w = new Button(swtShell(), SWT.NONE);
+        Button w = new Button(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ButtonSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Button() {
-        Button w = new Button(swtShell(), SWT.NONE);
+        Button w = new Button(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -28,6 +28,7 @@ class ButtonSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Button")
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
@@ -42,12 +43,11 @@ class ButtonSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_Button() {
-        Button w = new Button(swtShell(), SWT.NONE);
+        Button w = new Button(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

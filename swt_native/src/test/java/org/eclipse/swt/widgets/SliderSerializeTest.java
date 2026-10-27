@@ -11,7 +11,7 @@ class SliderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Slider() {
-        Slider w = new Slider(swtShell(), SWT.NONE);
+        Slider w = new Slider(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,13 +20,14 @@ class SliderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Slider() {
-        Slider w = new Slider(swtShell(), SWT.NONE);
+        Slider w = new Slider(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Slider")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("increment").equalsTo(w.getIncrement(), orAbsentIf0));
         assertJ.satisfies(node("maximum").equalsTo(w.getMaximum(), orAbsentIf0));
@@ -43,12 +44,11 @@ class SliderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_Slider() {
-        Slider w = new Slider(swtShell(), SWT.NONE);
+        Slider w = new Slider(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

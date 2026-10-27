@@ -7,6 +7,7 @@
 // editor twice, which opens two dialogs for one double-click.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -17,6 +18,7 @@ import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/utils/double_tap_detector.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 class _RecordingTableSwt extends TableSwt<VTable> {
@@ -64,6 +66,7 @@ List<int?> _countsOf(List<String> calls, String event) => calls
 void main() {
   setUp(resetConfigFlags);
   tearDown(resetConfigFlags);
+  tearDown(() => DoubleTapDetector.clock = DateTime.now);
 
   testWidgets('the second click of a row double-click reports count=2',
       (tester) async {
@@ -85,8 +88,15 @@ void main() {
     ));
     await tester.pump();
 
+    // Step the detector's clock by a fixed amount per tap. Left on the wall clock, the pairing
+    // measures how long the harness took to run the two taps, so on a loaded machine the gap
+    // exceeds the double-click window and the second click starts a fresh sequence.
+    var fake = DateTime(2020);
+    DoubleTapDetector.clock = () => fake;
+
     await tester.tap(find.text('Row 1'));
     await tester.pump(Duration.zero);
+    fake = fake.add(const Duration(milliseconds: 20));
     await tester.tap(find.text('Row 1'));
     await tester.pump(Duration.zero);
 
@@ -98,5 +108,34 @@ void main() {
     expect(calls.where((c) => c.startsWith('Selection/DefaultSelection:')),
         hasLength(1),
         reason: 'a double-click sends exactly one DefaultSelection');
+    final second = calls.sublist(calls.lastIndexOf('Mouse/MouseDown:2'));
+    expect(second.map((c) => c.split(':').first).where((e) => e != 'Selection/Selection').toList(),
+        equals(['Mouse/MouseDown', 'Mouse/MouseDoubleClick', 'Selection/DefaultSelection',
+            'Mouse/MouseUp']),
+        reason: 'Win32 and GTK deliver the double-click and the DefaultSelection with the second '
+            'press, ahead of its release');
+  });
+
+  testWidgets('a tap through the semantics tree sends one MouseDown', (tester) async {
+    final handle = tester.ensureSemantics();
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 800,
+        height: 400,
+        child: _RecordingTableSwt(value: _table(), calls: calls),
+      ),
+    ));
+    await tester.pump();
+
+    final node = tester.getSemantics(find.text('Row 1'));
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+    await tester.pump(Duration.zero);
+
+    expect(_countsOf(calls, 'Mouse/MouseDown'), equals([1]),
+        reason: 'accessibility and test drivers tap through the semantics tree, with no pointer '
+            'press before the tap; the row still has to be pressed, once');
+    handle.dispose();
   });
 }

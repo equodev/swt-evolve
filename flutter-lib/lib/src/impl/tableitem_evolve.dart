@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
 import '../gen/widget.dart';
 import '../gen/event.dart';
@@ -11,12 +15,20 @@ import '../impl/table_evolve.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
+import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
+import 'utils/font_utils.dart';
+import 'utils/viewport_clip.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
+import 'control_evolve.dart' show ControlImpl;
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
+  // Set when a pointer press has already sent this row's MouseDown, so the tap the same click
+  // completes does not send it again.
+  bool _pressSent = false;
+
   TableItemContext? _context;
 
   void setContext(TableItemContext context) {
@@ -81,21 +93,30 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
     final columns = _context?.parentTableValue.columns ?? [];
+    final rowGround = Color.alphaBlend(
+        _context?.tableImpl?.rowBackgroundColor(rowIndex, state, theme) ?? Colors.transparent,
+        enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
 
     return List.generate(effectiveColumnCount, (columnIndex) {
       final cellText = columnIndex < cellTexts.length
           ? (cellTexts[columnIndex] ?? "")
           : "";
       final cellTextColor = getCellTextColor(
+        context,
         columnIndex,
         theme,
         isSelected,
         enabled,
+        background: rowGround,
       );
+      // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
+      // painted twice.
+      final paintedByOverlay =
+          state.paintedTexts?.contains(columnIndex) ?? false;
       final cellTextStyle = getTextStyle(
         context: context,
-        font: state.font ?? _context?.tableFont,
-        textColor: cellTextColor,
+        font: cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.tableFont,
+        textColor: paintedByOverlay ? Colors.transparent : cellTextColor,
         baseTextStyle: theme.rowTextStyle,
       );
       final columnAlignment = columnIndex < columns.length
@@ -170,14 +191,28 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final cellPadding = _fitCellPadding(
         columnIndex, cellText, textStyle, theme, showCheckbox, cellImage);
 
-    void sendMouseDown(int button, int count) {
+    // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in only
+    // for a press that carries no position.
+    VEvent pointedEvent(Offset? globalPosition) {
+      final e = VEvent();
+      final tableBox = _context!.tableImpl?.context.findRenderObject();
+      if (globalPosition != null && tableBox is RenderBox && tableBox.attached) {
+        final local = tableBox.globalToLocal(globalPosition);
+        e.x = local.dx.round();
+        e.y = local.dy.round();
+      } else {
+        e.x = _computeCellCenterX(columnIndex, theme);
+        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+      }
+      return e;
+    }
+
+    void sendMouseDown(int button, int count, [Offset? globalPosition]) {
       if (enabled && _context != null) {
         if ((button == 1 || button == 3) && _context!.tableImpl != null) {
           _context!.tableImpl!.selectRowLocally(rowIndex);
         }
-        final e = VEvent();
-        e.x = _computeCellCenterX(columnIndex, theme);
-        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        final e = pointedEvent(globalPosition);
         e.button = button;
         e.count = count;
         e.segments = [rowIndex];
@@ -189,12 +224,29 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       }
     }
 
-    void sendMouseDoubleClick(int button) {
+    // A secondary press is sent from the raw down, as the primary one is, so it is reported ahead
+    // of the Table's focus and where the pointer is; MenuDetect follows it.
+    void menuPress(int button, Offset globalPosition) {
+      sendMouseDown(button, 1, globalPosition);
+      if (enabled && _context?.tableImpl != null) {
+        MenuDetectGate.withhold(
+          _context!.parentTableValue.swt,
+          _context!.parentTableValue.id,
+          () => _context!.tableImpl!.openContextMenu(globalPosition),
+        );
+        _context!.parentTable.sendMenuDetectMenuDetect(
+          _context!.parentTableValue,
+          pointedEvent(globalPosition),
+        );
+      }
+    }
+
+    // The second press delivers MouseDoubleClick, then the row's DefaultSelection, both ahead of
+    // the release, as Win32 and GTK do.
+    void sendDoubleClick(int button, [Offset? globalPosition]) {
       if (enabled && _context?.tableImpl != null) {
         _context!.tableImpl!.selectRowLocally(rowIndex);
-        final e = VEvent();
-        e.x = _computeCellCenterX(columnIndex, theme);
-        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        final e = pointedEvent(globalPosition);
         e.count = 2;
         e.button = button;
         _context!.parentTable.sendEvent(
@@ -202,47 +254,51 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           "Mouse/MouseDoubleClick",
           e,
         );
+        _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);
       }
     }
 
     // Tag only the first cell as the row's anchor for E2E tooling (Playwright etc.) —
     // tagging every cell would give the row's id to several DOM nodes at once.
-    final cell = GestureDetector(
-      // The click count is registered here, on the down, because that is the
-      // event SWT numbers -- onTap only decides what the completed gesture was.
-      onTapDown: (_) => sendMouseDown(
-          1,
-          enabled && _context?.tableImpl != null
-              ? _context!.tableImpl!.registerRowTap(rowIndex)
-              : 1),
-      onSecondaryTapDown: (details) {
-        sendMouseDown(3, 1);
-        if (_context?.tableImpl != null) {
-          MenuDetectGate.withhold(
-            _context!.parentTableValue.swt,
-            _context!.parentTableValue.id,
-            () => _context!.tableImpl!.openContextMenu(details.globalPosition),
-          );
-          final e = VEvent();
-          e.x = _computeCellCenterX(columnIndex, theme);
-          e.y = _computeCellCenterY(rowIndex, textStyle, theme);
-          _context!.parentTable.sendMenuDetectMenuDetect(
-            _context!.parentTableValue,
-            e,
-          );
+    final cell = Listener(
+      // The primary press is sent from the raw down, not from a tap gesture: the gesture is only
+      // recognised once the arena settles, after the Table has already reported its focus, and
+      // SWT delivers the press first. The click count is registered here too, because that is
+      // the event SWT numbers -- onTap only decides what the completed gesture was.
+      onPointerDown: (e) {
+        final button = ControlImpl.swtButtonOf(e.buttons);
+        if (ControlImpl.isMenuDetectTrigger(button)) {
+          menuPress(button, e.position);
+          return;
         }
+        if (e.buttons != kPrimaryButton) return;
+        _pressSent = true;
+        final count = enabled && _context?.tableImpl != null
+            ? _context!.tableImpl!.registerRowTap(rowIndex, e.timeStamp)
+            : 1;
+        sendMouseDown(1, count, e.position);
+        if (count == 2) sendDoubleClick(1, e.position);
       },
+      // A press whose tap lost the arena before tap-down (a drag) reaches neither tap callback; once
+      // the arena has settled on the release, the press is over either way.
+      onPointerUp: (_) => scheduleMicrotask(() => _pressSent = false),
+      onPointerCancel: (_) => scheduleMicrotask(() => _pressSent = false),
+      child: GestureDetector(
+      // A tap through the semantics tree arrives here with no press before it; one that follows a
+      // pointer press was already sent above.
+      onTapDown: (_) {
+        if (_pressSent) {
+          _pressSent = false;
+          return;
+        }
+        final count = enabled && _context?.tableImpl != null
+            ? _context!.tableImpl!.registerRowTap(rowIndex)
+            : 1;
+        sendMouseDown(1, count);
+        if (count == 2) sendDoubleClick(1);
+      },
+      onTapCancel: () => _pressSent = false,
       onTertiaryTapDown: (_) => sendMouseDown(2, 1),
-      onTap: () {
-        if (enabled && _context?.tableImpl != null) {
-          if (_context!.tableImpl!.lastRowTapCount == 2) {
-            sendMouseDoubleClick(1);
-            // A double-click is SWT's DefaultSelection, not just the generic mouse event
-            // — handleRowDoubleTap already existed but nothing called it.
-            _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);
-          }
-        }
-      },
       child: SizedBox(
         height: rowHeight,
         child: Container(
@@ -278,6 +334,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           ),
         ),
       ),
+      ),
     );
 
     return columnIndex == 0 ? tagSemantics(cell) : cell;
@@ -291,11 +348,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
   int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {
     final columnWidths = _context?.tableImpl?.cachedColumnWidths;
+    final tableImpl = _context?.tableImpl;
     double x = 0.0;
-    if (columnWidths != null) {
-      for (int i = 0; i < columnIndex; i++) {
-        final w = columnWidths[i];
-        if (w is FixedColumnWidth) x += w.value;
+    if (columnWidths != null && tableImpl != null) {
+      final count = tableImpl.getColumns().length;
+      if (columnIndex < count) {
+        x = columnLefts(tableImpl.fixedColumnWidths(count), tableImpl.displayOrder)[columnIndex];
       }
       final colW = columnWidths[columnIndex];
       if (colW is FixedColumnWidth) x += colW.value / 2;
@@ -319,7 +377,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   ) {
     final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
     final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
-    return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
+    // In the table's own coordinates, as Table.getItem(Point) reads them: the scrolled rows moved up.
+    final scrolled = _context?.tableImpl?.verticalScrollOffset ?? 0.0;
+    return (headerOffset + rowIndex * rowHeight + rowHeight / 2 - scrolled).round();
   }
 
   Widget buildCheckbox(TableThemeExtension theme, bool enabled) {
@@ -386,18 +446,23 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   }
 
   Color getCellTextColor(
+    BuildContext context,
     int columnIndex,
     TableThemeExtension theme,
     bool isSelected,
-    bool enabled,
-  ) {
+    bool enabled, {
+    Color? background,
+  }) {
     final defaultColor = getTableCellDefaultTextColor(theme, isSelected, enabled);
 
     final cellForeground = getCellForeground(columnIndex);
     return getForegroundColor(
+      context: context,
       // Cell, else row, else the Table's own -- the cascade SWT resolves.
       foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
       defaultColor: defaultColor,
+      minContrast: theme.minTextContrast,
+      background: background,
     );
   }
 
@@ -414,19 +479,18 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final textPainter = TextPainter(
       text: TextSpan(text: 'Ag', style: textStyle),
       textDirection: TextDirection.ltr,
+      textScaler: FontUtils.textWidgetScaler,
       maxLines: 1,
     );
     textPainter.layout();
     return textPainter.height + theme.cellPadding.vertical;
   }
 
-  VColor? getCellForeground(int columnIndex) {
-    return null;
-  }
+  VColor? getCellForeground(int columnIndex) =>
+      cellValue(state.foregrounds, columnIndex);
 
-  VColor? getCellBackground(int columnIndex) {
-    return null;
-  }
+  VColor? getCellBackground(int columnIndex) =>
+      cellValue(state.backgrounds, columnIndex);
 }
 
 class _TableCheckboxButtonWrapper extends StatefulWidget {
@@ -527,6 +591,7 @@ class _CellHoverZoom extends StatefulWidget {
 }
 
 class _CellHoverZoomState extends State<_CellHoverZoom> {
+  final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
 
   bool get _showing => _entry != null;
@@ -535,6 +600,16 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
   void dispose() {
     _remove();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_CellHoverZoom oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Keeps the copy on the cell's current content. Deferred because an overlay entry is a sibling
+    // of the table, not a descendant: marking it dirty from inside the table's own build throws.
+    if (_entry != null) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => _entry?.markNeedsBuild());
+    }
   }
 
   void _remove() {
@@ -546,36 +621,46 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
     if (_showing) return;
     final overlay = Overlay.maybeOf(context);
     final box = context.findRenderObject() as RenderBox?;
-    final overlayBox = overlay?.context.findRenderObject() as RenderBox?;
-    if (overlay == null || box == null || overlayBox == null || !box.hasSize) return;
+    if (overlay == null || box == null || !box.hasSize) return;
 
-    final origin = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
-    final size = box.size;
-    final entry = OverlayEntry(
-      builder: (_) => Positioned(
-        left: origin.dx,
-        top: origin.dy,
-        width: size.width,
-        height: size.height,
-        // The real cell underneath still owns every gesture; this is paint only.
-        child: IgnorePointer(
-          // The overlay is outside any Material, where the inherited DefaultTextStyle is the
-          // debug one that underlines text in yellow. A transparent Material restores the
-          // theme's own text style without painting anything.
-          child: Material(
-            type: MaterialType.transparency,
-            child: _GrowIn(
-              scale: widget.theme.cellHoverZoomScale,
-              duration: widget.theme.cellHoverZoomDuration,
-              alignment: widget.alignment,
-              child: widget.child,
-            ),
+    final entry = OverlayEntry(builder: (_) => _buildCopy());
+    overlay.insert(entry);
+    setState(() => _entry = entry);
+  }
+
+  Widget _buildCopy() {
+    final cell = context.findRenderObject() as RenderBox?;
+    if (cell == null || !cell.hasSize) return const SizedBox.shrink();
+
+    Widget copy = _GrowIn(
+      scale: widget.theme.cellHoverZoomScale,
+      duration: widget.theme.cellHoverZoomDuration,
+      alignment: widget.alignment,
+      child: widget.child,
+    );
+    // Keeps a copy anchored to a half-scrolled row from painting over the header.
+    final viewport = visibleViewportRect(context, cell);
+    if (viewport != null) copy = ClipRect(clipper: FixedRectClipper(viewport), child: copy);
+
+    return Positioned(
+      width: cell.size.width,
+      height: cell.size.height,
+      // The follower re-resolves the cell's transform every frame, so the copy rides the table's
+      // scroll instead of staying where the pointer entered, and stops painting once the cell goes.
+      child: CompositedTransformFollower(
+        link: _link,
+        showWhenUnlinked: false,
+        // The real cell underneath still owns every gesture and its semantics; this is paint only.
+        child: ExcludeSemantics(
+          child: IgnorePointer(
+            // The overlay is outside any Material, where the inherited DefaultTextStyle is the
+            // debug one that underlines text in yellow. A transparent Material restores the
+            // theme's own text style without painting anything.
+            child: Material(type: MaterialType.transparency, child: copy),
           ),
         ),
       ),
     );
-    overlay.insert(entry);
-    setState(() => _entry = entry);
   }
 
   void _hide() {
@@ -590,8 +675,15 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
     return MouseRegion(
       onEnter: (_) => _show(),
       onExit: (_) => _hide(),
-      // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
-      child: Opacity(opacity: _showing ? 0.0 : 1.0, child: widget.child),
+      child: CompositedTransformTarget(
+        link: _link,
+        // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
+        child: Opacity(
+          opacity: _showing ? 0.0 : 1.0,
+          alwaysIncludeSemantics: true,
+          child: widget.child,
+        ),
+      ),
     );
   }
 }

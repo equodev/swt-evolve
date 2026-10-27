@@ -377,6 +377,15 @@ public class GallerySnippet {
             moreItem.setText(entry);
             moreItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
         }
+        MenuItem moreCascade = new MenuItem(toolDropDownMenu, SWT.CASCADE);
+        moreCascade.setText("More C");
+        Menu moreSubMenu = new Menu(shell, SWT.DROP_DOWN);
+        moreCascade.setMenu(moreSubMenu);
+        for (String entry : new String[] { "Deep 1", "Deep 2" }) {
+            MenuItem deepItem = new MenuItem(moreSubMenu, SWT.PUSH);
+            deepItem.setText(entry);
+            deepItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
+        }
         toolDropDown.addSelectionListener(widgetSelectedAdapter(e -> {
             if (e.detail == SWT.ARROW) {
                 // A DROP_DOWN ToolItem only reports the arrow click; placing and showing the menu
@@ -480,6 +489,8 @@ public class GallerySnippet {
         DateTime date = new DateTime(progressGroup, SWT.DATE | SWT.BORDER);
         date.setDate(2026, 6, 15); // months are 0-based: July 15, 2026
         date.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Date changed")));
+        DateTime dropDownDate = new DateTime(progressGroup, SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN | SWT.BORDER);
+        dropDownDate.setDate(2026, 6, 15);
 
         // Menu / CLabel / Canvas — the CLabel carries the popup menu (each item posts to the
         // status Label) and the Canvas reports its mouse events the same way. The Canvas gets
@@ -742,6 +753,7 @@ public class GallerySnippet {
             spinner.setSelection(25);
             progressBar.setSelection(30);
             date.setDate(2026, 6, 15);
+            dropDownDate.setDate(2026, 6, 15);
             popup.setVisible(false); // a failed scenario may leave the context menu up
             tip.setVisible(false);
             if (browserReloaded[0]) { // restore silently (the TitleListener ignores the original title)

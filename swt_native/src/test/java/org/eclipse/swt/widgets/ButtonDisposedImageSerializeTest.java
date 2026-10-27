@@ -14,7 +14,7 @@ class ButtonDisposedImageSerializeTest extends SerializeTestBase {
 
     @Test
     void serializing_a_button_with_a_disposed_image_omits_it_instead_of_throwing() {
-        Button w = new Button(swtShell(), SWT.NONE);
+        Button w = new Button(shell(), SWT.NONE);
         Image image = new Image(w.getDisplay(), getClass().getClassLoader().getResourceAsStream("collapseall.png"));
         w.setImage(image);
         image.dispose();

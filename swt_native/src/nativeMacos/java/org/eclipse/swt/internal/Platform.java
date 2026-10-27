@@ -25,7 +25,7 @@ public class Platform {
     }
 
     public static void exitIfNotLoadable() {
-        if (!Library.isLoadable()) {
+        if (!Library.isLoadable(true)) {
             System.err.println("Libraries for platform " + Platform.PLATFORM + " cannot be loaded because of incompatible environment");
             System.exit(1);
         }

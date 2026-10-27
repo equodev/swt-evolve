@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.*;
 
@@ -16,6 +17,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 
@@ -29,7 +32,7 @@ public class Config {
     static Impl statusBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.statusbar", defaultImpl.name()));
     static Impl mainCompositeImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maincomposite", defaultImpl.name()));
 
-    private static final String os = System.getProperty("os.name").toLowerCase();
+    private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
     static final Map<Class<?>, Impl> equoEnabled;
     static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
     static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
@@ -428,11 +431,14 @@ public class Config {
      * is side-aware and corrects its own sizing at layout time.
      */
     static int classifyTrimSide(Composite parent) {
-        if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
+        // Every Composite in the application is classified here, so the cheap discriminator runs
+        // first -- an instanceof, a layout read and a class-name compare -- and the stack walk only
+        // for what survives it.
         Object layout = trimLayout(parent);
         if (layout == null) return -1;
         java.lang.reflect.Field[] f = trimFields(layout);
         if (f == null) return -1;
+        if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
         try {
             int fromModel = modelTrimSide(parent);
             // A side whose field is already assigned cannot be the one under construction.
@@ -467,24 +473,91 @@ public class Config {
     private static int modelTrimSide(Composite parent) {
         Object window = parent.getData(E4_MODEL_ELEMENT_KEY);
         if (window == null) return -1;
+        Accessors windowGetters = windowAccessors(window);
+        if (windowGetters == null) return -1;
         try {
-            Object bars = window.getClass().getMethod("getTrimBars").invoke(window);
+            Object bars = windowGetters.get(WINDOW_TRIM_BARS, window);
             if (!(bars instanceof java.util.List)) return -1;
-            java.util.List<?> list = (java.util.List<?>) bars;
             Object building = null;
-            for (Object bar : list) {
-                Class<?> barClass = bar.getClass();
-                if (barClass.getMethod("getRenderer").invoke(bar) == null) continue;
-                if (barClass.getMethod("getWidget").invoke(bar) != null) continue;
+            Accessors buildingGetters = null;
+            for (Object bar : (java.util.List<?>) bars) {
+                Accessors barGetters = barAccessors(bar);
+                if (barGetters == null) return -1;
+                if (barGetters.get(BAR_RENDERER, bar) == null) continue;
+                if (barGetters.get(BAR_WIDGET, bar) != null) continue;
                 if (building != null) return -1;
                 building = bar;
+                buildingGetters = barGetters;
             }
             if (building == null) return -1;
-            Object side = building.getClass().getMethod("getSide").invoke(building);
+            Object side = buildingGetters.get(BAR_SIDE, building);
             return side instanceof Enum ? trimSideNamed(((Enum<?>) side).name()) : -1;
         } catch (ReflectiveOperationException | RuntimeException ignored) {
         }
         return -1;
+    }
+
+    /**
+     * The no-arg e4 model getters {@link #modelTrimSide} reads, resolved once per owning class.
+     *
+     * <p>{@code getMethod} scans a class's public methods and hands back a fresh copy on every call,
+     * which is the part of the reflection worth keeping out of the per-bar loop; the {@code invoke}
+     * folds into roughly a virtual call once JIT'd. Resolved lazily instead of at class-init like
+     * {@link Jdk9}'s lookups, because these classes are not on this fragment's classpath and the
+     * only handle on them is an instance handed over at runtime.
+     *
+     * <p>{@link #owner} is what makes a cached holder safe to reuse: a host whose model is
+     * implemented by another class re-resolves, instead of invoking a foreign {@code Method} and
+     * losing the model read to the failure that follows.
+     */
+    private static final class Accessors {
+
+        final Class<?> owner;
+        private final java.lang.reflect.Method[] getters;
+
+        private Accessors(Class<?> owner, java.lang.reflect.Method[] getters) {
+            this.owner = owner;
+            this.getters = getters;
+        }
+
+        static Accessors of(Class<?> owner, String[] names) {
+            java.lang.reflect.Method[] getters = new java.lang.reflect.Method[names.length];
+            try {
+                for (int i = 0; i < names.length; i++) getters[i] = owner.getMethod(names[i]);
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                return null;
+            }
+            return new Accessors(owner, getters);
+        }
+
+        Object get(int getter, Object target) throws ReflectiveOperationException {
+            return getters[getter].invoke(target);
+        }
+    }
+
+    private static final String[] WINDOW_GETTERS = {"getTrimBars"};
+    private static final int WINDOW_TRIM_BARS = 0;
+
+    private static final String[] BAR_GETTERS = {"getRenderer", "getWidget", "getSide"};
+    private static final int BAR_RENDERER = 0, BAR_WIDGET = 1, BAR_SIDE = 2;
+
+    private static volatile Accessors WINDOW_ACCESSORS;
+    private static volatile Accessors BAR_ACCESSORS;
+
+    private static Accessors windowAccessors(Object window) {
+        Accessors cached = WINDOW_ACCESSORS;
+        if (cached != null && cached.owner == window.getClass()) return cached;
+        Accessors resolved = Accessors.of(window.getClass(), WINDOW_GETTERS);
+        if (resolved != null) WINDOW_ACCESSORS = resolved;
+        return resolved;
+    }
+
+    private static Accessors barAccessors(Object bar) {
+        Accessors cached = BAR_ACCESSORS;
+        if (cached != null && cached.owner == bar.getClass()) return cached;
+        Accessors resolved = Accessors.of(bar.getClass(), BAR_GETTERS);
+        if (resolved != null) BAR_ACCESSORS = resolved;
+        return resolved;
     }
 
     private static int trimSideNamed(String name) {
@@ -522,7 +595,7 @@ public class Config {
      * (the {@code panelChildGap}, border and shadow that {@code MainComposite} gives its
      * children) -- the web-mode "part separators vanish after a perspective switch" defect
      * The SashLayout is only assigned after the composite is constructed, so
-     * this is consulted at serialize time ({@link Serializer#swtWidgetName}), not in
+     * this is consulted whenever the widget is named ({@link #presentedName}), not in
      * {@link #getCompositeImpl}.
      */
     static boolean isMainSashComposite(Composite c) {
@@ -532,17 +605,56 @@ public class Config {
         // (which would wrap the whole area as one panel and leave the real parts blended, the
         // symptom after a perspective switch). A perspective nests these at varying depths, so
         // key off "SashLayout that directly arranges part-stacks" rather than a fixed path.
-        return c != null && !c.isDisposed() && hasSashLayout(c) && hasChildOfType(c, CTabFolder.class);
+        if (c == null || c.isDisposed()) return false;
+        if (c.getImpl() instanceof DartComposite) return isMainSashComposite((DartComposite) c.getImpl());
+        return isSashLayout(c.getLayout()) && hasChildOfType(c.getChildren(), CTabFolder.class);
     }
 
-    private static boolean hasSashLayout(Composite c) {
-        Layout layout = c.getLayout();
+    /**
+     * The same rule read off the impl's own fields rather than the checked getters, so it also
+     * answers off the UI thread: {@link #presentedName} runs wherever a message is addressed.
+     */
+    private static boolean isMainSashComposite(DartComposite impl) {
+        return isSashLayout(impl._layout()) && hasChildOfType(impl._getChildren(), CTabFolder.class);
+    }
+
+    /**
+     * The name a Dart widget is described and addressed under. A plain Composite that is the main
+     * sash area is described as a MainComposite, and has to be addressed the same way: the client
+     * subscribes to a widget under the name its description carries, so a message sent under the
+     * class name instead reaches nothing.
+     */
+    public static String presentedName(DartWidget impl, String name) {
+        String filed = presented.get(impl);
+        if (filed != null) return filed;
+        return "Composite".equals(name) && impl instanceof DartComposite && !impl.isDisposed()
+                && isMainSashComposite((DartComposite) impl)
+                ? "MainComposite"
+                : name;
+    }
+
+    /**
+     * Records the name a widget has been described under, which is the one it is addressed by from
+     * then on.
+     *
+     * <p>{@link #isMainSashComposite} is structural, so it answers differently once the first
+     * part-stack arrives, and a perspective builds its sash containers empty and fills them. The
+     * client subscribes to the name its description carried, so renaming one mid-life leaves it
+     * listening on a channel nothing is addressed to.
+     */
+    static void describedAs(DartWidget impl, String name) {
+        presented.put(impl, name);
+    }
+
+    private static final Map<DartWidget, String> presented =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    private static boolean isSashLayout(Layout layout) {
         return layout != null
                 && layout.toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.SashLayout");
     }
 
-    private static boolean hasChildOfType(Composite c, Class<?> type) {
-        Control[] children = c.getChildren();
+    private static boolean hasChildOfType(Control[] children, Class<?> type) {
         if (children == null) return false;
         for (Control child : children) if (type.isInstance(child)) return true;
         return false;
@@ -579,6 +691,8 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
+        IWidget island = swingIslandFor(parent, style, composite);
+        if (island != null) return island;
         // Route by the public class's simple name so Evolve stays EWT-agnostic:
         // an EWT-provided `EwtWidget` (split package) renders as an "EwtWidget" node.
         if ("EwtWidget".equals(composite.getClass().getSimpleName()))
@@ -596,6 +710,33 @@ public class Config {
         return new DartComposite(parent, style, composite);
     }
 
+    /** The island {@code SWT_AWT.new_Frame} mounts a Swing mirror in, routed by its type; null otherwise. */
+    static IWidget swingIslandFor(Composite parent, int style, Composite composite) {
+        return composite instanceof SwingIsland ? new DartSwingIsland(parent, style, composite) : null;
+    }
+
+    /**
+     * Whether swing-evolve's engine owns this JVM's AWT, detected by its classes being loadable:
+     * {@code swt_native} compiles against nothing of it.
+     */
+    public static boolean hasSwingEngine() {
+        return SwingEngine.PRESENT;
+    }
+
+    /** A class of swing-evolve's engine, or null when it is not loadable. */
+    public static Class<?> swingEngineClass(String name) {
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException | LinkageError e) {
+            return null;
+        }
+    }
+
+    private static final class SwingEngine {
+        static final boolean PRESENT = swingEngineClass("dev.equo.swing.engine.Engine") != null
+                && swingEngineClass("dev.equo.swing.bridge.comm.CommService") != null;
+    }
+
     private static final String EDITOR_CLASS = "org.eclipse.ui.texteditor.AbstractTextEditor";
 
     private static boolean isEditor(Class<?> clazz) {
@@ -608,11 +749,13 @@ public class Config {
     }
 
     /**
-     * Hosts a Swing scene on the Flutter surface, or null when this fragment was built without the
-     * Swing bridge (see {@link Jdk9}). SWT_AWT calls this and falls back to native reparenting.
+     * Hosts a Swing scene on the Flutter surface. SWT_AWT calls this for a Dart-backed composite,
+     * which has no native window for its own embedding to reparent a frame into — so when the bridge
+     * cannot run here (see {@link Jdk9}) this fails the way SWT_AWT does on a JRE that cannot embed,
+     * with the reason as the error's cause.
      */
     public static java.awt.Frame newSwingFrame(org.eclipse.swt.widgets.Composite parent) {
-        if (Jdk9.SWING_HOST_NEW_FRAME == null) return null;
+        if (Jdk9.SWING_HOST_NEW_FRAME == null) return swingUnavailable(Jdk9.swingHostFailure(false));
         try {
             return (java.awt.Frame) Jdk9.SWING_HOST_NEW_FRAME.invoke(null, parent);
         } catch (java.lang.reflect.InvocationTargetException e) {
@@ -621,8 +764,15 @@ public class Config {
             if (cause instanceof Error) throw (Error) cause;
             throw new RuntimeException(cause);
         } catch (IllegalAccessException e) {
-            return null;
+            return swingUnavailable(e);
         }
+    }
+
+    /** Throws SWT_AWT's error for a JRE that cannot embed; never returns. */
+    private static java.awt.Frame swingUnavailable(Throwable cause) {
+        SWT.error(SWT.ERROR_NOT_IMPLEMENTED, cause, " [Swing cannot be embedded here: the SWT Evolve "
+                + "Swing bridge is not in this build or cannot run on this Java runtime]");
+        return null;
     }
 
     private static boolean isInStackTrace(String className, String methodName) {
@@ -688,9 +838,32 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
+    /** The double-click time when none is configured: Win32's and Cocoa's default. */
+    public static final int DOUBLE_CLICK_TIME_MS = 500;
+
+    /** The hover and tooltip delay when none is configured: Cocoa SWT's getToolTipTime(). */
+    public static final int HOVER_DELAY_MS = 560;
+
+    /** How long the pointer rests before MouseHover and the tooltip, in milliseconds; Java and the client share it. */
+    public static int hoverDelay() {
+        int ms = getConfigFlags().hover_delay_ms;
+        return ms > 0 ? ms : HOVER_DELAY_MS;
+    }
+
+    /** The double-click time both Java and the client use, in milliseconds. */
+    public static int doubleClickTime() {
+        int ms = getConfigFlags().double_click_timeout_ms;
+        return ms > 0 ? ms : DOUBLE_CLICK_TIME_MS;
+    }
+
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
         return configFlags;
+    }
+
+    /** The locale numbers and dates are written in on desktop, where the JVM serves a single user. */
+    public static java.util.Locale formatLocale() {
+        return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
     }
 
     public static ConfigFlags getConfigFlags() {
@@ -699,6 +872,7 @@ public class Config {
             String eclipseThemeId = EclipseWorkspaceTheme.detectThemeId();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
+            configFlags.ctabfolder_tab_scroll = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_tab_scroll", "true"));
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
             configFlags.disable_evolve_icons = Boolean.getBoolean("swt.evolve.disable_evolve_icons");
@@ -711,7 +885,16 @@ public class Config {
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
+            configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
+            configFlags.canvas_hover_fills_by_class = fillsByClassFromProperties(CANVAS_HOVER_FILLS_BY_CLASS);
+            configFlags.canvas_selection_fills_by_class = fillsByClassFromProperties(CANVAS_SELECTION_FILLS_BY_CLASS);
+            // Drops what an application paints over a control through its GC, keeping only what the
+            // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
+            configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
+            configFlags.use_swt_border = Boolean.getBoolean("swt.use_swt_border");
+            configFlags.use_swt_font_colors = optionalBoolean(System.getProperty(USE_SWT_FONT_COLORS));
+            configFlags.use_swt_font_colors_by_widget = fontColorsByWidgetFromProperties();
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));
             // Toolbar icons and table cells grow under the pointer by default; opt out to render
             // like native SWT:  -Dswt.evolve.disable_hover_zoom=true
@@ -752,19 +935,25 @@ public class Config {
             boolean desktopMode = ConfigFlags.isDesktopMode();
             String csdDefault = chromiumMode ? "toolbar" : desktopMode ? "overlay" : "false";
             configFlags.csd_placement = System.getProperty(
-                    "dev.equo.swt.csd", csdDefault).toLowerCase();
+                    "dev.equo.swt.csd", csdDefault).toLowerCase(java.util.Locale.ROOT);
             // OS picks the native control styling; override to test other platforms:
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
+            configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
+            configFlags.bigger_icon_size = Boolean.getBoolean("swt.evolve.bigger_icon_size");
+            configFlags.transparent_menu_check_box = Boolean.getBoolean("swt.evolve.transparent_menu_check_box");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
             //   -Ddev.equo.swt.csd.maximize=direct|bounds|native|fullscreen
             configFlags.csd_maximize = System.getProperty("dev.equo.swt.csd.maximize", "direct");
-            // Double-click pairing window (ms) for the Flutter-side DoubleTapDetector. Unset/0 keeps
-            // Flutter's kDoubleTapTimeout; a test harness whose synthetic click pairs land further
-            // apart than a real user's widens it without a rebuild.
-            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", 0);
+            // Double-click pairing window (ms): Display.getDoubleClickTime() answers it and the
+            // client's DoubleTapDetectors pair clicks with it, so both sides agree. A test harness
+            // whose synthetic click pairs land further apart than a real user's widens it.
+            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", DOUBLE_CLICK_TIME_MS);
+            // Hover and tooltip delay (ms): MouseHover fires, and the tooltip shows, once the pointer
+            // has rested this long. A test harness that waits for hovers shortens it.
+            configFlags.hover_delay_ms = Integer.getInteger("swt.evolve.hover_delay_ms", HOVER_DELAY_MS);
             // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).
@@ -775,7 +964,124 @@ public class Config {
         // Derived, not configured: it follows the rendering mode, which the desktop bridge sets
         // after the flags above are first read, so it is refreshed on every read.
         configFlags.system_menu_bar = systemMenuBar();
+        // Likewise derived: before a Display exists this falls back to the host's own convention,
+        // and reads the Display's DPI once there is one.
+        configFlags.font_point_scale = FontMetricsUtil.rawDpiScale();
+        // Also derived, and for the same reason: the client reports the monitor's zoom only once it
+        // is up, and swt.autoScale is applied to it after these flags were first read.
+        configFlags.ui_zoom = uiZoom();
+        configFlags.decimal_separator =
+                String.valueOf(java.text.DecimalFormatSymbols.getInstance(formatLocale()).getDecimalSeparator());
+        configFlags.locale = formatLocale().toLanguageTag();
         return configFlags;
+    }
+
+    /**
+     * The monitor's own zoom, as the client reported it.
+     *
+     * <p>100 until it does, rather than "unknown": the scale has to be right for the <em>first</em>
+     * measurement, not just eventually. Upstream {@code DPIUtil} makes the same assumption — its
+     * {@code nativeDeviceZoom} starts at 100 and the whole autoscale calculation runs off that — so
+     * this reads the zoom the same way SWT itself does before a display exists, and the client's
+     * report only corrects it on a monitor that is not at 100 %.
+     *
+     * <p>Waiting for the report is not a safe default. A control that measures text while the scale
+     * still reads 1.0 can cache the result for the rest of the run — {@code FormText} does, in
+     * {@code TextSegment.computeTextFragments}, which measures every word once and never again —
+     * and then lays those stale widths out inside a box that has since been divided by the zoom, so
+     * the text wraps at about two thirds of the width it should.
+     */
+    private static volatile int clientDeviceZoom = 100;
+
+    /**
+     * Listeners for {@link #uiScale()} settling on a new value. The client reports the monitor it is
+     * on well after the widget tree is built, so anything that sized itself by the scale has to be
+     * told when the real one arrives rather than reading it once at construction.
+     */
+    private static final java.util.List<Runnable> uiScaleListeners =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static volatile double notifiedUiScale = 1.0;
+
+    public static void addUiScaleListener(Runnable listener) {
+        if (listener != null) uiScaleListeners.add(listener);
+    }
+
+    /** Call once the client's zoom AND the UI zoom derived from it are both in place. */
+    public static void setClientDeviceZoom(int zoom) {
+        if (zoom > 0) clientDeviceZoom = zoom;
+        double scale = uiScale();
+        if (scale == notifiedUiScale) return;
+        notifiedUiScale = scale;
+        for (Runnable listener : uiScaleListeners) {
+            try {
+                listener.run();
+            } catch (Throwable ignored) {
+                // One listener failing must not stop the others from being told.
+            }
+        }
+    }
+
+    /**
+     * The factor the render side draws the tree at: the {@linkplain #uiZoom() UI zoom} over the
+     * monitor zoom the client draws at. 1.0 while the two agree or either is still unknown.
+     *
+     * <p>Kept in step with the render side's own {@code swtUiScale()} by construction: both are
+     * that same ratio. Read the monitor's zoom from what the client reported rather than from
+     * {@code DPIUtil.getNativeDeviceZoom()}, which the older supported SWT versions do not have.
+     */
+    public static double uiScale() {
+        return uiScaleFor(uiZoom(), clientDeviceZoom);
+    }
+
+    /**
+     * The zoom the UI is drawn at, in percent: the one {@code swt.autoScale} derived from the
+     * client's zoom.
+     *
+     * <p>Except in a browser tab whose application sets no {@code swt.autoScale}, where it is the
+     * client's zoom itself. A browser's device pixel ratio includes the user's page zoom, and SWT's
+     * default policy rounds it to a multiple of 100, which would undo any zoom between 75 % and 150 %.
+     */
+    public static int uiZoom() {
+        boolean browserTab = !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode();
+        if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom;
+        return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+    }
+
+    static double uiScaleFor(int uiZoom, int monitorZoom) {
+        if (uiZoom <= 0 || monitorZoom <= 0) return 1.0;
+        return uiZoom / (double) monitorZoom;
+    }
+
+    /**
+     * An SWT coordinate in the render side's logical pixels, the units a native window is placed and
+     * sized in. Java-side conversions go through this pair, so the scale is read in one place.
+     */
+    public static int swtToLogical(int swt) {
+        return (int) Math.round(swt * uiScale());
+    }
+
+    /** A coordinate in the render side's logical pixels, in SWT units: the inverse of {@link #swtToLogical}. */
+    public static int logicalToSwt(int logical) {
+        return (int) Math.round(logical / uiScale());
+    }
+
+    /**
+     * Device pixels per SWT coordinate — how many pixels an off-screen buffer needs per unit the
+     * application draws in.
+     *
+     * <p>Not {@link #uiScale()}: that is only the part of the magnification the render side applies
+     * on top of the monitor. A coordinate travels through both — the tree is scaled by the UI zoom
+     * over the monitor zoom, and the result is then rasterized at the monitor zoom — so the two
+     * cancel down to the UI zoom alone. The distinction is invisible on a monitor at 100 %, where
+     * the two are equal, and is the difference between a crisp and a soft double buffer on any
+     * other one.
+     */
+    public static double rasterScale() {
+        return rasterScaleFor(uiZoom());
+    }
+
+    static double rasterScaleFor(int uiZoom) {
+        return uiZoom > 0 ? uiZoom / 100.0 : 1.0;
     }
 
     /**
@@ -794,7 +1100,7 @@ public class Config {
 
     /** Maps a raw {@code os.name} to the CSD styling key the Flutter side understands. */
     private static String normalizeOs(String osName) {
-        String n = osName == null ? "" : osName.toLowerCase();
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
         if (n.startsWith("mac") || n.contains("darwin")) return "mac";
         if (n.startsWith("win")) return "windows";
         return "linux";
@@ -821,6 +1127,104 @@ public class Config {
         flags.decorations_align = DecorationsAlign.VLEFT;
     }
 
+    static final String USE_SWT_FONT_COLORS = "swt.use_swt_font_colors";
+    static final String USE_SWT_FONT_COLORS_BY_WIDGET = "swt.evolve.use_swt_font_colors_";
+
+    static final String DISABLE_SWT_CANVAS_COLORS_BY_CLASS = "swt.evolve.disable_swt_canvas_colors_";
+
+    /**
+     * {@code -Dswt.evolve.disable_swt_canvas_colors_<fully.qualified.Class>=true|false}, keyed by the
+     * class name as written: unlike the per-widget flags, the key is the application's own class.
+     */
+    static Map<String, Boolean> canvasColorsByClassFromProperties() {
+        return byPrefix(DISABLE_SWT_CANVAS_COLORS_BY_CLASS, Function.identity(), Config::optionalBoolean);
+    }
+
+    /**
+     * {@code disable_swt_canvas_colors} for what a GC draws on: as set for the control's class or a
+     * superclass of it or, failing that, for the nearest control containing it that is listed; null
+     * when none is, which leaves the global flag to decide. Containers are matched so that a bare
+     * Composite inside a listed control follows it. A GC on an Image has no control and gets null.
+     */
+    public static Boolean canvasColorsOverride(Drawable drawable) {
+        return nearestListed(getConfigFlags().disable_swt_canvas_colors_by_class, drawable);
+    }
+
+    static final String CANVAS_HOVER_FILLS_BY_CLASS = "swt.evolve.canvas_hover_fills_";
+    static final String CANVAS_SELECTION_FILLS_BY_CLASS = "swt.evolve.canvas_selection_fills_";
+
+    /**
+     * {@code -D<prefix><fully.qualified.Class>=RRGGBB,...}, keyed by the application's class name as
+     * written: the colors that class fills a hover or a selection with, so a themed GC paints them
+     * with the theme's color for that role.
+     */
+    static Map<String, RGB[]> fillsByClassFromProperties(String prefix) {
+        return byPrefix(prefix, Function.identity(), Config::fillColors);
+    }
+
+    /** The hover fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static RGB[] canvasHoverFills(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_hover_fills_by_class, drawable);
+    }
+
+    /** The selection fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static RGB[] canvasSelectionFills(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_selection_fills_by_class, drawable);
+    }
+
+    /** The six-digit colors (an optional {@code #} before each) of a comma-separated list; null when none is. */
+    static RGB[] fillColors(String value) {
+        if (value == null) return null;
+        ArrayList<RGB> colors = new ArrayList<>();
+        for (String entry : value.split(",")) {
+            String hex = entry.trim();
+            if (hex.startsWith("#")) hex = hex.substring(1);
+            if (!hex.matches("[0-9a-fA-F]{6}")) continue;
+            int rgb = Integer.parseInt(hex, 16);
+            colors.add(new RGB(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF));
+        }
+        return colors.isEmpty() ? null : colors.toArray(new RGB[0]);
+    }
+
+    private static <T> T nearestListed(Map<String, T> byClass, Drawable drawable) {
+        if (byClass == null || byClass.isEmpty() || !(drawable instanceof Control)) return null;
+        for (Control c = (Control) drawable; c != null && !c.isDisposed(); c = c.getParent()) {
+            for (Class<?> type = c.getClass(); type != null; type = type.getSuperclass()) {
+                T value = byClass.get(type.getName());
+                if (value != null) return value;
+            }
+        }
+        return null;
+    }
+
+    /** Null when unset or blank, so the flag can tell "not configured" from "false". */
+    static Boolean optionalBoolean(String value) {
+        return value == null || value.trim().isEmpty() ? null : Boolean.parseBoolean(value.trim());
+    }
+
+    /**
+     * {@code -Dswt.evolve.use_swt_font_colors_<widget>=true|false}, keyed by the lower-case widget
+     * name, like {@code swt.evolve.theme_color_<widget>}.
+     */
+    static Map<String, Boolean> fontColorsByWidgetFromProperties() {
+        return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, k -> k.toLowerCase(java.util.Locale.ROOT), Config::optionalBoolean);
+    }
+
+    /**
+     * The system properties named {@code prefix<key>}, keyed by {@code keyOf} of the trimmed suffix;
+     * a blank key or a value {@code parse} maps to null is left out. Null when nothing is left.
+     */
+    private static <T> Map<String, T> byPrefix(String prefix, Function<String, String> keyOf, Function<String, T> parse) {
+        TreeMap<String, T> byKey = new TreeMap<>();
+        for (String property : System.getProperties().stringPropertyNames()) {
+            if (!property.startsWith(prefix)) continue;
+            String key = keyOf.apply(property.substring(prefix.length()).trim());
+            T value = parse.apply(System.getProperty(property));
+            if (!key.isEmpty() && value != null) byKey.put(key, value);
+        }
+        return byKey.isEmpty() ? null : byKey;
+    }
+
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {
         final String prefix = "swt.evolve.theme_color_";
 
@@ -839,7 +1243,7 @@ public class Config {
             if (value == null || value.trim().isEmpty()) {
                 continue;
             }
-            String widgetKey = key.substring(prefix.length()).trim().toLowerCase();
+            String widgetKey = key.substring(prefix.length()).trim().toLowerCase(java.util.Locale.ROOT);
             if (widgetKey.isEmpty()) {
                 continue;
             }
@@ -889,6 +1293,57 @@ public class Config {
 
     public static boolean isDebug() {
         return debug;
+    }
+
+    private static volatile java.lang.reflect.Method systemDarkThemeMethod;
+    private static volatile boolean systemDarkThemeLookedUp;
+
+    /**
+     * Whether the system theme is dark. {@code Display.isSystemDarkTheme()} is SWT API from 3.112;
+     * an older release has no notion of a system theme, so the theme the application forced is the
+     * only answer there is. Looked up reflectively because this class compiles against every
+     * release, and resolving it eagerly would load {@code Display} during this class' own init.
+     */
+    public static boolean systemDarkTheme() {
+        if (!systemDarkThemeLookedUp) {
+            try {
+                systemDarkThemeMethod = Display.class.getMethod("isSystemDarkTheme");
+            } catch (NoSuchMethodException e) {
+                systemDarkThemeMethod = null;
+            }
+            systemDarkThemeLookedUp = true;
+        }
+        java.lang.reflect.Method m = systemDarkThemeMethod;
+        if (m != null) {
+            try {
+                return (Boolean) m.invoke(null);
+            } catch (ReflectiveOperationException e) {
+                // fall through to the forced theme
+            }
+        }
+        return "dark".equals(getConfigFlags().force_theme);
+    }
+
+    /**
+     * Whether the widget/list system colors use the dark scheme. A dark theme makes them dark, the
+     * way a dark desktop does natively: an application that colors its own widgets from this palette
+     * — Eclipse Forms takes its container background from {@code COLOR_LIST_BACKGROUND} — has to be
+     * handed the scheme the theme actually paints in, or it colors them for the other one.
+     * <p>
+     * The desktop's own appearance is not consulted: it already decides {@code force_theme} when
+     * nothing else does, so reading it again here would keep the colors light exactly when a theme
+     * was forced against it.
+     * <p>
+     * An application that mixes them with fixed colors such as {@code COLOR_WHITE}, and so needs one
+     * light scheme under a dark theme, keeps them light with {@code -Dswt.evolve.system_colors=light}.
+     */
+    public static boolean systemColorsAreDark() {
+        ConfigFlags flags = getConfigFlags();
+        if (!"dark".equals(flags.force_theme) || flags.use_swt_colors)
+            return false;
+        if (flags.disable_swt_canvas_colors)
+            return true;
+        return !"light".equalsIgnoreCase(System.getProperty("swt.evolve.system_colors"));
     }
 
 }

@@ -20,13 +20,16 @@ public class TableSizes {
 
     private static final double ROW_PADDING_VERTICAL = 8.0;
     private static final double HEADER_PADDING_VERTICAL = 8.0;
-    private static final double BORDER_WIDTH = 2.5;
+    private static final double BORDER_WIDTH = 2.0;
     private static final int WIDTH_NO_COLUMNS = 70;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
     private static final int CELL_PADDING_LEFT = 8;
     private static final int CELL_PADDING_HORIZONTAL = 16;
     private static final int CELL_MARGIN = 2;
     private static final int CHECKBOX_WIDTH = 20;
+
+    private TableSizes() {
+    }
 
     public static Point computeSize(DartTable table, int wHint, int hHint, boolean changed) {
         int columnCount = table.getColumnCount();
@@ -66,25 +69,56 @@ public class TableSizes {
         int widest = 0;
         for (TableItem item : table.getItems()) {
             if (item == null) continue;
-            TextStyle ts;
-            if (!Config.getConfigFlags().use_swt_fonts || ((DartTableItem) item.getImpl()).getExplicitFont() == null) {
-                ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
-            } else {
-                ts = TextStyle.from(item.getFont());
-            }
-            int cellWidth = 0;
-            String text = item.getText();
-            if (text != null && !text.isEmpty()) {
-                cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
-            }
-            if (item.getImage() != null) {
-                cellWidth += ts.size() + CELL_PADDING_LEFT;
-            }
-            widest = Math.max(widest, cellWidth);
+            widest = Math.max(widest, getCellContentWidth(item));
         }
         if (widest == 0) return 0;
         if ((table.getStyle() & SWT.CHECK) != 0) widest += CHECKBOX_WIDTH + CELL_PADDING_LEFT;
         return widest + CELL_PADDING_HORIZONTAL + CELL_MARGIN;
+    }
+
+    /** The width the first cell's image and text take, without the cell's padding. */
+    public static int getCellContentWidth(TableItem item) {
+        int cellWidth = getTextWidth(item);
+        if (item.getImage() != null) {
+            cellWidth += getIconSpace(item);
+        }
+        return cellWidth;
+    }
+
+    /** The width the first cell's text takes. */
+    public static int getTextWidth(TableItem item) {
+        String text = item.getText();
+        if (text.isEmpty()) return 0;
+        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());
+    }
+
+    /** The square an item's image is rendered in: the cell's font size, whatever the image's own size. */
+    public static int getIconSize(TableItem item) {
+        return cellTextStyle(item).size();
+    }
+
+    /** The width an image takes before the text, its spacing included. */
+    public static int getIconSpace(TableItem item) {
+        return getIconSize(item) + CELL_PADDING_LEFT;
+    }
+
+    /** Where a cell's content starts, from its column's left edge. */
+    public static int getCellInset() {
+        return CELL_PADDING_LEFT;
+    }
+
+    private static TextStyle cellTextStyle(TableItem item) {
+        if (!org.eclipse.swt.widgets.TableHelper.usesApplicationFont((DartTableItem) item.getImpl())) {
+            return TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
+        }
+        return TextStyle.from(item.getFont());
+    }
+
+    /** Where the first cell's content starts: after the checkbox, if any, and the cell's padding. */
+    public static int getLeadingInset(DartTable table) {
+        int inset = CELL_PADDING_LEFT;
+        if ((table.getStyle() & SWT.CHECK) != 0) inset += CHECKBOX_WIDTH + CELL_PADDING_LEFT;
+        return inset;
     }
 
     public static int getPreferredHeight(DartTable table) {

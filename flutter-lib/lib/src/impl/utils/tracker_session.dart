@@ -55,6 +55,13 @@ class TrackerSession {
   /// position seen, or a slow drag would never report at all.
   static Offset? _lastReported;
 
+  /// How long the pointer must stay put before a position the threshold held back is reported
+  /// anyway. A drop target can be smaller than the threshold — a tab strip is — so the pointer can
+  /// come to rest on one without ever having been reported there.
+  static const _settleDelay = Duration(milliseconds: 100);
+
+  static Timer? _settle;
+
 
   /// Whether a Tracker currently holds the pointer. Widgets that run their own drag gesture check
   /// this so two mechanisms don't both act on one drag.
@@ -67,6 +74,9 @@ class TrackerSession {
   /// The host whose Tracker is open, so a position is converted by the Shell it belongs to.
   static String? _activeHost;
 
+  /// Converts on the way out, not when a position is recorded: which Shell a gesture belongs to is
+  /// only known once its Tracker opens, and the gesture starts before that. Converting earlier makes
+  /// [_begin]'s replay report window coordinates, off by the Shell's own header.
   static Offset _convert(Offset viewPosition) {
     final convert = _toDisplay[_activeHost];
     return convert == null ? viewPosition : convert(viewPosition);
@@ -121,16 +131,17 @@ class TrackerSession {
 
   static void _release() {
     _activeId = null;
+    _settle?.cancel();
+    _settle = null;
   }
 
   static void _onPointer(PointerEvent event) {
     // Bookkeeping first, and whether a Tracker is open or not: the gesture starts well before Java
     // has answered DragDetect, so where the pointer is -- and whether it is still down -- has to be
     // known by the time the Tracker arrives. See _begin.
-    // A pointer position is global to the window, which includes whatever frame the client draws
-    // around the Shell; everything the workbench compares it against is in the Shell's own
-    // coordinates. Converting here keeps that difference out of the rest of the session.
-    final position = _convert(event.position);
+    // Kept as the window position it arrives as, and converted into the Shell's coordinates only on
+    // the way out: see _convert.
+    final position = event.position;
     _lastPosition = position;
     final ended = event is PointerUpEvent || event is PointerCancelEvent;
     if (event is PointerDownEvent) {
@@ -150,9 +161,12 @@ class TrackerSession {
       final reported = _lastReported;
       if (reported != null &&
           (position - reported).distance < _moveThresholdPx) {
+        if (_activeId != null) _scheduleSettle();
         return;
       }
     }
+    _settle?.cancel();
+    final unreported = _lastReported != position;
     _lastReported = position;
     if (_pointerDown) {
       // A rolling window, dropping the oldest: what the workbench needs is how the gesture
@@ -168,8 +182,26 @@ class TrackerSession {
       _send(id, 'Control/Move', position);
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
       _send(id, 'Control/Move', position);
+      // The workbench only enters a target on the first move there and accepts the drop on the
+      // next; a release where nothing was reported yet would otherwise be resolved as "no drop".
+      if (unreported && event is PointerUpEvent) _send(id, 'Control/Move', position);
       _finish(id, event is PointerCancelEvent ? 'Tracker/cancel' : 'Tracker/close');
     }
+  }
+
+  /// Reports where the pointer came to rest when the threshold held that position back, twice for
+  /// the same reason a release is: the first move enters the target, the second shows the drop there.
+  static void _scheduleSettle() {
+    _settle?.cancel();
+    _settle = Timer(_settleDelay, () {
+      _settle = null;
+      final id = _activeId;
+      final position = _lastPosition;
+      if (id == null || position == null || !_pointerDown || position == _lastReported) return;
+      _lastReported = position;
+      _send(id, 'Control/Move', position);
+      _send(id, 'Control/Move', position);
+    });
   }
 
   static void _finish(int id, String action) {
@@ -178,12 +210,13 @@ class TrackerSession {
   }
 
   static void _send(int id, String action, Offset position) {
+    final converted = _convert(position);
     _sendEvent(
       id,
       action,
       VEvent()
-        ..x = position.dx.round()
-        ..y = position.dy.round(),
+        ..x = converted.dx.round()
+        ..y = converted.dy.round(),
     );
   }
 

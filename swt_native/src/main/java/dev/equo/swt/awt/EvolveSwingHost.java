@@ -4,35 +4,54 @@ import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.PaintEvent;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.MenuSelectionManager;
+import javax.swing.PopupFactory;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.WindowBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
+import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
+import sun.awt.AWTAccessor;
+import sun.awt.FwDispatcher;
+import sun.awt.NullComponentPeer;
 import sun.swing.JLightweightFrame;
 import sun.swing.LightweightContent;
 
@@ -67,6 +86,105 @@ public final class EvolveSwingHost {
 
     private static final AtomicBoolean TOOLKIT_STARTED = new AtomicBoolean(false);
 
+    private static final AtomicBoolean DISPATCH_MERGE_INSTALLED = new AtomicBoolean(false);
+
+    /**
+     * Records what the dispatch merge did, readable from outside the JVM with
+     * {@code jcmd <pid> VM.system_properties}. A product launcher that starts the application
+     * detached leaves no stdout to read, and "did this run at all" is the first question any hang
+     * in the host's AWT bridge raises — a value of {@code reinstated} additionally says the merge
+     * was installed and then displaced by someone else.
+     */
+    static final String DISPATCH_MERGE_PROPERTY = "dev.equo.swt.dispatchMerge";
+
+    private static final AtomicBoolean SWING_OPEN_TRIED = new AtomicBoolean(false);
+
+    private static final AtomicBoolean UNAVAILABLE_WARNED = new AtomicBoolean(false);
+
+    /**
+     * Whether the Swing bridge's restricted-package classes can actually be defined on this JVM.
+     *
+     * <p>{@code EvolveContent implements sun.swing.LightweightContent}, and from Java 17 on defining
+     * a class whose superinterface sits in a non-exported package fails at <em>class definition</em>
+     * with {@code IllegalAccessError}. Merely loading this host — which {@link dev.equo.swt.Jdk9}
+     * does to find {@code newFrame} — does not reach that definition, so it is not proof the bridge
+     * can run. This asks {@link #openSwingInternals()} to open the packages itself and then forces
+     * both classes that implement a JDK-internal interface to be defined. When either cannot be,
+     * {@code SWT_AWT.new_Frame} fails for a Dart-backed composite with {@code ERROR_NOT_IMPLEMENTED},
+     * as SWT_AWT does on a JRE that cannot embed, instead of an {@code IllegalAccessError} reaching
+     * the host application's editor.</p>
+     */
+    public static boolean canHost() {
+        return hostFailure() == null;
+    }
+
+    /** Why the bridge cannot host Swing on this JVM, or null when it can (see {@link #canHost()}). */
+    public static Throwable hostFailure() {
+        openSwingInternals();
+        try {
+            Class.forName("dev.equo.swt.awt.EvolveSwingHost$Host$EvolveContent");
+            Class.forName("dev.equo.swt.awt.EvolveSwingHost$EvolveDispatcherWrapper");
+            return null;
+        } catch (ClassNotFoundException | LinkageError cannotDefine) {
+            warnUnavailable(cannotDefine);
+            return cannotDefine;
+        }
+    }
+
+    /**
+     * Exports the JDK internals the bridge is built on — {@code java.desktop/sun.swing} and
+     * {@code java.desktop/sun.awt} — to this module, so that defining
+     * {@code EvolveContent implements sun.swing.LightweightContent} and
+     * {@code EvolveDispatcherWrapper implements sun.awt.FwDispatcher}, and using
+     * {@code JLightweightFrame} and {@code AWTAccessor}, pass the JVM's access check. The
+     * command-line {@code --add-exports} for the same packages also works ({@code java.desktop} is
+     * a boot-layer module), so an app that already carries those flags needs none of this — it is
+     * the path for one that carries only {@code --add-opens=java.base/java.lang=ALL-UNNAMED}.
+     *
+     * <p>{@code Module.addExports} is caller-sensitive, so it goes through {@code implAddExports},
+     * which needs {@code java.lang} opened to us; that one flag works from the command line because
+     * {@code java.base} is always in the boot layer. Without it this is a no-op and {@link #canHost()}
+     * reports the bridge unavailable. Mirrors {@code FXCanvas.openFxInternals()} for JavaFX.</p>
+     */
+    static void openSwingInternals() {
+        if (!SWING_OPEN_TRIED.compareAndSet(false, true)) return;
+        try {
+            Method implAddExports = Module.class.getDeclaredMethod("implAddExports", String.class, Module.class);
+            implAddExports.setAccessible(true);
+            Module self = EvolveSwingHost.class.getModule();
+            selfExport(implAddExports, self, "java.desktop", "sun.swing", "sun.awt");
+        } catch (Throwable notOpenable) {
+            // Left closed: canHost() reports it and SWT_AWT.new_Frame fails. Enable with
+            // --add-opens=java.base/java.lang=ALL-UNNAMED.
+        }
+    }
+
+    private static void selfExport(Method implAddExports, Module self, String moduleName, String... pkgs)
+            throws ReflectiveOperationException {
+        // By boot-layer name, never a class literal: referencing a class in one of these packages
+        // would itself fail the access check we are here to remove.
+        Module owner = ModuleLayer.boot().findModule(moduleName).orElse(null);
+        if (owner == null || !owner.isNamed()) return; // not a modular JDK, or module absent/on classpath
+        for (String pkg : pkgs) {
+            if (owner.getPackages().contains(pkg) && !owner.isExported(pkg, self)) {
+                implAddExports.invoke(owner, pkg, self);
+            }
+        }
+    }
+
+    /** Explains once per JVM why the Swing bridge cannot host, which is otherwise undiagnosable. */
+    private static void warnUnavailable(Throwable cause) {
+        if (UNAVAILABLE_WARNED.compareAndSet(false, true)) {
+            System.err.println("[EvolveSwingHost] Swing embedding disabled: SWT_AWT.new_Frame will fail with "
+                    + "ERROR_NOT_IMPLEMENTED. The JDK internals the bridge needs (sun.swing, sun.awt) are not "
+                    + "reachable from this module. Add either "
+                    + "--add-exports=java.desktop/sun.swing=ALL-UNNAMED and "
+                    + "--add-exports=java.desktop/sun.awt=ALL-UNNAMED, or "
+                    + "--add-opens=java.base/java.lang=ALL-UNNAMED (which lets Evolve open them itself), "
+                    + "to the JVM command line. Cause: " + cause);
+        }
+    }
+
     /**
      * One paint-and-push callback per active embedding, keyed by its content root.
      * {@link JLightweightFrame}'s own repaint cycle only reacts to the lightweight tree, so a
@@ -76,6 +194,11 @@ public final class EvolveSwingHost {
 
     private static final AtomicBoolean OUTSIDE_CLICK_FILTER_INSTALLED = new AtomicBoolean(false);
 
+    private static final AtomicBoolean MENU_CLOSE_FILTER_INSTALLED = new AtomicBoolean(false);
+
+    /** The host of each active embedding, by its frame. */
+    private static final Map<Window, Host> EMBEDDINGS = new ConcurrentHashMap<>();
+
     /**
      * Evolve reimplementation of {@code SWT_AWT.new_Frame}. Returns a Swing
      * {@link Frame} whose content is rendered off-screen and presented on the
@@ -83,14 +206,26 @@ public final class EvolveSwingHost {
      */
     public static Frame newFrame(final Composite parent) {
         if (parent == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        // Under swing-evolve's engine there is no LightweightFrame peer to blit from: the island
+        // path replaces this one, toolkit set-up included.
+        if (Config.hasSwingEngine()) {
+            if (javaFxOwnsTheQueue()) installDispatchMerge();
+            return SwingIslandHost.newFrame(parent);
+        }
+        // Idempotent with the canHost() gate the Jdk9 guard already ran; keeps this method correct
+        // even if a caller reaches it without that gate.
+        openSwingInternals();
         startToolkit();
+        // The toolkit starts once per process, but the dispatcher it installed can since have been
+        // cleared or left bound to a disposed Display; without it AWT runs its own dispatch thread,
+        // which on macOS deadlocks against AppKit's main thread under the AWT tree lock.
+        ensureDispatcherInstalled(parent.getDisplay());
         installOutsideClickRepaintFilter(parent.getDisplay());
+        installMenuCloseFilter(parent.getDisplay());
 
         // A single full-bleed Canvas child is the paint surface (Evolve pipes its
-        // PaintListener + GC.drawImage to Flutter). FillLayout keeps it sized to
-        // the EMBEDDED composite.
-        parent.setLayout(new FillLayout());
-        final Canvas canvas = new Canvas(parent, SWT.NO_BACKGROUND);
+        // PaintListener + GC.drawImage to Flutter).
+        final Canvas canvas = newPaintSurface(parent);
 
         final Host host = new Host(canvas);
 
@@ -102,15 +237,98 @@ public final class EvolveSwingHost {
         // happens on the EDT (Java2D, no main thread needed).
         final JLightweightFrame frame = new JLightweightFrame();
         frame.setContent(host.content);
+        EMBEDDINGS.put(frame, host);
         host.bind(frame);
 
-        // Initial size + realize so the first frame renders. Pre-open the canvas may
-        // report 0×0; the Resize listener re-sizes the frame once it's laid out.
-        Rectangle area = canvas.getClientArea();
-        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+        // Pre-open the canvas reports 0x0; the Resize listener sizes the frame once it is laid out.
+        sizeBlitFrame(frame, host.contentRoot, canvas.getClientArea());
         syncFrameLocation(canvas, frame);
         frame.setVisible(true);
+        host.syncOwner();
         return frame;
+    }
+
+    /**
+     * Sizes an island's frame to its host control's client area, 0x0 included, as native
+     * {@code SWT_AWT} leaves its frame until the composite has its real size. At any positive size
+     * the frame paints, and some content keeps what it painted at: a {@code JSplitPane} stops placing
+     * its divider from its children's preferred sizes once painted, so a placeholder 1x1 collapses
+     * its top component for good.
+     */
+    static void sizeFrame(Component frame, Rectangle area) {
+        frame.setSize(Math.max(0, area.width), Math.max(0, area.height));
+    }
+
+    /**
+     * Never below 1x1: a component added to a 0x0 frame is never laid out. {@code root} paints only
+     * once the area is real.
+     */
+    static void sizeBlitFrame(Component frame, ContentRoot root, Rectangle area) {
+        if (area.width > 0 && area.height > 0) root.place();
+        frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+    }
+
+    /**
+     * The canvas the frame is drawn into, kept at the composite's whole client area as a native
+     * embedded window is.
+     */
+    static Canvas newPaintSurface(Composite parent) {
+        PaintSurface canvas = new PaintSurface(parent);
+        Listener fill = e -> canvas.fill();
+        parent.addListener(SWT.Resize, fill);
+        canvas.addListener(SWT.Dispose, e -> parent.removeListener(SWT.Resize, fill));
+        canvas.fill();
+        return canvas;
+    }
+
+    /**
+     * Stands for the native window SWT_AWT embeds, which no SWT layout places: whatever bounds,
+     * size or location it is given, it takes the composite's client area. That area comes from the
+     * implementation, because SWT/Swing integration libraries override the composite's
+     * {@code getClientArea()}, some answering with the Swing component's preferred size.
+     * {@code SwingIsland} does the same for swing-evolve's engine.
+     */
+    static final class PaintSurface extends Canvas {
+        PaintSurface(Composite parent) {
+            super(parent, SWT.NO_BACKGROUND);
+        }
+
+        // Straight to the implementation: on some platforms the API setters call one another, and
+        // each of them lands back here.
+        void fill() {
+            Rectangle area = getParent().getImpl().getClientArea();
+            getImpl().setBounds(area.x, area.y, area.width, area.height);
+        }
+
+        @Override
+        public void setBounds(int x, int y, int width, int height) {
+            fill();
+        }
+
+        @Override
+        public void setBounds(Rectangle rect) {
+            fill();
+        }
+
+        @Override
+        public void setSize(int width, int height) {
+            fill();
+        }
+
+        @Override
+        public void setSize(Point size) {
+            fill();
+        }
+
+        @Override
+        public void setLocation(int x, int y) {
+            fill();
+        }
+
+        @Override
+        public void setLocation(Point location) {
+            fill();
+        }
     }
 
     /**
@@ -124,6 +342,29 @@ public final class EvolveSwingHost {
         if (canvas.isDisposed()) return;
         Point onScreen = canvas.toDisplay(0, 0);
         EventQueue.invokeLater(() -> frame.setLocation(onScreen.x, onScreen.y));
+    }
+
+    /**
+     * Makes the frame stand for the native window its canvas is drawn into, and returns that
+     * window's handle ({@code current} when nothing changed).
+     *
+     * <p>A Swing window opened from the embedded content is owned by this frame, and a lightweight
+     * frame's peer is a hidden window: owned by it, a dialog has no relation to the application
+     * window and falls behind it as soon as that window is activated. Natively the frame is a child
+     * of the shell, which keeps its dialogs above the shell's window; this restores that.
+     */
+    static long syncFrameOwner(Canvas canvas, JLightweightFrame frame, long current) {
+        if (canvas.isDisposed()) return current;
+        long window = nativeWindowOf(canvas.getShell());
+        if (window == 0 || window == current) return current;
+        frame.overrideNativeWindowHandle(window, null);
+        return window;
+    }
+
+    private static long nativeWindowOf(Shell shell) {
+        if (shell == null || !(shell.getImpl() instanceof DartControl)) return 0;
+        FlutterBridge bridge = ((DartControl) shell.getImpl()).getBridge();
+        return bridge instanceof WindowBridge ? ((WindowBridge) bridge).nativeWindowHandle(shell) : 0;
     }
 
     /**
@@ -145,6 +386,29 @@ public final class EvolveSwingHost {
         };
         display.addFilter(SWT.MouseDown, repaintAllEmbeds);
         display.addFilter(SWT.MouseUp, repaintAllEmbeds);
+    }
+
+    /**
+     * Closes an open Swing menu on a click on SWT outside every embedding, installed once per
+     * process. Swing closes it on a click anywhere in AWT, but a click on SWT never reaches AWT,
+     * and a menu in a shell of its own has no native window whose loss of focus would close it.
+     */
+    private static void installMenuCloseFilter(Display display) {
+        if (!MENU_CLOSE_FILTER_INSTALLED.compareAndSet(false, true)) return;
+        display.addFilter(SWT.MouseDown, ev -> {
+            if (ConfigFlags.isDesktopMode() || isEmbeddingCanvas(ev.widget)) return;
+            EventQueue.invokeLater(() -> {
+                MenuSelectionManager menus = MenuSelectionManager.defaultManager();
+                if (menus.getSelectedPath().length > 0) menus.clearSelectedPath();
+            });
+        });
+    }
+
+    private static boolean isEmbeddingCanvas(Object widget) {
+        for (Host host : EMBEDDINGS.values()) {
+            if (host.canvas == widget) return true;
+        }
+        return false;
     }
 
     /**
@@ -170,13 +434,118 @@ public final class EvolveSwingHost {
         // no Dock icon / app menu, so bringing up AppKit alongside Flutter is quiet.
         setIfAbsent("java.awt.headless", "false");
         setIfAbsent("apple.awt.UIElement", "true");
-        // Keep menus/tooltips/popups inside the off-screen frame (lightweight) rather
-        // than spawning real OS windows over the Flutter surface.
-        javax.swing.JPopupMenu.setDefaultLightWeightPopupEnabled(true);
+        installPopupFactory();
+        shareFrameBuffer();
         Toolkit.getDefaultToolkit();
-        installEvolveDispatcher();
+        if (javaFxOwnsTheQueue()) installDispatchMerge();
         installHeavyweightRepaintListener();
+    }
+
+    /**
+     * Whether this process's AWT event queue is already someone else's, which is the one case the
+     * dispatch merge exists for — and the one case it may be installed in.
+     *
+     * <p>A host that runs AWT through its own {@code FwDispatcher} — an RCP product shipping
+     * {@code -Djavafx.embed.singleThread=true} does — serves an {@code EventQueue.invokeAndWait}
+     * issued from the SWT thread on the JavaFX thread; a {@code Display.syncExec} from inside that
+     * task then waits for the SWT thread, which is already blocked in that same
+     * {@code invokeAndWait}. Neither side holds a monitor, so the JDK's deadlock detector says
+     * nothing. Installing {@link EvolveDispatcherWrapper} makes the SWT thread the dispatch
+     * thread, and that inner {@code syncExec} runs inline instead of waiting.
+     *
+     * <p><b>One slot, two opposite requirements.</b> In that host the slot must be taken, and
+     * taken early. In a host with no JavaFX it must not be taken at all: there is no foreign
+     * dispatcher to displace, and a dispatcher of ours takes the lifetime of the event dispatch
+     * thread away from AWT, so the EDT outlives everything and the JVM cannot end — measured, still
+     * alive ninety seconds after its Display was disposed, {@code AWT-EventQueue-0} parked
+     * non-daemon and the only application thread left. Claiming it unconditionally broke the
+     * second host; claiming it only for an {@code FXCanvas} broke the first, which deadlocked on
+     * its first workbench view — and booting it on the class from before that change brought it
+     * up. This property is the difference between them.
+     *
+     * <p>It gates the island branch of {@link #newFrame} (which returns before
+     * {@link #startToolkit()}) and {@link #startToolkit()} itself. {@code FXCanvas} asks
+     * explicitly. Without the engine, {@link #newFrame} also reinstates the dispatcher on every
+     * embedding, unconditionally: there AWT running its own dispatch thread deadlocks against
+     * AppKit's main thread on macOS, and the JVM-exit concern above is the island's, whose frames
+     * the engine owns.
+     *
+     * <p><b>Not at {@code Display} creation, and that is measured, not a preference.</b> Installed
+     * there, the same host's boot died in fifteen seconds: it issues an unguarded
+     * {@code SwingUtilities.invokeAndWait} from the SWT thread before it embeds anything, and
+     * {@code EventQueue.invokeAndWait} throws outright from the dispatch thread
+     * ({@code EventQueue.java:1353}) — which the SWT thread is, once the merge is in. So the slot is
+     * taken at the first embedding, after that set-up has run, which is also where upstream's own
+     * dispatcher arrives.
+     */
+    public static boolean javaFxOwnsTheQueue() {
+        return Boolean.getBoolean("javafx.embed.singleThread");
+    }
+
+    /**
+     * Installs the merge against {@code display}. Called by {@code FXCanvas}, which asks for it
+     * explicitly and has its own display in hand; every other path goes through
+     * {@link #javaFxOwnsTheQueue()} instead.
+     */
+    public static void installDispatchMergeOn(Display display) {
+        installDispatchMerge(display);
+    }
+
+    private static void installDispatchMerge() {
+        installDispatchMerge(null);
+    }
+
+    private static void installDispatchMerge(Display display) {
+        if (!DISPATCH_MERGE_INSTALLED.compareAndSet(false, true)) return;
+        installEvolveDispatcher(display);
         installDispatcherReinstateListener();
+        installStalledFocusRepair();
+    }
+
+    /**
+     * Puts {@link ShellPopupFactory} in front of whatever popup factory Swing would use. A look and
+     * feel may install its own factory when it initializes (Aqua does), replacing ours, so the
+     * current one is initialized first and every later look-and-feel change is wrapped again.
+     */
+    private static void installPopupFactory() {
+        UIManager.getLookAndFeel();
+        wrapSharedPopupFactory();
+        UIManager.addPropertyChangeListener(e -> {
+            if ("lookAndFeel".equals(e.getPropertyName())) wrapSharedPopupFactory();
+        });
+    }
+
+    static void wrapSharedPopupFactory() {
+        PopupFactory current = PopupFactory.getSharedInstance();
+        if (current instanceof ShellPopupFactory) return;
+        PopupFactory.setSharedInstance(
+                new ShellPopupFactory(current, EvolveSwingHost::popupEmbeddingOf, EvolveSwingHost::hostInShell));
+    }
+
+    /**
+     * The canvas of the embedding {@code owner} is shown in, when its popups belong in an SWT
+     * shell; {@code null} otherwise. Under the desktop surface a native popup window lands where a
+     * native {@code SWT_AWT} one does, so it is left to Swing there.
+     */
+    static Canvas popupEmbeddingOf(Component owner) {
+        if (ConfigFlags.isDesktopMode()) return null;
+        Window window = owner instanceof Window ? (Window) owner : SwingUtilities.getWindowAncestor(owner);
+        Host host = window == null ? null : EMBEDDINGS.get(window);
+        return host == null ? null : host.canvas;
+    }
+
+    /**
+     * Hosts {@code contents} in {@code shell} through an embedding of its own, added straight to
+     * the content root: a popup can be hidden before the move {@code frame.add} defers would run.
+     */
+    static void hostInShell(Shell shell, Component contents) {
+        Frame frame = newFrame(shell);
+        Host host = EMBEDDINGS.get(frame);
+        if (host == null) {
+            frame.add(contents);
+            return;
+        }
+        host.contentRoot.attach(contents);
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -191,7 +560,9 @@ public final class EvolveSwingHost {
      * component that repaints itself while painting — feeds itself without bound.
      */
     /** Drops every reference this class holds to a disposed embedding's component tree. */
-    private static void forgetEmbed(Container root) {
+    private static void forgetEmbed(ContentRoot root, Window frame) {
+        root.dropHeld();
+        EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
         REPAINT_PENDING.remove(root);
         LAST_REPAINT.remove(root);
@@ -252,6 +623,24 @@ public final class EvolveSwingHost {
         }, AWTEvent.WINDOW_EVENT_MASK);
     }
 
+    /** Redelivers WINDOW_GAINED_FOCUS to a modal dialog left active but unfocused by a modal loop run from WINDOW_ACTIVATED. */
+    private static void installStalledFocusRepair() {
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        kfm.addPropertyChangeListener("activeWindow", ev -> {
+            if (ev.getNewValue() instanceof Window) {
+                Window active = (Window) ev.getNewValue();
+                EventQueue.invokeLater(() -> completeStalledFocus(kfm, active));
+            }
+        });
+    }
+
+    static void completeStalledFocus(KeyboardFocusManager kfm, Window active) {
+        if (!(active instanceof Dialog) || !((Dialog) active).isModal()) return;
+        if (kfm.getActiveWindow() != active || kfm.getFocusedWindow() != null) return;
+        if (!active.isShowing() || !active.isFocusableWindow()) return;
+        active.dispatchEvent(new WindowEvent(active, WindowEvent.WINDOW_GAINED_FOCUS));
+    }
+
     /**
      * Puts this host's dispatcher back on the AWT event queue if the queue has stopped holding it.
      *
@@ -268,40 +657,61 @@ public final class EvolveSwingHost {
      */
     static void ensureDispatcherInstalled() {
         try {
-            EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(Display.getDefault());
+            ensureDispatcherInstalled(Display.getDefault());
+        } catch (Throwable notInstallable) {
+        }
+    }
+
+    /** {@link #ensureDispatcherInstalled()} for {@code display}; call it on that Display's thread. */
+    static void ensureDispatcherInstalled(Display display) {
+        try {
+            EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(display);
             if (wrapper.isDispatchThread() == EventQueue.isDispatchThread()) return;
-            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(
-                    Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
+            setFwDispatcher(Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
+            System.setProperty(DISPATCH_MERGE_PROPERTY,
+                    "reinstated on " + Thread.currentThread().getName());
         } catch (Throwable notInstallable) {
         }
     }
 
     /**
      * Installs {@link EvolveDispatcherWrapper} on the system {@link EventQueue} — see the
-     * class-level "AWT/Swing dispatch" section for why. Requires
-     * {@code --add-exports jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED} on the
-     * actual runtime JVM command line, not just at compile time; if that export is missing
-     * this fails closed (logged, caught) and dispatch falls back to whatever the host's own
-     * JavaFX/AWT bridge does by default.
+     * class-level "AWT/Swing dispatch" section for why. Needs {@code java.desktop/sun.awt}
+     * reachable from this module, as the rest of the bridge does ({@link #openSwingInternals()});
+     * without it this fails closed and dispatch falls back to whatever the host's own JavaFX/AWT
+     * bridge does by default.
      *
      * <p>Installs the first time any Evolve Swing embedding happens in the process. A host
      * that constructs its own {@code JFXPanel} (unrelated to Evolve) before that point installs
      * its own dispatcher first, and that specific panel's handshake is not protected by this —
      * only dispatch from this point forward is.
      */
-    private static void installEvolveDispatcher() {
+    private static void installEvolveDispatcher(Display display) {
         try {
-            Display display = Display.getDefault();
+            Display target = display != null ? display : Display.getDefault();
             EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
-            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
-        } catch (Throwable ignored) {
+            setFwDispatcher(eq, new EvolveDispatcherWrapper(target));
+            System.setProperty(DISPATCH_MERGE_PROPERTY,
+                    "installed on " + Thread.currentThread().getName());
+        } catch (Throwable notInstallable) {
             // Falls back to default AWT/JavaFX dispatch behavior.
+            System.setProperty(DISPATCH_MERGE_PROPERTY, "failed: " + notInstallable);
         }
+    }
+
+    /**
+     * Puts {@code dispatcher} in the queue's forwarding-dispatcher slot. This is the call
+     * {@code jdk.swing.interop.DispatcherWrapper} wraps, made directly: that class lives in
+     * {@code jdk.unsupported.desktop}, a module a trimmed runtime image can leave out, and any
+     * reference to it stops this whole class from loading on such a runtime.
+     */
+    static void setFwDispatcher(EventQueue queue, FwDispatcher dispatcher) {
+        AWTAccessor.getEventQueueAccessor().setFwDispatcher(queue, dispatcher);
     }
 
     // Package-private (not private) so EvolveDispatcherWrapperTest can construct and exercise
     // these directly instead of only through the full JavaFX/AWT dispatch-merge trigger.
-    static final class EvolveDispatcherWrapper extends jdk.swing.interop.DispatcherWrapper {
+    static final class EvolveDispatcherWrapper implements FwDispatcher {
         private final Display display;
 
         EvolveDispatcherWrapper(Display display) {
@@ -370,20 +780,219 @@ public final class EvolveSwingHost {
         }
     }
 
+    /**
+     * Makes {@link JLightweightFrame} hand its content the frame's own pixel buffer instead of a
+     * copy. The copy is only refreshed by Swing's repaint cycle, so anything drawn straight through
+     * {@code Component.getGraphics()} — a rubber-band zoom box drawn in XOR mode, say — reaches the
+     * frame's buffer but never the copy, and a forced push sends the stale copy. Reading the shared
+     * buffer is safe here because every read happens on the EDT, the thread that paints into it.
+     *
+     * <p>{@code JLightweightFrame} reads the property once, when the class initializes, so this has
+     * to run before the first frame is constructed.
+     */
+    static void shareFrameBuffer() {
+        setIfAbsent("swing.jlf.copyBufferEnabled", "false");
+    }
+
     private static void setIfAbsent(String key, String value) {
         if (System.getProperty(key) == null) System.setProperty(key, value);
     }
 
     // ---- Host: LightweightContent + SWT canvas wiring ----------------------------
 
+    /**
+     * The pixel extent of a frame dimension the frame reports in points. {@code JLightweightFrame}
+     * sizes itself in points but allocates its buffer at the display scale, so the two differ on a
+     * scaled display and only this product indexes the buffer correctly.
+     */
+    static int pixelExtent(int points, double scale) {
+        return Math.max(1, (int) Math.round(points * scale));
+    }
+
+    /**
+     * Copies {@code w}x{@code h} pixels out of the frame's shared buffer, dropping the padding its
+     * stride carries, so the SWT thread reads a stable image. {@code w} must be the buffer's pixel
+     * width: passing the frame's width in points instead copies the top-left crop of a magnified
+     * image, which is what a scaled display renders into it.
+     */
+    static int[] copyFrameBuffer(int[] buffer, int stride, int w, int h) {
+        int[] snapshot = new int[w * h];
+        for (int row = 0; row < h; row++) {
+            System.arraycopy(buffer, row * stride, snapshot, row * w, w);
+        }
+        return snapshot;
+    }
+
+    interface HeavyweightVisitor {
+        void visit(Component heavy, int x, int y);
+    }
+
+    /**
+     * Visits every showing heavyweight under {@code root} with its offset from {@code root}'s origin.
+     * A heavyweight nested inside another (a canvas inside an applet) is visited too, right after its
+     * ancestor: the ancestor's own {@code paint} only covers its lightweight children, so the nested
+     * one has to be painted on top of it separately.
+     */
+    static void visitHeavyweights(Container root, int offsetX, int offsetY, HeavyweightVisitor visitor) {
+        for (Component child : root.getComponents()) {
+            if (!child.isShowing()) continue;
+            int cx = offsetX + child.getX();
+            int cy = offsetY + child.getY();
+            if (!child.isLightweight()) visitor.visit(child, cx, cy);
+            if (child instanceof Container) visitHeavyweights((Container) child, cx, cy, visitor);
+        }
+    }
+
+    private static final boolean OFFSCREEN_HEAVYWEIGHTS = Boolean.getBoolean("swt.evolve.heavyweight_offscreen");
+
+    private static final ClassValue<Method[]> OFFSCREEN_TOGGLE = new ClassValue<Method[]>() {
+        @Override
+        protected Method[] computeValue(Class<?> type) {
+            try {
+                return new Method[] {type.getMethod("isOffScreenBuffer"), type.getMethod("setOffScreenBuffer", boolean.class)};
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
+        }
+    };
+
+    /**
+     * Switches a heavyweight that exposes {@code isOffScreenBuffer()}/{@code setOffScreenBuffer(boolean)}
+     * into that mode. An OpenGL canvas normally renders into its own native window, which is never
+     * shown here, and paints nothing into the {@code Graphics} it is handed; in off-screen mode it
+     * renders into memory and draws the result into that {@code Graphics} instead. Checked on every
+     * frame because the hosting application may switch the mode back off at any time.
+     */
+    static void enableOffscreenRendering(Component heavy) {
+        Method[] toggle = OFFSCREEN_TOGGLE.get(heavy.getClass());
+        if (toggle == null) return;
+        try {
+            if (!Boolean.TRUE.equals(toggle[0].invoke(heavy))) toggle[1].invoke(heavy, true);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            // A component that refuses the switch keeps painting the way it did before.
+        }
+    }
+
+    /**
+     * The panel the hosted Swing tree is relocated into.
+     *
+     * <p>Whatever reaches it through {@code getGraphics()} is drawing that happens outside the
+     * frame's own paint pass, so the frame never reports it: immediate-mode drawing such as a
+     * rubber-band box, and every repaint inside a hosted applet, which Swing starts from the applet
+     * as its own root rather than from the frame. {@code drawn} schedules the push the frame won't.
+     */
+    static final class ContentRoot extends JPanel {
+        private final Runnable drawn;
+        private final List<Component> held = new ArrayList<>();
+        private volatile boolean placed;
+
+        ContentRoot(Runnable drawn) {
+            super(new BorderLayout());
+            this.drawn = drawn;
+        }
+
+        /**
+         * Attaches held content and lets the hosted tree paint from now on. Runs on the EDT; {@code
+         * held} is still empty at the first call, from {@code newFrame} on the SWT thread.
+         */
+        void place() {
+            if (placed) return;
+            placed = true;
+            List<Component> attach;
+            synchronized (held) {
+                attach = new ArrayList<>(held);
+                held.clear();
+            }
+            attach.forEach(this::attach);
+        }
+
+        /**
+         * Adds application content, held out of the tree until {@link #place}: an applet repaints
+         * from itself rather than through {@link #paintChildren}, and a {@code JSplitPane} painted at
+         * the applet's own placeholder size keeps that layout when the frame grows.
+         */
+        void host(Component child) {
+            synchronized (held) {
+                if (!placed) {
+                    held.add(child);
+                    return;
+                }
+            }
+            attach(child);
+        }
+
+        /** Drops content held for a canvas disposed before it ever had a size. */
+        void dropHeld() {
+            synchronized (held) {
+                held.clear();
+            }
+        }
+
+        void attach(Component child) {
+            hostAsLightweight(child);
+            add(child);
+            revalidate();
+            repaint();
+        }
+
+        @Override
+        protected void paintChildren(Graphics g) {
+            if (placed) super.paintChildren(g);
+        }
+
+        // Until placed, a descendant's own repaint starts from here, so it goes through paintChildren.
+        @Override
+        public boolean isOptimizedDrawingEnabled() {
+            return placed && super.isOptimizedDrawingEnabled();
+        }
+
+        @Override
+        public boolean isPaintingOrigin() {
+            return !placed;
+        }
+
+        @Override
+        public Graphics getGraphics() {
+            Graphics g = super.getGraphics();
+            if (g != null) drawn.run();
+            return g;
+        }
+    }
+
+    /**
+     * Gives a heavyweight root-pane container — the {@code JApplet} an application wraps its Swing
+     * content in — a lightweight peer, so it becomes part of the frame's own lightweight tree.
+     *
+     * <p>As a heavyweight it has a native surface nobody ever shows, and anything drawn through
+     * {@code getGraphics()} anywhere inside it lands on that surface and is lost: a lightweight
+     * component's {@code getGraphics()} resolves to its nearest heavyweight ancestor's. Lightweight,
+     * the same call resolves to the frame's buffer. Must be called while {@code c} has no peer,
+     * between its removal from one parent and its addition to the next, so that {@code addNotify}
+     * keeps the given peer instead of creating a native one.
+     *
+     * <p>Needs {@code --add-exports java.desktop/sun.awt=ALL-UNNAMED} at runtime; without it the
+     * container stays heavyweight, as it was before.
+     */
+    static void hostAsLightweight(Component c) {
+        if (c.isDisplayable()) return;
+        if (!(c instanceof java.awt.Panel) || !(c instanceof javax.swing.RootPaneContainer)) return;
+        try {
+            AWTAccessor.getComponentAccessor().setPeer(c, new NullComponentPeer());
+        } catch (LinkageError | RuntimeException notAccessible) {
+        }
+    }
+
     private static final class Host {
         private final Canvas canvas;
         // Cached at construction so the EDT never calls canvas.getDisplay() (which throws once the
         // canvas is disposed during shutdown). Display.isDisposed()/asyncExec are thread-safe.
         private final Display display;
-        private final JPanel contentRoot = new JPanel(new BorderLayout());
+        private final ContentRoot contentRoot = new ContentRoot(this::pushSoon);
         private final EvolveContent content = new EvolveContent();
         private volatile JLightweightFrame frame;
+        private volatile Runnable forceRepaint;
+        private volatile EmbedCursor cursor;
+        private final AwtDropBridge drops;
         // Guards the container-listener reentrancy while we relocate app-added children.
         private boolean relocating;
 
@@ -394,10 +1003,13 @@ public final class EvolveSwingHost {
         private int frameHeight;
         // Coalesces repaints: many EDT frames (e.g. a blinking caret) collapse to one SWT redraw.
         private final AtomicBoolean redrawPending = new AtomicBoolean();
+        // The native window the frame stands for, 0 until one is known. SWT thread only.
+        private long ownerWindow;
 
         Host(Canvas canvas) {
             this.canvas = canvas;
             this.display = canvas.getDisplay();
+            this.drops = new AwtDropBridge(canvas);
         }
 
         /**
@@ -417,30 +1029,64 @@ public final class EvolveSwingHost {
          */
         void bind(JLightweightFrame frame) {
             this.frame = frame;
+            drops.bind(frame);
             interceptAdds(frame);
             canvas.addPaintListener(this::paint);
             Runnable forceRepaint = () -> content.imageUpdated(0, 0, 0, 0);
+            this.forceRepaint = forceRepaint;
             HEAVYWEIGHT_REPAINT_HOOKS.put(contentRoot, forceRepaint);
             AwtInput.attach(canvas, frame, contentRoot, forceRepaint);
+            EmbedCursor embedCursor = new EmbedCursor(canvas, display, frame);
+            embedCursor.attach();
+            cursor = embedCursor;
             canvas.addListener(SWT.Resize, e -> {
                 Rectangle a = canvas.getClientArea();
-                final int w = Math.max(1, a.width), h = Math.max(1, a.height);
-                EventQueue.invokeLater(() -> frame.setSize(w, h));
+                EventQueue.invokeLater(() -> {
+                    sizeBlitFrame(frame, contentRoot, a);
+                    final int w = frame.getWidth(), h = frame.getHeight();
+                    // JLightweightFrame.reshape() reallocates the off-screen buffer and repaints
+                    // immediately, but the content tree is still laid out for the old size, so that
+                    // repaint fills the new buffer with background and drops the components — they
+                    // stay invisible until some later event repaints them. Lay the tree out and ask
+                    // for the repaint on a following EDT pass, once the reallocation has settled.
+                    EventQueue.invokeLater(() -> {
+                        javax.swing.JRootPane root = frame.getRootPane();
+                        if (root != null) {
+                            root.setBounds(0, 0, w, h);
+                            root.revalidate();
+                        }
+                        contentRoot.revalidate();
+                        contentRoot.repaint();
+                    });
+                });
                 syncFrameLocation(canvas, frame);
+                syncOwner();
                 scheduleStaggeredRepaints(forceRepaint, 200, 600, 1500);
             });
-            canvas.addListener(SWT.Move, e -> syncFrameLocation(canvas, frame));
+            canvas.addListener(SWT.Move, e -> {
+                syncFrameLocation(canvas, frame);
+                syncOwner();
+            });
             // The canvas raises neither Move nor Resize when an ancestor moves, and the window
             // moving changes where it sits on screen just the same.
             Shell shell = canvas.getShell();
-            Listener shellMoved = e -> syncFrameLocation(canvas, frame);
+            Listener shellMoved = e -> {
+                syncFrameLocation(canvas, frame);
+                syncOwner();
+            };
             shell.addListener(SWT.Move, shellMoved);
             canvas.addListener(SWT.Dispose, e -> {
                 if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
-                forgetEmbed(contentRoot);
+                forgetEmbed(contentRoot, frame);
+                drops.dispose();
                 disposeFrame(frame);
             });
             scheduleStaggeredRepaints(forceRepaint, 300, 900, 2000);
+        }
+
+        /** Needs the frame's peer, so not before the frame has been made visible. */
+        void syncOwner() {
+            ownerWindow = syncFrameOwner(canvas, frame, ownerWindow);
         }
 
         /**
@@ -462,9 +1108,7 @@ public final class EvolveSwingHost {
                         try {
                             frame.remove(child);
                             frame.add(frame.getRootPane(), BorderLayout.CENTER);
-                            contentRoot.add(child);
-                            contentRoot.revalidate();
-                            contentRoot.repaint();
+                            contentRoot.host(child);
                             frame.revalidate();
                         } finally {
                             relocating = false;
@@ -491,6 +1135,11 @@ public final class EvolveSwingHost {
                 frame.setVisible(false);
                 frame.dispose();
             } catch (Throwable ignored) {}
+        }
+
+        private void pushSoon() {
+            Runnable push = forceRepaint;
+            if (push != null && !BLITTING.get()) coalesceRepaint(contentRoot, push);
         }
 
         private void paint(org.eclipse.swt.events.PaintEvent pe) {
@@ -531,7 +1180,18 @@ public final class EvolveSwingHost {
             imageData.setPixels(0, 0, pw * ph, out, 0);
             Image image = new Image(display, imageData);
             try {
-                pe.gc.drawImage(image, 0, 0);
+                // On a scaled display the off-screen frame rasterises at the monitor's scale, so the
+                // buffer is in physical pixels while the GC draws in points: blitting it 1:1 lands it
+                // oversized by that factor and clips whatever falls outside the canvas. Map the whole
+                // buffer onto the canvas instead — the render side composites it at the physical
+                // resolution, so nothing is resampled and the extra detail is what reaches the screen.
+                Rectangle area = canvas.getClientArea();
+                int lw = Math.max(1, area.width), lh = Math.max(1, area.height);
+                if (pw == lw && ph == lh) {
+                    pe.gc.drawImage(image, 0, 0);
+                } else {
+                    pe.gc.drawImage(image, 0, 0, pw, ph, 0, 0, lw, lh);
+                }
             } finally {
                 image.dispose();
             }
@@ -578,6 +1238,11 @@ public final class EvolveSwingHost {
             private int stride;
             private int bufWidth;
             private int bufHeight;
+            // The frame reports its size in points but allocates the buffer at the display scale, so
+            // the real pixel dimensions are bufWidth*scaleX by bufHeight*scaleY. Reading the buffer
+            // as if it were bufWidth wide takes the top-left crop of a magnified image.
+            private double scaleX = 1.0;
+            private double scaleY = 1.0;
             private final Object lock = new Object();
 
             @Override
@@ -596,6 +1261,8 @@ public final class EvolveSwingHost {
                     stride = linestride;
                     bufWidth = width;
                     bufHeight = height;
+                    this.scaleX = scaleX > 0 ? scaleX : 1.0;
+                    this.scaleY = scaleY > 0 ? scaleY : 1.0;
                 }
             }
 
@@ -613,14 +1280,9 @@ public final class EvolveSwingHost {
                 final int w, h;
                 synchronized (lock) {
                     if (buffer == null || bufWidth <= 0 || bufHeight <= 0) return;
-                    w = bufWidth;
-                    h = bufHeight;
-                    // Copy the whole logical frame out of the shared buffer (dropping any
-                    // padding the stride carries) so the SWT thread reads a stable image.
-                    snapshot = new int[w * h];
-                    for (int row = 0; row < h; row++) {
-                        System.arraycopy(buffer, row * stride, snapshot, row * w, w);
-                    }
+                    w = pixelExtent(bufWidth, scaleX);
+                    h = pixelExtent(bufHeight, scaleY);
+                    snapshot = copyFrameBuffer(buffer, stride, w, h);
                 }
                 paintHeavyweightDescendants(contentRoot, 0, 0, snapshot, w, h);
                 frameProduced(snapshot, w, h);
@@ -639,25 +1301,26 @@ public final class EvolveSwingHost {
              */
             private void paintHeavyweightDescendants(Container root, int offsetX, int offsetY,
                     int[] snapshot, int w, int h) {
-                for (Component child : root.getComponents()) {
-                    int cx = offsetX + child.getX();
-                    int cy = offsetY + child.getY();
-                    if (!child.isShowing()) continue;
-                    if (!child.isLightweight()) {
-                        blitHeavyweight(child, cx, cy, snapshot, w, h);
-                    } else if (child instanceof Container) {
-                        paintHeavyweightDescendants((Container) child, cx, cy, snapshot, w, h);
-                    }
-                }
+                visitHeavyweights(root, offsetX, offsetY,
+                        (heavy, x, y) -> blitHeavyweight(heavy, x, y, snapshot, w, h));
             }
 
             /** Paints one heavyweight component off-screen and composites it (premultiplied) into snapshot. */
             private void blitHeavyweight(Component heavy, int destX, int destY, int[] snapshot, int w, int h) {
                 int cw = heavy.getWidth(), ch = heavy.getHeight();
                 if (cw <= 0 || ch <= 0) return;
-                BufferedImage img = new BufferedImage(cw, ch, BufferedImage.TYPE_INT_ARGB);
+                if (OFFSCREEN_HEAVYWEIGHTS) enableOffscreenRendering(heavy);
+                // The component reports its geometry in points while snapshot is the frame's pixel
+                // buffer, so render it at the display scale and place it at the scaled offset —
+                // otherwise a heavyweight child lands undersized in the top-left of where it belongs.
+                int sw = Math.max(1, (int) Math.round(cw * scaleX));
+                int sh = Math.max(1, (int) Math.round(ch * scaleY));
+                int px0 = (int) Math.round(destX * scaleX);
+                int py0 = (int) Math.round(destY * scaleY);
+                BufferedImage img = new BufferedImage(sw, sh, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2 = img.createGraphics();
                 try {
+                    g2.scale(scaleX, scaleY);
                     heavy.paint(g2);
                 } catch (Throwable t) {
                     return; // A component that can't paint off-cycle leaves that region as JLightweightFrame left it.
@@ -665,13 +1328,13 @@ public final class EvolveSwingHost {
                     g2.dispose();
                 }
                 int[] src = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-                for (int row = 0; row < ch; row++) {
-                    int py = destY + row;
+                for (int row = 0; row < sh; row++) {
+                    int py = py0 + row;
                     if (py < 0 || py >= h) continue;
-                    int rowBase = row * cw;
+                    int rowBase = row * sw;
                     int destRowBase = py * w;
-                    for (int col = 0; col < cw; col++) {
-                        int px = destX + col;
+                    for (int col = 0; col < sw; col++) {
+                        int px = px0 + col;
                         if (px < 0 || px >= w) continue;
                         int argb = src[rowBase + col];
                         int a = (argb >>> 24) & 0xFF;
@@ -682,6 +1345,23 @@ public final class EvolveSwingHost {
                         snapshot[destRowBase + px] = (a << 24) | (r << 16) | (g << 8) | b;
                     }
                 }
+            }
+
+            /** Ignores the frame's pick, which it makes from the OS pointer; see {@link EmbedCursor}. */
+            @Override
+            public void setCursor(java.awt.Cursor ignored) {
+                EmbedCursor c = cursor;
+                if (c != null) c.refresh();
+            }
+
+            @Override
+            public void addDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.register(dt);
+            }
+
+            @Override
+            public void removeDropTarget(java.awt.dnd.DropTarget dt) {
+                drops.unregister(dt);
             }
 
             @Override public void focusGrabbed() {}

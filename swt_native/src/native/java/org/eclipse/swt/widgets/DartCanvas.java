@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -226,7 +227,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
         int deltaX = destX - x, deltaY = destY - y;
         if (deltaX == 0 && deltaY == 0)
             return;
-        if (!isDrawing())
+        if (!getApi().isVisible())
             return;
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)
@@ -296,6 +297,9 @@ public class DartCanvas extends DartComposite implements ICanvas {
      */
     public void setCaret(Caret caret) {
         checkWidget();
+        if (!java.util.Objects.equals(this.caret, caret)) {
+            getValue().markDirty(VCanvas.CARET);
+        }
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
         this.caret = newCaret;
@@ -316,15 +320,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
         if (caret != null)
             caret.setFont(font);
         super.setFont(font);
-    }
-
-    @Override
-    void setOpenGLContext(Object value) {
-        Shell shell = getShell();
-        {
-            ((DartShell) shell.getImpl()).glContextCount--;
-        }
-        shell.getImpl().updateOpaque();
     }
 
     /**
@@ -358,18 +353,14 @@ public class DartCanvas extends DartComposite implements ICanvas {
     }
 
     @Override
-    public Color getBackground() {
-        checkWidget();
-        return _background != null ? _background : defaultBackground();
-    }
-
-    @Override
     Color defaultBackground() {
-        return ((DartDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
+        int id = Config.getConfigFlags().use_swt_colors ? SWT.COLOR_WIDGET_BACKGROUND : SWT.COLOR_LIST_BACKGROUND;
+        return ((DartDisplay) display.getImpl()).getWidgetColor(id);
     }
 
     protected void _hookEvents() {
         super._hookEvents();
+        ImeHelper.hookComposition(this);
     }
 
     public Canvas getApi() {

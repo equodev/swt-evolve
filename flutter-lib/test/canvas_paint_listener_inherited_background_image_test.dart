@@ -83,8 +83,8 @@ void _deliver(String actionId, Map<String, dynamic> json) {
 
 /// What the login screen's PaintListener emits: one transparent drawText, then the Paint ends.
 void _paintWaitingForConnection() {
-  _deliver('GC/$_canvasId/drawTextStringintintboolean',
-      {'string': 'Waiting for connection ....', 'x': 0, 'y': 184, 'isTransparent': true});
+  _deliver('GC/$_canvasId/drawTextStringintintint',
+      {'string': 'Waiting for connection ....', 'x': 0, 'y': 184, 'flags': 7}); // DRAW_DELIMITER | DRAW_TAB | DRAW_TRANSPARENT
   _deliver('GC/$_canvasId/gcDispose', {'fullRepaint': true});
 }
 

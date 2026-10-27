@@ -152,9 +152,7 @@ class VControl extends VWidget {
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
       case 'background':
-        background = json['background'] == null
-            ? null
-            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+        background = VColor.read(json['background']);
       case 'backgroundImage':
         backgroundImage = json['backgroundImage'] == null
             ? null
@@ -180,9 +178,7 @@ class VControl extends VWidget {
             ? null
             : VFont.fromJson(json['font'] as Map<String, dynamic>);
       case 'foreground':
-        foreground = json['foreground'] == null
-            ? null
-            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+        foreground = VColor.read(json['foreground']);
       case 'hasOwnBackground':
         hasOwnBackground = json['hasOwnBackground'] as bool?;
       case 'inheritsBackground':

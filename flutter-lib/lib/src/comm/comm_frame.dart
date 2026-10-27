@@ -1,10 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:meta/meta.dart';
 import 'dart:typed_data';
+
+import '../impl/utils/perf_marks.dart';
 
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import 'comm_api.dart' show CommCallback;
+import 'delivery_gate.dart' show kBase, kChangedKeys;
+import 'received_images.dart';
 
 /// Fused JSON→UTF-8 codec: encodes straight to bytes (and decodes from bytes)
 /// in one pass, no intermediate String. Shared by every transport.
@@ -15,6 +21,10 @@ final _jsonBytes = json.fuse(utf8);
 typedef OnSuccessCallback<T> = FutureOr<void> Function(T response);
 typedef OnErrorCallback = void Function(SDKCommError error);
 typedef Payload = dynamic;
+
+void _logHandlerError(String actionId, Object error, StackTrace stack) {
+  print('[comm] Handler error for "$actionId": $error\n$stack');
+}
 
 class SendArgs {
   bool sequential;
@@ -65,8 +75,16 @@ class UserEventCallback {
 abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, List<dynamic>> _pending = {};
+
+  /// The channels a handler is registered on.
+  @visibleForTesting
+  Iterable<String> get handledChannels => _handlers.keys;
+
+  /// Channels whose held run overflowed and has had no whole frame since: the changes arriving
+  /// after it describe a state this side no longer has, so they are not kept.
+  final Set<String> _overflowed = {};
   final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
-  final Map<String, Uint8List> _rawPending = {};
+  final Map<String, List<Uint8List>> _rawPending = {};
   final Map<String, bool Function(Uint8List)> _arrivalHandlers = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
@@ -142,7 +160,30 @@ abstract class EquoCommBase {
     });
   }
 
+  /// Pushes deferred until after the frame, flushed before any other send so Java never sees an
+  /// event ahead of the state it was made against.
+  static final Set<void Function()> _owed = {};
+  static bool _paying = false;
+
+  static void owe(void Function() push) => _owed.add(push);
+
+  static void payOwed() {
+    if (_paying || _owed.isEmpty) return;
+    _paying = true;
+    try {
+      final due = _owed.toList();
+      _owed.clear();
+      for (final push in due) {
+        push();
+      }
+    } finally {
+      _paying = false;
+    }
+  }
+
   void _enqueue(Uint8List frame) {
+    payOwed();
+    if (recordSentFrames) _sent.add(frame);
     if (_open) {
       rawSend(frame);
     } else {
@@ -165,8 +206,41 @@ abstract class EquoCommBase {
     return out;
   }
 
+  /// Frames this client has sent, recorded only while [recordSentFrames] is on.
+  ///
+  /// Reading a widget's rendered position only covers what the client draws; a test that never looks
+  /// at what it reports cannot see the two drifting apart -- which is how a coordinate conversion
+  /// came to be right in one direction and wrong in the other. Off by default, so production
+  /// records nothing.
+  final List<Uint8List> _sent = [];
+
+  @visibleForTesting
+  static bool recordSentFrames = false;
+
+  @visibleForTesting
+  List<Uint8List> get sentFrames => List.unmodifiable(_sent);
+
+  /// Forgets the frames recorded so far, so a test can assert on one interaction at a time.
+  @visibleForTesting
+  void clearSentFrames() => _sent.clear();
+
+  /// Splits a frame from [sentFrames] into its channel and its JSON body.
+  @visibleForTesting
+  static (String, String) decodeFrame(Uint8List frame) {
+    final nameLen = (frame[0] << 8) | frame[1];
+    return (
+      utf8.decode(frame.sublist(2, 2 + nameLen)),
+      utf8.decode(frame.sublist(2 + nameLen)),
+    );
+  }
+
   /// Subclasses call this with the raw bytes of each received binary frame.
+  /// Microseconds on [clock] at which the socket last handed a frame over, before it was queued.
+  static int lastReceivedMicros = 0;
+  static final Stopwatch clock = Stopwatch()..start();
+
   void receiveBinary(Uint8List data) {
+    lastReceivedMicros = clock.elapsedMicroseconds;
     if (data.length < 2) return;
     final nameLen = (data[0] << 8) | data[1];
     if (data.length < 2 + nameLen) return;
@@ -212,26 +286,75 @@ abstract class EquoCommBase {
 
     if (jsonOk) {
       final delivered = _deliverDecoded(actionId, payload);
-      if (delivered != null) return delivered;
+      if (!identical(delivered, _noHandler)) return delivered;
     }
 
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
     if (jsonOk) _hold(actionId, payload);
-    _rawPending[actionId] = body ?? Uint8List(0);
+    _holdRaw(actionId, body ?? Uint8List(0));
     return null;
   }
 
+  /// [_hold] for a raw-bytes channel: a run in arrival order, capped the same way. A protocol's
+  /// opening message is routinely followed by another before its listener is up, and a slot would
+  /// keep only the later one.
+  void _holdRaw(String actionId, Uint8List body) {
+    final run = _rawPending.putIfAbsent(actionId, () => []);
+    if (run.length >= maxPendingPerChannel) {
+      run.clear();
+      return;
+    }
+    run.add(body);
+  }
+
+  /// GC descriptions by name: the sender defines one under `_gd` and refers to it by `_gr` after.
+  final Map<int, Map<String, dynamic>> _gcNames = {};
+
+  /// [payload] with a named GC description filled back in, or unchanged when it carries none.
+  Object? _namedGcState(Object? payload) {
+    if (payload is! Map) return payload;
+    final defined = payload['_gd'];
+    if (defined is int) {
+      final described = Map<String, dynamic>.from(payload.cast<String, dynamic>())
+        ..remove('_gd')
+        ..remove('id');
+      _gcNames[defined] = described;
+      return Map<String, dynamic>.from(payload.cast<String, dynamic>())..remove('_gd');
+    }
+    final named = payload['_gr'];
+    if (named is! int) return payload;
+    final described = _gcNames[named];
+    // An unknown name passes through unchanged rather than dropping the frame's ops.
+    if (described == null) return payload;
+    return <String, dynamic>{...described, 'id': payload['id']};
+  }
+
   Future<void> _applyBatch(List entries) async {
-    for (final entry in entries) {
-      if (entry is! List || entry.length != 2 || entry[0] is! String) continue;
-      final name = entry[0] as String;
-      final delivered = _deliverDecoded(name, entry[1]);
-      if (delivered == null) {
-        _hold(name, entry[1]);
-      } else {
-        await delivered;
+    // Later entries on a channel carry the index of the entry that spelled it out. Indexed by
+    // position, so a malformed entry leaves a hole instead of shifting later channels.
+    final names = List<String?>.filled(entries.length, null);
+    for (var i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry is! List || entry.length != 2) continue;
+      final first = entry[0];
+      final String? name = first is String
+          ? first
+          : (first is int && first >= 0 && first < i ? names[first] : null);
+      if (name == null) continue;
+      names[i] = name;
+      // An entry that fails is that entry's failure alone: the rest of the run applies, as it would
+      // have arriving in frames of its own.
+      try {
+        final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
+        if (identical(delivered, _noHandler)) {
+          _hold(name, entry[1]);
+        } else if (delivered is Future) {
+          await delivered;
+        }
+      } catch (e, st) {
+        _logHandlerError(name, e, st);
       }
     }
   }
@@ -250,9 +373,21 @@ abstract class EquoCommBase {
   /// describe the past, so replaying the run in order costs a little work and settles on the same
   /// state.
   void _hold(String actionId, dynamic payload) {
+    // Its images count as delivered already, and a held frame may never be decoded.
+    keepImagesIn(payload);
+    // A resource's change names no base, only that it is one.
+    final whole = payload is Map && !payload.containsKey(kBase) && !payload.containsKey(kChangedKeys);
+    if (_overflowed.contains(actionId)) {
+      // Past an overflow only a whole frame means anything; it starts the run over.
+      if (!whole) return;
+      _overflowed.remove(actionId);
+      _pending[actionId] = [payload];
+      return;
+    }
     final run = _pending.putIfAbsent(actionId, () => []);
     if (run.length >= maxPendingPerChannel) {
       run.clear();
+      _overflowed.add(actionId);
       return;
     }
     run.add(payload);
@@ -261,10 +396,14 @@ abstract class EquoCommBase {
   /// Channel a fused run of frames arrives on.
   static const batchEvent = 'swt.evolve.batch';
 
-  /// Runs [actionId]'s handler on an already-decoded payload, or null when none is registered.
+  /// What [_deliverDecoded] returns when no handler is registered. Not null: a synchronous handler
+  /// returns null too, and a frame it already applied must not be held for the next handler.
+  static final Future<void> _noHandler = Future<void>.value();
+
+  /// Runs [actionId]'s handler on an already-decoded payload, or returns [_noHandler].
   FutureOr<void>? _deliverDecoded(String actionId, dynamic payload) {
     final callback = _handlers[actionId];
-    if (callback == null) return null;
+    if (callback == null) return _noHandler;
     if (callback.args?.once ?? false) _handlers.remove(actionId);
     return callback.onSuccess(payload);
   }
@@ -285,23 +424,66 @@ abstract class EquoCommBase {
     _enqueueApply(actionId, () => onSuccess(payload));
   }
 
+  /// Action ids whose queue wait is measured every time rather than sampled.
+  static final Set<String> queueTracedActions = {};
+
   void _enqueueApply(String actionId, FutureOr<void> Function() apply) {
+    final queuedAt = perfNow();
     _applyQueue.add(() {
+      if (queueTracedActions.contains(actionId)) {
+        perfSpan('queueWait:$actionId', queuedAt, perfNow());
+      } else {
+        perfSpanSampled('Comm.queueWait', queuedAt, perfNow());
+      }
       try {
         final applied = apply();
         if (applied is Future) {
           return applied.catchError((Object e, StackTrace st) {
-            print('[comm] Handler error for "$actionId": $e\n$st');
+            _logHandlerError(actionId, e, st);
           });
         }
       } catch (e, st) {
-        print('[comm] Handler error for "$actionId": $e\n$st');
+        _logHandlerError(actionId, e, st);
       }
       return null;
     });
     if (!_applying) {
       _applying = true;
+      _applyingCount++;
       scheduleMicrotask(_drainApplyQueue);
+    }
+  }
+
+  /// How many connections have frames received and not yet applied. Static because what waits on
+  /// it, the widget registry, is one for the whole client.
+  static int _applyingCount = 0;
+  static final List<void Function()> _whenApplied = [];
+
+  /// Runs [callback] once every frame received so far has been applied: when the apply queue runs
+  /// dry, or in a microtask when nothing is waiting to be applied.
+  ///
+  /// A batch can await a handler halfway through, so the end of the current microtask is not the
+  /// end of the frames that arrived together.
+  static void whenApplied(void Function() callback) {
+    _whenApplied.add(callback);
+    if (_applyingCount == 0 && _whenApplied.length == 1) {
+      scheduleMicrotask(() {
+        if (_applyingCount == 0) _runWhenApplied();
+      });
+    }
+  }
+
+  static void _runWhenApplied() {
+    while (_whenApplied.isNotEmpty) {
+      final callbacks = List.of(_whenApplied);
+      _whenApplied.clear();
+      for (final callback in callbacks) {
+        try {
+          callback();
+        } catch (e, st) {
+          _logHandlerError('whenApplied', e, st);
+        }
+      }
     }
   }
 
@@ -315,10 +497,17 @@ abstract class EquoCommBase {
       }
     } finally {
       _applying = false;
+      if (--_applyingCount == 0) _runWhenApplied();
     }
   }
 
+  /// Sees every event the client sends to Java, so a widget test can check what controls built
+  /// from state report.
+  @visibleForTesting
+  static void Function(String actionId, Payload? payload)? sendObserverForTesting;
+
   Future send(String actionId, [Payload? payload]) {
+    sendObserverForTesting?.call(actionId, payload);
     final body = payload != null ? (_jsonBytes.encode(payload) as Uint8List) : Uint8List(0);
     _enqueue(_frame(actionId, body));
     return Future.value();
@@ -344,8 +533,16 @@ abstract class EquoCommBase {
     // the delivery gate refuses one that describes the widget as it used to be. Asking Java to
     // re-serialize instead, which this did while that could not be told apart, was a round trip for
     // every widget described before it was mounted.
+    // The same frames were held as raw bytes too, for an onBytes that will not come now.
+    _rawPending.remove(actionId);
     for (final pending in _pending.remove(actionId) ?? const []) {
       _deliver(actionId, onSuccess, pending);
+    }
+    // What was held overflowed and nothing whole came after it: asked for once, whole, instead of
+    // replaying changes to a state that never arrived.
+    if (_overflowed.remove(actionId)) {
+      final slash = actionId.lastIndexOf('/');
+      if (slash >= 0) send(widgetRefreshChannel, actionId.substring(slash + 1));
     }
     return token;
   }
@@ -376,16 +573,20 @@ abstract class EquoCommBase {
   /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).
   void onBytes(String actionId, FutureOr<void> Function(Uint8List) callback) {
     _rawHandlers[actionId] = callback;
-    final pending = _rawPending.remove(actionId);
-    // A frame that arrived before anyone was listening replays through the queue, so it still
-    // lands ahead of whatever has arrived since.
-    if (pending != null) _enqueueApply(actionId, () => callback(pending));
+    // A body that happened to decode as JSON was held for on() too; this channel is raw now.
+    _pending.remove(actionId);
+    // Frames that arrived before anyone was listening replay through the queue, in arrival order,
+    // so they still land ahead of whatever has arrived since.
+    for (final pending in _rawPending.remove(actionId) ?? const <Uint8List>[]) {
+      _enqueueApply(actionId, () => callback(pending));
+    }
   }
 
   void remove(String actionId, [Object? token]) {
     if (token != null && _handlers[actionId]?.token != token) return;
     _handlers.remove(actionId);
     _pending.remove(actionId);
+    _overflowed.remove(actionId);
     _rawHandlers.remove(actionId);
     _rawPending.remove(actionId);
   }

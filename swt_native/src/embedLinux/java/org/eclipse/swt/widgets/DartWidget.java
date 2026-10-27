@@ -410,7 +410,7 @@ public abstract class DartWidget implements IWidget {
      */
     public DartWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();
@@ -665,6 +665,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void deregister() {
+        dev.equo.swt.FlutterBridge.releaseRegistrations(this);
         if (bridge != null)
             bridge.destroy(this);
     }
@@ -743,6 +744,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(Object)
      */
     public Object getData() {
+        checkWidget();
         return (getApi().state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
     }
 
@@ -771,6 +773,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
+        checkWidget();
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (key.equals(KEY_CHECK_SUBWINDOW)) {
@@ -867,7 +870,7 @@ public abstract class DartWidget implements IWidget {
         //	String string = getClass ().getName ();
         //	int index = string.lastIndexOf ('.');
         //	if (index == -1) return string;
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.length();
         while ((--index > 0) && (string.charAt(index) != '.')) {
         }
@@ -899,6 +902,7 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public int getStyle() {
+        checkWidget();
         return getApi().style;
     }
 
@@ -1027,7 +1031,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     void hookEvents() {
@@ -1219,7 +1223,7 @@ public abstract class DartWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -1491,6 +1495,7 @@ public abstract class DartWidget implements IWidget {
      * @see #getData()
      */
     public void setData(Object data) {
+        checkWidget();
         if ((getApi().state & KEYED_DATA) != 0) {
             ((Object[]) this.data)[0] = data;
         } else {
@@ -1523,6 +1528,7 @@ public abstract class DartWidget implements IWidget {
      * @see #getData(String)
      */
     public void setData(String key, Object value) {
+        checkWidget();
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (key.equals(KEY_CHECK_SUBWINDOW)) {

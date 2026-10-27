@@ -51,11 +51,15 @@ import com.sun.javafx.stage.EmbeddedWindow;
  *
  * <h2>How this differs from upstream</h2>
  * <ul>
- *   <li><b>Headless toolkit.</b> JavaFX is started with the Monocle/Headless
- *       Glass platform and the software Prism pipeline, so it never creates a
- *       real native window or seizes the platform UI thread (on macOS, the main
- *       thread already owned by SWT/Flutter via {@code -XstartOnFirstThread}).
- *       The same headless path is used on Windows, Linux and macOS.</li>
+ *   <li><b>No window, whichever Glass backend.</b> Nothing here ever opens one: the
+ *       scene is rasterised into an image by {@link Scene#snapshot}, never onto a
+ *       screen, and all this canvas takes from Glass is the JavaFX thread and its
+ *       pulses. So the host's own backend (Win/Gtk) serves, and Prism picks its own
+ *       pipeline. Monocle/Headless is the <em>exception</em>, not the default — it does
+ *       not ship with {@code javafx.graphics} and is absent from most host
+ *       applications. It is asked for only where the host's backend cannot work at
+ *       all: macOS, whose Glass seizes the main thread SWT runs its loop on, and a
+ *       machine with no display server. See {@code needsMonocle()}.</li>
  *   <li><b>snapshot() rendering.</b> Under headless Monocle the embedded scene's
  *       {@code repaint()}/{@code getPixels()} pulse does not deliver frames, so we
  *       render with the synchronous {@link Scene#snapshot} API instead and cache
@@ -141,6 +145,7 @@ public class FXCanvas extends Canvas {
             fxHostUnavailable = true;
             warnUnavailable(t);
         }
+        installAwtDispatchMerge();
 
         addPaintListener(this::paintControl);
         addListener(SWT.Dispose, e -> dispose0());
@@ -288,6 +293,7 @@ public class FXCanvas extends Canvas {
         if (fxHostUnavailable) {
             return false;
         }
+        openFxInternals();
         try {
             hostContainer = new HostContainer();
             return true;
@@ -295,6 +301,84 @@ public class FXCanvas extends Canvas {
             fxHostUnavailable = true;
             warnUnavailable(t);
             return false;
+        }
+    }
+
+    /** Packages {@code HostContainer} and the embedded-stage plumbing need to reach. */
+    private static final String[] FX_EMBED_PACKAGES = {
+        "com.sun.javafx.embed",
+        "com.sun.javafx.cursor",
+        "com.sun.javafx.stage",
+        "com.sun.javafx.application",
+        "com.sun.javafx.tk",
+    };
+
+    // Packages the SWT-thread input dispatch reaches by *deep* reflection — reading the
+    // private Toolkit.fxUserThread, the private Application.eventThread and the protected
+    // GlassScene.sceneListener. setAccessible on a non-public member of a named module needs the
+    // package opened, not merely exported. Both thread fields are repointed together: Scene's mouse
+    // processing gates on Toolkit.checkFxUserThread AND com.sun.glass.ui.Application.checkEventThread,
+    // which read *different* static fields, so pointing only one still throws on the other.
+    private static final String[] FX_DISPATCH_OPEN_PACKAGES = {
+        "com.sun.javafx.tk",
+        "com.sun.javafx.tk.quantum",
+        "com.sun.glass.ui",
+    };
+
+    // Longest the SWT thread will wait for the JavaFX thread to reach the parking point before an
+    // input event gives up and falls back to the async peer path. The FX thread is idle between
+    // pulses, so it parks in well under a frame; this is only a safety valve against a wedged one.
+    private static final long FX_PARK_TIMEOUT_MS = 2000L;
+
+    private static final java.util.concurrent.atomic.AtomicBoolean FX_OPEN_TRIED =
+            new java.util.concurrent.atomic.AtomicBoolean();
+
+    /**
+     * Adds the embedding packages of the host's {@code javafx.graphics} to this bundle's module, so
+     * that defining {@code HostContainer implements HostInterface} passes the JVM's access check.
+     *
+     * <p>Command-line {@code --add-exports} cannot do this: it is applied to the boot layer, while a
+     * host like e(fx)clipse builds its own {@code ModuleLayer} at runtime. Mutating the {@code Module}
+     * object works whatever layer it lives in — but {@code Module.addExports} is caller-sensitive, so
+     * we go through {@code implAddExports}, which needs {@code java.lang} opened to us. That one flag
+     * <em>does</em> work from the command line, because {@code java.base} is always in the boot
+     * layer:</p>
+     *
+     * <pre>--add-opens=java.base/java.lang=ALL-UNNAMED</pre>
+     *
+     * <p>Without it this is a no-op and the canvas degrades to blank exactly as before.</p>
+     */
+    private static void openFxInternals() {
+        if (!FX_OPEN_TRIED.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            Module fx = Platform.class.getModule();
+            Module self = FXCanvas.class.getModule();
+            // JavaFX on the classpath lands in the unnamed module, where no access control applies.
+            if (!fx.isNamed()) {
+                return;
+            }
+            java.lang.reflect.Method implAddExports =
+                    Module.class.getDeclaredMethod("implAddExports", String.class, Module.class);
+            implAddExports.setAccessible(true);
+            for (String pkg : FX_EMBED_PACKAGES) {
+                if (fx.getPackages().contains(pkg) && !fx.isExported(pkg, self)) {
+                    implAddExports.invoke(fx, pkg, self);
+                }
+            }
+            java.lang.reflect.Method implAddOpens =
+                    Module.class.getDeclaredMethod("implAddOpens", String.class, Module.class);
+            implAddOpens.setAccessible(true);
+            for (String pkg : FX_DISPATCH_OPEN_PACKAGES) {
+                if (fx.getPackages().contains(pkg) && !fx.isOpen(pkg, self)) {
+                    implAddOpens.invoke(fx, pkg, self);
+                }
+            }
+        } catch (Throwable t) {
+            // Left closed — ensureHost() will report the blank canvas with the real cause.
+            System.err.println("[FXCanvas] could not open JavaFX internals to this bundle "
+                    + "(add --add-opens=java.base/java.lang=ALL-UNNAMED to enable): " + t);
         }
     }
 
@@ -312,16 +396,117 @@ public class FXCanvas extends Canvas {
         if (!TOOLKIT_STARTED.compareAndSet(false, true)) {
             return;
         }
-        // Headless Monocle + software Prism: render the scene off-screen without
-        // a real window or the macOS main thread (owned by SWT/Flutter).
-        setIfAbsent("glass.platform", "Monocle");
-        setIfAbsent("monocle.platform", "Headless");
-        setIfAbsent("prism.order", "sw");
+        // The host's own Glass backend is the normal path. Nothing here ever opens a
+        // window: the scene is rasterised into an image by snapshot(), never onto a
+        // screen, so Win/Mac/Gtk all serve — all this canvas takes from Glass is the
+        // JavaFX thread and its pulses.
+        //
+        // Monocle is the exception, for a machine with no display at all to talk to.
+        // It does not ship with javafx.graphics — only a separate artifact carries it —
+        // so it is absent from practically every host application, and naming it
+        // unconditionally made Glass resolve com.sun.glass.ui.monocle.MonoclePlatformFactory,
+        // fail, and hand back a null factory, leaving every canvas in the product blank.
+        //
+        // Anywhere this reads the machine wrong, -Dglass.platform on the command line still
+        // wins — every write below is set-if-absent.
+        if (needsMonocle() && monocleAvailable()) {
+            setIfAbsent("glass.platform", "Monocle");
+            setIfAbsent("monocle.platform", "Headless");
+            // Nothing is going to hand a headless Glass a GPU, so the software pipeline is
+            // the only one that can serve. With a real backend, let Prism choose (d3d/es2,
+            // falling back to sw by itself where there is no usable device).
+            setIfAbsent("prism.order", "sw");
+        }
         setIfAbsent("prism.vsync", "false");
         try {
             Platform.startup(() -> {});
         } catch (IllegalStateException alreadyStarted) {
             // Toolkit already running — fine.
+        }
+    }
+
+    /**
+     * Whether the host's own Glass backend cannot drive this canvas, so the headless one is
+     * the only candidate left.
+     *
+     * <p><b>macOS.</b> Glass there adopts the <em>main</em> thread as the JavaFX application
+     * thread — the same thread SWT runs its event loop on — and offers no alternative. That
+     * loop is pure Java: {@code DartDisplay.readAndDispatch()} runs timers, paints and async
+     * messages and then parks in {@code sleep()} on a semaphore, so it never services the
+     * native run loop Glass posts to and no {@code Platform.runLater} ever runs. Measured on a
+     * live application: the main thread renamed "JavaFX Application Thread" and parked in
+     * {@code DartDisplay.sleep}, with not a single frame drawn. It is the same dead end that
+     * {@code javafx.embed.isEventThread=true} leads to, reached without asking for it.</p>
+     *
+     * <p><b>No display server.</b> A CI worker has nothing for a native backend to talk to.</p>
+     */
+    /**
+     * Claims the AWT dispatch slot for the SWT thread, which is what upstream {@code FXCanvas}
+     * achieves by running JavaFX on that thread and what a host in single-UI-thread mode relies
+     * on.
+     *
+     * <p>Evolve keeps JavaFX on its own thread (see {@link #needsMonocle()} — running it on the
+     * SWT thread is a measured dead end, Glass posts to a native run loop this display never
+     * services). But a host's AWT/SWT bridge does not ask where JavaFX runs; it asks
+     * {@code SwingUtilities.isEventDispatchThread()}, and on that answer it chooses between
+     * running its work inline on the SWT thread and posting it to whichever thread the dispatcher
+     * names. Measured in a host RCP product: answered "no", it posts to the JavaFX thread, that
+     * work calls {@code Display.syncExec}, and the SWT thread is already blocked waiting for it —
+     * a cycle with no monitors, so nothing reports a deadlock.
+     *
+     * <p>The two questions are separable, so this answers only the second one.
+     *
+     * <p><b>Why here and not earlier.</b> A host may issue an unguarded
+     * {@code SwingUtilities.invokeAndWait} from the SWT thread before any of this exists —
+     * measured, one does, to push its own {@code EventQueue} — and that call throws outright
+     * ({@code EventQueue.java:1353}) once the SWT thread answers as the dispatch thread. Upstream
+     * is safe from it because its dispatcher arrives with the first {@code FXCanvas}, after such
+     * set-up has run. Installing here inherits that ordering rather than inventing one.
+     *
+     * <p>Gated on the host asking for a single UI thread, so an ordinary SWT/JavaFX application
+     * neither loads AWT nor has its dispatch redirected. Fails closed.
+     */
+    private void installAwtDispatchMerge() {
+        if (fxHostUnavailable || !Boolean.getBoolean("javafx.embed.singleThread")) {
+            return;
+        }
+        try {
+            dev.equo.swt.awt.EvolveSwingHost.installDispatchMergeOn(getDisplay());
+        } catch (Throwable notInstallable) {
+            // An absent interop API leaves AWT dispatching however it would by default.
+        }
+    }
+
+    private static boolean needsMonocle() {
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+        if (os.contains("mac")) {
+            return true;
+        }
+        if (os.startsWith("windows")) {
+            return false;
+        }
+        // Linux: the host Glass backend is Gtk, and Gtk's <clinit> matches the SWT-GTK version.
+        // Evolve renders via Flutter and never initialises native GTK, so SWT reports GTK major
+        // version 0 and GtkApplication throws "SWT-GTK uses unsupported major GTK version 0".
+        // The Gtk backend can therefore never drive this canvas under Evolve — display or not —
+        // so Monocle (headless, offscreen snapshot) is the only viable backend on Linux.
+        return true;
+    }
+
+    /**
+     * Whether this JavaFX carries the headless Monocle Glass platform.
+     *
+     * <p>Probed through the loader that defined {@code javafx.application.Platform}, because
+     * that is the loader Glass itself resolves the platform factory with — under OSGi, or when
+     * the host loads JavaFX into its own {@code ModuleLayer}, it is not this bundle's.</p>
+     */
+    private static boolean monocleAvailable() {
+        try {
+            Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory", false,
+                    Platform.class.getClassLoader());
+            return true;
+        } catch (Throwable notThere) {
+            return false;
         }
     }
 
@@ -597,12 +782,205 @@ public class FXCanvas extends Canvas {
         boolean control = (stateMask & SWT.CONTROL) != 0;
         boolean alt = (stateMask & SWT.ALT) != 0;
         boolean meta = (stateMask & SWT.COMMAND) != 0;
+        // Press/release are the events that make Scene synthesise a MOUSE_CLICKED, so an
+        // application's click handler fires here. Dispatch those on the SWT thread so a handler
+        // that calls SWT/JFace — e.g. a link whose handler opens a JFace preference dialog — runs
+        // on the display thread instead of the FX thread, where DartShell's constructor would
+        // reject it with "Invalid thread access" (thrown to nowhere on the FX thread). Moves/drags
+        // stay on the async peer path: they fire no such handler and run far more often, so their
+        // per-event FX-thread parking cost is not worth paying. Any failure degrades to that same
+        // async path — today's behaviour.
+        boolean discrete = embedMouseType == AbstractEvents.MOUSEEVENT_PRESSED
+                || embedMouseType == AbstractEvents.MOUSEEVENT_RELEASED;
+        if (discrete && dispatchMouseOnSwtThread(peer, embedMouseType, button,
+                primaryDown, middleDown, secondaryDown,
+                me.x, me.y, abs.x, abs.y, shift, control, alt, meta)) {
+            return;
+        }
         peer.mouseEvent(embedMouseType, button,
                 primaryDown, middleDown, secondaryDown,
                 false, false,
                 me.x, me.y, abs.x, abs.y,
                 shift, control, alt, meta,
                 secondaryDown);
+    }
+
+    /**
+     * Dispatches a mouse event straight into the JavaFX scene on the calling SWT thread, bypassing
+     * {@code EmbeddedScene.mouseEvent}'s {@code Platform.runLater} (which would defer it onto the
+     * JavaFX thread). Reproduces that method's body against {@code GlassScene.sceneListener}.
+     *
+     * @return true if it dispatched; false if the FX internals are unreachable or the scene is not
+     *         yet wired, so the caller must fall back to the async peer path.
+     */
+    private static boolean dispatchMouseOnSwtThread(EmbeddedSceneInterface peer, int embedMouseType,
+            int button, boolean primaryDown, boolean middleDown, boolean secondaryDown,
+            int x, int y, int xAbs, int yAbs,
+            boolean shift, boolean control, boolean alt, boolean meta) {
+        if (!FxDispatch.READY) {
+            return false;
+        }
+        final Object sceneListener;
+        try {
+            sceneListener = FxDispatch.SCENE_LISTENER.get(peer);
+        } catch (IllegalAccessException impossible) {
+            return false;
+        }
+        if (sceneListener == null) {
+            return false; // scene not wired yet — nothing to dispatch to
+        }
+        final Object eventType = AbstractEvents.mouseIDToFXEventID(embedMouseType);
+        final Object fxButton = AbstractEvents.mouseButtonToFXMouseButton(button);
+        return runAsFxUserThread(() -> {
+            try {
+                FxDispatch.MOUSE_EVENT.invoke(sceneListener, eventType,
+                        (double) x, (double) y, (double) xAbs, (double) yAbs,
+                        fxButton, secondaryDown, false,
+                        shift, control, alt, meta,
+                        primaryDown, middleDown, secondaryDown, false, false);
+            } catch (Throwable handlerFailed) {
+                // A handler running on the FX thread throws to that thread's uncaught handler, never
+                // to SWT's event loop. Preserve that: log, don't let it abort readAndDispatch.
+                Throwable cause = handlerFailed instanceof java.lang.reflect.InvocationTargetException
+                        ? handlerFailed.getCause() : handlerFailed;
+                System.err.println("[FXCanvas] JavaFX mouse handler threw on the SWT thread: " + cause);
+                cause.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Runs {@code fxWork} on the calling SWT thread while JavaFX believes that thread is its
+     * application thread — the single-threaded contract upstream FXCanvas gets from
+     * {@code javafx.embed.isEventThread=true}. The real FX thread is parked for the duration so
+     * nothing touches the scene graph or {@code Toolkit.fxUserThread} concurrently, then restored.
+     *
+     * <p>Reentrant: an event fired while a modal dialog opened by an earlier handler pumps its own
+     * {@code readAndDispatch} loop on this thread runs inline — the FX thread is already parked up
+     * the stack, and re-parking it would deadlock (it can't service a second park while blocked in
+     * the first).</p>
+     *
+     * @return true if the work ran; false — caller must fall back to the async peer path — if the
+     *         FX internals are unreachable, the toolkit is not running, or the FX thread could not
+     *         be parked within {@link #FX_PARK_TIMEOUT_MS}.
+     */
+    // Package-visible (not private) so FXCanvasSwtThreadDispatchNativeTest can drive the real
+    // repoint-and-park logic against a live toolkit without needing an SWT Display or scene peer.
+    static boolean runAsFxUserThread(Runnable fxWork) {
+        if (!FxDispatch.READY) {
+            return false;
+        }
+        Thread swt = Thread.currentThread();
+        try {
+            if (FxDispatch.FX_USER_THREAD.get(null) == swt) {
+                fxWork.run();
+                return true;
+            }
+        } catch (IllegalAccessException impossible) {
+            return false;
+        }
+        java.util.concurrent.CountDownLatch parked = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        try {
+            Platform.runLater(() -> {
+                parked.countDown();
+                try {
+                    release.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        } catch (Throwable toolkitNotRunning) {
+            return false;
+        }
+        try {
+            if (!parked.await(FX_PARK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                release.countDown(); // let the late parking runnable fall straight through
+                return false;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            release.countDown();
+            return false;
+        }
+        Object previousFx;
+        Object previousGlass;
+        try {
+            previousFx = FxDispatch.FX_USER_THREAD.get(null);
+            previousGlass = FxDispatch.GLASS_EVENT_THREAD.get(null);
+            FxDispatch.FX_USER_THREAD.set(null, swt);
+            FxDispatch.GLASS_EVENT_THREAD.set(null, swt);
+        } catch (IllegalAccessException impossible) {
+            release.countDown();
+            return false;
+        }
+        try {
+            fxWork.run();
+            return true;
+        } finally {
+            try {
+                FxDispatch.FX_USER_THREAD.set(null, previousFx);
+                FxDispatch.GLASS_EVENT_THREAD.set(null, previousGlass);
+            } catch (IllegalAccessException impossible) {
+                // Restore failed; releasing the parked FX thread still matters more than a clean
+                // pair of thread fields, and the next dispatch re-reads whatever they are now.
+            }
+            release.countDown();
+        }
+    }
+
+    /**
+     * Reflective handles for SWT-thread input dispatch, resolved once. All optional: if any
+     * JavaFX internal is unreachable (host loaded JavaFX into its own {@code ModuleLayer} and left
+     * it closed, or a future JavaFX renamed a field), {@link #READY} stays false and dispatch
+     * falls back to the async {@code EmbeddedScene} path — today's behaviour, never a hard failure.
+     */
+    private static final class FxDispatch {
+        static final boolean READY;
+        static final java.lang.reflect.Field FX_USER_THREAD;  // static com.sun.javafx.tk.Toolkit.fxUserThread
+        static final java.lang.reflect.Field GLASS_EVENT_THREAD; // static com.sun.glass.ui.Application.eventThread
+        static final java.lang.reflect.Field SCENE_LISTENER;  // com.sun.javafx.tk.quantum.GlassScene.sceneListener
+        static final java.lang.reflect.Method MOUSE_EVENT;    // com.sun.javafx.tk.TKSceneListener.mouseEvent(...)
+
+        static {
+            java.lang.reflect.Field userThread = null;
+            java.lang.reflect.Field eventThread = null;
+            java.lang.reflect.Field listener = null;
+            java.lang.reflect.Method mouse = null;
+            boolean ok = false;
+            try {
+                openFxInternals();
+                Class<?> toolkit = Class.forName("com.sun.javafx.tk.Toolkit");
+                userThread = toolkit.getDeclaredField("fxUserThread");
+                userThread.setAccessible(true);
+                Class<?> application = Class.forName("com.sun.glass.ui.Application");
+                eventThread = application.getDeclaredField("eventThread");
+                eventThread.setAccessible(true);
+                Class<?> glassScene = Class.forName("com.sun.javafx.tk.quantum.GlassScene");
+                listener = glassScene.getDeclaredField("sceneListener");
+                listener.setAccessible(true);
+                Class<?> tkSceneListener = Class.forName("com.sun.javafx.tk.TKSceneListener");
+                mouse = tkSceneListener.getMethod("mouseEvent",
+                        javafx.event.EventType.class,
+                        double.class, double.class, double.class, double.class,
+                        javafx.scene.input.MouseButton.class,
+                        boolean.class, boolean.class,
+                        boolean.class, boolean.class, boolean.class, boolean.class,
+                        boolean.class, boolean.class, boolean.class, boolean.class, boolean.class);
+                mouse.setAccessible(true);
+                ok = true;
+            } catch (Throwable unavailable) {
+                // Left unresolved — dispatch degrades to the async peer path.
+            }
+            FX_USER_THREAD = userThread;
+            GLASS_EVENT_THREAD = eventThread;
+            SCENE_LISTENER = listener;
+            MOUSE_EVENT = mouse;
+            READY = ok;
+        }
+
+        private FxDispatch() {
+        }
     }
 
     private static int swtButtonMask(int swtButton) {

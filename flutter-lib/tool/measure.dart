@@ -8,13 +8,23 @@ import 'package:swtflutter/src/theme/theme.dart';
 import 'dart:ui' as ui;
 
 import 'package:swtflutter/screenshot.dart';
+import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
+import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/treecolumn_evolve.dart' show TreeColumnImpl;
+
+import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
 import 'measure_data.dart';
 
 // Configuration
 const bool ENABLE_SCREENSHOTS = true;
-const bool ENABLE_INTERACTIVITY =
-    true; // When true, starts paused with controls
+// When true, starts paused with controls. `--dart-define=MEASURE_INTERACTIVE=false` runs every case
+// unattended and exits when done.
+const bool ENABLE_INTERACTIVITY = bool.fromEnvironment(
+  'MEASURE_INTERACTIVE',
+  defaultValue: true,
+);
 const FromTheme = -1;
 
 /// Supported font weights for theme extraction and font metrics IDs (align with FontList.kt / FontMetricsUtil).
@@ -50,6 +60,28 @@ class ThemeConfig {
 
 String widgetName(String fqn) => fqn.split('.').last;
 
+/// Where the emitters write the Java they generate. Overridable so a check can re-emit into a
+/// temp directory and compare, instead of overwriting the source tree it is checking.
+const String defaultSizeOutputDir =
+    '../swt_native/src/main/java/dev/equo/swt/size';
+
+/// The analysis a measurement run derived, committed so the emitters can re-run without a screen.
+///
+/// The Java under `dev/equo/swt/size` is a function of two things: these numbers and the emitters
+/// below. Only the numbers need a real window, real fonts and a GPU — so committing them is what
+/// lets a machine without one re-emit the Java and check it (`tool/emit_sizes.dart`).
+const String sizesModelPath = 'tool/sizes-model.json';
+
+/// Hand-written answers the emitted Java asks instead of deciding itself. What they compute is
+/// application state or the column order, which no measurement sees.
+const String _tableUsesApplicationFont =
+    'org.eclipse.swt.widgets.TableHelper.usesApplicationFont';
+const String _treeColumnLeft = 'org.eclipse.swt.widgets.Sizes.treeColumnLeft';
+
+/// Bumped when the shape below changes, so a stale model fails loudly instead of emitting
+/// half-populated Java.
+const int sizesModelVersion = 2;
+
 // Measurement test case - generic for any widget
 class MeasurementCase {
   final String fqn;
@@ -61,6 +93,9 @@ class MeasurementCase {
   final bool useFontTheme;
   final String? itemsAccessor;
 
+  /// The widget letters in its parent's font, having none of its own (a ToolItem in its ToolBar's).
+  final bool fontFromParent;
+
   MeasurementCase({
     required String descr,
     required this.fqn,
@@ -69,6 +104,7 @@ class MeasurementCase {
     required this.widgetBuilder,
     this.useFontTheme = false,
     this.itemsAccessor,
+    this.fontFromParent = false,
   }) : name = "${widgetName(fqn)}_${style}_$descr";
 
   Widget buildWidget(GlobalKey key) {
@@ -228,6 +264,24 @@ const Map<String, (int, int)> rowWidgetFallbackWidth = {
   'Table': (70, 70),
 };
 
+/// Length along the bar of a widget that fills the length it is given, when no hint gives one.
+///
+/// Like [rowWidgetFallbackWidth] this is SWT layout policy, not a measurement: an unbounded Sash
+/// measures its thickness only. 64 is SWT's default size of a widget with nothing to measure.
+const Map<String, int> barWidgetDefaultLength = {'Sash': 64};
+
+/// Widgets whose `computeSize` reads a negative hint other than `SWT.DEFAULT` as 0, as Win32 and
+/// GTK do.
+const Set<String> negativeHintIsZero = {'Sash'};
+
+/// Width of the frame a row widget draws inside its own bounds for `SWT.BORDER`, read from the
+/// theme that draws it. A widget absent here draws no frame — Tree's only border is the line
+/// between columns, which is not an inset — and gets no `getFrameBorder` at all.
+double? declaredFrameBorder(String widgetType, ThemeData theme) =>
+    widgetType == 'Table'
+    ? theme.extension<TableThemeExtension>()?.borderWidth
+    : null;
+
 /// What the native `Scrollable.computeTrim` reserves on each axis for the scroll bars and the
 /// frame, whether or not they end up showing (on macOS, `NSScrollView.frameSizeForContentSize`
 /// with legacy scrollers). Like the fallback widths above these are not measurements and cannot
@@ -261,6 +315,21 @@ class _RowGeometry {
   });
 
   bool get hasExpander => arrowWidth != null;
+}
+
+/// What a tab costs beyond its label, measured rather than copied from the theme it is drawn from.
+class _TabGeometry {
+  final double surround;
+  final double closeExtra;
+  final double imageExtra;
+  final double imageHeight;
+
+  const _TabGeometry({
+    required this.surround,
+    required this.closeExtra,
+    required this.imageExtra,
+    required this.imageHeight,
+  });
 }
 
 // Analysis results for a widget type
@@ -304,21 +373,62 @@ class WidgetMeasurer {
   int currentThemeIndex = 0;
   // Map: themeName -> widgetType:style -> textStyle
   Map<String, Map<String, Map<String, dynamic>>> extractedThemes = {};
+  // Map: themeName -> widgetType:style -> the frame drawn around the widget's page, per edge
+  Map<String, Map<String, Map<String, double>>> extractedChrome = {};
 
   // Interactive controls state
   bool isPaused = ENABLE_INTERACTIVITY;
   bool isFinished = false;
 
+  /// Where the generated Java goes.
+  String outputDir = defaultSizeOutputDir;
+
+  /// False for a re-emit from the committed model: it has no raw render boxes to dump under
+  /// `build/`, and must not write the model it was just handed back over itself.
+  bool isMeasuring = true;
+
+  /// `widget.<expr>` that a widget's `computeSize` walks for its widest item, by fqn. Declared on
+  /// the measurement cases, so it has to be carried for a re-emit that has none.
+  final Map<String, String> itemsAccessorByFqn = {};
+
+  /// Fqn of every widget that letters in its parent's font. Declared on the measurement cases, so
+  /// it has to be carried for a re-emit that has none.
+  final Set<String> fontFromParentFqns = {};
+
+  /// Fqn of every widget that has a theme-sampling case, by simple name. A widget whose cases draw
+  /// no text still gets a theme file, derived from this.
+  final Map<String, String> themeCaseFqnByWidget = {};
+
   WidgetMeasurer();
 
   List<MeasurementResult> get results => resultsMap.values.toList();
 
+  /// Themes in the order `getThemes()` declares them, which is the order the generated
+  /// `get<Theme>Theme()` methods come out in. Map iteration order would instead make the emitted
+  /// Java depend on the order the themes happened to reach the measurer, which a re-emit from the
+  /// committed model cannot reproduce.
+  Iterable<String> get themeOrder {
+    final declared = themesToMeasure.map((t) => t.name).toList();
+    return [
+      ...declared,
+      ...{
+        ...extractedThemes.keys,
+        ...extractedChrome.keys,
+      }.where((n) => !declared.contains(n)),
+    ];
+  }
+
   void addTestCase(MeasurementCase testCase) {
     testCases.add(testCase);
+    if (testCase.itemsAccessor != null) {
+      itemsAccessorByFqn[testCase.fqn] = testCase.itemsAccessor!;
+    }
+    if (testCase.fontFromParent) fontFromParentFqns.add(testCase.fqn);
   }
 
   void addThemeCase(MeasurementCase testCase) {
     themeSamplingCases.add(testCase);
+    themeCaseFqnByWidget[widgetName(testCase.fqn)] = testCase.fqn;
   }
 
   Widget buildCurrentCase(GlobalKey key) {
@@ -340,6 +450,15 @@ class WidgetMeasurer {
     }
   }
 
+  /// The theme the sizing phase renders under, which is the one the emitted constants describe.
+  ///
+  /// Some of what the Java needs is *declared* on the render side rather than measurable: the gap
+  /// beside a tree item's icon, the width of its checkbox, the frame a bordered Table draws. Those
+  /// are read off this theme and compiled into the Java, the same way measure_canvas.dart reads the
+  /// ColorScheme — one declaration, so the side that measures and the side that draws cannot drift.
+  ThemeData get sizingTheme =>
+      themesToMeasure.isEmpty ? ThemeData() : themesToMeasure.first.themeFactory();
+
   ThemeData getCurrentTheme() {
     if (themesToMeasure.isEmpty ||
         currentThemeIndex >= themesToMeasure.length) {
@@ -356,6 +475,34 @@ class WidgetMeasurer {
     return themesToMeasure[currentThemeIndex].name;
   }
 
+  /// A widget that decodes its image asynchronously shows a progress indicator until it resolves;
+  /// measured before then, the case reads the placeholder's size instead of the image's.
+  Future<void> _waitForPendingImages(GlobalKey key) async {
+    for (var i = 0; i < 100; i++) {
+      final element = key.currentContext as Element?;
+      if (element == null || !_hasProgressIndicator(element)) return;
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      WidgetsBinding.instance.scheduleFrame();
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    print('WARNING: an image was still loading when the case was measured');
+  }
+
+  bool _hasProgressIndicator(Element root) {
+    var found = false;
+    void visit(Element e) {
+      if (found) return;
+      if (e.widget is ProgressIndicator) {
+        found = true;
+        return;
+      }
+      e.visitChildren(visit);
+    }
+
+    root.visitChildren(visit);
+    return found;
+  }
+
   Future<void> measureCurrentCase(GlobalKey key) async {
     final testCasesList = currentPhase == 1 ? testCases : themeSamplingCases;
 
@@ -366,6 +513,10 @@ class WidgetMeasurer {
         _finishPhase2();
       }
       return;
+    }
+
+    if (testCasesList[currentCaseIndex].expectedComponents['image'] != null) {
+      await _waitForPendingImages(key);
     }
 
     final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
@@ -416,7 +567,17 @@ class WidgetMeasurer {
       );
       resultsMap[testCase.name] = result;
     } else {
-      // Phase 2: Extract TextStyle only
+      // Phase 2: a widget measured for its chrome keeps the frame it drew under this theme.
+      final page = discoveredComponents['page'];
+      if (page is Map) {
+        final widgetType = widgetName(testCase.fqn);
+        extractedChrome.putIfAbsent(getCurrentThemeName(), () => {})[
+            '$widgetType:${testCase.style}'] = _frameAround(
+          page,
+          size,
+        );
+      }
+      // Otherwise it keeps its TextStyle only
       if (discoveredComponents.containsKey('text')) {
         final textInfo = discoveredComponents['text'];
         if (textInfo['textStyle'] != null) {
@@ -630,6 +791,7 @@ class WidgetMeasurer {
     } else {
       // No theme sampling needed, finish immediately
       print('No theme sampling configured, measurements complete.');
+      saveSizesModel();
       isFinished = true;
       if (!ENABLE_INTERACTIVITY) exit(0);
     }
@@ -659,9 +821,199 @@ class WidgetMeasurer {
 
     // Now generate theme files from extractedThemes
     _exportThemeResults();
+    saveSizesModel();
 
     isFinished = true;
     if (!ENABLE_INTERACTIVITY) exit(0);
+  }
+
+  /// What this run measured, in the shape [sizesModelPath] carries.
+  ///
+  /// The per-case sizes and the components discovered in them — not the constants derived from
+  /// them. Deriving is pure arithmetic over exactly this, so it re-runs on the way back out and
+  /// stays under the check: a fix to the analysis has to show up in the Java or the check fails.
+  ///
+  /// `renderBoxHierarchy` is the one thing left out. Only discovery reads it, discovery is what
+  /// produced `discoveredComponents` here, and it is the bulk of a run's output.
+  Map<String, dynamic> toSizesModel() {
+    Object? jsonSafe(Object? v) {
+      if (v == null || v is num || v is bool || v is String) return v;
+      // An image probe is declared as a record of its nominal size.
+      if (v is (int, int)) return [v.$1, v.$2];
+      if (v is List) return v.map(jsonSafe).toList();
+      if (v is Map) {
+        return {for (final e in v.entries) '${e.key}': jsonSafe(e.value)};
+      }
+      return '$v';
+    }
+
+    final widgets = <String, dynamic>{};
+    for (final m in results) {
+      final entry =
+          widgets.putIfAbsent(m.fqn, () {
+                return <String, dynamic>{
+                  if (itemsAccessorByFqn.containsKey(m.fqn))
+                    'itemsAccessor': itemsAccessorByFqn[m.fqn],
+                  if (fontFromParentFqns.contains(m.fqn)) 'fontFromParent': true,
+                  'cases': <dynamic>[],
+                };
+              })
+              as Map<String, dynamic>;
+      (entry['cases'] as List).add({
+        'name': m.name,
+        'style': m.style,
+        'width': m.finalSize.width,
+        'height': m.finalSize.height,
+        'useFontTheme': m.useFontTheme,
+        'expectedComponents': jsonSafe(m.expectedComponents),
+        'discoveredComponents': jsonSafe(m.discoveredComponents),
+      });
+    }
+    return {
+      'version': sizesModelVersion,
+      'widgets': widgets,
+      'themeCaseFqnByWidget': themeCaseFqnByWidget,
+      'themes': extractedThemes,
+      'chrome': extractedChrome,
+    };
+  }
+
+  /// Load [model] into this measurer so the emitters can run against it.
+  void applySizesModel(Map<String, dynamic> model) {
+    final version = model['version'];
+    if (version != sizesModelVersion) {
+      throw StateError(
+        '$sizesModelPath is version $version, this tool writes '
+        '$sizesModelVersion — re-run the measurement to rewrite it.',
+      );
+    }
+    for (final widget in (model['widgets'] as Map).entries) {
+      final fqn = widget.key as String;
+      final entry = widget.value as Map;
+      final itemsAccessor = entry['itemsAccessor'];
+      if (itemsAccessor is String) itemsAccessorByFqn[fqn] = itemsAccessor;
+      if (entry['fontFromParent'] == true) fontFromParentFqns.add(fqn);
+      for (final c in (entry['cases'] as List).cast<Map>()) {
+        final name = c['name'] as String;
+        resultsMap[name] = MeasurementResult(
+          fqn,
+          name,
+          c['style'] as String,
+          Size(
+            (c['width'] as num).toDouble(),
+            (c['height'] as num).toDouble(),
+          ),
+          Map<String, dynamic>.from(c['expectedComponents'] as Map),
+          Map<String, dynamic>.from(c['discoveredComponents'] as Map),
+          const {},
+          c['useFontTheme'] as bool,
+        );
+      }
+    }
+    themeCaseFqnByWidget.addAll(
+      Map<String, String>.from(model['themeCaseFqnByWidget'] as Map),
+    );
+    for (final theme in (model['themes'] as Map).entries) {
+      extractedThemes[theme.key as String] = {
+        for (final e in (theme.value as Map).entries)
+          e.key as String: Map<String, dynamic>.from(e.value as Map),
+      };
+    }
+    for (final theme in (model['chrome'] as Map).entries) {
+      extractedChrome[theme.key as String] = {
+        for (final e in (theme.value as Map).entries)
+          e.key as String: {
+            for (final f in (e.value as Map).entries)
+              f.key as String: (f.value as num).toDouble(),
+          },
+      };
+    }
+  }
+
+  /// Re-run the emitters alone, against a model a measurement run derived earlier.
+  void emitFromSizesModel(Map<String, dynamic> model) {
+    isMeasuring = false;
+    applySizesModel(model);
+    _exportSizingResults(_analyzeResultsByStyle());
+    _exportThemeResults();
+  }
+
+  /// Merge what this run measured into the committed model.
+  ///
+  /// A per-widget run (`measure_button.dart`) measures a few widgets, so it replaces their entries
+  /// and leaves every other widget's alone — overwriting would reduce the model to one widget and
+  /// take the rest of the Java out of the check with it.
+  void saveSizesModel({String path = sizesModelPath}) {
+    if (!isMeasuring) return;
+    final file = File(path);
+    final fresh = toSizesModel();
+    final merged = file.existsSync()
+        ? mergeSizesModel(
+            jsonDecode(file.readAsStringSync()) as Map<String, dynamic>,
+            fresh,
+          )
+        : fresh;
+    file.writeAsStringSync(_encodeSizesModel(merged));
+    print('Updated: ${file.path}');
+  }
+
+  /// [fresh] on top of [committed]: the widgets this run measured replace their entries, every
+  /// other widget's is kept.
+  Map<String, dynamic> mergeSizesModel(
+    Map<String, dynamic> committed,
+    Map<String, dynamic> fresh,
+  ) {
+    if (committed['version'] != sizesModelVersion) return fresh;
+    final widgets = Map<String, dynamic>.from(committed['widgets'] as Map)
+      ..addAll(fresh['widgets'] as Map<String, dynamic>);
+    final themeCases = Map<String, dynamic>.from(
+      committed['themeCaseFqnByWidget'] as Map,
+    )..addAll((fresh['themeCaseFqnByWidget'] as Map).cast<String, dynamic>());
+
+    // A theme's entries are keyed `Widget:STYLE`. Every key of a re-measured widget is dropped
+    // before the fresh ones go in, so each theme ends up holding exactly the styles this run found.
+    final measuredWidgets = {
+      for (final fqn in (fresh['widgets'] as Map).keys) widgetName(fqn as String),
+      ...(fresh['themeCaseFqnByWidget'] as Map).keys.cast<String>(),
+    };
+    Map<String, dynamic> mergeByStyle(String section) {
+      final out = <String, dynamic>{};
+      for (final theme in (committed[section] as Map).entries) {
+        out[theme.key as String] = {
+          for (final e in (theme.value as Map).entries)
+            if (!measuredWidgets.contains((e.key as String).split(':').first))
+              e.key as String: e.value,
+        };
+      }
+      for (final theme in (fresh[section] as Map).entries) {
+        (out.putIfAbsent(theme.key as String, () => <String, dynamic>{})
+                as Map<String, dynamic>)
+            .addAll(Map<String, dynamic>.from(theme.value as Map));
+      }
+      return out;
+    }
+
+    return {
+      'version': sizesModelVersion,
+      'widgets': widgets,
+      'themeCaseFqnByWidget': themeCases,
+      'themes': mergeByStyle('themes'),
+      'chrome': mergeByStyle('chrome'),
+    };
+  }
+
+  /// Keys sorted at every level, so two runs that measured the same thing produce the same file
+  /// and a merge shows only what actually moved.
+  String _encodeSizesModel(Map<String, dynamic> model) {
+    Object? sorted(Object? v) => v is Map
+        ? {
+            for (final k in v.keys.map((k) => k as String).toList()..sort())
+              k: sorted(v[k]),
+          }
+        : v is List
+        ? v.map(sorted).toList()
+        : v;
+    return '${JsonEncoder.withIndent('  ').convert(sorted(model))}\n';
   }
 
   void _exportSizingResults(List<WidgetAnalysis> analyses) {
@@ -679,13 +1031,15 @@ class WidgetMeasurer {
       final widgetType = widgetName(fqn).toLowerCase();
 
       // Write per-widget JSON file
-      final widgetJson = {
-        'analyses': widgetAnalyses.map((a) => a.toJson()).toList(),
-      };
-      final json = JsonEncoder.withIndent('  ').convert(widgetJson);
-      final file = File('./build/measurements_$widgetType.json');
-      file.writeAsStringSync(json);
-      print('Exported: ${file.path}');
+      if (isMeasuring) {
+        final widgetJson = {
+          'analyses': widgetAnalyses.map((a) => a.toJson()).toList(),
+        };
+        final json = JsonEncoder.withIndent('  ').convert(widgetJson);
+        final file = File('./build/measurements_$widgetType.json');
+        file.writeAsStringSync(json);
+        print('Exported: ${file.path}');
+      }
 
       // Generate Java sizing file
       _generateJavaWidgetSizes(fqn, widgetAnalyses);
@@ -704,9 +1058,9 @@ class WidgetMeasurer {
     // Group by widget type
     final byWidgetType = <String, Map<String, Map<String, dynamic>>>{};
 
-    for (var themeEntry in extractedThemes.entries) {
-      final themeName = themeEntry.key;
-      final stylesMap = themeEntry.value;
+    for (var themeName in themeOrder) {
+      final stylesMap = extractedThemes[themeName];
+      if (stylesMap == null) continue;
 
       for (var styleEntry in stylesMap.entries) {
         final key = styleEntry.key; // e.g., "label:HORIZONTAL"
@@ -722,13 +1076,9 @@ class WidgetMeasurer {
       }
     }
 
-    // Find widget types that have theme sampling cases but no extracted text
-    // These need a default theme with TextStyle.def()
-    final widgetTypesWithThemeCases = <String, String>{};
-    for (var testCase in themeSamplingCases) {
-      final widgetType = widgetName(testCase.fqn);
-      widgetTypesWithThemeCases[widgetType] = testCase.fqn;
-    }
+    // Widget types that have theme sampling cases but no extracted text need a default theme with
+    // TextStyle.def().
+    final widgetTypesWithThemeCases = themeCaseFqnByWidget;
 
     // Generate theme file per widget type
     for (var entry in byWidgetType.entries) {
@@ -741,12 +1091,22 @@ class WidgetMeasurer {
       _generateJavaWidgetThemeFromExtracted(fqn, widgetType, themesByStyle);
     }
 
+    // A widget measured for its chrome gets a theme of frames rather than of text styles.
+    final chromeWidgetTypes = {
+      for (final byStyle in extractedChrome.values)
+        for (final key in byStyle.keys) key.split(':').first,
+    };
+    for (final widgetType in chromeWidgetTypes) {
+      _generateJavaChromeTheme(widgetType);
+    }
+
     // Generate default theme for widgets without text
     for (var entry in widgetTypesWithThemeCases.entries) {
       final widgetType = entry.key;
       final fqn = entry.value;
 
-      if (!byWidgetType.containsKey(widgetType)) {
+      if (!byWidgetType.containsKey(widgetType) &&
+          !chromeWidgetTypes.contains(widgetType)) {
         print('Generating default theme for $widgetType (no text component)');
         _generateJavaWidgetThemeFromExtracted(fqn, widgetType, null);
       }
@@ -905,15 +1265,19 @@ class WidgetMeasurer {
           'height': imageBox.size.height,
         };
       } else if (expectedComponents['image'] != null) {
-        // Try icon-sized placeholder first (FutureBuilder SizedBox for icon images)
-        final iconBox = _findIconBox(root);
-        if (iconBox != null) {
+        final img = expectedComponents['image'] as (int, int);
+        // An unresolved image still occupies the slot the widget reserved for it. Only when no box
+        // has the image's own size is it drawn at an icon size instead; any square leaf is a weaker
+        // guess, since a check box's indicator is one too.
+        final placeholder =
+            _findBoxOfSize(root, Size(img.$1.toDouble(), img.$2.toDouble())) ??
+                _findIconBox(root);
+        if (placeholder != null) {
           discovered['image'] = {
-            'width': iconBox.size.width,
-            'height': iconBox.size.height,
+            'width': placeholder.size.width,
+            'height': placeholder.size.height,
           };
         } else {
-          final img = expectedComponents['image'] as (int, int);
           discovered['image'] = {
             'width': img.$1.toDouble(),
             'height': img.$2.toDouble(),
@@ -957,6 +1321,30 @@ class WidgetMeasurer {
           'top': root.offset.dy,
           'borderWidth': borderWidth,
         };
+      }
+    }
+
+    // The area a container lays the page it shows out in. `Sizes.getClientArea` reserves exactly
+    // this, so the two are one number on two sides, and a drift lays the page -- and everything
+    // the page positions from its own client area -- off by that much.
+    final pageWidget = expectedComponents['pageOf'];
+    if (pageWidget is String) {
+      final page = _findBoxCreatedBy(root, pageWidget);
+      if (page != null) discovered['page'] = _probeJson(page);
+    }
+
+    // The tabs a CTabFolder draws, which is what Java has to size to answer which one a point is
+    // over. A tab is assembled by the row rather than being a widget of its own, so it is found the
+    // way the row itself holds on to one: the keyed subtree per tab, inside that row and nowhere
+    // else. The item widget's own box is no use here - it is the label, without the padding and the
+    // close button the folder draws around it.
+    final tabRow = expectedComponents['tabsOf'];
+    if (tabRow is String) {
+      final row = _findBoxCreatedBy(root, tabRow);
+      if (row != null) {
+        final tabs = <RenderBoxInfo>[];
+        _collectOutermostCreatedBy(row, 'KeyedSubtree', tabs);
+        if (tabs.isNotEmpty) discovered['tab'] = tabs.map(_probeJson).toList();
       }
     }
 
@@ -1105,6 +1493,32 @@ class WidgetMeasurer {
     return null;
   }
 
+  /// The outermost box built by [widget], found from the render tree itself rather than from a
+  /// marker the widget has to carry — the same way rows are located.
+  /// Every box created by [widget], outermost only: once one matches, its children are its parts.
+  void _collectOutermostCreatedBy(
+    RenderBoxInfo box,
+    String widget,
+    List<RenderBoxInfo> into,
+  ) {
+    if (box.createdBy(widget)) {
+      into.add(box);
+      return;
+    }
+    for (final child in box.children) {
+      _collectOutermostCreatedBy(child, widget, into);
+    }
+  }
+
+  RenderBoxInfo? _findBoxCreatedBy(RenderBoxInfo box, String widget) {
+    if (box.createdBy(widget)) return box;
+    for (final child in box.children) {
+      final found = _findBoxCreatedBy(child, widget);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
   void _collectNamedBoxes(
     RenderBoxInfo box,
     String name,
@@ -1139,6 +1553,18 @@ class WidgetMeasurer {
       if (found != null) return found;
     }
 
+    return null;
+  }
+
+  RenderBoxInfo? _findBoxOfSize(RenderBoxInfo box, Size size) {
+    if ((box.size.width - size.width).abs() < 0.5 &&
+        (box.size.height - size.height).abs() < 0.5) {
+      return box;
+    }
+    for (var child in box.children) {
+      final found = _findBoxOfSize(child, size);
+      if (found != null) return found;
+    }
     return null;
   }
 
@@ -1192,9 +1618,61 @@ class WidgetMeasurer {
   ) {
     final constants = <String, dynamic>{};
 
+    // How much of the size it was given does the image actually take? Answered by how the widget's
+    // width responds to a larger image: cases that differ only in the image share a text width, so
+    // the slope across two image sizes says it. 1 means the image is laid out at the size it was
+    // given; 0 means it was not laid out at all, and the extra width is only the gap beside it.
+    //
+    // This has to be measured rather than assumed, because `_discoverComponents` reports the size
+    // the case *asked* for when it finds no image box. Subtracting that nominal width from a width
+    // that never contained it is what used to derive a negative image spacing.
+    final slopes = <double>[];
+    final byTextWidth = <double, List<MeasurementResult>>{};
+    for (final r in styleResults) {
+      final text = r.discoveredComponents['text'];
+      final image = r.discoveredComponents['image'];
+      if (text is! Map || image is! Map) continue;
+      byTextWidth
+          .putIfAbsent((text['width'] as num).toDouble(), () => [])
+          .add(r);
+    }
+    for (final group in byTextWidth.values) {
+      for (final a in group) {
+        for (final b in group) {
+          final aw = ((a.discoveredComponents['image'] as Map)['width'] as num)
+              .toDouble();
+          final bw = ((b.discoveredComponents['image'] as Map)['width'] as num)
+              .toDouble();
+          if (bw - aw < 1) continue;
+          slopes.add((b.finalSize.width - a.finalSize.width) / (bw - aw));
+        }
+      }
+    }
+    // Every pair, not the first one: a case whose image had not resolved by the time it was
+    // measured reads as its own slope, and one of those must not decide the answer.
+    final imageWidthSlope = _median(slopes);
+    // Only the two ends are conclusive; a slope in between is left to the arithmetic below rather
+    // than guessed at.
+    final imageRendersNothing =
+        imageWidthSlope != null && imageWidthSlope.abs() < 0.1;
+
     double? minWidth;
     double? minHeight;
+    // The smallest case of all, including ones that drew nothing. Only the image heuristics below
+    // read it; it is kept separate from the floor emitted into the Java so that excluding a
+    // drew-nothing case from one does not silently move the other.
+    double? smallestHeight;
     for (var result in styleResults) {
+      if (smallestHeight == null || result.finalSize.height < smallestHeight) {
+        smallestHeight = result.finalSize.height;
+      }
+      // A case given an image the widget never laid out, with no text to lay out either, measured
+      // the widget's padding and nothing else. That is not a floor for one that shows content.
+      if (imageRendersNothing &&
+          !result.discoveredComponents.containsKey('text') &&
+          result.discoveredComponents.containsKey('image')) {
+        continue;
+      }
       if (minWidth == null || result.finalSize.width < minWidth) {
         minWidth = result.finalSize.width;
       }
@@ -1205,6 +1683,10 @@ class WidgetMeasurer {
 
     constants['minWidth'] = minWidth;
     constants['minHeight'] = minHeight;
+    final defaultLength = barWidgetDefaultLength[widgetType]?.toDouble();
+    if (defaultLength != null) {
+      constants[style.split('|').contains('VERTICAL') ? 'minHeight' : 'minWidth'] = defaultLength;
+    }
 
     // Extract TextStyle from cases that have useFontTheme=true
     // Only consider results where useFontTheme is true
@@ -1370,12 +1852,14 @@ class WidgetMeasurer {
       final imageAffectsWidth =
           (maxWidthWithImage - minWidth!) > avgImageWidth * 0.5;
       final imageAffectsHeight =
-          (maxHeightWithImage - minHeight!) > avgImageHeight * 0.5;
+          (maxHeightWithImage - smallestHeight!) > avgImageHeight * 0.5;
 
       // Analyze layout orientation for cases with both text and image
       String? imageLayout; // 'horizontal', 'vertical', or null
       double? imageSpacing;
       bool? imageUsesMax; // true if height uses MAX, false if uses SUM
+      final horizontalSpacings = <double>[];
+      final verticalSpacings = <double>[];
 
       for (var result in styleResults) {
         if (result.discoveredComponents.containsKey('text') &&
@@ -1403,7 +1887,10 @@ class WidgetMeasurer {
 
           // Analyze width: finalWidth = textWidth + imageWidth + spacing + hPad
           final widthForComponents = finalWidth - hPad;
-          final widthSpacing = widthForComponents - textWidth - imageWidth;
+          final widthSpacing =
+              widthForComponents -
+              textWidth -
+              (imageRendersNothing ? 0 : imageWidth);
 
           // Analyze height: could be MAX(text, image) + vPad OR textHeight + imageHeight + spacing + vPad
           final heightForComponents = finalHeight - vPad;
@@ -1414,26 +1901,28 @@ class WidgetMeasurer {
           final diffFromSum = (heightForComponents - sumHeight).abs();
 
           if (diffFromMax < 5) {
-            // Height uses MAX (horizontal layout)
-            imageLayout = 'horizontal';
-            imageSpacing = widthSpacing;
-            imageUsesMax = true;
+            horizontalSpacings.add(widthSpacing);
           } else if (diffFromSum < 5) {
-            // Height uses SUM (vertical layout)
-            imageLayout = 'vertical';
-            imageSpacing = heightForComponents - sumHeight;
-            imageUsesMax = false;
+            verticalSpacings.add(heightForComponents - sumHeight);
           }
-
-          print(
-            '  Layout analysis: width=$finalWidth (text=$textWidth + image=$imageWidth + spacing=$widthSpacing + pad=$hPad)',
-          );
-          print(
-            '               height=$finalHeight (MAX($textHeight, $imageHeight)=$maxHeight vs SUM=${sumHeight}, diffMax=$diffFromMax, diffSum=$diffFromSum)',
-          );
-          break; // Only need to analyze one case
         }
       }
+      // The layout the cases mostly agree on, and the median of what they measured for it — for
+      // the same reason the slope above takes every pair: one unresolved image must not set it.
+      if (horizontalSpacings.length >= verticalSpacings.length &&
+          horizontalSpacings.isNotEmpty) {
+        imageLayout = 'horizontal';
+        imageSpacing = _median(horizontalSpacings);
+        imageUsesMax = true;
+      } else if (verticalSpacings.isNotEmpty) {
+        imageLayout = 'vertical';
+        imageSpacing = _median(verticalSpacings);
+        imageUsesMax = false;
+      }
+      print(
+        '  Layout analysis: $imageLayout, spacing=$imageSpacing '
+        '(${horizontalSpacings.length} horizontal / ${verticalSpacings.length} vertical cases)',
+      );
 
       constants['imageAffectsWidth'] = imageAffectsWidth;
       constants['imageAffectsHeight'] = imageAffectsHeight;
@@ -1486,6 +1975,24 @@ class WidgetMeasurer {
           }
         }
       }
+      // The size this style draws its image at whatever the image it was given, or null when it
+      // follows the image: the rendered size holds across images of different sizes, and fonts.
+      // A widget's image is a fixed icon only when every style showing one agrees (see
+      // _fixedIconByImage); one style's glyph alone (a check box) says nothing about its image.
+      if (!isIconImage) {
+        final rendered = <double>[];
+        final requested = <double>{};
+        for (final r in styleResults) {
+          final image = r.discoveredComponents['image'];
+          final nominal = _nominalImageWidth(r.expectedComponents['image']);
+          if (image is! Map || nominal == null) continue;
+          rendered.add((image['width'] as num).toDouble());
+          requested.add(nominal);
+        }
+        if (requested.length > 1 && rendered.reduce(max) - rendered.reduce(min) < 2.0) {
+          constants['fixedIconByImage'] = _median(rendered);
+        }
+      }
       constants['isIconImage'] = isIconImage;
       constants['isFixedIconSize'] = isFixedIconSize;
       constants['fixedIconWidth'] = fixedIconWidth;
@@ -1514,11 +2021,16 @@ class WidgetMeasurer {
     final softWrapCount = styleResults
         .where((r) => r.discoveredComponents['text']?['softWrap'] == true)
         .length;
-    constants['wrapsMode'] = softWrapCount == 0
-        ? 'none'
-        : softWrapCount == styleResults.length
-            ? 'always'
-            : 'whenWrapStyle';
+    // A style that declares WRAP wraps at the width it is given, even where the probe finds no
+    // soft-wrapping Text: a Text draws an EditableText, whose wrapping it does not see.
+    final declaresWrap = style.toUpperCase().split('|').contains('WRAP');
+    constants['wrapsMode'] = declaresWrap
+        ? 'whenWrapStyle'
+        : softWrapCount == 0
+            ? 'none'
+            : softWrapCount == styleResults.length
+                ? 'always'
+                : 'whenWrapStyle';
 
     final algorithm = _deriveAlgorithm(widgetType, style, constants);
 
@@ -1619,6 +2131,13 @@ class WidgetMeasurer {
       return;
     }
 
+    // A container measured for its chrome reports where it put its page, not how big it wants to
+    // be. What Java needs from it are the insets it has to reserve, not a computeSize.
+    if (_hasClientAreaGeometry(analyses)) {
+      _generateJavaClientAreaSizes(fqn, analyses);
+      return;
+    }
+
     final buffer = StringBuffer();
 
     // Extract package and class name to create DartClassName import
@@ -1638,17 +2157,21 @@ class WidgetMeasurer {
     buffer.writeln();
     buffer.writeln('import dev.equo.swt.Config;');
     buffer.writeln('import dev.equo.swt.FontMetricsUtil;');
+    final fixedIconByImage = _fixedIconByImage(analyses);
     final isIconImageWidget =
         hasAnyImageSupport &&
-        analyses.any((a) => a.derivedConstants['isIconImage'] == true);
+        (fixedIconByImage != null ||
+            analyses.any((a) => a.derivedConstants['isIconImage'] == true));
     final isFixedIconSizeWidget =
         isIconImageWidget &&
-        analyses.any((a) => a.derivedConstants['isFixedIconSize'] == true);
-    final fixedIconWidthValue = isFixedIconSizeWidget
-        ? analyses
-            .firstWhere((a) => a.derivedConstants['isFixedIconSize'] == true)
-            .derivedConstants['fixedIconWidth']
-        : null;
+        (fixedIconByImage != null ||
+            analyses.any((a) => a.derivedConstants['isFixedIconSize'] == true));
+    final fixedIconWidthValue = !isFixedIconSizeWidget
+        ? null
+        : fixedIconByImage ??
+            analyses
+                .firstWhere((a) => a.derivedConstants['isFixedIconSize'] == true)
+                .derivedConstants['fixedIconWidth'];
     if (hasAnyImageSupport && !isIconImageWidget) {
       buffer.writeln('import dev.equo.swt.ImageMetricUtil;');
     }
@@ -1658,6 +2181,9 @@ class WidgetMeasurer {
       buffer.writeln('import org.eclipse.swt.graphics.Image;');
     }
     buffer.writeln('import org.eclipse.swt.graphics.Point;');
+    if (fontFromParentFqns.contains(fqn)) {
+      buffer.writeln('import org.eclipse.swt.widgets.DartControl;');
+    }
     buffer.writeln('import $dartFqn;');
     buffer.writeln();
     buffer.writeln('import static dev.equo.swt.Styles.hasFlags;');
@@ -1670,24 +2196,38 @@ class WidgetMeasurer {
     buffer.writeln(' */');
     buffer.writeln('public class ${widgetType}Sizes {');
     buffer.writeln();
-
-    // Group analyses by their constants to avoid duplicating identical sizing logic
-    // IMPORTANT: VERTICAL styles must never be grouped with HORIZONTAL styles due to dimension swap
-    String getConstantsKey(Map<String, dynamic> constants) {
-      final isConstantSize = constants['isConstantSize'] == true;
+    // Group analyses by their constants to avoid duplicating identical sizing logic: styles of
+    // equal values share one class and one branch.
+    // IMPORTANT: VERTICAL styles must never be grouped with HORIZONTAL styles due to dimension swap.
+    // A constant-size style uses none of the padding or wrapping values, so only its size and the
+    // orientation its style declares tell it from another. A style that wraps only with the WRAP
+    // bit shares its branch with the ones that never wrap: the branch tests the bit.
+    String getConstantsKey(WidgetAnalysis analysis) {
+      final constants = analysis.derivedConstants;
+      final size = '${constants['minWidth']}_${constants['minHeight']}';
+      if (constants['isConstantSize'] == true) {
+        final vertical = analysis.widgetType.split('-')[1].split('|').contains('VERTICAL');
+        return '${size}_constant_vertical:$vertical';
+      }
       final useHorizontalPadding = constants['useHorizontalPadding'] as bool;
       final useVerticalPadding = constants['useVerticalPadding'] as bool;
-      final isVerticalStyle = constants['isVerticalStyle'] == true;
-      return '${constants['minWidth']}_${constants['minHeight']}_'
-          '${isConstantSize}_${useHorizontalPadding}_${useVerticalPadding}_'
+      final wrap = constants['wrapsMode'] == 'always' ? 'always' : 'byStyle';
+      return '${size}_${useHorizontalPadding}_${useVerticalPadding}_'
           '${constants['horizontalPadding']}_${constants['verticalPadding']}_'
-          'vertical:${isVerticalStyle}_wrap:${constants['wrapsMode'] ?? 'none'}';
+          'vertical:${constants['isVerticalStyle'] == true}_wrap:$wrap';
     }
 
     final Map<String, List<WidgetAnalysis>> groupsByConstants = {};
     for (var analysis in analyses) {
-      final key = getConstantsKey(analysis.derivedConstants);
+      final key = getConstantsKey(analysis);
       groupsByConstants.putIfAbsent(key, () => []).add(analysis);
+    }
+    for (final group in groupsByConstants.values) {
+      if (group.any((a) => a.derivedConstants['wrapsMode'] == 'whenWrapStyle')) {
+        for (final a in group) {
+          a.derivedConstants['wrapsMode'] = 'whenWrapStyle';
+        }
+      }
     }
 
     // Map from style to class name (for merged groups)
@@ -1770,6 +2310,12 @@ class WidgetMeasurer {
       (a) => a.widgetType.split('-')[1] == 'VERTICAL',
     );
 
+    // What a widget draws is what it is measured from, and Drawn (hand-written, next to these classes)
+    // says what that is for each widget: without the mnemonic marker, without a Link's markup, a
+    // password as stars, a Label's text or image, whichever it shows.
+    const drawnText = 'Drawn.text(widget)';
+    const drawnImage = 'Drawn.image(widget)';
+
     // Generate computeSize method (public API)
     buffer.writeln(
       '    public static Point computeSize(Dart$widgetType widget, int wHint, int hHint, boolean changed) {',
@@ -1790,6 +2336,11 @@ class WidgetMeasurer {
     buffer.writeln();
     buffer.writeln('        double width, height;');
     buffer.writeln();
+    if (negativeHintIsZero.contains(widgetType)) {
+      buffer.writeln('        if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;');
+      buffer.writeln('        if (hHint != SWT.DEFAULT && hHint < 0) hHint = 0;');
+      buffer.writeln();
+    }
 
     void generateSizeCalculation(
       String styleName,
@@ -1811,13 +2362,18 @@ class WidgetMeasurer {
         final emptyTextAffectsSizing =
             constants['emptyTextAffectsSizing'] as bool;
 
-        // Text-based widget - calculate size based on text, image, spacing, and padding
-        if (hasAnyTextBasedWidget) {
-          buffer.writeln(
-            '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);',
-          );
-        }
-        if (hasAnyImageSupport) {
+        // Text-based widget - calculate size based on text, image, spacing, and padding.
+        //
+        // CLabel goes image-first: it renders only its image when the text is empty, so whether
+        // there is one decides whether empty text is measured at all. Sound only while the image
+        // call does not itself read m.textStyle.
+        final imageBeforeText =
+            widgetType == 'CLabel' &&
+            hasAnyImageSupport &&
+            (isFixedIconSizeWidget || !isIconImageWidget);
+
+        void writeImage() {
+          if (!hasAnyImageSupport) return;
           if (isFixedIconSizeWidget) {
             buffer.writeln('${indent}m.image = computeImage(widget);');
           } else if (isIconImageWidget) {
@@ -1829,6 +2385,26 @@ class WidgetMeasurer {
           }
         }
 
+        if (imageBeforeText) writeImage();
+        if (hasAnyTextBasedWidget) {
+          if (imageBeforeText) {
+            buffer.writeln(
+              "$indent// With an image set, Dart's empty-text branch never runs (it shows only the image) --",
+            );
+            buffer.writeln(
+              "$indent// so empty text reserves a line only when there's no image to take that branch instead.",
+            );
+            buffer.writeln(
+              '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING && $drawnImage == null);',
+            );
+          } else {
+            buffer.writeln(
+              '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);',
+            );
+          }
+        }
+        if (!imageBeforeText) writeImage();
+
         final imageUsesMax = constants['imageUsesMax'] as bool;
         final imageSpacing = constants['imageSpacing'] as double;
         final hasImageSpacing = imageSpacing > 0;
@@ -1837,11 +2413,13 @@ class WidgetMeasurer {
         final textX = isVertical ? 'm.text.y()' : 'm.text.x()';
         final textY = isVertical ? 'm.text.x()' : 'm.text.y()';
 
-        // Include image spacing whenever the image exists — it's the icon's own margin, not conditioned on sibling text.
+        // The gap sits between the image and the text, so it only exists when both do — which is
+        // how the render side lays it out (`clabel_evolve.dart`, `label_evolve.dart`: the
+        // SizedBox(iconTextSpacing) is inside an `if (text.isNotEmpty)`).
         String textWidthExpr;
         if (imageAffectsWidth && hasImageSpacing) {
           textWidthExpr =
-              '($textX + m.image.x() + (m.image.x() > 0 ? $styleName.IMAGE_SPACING : 0))';
+              '($textX + m.image.x() + (m.image.x() > 0 && $textX > 0 ? $styleName.IMAGE_SPACING : 0))';
         } else if (imageAffectsWidth) {
           textWidthExpr = '($textX + m.image.x())';
         } else {
@@ -1855,9 +2433,9 @@ class WidgetMeasurer {
             // Horizontal layout - no spacing needed in height
             textHeightExpr = 'Math.max($textY, m.image.y())';
           } else if (hasImageSpacing) {
-            // Same reasoning as the width case above.
+            // Same reasoning as the width case above, on the stacking axis.
             textHeightExpr =
-                '($textY + m.image.y() + (m.image.y() > 0 ? $styleName.IMAGE_SPACING : 0))';
+                '($textY + m.image.y() + (m.image.y() > 0 && $textY > 0 ? $styleName.IMAGE_SPACING : 0))';
           } else {
             // Vertical layout without spacing
             textHeightExpr = '($textY + m.image.y())';
@@ -1918,10 +2496,6 @@ class WidgetMeasurer {
           buffer.writeln('${indent}    height = hHint;');
           buffer.writeln('${indent}} else if ($wrapCondition) {');
           if (wrapsMode == 'always') {
-            buffer.writeln('${indent}    String rawText = widget.getText();');
-            buffer.writeln(
-              '${indent}    String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";',
-            );
             final aw = useHorizontalPadding
                 ? 'wHint - $styleName.HORIZONTAL_PADDING'
                 : '(double) wHint';
@@ -1929,7 +2503,7 @@ class WidgetMeasurer {
               '${indent}    double availableWidth = Math.max(1.0, $aw);',
             );
             buffer.writeln(
-              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);',
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped($drawnText, m.textStyle, availableWidth);',
             );
             final hExpr = useVerticalPadding
                 ? 'wrapped.y() + $styleName.VERTICAL_PADDING'
@@ -1959,8 +2533,14 @@ class WidgetMeasurer {
               );
             }
             buffer.writeln(
-              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);',
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped($drawnText, m.textStyle, availableWidth);',
             );
+            // A widget whose empty text still takes a line keeps that line when it wraps.
+            if (emptyTextAffectsSizing) {
+              buffer.writeln(
+                '${indent}    wrapped = new PointD(wrapped.x(), Math.max(wrapped.y(), $textY));',
+              );
+            }
             if (imageAffectsHeight && useVerticalPadding) {
               buffer.writeln(
                 '${indent}    height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
@@ -2081,7 +2661,20 @@ class WidgetMeasurer {
             styles[i],
       ];
 
-      final conditions = minimalStyles.map((style) {
+      // The flags every style of the group shares say it alone when no style outside it holds them
+      // all: a Text wraps whatever its other bits, so its WRAP branch tests WRAP, not each style.
+      final common = styleFlags.reduce((a, b) => a.intersection(b));
+      final groupStyles = styles.toSet();
+      final sharedSaysIt = common.isNotEmpty &&
+          analyses
+              .map((a) => a.widgetType.split('-')[1])
+              .where((s) => !groupStyles.contains(s))
+              .every((s) => !s.split('|').toSet().containsAll(common));
+      final testedStyles = sharedSaysIt && minimalStyles.length > 1
+          ? [(common.toList()..sort()).join('|')]
+          : minimalStyles;
+
+      final conditions = testedStyles.map((style) {
         final styleCheck = style.contains('|')
             ? '(${style.split('|').map((s) => 'SWT.$s').join(' | ')})'
             : 'SWT.$style';
@@ -2176,19 +2769,24 @@ class WidgetMeasurer {
       if (isFixedIconSizeWidget) {
         // Image renders as an icon at a fixed theme size, independent of the widget's font.
         buffer.writeln(
+          '    /** The size the icon is drawn at, whatever the size of the image. */',
+        );
+        buffer.writeln(
+          '    public static final double ICON_SIZE = $fixedIconWidthValue;',
+        );
+        buffer.writeln();
+        buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
-        buffer.writeln('        if (widget.getImage() == null) return PointD.zero;');
-        buffer.writeln(
-          '        return new PointD($fixedIconWidthValue, $fixedIconWidthValue);',
-        );
+        buffer.writeln('        if ($drawnImage == null) return PointD.zero;');
+        buffer.writeln('        return new PointD(ICON_SIZE, ICON_SIZE);');
         buffer.writeln('    }');
       } else if (isIconImageWidget) {
         // Image renders as icon at fontSize — use textStyle.size() instead of pixel dimensions.
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget, TextStyle ts) {',
         );
-        buffer.writeln('        if (widget.getImage() == null) return PointD.zero;');
+        buffer.writeln('        if ($drawnImage == null) return PointD.zero;');
         buffer.writeln('        double iconSize = ts != null ? (double) ts.size() : 16.0;');
         buffer.writeln('        return new PointD(iconSize, iconSize);');
         buffer.writeln('    }');
@@ -2196,13 +2794,9 @@ class WidgetMeasurer {
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget) {',
         );
-        buffer.writeln('        Image image = widget.getImage();');
-        buffer.writeln('        if (image != null) {');
         buffer.writeln(
-          '            return ImageMetricUtil.getImageSize(image.getImageData());',
+          '        return ImageMetricUtil.getImageSize($drawnImage);',
         );
-        buffer.writeln('        }');
-        buffer.writeln('        return PointD.zero;');
         buffer.writeln('    }');
       }
       buffer.writeln();
@@ -2213,44 +2807,33 @@ class WidgetMeasurer {
       buffer.writeln(
         '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing) {',
       );
-      buffer.writeln('        String text = widget.getText();');
-      if (widgetType == 'Link') {
-        buffer.writeln('        if (text != null) {');
-        buffer.writeln('            text = text.replaceAll("<[^>]+>", "");');
-        buffer.writeln('        }');
-      }
-      // PASSWORD style only applies to Text widget
-      if (widgetType == 'Text') {
-        buffer.writeln(
-          '        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {',
-        );
-        buffer.writeln('            text = "*".repeat(text.length());');
-        buffer.writeln('        }');
-      }
+      buffer.writeln('        String text = $drawnText;');
 
       // Use parameter to decide whether empty text should be measured
       buffer.writeln(
         '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
       );
 
+      // A table row is measured in the application's font when its table was given one too, which
+      // only the table knows; every other widget answers from its own font, or from its parent's when
+      // it has none of its own.
+      final fontOwner = fontFromParentFqns.contains(fqn)
+          ? '((DartControl) widget.getParent().getImpl())'
+          : 'widget';
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {',
+        widgetType == 'TableItem'
+            ? '            if (!$_tableUsesApplicationFont(widget)) {'
+            : '            if (!Config.getConfigFlags().use_swt_fonts || $fontOwner.getExplicitFont() == null) {',
       );
       buffer.writeln(
-        '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom(widget.getFont());',
+        '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom($fontOwner.getFont());',
       );
       buffer.writeln('            } else {');
       buffer.writeln(
-        '                m.textStyle = TextStyle.from(widget.getFont());',
+        '                m.textStyle = TextStyle.from($fontOwner.getFont());',
       );
       buffer.writeln('            }');
-      String? itemsExpr;
-      for (final c in testCases) {
-        if (c.fqn == fqn && c.itemsAccessor != null) {
-          itemsExpr = c.itemsAccessor;
-          break;
-        }
-      }
+      final itemsExpr = itemsAccessorByFqn[fqn];
       if (itemsExpr == null) {
         buffer.writeln(
           '            return FontMetricsUtil.getFontSize(text, m.textStyle);',
@@ -2280,12 +2863,45 @@ class WidgetMeasurer {
 
     buffer.writeln('}');
 
-    final javaFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Sizes.java',
-    );
+    final javaFile = File('$outputDir/${widgetType}Sizes.java');
     javaFile.writeAsStringSync(buffer.toString());
     print('Generated: ${javaFile.path}');
   }
+
+  /// Middle value of [values], or null when there are none. Used wherever several cases measured
+  /// the same thing: the median ignores a case the render side had not finished laying out, which
+  /// a mean or a first-match would carry straight into the generated constant.
+  double? _median(List<double> values) {
+    if (values.isEmpty) return null;
+    final sorted = [...values]..sort();
+    final mid = sorted.length ~/ 2;
+    return sorted.length.isOdd
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  /// The size every style that shows an image draws it at, when they all draw it at one size
+  /// whatever the image; null when any style follows the image.
+  double? _fixedIconByImage(List<WidgetAnalysis> analyses) {
+    final withImage = analyses.where(
+      (a) =>
+          a.derivedConstants['imageAffectsWidth'] == true ||
+          a.derivedConstants['imageAffectsHeight'] == true,
+    );
+    if (withImage.isEmpty) return null;
+    final sizes = withImage.map((a) => a.derivedConstants['fixedIconByImage'] as double?);
+    if (sizes.any((s) => s == null)) return null;
+    final values = sizes.cast<double>().toList();
+    return values.reduce(max) - values.reduce(min) < 2.0 ? _median(values) : null;
+  }
+
+  /// The width a case asked its image to be: a record live, a two-element list once read back
+  /// from the model.
+  double? _nominalImageWidth(Object? image) => switch (image) {
+        (int w, int _) => w.toDouble(),
+        [num w, num _] => w.toDouble(),
+        _ => null,
+      };
 
   /// Number formatted as a Java `double` literal, with float noise from the layout rounded off.
   String _d(double v) {
@@ -2374,6 +2990,446 @@ class WidgetMeasurer {
   bool _hasRowGeometry(List<WidgetAnalysis> analyses) => analyses.any(
     (a) => a.measurements.any((m) => m.discoveredComponents['row'] is List),
   );
+
+  bool _hasClientAreaGeometry(List<WidgetAnalysis> analyses) => analyses.any(
+    (a) => a.measurements.any((m) => m.discoveredComponents['page'] is Map),
+  );
+
+  /// Emits the chrome a container reserves around its page: the strip on one edge and the frame on
+  /// the other three, as `Sizes.getClientArea` has to subtract them.
+  ///
+  /// Every style the widget declares is measured, and they all have to agree — Java keeps one
+  /// number for the strip and tells apart exactly one case, `SWT.BORDER`. A style that moves the
+  /// chrome beyond that is a layout bug, so this refuses to write rather than pick a side.
+  void _generateJavaClientAreaSizes(String fqn, List<WidgetAnalysis> analyses) {
+    final widgetType = widgetName(fqn);
+    final results = analyses
+        .expand((a) => a.measurements)
+        .where((m) => m.discoveredComponents['page'] is Map)
+        .toList();
+
+    // No tab strip: a bar whose page is the row its items sit in, framed on all four edges.
+    if (!results.any((m) => m.expectedComponents.containsKey('tabsOf'))) {
+      _generateJavaItemBarSizes(widgetType, results);
+      return;
+    }
+
+    final strip = <String, double>{};
+    final frame = <String, double>{};
+    final frameStyled = <String, double>{};
+    for (final m in results) {
+      final page = m.discoveredComponents['page'] as Map;
+      final left = (page['left'] as num).toDouble();
+      final top = (page['top'] as num).toDouble();
+      final right = m.finalSize.width - left - (page['width'] as num).toDouble();
+      final bottom =
+          m.finalSize.height - top - (page['height'] as num).toDouble();
+
+      // Which edge the strip is on is the style's to say; the other three carry the frame.
+      final onBottom = m.style.contains('BOTTOM');
+      strip[m.style] = onBottom ? bottom : top;
+      final into = m.style.contains('BORDER') ? frameStyled : frame;
+      into['${m.style} left'] = left;
+      into['${m.style} right'] = right;
+      into['${m.style} ${onBottom ? 'top' : 'bottom'}'] = onBottom ? top : bottom;
+    }
+
+    final stripHeight = _agreedMeasurement(strip, widgetType, 'the tab strip height');
+    final border = _agreedMeasurement(frame, widgetType, 'the body frame');
+    final borderStyled =
+        _agreedMeasurement(frameStyled, widgetType, 'the SWT.BORDER body frame');
+    if (stripHeight == null || border == null || borderStyled == null) return;
+
+    final labelStyle = _labelStyle(widgetType, analyses);
+    if (labelStyle == null) return;
+
+    final tab = _tabGeometry(widgetType, analyses);
+    if (tab == null) return;
+
+    final buffer = StringBuffer()
+      ..writeln('package dev.equo.swt.size;')
+      ..writeln()
+      ..writeln('/**')
+      ..writeln(
+        ' * What a $widgetType lays out around the page it shows. Java hands the page exactly the',
+      )
+      ..writeln(
+        ' * area these leave, so the numbers are the render side\'s rather than a second copy.',
+      )
+      ..writeln(' *')
+      ..writeln(
+        ' * DO NOT EDIT MANUALLY - regenerate from measure_${widgetType.toLowerCase()}.dart',
+      )
+      ..writeln(' */')
+      ..writeln('public class ${widgetType}Sizes {')
+      ..writeln()
+      ..writeln('    /** Height of the tab strip, on whichever edge the tabs sit. */')
+      ..writeln(
+        '    public static final int TAB_STRIP_HEIGHT = ${stripHeight.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** The frame drawn on the three edges the strip does not take. */')
+      ..writeln('    public static final int BODY_BORDER = ${border.round()};')
+      ..writeln()
+      ..writeln('    /** The same frame, as SWT.BORDER widens it. */')
+      ..writeln(
+        '    public static final int BODY_BORDER_STYLED = ${borderStyled.round()};',
+      )
+      ..writeln()
+      ..writeln(
+        '    /** What a tab draws around its label, both sides together. */',
+      )
+      ..writeln(
+        '    public static final int TAB_LABEL_SURROUND = ${tab.surround.round()};',
+      )
+      ..writeln()
+      ..writeln(
+        '    /** What a close button adds to a tab\'s width, including its gap to the label. */',
+      )
+      ..writeln(
+        '    public static final int TAB_CLOSE_EXTRA = ${tab.closeExtra.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** What an image adds to a tab\'s width, including its gap to the label. */')
+      ..writeln(
+        '    public static final int TAB_IMAGE_EXTRA = ${tab.imageExtra.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** How tall an image on a tab is drawn, which is what sets the tab\'s height. */')
+      ..writeln(
+        '    public static final int TAB_IMAGE_HEIGHT = ${tab.imageHeight.round()};',
+      )
+      ..writeln()
+      ..writeln(
+        '    /** The style a tab\'s label is drawn in, which is the font to measure it in. */',
+      )
+      ..writeln('    public static TextStyle tabLabelStyle() {')
+      ..writeln('        return $labelStyle;')
+      ..writeln('    }')
+      ..writeln('}');
+    _writeSizesFile(widgetType, buffer);
+  }
+
+  /// The frame between a widget's own edges and the page it lays out inside them, per edge.
+  Map<String, double> _frameAround(Map page, Size size) {
+    final left = (page['left'] as num).toDouble();
+    final top = (page['top'] as num).toDouble();
+    return {
+      'left': left,
+      'top': top,
+      'right': size.width - left - (page['width'] as num).toDouble(),
+      'bottom': size.height - top - (page['height'] as num).toDouble(),
+    };
+  }
+
+  /// The one frame every style of [widgetType] draws, or null after saying which edge disagreed.
+  /// Java reserves one frame whatever the style, so a style that moves it is a layout bug to fix
+  /// rather than a number to pick.
+  Map<String, double>? _agreedFrame(
+    String widgetType,
+    Map<String, Map<String, double>> framesByStyle,
+    String where,
+  ) {
+    final agreed = <String, double>{};
+    for (final edge in const ['left', 'top', 'right', 'bottom']) {
+      final value = _agreedMeasurement(
+        {for (final e in framesByStyle.entries) e.key: e.value[edge]!},
+        widgetType,
+        'the $edge edge of the frame $where',
+      );
+      if (value == null) return null;
+      agreed[edge] = value;
+    }
+    return agreed;
+  }
+
+  /// Emits how a bar of items sizes itself: SWT's row layout around the items' preferred sizes,
+  /// inside the frame the render side draws, which [_generateJavaChromeTheme] writes per theme.
+  ///
+  /// The row layout is SWT's own - the item trim and the row spacing are the numbers it places the
+  /// items with - so they are written here as SWT's, not measured. What this run checks is that
+  /// every style draws the same frame, which is the one thing Java cannot tell apart per style.
+  void _generateJavaItemBarSizes(
+    String widgetType,
+    List<MeasurementResult> results,
+  ) {
+    final frame = _agreedFrame(widgetType, {
+      for (final m in results)
+        m.style: _frameAround(m.discoveredComponents['page'] as Map, m.finalSize),
+    }, 'around the item row');
+    if (frame == null) return;
+
+    const javaSource = r'''
+package dev.equo.swt.size;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.CoolBar;
+import org.eclipse.swt.widgets.CoolItem;
+
+/**
+ * How a CoolBar sizes itself: SWT's rows of items, inside the frame the render side draws around
+ * them. The frame is measured, per theme, into {@link CoolBarTheme}; the row layout is SWT's own.
+ *
+ * DO NOT EDIT MANUALLY - regenerate from measure_coolbar.dart
+ */
+public class CoolBarSizes {
+
+    /** What a CoolItem adds to its control on the layout axis: SWT's gripper plus its margins. */
+    public static final int ITEM_TRIM = 10;
+
+    /** The gap SWT's row layout leaves between two rows of a bar that is not SWT.FLAT. */
+    public static final int ROW_SPACING = 2;
+
+    /**
+     * SWT's emulated CoolBar.computeSize: rows break at the explicit wrap indices and wherever the
+     * next item's minimum width would overflow the hint; a row is as long as its items' preferred
+     * widths and as thick as its thickest item. The rows the bar is currently wrapped into for its
+     * present size are deliberately ignored: a bar squeezed onto several rows must still report its
+     * natural size, or its parent keeps it squeezed.
+     */
+    public static Point computeSize(CoolBar bar, int wHint, int hHint) {
+        boolean vertical = (bar.getStyle() & SWT.VERTICAL) != 0;
+        int rowSpacing = (bar.getStyle() & SWT.FLAT) != 0 ? 0 : ROW_SPACING;
+        int maxLength = vertical ? hHint : wHint;
+        int[] order = bar.getItemOrder();
+        java.util.Set<Integer> wraps = new java.util.HashSet<>();
+        for (int index : bar.getWrapIndices()) wraps.add(index);
+
+        int length = 0, thickness = 0, rows = 0;
+        int rowLength = 0, rowMinLength = 0, rowThickness = 0;
+        for (int i = 0; i < order.length; i++) {
+            CoolItem item = bar.getItem(order[i]);
+            Point preferred = item.getPreferredSize();
+            Point minimum = item.getMinimumSize();
+            int itemLength = vertical ? preferred.y : preferred.x;
+            int itemThickness = vertical ? preferred.x : preferred.y;
+            int itemMinLength = (vertical ? minimum.y : minimum.x) + ITEM_TRIM;
+            boolean overflows = maxLength != SWT.DEFAULT && rowMinLength + itemMinLength > maxLength;
+            if (i > 0 && (wraps.contains(i) || overflows)) {
+                length = Math.max(length, rowLength);
+                thickness += rowThickness + (rows > 0 ? rowSpacing : 0);
+                rows++;
+                rowLength = rowMinLength = rowThickness = 0;
+            }
+            rowLength += itemLength;
+            rowMinLength += itemMinLength;
+            rowThickness = Math.max(rowThickness, itemThickness);
+        }
+        if (order.length > 0) {
+            length = Math.max(length, rowLength);
+            thickness += rowThickness + (rows > 0 ? rowSpacing : 0);
+        }
+
+        int width = vertical ? thickness : length;
+        int height = vertical ? length : thickness;
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+        Rectangle trim = computeTrim(0, 0, width, height);
+        return new Point(trim.width, trim.height);
+    }
+
+    /** The bar's bounds around a client area, with the frame the render side draws added back. */
+    public static Rectangle computeTrim(int x, int y, int width, int height) {
+        CoolBarTheme frame = CoolBarTheme.get();
+        return new Rectangle(x - frame.frameLeft(), y - frame.frameTop(),
+                width + frame.frameLeft() + frame.frameRight(),
+                height + frame.frameTop() + frame.frameBottom());
+    }
+
+    /** What the frame the render side draws leaves of the bar's bounds for its items. */
+    public static Rectangle getClientArea(Rectangle bounds) {
+        CoolBarTheme frame = CoolBarTheme.get();
+        return new Rectangle(frame.frameLeft(), frame.frameTop(),
+                Math.max(0, bounds.width - frame.frameLeft() - frame.frameRight()),
+                Math.max(0, bounds.height - frame.frameTop() - frame.frameBottom()));
+    }
+}
+''';
+    _writeSizesFile(widgetType, StringBuffer(javaSource));
+  }
+
+  /// Emits `{Widget}Theme` for a widget measured for its chrome: the frame it draws, per theme.
+  /// Every style has to draw one frame within a theme; themes are free to differ.
+  void _generateJavaChromeTheme(String widgetType) {
+    final byTheme = <String, Map<String, double>>{};
+    for (final themeName in themeOrder) {
+      final byStyle = extractedChrome[themeName];
+      if (byStyle == null) continue;
+      final framesByStyle = <String, Map<String, double>>{
+        for (final e in byStyle.entries)
+          if (e.key.startsWith('$widgetType:')) e.key.split(':').last: e.value,
+      };
+      final frame = _agreedFrame(
+        widgetType,
+        framesByStyle,
+        'in the $themeName theme',
+      );
+      if (frame == null) {
+        print('SKIPPED ${widgetType}Theme.java: see above.');
+        return;
+      }
+      byTheme[themeName] = frame;
+    }
+
+    final buffer = StringBuffer()
+      ..writeln('package dev.equo.swt.size;')
+      ..writeln()
+      ..writeln('/**')
+      ..writeln(
+        ' * The frame a $widgetType draws between its bounds and its content, per theme.',
+      )
+      ..writeln(' *')
+      ..writeln(
+        ' * DO NOT EDIT MANUALLY - regenerate from measure_${widgetType.toLowerCase()}.dart',
+      )
+      ..writeln(' */')
+      ..write(
+        javaValueClass('${widgetType}Theme', const [
+          ('int', 'frameLeft'),
+          ('int', 'frameTop'),
+          ('int', 'frameRight'),
+          ('int', 'frameBottom'),
+        ]),
+      )
+      ..writeln('    public static ${widgetType}Theme get() {')
+      ..writeln('        return Themes.getTheme().${widgetField(widgetType)};')
+      ..writeln('    }')
+      ..writeln();
+    for (final entry in byTheme.entries) {
+      final f = entry.value;
+      buffer
+        ..writeln('    public static ${widgetType}Theme get${entry.key}Theme() {')
+        ..writeln(
+          '        return new ${widgetType}Theme(${f['left']!.round()}, ${f['top']!.round()}, '
+          '${f['right']!.round()}, ${f['bottom']!.round()});',
+        )
+        ..writeln('    }')
+        ..writeln();
+    }
+    buffer.writeln('}');
+
+    final themeFile = File('$outputDir/${widgetType}Theme.java');
+    themeFile.writeAsStringSync(buffer.toString());
+    print('Generated: ${themeFile.path}');
+  }
+
+  /// What a tab costs beyond its label, as differences between the tab shapes.
+  ///
+  /// Java sizes a tab by measuring its label and adding to it, so these are the numbers it needs -
+  /// not the decomposition the theme is written in, whose several constants only ever reach a tab's
+  /// width as a sum.
+  ///
+  _TabGeometry? _tabGeometry(String widgetType, List<WidgetAnalysis> analyses) {
+    final surround = <String, double>{};
+    final widths = <String, double>{};
+    double? imageHeight;
+    for (final m in analyses.expand((a) => a.measurements)) {
+      final tabs = m.discoveredComponents['tab'];
+      final text = m.discoveredComponents['text'];
+      if (tabs is! List || tabs.isEmpty || text is! Map) continue;
+      final width = ((tabs.first as Map)['width'] as num).toDouble();
+      widths[m.style] = width;
+      if (!m.style.startsWith('tab:')) {
+        surround[m.style] = width - (text['width'] as num).toDouble();
+      }
+      final image = m.discoveredComponents['image'];
+      if (image is Map) imageHeight = (image['height'] as num).toDouble();
+    }
+
+    final agreed =
+        _agreedMeasurement(surround, widgetType, 'what a tab draws around its label');
+    final plain = widths['tab:plain'];
+    final withClose = widths['tab:close'];
+    final withImage = widths['tab:image'];
+    if (agreed == null) return null;
+    if (plain == null || withClose == null || withImage == null || imageHeight == null) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: the tab shapes did not all measure — '
+        'plain=$plain close=$withClose image=$withImage imageHeight=$imageHeight',
+      );
+      return null;
+    }
+
+    // An icon is square, so it has to widen the tab by at least its own height. Anything less means
+    // it was never drawn - the render side builds one from the image's bytes and falls back to
+    // nothing - and the difference would then describe this tool rather than the tab.
+    final imageExtra = withImage - plain;
+    if (imageExtra < imageHeight) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: the tab with an image is only ${imageExtra}px wider than '
+        'the one without, for an icon $imageHeight tall — it was not drawn.',
+      );
+      return null;
+    }
+
+    return _TabGeometry(
+      surround: agreed,
+      closeExtra: withClose - plain,
+      imageExtra: imageExtra,
+      imageHeight: imageHeight,
+    );
+  }
+
+  /// The style the label on this container's own chrome is drawn in, as the `new TextStyle(...)`
+  /// Java measures with. Read off the laid-out text rather than derived from the theme it came from,
+  /// so the side that measures a label and the side that draws it cannot drift apart.
+  String? _labelStyle(String widgetType, List<WidgetAnalysis> analyses) {
+    final byStyle = <String, String>{};
+    for (final m in analyses.expand((a) => a.measurements)) {
+      final text = m.discoveredComponents['text'];
+      if (text is! Map) continue;
+      final style = text['textStyle'];
+      if (style is Map) byStyle[m.style] = _javaTextStyle(style);
+    }
+    final distinct = byStyle.values.toSet();
+    if (distinct.length == 1) return distinct.single;
+    print(
+      distinct.isEmpty
+          ? 'SKIPPED ${widgetType}Sizes.java: no case measured a label.'
+          : 'SKIPPED ${widgetType}Sizes.java: the label is not drawn in one style: $byStyle',
+    );
+    return null;
+  }
+
+  /// A measured text style as the `new TextStyle(...)` Java measures with.
+  String _javaTextStyle(Map style) {
+    final family = ((style['fontFamily'] ?? 'System') as String)
+        .replaceAll('.AppleSystemUIFont', 'System')
+        .replaceAll('Roboto', 'System')
+        .replaceAll('Segoe UI', 'System');
+    final size = (style['fontSize'] as num?)?.toInt() ?? 12;
+    final weight = snapToSupportedWeight(
+      style['fontWeight'] != null
+          ? ((style['fontWeight'] as int).clamp(0, 8) + 1) * 100
+          : 400,
+    );
+    final italic =
+        style['fontStyle'] != null && (style['fontStyle'] as int) == FontStyle.italic.index;
+    return 'new TextStyle("$family", $size, $italic, $weight)';
+  }
+
+  /// The one value every entry in [edges] agrees on, or null after saying which disagreed. Refusing
+  /// to write beats emitting a number picked out of a disagreement that a layout bug caused.
+  double? _agreedMeasurement(
+    Map<String, double> edges,
+    String widgetType,
+    String what,
+  ) {
+    if (edges.isEmpty) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: nothing measured $what — no style case produced it.',
+      );
+      return null;
+    }
+    final distinct = edges.values.toSet();
+    if (distinct.length != 1) {
+      print('SKIPPED ${widgetType}Sizes.java: $what is not one number: $edges');
+      return null;
+    }
+    return distinct.single;
+  }
 
   /// Emits `computeSize`, so a row widget reports its preferred size the same way every other
   /// generated widget does instead of keeping the arithmetic by hand in Sizes.java.
@@ -2476,29 +3532,9 @@ class WidgetMeasurer {
         '        for ($itemType item : $param.getItems()) {',
       );
       buffer.writeln('            if (item == null) continue;');
-      buffer.writeln('            TextStyle ts;');
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+        '            widest = Math.max(widest, getCellContentWidth(item));',
       );
-      buffer.writeln(
-        '                ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
-      );
-      buffer.writeln('            } else {');
-      buffer.writeln('                ts = TextStyle.from(item.getFont());');
-      buffer.writeln('            }');
-      buffer.writeln('            int cellWidth = 0;');
-      buffer.writeln('            String text = item.getText();');
-      buffer.writeln('            if (text != null && !text.isEmpty()) {');
-      buffer.writeln(
-        '                cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
-      buffer.writeln('            }');
-      buffer.writeln('            if (item.getImage() != null) {');
-      buffer.writeln(
-        '                cellWidth += ts.size() + CELL_PADDING_LEFT;',
-      );
-      buffer.writeln('            }');
-      buffer.writeln('            widest = Math.max(widest, cellWidth);');
       buffer.writeln('        }');
       buffer.writeln('        if (widest == 0) return 0;');
       buffer.writeln(
@@ -2507,6 +3543,81 @@ class WidgetMeasurer {
       buffer.writeln(
         '        return widest + CELL_PADDING_HORIZONTAL + CELL_MARGIN;',
       );
+      buffer.writeln('    }');
+      buffer.writeln();
+      // One cell's content, and where it starts. computeSize needs the first for the widest item;
+      // {Widget}Item.getBounds() needs both, so they are public rather than inlined above.
+      buffer.writeln(
+        '    /** The width the first cell\'s image and text take, without the cell\'s padding. */',
+      );
+      buffer.writeln(
+        '    public static int getCellContentWidth($itemType item) {',
+      );
+      buffer.writeln('        int cellWidth = getTextWidth(item);');
+      buffer.writeln('        if (item.getImage() != null) {');
+      buffer.writeln('            cellWidth += getIconSpace(item);');
+      buffer.writeln('        }');
+      buffer.writeln('        return cellWidth;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The width the first cell\'s text takes. */');
+      buffer.writeln('    public static int getTextWidth($itemType item) {');
+      buffer.writeln('        String text = item.getText();');
+      buffer.writeln('        if (text.isEmpty()) return 0;');
+      buffer.writeln(
+        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      // The icon is drawn in a square of the cell's font size whatever the image's own size, and
+      // {Widget}Item.getImageBounds()/getTextBounds() have to agree with computeSize on it.
+      buffer.writeln(
+        '    /** The square an item\'s image is rendered in: the cell\'s font size, whatever the image\'s own size. */',
+      );
+      buffer.writeln(
+        '    public static int getIconSize($itemType item) {',
+      );
+      buffer.writeln('        return cellTextStyle(item).size();');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width an image takes before the text, its spacing included. */',
+      );
+      buffer.writeln(
+        '    public static int getIconSpace($itemType item) {',
+      );
+      buffer.writeln('        return getIconSize(item) + CELL_PADDING_LEFT;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where a cell\'s content starts, from its column\'s left edge. */',
+      );
+      buffer.writeln('    public static int getCellInset() {');
+      buffer.writeln('        return CELL_PADDING_LEFT;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    private static TextStyle cellTextStyle($itemType item) {');
+      buffer.writeln(
+        '        if (!$_tableUsesApplicationFont((Dart$itemType) item.getImpl())) {',
+      );
+      buffer.writeln(
+        '            return $themeClass.get().textStyle().withStyleFrom(item.getFont());',
+      );
+      buffer.writeln('        }');
+      buffer.writeln('        return TextStyle.from(item.getFont());');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where the first cell\'s content starts: after the checkbox, if any, and the cell\'s padding. */',
+      );
+      buffer.writeln(
+        '    public static int getLeadingInset(Dart$widgetType $param) {',
+      );
+      buffer.writeln('        int inset = CELL_PADDING_LEFT;');
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.CHECK) != 0) inset += CHECKBOX_WIDTH + CELL_PADDING_LEFT;',
+      );
+      buffer.writeln('        return inset;');
       buffer.writeln('    }');
       buffer.writeln();
     }
@@ -2663,6 +3774,9 @@ class WidgetMeasurer {
     final needsFontMetrics = rowFontSensitive || headerFontSensitive;
 
     final fallbackWidth = rowWidgetFallbackWidth[widgetType];
+    // A measured border wins; the declaration covers a widget whose cases never set SWT.BORDER.
+    final frameBorder =
+        plain.borderWidth ?? declaredFrameBorder(widgetType, sizingTheme);
     final nested = plain.hasExpander;
     // A flat widget with no columns paints its items in an implicit column 0, so its preferred
     // width has to follow the widest item instead of the fallback constant. A nested one is left
@@ -2727,9 +3841,9 @@ class WidgetMeasurer {
         '    private static final double HEADER_PADDING_VERTICAL = ${_d(headerPaddingVertical)};',
       );
     }
-    if (plain.borderWidth != null) {
+    if (frameBorder != null) {
       buffer.writeln(
-        '    private static final double BORDER_WIDTH = ${_d(plain.borderWidth!)};',
+        '    private static final double BORDER_WIDTH = ${_d(frameBorder)};',
       );
     }
     if (fallbackWidth != null) {
@@ -2752,6 +3866,9 @@ class WidgetMeasurer {
       // reserves ahead of column 0 — both mirror what the row impl draws.
       buffer.writeln('    private static final int CELL_MARGIN = 2;');
       buffer.writeln('    private static final int CHECKBOX_WIDTH = 20;');
+      buffer.writeln();
+      buffer.writeln('    private ${widgetType}Sizes() {');
+      buffer.writeln('    }');
     }
     if (plain.hasExpander) {
       // Horizontal row geometry: the left edge gap is a fraction of the widget width, then a
@@ -2778,6 +3895,53 @@ class WidgetMeasurer {
       buffer.writeln(
         '    private static final double EXPAND_ICON_SIZE = ${_d(plain.arrowWidth!)};',
       );
+      // What the row reserves beside each part it draws. These are declared on the render side
+      // rather than recoverable from a row's overall size, so they are read off the theme the
+      // rows were measured under (see [sizingTheme]).
+      final row = sizingTheme.extension<TreeThemeExtension>();
+      if (row != null) {
+        buffer.writeln(
+          '    public static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
+        );
+        buffer.writeln(
+          '    private static final double CHECKBOX_SPACE = ${_d(row.checkboxSize)} + ${_d(row.checkboxSpacing)};',
+        );
+        buffer.writeln(
+          '    private static final int ICON_SIZE = ${row.itemIconSize.round()};',
+        );
+        buffer.writeln(
+          '    private static final int ICON_SPACE = ICON_SIZE + ${row.itemIconSpacing.round()};',
+        );
+        buffer.writeln(
+          '    public static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
+        );
+        // The alignment inset the row builder applies to left-aligned text.
+        const alignmentInset = 4.0;
+        buffer.writeln(
+          '    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment\'s. */',
+        );
+        buffer.writeln(
+          '    public static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset).round()};',
+        );
+        buffer.writeln(
+          '    /** The gap before the divider that every column but the last draws at its right. */',
+        );
+        buffer.writeln(
+          '    public static final int DIVIDER_GAP = ${row.columnDividerGap.round()};',
+        );
+        buffer.writeln(
+          '    /** The room a header image takes before the text. */',
+        );
+        buffer.writeln(
+          '    public static final int HEADER_IMAGE_GAP = ${TreeColumnImpl.headerImageGap.round()};',
+        );
+        buffer.writeln(
+          '    private static final int CELL_INSET = ${row.cellMultiColumnPadding.left.round()};',
+        );
+        buffer.writeln(
+          '    private static final int ALIGNMENT_INSET = ${alignmentInset.round()};',
+        );
+      }
     }
     buffer.writeln();
     if (fallbackWidth != null) {
@@ -2787,7 +3951,7 @@ class WidgetMeasurer {
         nested: nested,
         measuresContent: measuresContent,
         themeClass: '${widgetType}ItemTheme',
-        hasBorder: plain.borderWidth != null,
+        hasBorder: frameBorder != null,
       );
       buffer.writeln();
     }
@@ -2820,29 +3984,112 @@ class WidgetMeasurer {
 
     final param = widgetType.toLowerCase();
     final itemType = '${widgetType}Item';
-    // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
     buffer.writeln();
+    buffer.writeln(
+      '    /** Where a row\'s box starts: after the edge gap. An owner-drawn row\'s overlay starts here. */',
+    );
+    buffer.writeln('    public static double getRowLeft(Dart$widgetType $param) {');
+    buffer.writeln(
+      '        double gapFraction = $param.getColumnCount() > 1 ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;',
+    );
+    buffer.writeln('        Rectangle bounds = $param.getBounds();');
+    buffer.writeln('        return (bounds != null ? bounds.width : 0) * gapFraction;');
+    buffer.writeln('    }');
+    // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
+    // It sits inside the first column shown, which is not at 0 once the columns are reordered.
+    buffer.writeln();
+    buffer.writeln(
+      '    /** Where an item\'s expander starts: inside the $param column, wherever the column order shows it. */',
+    );
     buffer.writeln(
       '    public static double getExpanderLeft(Dart$widgetType $param, int level) {',
     );
     buffer.writeln('        boolean withCols = $param.getColumnCount() > 1;');
-    buffer.writeln(
-      '        double gapFraction = withCols ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;',
-    );
     buffer.writeln(
       '        double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;',
     );
     buffer.writeln(
       '        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
     );
-    buffer.writeln('        Rectangle bounds = $param.getBounds();');
     buffer.writeln(
-      '        double widgetWidth = bounds != null ? bounds.width : 0;',
-    );
-    buffer.writeln(
-      '        return widgetWidth * gapFraction + paddingLeft + indent * level;',
+      '        return $_treeColumnLeft($param, 0) + getRowLeft($param) + paddingLeft + indent * level;',
     );
     buffer.writeln('    }');
+    // Where an item's own content begins, and what its parts are reported to take. These answer
+    // {Widget}Item.getBounds()/getTextBounds() rather than computeSize, so they live beside the
+    // geometry they are derived from instead of being hand-written into the file afterwards.
+    final row = sizingTheme.extension<TreeThemeExtension>();
+    if (row != null) {
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where the first column starts in a row: the expander\'s left edge at level 0, after the edge gap and the row\'s padding. */',
+      );
+      buffer.writeln('    public static int getCellsLeft(Dart$widgetType $param) {');
+      buffer.writeln('        return (int) Math.round(getExpanderLeft($param, 0));');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where an item\'s first cell content starts: after its indent, the expander and any checkbox. */',
+      );
+      buffer.writeln(
+        '    public static int getContentLeft(Dart$widgetType $param, $itemType item) {',
+      );
+      buffer.writeln(
+        '        double left = getExpanderLeft($param, levelOf(item)) + EXPAND_ICON_SIZE + EXPAND_ICON_SPACING;',
+      );
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.CHECK) != 0) left += CHECKBOX_SPACE;',
+      );
+      buffer.writeln('        return (int) Math.ceil(left);');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The size an item\'s image is drawn at. */');
+      buffer.writeln('    public static int getIconSize() {');
+      buffer.writeln('        return ICON_SIZE;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width an image takes before the text, its spacing included. */',
+      );
+      buffer.writeln('    public static int getIconSpace() {');
+      buffer.writeln('        return ICON_SPACE;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** Where a multi-column cell\'s content starts, from its column\'s left edge. */',
+      );
+      buffer.writeln('    public static int getCellInset(int alignment) {');
+      buffer.writeln(
+        '        return (alignment & (SWT.CENTER | SWT.RIGHT)) == 0 ? CELL_INSET + ALIGNMENT_INSET : CELL_INSET;',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln(
+        '    /** The width a cell\'s text is shown in: the text and its padding. */',
+      );
+      buffer.writeln(
+        '    public static int getTextWidth($itemType item, int index) {',
+      );
+      buffer.writeln('        String text = item.getText(index);');
+      buffer.writeln(
+        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(item.getFont(index));',
+      );
+      buffer.writeln(
+        '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
+      );
+      buffer.writeln('        return width + TEXT_PADDING;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    static int levelOf($itemType item) {');
+      buffer.writeln('        int level = 0;');
+      buffer.writeln(
+        '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
+      );
+      buffer.writeln('            level++;');
+      buffer.writeln('        }');
+      buffer.writeln('        return level;');
+      buffer.writeln('    }');
+    }
     buffer.writeln();
     buffer.writeln('    public static double getExpanderWidth() {');
     buffer.writeln('        return EXPAND_ICON_SIZE;');
@@ -2859,13 +4106,19 @@ class WidgetMeasurer {
     buffer.writeln(
       '        if (item == null || item.getItemCount() == 0) return false;',
     );
-    buffer.writeln('        int level = 0;');
-    buffer.writeln(
-      '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
-    );
-    buffer.writeln('            level++;');
-    buffer.writeln('        }');
-    buffer.writeln('        double left = getExpanderLeft($param, level);');
+    if (row == null) {
+      buffer.writeln('        int level = 0;');
+      buffer.writeln(
+        '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
+      );
+      buffer.writeln('            level++;');
+      buffer.writeln('        }');
+      buffer.writeln('        double left = getExpanderLeft($param, level);');
+    } else {
+      buffer.writeln(
+        '        double left = getExpanderLeft($param, levelOf(item));',
+      );
+    }
     buffer.writeln('        return x >= left && x < left + EXPAND_ICON_SIZE;');
     buffer.writeln('    }');
     buffer.writeln('}');
@@ -2873,9 +4126,7 @@ class WidgetMeasurer {
   }
 
   void _writeSizesFile(String widgetType, StringBuffer buffer) {
-    final javaFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Sizes.java',
-    );
+    final javaFile = File('$outputDir/${widgetType}Sizes.java');
     javaFile.writeAsStringSync(buffer.toString());
     print('Generated: ${javaFile.path}');
   }
@@ -2921,8 +4172,10 @@ class WidgetMeasurer {
 
     if (allStylesSameForAllThemes) {
       // Simple case: single textStyle across all styles (or no text at all)
-      buffer.writeln(
-        'public record ${widgetClass}Theme (TextStyle textStyle) {',
+      buffer.write(
+        javaValueClass('${widgetClass}Theme', const [
+          ('TextStyle', 'textStyle'),
+        ]),
       );
       buffer.writeln('    public static ${widgetClass}Theme get() {');
       buffer.writeln(
@@ -2974,8 +4227,10 @@ class WidgetMeasurer {
       // Complex case: different textStyles per style
       buffer.writeln('import java.util.Map;');
       buffer.writeln();
-      buffer.writeln(
-        'public record ${widgetClass}Theme (Map<String, TextStyle> textStyles) {',
+      buffer.write(
+        javaValueClass('${widgetClass}Theme', const [
+          ('Map<String, TextStyle>', 'textStyles'),
+        ]),
       );
       buffer.writeln('    public static ${widgetClass}Theme get() {');
       buffer.writeln(
@@ -3017,7 +4272,9 @@ class WidgetMeasurer {
         buffer.writeln(
           '    public static ${widgetClass}Theme get${themeName}Theme() {',
         );
-        buffer.writeln('        return new ${widgetClass}Theme(Map.of(');
+        buffer.writeln(
+          '        Map<String, TextStyle> styles = new java.util.HashMap<>();',
+        );
 
         final entries = <String>[];
         for (var styleEntry in stylesMap.entries) {
@@ -3031,21 +4288,21 @@ class WidgetMeasurer {
           final fontWeight = textStyle['fontWeight'] ?? 400;
           final fontItalic = textStyle['fontItalic'] ?? false;
           entries.add(
-            '            "$styleName", new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight${themeName != 'Default' && (textStyle['height'] ?? 0.0) != 0.0 ? ', ${textStyle['height']}' : ''})',
+            '        styles.put("$styleName", new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight${themeName != 'Default' && (textStyle['height'] ?? 0.0) != 0.0 ? ', ${textStyle['height']}' : ''}));',
           );
         }
 
-        buffer.writeln(entries.join(',\n'));
-        buffer.writeln('        ));');
+        buffer.writeln(entries.join('\n'));
+        buffer.writeln(
+          '        return new ${widgetClass}Theme(java.util.Collections.unmodifiableMap(styles));',
+        );
         buffer.writeln('    }');
         buffer.writeln();
       }
       buffer.writeln('}');
     }
 
-    final themeFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${widgetClass}Theme.java',
-    );
+    final themeFile = File('$outputDir/${widgetClass}Theme.java');
     themeFile.writeAsStringSync(buffer.toString());
     print('Generated: ${themeFile.path}');
   }
@@ -3054,7 +4311,10 @@ class WidgetMeasurer {
       widgetType[0].toLowerCase() + widgetType.substring(1);
 }
 
-// Test app that runs measurements
+// Test app that runs measurements.
+//
+// Keep its window visible for the whole run: macOS stops producing frames for an occluded window,
+// and a run measures one case per frame, so it silently stalls until the window comes back.
 class MeasurementApp extends StatefulWidget {
   final WidgetMeasurer measurer;
 
@@ -3067,6 +4327,16 @@ class MeasurementApp extends StatefulWidget {
 class _MeasurementAppState extends State<MeasurementApp> {
   GlobalKey _key = GlobalKey();
   bool _isRunning = false;
+
+  /// Starts the next case on an empty registry, under a key nothing has been built with.
+  ///
+  /// Every case builds its own value for the same widget and none of them carry an id, so they all
+  /// address one registry channel. The registry answers with the value it already holds for a
+  /// channel, so without this each case would be measured rendering the first case's state.
+  void _startNextCase() {
+    VRegistry.instance.clear();
+    _key = GlobalKey();
+  }
 
   @override
   void initState() {
@@ -3099,7 +4369,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
     if ((phaseChanged || widget.measurer.hasMoreCases()) &&
         !widget.measurer.isPaused) {
       setState(() {
-        _key = GlobalKey();
+        _startNextCase();
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3127,7 +4397,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
     widget.measurer.isFinished = wasFinished;
 
     setState(() {
-      _key = GlobalKey();
+      _startNextCase();
     });
   }
 
@@ -3145,7 +4415,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
   void _onPrevious() {
     setState(() {
       widget.measurer.goToPrevious();
-      _key = GlobalKey();
+      _startNextCase();
     });
     // Measure the case after navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3156,7 +4426,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
   void _onNext() {
     setState(() {
       widget.measurer.goToNext();
-      _key = GlobalKey();
+      _startNextCase();
     });
     // Measure the case after navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3168,7 +4438,7 @@ class _MeasurementAppState extends State<MeasurementApp> {
     if (index != null) {
       setState(() {
         widget.measurer.goToGlobalIndex(index);
-        _key = GlobalKey();
+        _startNextCase();
       });
       // Measure the selected case
       WidgetsBinding.instance.addPostFrameCallback((_) {

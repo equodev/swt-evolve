@@ -24,7 +24,23 @@ public class VCursor extends VResource {
         ((DartCursor) impl).cursorStyle = value;
     }
 
-    @JsonAttribute(ignore = true)
+    public int getHotspotX() {
+        return ((DartCursor) impl).hotspotX;
+    }
+
+    public void setHotspotX(int value) {
+        ((DartCursor) impl).hotspotX = value;
+    }
+
+    public int getHotspotY() {
+        return ((DartCursor) impl).hotspotY;
+    }
+
+    public void setHotspotY(int value) {
+        ((DartCursor) impl).hotspotY = value;
+    }
+
+    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartCursor) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -38,11 +54,26 @@ public class VCursor extends VResource {
 
     public static final String CURSOR_STYLE = "cursorStyle";
 
+    public static final String HOTSPOT_X = "hotspotX";
+
+    public static final String HOTSPOT_Y = "hotspotY";
+
+    public static final String IMAGE = "image";
+
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
             case "cursorStyle":
                 Serializer.writeKeyValue(writer, "cursorStyle", getCursorStyle());
+                return;
+            case "hotspotX":
+                Serializer.writeKeyValue(writer, "hotspotX", getHotspotX());
+                return;
+            case "hotspotY":
+                Serializer.writeKeyValue(writer, "hotspotY", getHotspotY());
+                return;
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
                 return;
         }
         super.writeProperty(writer, key);

@@ -333,7 +333,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
             return false;
         if (hFont != 0)
             return false;
-        return false;
+        return true;
     }
 
     void layoutItems(int index, boolean setScrollbar) {
@@ -456,7 +456,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     void setSpacingInPixels(int spacing) {
         if (spacing < 0)
             return;
-        if (!java.util.Objects.equals(this.spacing, spacing)) {
+        if (this.spacing != spacing) {
             getValue().markDirty(VExpandBar.SPACING);
         }
         if (spacing == this.spacing)

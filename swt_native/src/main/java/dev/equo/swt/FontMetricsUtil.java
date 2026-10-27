@@ -17,6 +17,15 @@ public final class FontMetricsUtil {
         fontNameSubstitutions.put(from, to);
     }
 
+    /**
+     * Drops a registered substitution. Test support: this table is global and read by anything that
+     * enumerates the fonts on offer, so a test that adds to it has to put it back or it changes what
+     * later tests in the same JVM see.
+     */
+    static void removeFontSubstitution(String from) {
+        fontNameSubstitutions.remove(from);
+    }
+
     /** Return the substituted font name, or the original if no substitution is registered. */
     public static String substituteFontName(String name) {
         return fontNameSubstitutions.getOrDefault(name, name);
@@ -39,7 +48,8 @@ public final class FontMetricsUtil {
      *
      * <p>Reads the substitution table, never populates it: registering is the web runtime's call
      * (see {@code WebFlutterServer}), and forcing it here would make a desktop build substitute
-     * names it can render natively.</p>
+     * names it can render natively. The desktop surface, which leaves that table empty, offers
+     * the families of the host's own metrics table instead: the fonts its font stack paints.</p>
      */
     public static FontData[] getFontList(String faceName, boolean scalable, FontData systemFontData) {
         if (!scalable) return new FontData[0];
@@ -48,6 +58,9 @@ public final class FontMetricsUtil {
             names.add(systemFontData.getName());
         }
         names.addAll(fontSubstitutionKeys());
+        if (ConfigFlags.isDesktopMode()) {
+            names.addAll(desktopFontFamilies());
+        }
         int height = Math.max(1, systemFontData != null ? systemFontData.getHeight() : 11);
         java.util.List<FontData> result = new java.util.ArrayList<>();
         for (String name : names) {
@@ -59,14 +72,130 @@ public final class FontMetricsUtil {
     }
 
     /**
-     * Device pixels per 72-dpi point. {@link GenFontMetrics} stores point advances while text is
-     * painted at the display DPI, so widths derived from the table must be multiplied by this to
-     * land on painted glyphs.
+     * Under the desktop surface text is painted by the host's own font stack, not by the fonts the
+     * web client bundles and substitutes, so it has to be measured with metrics taken from that
+     * stack. Each desktop jar carries them as this class, built from the embedded backend's table
+     * for the same OS; the web and embedded builds do not have it and never run that surface.
+     */
+    private static final String DESKTOP_METRICS_CLASS = "dev.equo.swt.GenDesktopFontMetrics";
+
+    private static volatile java.util.Map<String, Metrics> desktopMetrics;
+
+    @SuppressWarnings("unchecked")
+    private static java.util.Map<String, Metrics> desktopMetrics() {
+        java.util.Map<String, Metrics> table = desktopMetrics;
+        if (table == null) {
+            try {
+                table = (java.util.Map<String, Metrics>) Class.forName(DESKTOP_METRICS_CLASS).getField("DATA").get(null);
+            } catch (ReflectiveOperationException e) {
+                table = java.util.Collections.emptyMap();
+            }
+            desktopMetrics = table;
+        }
+        return table;
+    }
+
+    private static volatile java.util.Set<String> desktopFontFamilies;
+
+    /** The family names in the desktop metrics table; empty where it is absent. */
+    private static java.util.Set<String> desktopFontFamilies() {
+        java.util.Set<String> families = desktopFontFamilies;
+        if (families == null) {
+            families = new java.util.LinkedHashSet<>();
+            for (String id : desktopMetrics().keySet()) {
+                families.add(id.replaceFirst("-[01]-[0-8]$", ""));
+            }
+            desktopFontFamilies = families;
+        }
+        return families;
+    }
+
+    /**
+     * The metrics for a font id ({@link #getId}): the host's own under the desktop surface when it
+     * has them, otherwise the shared table, which also holds the fonts every surface bundles.
+     */
+    public static Metrics metrics(String fontId) {
+        if (ConfigFlags.isDesktopMode()) {
+            Metrics m = desktopMetrics().get(fontId);
+            if (m != null) return m;
+        }
+        return GenFontMetrics.DATA.get(fontId);
+    }
+
+    /** A typographic point is 1/72", the unit an SWT {@code FontData} height is given in. */
+    private static final double POINTS_PER_INCH = 72.0;
+
+    /**
+     * The DPI Cocoa lays out in: a point is a logical pixel on macOS. Native SWT arrives here by
+     * dividing the screen resolution by the backing scale factor, which cancels Retina out.
+     */
+    private static final int MACOS_DPI = 72;
+
+    /**
+     * The DPI Win32 and GTK render a point-sized font at. Upstream GTK writes the same literal
+     * ({@code SwtDevice#getScreenDPI}); Win32 normalises {@code GetDeviceCaps} by the autoscale
+     * zoom and lands on it too, the display's own scaling being carried by {@code DPIUtil}.
+     */
+    private static final int WIN32_GTK_DPI = 96;
+
+    /**
+     * The screen DPI this backend reports, for the host it is running on. Native SWT reads it off
+     * the OS; there is none to ask here, and neither can the render side answer it — on web its
+     * platform is the browser's, not the one the application is laid out for.
+     */
+    public static org.eclipse.swt.graphics.Point hostScreenDPI() {
+        return hostScreenDPI(System.getProperty("os.name"));
+    }
+
+    public static org.eclipse.swt.graphics.Point hostScreenDPI(String osName) {
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
+        int dpi = (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
+        return new org.eclipse.swt.graphics.Point(dpi, dpi);
+    }
+
+    /**
+     * Logical pixels per SWT font point — {@code dpi / 72} by SWT's own definition.
+     * {@link GenFontMetrics} stores point advances while text is painted at the display DPI, so
+     * widths derived from the table must be multiplied by this to land on painted glyphs. Divided
+     * by the zoom, so text measured here matches text painted there — see
+     * {@link #pointScaleForZoom}.
      */
     public static double dpiScale() {
-        Display display = Display.getCurrent();
-        return (display != null && display.getDPI().x > 0) ? display.getDPI().x / 72.0 : 96.0 / 72.0;
+        return pointScaleForZoom(rawDpiScale(), Config.uiScale());
     }
+
+    /**
+     * The same figure with the zoom left out — what the host's DPI alone says a point is worth.
+     *
+     * <p>This is what travels to the render side in {@code ConfigFlags.font_point_scale}, because
+     * the zoom does not travel with it: the client learns the monitor late, and a flag carrying the
+     * ratio would be read there before that and again after, with no way to tell one from the other.
+     * Each side divides by the zoom it currently holds instead.
+     */
+    public static double rawDpiScale() {
+        Display display = Display.getCurrent();
+        double dpi = (display != null && display.getDPI().x > 0)
+                ? display.getDPI().x
+                : hostScreenDPI().x;
+        return dpi / POINTS_PER_INCH;
+    }
+
+    /**
+     * Text is the one thing {@code swt.autoScale} does not grow. Native SWT builds a font from the
+     * monitor's real DPI — {@code Device#computePixels} reads {@code GetDeviceCaps} and never
+     * consults {@code DPIUtil} — so raising the flag widens every box, row and image while the
+     * glyphs inside them stay the size they were.
+     *
+     * <p>Evolve gets there from the other end: the tree is laid out in a space divided by the zoom
+     * and magnified back, which grows everything including the text. Shrinking a point by the same
+     * factor here lets that magnification cancel, leaving glyphs at their true size in boxes that
+     * grew. The render side divides by the same factor, from its own copy of the zoom:
+     * {@code FontUtils.pointScale} for painted text, {@code SwtZoomScale} for the rest.
+     */
+    static double pointScaleForZoom(double pointScale, double uiScale) {
+        return uiScale > 0 ? pointScale / uiScale : pointScale;
+    }
+
 
     /**
      * Computes scaled font metric values for the given font.
@@ -76,19 +205,23 @@ public final class FontMetricsUtil {
     public static int[] computeFontMetrics(Font font) {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
-        Metrics m = GenFontMetrics.DATA.get(getId(fd));
-        if (m == null) m = GenFontMetrics.DATA.get("Verdana-0-3");
+        Metrics m = metrics(getId(fd));
+        // The same fallback text is measured with (lineHeight, measureLine), so a line's extent and
+        // the font's height agree for a family without metrics of its own.
+        if (m == null) m = metrics("System-0-3");
+        if (m == null) m = metrics("Verdana-0-3");
         if (m == null) return null;
         Display display = Display.getCurrent();
         int h = effectiveHeight(fd, display);
         double scale = (double) h / GenFontMetrics.BASE;
-        double dpiScale = display != null ? display.getDPI().x / 72.0 : 1.0;
-        return new int[]{
-            (int) Math.round(m.ascent() * h * dpiScale),
-            (int) Math.round(m.descent() * h * dpiScale),
-            (int) Math.round(m.height() * h * dpiScale),
-            (int) Math.round(m.avgCharWidth() * scale * dpiScale)
-        };
+        double dpiScale = dpiScale();
+        int ascent = (int) Math.round(m.ascent() * h * dpiScale);
+        int height = (int) Math.round(m.height() * h * dpiScale);
+        // Height is ascent + descent + leading, and leading is never negative. Rounding the three
+        // separately can leave the other two a pixel over; the height stays, since it is also the
+        // line height text extents are measured with.
+        int descent = Math.min((int) Math.round(m.descent() * h * dpiScale), height - ascent);
+        return new int[]{ascent, descent, height, (int) Math.round(m.avgCharWidth() * scale * dpiScale)};
     }
 
     /**
@@ -151,8 +284,16 @@ public final class FontMetricsUtil {
         return getFontSize(text, FontMetricsUtil.getId(fontDatum), height, 0);
     }
 
+    /**
+     * The extent of text the render side paints as a {@code Text} widget. Those go through the
+     * {@code textScaler} {@code SwtZoomScale} sets, {@code 1 / uiScale}, so they come out larger
+     * than their style says whenever autoscale rounds the monitor's zoom down (100 on a 125%
+     * monitor) and smaller when it rounds up; the box laid out here has to follow.
+     */
     public static PointD getFontSize(String text, TextStyle textStyle) {
-        return getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.weight()), textStyle.size(), textStyle.height());
+        PointD size = getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.weight()), textStyle.size(), textStyle.height());
+        double textScale = 1 / Config.uiScale();
+        return textScale == 1.0 ? size : new PointD(size.x() * textScale, size.y() * textScale);
     }
 
     public static PointD getFontSize(String text, String fontId, int fontSize){
@@ -240,16 +381,16 @@ public final class FontMetricsUtil {
     }
 
     private static double lineHeight(String fontId, int fontSize, double fontHeight) {
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
-        if (metrics == null) metrics = GenFontMetrics.DATA.get("System-0-3");
+        Metrics metrics = metrics(fontId);
+        if (metrics == null) metrics = metrics("System-0-3");
         if (metrics == null) return fontSize;
         return fontHeight != 0 ? fontHeight * fontSize : metrics.height() * fontSize;
     }
 
     private static double measureLine(String text, String fontId, int fontSize) {
-        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        Metrics metrics = metrics(fontId);
         if (metrics == null)
-            metrics = GenFontMetrics.DATA.get("System-0-3");
+            metrics = metrics("System-0-3");
         if (metrics == null)
             return 0;
 
@@ -302,7 +443,7 @@ public final class FontMetricsUtil {
             totalLines += linesInParagraph;
         }
         if (totalLines == 0) totalLines = 1;
-        return new PointD(maxWidth, lineHeight * totalLines + 2.0);
+        return new PointD(maxWidth, lineHeight * totalLines);
     }
 
     /**
@@ -315,7 +456,7 @@ public final class FontMetricsUtil {
      * @return MetricsPerSize-like object with fields ascent, descent, height, avgCharWidth, glyphWidths
      */
     private static Metrics getMetrics(String fontName, int size) {
-        Metrics m = GenFontMetrics.DATA.get(fontName);
+        Metrics m = metrics(fontName);
         if (m == null) return null;
 
         // exact hit

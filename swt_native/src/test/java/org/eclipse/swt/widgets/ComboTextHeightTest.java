@@ -42,7 +42,7 @@ class ComboTextHeightTest {
 
     @Test
     void textHeightIsTheHeightTheComboActuallyOccupies() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Combo combo = new Combo(shell, SWT.DROP_DOWN | SWT.READ_ONLY);
 
         assertThat(combo.getTextHeight())
@@ -56,7 +56,7 @@ class ComboTextHeightTest {
      */
     @Test
     void arrowButtonHintedWithTheComboTextHeightIsLaidOutVisible() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         parent.setLayout(new GridLayout(2, false));
 

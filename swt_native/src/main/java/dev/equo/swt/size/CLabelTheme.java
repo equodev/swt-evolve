@@ -35,4 +35,8 @@ public final class CLabelTheme {
         return new CLabelTheme(new TextStyle("Inter", 12, false, 500));
     }
 
+    public static CLabelTheme getCompactTheme() {
+        return new CLabelTheme(new TextStyle("Inter", 12, false, 500, 1.1428571428571428));
+    }
+
 }

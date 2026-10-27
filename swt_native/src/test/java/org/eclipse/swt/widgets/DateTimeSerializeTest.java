@@ -11,7 +11,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_DateTime() {
-        DateTime w = new DateTime(swtShell(), SWT.NONE);
+        DateTime w = new DateTime(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_DateTime() {
-        DateTime w = new DateTime(swtShell(), SWT.NONE);
+        DateTime w = new DateTime(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
@@ -31,6 +31,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
                .containsEntry("month", w.getMonth())
                .containsEntry("seconds", w.getSeconds())
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("day").equalsTo(w.getDay(), orAbsentIf0));
         assertJ.satisfies(node("year").equalsTo(w.getYear(), orAbsentIf0));
@@ -44,12 +45,11 @@ class DateTimeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_DateTime() {
-        DateTime w = new DateTime(swtShell(), SWT.NONE);
+        DateTime w = new DateTime(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

@@ -146,6 +146,7 @@ public class DartViewForm extends DartComposite implements IViewForm {
     //}
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 

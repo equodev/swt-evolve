@@ -104,7 +104,7 @@ final class MacApplicationMenu {
                 OS.sel_hide_, NSString.stringWith("h"), SWT.ID_HIDE);
         NSMenuItem hideOthers = add(appMenu, AppMenuMessages.label("SWT_HideOthers"),
                 OS.sel_hideOtherApplications_, NSString.stringWith("h"), SWT.ID_HIDE_OTHERS);
-        hideOthers.setKeyEquivalentModifierMask(OS.NSCommandKeyMask | OS.NSAlternateKeyMask);
+        hideOthers.setKeyEquivalentModifierMask(AppKitValues.COMMAND_KEY_MASK | AppKitValues.ALTERNATE_KEY_MASK);
         add(appMenu, AppMenuMessages.label("SWT_ShowAll"),
                 OS.sel_unhideAllApplications_, empty, SWT.ID_SHOW_ALL);
         appMenu.addItem(NSMenuItem.separatorItem());
@@ -129,7 +129,13 @@ final class MacApplicationMenu {
         String appName = applicationName();
         // The Display's own menu bar, not a Shell's: it needs no Decorations parent and so exists
         // before any window does, which is when an application asks for the menu to contribute to.
-        Menu holder = display.getMenuBar();
+        // Taken from the Display itself rather than through getMenuBar(), which answers the native
+        // contract and so is null where no OS menu bar shows it -- the client draws this menu out of
+        // the same bar either way.
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        if (impl.appMenuBar == null || impl.appMenuBar.isDisposed())
+            impl.appMenuBar = new Menu(display);
+        Menu holder = impl.appMenuBar;
         MenuItem appItem = new MenuItem(holder, SWT.CASCADE, 0);
         appItem.setText(appName);
         Menu appMenu = new Menu(appItem);
@@ -153,7 +159,7 @@ final class MacApplicationMenu {
         new MenuItem(appMenu, SWT.SEPARATOR);
         action(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
 
-        ((DartDisplay) display.getImpl()).appMenu = appMenu;
+        impl.appMenu = appMenu;
         contributions = appMenu;
         systemMenu = holder;
         return systemMenu;
@@ -162,7 +168,8 @@ final class MacApplicationMenu {
     private static void action(Menu menu, String text, int id, Runnable onSelection) {
         MenuItem item = new MenuItem(menu, SWT.PUSH);
         item.setText(text);
-        item.setID(id);
+        // The ids are negative, which MenuItem#setID refuses; native SWT puts them in the item's tag.
+        ((DartMenuItem) item.getImpl()).ID = id;
         if (onSelection != null)
             item.addListener(SWT.Selection, event -> onSelection.run());
     }

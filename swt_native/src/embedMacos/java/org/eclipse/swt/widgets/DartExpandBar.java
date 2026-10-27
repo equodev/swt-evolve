@@ -181,6 +181,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -459,7 +460,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        if (!java.util.Objects.equals(this.spacing, spacing)) {
+        if (this.spacing != spacing) {
             getValue().markDirty(VExpandBar.SPACING);
         }
         if (spacing < 0)

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -24,6 +25,8 @@ void _receive(String actionId, Object payload) {
 }
 
 void main() {
+  dictionaryTests();
+  gcNameTests();
   test('a batch delivers every entry on its own channel, in order', () async {
     final seen = <String>[];
     EquoCommService.onRaw('GC/1/drawLine', (p) => seen.add('line:${(p as Map)["x1"]}'));
@@ -37,6 +40,52 @@ void main() {
     await Future.delayed(Duration.zero);
 
     expect(seen, ['line:7', 'line:8', 'dispose']);
+  });
+
+  test('an entry whose handler fails does not drop the rest of the batch', () async {
+    final seen = <String>[];
+    EquoCommService.onRaw('GC/41/drawLine', (p) => seen.add('line:${(p as Map)["x1"]}'));
+    EquoCommService.onRaw('GC/41/broken', (_) => throw StateError('broken handler'));
+    final failedLater = Completer<void>();
+    EquoCommService.onRaw('GC/41/failsLater', (_) async {
+      await Future<void>.delayed(Duration.zero);
+      failedLater.complete();
+      throw StateError('broken later');
+    });
+
+    _receive(batchEvent, [
+      ['GC/41/drawLine', {'x1': 1}],
+      ['GC/41/broken', {}],
+      ['GC/41/drawLine', {'x1': 2}],
+      ['GC/41/failsLater', {}],
+      ['GC/41/drawLine', {'x1': 3}],
+    ]);
+    // The entries after failsLater apply once it has thrown, in microtasks a zero timer outlasts.
+    await failedLater.future;
+    await Future<void>.delayed(Duration.zero);
+
+    expect(seen, ['line:1', 'line:2', 'line:3']);
+  });
+
+  test('a batched entry a synchronous handler took is not kept for the next one', () async {
+    final first = <int>[];
+    EquoCommService.onRaw('GC/901/drawLine', (p) {
+      first.add((p as Map)['x1'] as int);
+    });
+    _receive(batchEvent, [
+      ['GC/901/drawLine', {'x1': 1}],
+    ]);
+    await Future.delayed(Duration.zero);
+
+    // A new drawer on the same id registers the channel again.
+    final second = <int>[];
+    EquoCommService.onRaw('GC/901/drawLine', (p) {
+      second.add((p as Map)['x1'] as int);
+    });
+    await Future.delayed(Duration.zero);
+
+    expect(first, [1]);
+    expect(second, isEmpty, reason: 'a frame already applied must not be replayed');
   });
 
   test('a batched entry whose handler is not up yet is not dropped', () async {
@@ -66,5 +115,110 @@ void main() {
     await Future.delayed(Duration.zero);
 
     expect(seen, ['before', 'inside', 'after']);
+  });
+}
+
+/// The sender names a repeated channel once and cites that entry's position afterwards.
+void dictionaryTests() {
+  test('a repeated channel travels as the index of the entry that named it', () async {
+    final seen = <String>[];
+    EquoCommService.onRaw('GC/7/drawStringStringintintboolean',
+        (p) => seen.add('s:${(p as Map)["string"]}'));
+    EquoCommService.onRaw('GC/7/gcDispose', (_) => seen.add('dispose'));
+
+    _receive(batchEvent, [
+      ['GC/7/drawStringStringintintboolean', {'string': '71'}],
+      [0, {'string': '72'}],
+      [0, {'string': '73'}],
+      ['GC/7/gcDispose', <String, Object>{}],
+    ]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(seen, ['s:71', 's:72', 's:73', 'dispose']);
+  });
+
+  test('an index is read against entry positions, so a bad entry does not shift the rest', () async {
+    final seen = <String>[];
+    EquoCommService.onRaw('GC/8/drawLine', (p) => seen.add('line:${(p as Map)["x1"]}'));
+
+    _receive(batchEvent, [
+      ['GC/8/drawLine', {'x1': 1}],
+      'not an entry',
+      [0, {'x1': 2}],
+    ]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(seen, ['line:1', 'line:2'],
+        reason: 'the index still names entry 0, not whatever survived parsing before it');
+  });
+
+  test('an index that names no earlier entry is dropped, not guessed', () async {
+    final seen = <String>[];
+    EquoCommService.onRaw('GC/9/drawLine', (p) => seen.add('line:${(p as Map)["x1"]}'));
+
+    _receive(batchEvent, [
+      [3, {'x1': 1}],
+      ['GC/9/drawLine', {'x1': 2}],
+    ]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(seen, ['line:2']);
+  });
+}
+
+/// A GC description is spelled out once under `_gd` and cited by number (`_gr`) after that.
+void gcNameTests() {
+  test('a named description is filled back in for the GCs that cite it', () async {
+    final seen = <Map<String, dynamic>>[];
+    EquoCommService.onRaw('GC/11', (p) => seen.add((p as Map).cast<String, dynamic>()));
+    EquoCommService.onRaw('GC/12', (p) => seen.add((p as Map).cast<String, dynamic>()));
+
+    _receive(batchEvent, [
+      ['GC/11', {'id': 11, 'swt': 'GC', 'style': 33554432, 'alpha': 255, '_gd': 0}],
+      ['GC/12', {'id': 12, '_gr': 0}],
+    ]);
+    await Future.delayed(Duration.zero);
+
+    expect(seen, hasLength(2));
+    // The one that spelled it out keeps everything it said, without the bookkeeping key.
+    expect(seen[0]['style'], 33554432);
+    expect(seen[0].containsKey('_gd'), isFalse);
+    // The one that cited it says exactly the same, under its own id.
+    expect(seen[1]['id'], 12);
+    expect(seen[1]['style'], 33554432);
+    expect(seen[1]['alpha'], 255);
+    expect(seen[1]['swt'], 'GC');
+    expect(seen[1].containsKey('_gr'), isFalse);
+  });
+
+  test('a name is remembered across batches', () async {
+    final seen = <Map<String, dynamic>>[];
+    EquoCommService.onRaw('GC/21', (p) => seen.add((p as Map).cast<String, dynamic>()));
+    EquoCommService.onRaw('GC/22', (p) => seen.add((p as Map).cast<String, dynamic>()));
+
+    _receive(batchEvent, [
+      ['GC/21', {'id': 21, 'swt': 'GC', 'style': 7, '_gd': 5}],
+    ]);
+    await Future.delayed(Duration.zero);
+    _receive(batchEvent, [
+      ['GC/22', {'id': 22, '_gr': 5}],
+    ]);
+    await Future.delayed(Duration.zero);
+
+    expect(seen.last['style'], 7);
+    expect(seen.last['id'], 22);
+  });
+
+  test('a name never given arrives as it is, rather than not at all', () async {
+    final seen = <Map<String, dynamic>>[];
+    EquoCommService.onRaw('GC/31', (p) => seen.add((p as Map).cast<String, dynamic>()));
+
+    _receive(batchEvent, [
+      ['GC/31', {'id': 31, '_gr': 999}],
+    ]);
+    await Future.delayed(Duration.zero);
+
+    expect(seen, hasLength(1), reason: 'the frame still has to reach the GC it describes');
+    expect(seen[0]['id'], 31);
   });
 }

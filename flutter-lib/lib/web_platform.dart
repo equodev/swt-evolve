@@ -157,7 +157,7 @@ void observeWindowClose(void Function() onClose) {
 
 /// Stops the browser from acting on a small set of reserved shortcuts (Ctrl/Cmd + S, P, O) so they
 /// reach the app instead — e.g. Cmd+S otherwise opens the browser's "Save page" dialog. Also stops
-/// the browser's own Tab-key DOM focus traversal while [focusedEditorHandlesOwnKeys]. Runs in the
+/// the browser's own Tab-key DOM focus traversal while [canvasEditorFocused]. Runs in the
 /// capture phase and only calls preventDefault; it never stops propagation, so Flutter still
 /// receives the key. The editing shortcuts (Ctrl/Cmd + C/V/X/A/Z) are left alone.
 void suppressBrowserShortcuts() {
@@ -165,7 +165,7 @@ void suppressBrowserShortcuts() {
   _addWindowEventListenerCapture(
     'keydown'.toJS,
     ((_KeyboardEvent event) {
-      if (event.key == 'Tab' && focusedEditorHandlesOwnKeys) {
+      if (event.key == 'Tab' && canvasEditorFocused) {
         event.preventDefault();
         return;
       }

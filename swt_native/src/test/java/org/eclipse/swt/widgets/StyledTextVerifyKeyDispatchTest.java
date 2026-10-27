@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextVerifyKeyDispatchTest {
 
@@ -50,9 +49,9 @@ class StyledTextVerifyKeyDispatchTest {
     }
 
     private StyledText styledText() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);
             if (ev != null && (ev.type == SWT.KeyDown || ev.type == SWT.KeyUp
@@ -79,28 +78,13 @@ class StyledTextVerifyKeyDispatchTest {
         }
     }
 
+    /** A key typed on the client, which forwards it and leaves the edit to the widget. */
     private void typeFromFlutter(StyledText st, char character) {
-        int caret = st.getCaretOffset();
-
         Event key = new Event();
         key.keyCode = character;
         key.character = character;
         key.stateMask = 0;
         bridge.comm.fireContaining("/" + st.hashCode() + "/Key/KeyDown", key);
-        pumpAsync();
-
-        Event verify = new Event();
-        verify.keyCode = character;
-        verify.character = character;
-        verify.stateMask = 0;
-        bridge.comm.fireContaining("/" + st.hashCode() + "/VerifyKey/verifyKey", verify);
-        pumpAsync();
-
-        Event modify = new Event();
-        modify.text = String.valueOf(character);
-        modify.start = caret;
-        modify.end = caret;
-        bridge.comm.fireContaining("/" + st.hashCode() + "/Modify/Modify", modify);
         pumpAsync();
     }
 

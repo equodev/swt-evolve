@@ -11,7 +11,7 @@ class ExpandBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ExpandBar() {
-        ExpandBar w = new ExpandBar(swtShell(), SWT.NONE);
+        ExpandBar w = new ExpandBar(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,13 +20,14 @@ class ExpandBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ExpandBar() {
-        ExpandBar w = new ExpandBar(swtShell(), SWT.NONE);
+        ExpandBar w = new ExpandBar(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ExpandBar")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("spacing").equalsTo(w.getSpacing(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
@@ -39,12 +40,11 @@ class ExpandBarSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_ExpandBar() {
-        ExpandBar w = new ExpandBar(swtShell(), SWT.NONE);
+        ExpandBar w = new ExpandBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

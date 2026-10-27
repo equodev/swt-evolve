@@ -334,12 +334,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void pack() {
         checkWidget();
-        int width = 0;
-        if (image != null) {
-        }
-        if (((DartTree) parent.getImpl()).sortColumn == this.getApi() && ((DartTree) parent.getImpl()).sortDirection != SWT.NONE) {
-        }
-        setWidth(width);
+        setWidth(TreeColumnHelper.packWidth(this));
     }
 
     @Override
@@ -469,7 +464,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.movable, moveable)) {
+        if (this.movable != moveable) {
             getValue().markDirty(VTreeColumn.MOVEABLE);
         }
         this.movable = moveable;
@@ -490,6 +485,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         checkWidget();
+        if (this.resizable != newValue) {
+            getValue().markDirty(VTreeColumn.RESIZABLE);
+        }
         this.resizable = newValue;
     }
 
@@ -550,15 +548,20 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         int newValue = width;
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        boolean widthChanged = this.width != newValue;
+        checkWidget();
+        if (this.width != newValue) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
-        checkWidget();
         if (width < 0)
             return;
         // TODO how to differentiate 0 and 1 cases?
         width = Math.max(0, width - DartTree.CELL_GAP);
         this.width = newValue;
+        if (widthChanged) {
+            sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     @Override
@@ -613,7 +616,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Move, e);
+                ColumnHelper.movedByUser(getApi(), e.index);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {
@@ -621,7 +624,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
                 if (isDisposed())
                     return;
                 setWidth(e.width);
-                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

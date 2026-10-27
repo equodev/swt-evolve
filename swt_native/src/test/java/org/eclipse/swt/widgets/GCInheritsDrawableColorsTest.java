@@ -31,7 +31,6 @@ import static org.mockito.Mockito.doAnswer;
  * {@code AbstractHyperlink} never sets a background of its own, so a GC that started white painted a
  * white block over a dark workbench.
  */
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class GCInheritsDrawableColorsTest {
 
@@ -63,7 +62,7 @@ class GCInheritsDrawableColorsTest {
     }
 
     private Canvas canvasWithColors() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         doAnswer(inv -> {
             asyncQueue.add(inv.getArgument(0));
@@ -71,7 +70,7 @@ class GCInheritsDrawableColorsTest {
         }).when(display).asyncExec(any(Runnable.class));
         Canvas canvas = new Canvas(shell, SWT.NONE);
         canvas.setBounds(0, 0, 400, 400);
-        canvas.setBackground(new Color(DARK_BACKGROUND));
+        canvas.setBackground(new Color(display, DARK_BACKGROUND));
         Runnable r;
         while ((r = asyncQueue.poll()) != null) {
             r.run();
@@ -96,7 +95,7 @@ class GCInheritsDrawableColorsTest {
     @Test
     @DisplayName("a GC on an Image keeps the drawable-less white/black default")
     void imageGcKeepsTheDefault() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Image image = new Image(shell.getDisplay(), 64, 64);
         GC gc = new GC(image);
         try {

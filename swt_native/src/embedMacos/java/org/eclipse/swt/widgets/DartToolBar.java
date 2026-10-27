@@ -156,11 +156,13 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
@@ -578,6 +580,16 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     public ToolItem _lastFocus() {
         return lastFocus;
+    }
+
+    @Override
+    public boolean forceFocus() {
+        checkWidget();
+        for (ToolItem item : items) {
+            if (item != null && !item.isDisposed() && (item.getStyle() & SWT.SEPARATOR) == 0 && item.getEnabled())
+                return super.forceFocus();
+        }
+        return false;
     }
 
     protected void _hookEvents() {

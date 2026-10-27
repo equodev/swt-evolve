@@ -41,6 +41,15 @@ CanvasThemeExtension _$CanvasThemeExtensionFromJson(
   imageTintColor: const ColorConverter().fromJson(
     json['imageTintColor'] as String,
   ),
+  highlightColor: const ColorConverter().fromJson(
+    json['highlightColor'] as String,
+  ),
+  hoverFillColor: const ColorConverter().fromJson(
+    json['hoverFillColor'] as String,
+  ),
+  selectionFillColor: const ColorConverter().fromJson(
+    json['selectionFillColor'] as String,
+  ),
   glyphTintMaxSide: (json['glyphTintMaxSide'] as num).toInt(),
   glyphTintChannelTolerance: (json['glyphTintChannelTolerance'] as num).toInt(),
 );
@@ -70,6 +79,11 @@ Map<String, dynamic> _$CanvasThemeExtensionToJson(
   ),
   'patternEndColor': const ColorConverter().toJson(instance.patternEndColor),
   'imageTintColor': const ColorConverter().toJson(instance.imageTintColor),
+  'highlightColor': const ColorConverter().toJson(instance.highlightColor),
+  'hoverFillColor': const ColorConverter().toJson(instance.hoverFillColor),
+  'selectionFillColor': const ColorConverter().toJson(
+    instance.selectionFillColor,
+  ),
   'glyphTintMaxSide': instance.glyphTintMaxSide,
   'glyphTintChannelTolerance': instance.glyphTintChannelTolerance,
 };

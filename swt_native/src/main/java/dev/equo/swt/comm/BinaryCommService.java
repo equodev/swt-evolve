@@ -1,15 +1,22 @@
 package dev.equo.swt.comm;
 
+import dev.equo.swt.Serializer;
+
 import org.java_websocket.server.WebSocketServer;
 import org.java_websocket.WebSocket;
+import org.java_websocket.WebSocketImpl;
 import org.java_websocket.handshake.ClientHandshake;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Default {@link CommService}, backed by the org.java-websocket server. Wire format and all
@@ -28,7 +35,12 @@ public class BinaryCommService extends AbstractBinaryCommService {
         try {
             server.start();
         } catch (Exception e) {
-            try { server.stop(); } catch (Exception ignored) {}
+            try {
+                server.stop();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Exception ignored) {
+            }
             throw new RuntimeException("Failed to start WebSocket server", e);
         }
     }
@@ -56,12 +68,50 @@ public class BinaryCommService extends AbstractBinaryCommService {
                 s.send(ByteBuffer.wrap(frame, offset, length));
             }
         }
+        checkWritesSoon();
     }
+
+    /**
+     * Java-WebSocket can strand a queued frame until the next send: its selector thread, having
+     * drained a connection's queue, sets the key back to OP_READ, and a send that queued a frame and
+     * asked for OP_WRITE in between loses that request. A frame queued with no write interest is
+     * that state exactly, so it is looked for shortly after every send and the write asked for again.
+     */
+    private void checkWritesSoon() {
+        if (writeCheckPending.compareAndSet(false, true))
+            WRITE_CHECKS.schedule(this::resumeStrandedWrites, 5, TimeUnit.MILLISECONDS);
+    }
+
+    private void resumeStrandedWrites() {
+        writeCheckPending.set(false);
+        boolean writing = false;
+        for (WebSocket s : sessions) {
+            if (!(s instanceof WebSocketImpl) || !s.isOpen()) continue;
+            WebSocketImpl conn = (WebSocketImpl) s;
+            if (conn.outQueue.isEmpty()) continue;
+            SelectionKey key = conn.getSelectionKey();
+            if (key == null || !key.isValid()) continue;
+            writing = true;
+            if ((key.interestOps() & SelectionKey.OP_WRITE) == 0) server.onWriteDemand(conn);
+        }
+        // Still draining: the selector can drop the interest again when it empties the queue.
+        if (writing) checkWritesSoon();
+    }
+
+    private final AtomicBoolean writeCheckPending = new AtomicBoolean();
+
+    private static final ScheduledExecutorService WRITE_CHECKS = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "comm-write-check");
+        t.setDaemon(true);
+        return t;
+    });
 
     @Override
     public void stop() {
         try {
             server.stop();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             System.err.println(logTag() + " Stop failed: " + e.getMessage());
         }
@@ -82,16 +132,27 @@ public class BinaryCommService extends AbstractBinaryCommService {
         @Override
         public void onOpen(WebSocket conn, ClientHandshake handshake) {
             sessions.add(conn);
+            // Several clients share this comm's connection id, so what may travel as a name rather
+            // than a description depends on how many there are -- see Serializer.clientsConnected.
+            Serializer.clientsConnected(BinaryCommService.this, sessions.size());
             onClientConnected(conn::send);
+            checkWritesSoon();
         }
 
         @Override
         public void onClose(WebSocket conn, int code, String reason, boolean remote) {
             sessions.remove(conn);
+            Serializer.clientsConnected(BinaryCommService.this, sessions.size());
         }
 
         @Override
         public void onMessage(WebSocket conn, ByteBuffer blob) {
+            // Java-WebSocket allocates a buffer for each message and never touches it again after
+            // this callback, so its array can be handed over as it is.
+            if (blob.hasArray() && blob.arrayOffset() == 0 && blob.position() == 0) {
+                onBinaryMessage(blob.array(), 0, blob.remaining());
+                return;
+            }
             byte[] data = new byte[blob.remaining()];
             blob.get(data);
             onBinaryMessage(data, 0, data.length);

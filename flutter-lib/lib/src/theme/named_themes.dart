@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 import 'theme.dart';
+import 'type_scales.dart';
 import 'theme_extensions/button_theme_extension.dart';
 import 'theme_extensions/ccombo_theme_extension.dart';
 import 'theme_extensions/combo_theme_extension.dart';
@@ -31,6 +32,19 @@ class NamedTheme {
   final ThemeData Function(ThemeData theme)? lightWidgetOverrides;
   final ThemeData Function(ThemeData theme)? darkWidgetOverrides;
 
+  /// The type scale this theme draws in. Null means the shared one, which is what every theme
+  /// did before this existed.
+  ///
+  /// A *named* scale rather than a bare function, because the Java size model mirrors these sizes
+  /// for `computeSize` and is keyed by the scale's name: naming it is what lets the measurement
+  /// run once per distinct set of sizes instead of once per theme. Themes that want the same
+  /// sizes share one scale and one measurement.
+  ///
+  /// The scale is applied *before* the per-widget extensions are built, because they take their
+  /// fonts from the text theme — a size changed afterwards would leave every widget still
+  /// measuring and drawing the old one.
+  final TypeScale? typeScale;
+
   /// Whether focus rings and focus-coloured borders show when the flag is not set.
   final bool focusIndicators;
 
@@ -43,8 +57,12 @@ class NamedTheme {
     this.darkTitleBarColor,
     this.lightWidgetOverrides,
     this.darkWidgetOverrides,
+    this.typeScale,
     this.focusIndicators = false,
   });
+
+  /// The type sizes this theme wants, or [base] untouched when it does not care.
+  TextTheme applyTypeSizes(TextTheme base) => typeScale?.apply(base) ?? base;
 
   /// The title-bar colour for [dark], or null when this theme does not specify one.
   Color? titleBarColor(bool dark) => dark ? darkTitleBarColor : lightTitleBarColor;
@@ -61,6 +79,19 @@ final Map<String, NamedTheme> kNamedThemes = {
         createColorSchemeExtension(createLightColorScheme()),
     darkColorSchemeExtension:
         createColorSchemeExtension(createDarkColorScheme()),
+  ),
+  // The shared palette with the type one step down. Vendor-neutral name on purpose: any POC whose
+  // layouts were sized against native SWT — which draws smaller than the shared scale, so a pane
+  // the application pinned to a fixed pixel width clips our text — can select it with
+  // -Dswt.evolve.theme_name=compact.
+  'compact': NamedTheme(
+    lightColorScheme: createLightColorScheme(),
+    darkColorScheme: createDarkColorScheme(),
+    lightColorSchemeExtension:
+        createColorSchemeExtension(createLightColorScheme()),
+    darkColorSchemeExtension:
+        createColorSchemeExtension(createDarkColorScheme()),
+    typeScale: kCompactTypeScale,
   ),
   'hb': NamedTheme(
     lightColorScheme: _hbLightScheme(),
@@ -183,6 +214,32 @@ final Map<String, NamedTheme> kNamedThemes = {
       ctabFolderUnselectedColor: const Color(0xFF1A2314),
       onSurfaceVariantDisabled: const Color(0xFF4E6236),
       neutral: const Color(0xFF1A2314),
+    ),
+  ),
+  // Orange brand (#FF5C00).
+  'ipOrange': NamedTheme(
+    lightColorScheme: _ipOrangeLightScheme,
+    darkColorScheme: _ipOrangeDarkScheme,
+    lightColorSchemeExtension: createColorSchemeExtension(_ipOrangeLightScheme).copyWith(
+      primaryHovered: const Color(0xFFE65200),
+      surfaceBorderFocused: const Color(0xFFFF5C00),
+      surfaceToolbar: const Color(0xFFFFF8F3),
+      toolbarDivider: const Color(0xFFFFE0CC),
+      ctabFolderHighlightColor: const Color(0xFFFF5C00),
+      ctabFolderSelectedTextColor: const Color(0xFF1C1A19),
+      ctabFolderUnselectedColor: const Color(0xFFFFF1E8),
+      neutral: const Color(0xFFFFF1E8),
+    ),
+    darkColorSchemeExtension: createColorSchemeExtension(_ipOrangeDarkScheme).copyWith(
+      primaryHovered: const Color(0xFFFFA273),
+      surfaceBorderFocused: const Color(0xFFFF8A4C),
+      surfaceToolbar: const Color(0xFF221D1A),
+      toolbarDivider: const Color(0xFF3D3029),
+      ctabFolderHighlightColor: const Color(0xFFFF8A4C),
+      ctabFolderSelectedTextColor: const Color(0xFFF2ECE8),
+      ctabFolderUnselectedColor: const Color(0xFF2A211C),
+      onSurfaceVariantDisabled: const Color(0xFF5A4E46),
+      neutral: const Color(0xFF2A211C),
     ),
   ),
 };
@@ -547,6 +604,74 @@ ColorScheme _greenDarkScheme() => ColorScheme.fromSeed(
   scrim: const Color(0xFF000000),
 );
 
+// White on the brand orange is ~3.1:1, under WCAG AA, so primary text is near-black (~5.7:1),
+// as on the product's own logo.
+const _ipOrangeLightScheme = ColorScheme(
+  brightness: Brightness.light,
+  primary: Color(0xFFFF5C00),
+  onPrimary: Color(0xFF171819),
+  primaryContainer: Color(0xFFC24600),
+  onPrimaryContainer: Color(0xFFFFF1E8),
+  secondary: Color(0xFFFFF1E8),
+  onSecondary: Color(0xFF8A3200),
+  secondaryContainer: Color(0xFFFFE0CC),
+  onSecondaryContainer: Color(0xFF8A3200),
+  tertiary: Color(0x00FFFFFF),
+  onTertiary: Color(0xFF8A3200),
+  error: Color(0xFFC62828),
+  onError: Color(0xFFFFFFFF),
+  errorContainer: Color(0xFFFBE9E9),
+  onErrorContainer: Color(0xFF5C1010),
+  surface: Color(0xFFFFFFFF),
+  onSurface: Color(0xFF1C1A19),
+  onSurfaceVariant: Color(0xFF6B625C),
+  surfaceVariant: Color(0xFFFFF1E8),
+  surfaceContainerHighest: Color(0xFFFDFBFA),
+  surfaceContainerHigh: Color(0xFFFBF8F6),
+  surfaceContainerLow: Color(0xFFFAF7F5),
+  outline: Color(0xFFDDD3CC),
+  outlineVariant: Color(0xFFEDE5DF),
+  inverseSurface: Color(0xFF2A2420),
+  onInverseSurface: Color(0xFFFAF7F5),
+  inversePrimary: Color(0xFFFF8A4C),
+  surfaceTint: Color(0xFFFF5C00),
+  shadow: Color(0xFF000000),
+  scrim: Color(0xFF000000),
+);
+
+const _ipOrangeDarkScheme = ColorScheme(
+  brightness: Brightness.dark,
+  primary: Color(0xFFFF8A4C),
+  onPrimary: Color(0xFF1F0C00),
+  primaryContainer: Color(0xFFB34000),
+  onPrimaryContainer: Color(0xFFFFE0CC),
+  secondary: Color(0xFF3D2210),
+  onSecondary: Color(0xFFFFCBA8),
+  secondaryContainer: Color(0xFF5A2E10),
+  onSecondaryContainer: Color(0xFFFFE0CC),
+  tertiary: Color(0x00FFFFFF),
+  onTertiary: Color(0xFFFFE0CC),
+  error: Color(0xFFEF6B6B),
+  onError: Color(0xFF2A0606),
+  errorContainer: Color(0xFF6B1A1A),
+  onErrorContainer: Color(0xFFFAC4C4),
+  surface: Color(0xFF1C1917),
+  onSurface: Color(0xFFF2ECE8),
+  onSurfaceVariant: Color(0xFFA8998F),
+  surfaceVariant: Color(0xFF2A211C),
+  surfaceContainerHighest: Color(0xFF151210),
+  surfaceContainerHigh: Color(0xFF181513),
+  surfaceContainerLow: Color(0xFF201C19),
+  outline: Color(0xFF4A3F38),
+  outlineVariant: Color(0xFF352C26),
+  inverseSurface: Color(0xFFF2ECE8),
+  onInverseSurface: Color(0xFF1C1917),
+  inversePrimary: Color(0xFFFF5C00),
+  surfaceTint: Color(0xFFFF8A4C),
+  shadow: Color(0xFF000000),
+  scrim: Color(0xFF000000),
+);
+
 ThemeData _withExtensions(ThemeData theme, List<ThemeExtension<dynamic>?> replacements) {
   final merged = Map<Object, ThemeExtension<dynamic>>.of(theme.extensions);
   for (final extension in replacements) {
@@ -688,13 +813,14 @@ ThemeData _hbLightWidgets(ThemeData t) {
       hoverBackgroundColor: const Color(0xFFEFECF3),
       textColor: const Color(0xFF3A343E),
     ),
+    // A drop-down list's hovered and selected items share the menu's hover colour.
     t.extension<ComboThemeExtension>()?.copyWith(
       hoverBackgroundColor: const Color(0xFFEFECF3),
-      selectedItemBackgroundColor: const Color(0xFFE5E0EB),
+      selectedItemBackgroundColor: const Color(0xFFEFECF3),
     ),
     t.extension<CComboThemeExtension>()?.copyWith(
       itemHoverBackgroundColor: const Color(0xFFEFECF3),
-      selectedItemBackgroundColor: const Color(0xFFE5E0EB),
+      selectedItemBackgroundColor: const Color(0xFFEFECF3),
     ),
     t.extension<ButtonThemeExtension>()?.copyWith(
       checkboxBorderColor: const Color(0xFF8B8293),

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/canvas.dart';
+import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -34,12 +35,17 @@ class VDecorations extends VCanvas {
   VMenu? menuBar;
   String? text;
 
+  int? menuStripHeight;
+  bool? ownMenuStrip;
+
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VDecorations) {
       menuBar = other.menuBar;
       text = other.text;
+      menuStripHeight = other.menuStripHeight;
+      ownMenuStrip = other.ownMenuStrip;
     }
   }
 
@@ -52,6 +58,10 @@ class VDecorations extends VCanvas {
             : VMenu.fromJson(json['menuBar'] as Map<String, dynamic>);
       case 'text':
         text = json['text'] as String?;
+      case 'menuStripHeight':
+        menuStripHeight = (json['menuStripHeight'] as num?)?.toInt();
+      case 'ownMenuStrip':
+        ownMenuStrip = json['ownMenuStrip'] as bool?;
       default:
         super.readProperty(key, json);
     }

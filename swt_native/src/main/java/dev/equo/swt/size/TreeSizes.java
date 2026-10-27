@@ -30,6 +30,19 @@ public class TreeSizes {
     private static final double ITEM_INDENT = 16.0;
     private static final double ITEM_INDENT_WITH_COLS = 16.0;
     private static final double EXPAND_ICON_SIZE = 12.0;
+    public static final double EXPAND_ICON_SPACING = 8.0;
+    private static final double CHECKBOX_SPACE = 18.0 + 4.0;
+    private static final int ICON_SIZE = 16;
+    private static final int ICON_SPACE = ICON_SIZE + 8;
+    public static final int TEXT_PADDING = 8;
+    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment's. */
+    public static final int CELL_PADDING = 12;
+    /** The gap before the divider that every column but the last draws at its right. */
+    public static final int DIVIDER_GAP = 8;
+    /** The room a header image takes before the text. */
+    public static final int HEADER_IMAGE_GAP = 4;
+    private static final int CELL_INSET = 4;
+    private static final int ALIGNMENT_INSET = 4;
 
     public static Point computeSize(DartTree tree, int wHint, int hHint, boolean changed) {
         int columnCount = tree.getColumnCount();
@@ -93,14 +106,62 @@ public class TreeSizes {
         return (int) Math.ceil(minHeight);
     }
 
+    /** Where a row's box starts: after the edge gap. An owner-drawn row's overlay starts here. */
+    public static double getRowLeft(DartTree tree) {
+        double gapFraction = tree.getColumnCount() > 1 ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;
+        Rectangle bounds = tree.getBounds();
+        return (bounds != null ? bounds.width : 0) * gapFraction;
+    }
+
+    /** Where an item's expander starts: inside the tree column, wherever the column order shows it. */
     public static double getExpanderLeft(DartTree tree, int level) {
         boolean withCols = tree.getColumnCount() > 1;
-        double gapFraction = withCols ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;
         double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;
         double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
-        Rectangle bounds = tree.getBounds();
-        double widgetWidth = bounds != null ? bounds.width : 0;
-        return widgetWidth * gapFraction + paddingLeft + indent * level;
+        return org.eclipse.swt.widgets.Sizes.treeColumnLeft(tree, 0) + getRowLeft(tree) + paddingLeft + indent * level;
+    }
+
+    /** Where the first column starts in a row: the expander's left edge at level 0, after the edge gap and the row's padding. */
+    public static int getCellsLeft(DartTree tree) {
+        return (int) Math.round(getExpanderLeft(tree, 0));
+    }
+
+    /** Where an item's first cell content starts: after its indent, the expander and any checkbox. */
+    public static int getContentLeft(DartTree tree, TreeItem item) {
+        double left = getExpanderLeft(tree, levelOf(item)) + EXPAND_ICON_SIZE + EXPAND_ICON_SPACING;
+        if ((tree.getStyle() & SWT.CHECK) != 0) left += CHECKBOX_SPACE;
+        return (int) Math.ceil(left);
+    }
+
+    /** The size an item's image is drawn at. */
+    public static int getIconSize() {
+        return ICON_SIZE;
+    }
+
+    /** The width an image takes before the text, its spacing included. */
+    public static int getIconSpace() {
+        return ICON_SPACE;
+    }
+
+    /** Where a multi-column cell's content starts, from its column's left edge. */
+    public static int getCellInset(int alignment) {
+        return (alignment & (SWT.CENTER | SWT.RIGHT)) == 0 ? CELL_INSET + ALIGNMENT_INSET : CELL_INSET;
+    }
+
+    /** The width a cell's text is shown in: the text and its padding. */
+    public static int getTextWidth(TreeItem item, int index) {
+        String text = item.getText(index);
+        TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
+        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
+        return width + TEXT_PADDING;
+    }
+
+    static int levelOf(TreeItem item) {
+        int level = 0;
+        for (TreeItem parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {
+            level++;
+        }
+        return level;
     }
 
     public static double getExpanderWidth() {
@@ -109,11 +170,7 @@ public class TreeSizes {
 
     public static boolean isOverExpander(DartTree tree, TreeItem item, int x) {
         if (item == null || item.getItemCount() == 0) return false;
-        int level = 0;
-        for (TreeItem parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {
-            level++;
-        }
-        double left = getExpanderLeft(tree, level);
+        double left = getExpanderLeft(tree, levelOf(item));
         return x >= left && x < left + EXPAND_ICON_SIZE;
     }
 }

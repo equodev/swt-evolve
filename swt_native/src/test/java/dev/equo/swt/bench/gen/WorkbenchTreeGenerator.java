@@ -77,7 +77,7 @@ public class WorkbenchTreeGenerator extends SerializeTestBase {
 
     @Test
     void generate() throws Exception {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         String source = new Builder().buildAndEmit(shell);
         Path out = Paths.get(System.getProperty("wb.out",
                 "src/test/java/dev/equo/swt/bench/WorkbenchTree.java"));
@@ -396,6 +396,8 @@ public class WorkbenchTreeGenerator extends SerializeTestBase {
             b.append(" * Built once at bench startup; re-serialized through the production Serializer each iteration like\n");
             b.append(" * every other shape. Do not edit by hand — re-run the generator after re-capturing the JSON.\n");
             b.append(" */\n");
+            // The captured tree replays every setter the workbench called, CTabFolder.setSimple included.
+            b.append("@SuppressWarnings(\"removal\")\n");
             b.append("final class WorkbenchTree {\n\n");
             b.append("    static DartControl build(Shell shell) {\n");
             b.append("        Widget[] w = new Widget[").append(n).append("];\n");

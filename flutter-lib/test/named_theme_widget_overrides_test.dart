@@ -12,6 +12,7 @@ import 'package:swtflutter/src/theme/theme_extensions/combo_theme_extension.dart
 import 'package:swtflutter/src/theme/theme_extensions/ctabfolder_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/list_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/menu_theme_extension.dart';
+import 'package:swtflutter/src/theme/theme_extensions/menuitem_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/spinner_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
@@ -29,6 +30,23 @@ ThemeData _built(NamedTheme named, {required bool dark}) {
 }
 
 void main() {
+  group('hb: a drop-down list highlights like a menu', () {
+    for (final dark in [false, true]) {
+      test('${dark ? 'dark' : 'light'}: hovered and selected items share the menu item hover colour', () {
+        final hb = kNamedThemes['hb']!;
+        final theme = hb.applyWidgetOverrides(_built(hb, dark: dark), dark: dark);
+        final menuHover = theme.extension<MenuItemThemeExtension>()!.hoverBackgroundColor;
+        final combo = theme.extension<ComboThemeExtension>()!;
+        final ccombo = theme.extension<CComboThemeExtension>()!;
+
+        expect(combo.hoverBackgroundColor, menuHover);
+        expect(combo.selectedItemBackgroundColor, menuHover);
+        expect(ccombo.itemHoverBackgroundColor, menuHover);
+        expect(ccombo.selectedItemBackgroundColor, menuHover);
+      });
+    }
+  });
+
   group('a named theme without widget overrides', () {
     for (final entry in kNamedThemes.entries.where((e) => e.key != 'hb')) {
       for (final dark in [false, true]) {

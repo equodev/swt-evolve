@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
  * Regression tests for the bf395f11 / b4c8e97c dispose-NPE incident.
@@ -33,7 +33,7 @@ class CompositeChildrenDuringDisposeTest extends SerializeTestBase {
 
     @Test
     void releaseChildren_clearsChildrenField() throws Exception {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         new Button(parent, SWT.PUSH);
         new Button(parent, SWT.PUSH);
         new Button(parent, SWT.PUSH);
@@ -52,7 +52,7 @@ class CompositeChildrenDuringDisposeTest extends SerializeTestBase {
 
     @Test
     void disposeNestedComposites_doesNotNPE() {
-        Composite outer = new Composite(swtShell(), SWT.NONE);
+        Composite outer = new Composite(shell(), SWT.NONE);
         Composite inner1 = new Composite(outer, SWT.NONE);
         new Button(inner1, SWT.PUSH);
         Composite inner2 = new Composite(outer, SWT.NONE);
@@ -77,7 +77,7 @@ class CompositeChildrenDuringDisposeTest extends SerializeTestBase {
      */
     @Test
     void disposeSingleChild_removedFromParentChildren() throws Exception {
-        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Composite parent = new Composite(shell(), SWT.NONE);
         Button keep = new Button(parent, SWT.PUSH);
         Button remove = new Button(parent, SWT.PUSH);
 

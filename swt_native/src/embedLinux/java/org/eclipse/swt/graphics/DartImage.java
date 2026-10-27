@@ -141,16 +141,27 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * by creating a GC and using any of its drawing operations,
      * as shown in the following example:
      * <pre>
-     *    Image i = new Image(device, width, height);
+     *    Image i = new Image(device, imageWidth, imageHeight);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, imageWidth, imageHeight);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), imageWidth, imageHeight);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -168,6 +179,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *    <li>ERROR_NO_HANDLES if a handle could not be obtained for image creation</li>
      * </ul>
      *
+     * @see #Image(Device, ImageGcDrawer, int, int)
      * @see #dispose()
      */
     public DartImage(Device device, int width, int height, Image api) {
@@ -175,7 +187,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         Point size = new Point(width, height);
         init(size.x, size.y);
         init();
-        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        this.imageData = GraphicsUtils.blankImageData(width, height);
     }
 
     /**
@@ -291,14 +303,25 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * <pre>
      *    Image i = new Image(device, boundsRectangle);
      *    GC gc = new GC(i);
-     *    gc.drawRectangle(0, 0, 50, 50);
+     *    gc.drawRectangle(0, 0, boundsRectangle.width, boundsRectangle.height);
      *    gc.dispose();
      * </pre>
      * <p>
-     * Note: Some platforms may have a limitation on the size
+     * <b>Note:</b> It is recommended to use
+     * {@link #Image(Device, ImageGcDrawer, int, int)} instead.
+     * With that constructor, image data for different zoom levels
+     * can be created on demand, whereas with this constructor
+     * the image data is only created once and may appear blurry
+     * when scaled to other zoom levels. The preceding example
+     * can be rewritten using the recommended constructor as follows:
+     * </p>
+     * <pre>
+     *    Image i = new Image(device, (gc, width, height) -> gc.drawRectangle(0, 0, width, height), boundsRectangle.width, boundsRectangle.height);
+     * </pre>
+     * <p>
+     * Some platforms may have a limitation on the size
      * of image that can be created (size depends on width, height,
-     * and depth). For example, Windows 95, 98, and ME do not allow
-     * images larger than 16M.
+     * and depth).
      * </p>
      * <p>
      * You must dispose the image when it is no longer required.
@@ -318,7 +341,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *
      * @see #dispose()
      *
-     * @deprecated use {@link Image#Image(Device, int, int)} instead
+     * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
     public DartImage(Device device, Rectangle bounds, Image api) {
@@ -474,6 +497,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, InputStream stream, Image api) {
         super(device, api);
+        if (stream == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         ImageData data = new ImageData(stream);
         this.imageData = data;
         getApi().surface = 1;
@@ -622,6 +648,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
+        if (imageGcDrawer == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         if (imageGcDrawer == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init();
@@ -1024,10 +1053,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                         // widget/event on it instead of using an isolated per-image engine (see
                         // DisplayBridge#sharedCommFor / GCImageDrawer#resolveSharedComm) — under CI load
                         // it can queue behind unrelated traffic, so this bound is generous either way.
-                        long deadline = System.nanoTime() + 5_000_000_000L;
+                        long deadline = System.nanoTime() + 30_000_000_000L;
                         Runnable wakeOnTimeout = () -> {
                         };
-                        display.timerExec(5000, wakeOnTimeout);
+                        display.timerExec(30000, wakeOnTimeout);
                         try {
                             while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
                                 // GC(Image) uses an off-screen Flutter engine whose startup and
@@ -1044,7 +1073,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                         }
                     } else {
                         try {
-                            f.get(2000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                            f.get(30000, java.util.concurrent.TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
@@ -1059,12 +1088,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         _ensureRemotePixels();
         // Return a defensive copy: getImageData() must not hand out the backing store, so a
         // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
-        if (zoom == 100)
+        // A buffer allocated at the raster scale (see _allocateScratchBuffer) is stored at that
+        // zoom; every other image at 100%.
+        int storedZoom = 100;
+        if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
-        // The image is stored at 100%; scale to the requested zoom (matches upstream, which
-        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already
-        // returns a fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
-        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
+        // Scale to the requested zoom (matches upstream, which falls back to
+        // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
+        // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
+        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, storedZoom);
     }
 
     private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {
@@ -1379,6 +1411,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
+        org.eclipse.swt.internal.StrictChecks.runWithStrictChecksDisabled(() -> {
+            Image imageToDraw = new Image(gc.getDevice(), (ImageDataProvider) zoom -> imageData);
+            Rectangle source = imageToDraw.getBounds();
+            gc.drawImage(imageToDraw, 0, 0, source.width, source.height, 0, 0, width, height);
+            imageToDraw.dispose();
+        });
     }
 
     Color background;
@@ -1446,7 +1484,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array()));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array())));
             }
         }
     }
@@ -1460,8 +1498,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.remoteRef = ref;
     }
 
+    boolean renderOwnsPixels;
+
+    public void _renderOwnsPixels() {
+        renderOwnsPixels = true;
+    }
+
     public ImageData _imageDataForWire() {
-        return remoteRef != null ? null : imageData;
+        return (remoteRef != null || renderOwnsPixels) ? null : imageData;
     }
 
     public int _wireWidth() {
@@ -1489,7 +1533,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     private void _ensureRemotePixels() {
         if (!remotePixelsStale || remoteRef == null || remoteComm == null)
             return;
-        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 5000);
+        // Generous: a GPU-less browser can take seconds to answer the first read of a kind of
+        // image, and an answer that arrives after the bound is lost.
+        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 30000);
         if (png == null || png.length == 0) {
             SWT.error(SWT.ERROR_IO, null, " [the render side did not return the pixels for image " + remoteRef + "]");
             return;

@@ -32,10 +32,7 @@ import static org.mockito.Mockito.doAnswer;
  * {@link RecordingBridge}. Lives in org.eclipse.swt.widgets so the mocked display's package-private
  * {@code sendEvent(EventTable, Event)} can be wired to really dispatch key events.
  */
-// Same platform pin as StyledTextRedrawPaintTest: on the Linux/Windows embed backends,
-// StyledText.setText routes renderer font metrics into real GTK/Pango / GDI, which cannot run
-// under the mocked headless display. The pipeline under test is shared main-source code.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
+// The pipeline under test is shared main-source code.
 @ExtendWith(Mocks.class)
 class StyledTextKeyboardCaretSyncTest {
 
@@ -65,9 +62,9 @@ class StyledTextKeyboardCaretSyncTest {
     }
 
     private StyledText styledText() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
-        SwtDisplay displayImpl = (SwtDisplay) display.getImpl();
+        DartDisplay displayImpl = (DartDisplay) display.getImpl();
         // Dispatch key events for real (the pipeline under test); everything else stays a mock
         // no-op — the paint/text-change pipelines take platform-specific paths that don't run
         // under the mocked display.

@@ -53,6 +53,8 @@ final class AwtInput {
         final Component[] capturedTarget = {null};
         final int[] capturedOffset = {0, 0};
         final javax.swing.Timer[] repaintTimer = {null};
+        final int[] pressedAt = {Integer.MIN_VALUE, Integer.MIN_VALUE};
+        final Component[] heavyweightUnder = {null};
 
         Listener l = new Listener() {
             @Override
@@ -62,14 +64,14 @@ final class AwtInput {
                         canvas.forceFocus();
                         buttonsDown[0] |= awtButtonDownMask(e.button);
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_PRESSED, e, buttonsDown[0], 1,
-                                capturedTarget, capturedOffset, true, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, true,
+                                repaintTimer, forceRepaint);
                         break;
                     }
                     case SWT.MouseUp: {
-                        // AWT expects the released button's down-mask still present on
-                        // the RELEASED event's modifiers.
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_RELEASED, e, buttonsDown[0], 1,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         buttonsDown[0] = 0;
                         break;
                     }
@@ -77,16 +79,19 @@ final class AwtInput {
                         int id = buttonsDown[0] != 0
                                 ? MouseEvent.MOUSE_DRAGGED : MouseEvent.MOUSE_MOVED;
                         postMouse(frame, contentRoot, id, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         break;
                     }
                     case SWT.MouseEnter:
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_ENTERED, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         break;
                     case SWT.MouseExit:
                         postMouse(frame, contentRoot, MouseEvent.MOUSE_EXITED, e, buttonsDown[0], 0,
-                                capturedTarget, capturedOffset, false, repaintTimer, forceRepaint);
+                                capturedTarget, capturedOffset, pressedAt, heavyweightUnder, false,
+                                repaintTimer, forceRepaint);
                         break;
                     case SWT.KeyDown:
                         postKey(frame, KeyEvent.KEY_PRESSED, e);
@@ -132,13 +137,20 @@ final class AwtInput {
      * cover both dispatch paths — a heavyweight only has the drag timer while captured, and a
      * lightweight target has no proactive repaint at all, so a toolbar button's click can reach
      * the view's model with nothing on screen reflecting it.
+     *
+     * <p>The frame's own dispatcher does not synthesize {@code MOUSE_CLICKED} either — the frame's
+     * peer would — so a release that lands where its press did ({@code pressedAt}) is followed by
+     * one, and a release that ends a drag is not, as a native peer decides.
      */
     private static void postMouse(Frame frame, Container contentRoot, int id, Event e, int buttonsDown,
-            int clickCount, Component[] capturedTarget, int[] capturedOffset, boolean isPress,
-            javax.swing.Timer[] repaintTimer, Runnable forceRepaint) {
+            int clickCount, Component[] capturedTarget, int[] capturedOffset, int[] pressedAt,
+            Component[] heavyweightUnder, boolean isPress, javax.swing.Timer[] repaintTimer,
+            Runnable forceRepaint) {
         final int x = e.x, y = e.y;
         final int button = awtButton(e.button, id);
-        final int modifiers = swtToAwtModifiers(e.stateMask) | buttonsDown;
+        final int modifiers = id == MouseEvent.MOUSE_RELEASED
+                ? releaseModifiers(e.stateMask, buttonsDown, e.button)
+                : swtToAwtModifiers(e.stateMask) | buttonsDown;
         final long when = System.currentTimeMillis();
         final boolean popup = e.button == 3;
         if (id == MouseEvent.MOUSE_PRESSED || id == MouseEvent.MOUSE_RELEASED) {
@@ -153,6 +165,13 @@ final class AwtInput {
             } else {
                 int[] offset = new int[2];
                 Component hit = findHeavyweightAt(contentRoot, x, y, offset);
+                if (id == MouseEvent.MOUSE_MOVED || id == MouseEvent.MOUSE_ENTERED
+                        || id == MouseEvent.MOUSE_EXITED) {
+                    crossHeavyweights(contentRoot, heavyweightUnder,
+                            id == MouseEvent.MOUSE_EXITED ? null : hit, x, y, when, modifiers);
+                    // Over a heavyweight, the crossing is the canvas's enter or exit.
+                    if (id != MouseEvent.MOUSE_MOVED && hit != null) return;
+                }
                 if (hit != null) {
                     target = hit;
                     lx = x - offset[0];
@@ -187,6 +206,16 @@ final class AwtInput {
             } else {
                 frame.dispatchEvent(new MouseEvent(frame, id, when, modifiers, x, y,
                         clickCount, popup, button));
+                if (isPress) {
+                    pressedAt[0] = x;
+                    pressedAt[1] = y;
+                } else if (id == MouseEvent.MOUSE_RELEASED) {
+                    if (isClick(pressedAt, x, y)) {
+                        frame.dispatchEvent(new MouseEvent(frame, MouseEvent.MOUSE_CLICKED, when,
+                                modifiers, x, y, clickCount, popup, button));
+                    }
+                    pressedAt[0] = Integer.MIN_VALUE;
+                }
             }
             if (id == MouseEvent.MOUSE_RELEASED) {
                 capturedTarget[0] = null;
@@ -225,6 +254,38 @@ final class AwtInput {
         });
     }
 
+    /**
+     * Raises {@code MOUSE_EXITED} on the heavyweight the pointer left and {@code MOUSE_ENTERED} on
+     * the one it is now over, as their native peers would. The frame's dispatcher only tracks
+     * lightweights, and applications rely on these: a 3D view sets its tool's cursor on enter.
+     */
+    static void crossHeavyweights(Container contentRoot, Component[] under, Component now,
+            int x, int y, long when, int modifiers) {
+        Component was = under[0];
+        if (now == was) return;
+        under[0] = now;
+        if (was != null && was.getParent() != null) {
+            dispatchCrossing(contentRoot, was, MouseEvent.MOUSE_EXITED, x, y, when, modifiers);
+        }
+        if (now != null) {
+            dispatchCrossing(contentRoot, now, MouseEvent.MOUSE_ENTERED, x, y, when, modifiers);
+        }
+    }
+
+    private static void dispatchCrossing(Container contentRoot, Component c, int id, int x, int y,
+            long when, int modifiers) {
+        java.awt.Point p = SwingUtilities.convertPoint(contentRoot, x, y, c);
+        c.dispatchEvent(new MouseEvent(c, id, when, modifiers, p.x, p.y, 0, false,
+                MouseEvent.NOBUTTON));
+    }
+
+    /** Whether a release at (x,y) stayed within the drag threshold of the recorded press. */
+    static boolean isClick(int[] pressedAt, int x, int y) {
+        if (pressedAt[0] == Integer.MIN_VALUE) return false;
+        int threshold = java.awt.dnd.DragSource.getDragThreshold();
+        return Math.abs(x - pressedAt[0]) <= threshold && Math.abs(y - pressedAt[1]) <= threshold;
+    }
+
     private static void startRepaintTimer(javax.swing.Timer[] repaintTimer, Runnable forceRepaint) {
         if (repaintTimer[0] != null) return;
         javax.swing.Timer t = new javax.swing.Timer(33, ev -> forceRepaint.run());
@@ -240,17 +301,19 @@ final class AwtInput {
     }
 
     /**
-     * Finds the heavyweight descendant of {@code root} under (x,y), with its absolute offset from
-     * {@code root}'s origin — or {@code null} if the point resolves to purely lightweight content,
-     * which {@code frame.dispatchEvent()}'s own {@code LightweightDispatcher} already routes
+     * Finds the innermost heavyweight descendant of {@code root} under (x,y), with its absolute
+     * offset from {@code root}'s origin — or {@code null} if the point resolves to purely lightweight
+     * content, which {@code frame.dispatchEvent()}'s own {@code LightweightDispatcher} already routes
      * correctly.
      *
      * <p>AWT's {@code LightweightDispatcher} deliberately stops retargeting a synthetic event at a
      * heavyweight child — normally that child's own native peer receives real input directly there
      * is no such peer here (the same reason {@code EvolveSwingHost.paintHeavyweightDescendants}
-     * exists for output), so input needs the same manual routing the paint side already gets.</p>
+     * exists for output), so input needs the same manual routing the paint side already gets. That
+     * includes a heavyweight nested inside another one (a canvas inside an applet), which the outer
+     * one's dispatcher would not route to either.</p>
      */
-    private static Component findHeavyweightAt(Container root, int x, int y, int[] offsetOut) {
+    static Component findHeavyweightAt(Container root, int x, int y, int[] offsetOut) {
         return findHeavyweightAt(root, x, y, 0, 0, offsetOut);
     }
 
@@ -262,6 +325,10 @@ final class AwtInput {
             if (x < b.x || y < b.y || x >= b.x + b.width || y >= b.y + b.height) continue;
             int cx = baseX + b.x, cy = baseY + b.y;
             if (!c.isLightweight()) {
+                if (c instanceof Container) {
+                    Component nested = findHeavyweightAt((Container) c, x - b.x, y - b.y, cx, cy, offsetOut);
+                    if (nested != null) return nested;
+                }
                 offsetOut[0] = cx;
                 offsetOut[1] = cy;
                 return c;
@@ -335,6 +402,20 @@ final class AwtInput {
             case 3: return InputEvent.BUTTON3_DOWN_MASK | InputEvent.BUTTON3_MASK;
             default: return 0;
         }
+    }
+
+    /**
+     * The modifiers of a release, built the way a native peer builds them: extended masks only,
+     * without the released button's, so {@code MouseEvent} derives the legacy masks — the released
+     * button's included — itself. AWT's lightweight dispatcher reads a release that still carries
+     * its button's down mask as one made with no button held, and hands it to whatever is under the
+     * pointer instead of the component the drag started on.
+     */
+    @SuppressWarnings("deprecation")
+    private static int releaseModifiers(int stateMask, int buttonsDown, int swtButton) {
+        int legacy = InputEvent.SHIFT_MASK | InputEvent.CTRL_MASK | InputEvent.META_MASK
+                | InputEvent.ALT_MASK | InputEvent.BUTTON1_MASK | InputEvent.ALT_GRAPH_MASK;
+        return (swtToAwtModifiers(stateMask) | buttonsDown) & ~legacy & ~awtButtonDownMask(swtButton);
     }
 
     @SuppressWarnings("deprecation")

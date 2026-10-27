@@ -54,6 +54,10 @@ class FlutterSurface: NSObject {
     func waitForEvent(millis: Int32) {}
     func setTitle(_ title: String) {}
     func setState(_ state: Int32) {}
+    func setVisible(_ visible: Bool) {}
+    func setOwner(_ owner: FlutterSurface?) {}
+    func origin() -> (Int32, Int32)? { return nil }
+    func isActive() -> Bool { return false }
     func dispose() {}
 }
 
@@ -177,15 +181,29 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     /// The CSD window channel; held so it outlives initialize() and can push focus changes.
     private var windowChannel: FlutterMethodChannel?
 
-    func initialize(port: Int32, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32, csdEnabled: Bool) {
+    /// The window this one is a child of, as native SWT makes a child shell's window a child window
+    /// of its parent's: it moves with it, stays above it and is miniaturized with it.
+    private weak var ownerWindow: NSWindow?
+
+    func initialize(port: Int32, owner: NSWindow?, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32, csdEnabled: Bool) {
         print("FlutterDisplayWindowController.initialize port:\(port) id:\(displayId) name:\(widgetName) \(width)x\(height)")
 
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
-        setupMainMenuIfNeeded(app)
-        // Report the app as "running" (see the note at the top) so embedded AWT/Swing coexists with
-        // our hand-driven pump() instead of hijacking the main thread with its own [NSApp run].
-        installIsRunningOverride()
+        // Application-level bootstrap, once per process rather than once per window. A second window
+        // must not repeat it: -finishLaunching is documented as a one-time call, and running it again
+        // re-posts the launch notifications and re-runs AppKit's launch bookkeeping. Doing that while
+        // AppKit is mid-dispatch -- which is exactly where a window opened from a click is created --
+        // left the new window's engine unattached, so the in-flight pointer event was delivered to an
+        // invalid engine handle and the window never came up. Opening the same shell from a timer
+        // never showed it, because there is no event being dispatched then.
+        let firstWindow = !deskAppConsideredRunning
+        if firstWindow {
+            app.setActivationPolicy(.regular)
+            setupMainMenuIfNeeded(app)
+            // Report the app as "running" (see the note at the top) so embedded AWT/Swing coexists
+            // with our hand-driven pump() instead of hijacking the main thread with its own [NSApp run].
+            installIsRunningOverride()
+        }
 
         // Same Flutter bootstrap as the embedded path: load the precompiled Dart bundle next to the
         // dylib and pass [port, id, name, theme, bg, parentBg] so main() connects to the comm port.
@@ -230,21 +248,63 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
             blue: CGFloat(backgroundColor & 0xFF) / 255.0,
             alpha: 1.0)
         win.contentViewController = fvc
+        // Adopting a content view controller makes the window take that controller's preferred size,
+        // and a Flutter view has none until it has rendered -- so the window collapses to a pixel
+        // here, and a window that small never reports a viewport worth having, which is the
+        // handshake that would otherwise have corrected it. Restore the size that was asked for.
+        win.setContentSize(NSSize(width: CGFloat(width), height: CGFloat(height)))
         win.delegate = self
         win.center()
         win.isReleasedWhenClosed = false
         self.window = win
+        self.ownerWindow = owner
 
         RegisterGeneratedPlugins(registry: fvc)
         setupWindowChannel(fvc)
 
-        // Bootstrap the app without entering the modal run loop (so this JNI call returns to Java).
-        // The SWT event loop then services Cocoa via pump().
-        app.finishLaunching()
-        // From here we service the AppKit loop ourselves via pump(); treat the app as running.
-        deskAppConsideredRunning = true
-        win.makeKeyAndOrderFront(nil)
-        app.activate(ignoringOtherApps: true)
+        if firstWindow {
+            // Bootstrap the app without entering the modal run loop (so this JNI call returns to
+            // Java). The SWT event loop then services Cocoa via pump().
+            app.finishLaunching()
+            // From here we service the AppKit loop ourselves via pump(); treat the app as running.
+            deskAppConsideredRunning = true
+            win.makeKeyAndOrderFront(nil)
+            // Only the first window takes the application forward. Repeating it for every window
+            // pulls activation out from under whatever is being dispatched at the time.
+            app.activate(ignoringOtherApps: true)
+        } else {
+            win.makeKeyAndOrderFront(nil)
+        }
+        attachToOwner()
+    }
+
+    /// Cocoa only keeps a child window while both are on screen, so, as native SWT's
+    /// Shell.updateParent does, it is attached when either one is shown and detached when either one
+    /// is hidden; a hidden owner leaves the window unattached.
+    private func attachToOwner() {
+        guard let win = window, win.isVisible, let owner = ownerWindow, owner.isVisible else { return }
+        owner.addChildWindow(win, ordered: .above)
+    }
+
+    private func detachFromOwner() {
+        guard let win = window, let owner = win.parent else { return }
+        owner.removeChildWindow(win)
+    }
+
+    /// The windows this one owns, found through their delegate rather than `childWindows`, which
+    /// leaves out the ones not attached while this one was hidden.
+    private func ownedControllers() -> [FlutterDisplayWindowController] {
+        guard let win = window else { return [] }
+        return NSApp.windows.compactMap { $0.delegate as? FlutterDisplayWindowController }
+            .filter { $0.ownerWindow === win }
+    }
+
+    override func setOwner(_ owner: FlutterSurface?) {
+        let ownerWin = owner?.getView()?.window
+        if ownerWin === ownerWindow { return }
+        detachFromOwner()
+        ownerWindow = ownerWin
+        attachToOwner()
     }
 
     /// Drains all pending native events, then spins the run loop briefly. Returns -2 once per user
@@ -261,9 +321,13 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // Under Flutter 3.35's merged platform/UI thread the engine's UI work (frame scheduling,
         // post-frame callbacks — including the one that sends ClientReady) runs on this main run
         // loop. The non-blocking nextEvent drain above doesn't give it time, so a busy SWT
-        // readAndDispatch loop would never let a frame render. Spin the run loop ~2ms so it does —
-        // the same fix applied to PumpMessages for the size-test harness.
-        RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
+        // readAndDispatch loop would never let a frame render. One pass over the run loop runs
+        // whatever the engine has ready; waiting in it would hold every paint that follows the pump,
+        // and an idle SWT loop already waits inside the OS loop (waitForEvent).
+        CFRunLoopRunInMode(CFRunLoopMode.defaultMode, 0, false)
+        // The engine is up by now if it is going to be, so anything held back for it can go.
+        hasPumped = true
+        flushPendingActive()
         if closed { return -1 }
         if closeRequested {
             closeRequested = false
@@ -298,12 +362,41 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
 
     override func setBounds(x: Int32, y: Int32, w: Int32, h: Int32, vx: Int32, vy: Int32, vw: Int32, vh: Int32) {
         guard let win = window else { return }
-        if let screen = win.screen ?? NSScreen.main {
-            // SWT uses a top-left screen origin; Cocoa uses bottom-left. Flip the y of the frame.
-            let origin = NSPoint(x: CGFloat(x), y: screen.frame.height - CGFloat(y) - CGFloat(h))
+        // Size first: the origin below assumes the final content height, and AppKit clamps a frame
+        // that would overflow the screen, so placing the still-large initial window first leaves it
+        // pinned under the menu bar instead of at (x, y). A caller with no size yet passes 0: move
+        // the window, leave its size alone. Resizing to a pixel here is what left the application
+        // with an invisible window it could never grow out of, because a window that small reports
+        // no viewport for the handshake to correct.
+        if w > 0 && h > 0 {
+            win.setContentSize(NSSize(width: CGFloat(w), height: CGFloat(h)))
+        }
+        // SWT uses a top-left origin on the primary screen; Cocoa a bottom-left one on that same
+        // screen, whatever screen the window ends up on. Flipping against any other screen (the
+        // window's, or the key window's) lands the frame off-screen and AppKit clamps it under the
+        // menu bar.
+        if let primary = NSScreen.screens.first {
+            let origin = NSPoint(x: CGFloat(x), y: primary.frame.height - CGFloat(y) - CGFloat(h))
             win.setFrameOrigin(origin)
         }
-        win.setContentSize(NSSize(width: CGFloat(w), height: CGFloat(h)))
+    }
+
+
+    /// Whether this window is key, i.e. the one AppKit sends keyboard input to. The same fact the
+    /// traffic lights mirror through `windowDidBecomeKey`, asked for directly.
+    override func isActive() -> Bool {
+        return window?.isKeyWindow ?? false
+    }
+
+    /// Where the window's CONTENT starts on screen, in the same top-left space setBounds takes.
+    /// Content rather than frame, so the title bar is already accounted for and a caller converting
+    /// a window-local point needs no further correction. Flips against the primary screen, the one
+    /// setBounds places against, so the two round-trip; both share that call's multi-monitor caveat.
+    override func origin() -> (Int32, Int32)? {
+        guard let win = window, let screen = NSScreen.screens.first else { return nil }
+        let content = win.contentRect(forFrameRect: win.frame)
+        let top = screen.frame.height - (content.origin.y + content.height)
+        return (Int32(content.origin.x.rounded()), Int32(top.rounded()))
     }
 
     override func setState(_ state: Int32) {
@@ -323,6 +416,21 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
             } else if win.isZoomed {
                 win.zoom(nil)
             }
+        }
+    }
+
+    override func setVisible(_ visible: Bool) {
+        guard let win = window else { return }
+        // orderOut, not close: the window and its engine stay, so showing it again costs an
+        // ordering call rather than a rebuild.
+        if visible {
+            win.makeKeyAndOrderFront(nil)
+            attachToOwner()
+            ownedControllers().forEach { $0.attachToOwner() }
+        } else {
+            ownedControllers().forEach { $0.detachFromOwner() }
+            detachFromOwner()
+            win.orderOut(nil)
         }
     }
 
@@ -373,8 +481,20 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     override func dispose() {
         windowChannel?.setMethodCallHandler(nil)
         windowChannel = nil
-        flutterViewController?.engine.shutDownEngine()
+        pendingActive = nil
+
+        // Take the view out of the window before shutting the engine down, not after. While the
+        // Flutter view is still on screen it is still in the responder chain and still driving the
+        // vsync waiter, so anything already in flight over a just-shut-down engine — a scheduled
+        // vsync, a pointer event — reaches the embedder with a handle that no longer resolves, which
+        // is what it reports as 'FlutterEngineOnVsync'/'FlutterEngineSendPointerEvent' returning
+        // kInvalidArguments. Detaching first closes that window entirely.
         window?.delegate = nil
+        detachFromOwner()
+        window?.orderOut(nil)
+        window?.contentViewController = nil
+
+        flutterViewController?.engine.shutDownEngine()
         window?.close()
         window = nil
         flutterViewController = nil
@@ -392,14 +512,67 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         closed = true
     }
 
-    // The macOS traffic lights grey out when the window is not key; the Dart controls mirror that
-    // through csdWindowActive (see equo_window_stub.installWindowStateListeners).
+    /// A window shown while this one was miniaturized could not be attached then.
+    func windowDidDeminiaturize(_ notification: Notification) {
+        ownedControllers().forEach { $0.attachToOwner() }
+    }
+
+    // Key state drives two things in Dart: the traffic lights, which grey out when the window is not
+    // key (csdWindowActive, see equo_window_stub.installWindowStateListeners), and the engine's app
+    // lifecycle, see deliverActive.
     func windowDidBecomeKey(_ notification: Notification) {
-        windowChannel?.invokeMethod("active", arguments: true)
+        notifyActive(true)
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        windowChannel?.invokeMethod("active", arguments: false)
+        notifyActive(false)
+    }
+
+    /// The active state this window has not been able to tell Dart about yet, or nil when it has.
+    private var pendingActive: Bool?
+
+    /// Tells Dart whether this window is key, once there is an engine that can be told.
+    ///
+    /// A window is made key inside `initialize`, before its engine has run — the engine starts on
+    /// the first turn of the run loop, which only happens once the SWT loop calls `pump()`. Sending
+    /// then reaches no engine ("Invalid engine handle"), and with a second window the message is
+    /// lost outright rather than merely early: the first window's own state change is what ends up
+    /// reported, and the new window's controls stay greyed out. Held and sent from `pump()` instead.
+    private func notifyActive(_ active: Bool) {
+        guard windowChannel != nil, hasPumped else {
+            pendingActive = active
+            return
+        }
+        pendingActive = nil
+        deliverActive(active)
+    }
+
+    /// The engine learns the app lifecycle only from an `NSApp.delegate` that is a
+    /// `FlutterAppLifecycleProvider`, and nothing installs one here: this process bootstraps NSApp
+    /// itself, and an embedding host (AWT) may own the delegate. Without it the lifecycle stays
+    /// `resumed`, the FocusManager never parks the focus, and the shell never sends Deactivate.
+    /// Each window has its own engine, so its key state is forwarded to that engine directly.
+    private func deliverActive(_ active: Bool) {
+        windowChannel?.invokeMethod("active", arguments: active)
+        guard let engine = flutterViewController?.engine as FlutterAppLifecycleDelegate? else { return }
+        let notification = Notification(name: active ? NSApplication.willBecomeActiveNotification
+                                                      : NSApplication.willResignActiveNotification)
+        if active {
+            engine.handleWillBecomeActive?(notification)
+        } else {
+            engine.handleWillResignActive?(notification)
+        }
+    }
+
+    /// Whether this window's engine has had a turn of the run loop, which is when it starts. There
+    /// is no engine flag to read for this on macOS, and the first `pump()` is exactly the moment.
+    private var hasPumped = false
+
+    /// Sends whatever `notifyActive` had to hold back, once the engine is up.
+    private func flushPendingActive() {
+        guard let active = pendingActive, windowChannel != nil else { return }
+        pendingActive = nil
+        deliverActive(active)
     }
 
     private func setupMainMenuIfNeeded(_ app: NSApplication) {
@@ -434,13 +607,16 @@ private func surfaceFrom(_ context: jlong) -> FlutterSurface? {
 // =================================================================================================
 
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_Initialize")
-public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint, csd_enabled: jboolean) -> jlong {
+public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint, csd_enabled: jboolean, impeller_enabled: jboolean) -> jlong {
+    // impeller_enabled is the Windows engine's renderer choice; the macOS engine always renders with Impeller.
     let name = jstringToSwift(env, widget_name)
     let themeString = jstringToSwift(env, theme)
     let surface: FlutterSurface
     if width > 0 && height > 0 {
         let c = FlutterDisplayWindowController()
-        c.initialize(port: port, displayId: Int64(widget_id), widgetName: name, theme: themeString, backgroundColor: background_color, width: width, height: height, csdEnabled: csd_enabled == 1)
+        // For a window, |parent| is the surface of the window that owns this one, or 0 for none.
+        let owner = surfaceFrom(parent)?.getView()?.window
+        c.initialize(port: port, owner: owner, displayId: Int64(widget_id), widgetName: name, theme: themeString, backgroundColor: background_color, width: width, height: height, csdEnabled: csd_enabled == 1)
         surface = c
     } else {
         let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil
@@ -481,6 +657,26 @@ public func FlutterNative_waitEvents(env: UnsafeMutablePointer<JNIEnv?>, cls: jc
     surfaceFrom(context)?.waitForEvent(millis: millis)
 }
 
+/// Wakes the main run loop so a `waitForEvent` in progress returns now. Called from a non-UI thread
+/// (the comm thread posting an SWT `asyncExec`), hence no `@MainActor`: it only hops to the main
+/// queue, which is what breaks the wait. `nextEvent` needs an event to hand back, so the hop posts
+/// one; a pump that already consumed the wake dispatches it harmlessly to no window.
+@_cdecl("Java_dev_equo_swt_FlutterNative_Wake")
+public func FlutterNative_wake(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) {
+    DispatchQueue.main.async {
+        guard let wakeEvent = NSEvent.otherEvent(with: .applicationDefined,
+                                                 location: .zero,
+                                                 modifierFlags: [],
+                                                 timestamp: ProcessInfo.processInfo.systemUptime,
+                                                 windowNumber: 0,
+                                                 context: nil,
+                                                 subtype: 0,
+                                                 data1: 0,
+                                                 data2: 0) else { return }
+        NSApp.postEvent(wakeEvent, atStart: true)
+    }
+}
+
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetTitle")
 public func FlutterNative_setTitle(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, title: jstring) {
     surfaceFrom(context)?.setTitle(jstringToSwift(env, title))
@@ -489,6 +685,27 @@ public func FlutterNative_setTitle(env: UnsafeMutablePointer<JNIEnv?>, cls: jcla
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetState")
 public func FlutterNative_setState(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, state: jint) {
     surfaceFrom(context)?.setState(state)
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_GetOrigin")
+public func FlutterNative_getOrigin(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jlong {
+    guard let o = surfaceFrom(context)?.origin() else { return jlong(Int64.min) }
+    return (jlong(o.0) << 32) | jlong(UInt32(bitPattern: o.1))
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_IsActive")
+public func FlutterNative_isActive(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jboolean {
+    return (surfaceFrom(context)?.isActive() ?? false) ? jboolean(1) : jboolean(0)
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetVisible")
+public func FlutterNative_setVisible(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, visible: jboolean) {
+    surfaceFrom(context)?.setVisible(visible != 0)
+}
+
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetOwner")
+public func FlutterNative_setOwner(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, owner: jlong) {
+    surfaceFrom(context)?.setOwner(surfaceFrom(owner))
 }
 
 // Stores the external bundle base so bundleBase() points the engine at it.

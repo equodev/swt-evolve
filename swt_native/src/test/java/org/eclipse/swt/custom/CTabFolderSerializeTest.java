@@ -11,7 +11,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_CTabFolder() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,13 +20,14 @@ class CTabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_CTabFolder() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabFolder")
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("highlightEnabled").equalsTo(w.getHighlightEnabled(), orAbsentIfFalse));
@@ -42,6 +43,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("selectionBgImage").equalsTo(value(w).getSelectionBgImage(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("single").equalsTo(w.getSingle(), orAbsentIfFalse));
+        assertJ.satisfies(node("tabHeight").equalsTo(value(w).getTabHeight(), null));
         assertJ.satisfies(node("tabPosition").equalsTo(w.getTabPosition(), orAbsentIf0));
         assertJ.satisfies(node("topRight").equalsTo(w.getTopRight(), orAbsentIfNull));
         assertJ.satisfies(node("unselectedCloseVisible").equalsTo(w.getUnselectedCloseVisible(), orAbsentIfFalse));
@@ -56,12 +58,11 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_CTabFolder() {
-        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 

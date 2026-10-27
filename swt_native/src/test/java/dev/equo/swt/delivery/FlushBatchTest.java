@@ -66,7 +66,7 @@ class FlushBatchTest {
     @Test
     @DisplayName("a flush with several things to say sends one message")
     void manyFramesTravelTogether() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         List<Label> rows = new ArrayList<>();
         for (int i = 0; i < 8; i++) rows.add(new Label(parent, SWT.NONE));
@@ -91,7 +91,7 @@ class FlushBatchTest {
     @Test
     @DisplayName("a flush with one thing to say sends it as itself")
     void oneFrameTravelsAlone() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         Label only = new Label(parent, SWT.NONE);
         settle(parent);
@@ -108,7 +108,7 @@ class FlushBatchTest {
     @Test
     @DisplayName("nothing to say sends nothing")
     void anEmptyFlushSendsNothing() {
-        Shell shell = Mocks.swtShell();
+        Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
         new Label(parent, SWT.NONE);
         settle(parent);

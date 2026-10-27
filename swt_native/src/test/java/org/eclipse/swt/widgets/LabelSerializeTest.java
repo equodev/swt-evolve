@@ -11,7 +11,7 @@ class LabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Label() {
-        Label w = new Label(swtShell(), SWT.NONE);
+        Label w = new Label(shell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,16 +20,17 @@ class LabelSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Label() {
-        Label w = new Label(swtShell(), SWT.NONE);
+        Label w = new Label(shell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Label")
-               .containsEntry("text", json(w.getText()))
+               .containsEntry("text", json(value(w).getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+        assertJ.satisfies(node("image").equalsTo(value(w).getImage(), orAbsentIfNull));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
@@ -39,12 +40,11 @@ class LabelSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
     @Test
     void should_name_every_change_Label() {
-        Label w = new Label(swtShell(), SWT.NONE);
+        Label w = new Label(shell(), SWT.NONE);
         assertNamesEveryChange(w);
     }
 
