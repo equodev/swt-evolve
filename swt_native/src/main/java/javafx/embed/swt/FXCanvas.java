@@ -621,7 +621,8 @@ public class FXCanvas extends Canvas {
         if (w <= 0 || h <= 0) {
             return;
         }
-        if (w != pWidth || h != pHeight) {
+        boolean resized = w != pWidth || h != pHeight;
+        if (resized) {
             pWidth = w;
             pHeight = h;
             final int fw = w, fh = h;
@@ -654,6 +655,13 @@ public class FXCanvas extends Canvas {
         }
         if (px == null || pw <= 0 || ph <= 0) {
             return;
+        }
+        if (!resized) {
+            // A zoom change that leaves the canvas size alone takes no frame by itself.
+            double scale = dev.equo.swt.Config.rasterScale();
+            if (pw != pixelExtent(w, scale) || ph != pixelExtent(h, scale)) {
+                requestSnapshot();
+            }
         }
 
         // snapshot() returns ARGB; render as opaque RGB (alpha dropped).

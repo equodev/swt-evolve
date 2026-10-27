@@ -165,6 +165,23 @@ class FXCanvasPixelDensityNativeTest {
         assertThat(blit).containsExactly(CANVAS_W, CANVAS_H, CANVAS_W, CANVAS_H);
     }
 
+    @Test
+    @DisplayName("a zoom change on a canvas that keeps its size retakes the frame at the new density")
+    void aZoomChangeRetakesTheFrameAtTheNewDensity() throws InterruptedException {
+        displayAt(100);
+        assertThat(renderAndBlit()).containsExactly(CANVAS_W, CANVAS_H, CANVAS_W, CANVAS_H);
+
+        displayAt(125);
+        paint();
+        onFxThread(() -> { });
+        bridge.comm.sent.clear();
+        paint();
+
+        List<int[]> blits = blits();
+        assertThat(blits).as("drawImage calls of the paint after the zoom change").hasSize(1);
+        assertThat(blits.get(0)).containsExactly(466, 716, CANVAS_W, CANVAS_H);
+    }
+
     /**
      * Shows a scene, lets the first paint size the scene and render it on the FX thread, then paints
      * again and returns the blit: the frame's width and height, and the canvas rectangle it lands in.
