@@ -223,10 +223,11 @@ class TreeColumnImplementationNativeTest {
 
         new TreeColumn(tree, SWT.NONE);
         TreeColumn last = new TreeColumn(tree, SWT.NONE);
-        assertThat(tree.getColumnOrder()).containsExactly(1, 0, 2, 3);
-
+        int[] afterAdding = tree.getColumnOrder();
         last.dispose();
-        assertThat(tree.getColumnOrder()).containsExactly(1, 0, 2);
+        int[] afterRemoving = tree.getColumnOrder();
+
+        assertThat(new int[][] {afterAdding, afterRemoving}).isEqualTo(new int[][] {{1, 0, 2, 3}, {1, 0, 2}});
     }
 
     @Test
