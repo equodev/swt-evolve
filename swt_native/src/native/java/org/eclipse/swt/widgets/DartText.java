@@ -390,11 +390,12 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
-        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
-            return;
         Point oldSelection = getSelection();
-        if (oldSelection.x == oldSelection.y)
+        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0' || oldSelection.x == oldSelection.y) {
+            clearSegments(true);
+            applySegments();
             return;
+        }
         String newText = "";
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
             newText = verifyText(newText, oldSelection.x, oldSelection.y);
@@ -1004,10 +1005,6 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void insertEditText(String string) {
-        _insertEditText(string, false);
-    }
-
-    void _insertEditText(String string, boolean enableUndo) {
         int length = string.length();
         Point selection = getSelection();
         if (selection.x > getCharCount() || selection.y > getCharCount()) {
@@ -1032,6 +1029,10 @@ public class DartText extends DartScrollable implements IText {
         if (!newText.equals(oldText))
             sendEvent(SWT.Modify);
         applySegments();
+    }
+
+    void _insertEditText(String string, boolean enableUndo) {
+        insertEditText(string);
     }
 
     @Override
