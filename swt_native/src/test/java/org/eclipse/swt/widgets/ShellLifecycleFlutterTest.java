@@ -361,7 +361,7 @@ class ShellLifecycleFlutterTest {
         parent.dispose();
         runLoop();
         assertThat(child.isDisposed()).isTrue();
-        assertThat(events).contains(SWT.Activate);
+        assertThat(events).containsExactly(SWT.Activate);
     }
 
     @Test
