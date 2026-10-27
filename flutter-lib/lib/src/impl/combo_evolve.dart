@@ -15,12 +15,13 @@ import '../theme/theme_settings/combo_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
 import 'utils/pointer.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
-    extends CompositeImpl<T, V> with PendingTextEchoes {
+    extends CompositeImpl<T, V> with PendingTextEchoes, ClientCaretReport {
   @override
   bool get keepsWheel => true;
 
@@ -44,6 +45,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
+    _controller.addListener(_reportCaret);
     _focusNode.addListener(_handleFocusChange);
     _focusNode.onKeyEvent = _handleKey;
     addOpenListKeyClaim(_listClaimsKey);
@@ -124,7 +126,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   }
 
   @override
-  void extraSetState() {
+  void extraSetState() => fromJava(_applyJavaState);
+
+  void _applyJavaState() {
     final String newText = state.text ?? "";
     // Ignore a stale echo of our own in-flight typing (see PendingTextEchoes); a value we
     // never sent is a genuine external change and still updates the controller below.
@@ -286,7 +290,22 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     state.text = value;
     recordSentText(value);
     widget.sendModifyModify(state, VEvent()..text = value);
+    _reportCaret();
   }
+
+  @override
+  int? get reportedCaret => state.caretPosition;
+
+  @override
+  set reportedCaret(int? caret) => state.caretPosition = caret;
+
+  @override
+  void sendCaretReport(VEvent event) => widget.sendVerifyVerify(state, event);
+
+  /// A typed edit reaches Java as the Modify after this listener runs, and resets Java's selection
+  /// there: its caret is reported once the Modify is sent.
+  void _reportCaret() =>
+      reportCaret(_controller, editPending: _controller.text != (state.text ?? ""));
 
   @override
   Widget build(BuildContext context) {
@@ -436,6 +455,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   @override
   void dispose() {
     removeOpenListKeyClaim(_listClaimsKey);
+    _controller.removeListener(_reportCaret);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
