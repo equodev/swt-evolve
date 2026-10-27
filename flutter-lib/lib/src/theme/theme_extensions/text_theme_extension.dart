@@ -69,6 +69,8 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
   // Search field
   final double searchIconSize;
 
+  final double minTextContrast;
+
   const TextThemeExtension({
     required this.textColor,
     required this.disabledTextColor,
@@ -105,6 +107,7 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
     required this.passwordToggleHoverColor,
     required this.passwordToggleSize,
     required this.searchIconSize,
+    required this.minTextContrast,
   });
 
   factory TextThemeExtension.fromJson(Map<String, dynamic> json) =>

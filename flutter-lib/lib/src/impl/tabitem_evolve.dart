@@ -8,6 +8,7 @@ import '../impl/ctabfolder_evolve.dart';
 import './utils/image_utils.dart';
 import '../theme/theme_extensions/tabitem_theme_extension.dart';
 import 'utils/widget_utils.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 
 class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
@@ -42,6 +43,7 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
           ? widgetTheme.disabledTextColor
           : (isSelected ? widgetTheme.selectedTextColor : widgetTheme.textColor),
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
     final textStyle = getTextStyle(
       context: context,
@@ -66,7 +68,7 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
             Padding(padding: widgetTheme.imagePadding, child: imageWidget),
           Padding(
             padding: widgetTheme.textPadding,
-            child: Text(stripAccelerators(state.text), style: textStyle),
+            child: MnemonicText(state.text, style: textStyle),
           ),
         ],
       ),

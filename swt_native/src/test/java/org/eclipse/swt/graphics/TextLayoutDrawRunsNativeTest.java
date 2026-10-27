@@ -56,6 +56,25 @@ class TextLayoutDrawRunsNativeTest extends TextLayoutDrawTestBase {
     }
 
     @Test
+    void aBoldRunInTheSystemFontSharesTheBaselineOfANamedFamily() {
+        // Eclipse's Quick Access: rows in the table font, the match in a bold derived from the system font.
+        TextLayout layout = layout("GeoShaper Interpretation");
+        layout.setFont(new DartFont(display, "Liberation Sans", 11, SWT.NORMAL, null).getApi());
+        layout.setStyle(new TextStyle(new DartFont(display, "system", 11, SWT.BOLD, null).getApi(), null, null), 0, 2);
+        layout.draw(gc(), 0, 0);
+        assertThat(run("Geo").y()).isEqualTo(run("Shaper Interpretation").y());
+    }
+
+    @Test
+    void aLayoutWithNoFontOfItsOwnDrawsItsTextOnTheLinesBaseline() {
+        TextLayout layout = new TextLayout(display);
+        layouts.add(layout);
+        layout.setText("plain");
+        layout.draw(gc(), 0, 0);
+        assertThat(run("plain").y()).isEqualTo(layout.getLineMetrics(0).getAscent() - StyledTextHelper.calculateFontMetrics(null, 1).ascent);
+    }
+
+    @Test
     void aRaisedRunIsDrawnHigherAndALoweredOneLower() {
         TextLayout layout = layout("aXbYc");
         TextStyle up = new TextStyle(), down = new TextStyle();

@@ -13,6 +13,7 @@ import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/canvas.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/display.dart';
+import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/gen/swt.dart';
@@ -66,7 +67,7 @@ void _paintLinkLabel() {
   _deliver('GC/$_canvasId/gcDispose', {'fullRepaint': true});
 }
 
-Future<void> _pumpDrawingLink(WidgetTester tester) async {
+Future<void> _pumpDrawingLink(WidgetTester tester, {VCanvas? link}) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: DisplaySwt(
@@ -77,7 +78,7 @@ Future<void> _pumpDrawingLink(WidgetTester tester) async {
               ..style = SWT.SHELL_TRIM
               ..text = 'shell'
               ..bounds = _rect(0, 0, 500, 300)
-              ..children = [_link()]
+              ..children = [link ?? _link()]
           ]),
   ));
   await tester.pumpAndSettle();
@@ -105,6 +106,24 @@ void main() {
     // where it was clicked, so its clicks must stay pointer events.
     final data = tester.getSemantics(find.bySemanticsIdentifier('Canvas/$_canvasId')).getSemanticsData();
     expect(data.hasAction(SemanticsAction.tap), isFalse);
+    semantics.dispose();
+  });
+
+  testWidgets('a Canvas with a context menu exposes no tap action either', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await _pumpDrawingLink(
+        tester,
+        link: _link()
+          ..menu = (VMenu()
+            ..id = 100
+            ..style = SWT.POP_UP
+            ..enabled = true));
+
+    // The menu's own tap callbacks (secondary click, macOS Ctrl+Click) must not make the node tappable.
+    final node = tester.getSemantics(find.bySemanticsIdentifier('Canvas/$_canvasId'));
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+    expect(node.label, contains('Forgot My Password'),
+        reason: 'excluding the detector must not cost the node its accessible name');
     semantics.dispose();
   });
 }

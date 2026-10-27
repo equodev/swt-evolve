@@ -86,6 +86,8 @@ ScaleThemeExtension _getScaleTheme({
     defaultSelection: 0,
     defaultIncrement: 1,
     defaultPageIncrement: 10,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -105,6 +107,7 @@ Color getScaleActiveTrackColor(
     context: context,
     foreground: foreground,
     defaultColor: widgetTheme.activeTrackColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -133,6 +136,7 @@ Color getScaleThumbColor(
     context: context,
     foreground: foreground,
     defaultColor: isHovered ? widgetTheme.thumbHoverColor : widgetTheme.thumbColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

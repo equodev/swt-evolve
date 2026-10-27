@@ -42,6 +42,7 @@ class VTableColumn extends VItem {
   }
 
   int? alignment;
+  bool? moveable;
   bool? resizable;
   int? width;
 
@@ -50,6 +51,7 @@ class VTableColumn extends VItem {
     super.copyFrom(other);
     if (other is VTableColumn) {
       alignment = other.alignment;
+      moveable = other.moveable;
       resizable = other.resizable;
       width = other.width;
     }
@@ -60,6 +62,8 @@ class VTableColumn extends VItem {
     switch (key) {
       case 'alignment':
         alignment = (json['alignment'] as num?)?.toInt();
+      case 'moveable':
+        moveable = json['moveable'] as bool?;
       case 'resizable':
         resizable = json['resizable'] as bool?;
       case 'width':

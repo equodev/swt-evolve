@@ -247,7 +247,7 @@ class TextImpl<T extends TextSwt, V extends VText>
             (!isSearch && b is OutlineInputBorder) ? b.copyWith(gapPadding: 0.0) : b!;
         decoration = decoration.copyWith(
           isDense: false,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 3.0),
+          contentPadding: singleLineTextInset,
           border: noGap(decoration.border),
           enabledBorder: noGap(decoration.enabledBorder),
           focusedBorder: noGap(decoration.focusedBorder),
@@ -258,10 +258,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         );
       } else {
         decoration = decoration.copyWith(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 3.0,
-            vertical: 4.0,
-          ),
+          contentPadding: singleLineTextInset.copyWith(top: 4.0, bottom: 4.0),
         );
       }
     }
@@ -270,6 +267,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       foreground: state.foreground,
       defaultColor: widgetTheme.textColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textField = TextField(

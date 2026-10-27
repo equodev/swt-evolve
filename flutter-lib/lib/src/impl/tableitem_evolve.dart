@@ -15,6 +15,7 @@ import '../impl/table_evolve.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
+import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
@@ -91,6 +92,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
     final columns = _context?.parentTableValue.columns ?? [];
+    final rowGround = Color.alphaBlend(
+        _context?.tableImpl?.rowBackgroundColor(rowIndex, state, theme) ?? Colors.transparent,
+        enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
 
     return List.generate(effectiveColumnCount, (columnIndex) {
       final cellText = columnIndex < cellTexts.length
@@ -102,6 +106,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         theme,
         isSelected,
         enabled,
+        background: rowGround,
       );
       // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
       // painted twice.
@@ -342,11 +347,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
   int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {
     final columnWidths = _context?.tableImpl?.cachedColumnWidths;
+    final tableImpl = _context?.tableImpl;
     double x = 0.0;
-    if (columnWidths != null) {
-      for (int i = 0; i < columnIndex; i++) {
-        final w = columnWidths[i];
-        if (w is FixedColumnWidth) x += w.value;
+    if (columnWidths != null && tableImpl != null) {
+      final count = tableImpl.getColumns().length;
+      if (columnIndex < count) {
+        x = columnLefts(tableImpl.fixedColumnWidths(count), tableImpl.displayOrder)[columnIndex];
       }
       final colW = columnWidths[columnIndex];
       if (colW is FixedColumnWidth) x += colW.value / 2;
@@ -370,7 +376,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   ) {
     final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
     final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
-    return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
+    // In the table's own coordinates, as Table.getItem(Point) reads them: the scrolled rows moved up.
+    final scrolled = _context?.tableImpl?.verticalScrollOffset ?? 0.0;
+    return (headerOffset + rowIndex * rowHeight + rowHeight / 2 - scrolled).round();
   }
 
   Widget buildCheckbox(TableThemeExtension theme, bool enabled) {
@@ -441,8 +449,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     int columnIndex,
     TableThemeExtension theme,
     bool isSelected,
-    bool enabled,
-  ) {
+    bool enabled, {
+    Color? background,
+  }) {
     final defaultColor = getTableCellDefaultTextColor(theme, isSelected, enabled);
 
     final cellForeground = getCellForeground(columnIndex);
@@ -451,6 +460,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // Cell, else row, else the Table's own -- the cascade SWT resolves.
       foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
       defaultColor: defaultColor,
+      minContrast: theme.minTextContrast,
+      background: background,
     );
   }
 

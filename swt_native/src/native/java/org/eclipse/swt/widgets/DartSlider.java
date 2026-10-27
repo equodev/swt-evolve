@@ -328,7 +328,7 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, value)) {
+        if (this.increment != value) {
             getValue().markDirty(VSlider.INCREMENT);
         }
         if (value < 1)
@@ -351,7 +351,7 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setMaximum(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.maximum, value)) {
+        if (this.maximum != value) {
             getValue().markDirty(VSlider.MAXIMUM);
         }
         if (value < 0)
@@ -381,7 +381,7 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setMinimum(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.minimum, value)) {
+        if (this.minimum != value) {
             getValue().markDirty(VSlider.MINIMUM);
         }
         if (value < 0)
@@ -411,7 +411,7 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setPageIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.pageIncrement, value)) {
+        if (this.pageIncrement != value) {
             getValue().markDirty(VSlider.PAGE_INCREMENT);
         }
         if (value < 1)
@@ -471,7 +471,7 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setThumb(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.thumb, value)) {
+        if (this.thumb != value) {
             getValue().markDirty(VSlider.THUMB);
         }
         if (value < 1)
@@ -504,19 +504,19 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
-        if (!java.util.Objects.equals(this.thumb, thumb)) {
+        if (this.thumb != thumb) {
             getValue().markDirty(VSlider.THUMB);
         }
-        if (!java.util.Objects.equals(this.pageIncrement, pageIncrement)) {
+        if (this.pageIncrement != pageIncrement) {
             getValue().markDirty(VSlider.PAGE_INCREMENT);
         }
-        if (!java.util.Objects.equals(this.minimum, minimum)) {
+        if (this.minimum != minimum) {
             getValue().markDirty(VSlider.MINIMUM);
         }
-        if (!java.util.Objects.equals(this.maximum, maximum)) {
+        if (this.maximum != maximum) {
             getValue().markDirty(VSlider.MAXIMUM);
         }
-        if (!java.util.Objects.equals(this.increment, increment)) {
+        if (this.increment != increment) {
             getValue().markDirty(VSlider.INCREMENT);
         }
         if (minimum < 0)

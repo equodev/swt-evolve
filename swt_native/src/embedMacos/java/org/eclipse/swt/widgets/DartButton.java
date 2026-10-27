@@ -473,7 +473,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (!java.util.Objects.equals(this.grayed, grayed)) {
+        if (this.grayed != grayed) {
             getValue().markDirty(VButton.GRAYED);
         }
         if ((getApi().style & SWT.CHECK) == 0)
@@ -504,8 +504,8 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.image, image)) {
             getValue().markDirty(VButton.IMAGE);
         }
@@ -555,7 +555,7 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (this.selection != newValue) {
             getValue().markDirty(VButton.SELECTION);
         }
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)

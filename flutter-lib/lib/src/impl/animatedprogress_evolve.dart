@@ -1,16 +1,16 @@
-import 'package:flutter/widgets.dart';
 import '../gen/animatedprogress.dart';
-import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 
+/// SWT's AnimatedProgress is a Canvas that paints its own bar, so it is one here too.
 class AnimatedProgressImpl<
   T extends AnimatedProgressSwt,
   V extends VAnimatedProgress
 >
     extends CanvasImpl<T, V> {
+  /// A progress bar takes no focus on a click, on any native.
   @override
-  Widget build(BuildContext context) {
-    // TODO: implement the widget, remove this line to stop regenerating
-    return const Text("AnimatedProgress");
-  }
+  bool get focusesOnPress => false;
+
+  @override
+  void takeFocusOnPress() {}
 }

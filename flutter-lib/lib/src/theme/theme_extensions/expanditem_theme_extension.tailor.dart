@@ -32,6 +32,7 @@ mixin _$ExpandItemThemeExtensionTailorMixin
   Curve get animationCurve;
   double get iconSize;
   double get imageTextSpacing;
+  double get minTextContrast;
 
   @override
   ExpandItemThemeExtension copyWith({
@@ -56,6 +57,7 @@ mixin _$ExpandItemThemeExtensionTailorMixin
     Curve? animationCurve,
     double? iconSize,
     double? imageTextSpacing,
+    double? minTextContrast,
   }) {
     return ExpandItemThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -86,6 +88,7 @@ mixin _$ExpandItemThemeExtensionTailorMixin
       animationCurve: animationCurve ?? this.animationCurve,
       iconSize: iconSize ?? this.iconSize,
       imageTextSpacing: imageTextSpacing ?? this.imageTextSpacing,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -154,6 +157,7 @@ mixin _$ExpandItemThemeExtensionTailorMixin
       animationCurve: t < 0.5 ? animationCurve : other.animationCurve,
       iconSize: t < 0.5 ? iconSize : other.iconSize,
       imageTextSpacing: t < 0.5 ? imageTextSpacing : other.imageTextSpacing,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -239,6 +243,10 @@ mixin _$ExpandItemThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               imageTextSpacing,
               other.imageTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -267,6 +275,7 @@ mixin _$ExpandItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(animationCurve),
       const DeepCollectionEquality().hash(iconSize),
       const DeepCollectionEquality().hash(imageTextSpacing),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -302,4 +311,5 @@ extension ExpandItemThemeExtensionBuildContextProps on BuildContext {
   Curve get animationCurve => expandItemThemeExtension.animationCurve;
   double get iconSize => expandItemThemeExtension.iconSize;
   double get imageTextSpacing => expandItemThemeExtension.imageTextSpacing;
+  double get minTextContrast => expandItemThemeExtension.minTextContrast;
 }

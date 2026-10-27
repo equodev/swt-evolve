@@ -48,6 +48,13 @@ public interface CommService {
     void remove(String eventName);
 
     /**
+     * Removes every handler registered under {@code owner} ({@code Type/id}): what a disposed widget
+     * leaves behind, which otherwise keeps it reachable from this comm for good.
+     */
+    default void removeOwner(String owner) {
+    }
+
+    /**
      * Identifies the client that will receive whatever is sent now.
      *
      * <p>Delivery is recorded against this rather than against the widget, because "already sent"

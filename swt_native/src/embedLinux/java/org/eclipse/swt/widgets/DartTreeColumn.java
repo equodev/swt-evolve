@@ -515,7 +515,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setMoveable(boolean moveable) {
         boolean newValue = moveable;
         checkWidget();
-        if (!java.util.Objects.equals(this.moveable, newValue)) {
+        if (this.moveable != newValue) {
             getValue().markDirty(VTreeColumn.MOVEABLE);
         }
         this.moveable = newValue;
@@ -544,6 +544,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         checkWidget();
+        if (this.resizable != newValue) {
+            getValue().markDirty(VTreeColumn.RESIZABLE);
+        }
         this.resizable = newValue;
     }
 
@@ -603,7 +606,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        if (!java.util.Objects.equals(this.lastWidth, width)) {
+        if (this.lastWidth != width) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
         if (width < 0)
@@ -719,7 +722,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Move, e);
+                ColumnHelper.movedByUser(getApi(), e.index);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {

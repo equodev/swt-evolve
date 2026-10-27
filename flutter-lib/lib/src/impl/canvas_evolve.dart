@@ -18,6 +18,7 @@ import '../gen/widgets.dart';
 import '../nolayout.dart';
 import '../styles.dart';
 import 'composite_evolve.dart';
+import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
@@ -109,13 +110,14 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  final int _alpha = 255;
-  Rect? clipRect;
-
   // Keyboard focus for a childless Canvas so it can be typed into (e.g. an FXCanvas
   // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
   // it on pointer-down and forward keystrokes to SWT below.
   final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
+
+  /// Whether a press gives this Canvas the keyboard focus; false for a Canvas that only paints, which
+  /// no native focuses on a click.
+  bool get focusesOnPress => true;
 
   // The Canvas grabs Flutter keyboard focus on tap (build's onPointerDown) so a childless Canvas can
   // be typed into. In whole-tree/web mode nothing forwards its keys directly (onKeyEvent stays
@@ -151,11 +153,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // window rather than a surface the application paints content onto: its children are ordinary
   // widgets and keep the theme. Only a plain Canvas hands its own colors to what is hosted over it.
   bool get hostsAppColoredContent => true;
-
-  Color applyAlpha(Color color) {
-    if (_alpha == 255) return color;
-    return color.withOpacity(_alpha / 255.0);
-  }
 
   @override
   void initState() {
@@ -226,7 +223,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
         // the Canvas hosts child widgets — they manage their own focus and stealing
         // it on every click would break them.
-        if (!hasActiveChildren) _keyboardFocus.requestFocus();
+        if (!hasActiveChildren && focusesOnPress) _keyboardFocus.requestFocus();
       },
       child: wrapWithScrollbars(base),
     );
@@ -507,12 +504,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   void sendScrollBarSelection(VScrollBar bar, int newValue, int detail) =>
       _sendSelection(bar, newValue, detail);
 
-  void _sendSelection(VScrollBar bar, int newValue, int detail) {
-    EquoCommService.sendPayload(
-      "ScrollBar/${bar.id}/Selection/Selection",
-      (VEvent()..index = newValue..detail = detail).toJson(),
-    );
-  }
+  void _sendSelection(VScrollBar bar, int newValue, int detail) =>
+      sendScrollBarSelectionEvent(bar, newValue, detail: detail);
 
   /// Java runs the wheel listeners, which may veto, then scrolls the bar of each axis.
   void _sendWheel(PointerScrollEvent event) {

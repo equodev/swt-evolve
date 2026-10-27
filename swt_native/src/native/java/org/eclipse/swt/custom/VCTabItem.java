@@ -29,6 +29,7 @@ public class VCTabItem extends VItem {
     }
 
     @JsonAttribute(ignore = true)
+    @SuppressWarnings("removal")
     public Image getDisabledImage() {
         Image val = ((DartCTabItem) impl).disabledImage;
         if (val != null && !(val.getImpl() instanceof DartImage))

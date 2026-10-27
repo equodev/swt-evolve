@@ -63,6 +63,12 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private Point windowOrigin = new Point(0, 0);
 
+    /** Whether a client has reported the real monitor yet; until then {@code display.bounds} is a placeholder. */
+    private boolean monitorReported;
+
+    /** Whether the window has been sized to the unsized main shell it first showed. */
+    private boolean windowSizedToUnsizedShell;
+
     /** The last real viewport the window reported, or null until it reports one. */
     private Rectangle windowViewport;
 
@@ -190,8 +196,9 @@ public class DeskDisplayBridge extends DisplayBridge {
         Rectangle placed = (normal.x != 0 || normal.y != 0) ? normal : cascade(normal);
         window.setBounds(placed);
         if (!shell.getMaximized() && !shell.getFullScreen()) shell.setLocation(placed.x, placed.y);
+        // Always set, even empty: the window was created titled with the client's widget name.
         String title = shell.getText();
-        if (title != null && !title.isEmpty()) window.setTitle(title);
+        window.setTitle(title == null ? "" : title);
         bindShellWindowView(shell, context);
         return window;
     }
@@ -681,10 +688,38 @@ public class DeskDisplayBridge extends DisplayBridge {
      * {@link #shellWindowOrigin}), so its window is that much taller and starts that much higher.
      * Sized to the shell alone, the window left the shell a strip-height short, and the next viewport
      * report shrank it -- whenever that report happened to arrive.
+     *
+     * <p>Native SWT puts a shell's title bar at the y it is given, so wherever that bar would show
+     * on the screen, the strip does too: a window that would start above the top of the work area
+     * starts at it, and the shell moves down below the strip, keeping its size. A shell a strip or
+     * more above the top of the work area, whose title bar would be off it in native SWT too, is
+     * left there. The native window places a framed window's caption by the same rule.
      */
-    private Rectangle windowBoundsFor(Rectangle shell) {
+    Rectangle windowBoundsFor(Rectangle shell) {
         if (shell == null || clientTopInset == 0) return shell;
-        return new Rectangle(shell.x, shell.y - clientTopInset, shell.width, shell.height + clientTopInset);
+        int y = shell.y - clientTopInset;
+        int top = workAreaTop(new Rectangle(shell.x, y, shell.width, shell.height + clientTopInset));
+        if (y < top && shell.y > top - clientTopInset) y = top;
+        return new Rectangle(shell.x, y, shell.width, shell.height + clientTopInset);
+    }
+
+    /** Whether the native library answers {@link FlutterNative#getWorkAreaTop}; only Windows' does. */
+    private boolean canAskWorkArea = true;
+
+    /**
+     * Seam: the top of the work area of the monitor nearest {@code window}, in SWT units. 0 where
+     * the window system cannot tell, which is the top of the Display's own bounds on this surface.
+     */
+    protected int workAreaTop(Rectangle window) {
+        if (!canAskWorkArea || !hasWindowSurface()) return 0;
+        Rectangle w = toWindowUnits(window);
+        try {
+            int top = FlutterNative.getWorkAreaTop(mainWindowContext(), w.x, w.y, w.width, w.height);
+            return top == FlutterNative.WORK_AREA_UNKNOWN ? 0 : Config.logicalToSwt(top);
+        } catch (UnsatisfiedLinkError notInThisRunner) {
+            canAskWorkArea = false;
+            return 0;
+        }
     }
 
     /**
@@ -701,6 +736,10 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (monitor != null && !display.bounds.equals(monitor)) {
             display.bounds = monitor; // the Display is the screen, not the window
             changed = true;
+            if (!monitorReported) {
+                monitorReported = true;
+                resizeUnsizedShells(display);
+            }
         }
 
         Shell main = mainShell(display);
@@ -721,6 +760,17 @@ public class DeskDisplayBridge extends DisplayBridge {
                 return changed;
             }
             windowShell = main;
+            // A main shell nobody sized opens its window at its own size, 5/8 of the real monitor, as a
+            // native shell opens its window, instead of the size the window was created at before the
+            // monitor was known.
+            if (monitorReported && isUnsized(main) && !windowSizedToUnsizedShell) {
+                windowSizedToUnsizedShell = true;
+                Rectangle own = main.getBounds();
+                if (own.width != viewport.width || own.height != viewport.height) {
+                    forwardWindowBounds(windowBoundsFor(own));
+                    return true;
+                }
+            }
             // Size only: where the shell is, is the window's business (applyWindowOrigin), not the
             // viewport's. Requiring (0,0) here treated any real position as "needs re-pinning".
             boolean shellMatches = current != null
@@ -934,6 +984,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             super.setBounds(control, bounds);
             return;
         }
+        noteBoundsSet(control);
         if (bounds == null) {
             return;
         }
@@ -971,6 +1022,7 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        if (fullScreen) fillMonitorIfUnsized(control);
         if (isMainWindow(control)) {
             setShellWindowState(windowContext, fullScreen ? ShellWindow.STATE_FULLSCREEN : ShellWindow.STATE_NORMAL);
             return;

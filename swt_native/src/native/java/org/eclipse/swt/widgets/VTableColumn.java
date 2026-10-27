@@ -25,7 +25,6 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).setAlignment(value);
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getMoveable() {
         return ((DartTableColumn) impl).getMoveable();
     }
@@ -61,6 +60,8 @@ public class VTableColumn extends VItem {
 
     public static final String ALIGNMENT = "alignment";
 
+    public static final String MOVEABLE = "moveable";
+
     public static final String RESIZABLE = "resizable";
 
     public static final String WIDTH = "width";
@@ -70,6 +71,9 @@ public class VTableColumn extends VItem {
         switch(key) {
             case "alignment":
                 Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
+            case "moveable":
+                Serializer.writeKeyValue(writer, "moveable", getMoveable());
                 return;
             case "resizable":
                 Serializer.writeKeyValue(writer, "resizable", getResizable());

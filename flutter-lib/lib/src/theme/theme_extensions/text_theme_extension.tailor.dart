@@ -45,6 +45,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
   Color get passwordToggleHoverColor;
   double get passwordToggleSize;
   double get searchIconSize;
+  double get minTextContrast;
 
   @override
   TextThemeExtension copyWith({
@@ -83,6 +84,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
     Color? passwordToggleHoverColor,
     double? passwordToggleSize,
     double? searchIconSize,
+    double? minTextContrast,
   }) {
     return TextThemeExtension(
       textColor: textColor ?? this.textColor,
@@ -125,6 +127,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
           passwordToggleHoverColor ?? this.passwordToggleHoverColor,
       passwordToggleSize: passwordToggleSize ?? this.passwordToggleSize,
       searchIconSize: searchIconSize ?? this.searchIconSize,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -228,6 +231,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
           ? passwordToggleSize
           : other.passwordToggleSize,
       searchIconSize: t < 0.5 ? searchIconSize : other.searchIconSize,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -369,6 +373,10 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
             const DeepCollectionEquality().equals(
               searchIconSize,
               other.searchIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -411,6 +419,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       const DeepCollectionEquality().hash(passwordToggleHoverColor),
       const DeepCollectionEquality().hash(passwordToggleSize),
       const DeepCollectionEquality().hash(searchIconSize),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -457,4 +466,5 @@ extension TextThemeExtensionBuildContextProps on BuildContext {
       textThemeExtension.passwordToggleHoverColor;
   double get passwordToggleSize => textThemeExtension.passwordToggleSize;
   double get searchIconSize => textThemeExtension.searchIconSize;
+  double get minTextContrast => textThemeExtension.minTextContrast;
 }

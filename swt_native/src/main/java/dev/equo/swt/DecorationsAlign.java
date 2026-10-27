@@ -5,7 +5,7 @@ public enum DecorationsAlign {
 
     public static DecorationsAlign fromString(String s) {
         if (s == null) return HLEFT;
-        switch (s.trim().toLowerCase()) {
+        switch (s.trim().toLowerCase(java.util.Locale.ROOT)) {
             case "hright": return HRIGHT;
             case "vleft":  return VLEFT;
             case "vright": return VRIGHT;

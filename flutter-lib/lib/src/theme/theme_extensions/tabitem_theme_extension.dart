@@ -29,7 +29,9 @@ class TabItemThemeExtension extends ThemeExtension<TabItemThemeExtension> with _
   
   // Typography
   final TextStyle? textStyle;
-  
+
+  final double minTextContrast;
+
   const TabItemThemeExtension({
     required this.textColor,
     required this.selectedTextColor,
@@ -40,6 +42,7 @@ class TabItemThemeExtension extends ThemeExtension<TabItemThemeExtension> with _
     required this.textPadding,
     required this.imageTextSpacing,
     this.textStyle,
+    required this.minTextContrast,
   });
 
   factory TabItemThemeExtension.fromJson(Map<String, dynamic> json) =>

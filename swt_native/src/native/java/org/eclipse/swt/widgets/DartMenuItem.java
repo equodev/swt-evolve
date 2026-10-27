@@ -554,7 +554,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setAccelerator(int accelerator) {
         checkWidget();
-        if (!java.util.Objects.equals(this.accelerator, accelerator)) {
+        if (this.accelerator != accelerator) {
             getValue().markDirty(VMenuItem.ACCELERATOR);
         }
         if (this.accelerator == accelerator)
@@ -583,7 +583,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        if (this.enabled != newValue) {
             getValue().markDirty(VMenuItem.ENABLED);
         }
         if (enabled) {
@@ -730,7 +730,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (this.selection != newValue) {
             getValue().markDirty(VMenuItem.SELECTION);
         }
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)

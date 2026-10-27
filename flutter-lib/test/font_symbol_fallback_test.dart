@@ -70,7 +70,7 @@ void main() {
           'one\ntwo\nthree',
           Offset.zero,
           const TextStyle(fontSize: 10, fontFamilyFallback: ['Inter']),
-          null, null, null, false, const Size(200, 100), true, null, null, null, null, 12.0, 4,
+          null, null, false, const Size(200, 100), true, null, null, null, null, 12.0, 4,
         );
     shape().draw(Canvas(ui.PictureRecorder()));
     debugLineLayoutHits = 0;

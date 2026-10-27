@@ -264,6 +264,7 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
       defaultColor: _isExpanded
           ? itemTheme.foregroundExpandedColor
           : itemTheme.foregroundColor,
+      minContrast: itemTheme.minTextContrast,
     );
 
     final iconColor = _isExpanded

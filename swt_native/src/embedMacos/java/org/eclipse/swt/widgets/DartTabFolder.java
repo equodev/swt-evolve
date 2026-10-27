@@ -514,7 +514,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     public void setSelection(TabItem[] items) {
         TabItem[] newValue = items;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTabFolder.SELECTION);
         }
         if (items == null)

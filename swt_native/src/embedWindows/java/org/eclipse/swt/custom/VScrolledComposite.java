@@ -77,7 +77,6 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).minWidth = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Point getOrigin() {
         return ((DartScrolledComposite) impl).getOrigin();
     }
@@ -95,6 +94,13 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).showFocusedControl = value;
     }
 
+    public int getOriginRequest() {
+        return ((DartScrolledComposite) impl).wireOriginRequest();
+    }
+
+    public void setOriginRequest(int value) {
+    }
+
     public static final String ALWAYS_SHOW_SCROLL_BARS = "alwaysShowScrollBars";
 
     public static final String CONTENT = "content";
@@ -106,6 +112,10 @@ public class VScrolledComposite extends VComposite {
     public static final String MIN_HEIGHT = "minHeight";
 
     public static final String MIN_WIDTH = "minWidth";
+
+    public static final String ORIGIN = "origin";
+
+    public static final String ORIGIN_REQUEST = "originRequest";
 
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
@@ -127,6 +137,12 @@ public class VScrolledComposite extends VComposite {
                 return;
             case "minWidth":
                 Serializer.writeKeyValue(writer, "minWidth", getMinWidth());
+                return;
+            case "origin":
+                Serializer.writeKeyValue(writer, "origin", getOrigin());
+                return;
+            case "originRequest":
+                Serializer.writeKeyValue(writer, "originRequest", getOriginRequest());
                 return;
         }
         super.writeProperty(writer, key);
