@@ -242,10 +242,9 @@ public class ControlHelper {
             ScaleHelper.stepByKey((DartScale) control, key);
     }
 
-    /** Shift+F10, which Win32 and GTK turn into a context-menu request. Cocoa has no such key. */
+    /** Shift+F10, which Win32 and GTK turn into a context-menu request (Cocoa has no such key). */
     private static boolean isMenuKey(Event key) {
-        return key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == SWT.SHIFT
-                && !"cocoa".equals(SWT.getPlatform());
+        return key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == SWT.SHIFT;
     }
 
     /**
@@ -268,8 +267,9 @@ public class ControlHelper {
         Menu menu = api.getMenu();
         if (menu == null || menu.isDisposed())
             return;
-        if (anchor != null || event.x != start.x || event.y != start.y)
-            menu.setLocation(event.x, event.y);
+        Point requested = new Point(event.x, event.y);
+        if (anchor != null || !requested.equals(start))
+            menu.setLocation(requested);
         menu.setVisible(true);
     }
 

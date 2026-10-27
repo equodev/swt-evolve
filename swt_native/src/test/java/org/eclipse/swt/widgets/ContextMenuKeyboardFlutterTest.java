@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Shift+F10 and the Menu key on a focused control fire {@link SWT#MenuDetect} with
- * {@link SWT#MENU_KEYBOARD} and show the control's menu, below the selected item of a Tree.
+ * {@link SWT#MENU_KEYBOARD} and show the control's menu: below the selected item of a Tree or a
+ * Table, at the pointer otherwise.
  *
  * <pre>./gradlew :swt-evolve:swt_native:test --tests '*ContextMenuKeyboardFlutterTest'</pre>
  */
@@ -44,9 +44,7 @@ class ContextMenuKeyboardFlutterTest {
             new TreeItem(tree, SWT.NONE).setText(s);
         tree.setSelection(tree.getItem(1));
         tree.addListener(SWT.MenuDetect, e -> menuDetects.add(copy(e)));
-        menu = new Menu(tree);
-        new MenuItem(menu, SWT.PUSH).setText("&Open");
-        tree.setMenu(menu);
+        menu = menuOf(tree);
         shell.setSize(300, 200);
         shell.open();
         tree.setFocus();
@@ -63,21 +61,28 @@ class ContextMenuKeyboardFlutterTest {
     @Test
     @DisplayName("Shift+F10 fires MenuDetect MENU_KEYBOARD and shows the menu")
     void shiftF10() {
-        assumeFalse("cocoa".equals(SWT.getPlatform()), "Cocoa has no keyboard context-menu key");
-
-        pressShiftF10();
+        press(SWT.F10, SWT.SHIFT);
 
         assertThat(menuDetects).singleElement().satisfies(e -> assertThat(e.detail).isEqualTo(SWT.MENU_KEYBOARD));
         assertThat(menu.getVisible()).isTrue();
     }
 
     @Test
+    @DisplayName("F10 alone or with another modifier added to Shift is not a context-menu request")
+    void otherF10Chords() {
+        press(SWT.F10, 0);
+        press(SWT.F10, SWT.SHIFT | SWT.CTRL);
+
+        assertThat(menuDetects).isEmpty();
+        assertThat(menu.getVisible()).isFalse();
+    }
+
+    @Test
     @DisplayName("A Shift+F10 KeyDown a listener vetoes opens nothing")
     void shiftF10Vetoed() {
-        assumeFalse("cocoa".equals(SWT.getPlatform()), "Cocoa has no keyboard context-menu key");
         tree.addListener(SWT.KeyDown, e -> e.doit = false);
 
-        pressShiftF10();
+        press(SWT.F10, SWT.SHIFT);
 
         assertThat(menuDetects).isEmpty();
         assertThat(menu.getVisible()).isFalse();
@@ -88,13 +93,125 @@ class ContextMenuKeyboardFlutterTest {
     void menuKey() {
         pressMenuKey();
 
-        Rectangle item = tree.getItem(1).getBounds();
-        Point expected = tree.toDisplay(item.x + item.width / 2, item.y + item.height);
+        Point expected = below(tree, tree.getItem(1).getBounds());
         assertThat(menuDetects).singleElement().satisfies(e -> {
             assertThat(e.detail).isEqualTo(SWT.MENU_KEYBOARD);
             assertThat(new Point(e.x, e.y)).isEqualTo(expected);
         });
         assertThat(menu.getVisible()).isTrue();
+        assertThat(location(menu)).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("A Tree with nothing selected opens its menu at the pointer")
+    void treeWithoutSelection() {
+        tree.deselectAll();
+
+        pressMenuKey();
+
+        assertOpenedAtPointer(menu);
+    }
+
+    @Test
+    @DisplayName("A Table opens its menu below its selected row")
+    void tableBelowSelectedRow() {
+        Table table = new Table(shell, SWT.BORDER);
+        for (String s : new String[] {"First", "Second", "Third"})
+            new TableItem(table, SWT.NONE).setText(s);
+        table.setSelection(2);
+        Menu tableMenu = focusWithMenu(table);
+
+        pressMenuKey();
+
+        Point expected = below(table, table.getItem(2).getBounds());
+        assertThat(menuDetects).singleElement().satisfies(e -> assertThat(new Point(e.x, e.y)).isEqualTo(expected));
+        assertThat(tableMenu.getVisible()).isTrue();
+        assertThat(location(tableMenu)).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("A Table with nothing selected opens its menu at the pointer")
+    void tableWithoutSelection() {
+        Table table = new Table(shell, SWT.BORDER);
+        new TableItem(table, SWT.NONE).setText("First");
+        Menu tableMenu = focusWithMenu(table);
+
+        pressMenuKey();
+
+        assertOpenedAtPointer(tableMenu);
+    }
+
+    @Test
+    @DisplayName("A control without items opens its menu at the pointer")
+    void controlWithoutItems() {
+        Button button = new Button(shell, SWT.PUSH);
+        Menu buttonMenu = focusWithMenu(button);
+
+        press(SWT.F10, SWT.SHIFT);
+
+        assertOpenedAtPointer(buttonMenu);
+    }
+
+    @Test
+    @DisplayName("A MenuDetect listener that moves the request opens the menu where it moved it")
+    void listenerMovesTheMenu() {
+        Button button = new Button(shell, SWT.PUSH);
+        Menu buttonMenu = focusWithMenu(button);
+        button.addListener(SWT.MenuDetect, e -> {
+            e.x = 42;
+            e.y = 24;
+        });
+
+        pressMenuKey();
+
+        assertThat(buttonMenu.getVisible()).isTrue();
+        assertThat(location(buttonMenu)).isEqualTo(new Point(42, 24));
+    }
+
+    @Test
+    @DisplayName("A control without a menu still gets MenuDetect, so its listener can build one")
+    void controlWithoutMenu() {
+        tree.setMenu(null);
+
+        pressMenuKey();
+
+        assertThat(menuDetects).singleElement().satisfies(e -> assertThat(e.detail).isEqualTo(SWT.MENU_KEYBOARD));
+        assertThat(menu.getVisible()).isFalse();
+    }
+
+    @Test
+    @DisplayName("A menu disposed while still set on the control does not open")
+    void disposedMenu() {
+        menu.dispose();
+
+        pressMenuKey();
+
+        assertThat(menuDetects).hasSize(1);
+        assertThat(tree.getMenu() == null || tree.getMenu().isDisposed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("A MenuDetect listener can attach the menu it builds, and that menu opens")
+    void listenerAttachesTheMenu() {
+        tree.setMenu(null);
+        Menu built = new Menu(tree);
+        new MenuItem(built, SWT.PUSH).setText("&Built");
+        tree.addListener(SWT.MenuDetect, e -> tree.setMenu(built));
+
+        pressMenuKey();
+
+        assertThat(built.getVisible()).isTrue();
+    }
+
+    @Test
+    @DisplayName("A MenuDetect listener that disposes the control ends the request")
+    void listenerDisposesTheControl() {
+        tree.addListener(SWT.MenuDetect, e -> tree.dispose());
+
+        pressMenuKey();
+
+        assertThat(tree.isDisposed()).isTrue();
+        assertThat(menu.isDisposed() || !menu.getVisible()).isTrue();
     }
 
     @Test
@@ -108,10 +225,45 @@ class ContextMenuKeyboardFlutterTest {
         assertThat(menu.getVisible()).isFalse();
     }
 
-    private void pressShiftF10() {
+    private Menu focusWithMenu(Control control) {
+        control.addListener(SWT.MenuDetect, e -> menuDetects.add(copy(e)));
+        Menu controlMenu = menuOf(control);
+        shell.layout();
+        control.setFocus();
+        drain();
+        return controlMenu;
+    }
+
+    private static Menu menuOf(Control control) {
+        Menu controlMenu = new Menu(control);
+        new MenuItem(controlMenu, SWT.PUSH).setText("&Open");
+        control.setMenu(controlMenu);
+        return controlMenu;
+    }
+
+    /** Opened where Menu.setVisible puts a menu given no location: the pointer. */
+    private void assertOpenedAtPointer(Menu opened) {
+        Point pointer = display.getCursorLocation();
+        assertThat(menuDetects).singleElement().satisfies(e -> {
+            assertThat(e.detail).isEqualTo(SWT.MENU_KEYBOARD);
+            assertThat(new Point(e.x, e.y)).isEqualTo(pointer);
+        });
+        assertThat(opened.getVisible()).isTrue();
+        assertThat(((DartMenu) opened.getImpl())._hasLocation()).isFalse();
+    }
+
+    private static Point below(Control control, Rectangle item) {
+        return control.toDisplay(item.x + item.width / 2, item.y + item.height);
+    }
+
+    private static Point location(Menu menu) {
+        return ((DartMenu) menu.getImpl())._location();
+    }
+
+    private void press(int keyCode, int stateMask) {
         Event key = new Event();
-        key.keyCode = SWT.F10;
-        key.stateMask = SWT.SHIFT;
+        key.keyCode = keyCode;
+        key.stateMask = stateMask;
         web.comm.fireContaining("Display/" + display.hashCode() + "/Key/KeyDown", key);
         drain();
     }
