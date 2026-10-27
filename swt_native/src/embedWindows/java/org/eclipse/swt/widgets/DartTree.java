@@ -2188,7 +2188,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
-        if (!java.util.Objects.equals(this.columnOrder, newValue)) {
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
             getValue().markDirty(VTree.COLUMN_ORDER);
         }
         if (order == null)

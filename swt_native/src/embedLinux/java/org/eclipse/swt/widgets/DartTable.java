@@ -2054,7 +2054,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
-        if (!java.util.Objects.equals(this.columnOrder, newValue)) {
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
             getValue().markDirty(VTable.COLUMN_ORDER);
         }
         if (order == null)
@@ -2572,7 +2572,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setTopIndex(int index) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topIndex, index)) {
+        if (this.topIndex != index) {
             getValue().markDirty(VTable.TOP_INDEX);
         }
         if (!(0 <= index && index < itemCount))

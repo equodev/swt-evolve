@@ -535,7 +535,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.moveable, moveable)) {
+        if (this.moveable != moveable) {
             getValue().markDirty(VTableColumn.MOVEABLE);
         }
         this.moveable = moveable;
