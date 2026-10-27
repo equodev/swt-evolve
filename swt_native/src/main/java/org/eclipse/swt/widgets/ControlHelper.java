@@ -75,37 +75,13 @@ public class ControlHelper {
     }
 
     /**
-     * Dart controls have no OS window proc, so nothing turns an incoming KeyDown into an
-     * {@link SWT#Traverse} event the way {@code SwtControl.translateTraversal} does natively.
-     * Popups and dialogs (e.g. the Command Palette) close on Escape via a Traverse listener on
-     * their Shell, which never fires without this translation. Mirror the native ancestor walk by
-     * delegating to {@code Control.traverse(int, Event)}, which sends SWT.Traverse up the parent
-     * chain to the Shell.
+     * Dart controls have no OS window proc to turn a KeyDown into {@link SWT#Traverse}, so a widget's
+     * own Escape runs the same traversal as a Display-routed one, up to the Shell.
      */
     private static void translateTraversal(DartWidget widget, Event keyEvent) {
-        if (!(widget instanceof DartControl))
+        if (keyEvent.keyCode != SWT.ESC || !(widget instanceof DartControl) || widget.isDisposed())
             return;
-        DartControl origin = (DartControl) widget;
-        if (origin.isDisposed())
-            return;
-        int detail;
-        switch (keyEvent.keyCode) {
-            case SWT.ESC:
-                detail = SWT.TRAVERSE_ESCAPE;
-                break;
-            default:
-                return;
-        }
-        Control start = resolveTraverseStart(origin);
-        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
-            return;
-        Event event = new Event();
-        event.character = keyEvent.character;
-        event.keyCode = keyEvent.keyCode;
-        event.keyLocation = keyEvent.keyLocation;
-        event.stateMask = keyEvent.stateMask;
-        event.doit = true;
-        ((DartControl) start.getImpl()).traverse(detail, event);
+        escapeTraversal((DartControl) widget, keyEvent);
     }
 
     /**
