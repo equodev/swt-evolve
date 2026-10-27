@@ -56,7 +56,8 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..locale = json['locale'] as String?
   ..font_point_scale = (json['font_point_scale'] as num?)?.toDouble()
   ..push_button_margin = (json['push_button_margin'] as num?)?.toInt()
-  ..transparent_menu_check_box = json['transparent_menu_check_box'] as bool?;
+  ..transparent_menu_check_box = json['transparent_menu_check_box'] as bool?
+  ..use_swt_border = json['use_swt_border'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -101,4 +102,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'font_point_scale': ?instance.font_point_scale,
   'push_button_margin': ?instance.push_button_margin,
   'transparent_menu_check_box': ?instance.transparent_menu_check_box,
+  'use_swt_border': ?instance.use_swt_border,
 };

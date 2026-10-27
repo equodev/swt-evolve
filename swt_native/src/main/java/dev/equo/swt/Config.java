@@ -892,6 +892,7 @@ public class Config {
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
+            configFlags.use_swt_border = Boolean.getBoolean("swt.use_swt_border");
             configFlags.use_swt_font_colors = optionalBoolean(System.getProperty(USE_SWT_FONT_COLORS));
             configFlags.use_swt_font_colors_by_widget = fontColorsByWidgetFromProperties();
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));

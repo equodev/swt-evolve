@@ -1049,7 +1049,15 @@ public class DartShell extends DartDecorations implements IShell {
     void releaseWidget() {
         Display savedDisplay = display;
         Composite savedParent = parent;
-        Shell returnTo = getBridge() instanceof DisplayBridge ? ((DisplayBridge) getBridge()).shellToReturnTo(this.getApi()) : null;
+        Shell returnTo = null;
+        boolean wasActive = savedDisplay != null && !savedDisplay.isDisposed() && savedDisplay.getActiveShell() == this.getApi();
+        if (getBridge() instanceof DisplayBridge) {
+            DisplayBridge bridge = (DisplayBridge) getBridge();
+            wasActive |= bridge.isActiveShell(this.getApi());
+            returnTo = bridge.shellToReturnTo(this.getApi());
+        } else {
+            wasActive = true;
+        }
         super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
@@ -1064,7 +1072,10 @@ public class DartShell extends DartDecorations implements IShell {
         lastActive = null;
         if (savedDisplay != null && ((DartDisplay) savedDisplay.getImpl()).disposing)
             return;
-        // The active shell going away hands activation back to the one it took over from, at
+        // A shell that was not active, as a child going with its parent, hands activation to nobody.
+        if (!wasActive)
+            return;
+        // The active shell going away hands activation back to the one active before it, at
         // once, as a window manager does when the active window is destroyed.
         if (returnTo != null && !returnTo.isDisposed() && returnTo.isVisible()) {
             ((DartShell) returnTo.getImpl())._takeFocusHolder(true);

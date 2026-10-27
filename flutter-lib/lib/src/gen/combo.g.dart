@@ -53,6 +53,7 @@ VCombo _$VComboFromJson(Map<String, dynamic> json) => VCombo()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..caretPosition = (json['caretPosition'] as num?)?.toInt()
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..listVisible = json['listVisible'] as bool?
   ..text = json['text'] as String?;
@@ -81,6 +82,7 @@ Map<String, dynamic> _$VComboToJson(VCombo instance) => <String, dynamic>{
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
+  'caretPosition': ?instance.caretPosition,
   'items': ?instance.items,
   'listVisible': ?instance.listVisible,
   'text': ?instance.text,

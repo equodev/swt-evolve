@@ -346,6 +346,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
         if (orientation != SWT.HORIZONTAL && orientation != SWT.VERTICAL) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        getValue().markDirty(VWidget.STYLE);
         sashStyle &= ~(SWT.HORIZONTAL | SWT.VERTICAL);
         sashStyle |= orientation == SWT.VERTICAL ? SWT.HORIZONTAL : SWT.VERTICAL;
         for (int i = 0; i < sashes.length; i++) {

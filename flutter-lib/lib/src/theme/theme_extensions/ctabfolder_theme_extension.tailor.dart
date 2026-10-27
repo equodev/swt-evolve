@@ -42,6 +42,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   TextStyle? get tabSelectedTextStyle;
   Color get tabContentBackgroundColor;
   Color get tabContentBorderColor;
+  Color get outlineColor;
   double get tabIconSize;
   double get tabCloseIconSize;
   double get controlButtonSize;
@@ -102,6 +103,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     TextStyle? tabSelectedTextStyle,
     Color? tabContentBackgroundColor,
     Color? tabContentBorderColor,
+    Color? outlineColor,
     double? tabIconSize,
     double? tabCloseIconSize,
     double? controlButtonSize,
@@ -175,6 +177,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
           tabContentBackgroundColor ?? this.tabContentBackgroundColor,
       tabContentBorderColor:
           tabContentBorderColor ?? this.tabContentBorderColor,
+      outlineColor: outlineColor ?? this.outlineColor,
       tabIconSize: tabIconSize ?? this.tabIconSize,
       tabCloseIconSize: tabCloseIconSize ?? this.tabCloseIconSize,
       controlButtonSize: controlButtonSize ?? this.controlButtonSize,
@@ -342,6 +345,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
         other.tabContentBorderColor,
         t,
       )!,
+      outlineColor: Color.lerp(outlineColor, other.outlineColor, t)!,
       tabIconSize: t < 0.5 ? tabIconSize : other.tabIconSize,
       tabCloseIconSize: t < 0.5 ? tabCloseIconSize : other.tabCloseIconSize,
       controlButtonSize: t < 0.5 ? controlButtonSize : other.controlButtonSize,
@@ -547,6 +551,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
               other.tabContentBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
+              outlineColor,
+              other.outlineColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               tabIconSize,
               other.tabIconSize,
             ) &&
@@ -687,6 +695,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabSelectedTextStyle),
       const DeepCollectionEquality().hash(tabContentBackgroundColor),
       const DeepCollectionEquality().hash(tabContentBorderColor),
+      const DeepCollectionEquality().hash(outlineColor),
       const DeepCollectionEquality().hash(tabIconSize),
       const DeepCollectionEquality().hash(tabCloseIconSize),
       const DeepCollectionEquality().hash(controlButtonSize),
@@ -768,6 +777,7 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
       cTabFolderThemeExtension.tabContentBackgroundColor;
   Color get tabContentBorderColor =>
       cTabFolderThemeExtension.tabContentBorderColor;
+  Color get outlineColor => cTabFolderThemeExtension.outlineColor;
   double get tabIconSize => cTabFolderThemeExtension.tabIconSize;
   double get tabCloseIconSize => cTabFolderThemeExtension.tabCloseIconSize;
   double get controlButtonSize => cTabFolderThemeExtension.controlButtonSize;

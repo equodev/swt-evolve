@@ -1424,6 +1424,8 @@ public class DartCombo extends DartComposite implements ICombo {
         return event.text;
     }
 
+    int caretPosition;
+
     String[] items = new String[0];
 
     Point selection;
@@ -1452,6 +1454,10 @@ public class DartCombo extends DartComposite implements ICombo {
 
     public boolean _listVisible() {
         return listVisible;
+    }
+
+    public int _caretPosition() {
+        return caretPosition;
     }
 
     public String[] _items() {
@@ -1537,6 +1543,10 @@ public class DartCombo extends DartComposite implements ICombo {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (ComboHelper.proposesNoChange(e)) {
+                    ComboHelper.clientCaretMoved(this, e.start, e.index);
+                    return;
+                }
                 sendEvent(SWT.Verify, e);
             });
         });

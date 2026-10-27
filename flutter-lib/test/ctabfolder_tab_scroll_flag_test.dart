@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -60,6 +61,14 @@ List<(int, int)> _reportedTabs() {
   return [for (var i = 0; i + 1 < values.length; i += 2) (values[i], values[i + 1])];
 }
 
+// The theme's font. Loaded here because another test in the same isolate may have loaded it: label
+// widths, and so where the tabs compress, must not depend on test order.
+Future<void> _loadInter() async {
+  final loader = FontLoader('Inter')
+    ..addFont(rootBundle.load('assets/fonts/Inter_18pt-Medium.ttf'));
+  await loader.load();
+}
+
 void _useTabScroll(bool? value) => setConfigFlags(ConfigFlags.fromJson(
     {if (value != null) 'ctabfolder_tab_scroll': value}));
 
@@ -95,6 +104,7 @@ List<Color?> _tabBackgrounds(WidgetTester tester) => [
     ];
 
 void main() {
+  setUpAll(_loadInter);
   setUp(() {
     resetConfigFlags();
     _strips.clear();
@@ -104,7 +114,7 @@ void main() {
   testWidgets('ctabfolder_tab_scroll=false: a narrow folder compresses its tabs instead of scrolling',
       (tester) async {
     _useTabScroll(false);
-    await _pump(tester, 236);
+    await _pump(tester, 120);
 
     expect(_horizontalScrollExtent(tester), 0, reason: 'the tab strip must not scroll');
     expect(find.text('Search'), findsNothing, reason: 'the tabs shrink to share the strip');
@@ -119,13 +129,13 @@ void main() {
       expect(tabLeft, closeTo(left, 1), reason: 'Java hit-tests the tabs at their compressed widths');
       left = tabLeft + width;
     }
-    expect(left, lessThanOrEqualTo(236));
+    expect(left, lessThanOrEqualTo(120));
   });
 
   testWidgets('ctabfolder_tab_scroll=false: tabs that do not fit at their minimum go behind the chevron',
       (tester) async {
     _useTabScroll(false);
-    await _pump(tester, 90);
+    await _pump(tester, 70);
 
     expect(_horizontalScrollExtent(tester), 0, reason: 'the tab strip must not scroll');
     expect(find.byIcon(Icons.expand_more), findsOneWidget);
@@ -133,14 +143,14 @@ void main() {
     // (CTabFolderRenderer.computeSize with MINIMUM_SIZE): the selected "Search" draws as "S".
     expect(find.text('S').hitTestable(), findsWidgets);
     expect(find.text('T').hitTestable(), findsNothing, reason: 'the tabs past the strip are not drawn');
-    final parked = _reportedTabs().where((tab) => tab.$1 >= 90);
+    final parked = _reportedTabs().where((tab) => tab.$1 >= 70);
     expect(parked, isNotEmpty, reason: 'Java finds no tab under a point past the folder');
   });
 
   testWidgets('ctabfolder_tab_scroll=false: the strip report shows only the tabs before the chevron',
       (tester) async {
     _useTabScroll(false);
-    await _pump(tester, 90);
+    await _pump(tester, 70);
 
     final sections = _strips.last.split(';');
     expect(sections, hasLength(3), reason: 'tabs; close buttons; shown part of the strip');
