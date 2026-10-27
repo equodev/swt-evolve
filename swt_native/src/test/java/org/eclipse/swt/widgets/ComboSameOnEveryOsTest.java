@@ -132,7 +132,7 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
-    @DisplayName("deselecting all in an editable combo empties its text, whether or not an item was selected, and says nothing")
+    @DisplayName("deselecting all in an editable combo empties its text, whether or not an item was selected, and tells the Modify listeners")
     void deselectAllEmptiesTheText() {
         for (int selected : new int[] {1, -1}) {
             Combo combo = abc(SWT.NONE, selected);
@@ -146,8 +146,43 @@ class ComboSameOnEveryOsTest {
             assertThat(combo.getSelectionIndex()).as("selected %d", selected).isEqualTo(-1);
             assertThat(combo.getText()).as("selected %d", selected).isEmpty();
             assertThat(combo.getSelection()).as("selected %d", selected).isEqualTo(new Point(0, 0));
-            assertThat(modifies).as("selected %d", selected).isEmpty();
+            assertThat(modifies).as("selected %d", selected).hasSize(1);
         }
+    }
+
+    @Test
+    @DisplayName("deselecting all in an editable combo asks the Verify listeners about emptying its text, then tells the Modify listeners, as GTK and Win32 do")
+    void deselectAllVerifiesAndModifies() {
+        Combo combo = abc(SWT.NONE, -1);
+        combo.setText("abcdef");
+        List<String> events = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> events.add("Verify " + e.start + ".." + e.end + " '" + e.text + "'"));
+        combo.addListener(SWT.Modify, e -> events.add("Modify"));
+
+        combo.deselectAll();
+
+        assertThat(events).containsExactly("Verify 0..6 ''", "Modify");
+        assertThat(combo.getText()).isEmpty();
+
+        events.clear();
+        combo.deselectAll();
+
+        assertThat(events).as("text already empty").isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Verify listener that vetoes deselecting all keeps an editable combo's text, and no Modify follows")
+    void deselectAllVetoedKeepsTheText() {
+        Combo combo = abc(SWT.NONE, -1);
+        combo.setText("abcdef");
+        List<Event> modifies = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> e.doit = false);
+        combo.addListener(SWT.Modify, modifies::add);
+
+        combo.deselectAll();
+
+        assertThat(combo.getText()).isEqualTo("abcdef");
+        assertThat(modifies).isEmpty();
     }
 
     @Test

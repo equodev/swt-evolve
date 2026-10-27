@@ -188,15 +188,19 @@ public class ComboHelper {
 
     /**
      * Deselects the selected item and empties the text that showed it, as GTK and Win32 do. A read-only combo says
-     * so, even when nothing was selected; an editable one does not.
+     * so, even when nothing was selected. An editable one with a text asks the Verify listeners about emptying it,
+     * and tells the Modify listeners once they allow it.
      */
     public static void deselect(DartCombo combo) {
         combo.selectedIndex = -1;
         if (readOnly(combo)) {
             syncReadOnlyText(combo);
             combo.sendEvent(SWT.Modify);
-        } else {
-            clearText(combo);
+        } else if (getCharCount(combo) > 0) {
+            String text = verify(combo, "", 0, getCharCount(combo));
+            // A listener that deselected again has already emptied the text and said so.
+            if (text != null && !text.equals(combo.text))
+                setText(combo, text, true, false);
         }
     }
 

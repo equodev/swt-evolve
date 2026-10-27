@@ -22,6 +22,20 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes {
   late TextEditingController _controller;
   FocusNode? _focusNode;
+  /// The arrow's node, where Tab leaves the focus of a READ_ONLY CCombo. Enter and Space there are
+  /// the field's keys, which Java answers (Enter fires DefaultSelection): they must not press the
+  /// arrow and open the list, as a native CCombo's field does not.
+  late final FocusNode _arrowFocusNode = FocusNode(
+    onKeyEvent: (node, event) => _isFieldKey(event.logicalKey)
+        ? KeyEventResult.handled
+        : KeyEventResult.ignored,
+  );
+
+  static bool _isFieldKey(LogicalKeyboardKey key) =>
+      key == LogicalKeyboardKey.enter ||
+      key == LogicalKeyboardKey.numpadEnter ||
+      key == LogicalKeyboardKey.space;
+
   final MenuController _menuController = MenuController();
   bool _isFocused = false;
   bool _isHovered = false;
@@ -159,6 +173,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
           widgetTheme: widgetTheme,
           controller: _controller,
           focusNode: _focusNode,
+          arrowFocusNode: _arrowFocusNode,
           menuController: _menuController,
           items: state.items ?? [],
           enabled: isEnabled,
@@ -235,10 +250,17 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// selection: the menu's own highlight must neither show in the field nor be reported on Enter.
   bool _listKeyInFlight = false;
 
+  /// Set from an Enter in this CCombo until its release. Java answers that Enter, open list or not;
+  /// the field submits the entry the menu last highlighted, which is no Selection.
+  bool _enterHeld = false;
+
   // HardwareKeyboard handlers run before the key reaches the focused menu.
   bool _handleListKey(KeyEvent event) {
-    if (event is KeyUpEvent || !_menuController.isOpen) return false;
     final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      _enterHeld = event is! KeyUpEvent && _isFocused;
+    }
+    if (event is KeyUpEvent || !_menuController.isOpen) return false;
     if (_isListNavigationKey(key)) {
       _listKeyInFlight = true;
       scheduleMicrotask(() {
@@ -260,7 +282,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   }
 
   void _onDropdownSelected(String? value) {
-    if (value == null || _listKeyInFlight) {
+    if (value == null || _listKeyInFlight || _enterHeld) {
       _restoreSelectedText();
     } else {
       onChanged(value);
@@ -286,6 +308,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     HardwareKeyboard.instance.removeHandler(_handleListKey);
     _controller.dispose();
     _focusNode?.dispose();
+    _arrowFocusNode.dispose();
     super.dispose();
   }
 }
@@ -295,6 +318,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final CComboThemeExtension widgetTheme;
   final TextEditingController controller;
   final FocusNode? focusNode;
+  final FocusNode arrowFocusNode;
   final MenuController menuController;
   final List<String> items;
   final bool enabled;
@@ -313,6 +337,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.widgetTheme,
     required this.controller,
     this.focusNode,
+    required this.arrowFocusNode,
     required this.menuController,
     required this.items,
     required this.enabled,
@@ -389,6 +414,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     final dropdown = DropdownMenu<String>(
       enabled: enabled,
       focusNode: focusNode,
+      trailingIconFocusNode: arrowFocusNode,
       controller: controller,
       menuController: menuController,
       // The anchor's builder runs on every open and close, entries or not: an empty list opens too.
