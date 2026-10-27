@@ -12,6 +12,7 @@ import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
 import './utils/text_utils.dart';
+import './utils/viewport_clip.dart';
 import './utils/widget_utils.dart';
 import '../custom/main_toolbar_scope.dart';
 import '../custom/rich_tooltip.dart';
@@ -49,15 +50,15 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   }
 
   /// Hover feedback asked for by applications whose toolbars are dense enough that the background
-  /// highlight alone is easy to miss. A paint-time [Transform.scale], so the item keeps the box
-  /// `Sizes.computeSize` laid the toolbar out from and hovering never reflows it.
+  /// highlight alone is easy to miss. The item keeps the box `Sizes.computeSize` laid the toolbar
+  /// out from, so hovering never reflows it.
   Widget _applyHoverZoom(Widget icon, bool enabled) {
     final theme = Theme.of(context).extension<ToolItemThemeExtension>()!;
     if (!theme.hoverZoomEnabled) return icon;
-    return AnimatedScale(
-      scale: enabled && _isHovered ? theme.hoverZoomScale : 1.0,
+    return _HoverZoom(
+      zoomed: enabled && _isHovered,
+      scale: theme.hoverZoomScale,
       duration: theme.hoverZoomDuration,
-      curve: Curves.easeOut,
       child: icon,
     );
   }
@@ -787,5 +788,111 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   void openMenu() {
     EvolveNotification.maybeRaiseFor(context, state);
     widget.sendSelectionOpenMenu(state, toolItemGeometryEvent(context));
+  }
+}
+
+/// Grows [child] around its centre while [zoomed]. A grown icon reaches past its item, and every
+/// control up to the Shell is clipped to its own bounds, as in SWT, so for as long as it is grown it
+/// is drawn in the [Overlay] instead, over the spot it occupies at rest, clipped only to the scroll
+/// viewports around it. That spot keeps the rest size meanwhile.
+class _HoverZoom extends StatefulWidget {
+  const _HoverZoom({
+    required this.zoomed,
+    required this.scale,
+    required this.duration,
+    required this.child,
+  });
+
+  final bool zoomed;
+  final double scale;
+  final Duration duration;
+  final Widget child;
+
+  @override
+  State<_HoverZoom> createState() => _HoverZoomState();
+}
+
+class _HoverZoomState extends State<_HoverZoom> with SingleTickerProviderStateMixin {
+  final _portal = OverlayPortalController();
+  final _restKey = GlobalKey();
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration)..addStatusListener(_onStatus);
+
+  /// The size [widget.child] had at rest, held while the child is drawn in the overlay.
+  Size? _restSize;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.zoomed) _syncAfterFrame();
+  }
+
+  @override
+  void didUpdateWidget(_HoverZoom oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.duration = widget.duration;
+    if (widget.zoomed != oldWidget.zoomed) _syncAfterFrame();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// The overlay is shown outside the build that changed [widget.zoomed], once the rest size of the
+  /// child has been laid out.
+  void _syncAfterFrame() => WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
+
+  void _sync() {
+    if (!mounted) return;
+    if (!widget.zoomed) {
+      _controller.reverse();
+      return;
+    }
+    if (!_portal.isShowing) {
+      final size = _restKey.currentContext?.size;
+      if (size == null) return;
+      setState(() => _restSize = size);
+      _portal.show();
+    }
+    _controller.forward();
+  }
+
+  void _onStatus(AnimationStatus status) {
+    if (status != AnimationStatus.dismissed || !mounted || !_portal.isShowing) return;
+    setState(() => _restSize = null);
+    _portal.hide();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = _controller
+        .drive(CurveTween(curve: Curves.easeOut))
+        .drive(Tween(begin: 1.0, end: widget.scale));
+    final restSize = _restSize;
+    return OverlayPortal.overlayChildLayoutBuilder(
+      controller: _portal,
+      overlayChildBuilder: (_, info) {
+        Widget grown = IgnorePointer(
+          child: SizedBox.fromSize(
+            size: info.childSize,
+            child: ScaleTransition(scale: scale, child: widget.child),
+          ),
+        );
+        final rest = context.findRenderObject();
+        final viewport =
+            rest is RenderBox && rest.hasSize ? visibleViewportRect(context, rest) : null;        if (viewport != null) {
+          grown = ClipRect(clipper: FixedRectClipper(viewport), child: grown);
+        }
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Transform(transform: info.childPaintTransform, child: grown),
+        );
+      },
+      child: restSize == null
+          ? KeyedSubtree(key: _restKey, child: widget.child)
+          : SizedBox.fromSize(size: restSize),
+    );
   }
 }
