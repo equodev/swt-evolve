@@ -200,6 +200,15 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   Widget tagItemSemantics(VWidget item, Widget child) =>
       _taggedSemantics(item, child);
 
+  /// Widgets whose `text` is the content the user edits or views, not a caption.
+  static const _valueTextSwt = {
+    'Text',
+    'Combo',
+    'CCombo',
+    'StyledText',
+    'Browser',
+  };
+
   Widget _taggedSemantics(VWidget node, Widget child) {
     final identifier = '${node.swt}/${node.id}';
     // Only pay the toJson() cost when the semantics tree is actually being built
@@ -215,13 +224,24 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     } catch (_) {
       json = const {};
     }
-    final tooltip = json['toolTipText'];
+    final toolTipText = json['toolTipText'];
+    final text = json['text'];
     final enabled = json['enabled'];
+    final tooltip = (toolTipText is String && toolTipText.isNotEmpty)
+        ? toolTipText
+        : null;
+    // Flutter Web names a node "tooltip\nlabel": next to a caption, the tooltip
+    // becomes the description so the caption stays the accessible name.
+    final namedByOwnText =
+        !_valueTextSwt.contains(node.swt) &&
+        text is String &&
+        text.trim().isNotEmpty;
     // Do not set label from json['text']: the child already contributes that text to
     // semantics, and Flutter Web would expose duplicated DOM text.
     return Semantics(
       identifier: identifier,
-      tooltip: (tooltip is String && tooltip.isNotEmpty) ? tooltip : null,
+      tooltip: namedByOwnText ? null : tooltip,
+      hint: namedByOwnText ? tooltip : null,
       enabled: enabled is bool ? enabled : null,
       child: child,
     );
