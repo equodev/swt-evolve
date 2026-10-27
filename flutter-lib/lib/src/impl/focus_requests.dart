@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../comm/comm.dart';
 
@@ -24,9 +24,18 @@ class FocusRequests extends ChangeNotifier {
   /// of the request, so they name the focus it held before, and applying them would undo it.
   static const String seenChannel = 'swt.evolve.focus.seen';
 
+  /// Which control Java holds as its focus control, when it changes without a Display push (which
+  /// carries it as `VDisplay.focusHolderId`). It never moves the client's keyboard focus; Tab
+  /// traverses from it (see `TraversalVetoScope`).
+  static const String holderChannel = 'swt.evolve.focusHolder';
+
   static bool _listening = false;
 
   int? _pendingId;
+
+  int? _holderId;
+
+  final Map<int, BuildContext> _controls = {};
 
   /// Subscribes the process-wide listener. Idempotent.
   static void listen() {
@@ -40,6 +49,29 @@ class FocusRequests extends ChangeNotifier {
       final id = (decoded['id'] as num?)?.toInt();
       if (id != null) instance.request(id);
     });
+    EquoCommService.onRaw(holderChannel, (dynamic args) {
+      final decoded = args is String ? jsonDecode(args) : args;
+      if (decoded is! Map) return;
+      instance._holderId = (decoded['id'] as num?)?.toInt();
+    });
+  }
+
+  /// The holder named by a Display push; 0 means none.
+  void holderFromDisplay(int? id) => _holderId = id == 0 ? null : id;
+
+  void register(int id, BuildContext context) => _controls[id] = context;
+
+  void unregister(int id, BuildContext context) {
+    if (identical(_controls[id], context)) _controls.remove(id);
+  }
+
+  /// Every mounted control.
+  Set<BuildContext> get controls => _controls.values.toSet();
+
+  /// The mounted control Java holds as its focus control, or null.
+  BuildContext? get holder {
+    final context = _holderId == null ? null : _controls[_holderId];
+    return context != null && context.mounted ? context : null;
   }
 
   void request(int id) {
@@ -56,5 +88,8 @@ class FocusRequests extends ChangeNotifier {
   }
 
   @visibleForTesting
-  void reset() => _pendingId = null;
+  void reset() {
+    _pendingId = null;
+    _holderId = null;
+  }
 }

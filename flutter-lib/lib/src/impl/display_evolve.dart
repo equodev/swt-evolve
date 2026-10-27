@@ -19,6 +19,7 @@ import 'menu_evolve.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
 import 'utils/key_edit_order.dart';
+import 'focus_requests.dart';
 import 'utils/traversal_veto_scope.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
@@ -43,6 +44,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   void initState() {
     super.initState();
     _display = widget.value;
+    FocusRequests.instance.holderFromDisplay(_display.focusHolderId);
     _publishHoldings();
     applySystemMenu(_heldSystemMenu());
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
@@ -137,6 +139,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       applyConfigFlags(updated.config);
       _display = updated;
+      FocusRequests.instance.holderFromDisplay(updated.focusHolderId);
       _publishHoldings();
       applySystemMenu(_heldSystemMenu());
       if (mounted) setState(() {});
