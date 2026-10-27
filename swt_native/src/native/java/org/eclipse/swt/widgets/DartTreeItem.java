@@ -264,6 +264,19 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         font = null;
         cellFont = null;
         width = -1;
+        getValue().markDirty(VTreeItem.TEXT);
+        getValue().markDirty(VTreeItem.IMAGE);
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
+        getValue().markDirty(VTreeItem.CHECKED);
+        getValue().markDirty(VTreeItem.GRAYED);
+        getValue().markDirty(VTreeItem.FOREGROUND);
+        getValue().markDirty(VTreeItem.BACKGROUND);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
+        getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
     }
 

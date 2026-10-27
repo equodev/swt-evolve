@@ -274,6 +274,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         font = null;
         strings = null;
         cellFont = null;
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.FONTS);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
     }
 
