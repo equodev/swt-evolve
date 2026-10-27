@@ -132,7 +132,7 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
-    @DisplayName("deselecting all in an editable combo empties its text, whether or not an item was selected, and says nothing")
+    @DisplayName("deselecting all in an editable combo empties its text, whether or not an item was selected, and tells the Modify listeners")
     void deselectAllEmptiesTheText() {
         for (int selected : new int[] {1, -1}) {
             Combo combo = abc(SWT.NONE, selected);
@@ -146,7 +146,7 @@ class ComboSameOnEveryOsTest {
             assertThat(combo.getSelectionIndex()).as("selected %d", selected).isEqualTo(-1);
             assertThat(combo.getText()).as("selected %d", selected).isEmpty();
             assertThat(combo.getSelection()).as("selected %d", selected).isEqualTo(new Point(0, 0));
-            assertThat(modifies).as("selected %d", selected).isEmpty();
+            assertThat(modifies).as("selected %d", selected).hasSize(1);
         }
     }
 
