@@ -315,14 +315,18 @@ public class ControlHelper {
         return keyCode == SWT.SHIFT || keyCode == SWT.CTRL || keyCode == SWT.ALT || keyCode == SWT.COMMAND;
     }
 
-    /** Escape runs the whole traversal, so a dialog closes on it. */
+    /**
+     * Escape runs the whole traversal, so a dialog closes on it, unless the control keeps Escape, as
+     * a key-listening Canvas does.
+     */
     private static boolean escapeTraversal(DartControl origin, Event keyEvent) {
         Control start = resolveTraverseStart(origin);
         if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
             return false;
+        DartControl impl = (DartControl) start.getImpl();
         Event event = traverseEventOf(keyEvent);
-        event.doit = true;
-        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
+        event.doit = traversesByDefault(impl, SWT.TRAVERSE_ESCAPE);
+        return impl.traverse(SWT.TRAVERSE_ESCAPE, event);
     }
 
     /**

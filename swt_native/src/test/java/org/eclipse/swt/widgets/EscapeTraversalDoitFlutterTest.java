@@ -61,6 +61,19 @@ class EscapeTraversalDoitFlutterTest {
     }
 
     @Test
+    @DisplayName("a StyledText that sends its own Escape is offered it with doit=false as well")
+    void styledTextSendingItsOwnEscapeIsOfferedDoitFalse() {
+        StyledText text = new StyledText(shell, SWT.NONE);
+        Event key = new Event();
+        key.keyCode = SWT.ESC;
+        key.character = SWT.ESC;
+
+        ControlHelper.sendFlutterKeyDown((DartWidget) text.getImpl(), key);
+
+        assertThat(traversals).containsExactly("StyledText doit=false", "Shell doit=true");
+    }
+
+    @Test
     @DisplayName("a Canvas with a key listener is offered Escape with doit=false, and the shell after it")
     void keyListeningCanvasIsOfferedEscapeWithDoitFalse() {
         Canvas canvas = new Canvas(shell, SWT.NONE);
