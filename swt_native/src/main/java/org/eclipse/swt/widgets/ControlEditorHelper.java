@@ -7,25 +7,26 @@ import java.lang.reflect.Array;
 
 public class ControlEditorHelper {
 
+    private ControlEditorHelper() {
+    }
+
     /**
-     * Drops every association in {@code editors} that points at {@code control}, answering whether
-     * any did. Called when the control leaves its parent — which, for a cell editor, is how an
-     * application closes one: it disposes the control it put over the cell. The editor outlives
-     * that (it is reused for the next cell), so nothing else clears the reference, and the dead
-     * control would go on being serialized under the parent's {@code editors} — leaving the client
-     * with an overlay it can never take down over a control that no longer exists.
+     * Whether any of {@code editors} holds {@code control}. Called when the control leaves its parent --
+     * which, for a cell editor, is how an application closes one: it disposes the control it put over the
+     * cell. The editor outlives that (it is reused for the next cell) and goes on answering the disposed
+     * control from {@code getEditor()}, as SWT does; its description for the client leaves a disposed
+     * control out, so the parent only has to describe its editors again for the overlay to go.
      */
-    public static <T extends ControlEditor> boolean releaseEditorControl(T[] editors, Control control) {
+    public static <T extends ControlEditor> boolean holdsEditorControl(T[] editors, Control control) {
         if (editors == null || control == null)
             return false;
-        boolean released = false;
         for (T editor : editors) {
             if (editor != null && editor.getImpl() instanceof DartControlEditor
-                    && ((DartControlEditor) editor.getImpl()).releaseEditor(control)) {
-                released = true;
+                    && ((DartControlEditor) editor.getImpl()).holdsEditor(control)) {
+                return true;
             }
         }
-        return released;
+        return false;
     }
 
     @SuppressWarnings("unchecked")

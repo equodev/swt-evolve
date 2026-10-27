@@ -1,5 +1,9 @@
+import 'dart:async' show scheduleMicrotask;
+
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 import '../theme/theme_settings/tree_theme_settings.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +11,7 @@ import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/gen/treecolumn.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/gen/widgets.dart';
+import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/droptarget.dart';
 import '../impl/composite_evolve.dart';
@@ -14,12 +19,15 @@ import '../impl/widget_config.dart';
 import '../gen/swt.dart';
 import '../gen/tree.dart';
 import '../gen/treeitem.dart';
+import '../gen/treeeditor.dart';
 import 'treeitem_evolve.dart' show VTreeItemChildren;
 import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
+import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/font_utils.dart';
+import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../testing/tree_test_registry.dart';
@@ -59,7 +67,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
+  // The rows' list moves between parents when a columnless tree starts or stops scrolling
+  // horizontally; keyed, it keeps its scroll position instead of starting again at the top.
+  final GlobalKey _rowsKey = GlobalKey(debugLabel: 'tree rows');
   final FocusNode _focusNode = FocusNode();
+  // The width of the column whose divider is being dragged, as the drag has made it so far.
+  double? _resizeStartWidth;
   /// Selects the item a context-menu press landed on. Run between MouseDown and MenuDetect,
   /// the order Win32 and GTK deliver them in, so MenuDetect listeners read that item.
   VoidCallback? selectBeforeMenuDetect;
@@ -71,6 +84,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     select?.call();
     super.handleMenuDetect(pointer, localPosition);
   }
+  // The header row and the widths its cells were drawn at, where a dragged header is dropped.
+  final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');
+  List<double>? _headerColumnWidths;
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -78,7 +94,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   void initState() {
     super.initState();
-    _horizontalController = ScrollController();
+    _horizontalController = ScrollController()..addListener(_reportScrollOffset);
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
     _verticalController!.addListener(_requestVisibleChildren);
@@ -102,6 +118,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       expand: _testExpandTreeItem,
     );
     registerTestTree(_testTreeKey, _testTreeHandle);
+    if (state.topItem != null) _scrollToTopItemAfterLayout();
   }
 
   late final String _testTreeKey;
@@ -110,6 +127,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   void _registerGetIdFromPointListener() {
     final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
+    eventNames.add(eventName);
     EquoCommService.onRaw(eventName, (payload) {
       if (payload != null) {
         try {
@@ -140,6 +158,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   void _registerGetItemBoundsListener() {
     final eventName = "${state.swt}/${state.id}/GetItemBounds";
+    eventNames.add(eventName);
     EquoCommService.onRaw(eventName, (payload) {
       final responseEvent = "${state.swt}/${state.id}/GetItemBoundsResponse";
       if (payload == null) {
@@ -188,30 +207,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
     final y = headerOffset + (itemIndex * itemHeight);
 
-    double x = 0.0;
-    double width = state.bounds?.width?.toDouble() ?? 0.0;
-
-    if (columns.isNotEmpty && _cachedEffectiveWidths != null) {
-      final effectiveWidths = _cachedEffectiveWidths!;
-      final prefix = theme.expandIconSize + theme.expandIconSpacing;
-      x = prefix;
-
-      for (int i = 0; i < columnIndex && i < effectiveWidths.length; i++) {
-        x += effectiveWidths[i];
-      }
-
-      if (columnIndex < effectiveWidths.length) {
-        width = effectiveWidths[columnIndex];
-      }
-    }
-
     final treeWidth = state.bounds?.width?.toDouble() ?? 0.0;
     final hasMultiColumn = columns.length > 1;
     final gapFraction = hasMultiColumn
         ? theme.itemEdgeGapFractionWithCols
         : theme.itemEdgeGapFraction;
     final leftGap = treeWidth * gapFraction;
-    return Rect.fromLTWH(x + leftGap, y, width, itemHeight);
+    if (columns.isEmpty || _cachedEffectiveWidths == null) {
+      return Rect.fromLTWH(leftGap, y, treeWidth, itemHeight);
+    }
+    // A cell is where it is drawn: past the edge gap and the row's padding, at the sum of the widths
+    // of the columns shown before it.
+    final rowPadding = hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding;
+    final widths = _cachedEffectiveWidths!;
+    if (columnIndex >= widths.length) return Rect.fromLTWH(0, y, 0, itemHeight);
+    final x = leftGap + rowPadding.left + columnLefts(widths, displayOrder)[columnIndex];
+    return Rect.fromLTWH(x, y, widths[columnIndex], itemHeight);
   }
 
   @override
@@ -225,34 +236,47 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void setValue(V value) {
-    final incomingSelection = value.selection ?? [];
-    final hasLocalSelection =
-        _pendingSelection != null && _pendingSelection!.isNotEmpty;
-
-    bool selectionsDiffer = false;
-    if (hasLocalSelection && incomingSelection.isNotEmpty) {
-      final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
-      final incomingIds = Set.from(incomingSelection.map((item) => item.id));
-      selectionsDiffer =
-          pendingIds.length != incomingIds.length ||
-          pendingIds.any((id) => !incomingIds.contains(id)) ||
-          incomingIds.any((id) => !pendingIds.contains(id));
-    }
-
-    if (_pendingSelection != null && _pendingSelection!.isNotEmpty) {
-      final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
-      final incomingIds = Set.from(incomingSelection.map((item) => item.id));
+    final pending = _pendingSelection;
+    if (pending != null && pending.isNotEmpty) {
+      final pendingIds = Set.from(pending.map((item) => item.id));
+      final incomingIds = Set.from((value.selection ?? []).map((item) => item.id));
       final confirmed =
           pendingIds.length == incomingIds.length &&
           pendingIds.every((id) => incomingIds.contains(id));
-      if (!confirmed) {
-        // Java sent stale state — override with our pending selection to avoid flicker
-        value.selection = List<VTreeItem>.from(_pendingSelection!);
-      } else {
+      // A delivery that names the selection is Java changing it, and Java owns the selection: it
+      // wins over what the last click painted. Anything else may predate the click, so the click's
+      // selection stays on screen until Java confirms or replaces it.
+      final javaSetSelection = lastChange?.changed?.contains('selection') ?? false;
+      if (confirmed || javaSetSelection) {
         _pendingSelection = null;
+      } else {
+        value.selection = List<VTreeItem>.from(pending);
       }
     }
     super.setValue(value);
+    if (lastChange?.touches('topItem') ?? true) _scrollToTopItemAfterLayout();
+  }
+
+  /// Brings the item Java asked for to the top, once the rows it is among are laid out. Flutter
+  /// clamps the distance at the end of the list, as a native tree does; a tree already showing
+  /// that row at the top does not move.
+  void _scrollToTopItemAfterLayout() {
+    final target = state.topItem;
+    if (target == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = _verticalController;
+      final rowHeight = _cachedItemHeight;
+      if (controller == null || !controller.hasClients) return;
+      if (rowHeight == null || rowHeight <= 0) return;
+      final row = findItemIndex(target.id);
+      if (row < 0) return;
+      final position = controller.position;
+      if ((position.pixels / rowHeight).floor() == row) return;
+      controller.jumpTo(
+        (row * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
   }
 
   Widget createTreeView() {
@@ -347,6 +371,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           widgetTheme!,
           effectiveWidths,
         );
+        final childControls = buildChildControlLayer(
+          state,
+          (state.editors ?? const <VTreeEditor>[]).map((e) => e.editor),
+        );
 
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -360,8 +388,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             // (opening the double-clicked file) silently do nothing.
             onFocusChange: (hasFocus) {
               if (showsTreeItemFocusRing(widgetTheme)) setState(() {});
+              // Called whenever the focus moves within the tree too: a cell editor's field taking
+              // it from the rows calls this with true again. The field reports its own focus;
+              // reporting the tree's as well would hand the focus back to the tree and close the
+              // editor. Only the tree gaining and losing the focus is reported.
+              if (hasFocus == _reportedHasFocus) return;
+              _reportedHasFocus = hasFocus;
               if (hasFocus) {
-                widget.sendFocusFocusIn(state, null);
+                if (!_focusedByPress) widget.sendFocusFocusIn(state, null);
               } else {
                 widget.sendFocusFocusOut(state, null);
               }
@@ -387,23 +421,27 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                             backgroundColor,
                           ),
                         Expanded(
-                          child: _buildContentWithEdgeGaps(
-                            flatItems,
-                            columns,
-                            widgetTheme!,
-                            context,
-                            hasVScroll,
-                            hasHScroll,
-                            effectiveWidths,
-                            maxWidth,
-                            hasMultiColumn,
-                            backgroundColor,
+                          child: Listener(
+                            onPointerDown: _takeFocusOnRowsPress,
+                            child: _buildContentWithEdgeGaps(
+                              flatItems,
+                              columns,
+                              widgetTheme!,
+                              context,
+                              hasVScroll,
+                              hasHScroll,
+                              effectiveWidths,
+                              maxWidth,
+                              hasMultiColumn,
+                              backgroundColor,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+                if (childControls != null) childControls,
                 ...editorOverlays,
               ],
             ),
@@ -448,6 +486,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
     return result;
   }
+  /// The column indexes in the order the columns are shown.
+  List<int> get displayOrder => columnDisplayOrder(state.columnOrder, getTreeColumns().length);
 
   List<_MoreRows> _rowsWithMoreAfter(List<_FlatTreeItem> flat) {
     final result = <_MoreRows>[];
@@ -871,6 +911,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final bool hasMultiColumn = columns.length > 1;
 
     Widget listView = ListView.builder(
+      key: _rowsKey,
       controller: _verticalController,
       itemCount: flatItems.length,
       itemBuilder: (context, index) {
@@ -951,6 +992,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final bool showHeaderBorder = effectiveHeaderBorderWidth > 0;
 
     final List<double> linePositions = [];
+    final List<int> order = displayOrder;
+    final List<double> columnWidths = [
+      for (int i = 0; i < columns.length; i++)
+        effectiveWidths != null && i < effectiveWidths.length
+            ? effectiveWidths[i]
+            : (columns[i].width ?? defaultWidth).toDouble(),
+    ];
+    _headerColumnWidths = columnWidths;
     double cumulativeWidth = 0.0;
 
     Widget headerContent = Stack(
@@ -965,22 +1014,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               child: TreeHasMultiColumnProvider(
                 hasMultiColumn: hasMultiColumn,
                 child: Row(
+                  key: _headerRowKey,
                   children: [
-                    ...columns.asMap().entries.map((entry) {
-                      final int columnIndex = entry.key;
-                      final column = entry.value;
-                      final double width =
-                          effectiveWidths != null &&
-                              columnIndex < effectiveWidths.length
-                          ? effectiveWidths[columnIndex]
-                          : (column.width ?? defaultWidth).toDouble();
+                    // In the column order; the tree column keeps its expander room wherever it is.
+                    ...order.asMap().entries.map((entry) {
+                      final int position = entry.key;
+                      final int columnIndex = entry.value;
+                      final column = columns[columnIndex];
+                      final double width = columnWidths[columnIndex];
                       cumulativeWidth += width;
-                      if (columnIndex < columns.length - 1) {
+                      if (position < order.length - 1) {
                         linePositions.add(cumulativeWidth - borderWidth);
                       }
                       if (columnIndex == 0) {
-                        return SizedBox(
+                        return TreeCellBox(
                           width: width,
+                          minContentWidth: prefix,
                           child: Row(
                             children: [
                               SizedBox(width: prefix),
@@ -1015,6 +1064,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               color: widgetTheme.headerBorderColor,
             ),
           ),
+        ..._buildColumnResizeHandles(columns, columnWidths, order, headerHeight, widgetTheme),
         if (state.linesVisible == true &&
             linePositions.isNotEmpty &&
             !hasMultiColumn)
@@ -1090,16 +1140,87 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return headerContent;
   }
 
+  /// Native SWT has no sash on a column boundary: the header itself switches to the resize cursor a
+  /// few pixels either side of the boundary and drags it. These transparent strips straddle each
+  /// boundary of a resizable column, so the grip answers from both sides of it.
+  List<Widget> _buildColumnResizeHandles(
+    List<VTreeColumn> columns,
+    List<double> widths,
+    List<int> order,
+    double headerHeight,
+    TreeThemeExtension theme,
+  ) {
+    final grip = theme.columnResizeHandleWidth * 2;
+    final handles = <Widget>[];
+    double boundary = 0.0;
+    for (final i in order) {
+      boundary += widths[i];
+      // SWT's TreeColumn.resizable defaults to true.
+      if (columns[i].resizable == false) continue;
+      final column = columns[i];
+      final renderedWidth = widths[i];
+      handles.add(Positioned(
+        left: boundary - grip / 2,
+        top: 0,
+        width: grip,
+        height: headerHeight,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.resizeColumn,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart: (_) =>
+                _resizeStartWidth = (column.width ?? renderedWidth.round()).toDouble(),
+            onHorizontalDragUpdate: (details) => _updateColumnResize(column, details.delta.dx),
+            onHorizontalDragEnd: (_) => _resizeStartWidth = null,
+            onHorizontalDragCancel: () => _resizeStartWidth = null,
+          ),
+        ),
+      ));
+    }
+    return handles;
+  }
+
+  void _updateColumnResize(VTreeColumn column, double deltaX) {
+    final start = _resizeStartWidth;
+    if (start == null) return;
+    final next = (start + deltaX).clamp(0.0, double.infinity);
+    _resizeStartWidth = next;
+    if (next.round() == column.width) return;
+    setState(() => column.width = next.round());
+    // Native SWT resizes the column live and sends Resize on every change: JFace relays out from it.
+    final e = VEvent()..width = column.width;
+    TreeColumnSwt<VTreeColumn>(value: column).sendControlResize(column, e);
+  }
+
   Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {
-    final columns = getTreeColumns();
-    final bool isLastColumn = columnIndex == columns.length - 1;
+    final bool isLastColumn = isLastShown(columnIndex);
+    final bool sorted = state.sortColumn != null && state.sortColumn!.id == column.id;
     return TreeColumnIndexProvider(
       columnIndex: columnIndex,
       child: TreeColumnIsLastProvider(
         isLastColumn: isLastColumn,
-        child: TreeColumnSwt(value: column),
+        child: TreeHeaderCellProvider(
+          sortDirection: sorted ? (state.sortDirection ?? SWT.NONE) : SWT.NONE,
+          foreground: state.headerForeground,
+          dropIndexAt: _headerDropIndexAt,
+          child: TreeColumnSwt(value: column),
+        ),
       ),
     );
+  }
+
+  /// Where on the header row a column dragged to [globalPosition] is dropped.
+  int _headerDropIndexAt(Offset globalPosition) {
+    final box = _headerRowKey.currentContext?.findRenderObject();
+    final widths = _headerColumnWidths;
+    if (box is! RenderBox || widths == null) return 0;
+    return dropDisplayIndex(widths, displayOrder, box.globalToLocal(globalPosition).dx);
+  }
+
+  /// Whether column [columnIndex] is the one shown last.
+  bool isLastShown(int columnIndex) {
+    final order = displayOrder;
+    return order.isNotEmpty && order.last == columnIndex;
   }
 
   Widget _buildFlatTreeItemWidget(_FlatTreeItem flatItem) {
@@ -1199,37 +1320,70 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   /// [notifyJava] defaults to true so keyboard-driven callers emit the SWT Selection
   /// event; row-tap/checkbox sites pass false because they send their own richer event
   /// (button, count, stateMask) — see treeitem_evolve.
+  ///
+  /// On a multi-selection tree, [toggle] adds the item to the selection or takes it out, and
+  /// [isShiftPressed] selects the rows from the anchor to it; with neither, it is selected alone.
   void handleTreeItemSelection(
     Object itemId, {
-    bool isCtrlPressed = false,
+    bool toggle = false,
     bool isShiftPressed = false,
     bool notifyJava = true,
   }) {
     if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
     if (item == null) return;
-    _focusNode.requestFocus();
-    // Report focus on the gesture, not only on a Flutter focus change. Java owns the SWT
-    // focus holder and moves it on its own — activating an editor part focuses that part's
-    // control — while this tree keeps its Flutter focus, so a later click produces no focus
-    // change here and Java would never learn the tree is focused again. The workbench picks
-    // the active part from the SWT focus holder, so leaving it stale makes every action bound
-    // to this tree's part (opening the double-clicked file) silently do nothing.
-    widget.sendFocusFocusIn(state, null);
+    // The press that started a click already focused the tree (_takeFocusOnRowsPress). Focusing
+    // it again here, on the release, would take the focus back from an editor the MouseDown opened.
 
     final bool isMultiMode = StyleBits(state.style).has(SWT.MULTI);
     setState(() {
       if (isMultiMode) {
         final flatIndex = _findFlatIndexForItem(itemId, 0, 0).index;
-        _handleMultiSelection(item, flatIndex, isCtrlPressed, isShiftPressed);
+        _handleMultiSelection(item, flatIndex, toggle, isShiftPressed);
       } else {
         _handleSingleSelection(item, 0);
       }
     });
     if (notifyJava) {
-      widget.sendSelectionSelection(state, _createDefaultEvent(itemId));
+      widget.sendSelectionSelection(state, withSelection(_createDefaultEvent(itemId)));
     }
   }
+
+  /// [event], carrying the ids of the items this tree shows selected. A modifier click or a
+  /// Shift+arrow builds the selection out of more than the row the event names, so Java takes the
+  /// selection from here instead of selecting that row alone.
+  VEvent withSelection(VEvent event) {
+    event.segments = [for (final item in state.selection ?? const <VTreeItem>[]) item.id];
+    return event;
+  }
+
+  /// Set by a press that focused the tree until Flutter applies that focus: Java already focused it
+  /// on that press's MouseDown, so the focus change is not reported.
+  bool _focusedByPress = false;
+
+  /// Whether the focus was in the tree, its child controls included, when last reported.
+  bool _reportedHasFocus = false;
+
+  /// A press on the rows focuses the tree. Java gives it the SWT focus, and announces the activation
+  /// the press causes, ahead of delivering the MouseDown (ControlHelper.pressed), so a cell editor
+  /// that MouseDown opens keeps the focus: the Flutter focus change that follows is not reported,
+  /// since reporting it would hand the focus back to the tree. Java also focuses the tree again when
+  /// its SWT focus moved elsewhere while this tree kept its Flutter focus.
+  void _takeFocusOnRowsPress(PointerDownEvent event) {
+    if (state.enabled != true) return;
+    if ((state.style & SWT.NO_FOCUS) != 0) return;
+    if (event.buttons & (kPrimaryButton | kSecondaryButton) == 0) return;
+    if (_focusNode.hasFocus) return;
+    _focusNode.requestFocus();
+    _focusedByPress = true;
+    // Flutter applies the focus in a microtask requestFocus queued; this one runs after it.
+    scheduleMicrotask(() => _focusedByPress = false);
+  }
+
+  /// A tree is not a childless composite surface: its focus is [_focusNode], which a press on the
+  /// rows takes and a press on the header does not.
+  @override
+  void takeFocusOnPress() {}
 
   void _handleSingleSelection(VTreeItem item, int flatIndex) {
     state.selection = [item];
@@ -1237,20 +1391,23 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _lastSelectedItemId = item.id;
   }
 
+  /// A toggle click moves the anchor a later Shift+click ranges from, as a plain click does; a
+  /// Shift+click leaves it where it was.
   void _handleMultiSelection(
     VTreeItem item,
     int flatIndex,
-    bool isCtrlPressed,
+    bool toggle,
     bool isShiftPressed,
   ) {
     final currentSelection = List<VTreeItem>.from(state.selection ?? []);
 
-    if (isCtrlPressed) {
+    if (toggle) {
       if (currentSelection.any((selected) => selected.id == item.id)) {
         currentSelection.removeWhere((selected) => selected.id == item.id);
       } else {
         currentSelection.add(item);
       }
+      _lastSelectedItemId = item.id;
     } else if (isShiftPressed && _lastSelectedItemId != null) {
       final lastIndex = _findFlatIndexForItem(_lastSelectedItemId!, 0, 0).index;
       final rangeItems = _getItemsInRange(lastIndex, flatIndex);
@@ -1585,14 +1742,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       double editorX = 0.0;
       double editorWidth = state.bounds?.width?.toDouble() ?? 0.0;
 
-      if (columns.isNotEmpty && effectiveWidths != null) {
-        for (int i = 0; i < columnIndex && i < effectiveWidths.length; i++) {
-          editorX += effectiveWidths[i];
-        }
-
-        if (columnIndex < effectiveWidths.length) {
-          editorWidth = effectiveWidths[columnIndex];
-        }
+      if (columns.isNotEmpty &&
+          effectiveWidths != null &&
+          columnIndex < effectiveWidths.length) {
+        editorX = columnLefts(effectiveWidths, displayOrder)[columnIndex];
+        editorWidth = effectiveWidths[columnIndex];
       }
 
       final editorWidget = mapWidgetFromValue(editable.editor!);
@@ -1618,6 +1772,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    // A key bubbling up from a control inside the tree, a cell editor's field, is that control's.
+    if (!node.hasPrimaryFocus) {
       return KeyEventResult.ignored;
     }
 
@@ -1690,7 +1849,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(newItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(newItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(newItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1711,7 +1870,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(newItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(newItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(newItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1776,7 +1935,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       var e = _createDefaultEvent(selectedItem.id);
       e.detail = SWT.CHECK;
 
-      widget.sendSelectionSelection(state, e);
+      widget.sendSelectionSelection(state, withSelection(e));
     } else {
       handleTreeItemSelection(selectedItem.id);
     }
@@ -1790,7 +1949,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(firstItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(firstItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(firstItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1803,7 +1962,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (isMultiSelectionMode() && isShiftPressed) {
         handleTreeItemSelection(lastItemId, isShiftPressed: true);
       } else {
-        handleTreeItemSelection(lastItemId, isCtrlPressed: isCtrlPressed);
+        handleTreeItemSelection(lastItemId, toggle: isCtrlPressed);
       }
     }
   }
@@ -1978,15 +2137,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   /// ScrollController fires without movement; an actual drag still reports once per frame, the same
   /// rate a mouse move is throttled to. Reporting every settled position is what keeps the lookups
   /// correct, so it is not throttled further.
+  ///
+  /// The sideways scroll goes with it, as x: a cell's bounds are in the tree's client area, so
+  /// Java takes it off the column positions to map a point to the column now under it.
   int _reportedScrollOffset = 0;
+  int _reportedHorizontalOffset = 0;
 
   void _reportScrollOffset() {
     final controller = _verticalController;
     if (controller == null || !controller.hasClients) return;
     final offset = controller.offset.round();
-    if (offset == _reportedScrollOffset) return;
+    final horizontal = _horizontalController;
+    final across = horizontal != null && horizontal.hasClients ? horizontal.offset.round() : 0;
+    if (offset == _reportedScrollOffset && across == _reportedHorizontalOffset) return;
     _reportedScrollOffset = offset;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+    _reportedHorizontalOffset = across;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..x = across..y = offset);
   }
 
   @override
@@ -2254,5 +2420,67 @@ class TreeColumnIsLastProvider extends InheritedWidget {
   @override
   bool updateShouldNotify(TreeColumnIsLastProvider oldWidget) {
     return isLastColumn != oldWidget.isLastColumn;
+  }
+}
+
+/// What the Tree decides about one header cell: the sort indicator it shows and the colour of its text.
+class TreeHeaderCellProvider extends InheritedWidget {
+  final int sortDirection;
+  final VColor? foreground;
+
+  /// The display position a header cell dragged to a global position is dropped at.
+  final int Function(Offset globalPosition)? dropIndexAt;
+
+  const TreeHeaderCellProvider({
+    super.key,
+    required this.sortDirection,
+    required this.foreground,
+    this.dropIndexAt,
+    required super.child,
+  });
+
+  static TreeHeaderCellProvider? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TreeHeaderCellProvider>();
+
+  @override
+  bool updateShouldNotify(TreeHeaderCellProvider oldWidget) =>
+      sortDirection != oldWidget.sortDirection || foreground != oldWidget.foreground;
+}
+
+/// A cell [width] wide, as a tree column lays it out. Its [child] is laid out at least
+/// [minContentWidth] plus room for a label wide and clipped to the cell, so a column narrower than
+/// what it holds clips it, as natively, instead of overflowing into the next one.
+class TreeCellBox extends StatelessWidget {
+  const TreeCellBox({
+    super.key,
+    required this.width,
+    this.minContentWidth = 0.0,
+    required this.child,
+  });
+
+  /// What a cell's label needs past its fixed content: padding, divider gap, an image, a sort arrow.
+  static const double labelRoom = 64.0;
+
+  final double width;
+  final double minContentWidth;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final needed = minContentWidth + labelRoom;
+    final layoutWidth = width < needed ? needed : width;
+    return SizedBox(
+      width: width,
+      child: ClipRect(
+        clipBehavior: layoutWidth > width ? Clip.hardEdge : Clip.none,
+        child: OverflowBox(
+          alignment: AlignmentDirectional.centerStart,
+          fit: OverflowBoxFit.deferToChild,
+          minWidth: layoutWidth,
+          maxWidth: layoutWidth,
+          child: child,
+        ),
+      ),
+    );
   }
 }

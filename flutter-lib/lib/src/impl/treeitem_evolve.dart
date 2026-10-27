@@ -17,6 +17,7 @@ import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
+import 'utils/column_order.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
@@ -90,11 +91,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       ),
       dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
       beforeDragDetect: () {
-        ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+        // A drag carries the selection: starting one on a selected row keeps the rows selected
+        // with it, and only a row outside the selection replaces it.
+        if (treeImpl == null || treeImpl.isItemSelected(state.id)) return;
+        treeImpl.handleTreeItemSelection(state.id, notifyJava: false);
         final e = _createEvent();
         e.count = 1;
         e.button = 1;
-        parentTree.sendSelectionSelection(parentTreeValue, e);
+        parentTree.sendSelectionSelection(parentTreeValue, treeImpl.withSelection(e));
       },
     );
   }
@@ -176,6 +180,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return e;
   }
 
+  VEvent _withSelection(VEvent e) => _context?.treeImpl?.withSelection(e) ?? e;
+
   void _selectForContextMenu({required int button}) {
     if (!(_context?.parentTreeValue.enabled ?? true)) return;
     if (_context?.treeImpl?.isItemSelected(state.id) ?? false) return;
@@ -185,7 +191,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     e.button = button;
     _context?.parentTree.sendSelectionSelection(
       _context!.parentTreeValue,
-      e,
+      _withSelection(e),
     );
   }
 
@@ -508,10 +514,20 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
 
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
-      return Row(
-        children: [
-          SizedBox(
+      // Each cell keeps its column's width, as TreeItem.getBounds(i) has it: column 0 holds the
+      // indent and the expander, and what does not fit a cell is clipped instead of pushing the
+      // next column right.
+      final double prefixWidth =
+          widgetTheme.itemIndent * level +
+          widgetTheme.expandIconSize +
+          widgetTheme.expandIconSpacing +
+          (isCheckMode ? widgetTheme.checkboxSize + widgetTheme.checkboxSpacing : 0.0) +
+          (image != null ? widgetTheme.itemIconSize + widgetTheme.itemIconSpacing : 0.0);
+      final cells = <Widget>[
+          TreeCellBox(
+            key: ValueKey('tree_cell_${state.id}_0'),
             width: firstColumnWidth,
+            minContentWidth: prefixWidth,
             child: Row(
               children: [
                 _buildItemPrefix(
@@ -547,7 +563,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             final column = entry.value;
             final String columnText = _getColumnText(texts, columnIndex);
             final double w = effectiveWidths[columnIndex];
-            return SizedBox(
+            return TreeCellBox(
+              key: ValueKey('tree_cell_${state.id}_$columnIndex'),
               width: w,
               child: _buildCellText(
                 context: context,
@@ -561,8 +578,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               ),
             );
           }),
-        ],
-      );
+      ];
+      // Each cell is drawn where the column order shows its column; the tree column keeps the expander.
+      final order = columnDisplayOrder(_context?.treeImpl?.state.columnOrder, cells.length);
+      return Row(children: [for (final index in order) cells[index]]);
     }
 
     return Row(
@@ -857,7 +876,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             final e = _createEvent(detail: SWT.CHECK);
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
-              e,
+              _withSelection(e),
             );
           },
         ),
@@ -930,10 +949,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             width: widgetTheme.rowSeparatorWidthWithCols,
           )
         : BorderSide.none;
-    final selectedSide = BorderSide(
-      color: widgetTheme.itemSelectedBorderColor,
-      width: widgetTheme.itemSelectedBorderWidth,
-    );
+    // A side that paints nothing is left out: Flutter cannot draw a hairline (width 0) side on a
+    // rounded row whose sides differ, which a selected row with a selected row below it has.
+    final selectedSide = widgetTheme.itemSelectedBorderColor.a == 0
+        ? BorderSide.none
+        : BorderSide(
+            color: widgetTheme.itemSelectedBorderColor,
+            width: widgetTheme.itemSelectedBorderWidth,
+          );
     if (selected) {
       return Border(
         left: selectedSide,
@@ -1087,35 +1110,33 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               de.button = 1;
               _context?.parentTree.sendSelectionDefaultSelection(
                 _context!.parentTreeValue,
-                de,
+                _withSelection(de),
               );
               return;
             }
 
-            final isCtrlPressed = isControlPressed || keyboard.isMetaPressed;
+            // Control or Command adds the row to the selection or takes it out, on every OS,
+            // as in a List.
             final isShiftPressed = keyboard.isShiftPressed;
-
             _context?.treeImpl?.handleTreeItemSelection(
               state.id,
-              isCtrlPressed: isCtrlPressed,
+              toggle: isControlPressed || keyboard.isMetaPressed,
               isShiftPressed: isShiftPressed,
               notifyJava: false,
             );
 
             int stateMask = 0;
-            if (isCtrlPressed) {
-              stateMask |= SWT.CTRL;
-            }
-            if (isShiftPressed) {
-              stateMask |= SWT.SHIFT;
-            }
+            if (isControlPressed) stateMask |= SWT.CTRL;
+            if (keyboard.isMetaPressed) stateMask |= SWT.COMMAND;
+            if (isShiftPressed) stateMask |= SWT.SHIFT;
+            if (keyboard.isAltPressed) stateMask |= SWT.ALT;
             final e = _createEvent(stateMask: stateMask);
             e.count = 1;
             e.button = 1;
 
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
-              e,
+              _withSelection(e),
             );
 
             if (selected) {
@@ -1260,7 +1281,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       extraPadding: 4.0,
     );
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-    if (columns.isNotEmpty && columnIndex < columns.length - 1) {
+    if (columns.isNotEmpty && !(_context?.treeImpl?.isLastShown(columnIndex) ?? false)) {
       adjustedPadding = adjustedPadding.copyWith(
         right: adjustedPadding.right + theme.columnDividerGap,
       );

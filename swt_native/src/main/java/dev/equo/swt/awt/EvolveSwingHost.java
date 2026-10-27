@@ -19,6 +19,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -470,10 +472,7 @@ public final class EvolveSwingHost {
             frame.add(contents);
             return;
         }
-        hostAsLightweight(contents);
-        host.contentRoot.add(contents);
-        host.contentRoot.revalidate();
-        host.contentRoot.repaint();
+        host.contentRoot.attach(contents);
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -488,7 +487,8 @@ public final class EvolveSwingHost {
      * component that repaints itself while painting — feeds itself without bound.
      */
     /** Drops every reference this class holds to a disposed embedding's component tree. */
-    private static void forgetEmbed(Container root, Window frame) {
+    private static void forgetEmbed(ContentRoot root, Window frame) {
+        root.dropHeld();
         EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
         REPAINT_PENDING.remove(root);
@@ -805,6 +805,7 @@ public final class EvolveSwingHost {
      */
     static final class ContentRoot extends JPanel {
         private final Runnable drawn;
+        private final List<Component> held = new ArrayList<>();
         private volatile boolean placed;
 
         ContentRoot(Runnable drawn) {
@@ -812,9 +813,48 @@ public final class EvolveSwingHost {
             this.drawn = drawn;
         }
 
-        /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
+        /**
+         * Attaches held content and lets the hosted tree paint from now on. Runs on the EDT; {@code
+         * held} is still empty at the first call, from {@code newFrame} on the SWT thread.
+         */
         void place() {
+            if (placed) return;
             placed = true;
+            List<Component> attach;
+            synchronized (held) {
+                attach = new ArrayList<>(held);
+                held.clear();
+            }
+            attach.forEach(this::attach);
+        }
+
+        /**
+         * Adds application content, held out of the tree until {@link #place}: an applet repaints
+         * from itself rather than through {@link #paintChildren}, and a {@code JSplitPane} painted at
+         * the applet's own placeholder size keeps that layout when the frame grows.
+         */
+        void host(Component child) {
+            synchronized (held) {
+                if (!placed) {
+                    held.add(child);
+                    return;
+                }
+            }
+            attach(child);
+        }
+
+        /** Drops content held for a canvas disposed before it ever had a size. */
+        void dropHeld() {
+            synchronized (held) {
+                held.clear();
+            }
+        }
+
+        void attach(Component child) {
+            hostAsLightweight(child);
+            add(child);
+            revalidate();
+            repaint();
         }
 
         @Override
@@ -990,10 +1030,7 @@ public final class EvolveSwingHost {
                         try {
                             frame.remove(child);
                             frame.add(frame.getRootPane(), BorderLayout.CENTER);
-                            hostAsLightweight(child);
-                            contentRoot.add(child);
-                            contentRoot.revalidate();
-                            contentRoot.repaint();
+                            contentRoot.host(child);
                             frame.revalidate();
                         } finally {
                             relocating = false;

@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Sizes;
 
 public class CTabFolderHelper {
     // Constants from CTabFolderRenderer
@@ -37,9 +38,38 @@ public class CTabFolderHelper {
     private static final int FLAGS = SWT.DRAW_TRANSPARENT | SWT.DRAW_MNEMONIC | SWT.DRAW_DELIMITER;
     private static final String CHEVRON_ELLIPSIS = "99+";
 
-    /** Height of the tab strip as drawn, where a wrapped SWT.WRAP topRight row starts. */
-    public static int tabStripHeight() {
-        return dev.equo.swt.size.CTabFolderSizes.TAB_STRIP_HEIGHT;
+    /**
+     * Upstream's {@code updateTabHeight}, with the heights from {@link Sizes}: the render side draws
+     * the strip from its theme, so no GC or renderer is asked. The strip height goes to the render
+     * side, which draws exactly that.
+     */
+    static boolean updateTabHeight(DartCTabFolder folder, boolean force) {
+        int oldHeight = folder.tabHeight;
+        int oldStripHeight = folder.stripHeight;
+        folder.tabHeight = Sizes.cTabFolderTabHeight(folder);
+        folder.stripHeight = Sizes.cTabFolderTabStripHeight(folder);
+        if (!force && folder.tabHeight == oldHeight && folder.stripHeight == oldStripHeight)
+            return false;
+        folder.oldSize = null;
+        folder.getValue().markDirty(VCTabFolder.TAB_HEIGHT);
+        return true;
+    }
+
+    /**
+     * How much taller than the drawn icon the tallest tab image is. The render side draws an icon
+     * at least that tall and grows the whole strip by the difference, as upstream sizes the header
+     * to its tallest tab.
+     */
+    public static int imageGrowth(DartCTabFolder folder) {
+        int growth = 0;
+        for (CTabItem item : folder.items)
+            if (!item.isDisposed()) growth = Math.max(growth, imageGrowth(item.getImage()));
+        return growth;
+    }
+
+    private static int imageGrowth(Image image) {
+        if (image == null || image.isDisposed()) return 0;
+        return Math.max(0, image.getBounds().height - CTabFolderSizes.TAB_IMAGE_HEIGHT);
     }
 
     /** Height of the row(s) SWT.WRAP topRight controls wrap onto when the folder is {@code size}. */
@@ -433,12 +463,11 @@ public class CTabFolderHelper {
     }
 
     /**
-     * Whether the render side draws the close button, which is what the tab has to leave room for.
-     * It reads the item's own flag only - a folder-wide SWT.CLOSE does not reach it - so a width
-     * that took the folder's flag into account would reserve room for a button nobody draws.
+     * Whether the render side draws the close button, which is what the tab has to leave room for:
+     * the tab's own flag or the folder's SWT.CLOSE.
      */
     private static boolean isCloseButtonDrawn(CTabItem item, DartCTabFolder parent, int state) {
-        return ((DartCTabItem) item.getImpl()).showClose
+        return (((DartCTabItem) item.getImpl()).showClose || parent.showClose)
                 && ((state & SWT.SELECTED) != 0 || parent.showUnselectedClose);
     }
 
@@ -463,11 +492,13 @@ public class CTabFolderHelper {
         int width = 0, height = 0;
         Image image = item.getImage();
         if (image != null && !image.isDisposed()) {
+            // A taller image is drawn in a square as high as it is.
+            int growth = imageGrowth(image);
             if (((state & SWT.SELECTED) != 0 && parent.showSelectedImage)
                     || ((state & SWT.SELECTED) == 0 && parent.showUnselectedImage)) {
-                width += CTabFolderSizes.TAB_IMAGE_EXTRA;
+                width += CTabFolderSizes.TAB_IMAGE_EXTRA + growth;
             }
-            height = CTabFolderSizes.TAB_IMAGE_HEIGHT;
+            height = CTabFolderSizes.TAB_IMAGE_HEIGHT + growth;
         }
         String text = item.getText();
         if (text != null) {

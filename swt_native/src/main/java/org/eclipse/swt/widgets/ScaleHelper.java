@@ -4,14 +4,15 @@ import org.eclipse.swt.SWT;
 
 public class ScaleHelper {
 
+    private ScaleHelper() {
+    }
+
     /**
      * A user change to a Scale, which notifies its listeners; setSelection(int) alone is the
      * programmatic setter, which does not. The event carries the button still held.
      */
     public static void selected(DartScale c, Event e) {
         c.setSelection(e.index);
-        if (c.isDisposed())
-            return;
         Event event = new Event();
         event.stateMask = e.stateMask;
         c.sendSelectionEvent(SWT.Selection, event, true);
@@ -44,7 +45,7 @@ public class ScaleHelper {
         }
         int before = c.selection;
         c.setSelection(value);
-        if (c.isDisposed() || c.selection == before)
+        if (c.selection == before)
             return;
         c.sendSelectionEvent(SWT.Selection, new Event(), true);
     }

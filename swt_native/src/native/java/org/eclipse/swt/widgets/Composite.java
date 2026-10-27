@@ -115,6 +115,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void changed(Control[] changed) {
         getImpl().changed(changed);
     }

@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.DartTableEditor;
 import org.eclipse.swt.custom.TableEditor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -16,9 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * How a cell editor ends: the application disposes the control it placed over the cell. The
- * {@link TableEditor} outlives that — it is reused for the next cell — so nothing in SWT clears its
- * reference, and a Dart-backed table has no OS to make the dead control disappear. It stops
- * existing for the client only if it stops being serialized under the table's editors.
+ * {@link TableEditor} outlives that — it is reused for the next cell — and SWT goes on answering the
+ * disposed control from {@code getEditor()}. A Dart-backed table has no OS to make the dead control
+ * disappear: it stops existing for the client only if it stops being serialized under the table's
+ * editors.
  */
 @Tag("flutter-it")
 class TableCellEditorDisposeFlutterTest {
@@ -69,6 +71,9 @@ class TableCellEditorDisposeFlutterTest {
         editor.dispose();
 
         assertThat(cellEditor.getEditor())
+                .as("SWT's TableEditor keeps answering the control it was given")
+                .isSameAs(editor);
+        assertThat(((DartTableEditor) cellEditor.getImpl()).getValue().getEditor())
                 .as("a disposed editor control must not stay in the table's editors: the client "
                         + "would keep its overlay mounted over a control that no longer exists")
                 .isNull();
@@ -96,8 +101,8 @@ class TableCellEditorDisposeFlutterTest {
 
         firstControl.dispose();
 
-        assertThat(first.getEditor()).isNull();
-        assertThat(second.getEditor())
+        assertThat(((DartTableEditor) first.getImpl()).getValue().getEditor()).isNull();
+        assertThat(((DartTableEditor) second.getImpl()).getValue().getEditor())
                 .as("a table can carry a permanent control on every row; disposing one must not "
                         + "take the others down with it")
                 .isSameAs(secondControl);

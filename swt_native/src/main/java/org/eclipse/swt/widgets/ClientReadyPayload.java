@@ -21,4 +21,14 @@ public class ClientReadyPayload {
     public int zoom;
     /** Height of the chrome the client draws inside the window above the app content -- the CSD title strip. */
     public int insetTop;
+    /**
+     * The client's locale as a BCP 47 tag ({@code es-AR}): the browser's on web, the OS's on desktop. Null from a
+     * client that does not report it.
+     */
+    public String locale;
+    /**
+     * The OS the client runs on, as Flutter's {@code TargetPlatform} name ({@code macOS}, {@code windows},
+     * {@code linux}, {@code iOS}, {@code android}). Null from a client that does not report it.
+     */
+    public String targetPlatform;
 }

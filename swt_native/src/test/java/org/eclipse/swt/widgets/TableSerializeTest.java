@@ -29,11 +29,13 @@ class TableSerializeTest extends SerializeTestBase {
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("columnOrder").equalsTo(w.getColumnOrder(), orAbsentIfNull));
         assertJ.satisfies(node("headerBackground").equalsTo(w.getHeaderBackground(), orAbsentIfNull));
         assertJ.satisfies(node("headerForeground").equalsTo(w.getHeaderForeground(), orAbsentIfNull));
         assertJ.satisfies(node("headerVisible").equalsTo(w.getHeaderVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("linesVisible").equalsTo(w.getLinesVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
+        assertJ.satisfies(node("topIndex").equalsTo(w.getTopIndex(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
