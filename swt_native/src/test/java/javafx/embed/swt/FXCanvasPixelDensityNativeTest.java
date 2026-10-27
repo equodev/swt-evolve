@@ -62,7 +62,7 @@ class FXCanvasPixelDensityNativeTest {
 
     private RecordingBridge bridge;
     private FXCanvas canvas;
-    private int nativeZoomBefore;
+    private int deviceZoomBefore;
     private String modeBefore;
     private String autoScaleBefore;
 
@@ -84,7 +84,7 @@ class FXCanvasPixelDensityNativeTest {
 
     @BeforeEach
     void setUp() {
-        nativeZoomBefore = DPIUtil.getNativeDeviceZoom();
+        deviceZoomBefore = DPIUtil.getDeviceZoom();
         modeBefore = System.getProperty(ConfigFlags.MODE_PROPERTY);
         autoScaleBefore = System.getProperty("swt.autoScale");
         System.clearProperty(ConfigFlags.MODE_PROPERTY);
@@ -105,7 +105,8 @@ class FXCanvasPixelDensityNativeTest {
     void tearDown() throws InterruptedException {
         canvas.setScene(null);
         onFxThread(() -> { });
-        displayAt(nativeZoomBefore);
+        DPIUtil.setDeviceZoom(deviceZoomBefore);
+        Config.setClientDeviceZoom(100);
         restoreProperty(ConfigFlags.MODE_PROPERTY, modeBefore);
         restoreProperty("swt.autoScale", autoScaleBefore);
         FlutterBridge.set(null);
