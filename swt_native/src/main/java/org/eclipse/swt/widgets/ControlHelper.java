@@ -75,37 +75,13 @@ public class ControlHelper {
     }
 
     /**
-     * Dart controls have no OS window proc, so nothing turns an incoming KeyDown into an
-     * {@link SWT#Traverse} event the way {@code SwtControl.translateTraversal} does natively.
-     * Popups and dialogs (e.g. the Command Palette) close on Escape via a Traverse listener on
-     * their Shell, which never fires without this translation. Mirror the native ancestor walk by
-     * delegating to {@code Control.traverse(int, Event)}, which sends SWT.Traverse up the parent
-     * chain to the Shell.
+     * Dart controls have no OS window proc to turn a KeyDown into {@link SWT#Traverse}, so a widget's
+     * own Escape runs the same traversal as a Display-routed one, up to the Shell.
      */
     private static void translateTraversal(DartWidget widget, Event keyEvent) {
-        if (!(widget instanceof DartControl))
+        if (keyEvent.keyCode != SWT.ESC || !(widget instanceof DartControl) || widget.isDisposed())
             return;
-        DartControl origin = (DartControl) widget;
-        if (origin.isDisposed())
-            return;
-        int detail;
-        switch (keyEvent.keyCode) {
-            case SWT.ESC:
-                detail = SWT.TRAVERSE_ESCAPE;
-                break;
-            default:
-                return;
-        }
-        Control start = resolveTraverseStart(origin);
-        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
-            return;
-        Event event = new Event();
-        event.character = keyEvent.character;
-        event.keyCode = keyEvent.keyCode;
-        event.keyLocation = keyEvent.keyLocation;
-        event.stateMask = keyEvent.stateMask;
-        event.doit = true;
-        ((DartControl) start.getImpl()).traverse(detail, event);
+        wholeTraversal((DartControl) widget, keyEvent, SWT.TRAVERSE_ESCAPE);
     }
 
     /**
@@ -183,9 +159,9 @@ public class ControlHelper {
         boolean traversed = false;
         boolean traverseDoit = false;
         if (key.keyCode == SWT.ESC) {
-            traversed = escapeTraversal(control, key);
+            traversed = wholeTraversal(control, key, SWT.TRAVERSE_ESCAPE);
         } else if (detail == SWT.TRAVERSE_RETURN) {
-            traversed = returnTraversal(control, key);
+            traversed = wholeTraversal(control, key, SWT.TRAVERSE_RETURN);
         } else if (detail != SWT.TRAVERSE_NONE) {
             Event e = new Event();
             e.character = key.character;
@@ -392,28 +368,18 @@ public class ControlHelper {
         return keyCode == SWT.SHIFT || keyCode == SWT.CTRL || keyCode == SWT.ALT || keyCode == SWT.COMMAND;
     }
 
-    /** Escape runs the whole traversal, so a dialog closes on it. */
-    private static boolean escapeTraversal(DartControl origin, Event keyEvent) {
-        Control start = resolveTraverseStart(origin);
-        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
-            return false;
-        Event event = traverseEventOf(keyEvent);
-        event.doit = true;
-        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
-    }
-
     /**
-     * Enter runs the whole traversal, so the shell presses its default button, unless the control
-     * keeps Enter, as a multi-line Text does.
+     * Escape and Enter run the whole traversal (a dialog closes or presses its default button), offered
+     * with the doit the start control's native gives, so a control that keeps the key holds it.
      */
-    private static boolean returnTraversal(DartControl origin, Event keyEvent) {
+    private static boolean wholeTraversal(DartControl origin, Event keyEvent, int detail) {
         Control start = resolveTraverseStart(origin);
         if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
             return false;
         DartControl impl = (DartControl) start.getImpl();
         Event event = traverseEventOf(keyEvent);
-        event.doit = traversesByDefault(impl, SWT.TRAVERSE_RETURN);
-        return impl.traverse(SWT.TRAVERSE_RETURN, event);
+        event.doit = traversesByDefault(impl, detail);
+        return impl.traverse(detail, event);
     }
 
     private static Event traverseEventOf(Event keyEvent) {
@@ -493,7 +459,7 @@ public class ControlHelper {
 
     private static int traverseDetail(int keyCode, int stateMask) {
         switch (keyCode) {
-            // Escape is not here: it runs the whole traversal straight away; see escapeTraversal.
+            // Escape is not here: it runs the whole traversal straight away; see wholeTraversal.
             case SWT.CR:
                 return SWT.TRAVERSE_RETURN;
             case SWT.ARROW_DOWN:
