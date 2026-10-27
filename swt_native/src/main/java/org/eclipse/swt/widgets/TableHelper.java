@@ -396,7 +396,7 @@ public class TableHelper {
         for (int n = 0; n < count; n++) {
             int index = Math.floorMod(start + n, count);
             String text = table.getApi().getItem(index).getText();
-            if (text != null && text.toLowerCase().startsWith(prefix)) {
+            if (text != null && text.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)) {
                 if (index != current) {
                     Event selection = new Event();
                     selection.segments = new int[] { index };
