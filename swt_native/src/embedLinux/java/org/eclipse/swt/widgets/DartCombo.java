@@ -1806,6 +1806,13 @@ public class DartCombo extends DartComposite implements ICombo {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "List", "Visible", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                ComboHelper.listShownByFlutter(this, e.detail != 0);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
