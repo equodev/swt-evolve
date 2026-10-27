@@ -18,7 +18,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
-/** F10 or a lone Alt makes the shell's menu bar take the keyboard, as on Windows. */
+/**
+ * F10 or a lone Alt makes the shell's menu bar take the keyboard, as on Windows; GTK has no lone Alt,
+ * and Cocoa none of it.
+ */
 class MenuBarKeyActivationTest extends KeyRoutingTestBase {
 
     private RecordingBridge bridge;
@@ -37,6 +40,7 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
         Display display = shell.getDisplay();
         doAnswer(inv -> displayData.put(inv.getArgument(0), inv.getArgument(1))).when(display).setData(anyString(), any());
         doAnswer(inv -> displayData.get(inv.getArgument(0))).when(display).getData(anyString());
+        DisplayHelper.clientReady(display, "windows");
     }
 
     @Test
@@ -218,6 +222,41 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
         release(focus, SWT.ALT);
 
         assertThat(activations()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("on a Linux client F10 and Alt+F still reach the menu bar, but a lone Alt does not")
+    void linuxClientHasNoLoneAlt() {
+        Menu bar = menuBar();
+        DisplayHelper.clientReady(shell.getDisplay(), "linux");
+
+        press(focus, SWT.ALT);
+        release(focus, SWT.ALT);
+        assertThat(activations()).isEmpty();
+
+        press(focus, SWT.F10);
+        MnemonicActivationTest.pressAlt(focus, 'f');
+
+        assertThat(activations()).containsExactly(FlutterBridge.eventName(bar.getImpl(), "activate"));
+        assertThat(openRequests()).containsExactly(FlutterBridge.eventName(bar.getItem(0).getImpl(), "openMenu"));
+    }
+
+    @Test
+    @DisplayName("on a macOS client F10, a lone Alt and Alt+F leave the menu bar alone, and F10 is still delivered")
+    void macClientLeavesTheMenuBarAlone() {
+        menuBar();
+        DisplayHelper.clientReady(shell.getDisplay(), "macOS");
+        int[] keyDowns = {0};
+        focus.addListener(SWT.KeyDown, e -> keyDowns[0]++);
+
+        press(focus, SWT.F10);
+        press(focus, SWT.ALT);
+        release(focus, SWT.ALT);
+        MnemonicActivationTest.pressAlt(focus, 'f');
+
+        assertThat(keyDowns[0]).isEqualTo(3);
+        assertThat(activations()).isEmpty();
+        assertThat(openRequests()).isEmpty();
     }
 
     private Menu menuBar() {

@@ -290,6 +290,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         onClientReady("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
             display.clientPlatform = p.targetPlatform;
+            DisplayHelper.clientReady(display.getApi(), p.targetPlatform);
             // A client that reconnects reporting p.isFirst=true — a fresh Flutter instance re-established
             // the socket (e.g. a browser refresh) but is NOT the bridge's first ClientReady — needs the
             // swt.evolve properties re-pushed, or its theme/config init is lost on refresh.

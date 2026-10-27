@@ -39,6 +39,8 @@ class MenuBarLoneAltDeactivationFlutterTest {
         web = new TestWebBridge(dd);
         dd.setBridge(web);
         web.start(dd);
+        // A lone Alt activates the menu bar only on a Windows client.
+        DisplayHelper.clientReady(display, "windows");
         Shell shell = new Shell(display);
         Menu bar = new Menu(shell, SWT.BAR);
         MenuItem file = new MenuItem(bar, SWT.CASCADE);

@@ -72,23 +72,29 @@ public class MenuHelper {
     }
 
     /**
-     * Once its KeyDown went through unvetoed, F10 with no modifier activates the menu bar, as on
-     * Windows, and an Alt+letter no control took opens the menu bar title carrying it.
+     * Once its KeyDown went through unvetoed, F10 with no modifier activates the menu bar and an
+     * Alt+letter no control took opens the menu bar title carrying it, as on Windows and GTK. Cocoa
+     * has neither: its menu bar is the system's, and Option+letter types a character.
      */
     static void keyDownDelivered(Control control, Event key) {
+        if ("cocoa".equals(DisplayHelper.keyboardPlatform(control.getDisplay())))
+            return;
         if (key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == 0)
             activateMenuBar(control);
         else if (ControlHelper.isMnemonicTrigger(key))
             MnemonicHelper.openMenuBarTitle(control, (char) key.keyCode);
     }
 
-    /** The release of a lone Alt activates the menu bar, unless a KeyUp listener vetoed it. */
+    /**
+     * The release of a lone Alt activates the menu bar on Windows, unless a KeyUp listener vetoed it.
+     * GTK and Cocoa do nothing on it.
+     */
     static void keyUpDelivered(Control control, Event key) {
         Display display = control.getDisplay();
         if (key.keyCode != SWT.ALT || display.getData(ALT_ALONE) == null)
             return;
         display.setData(ALT_ALONE, null);
-        if (key.doit)
+        if (key.doit && "win32".equals(DisplayHelper.keyboardPlatform(display)))
             activateMenuBar(control);
     }
 
