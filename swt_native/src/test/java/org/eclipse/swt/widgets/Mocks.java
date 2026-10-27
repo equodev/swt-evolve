@@ -69,6 +69,17 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         return DartMocks.dartShell(display);
     }
 
+    /**
+     * A shell whose own toDisplay is the identity, so what a mapping test asserts is the offset the
+     * walk up from the control accumulates -- not the mock's answer for where the shell sits.
+     */
+    public static Shell echoingShell() {
+        Shell shell = shell();
+        when(shell.toDisplay(anyInt(), anyInt()))
+                .thenAnswer(call -> new Point(call.getArgument(0), call.getArgument(1)));
+        return shell;
+    }
+
     public static Display display() {
         return DartMocks.dartDisplay();
     }

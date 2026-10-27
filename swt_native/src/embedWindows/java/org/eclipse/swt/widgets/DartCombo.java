@@ -1799,6 +1799,8 @@ public class DartCombo extends DartComposite implements ICombo {
         }
     }
 
+    int caretPosition;
+
     boolean listVisible;
 
     Point selection;
@@ -1857,6 +1859,10 @@ public class DartCombo extends DartComposite implements ICombo {
 
     public boolean _stateFlagsUsable() {
         return stateFlagsUsable;
+    }
+
+    public int _caretPosition() {
+        return caretPosition;
     }
 
     public boolean _listVisible() {
@@ -1931,6 +1937,10 @@ public class DartCombo extends DartComposite implements ICombo {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (ComboHelper.proposesNoChange(e)) {
+                    ComboHelper.clientCaretMoved(this, e.start, e.index);
+                    return;
+                }
                 sendEvent(SWT.Verify, e);
             });
         });

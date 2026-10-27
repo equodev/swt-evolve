@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
@@ -30,9 +31,35 @@ public class ComboHelper {
         return new Point(combo.selection.x, combo.selection.y);
     }
 
-    /** The caret is at the start of the selection, as Win32 and Cocoa answer when there is one. */
+    /**
+     * The caret is the end of the selection the user left it at ({@link #clientCaretMoved}); a selection set from
+     * code has it at its start, as Win32 and Cocoa answer when there is one.
+     */
     public static int getCaretPosition(DartCombo combo) {
-        return combo.selection.x;
+        Point selection = combo.selection;
+        return combo.caretPosition == selection.y ? selection.y : selection.x;
+    }
+
+    /**
+     * The user moved the caret or the selection in the client's field without editing: the caret at {@code offset},
+     * the selection running from {@code anchor} to it. getSelection() and getCaretPosition() answer from Java's
+     * copy, so it follows.
+     */
+    public static void clientCaretMoved(DartCombo combo, int offset, int anchor) {
+        if (readOnly(combo))
+            return;
+        TextHelper.ClientCaret moved = new TextHelper.ClientCaret(offset, anchor, getCharCount(combo));
+        combo.caretPosition = moved.caret;
+        combo.selection = moved.selection;
+        Serializer.clientChanged(combo.getValue(), VCombo.CARET_POSITION);
+    }
+
+    /**
+     * Whether a Verify from the client only reports a caret move ({@link TextHelper#proposesNoChange}). Named here so
+     * DartCombo does not name TextHelper, which the widget parity gate then counts as Text's alone.
+     */
+    public static boolean proposesNoChange(Event e) {
+        return TextHelper.proposesNoChange(e);
     }
 
     /** Collapses the selection in the text onto its end, as Win32 and GTK do; a read-only combo has none. */
@@ -138,6 +165,7 @@ public class ComboHelper {
         int start = Math.min(Math.max(Math.min(selection.x, selection.y), 0), length);
         int end = Math.min(Math.max(Math.max(selection.x, selection.y), 0), length);
         combo.selection = new Point(start, end);
+        combo.caretPosition = start;
     }
 
     /** All items are gone, and the selection with them. */

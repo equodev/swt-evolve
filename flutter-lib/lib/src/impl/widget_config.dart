@@ -167,6 +167,10 @@ bool useSwtFontColors([String? widget]) {
   return own ?? flags.use_swt_font_colors ?? flags.use_swt_fonts ?? false;
 }
 
+/// True when a bordered control draws the frame its `SWT.BORDER` style asks for rather than the
+/// theme's flat one: `-Dswt.use_swt_border`.
+bool get useSwtBorder => getConfigFlags().use_swt_border ?? false;
+
 /// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the named theme's default.
 bool get focusIndicators {
   final flags = getConfigFlags();

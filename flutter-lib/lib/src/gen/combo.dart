@@ -52,6 +52,7 @@ class VCombo extends VComposite {
     swt = "Combo";
   }
 
+  int? caretPosition;
   List<String>? items;
   bool? listVisible;
   String? text;
@@ -60,6 +61,7 @@ class VCombo extends VComposite {
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VCombo) {
+      caretPosition = other.caretPosition;
       items = other.items;
       listVisible = other.listVisible;
       text = other.text;
@@ -69,6 +71,8 @@ class VCombo extends VComposite {
   @override
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
+      case 'caretPosition':
+        caretPosition = (json['caretPosition'] as num?)?.toInt();
       case 'items':
         items = (json['items'] as List<dynamic>?)
             ?.map((e) => e as String)
