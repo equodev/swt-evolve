@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons, Icon, Divider, Theme;
@@ -35,6 +36,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   bool? _lastJavaListVisible;
   /// The item the keyboard points at while the list is open; Enter commits it.
   int _highlighted = -1;
+  /// Whether the highlighted item is already the selection, chosen by a typed letter.
+  bool _highlightSelected = false;
   final GlobalKey _highlightedKey = GlobalKey();
 
   /// The field is the only node a Combo mounts, and the one its keys are handled on.
@@ -151,6 +154,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     if (show == _overlayController.isShowing) return;
     if (show) {
       _highlighted = (state.items ?? const <String>[]).indexOf(state.text ?? "");
+      _highlightSelected = false;
       _overlayController.show();
     } else {
       _overlayController.hide();
@@ -188,7 +192,10 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     }
     if ((up || down) && !alt) {
       if (items.isNotEmpty) {
-        setState(() => _highlighted = (_highlighted + (down ? 1 : -1)).clamp(0, items.length - 1));
+        setState(() {
+          _highlighted = (_highlighted + (down ? 1 : -1)).clamp(0, items.length - 1);
+          _highlightSelected = false;
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final BuildContext? item = _highlightedKey.currentContext;
           if (item != null) Scrollable.ensureVisible(item);
@@ -197,7 +204,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
-      if (_highlighted >= 0 && _highlighted < items.length) {
+      if (_highlightSelected) {
+        _setListOpen(false);
+      } else if (_highlighted >= 0 && _highlighted < items.length) {
         _onItemSelected(items[_highlighted]);
       } else {
         _toggleOverlay();
@@ -208,7 +217,37 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       _toggleOverlay();
       return KeyEventResult.handled;
     }
+    if (_selectsByLetterWithListOpen && _isTypedLetter(event)) {
+      final int? target = _nextStartingWith(items, items.indexOf(state.text ?? ""), event.character!);
+      if (target != null) {
+        setState(() {
+          _highlighted = target;
+          _highlightSelected = true;
+        });
+        _selectKeepingListOpen(items[target]);
+      }
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
+  }
+
+  /// A READ_ONLY Combo's open list answers a typed letter as Win32 does: the letter selects, as it
+  /// does with the list closed. GTK's list ignores it, and so does this one on macOS.
+  bool get _selectsByLetterWithListOpen =>
+      StyleBits(state.style).has(SWT.READ_ONLY) &&
+      defaultTargetPlatform != TargetPlatform.linux &&
+      defaultTargetPlatform != TargetPlatform.macOS &&
+      defaultTargetPlatform != TargetPlatform.iOS;
+
+  /// GTK's closed READ_ONLY Combo ignores a typed letter; Win32 selects with it.
+  static bool get _selectsByLetterWithListClosed => defaultTargetPlatform != TargetPlatform.linux;
+
+  bool _isTypedLetter(KeyEvent event) {
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    return !keyboard.isAltPressed &&
+        !keyboard.isControlPressed &&
+        !keyboard.isMetaPressed &&
+        _isTypedCharacter(event.character);
   }
 
   /// The rows a Page key moves, as a Windows list showing SWT's default five items does.
@@ -244,6 +283,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     } else if (readOnly && key == LogicalKeyboardKey.pageUp) {
       target = current < 0 ? 0 : current - _pageStep;
     } else if (readOnly && _isTypedCharacter(event.character)) {
+      if (!_selectsByLetterWithListClosed) return KeyEventResult.ignored;
       target = _nextStartingWith(items, current, event.character!);
       if (target == null) return KeyEventResult.handled;
     } else {
@@ -408,7 +448,10 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             onDismiss: () => _setListOpen(false),
             highlighted: _highlighted,
             highlightedKey: _highlightedKey,
-            onHighlight: (i) => setState(() => _highlighted = i),
+            onHighlight: (i) => setState(() {
+              _highlighted = i;
+              _highlightSelected = false;
+            }),
             width: width,
             textPadding: textPadding,
             arrowSpacing: arrowSpacing,
@@ -445,6 +488,10 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
   void _onItemSelected(String? value) {
     _setListOpen(false);
+    _selectKeepingListOpen(value);
+  }
+
+  void _selectKeepingListOpen(String? value) {
     setState(() {
       state.text = value;
       _controller.text = value ?? "";
