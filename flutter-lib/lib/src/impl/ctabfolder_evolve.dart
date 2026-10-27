@@ -26,6 +26,7 @@ import '../gen/rectangle.dart';
 import '../custom/toolbar_composite.dart';
 import 'composite_evolve.dart';
 import 'control_evolve.dart';
+import 'ctab_tab_compression.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
@@ -856,10 +857,18 @@ class _CTabBarState extends State<_CTabBar> {
       folderState: widget.state,
       folderWidget: widget.folderWidget,
       tabHeight: widget.tabHeight,
-      rowWrapper: (row) => _buildHorizontalScrollableTabs(
-        widgetTheme: widgetTheme,
-        child: row,
-      ),
+      rowWrapper: ctabTabScroll()
+          ? (row) => _buildHorizontalScrollableTabs(widgetTheme: widgetTheme, child: row)
+          : (row) => ClipRect(child: SizedBox(width: double.infinity, child: row)),
+      stripBuilder: ctabTabScroll()
+          ? null
+          : (key, children) => CompressedTabRow(
+                key: key,
+                selectedIndex: effectiveSelected,
+                onOverflowChanged: _setOverflow,
+                onTabsMoved: () => _rowState.currentState?.scheduleStripReport(),
+                children: children,
+              ),
       onReorder: (from, to) {
         setState(() {
           _pendingFrom = from;
@@ -1170,6 +1179,9 @@ class _CTabBarState extends State<_CTabBar> {
 
     final showHighlight = widget.state.highlightEnabled ?? false;
     final enabled = widget.state.enabled ?? false;
+    final compressTo = ctabTabScroll()
+        ? null
+        : widget.state.minimumCharacters ?? ctabDefaultMinimumCharacters;
     final useDefaultTheme = getConfigFlags().theme_name == null;
     final active = showHighlight && (widget.state.highlight ?? false);
 
@@ -1323,12 +1335,13 @@ class _CTabBarState extends State<_CTabBar> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              tab.customContent != null
+              _shrinkable(compressTo, tab.customContent != null
                   ? TabItemContextProvider(
                       isSelected: isSelected,
                       isEnabled: enabled,
                       isActive: isSelected && enabled && active,
                       isDimmed: isSelected && enabled && showHighlight && !active,
+                      compressMinimumCharacters: compressTo,
                       child: tab.customContent!,
                     )
                   : Row(
@@ -1365,19 +1378,25 @@ class _CTabBarState extends State<_CTabBar> {
                               },
                             ),
                           ),
-                        Padding(
+                        _shrinkable(compressTo, Padding(
                           padding: EdgeInsets.only(
                             bottom: widgetTheme.tabTextBottomPadding,
                           ),
-                          child: Text(
-                            _getTabText(tab.label),
-                            style:
-                                textStyle?.copyWith(color: textColor) ??
-                                TextStyle(color: textColor),
-                          ),
-                        ),
+                          child: compressTo == null
+                              ? Text(
+                                  _getTabText(tab.label),
+                                  style: textStyle?.copyWith(color: textColor) ??
+                                      TextStyle(color: textColor),
+                                )
+                              : ShrinkableTabLabel(
+                                  tab.label,
+                                  style: textStyle?.copyWith(color: textColor) ??
+                                      TextStyle(color: textColor),
+                                  minimumCharacters: compressTo,
+                                ),
+                        )),
                       ],
-                    ),
+                    )),
               if (shouldShowClose) ...[
                 SizedBox(width: widgetTheme.tabCloseButtonSpacing),
                 MouseRegion(
@@ -1609,6 +1628,10 @@ class _CTabBarState extends State<_CTabBar> {
     }
   }
 
+  void _setOverflow(bool overflow) {
+    if (mounted && overflow != _hasOverflow) setState(() => _hasOverflow = overflow);
+  }
+
   void _hideScrollbarAfterDelay(Duration delay) {
     _scrollbarHideTimer?.cancel();
     _scrollbarHideTimer = Timer(delay, () {
@@ -1670,6 +1693,10 @@ class _CTabBarState extends State<_CTabBar> {
       child: Container(decoration: decoration, child: child),
     );
   }
+
+  /// [child] free to shrink below its natural width when the strip compresses its tabs.
+  static Widget _shrinkable(int? compressTo, Widget child) =>
+      compressTo == null ? child : Flexible(child: child);
 
   String _getTabText(String label) {
     final minChars = widget.state.minimumCharacters;
@@ -1936,7 +1963,7 @@ String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
         : '${button.left.round()},${button.top.round()},'
             '${button.width.round()},${button.height.round()}');
   }
-  final Object? viewport = tabs.isEmpty ? null : RenderAbstractViewport.maybeOf(tabs.first.tab);
+  final Object? viewport = tabs.isEmpty ? null : _shownStrip(tabs.first.tab);
   var shown = '';
   if (viewport is RenderBox && viewport.hasSize) {
     final area = _rectIn(folder, viewport);
@@ -1944,6 +1971,15 @@ String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
     shown = ';${area.left.round()},${area.width.round()}';
   }
   return '${strip.join(',')};${close.join(',')}$shown';
+}
+
+/// The box that bounds the shown tabs: the scrolled viewport, or a compressed row, which ends where
+/// the chevron begins and parks the tabs that do not fit past that end.
+RenderObject? _shownStrip(RenderBox tab) {
+  for (RenderObject? node = tab.parent; node != null; node = node.parent) {
+    if (node is RenderCompressedTabRow || node is RenderAbstractViewport) return node;
+  }
+  return null;
 }
 
 /// Where [child] is drawn within [folder], mapped without going through global coordinates: a panel
@@ -1989,6 +2025,9 @@ class TabDragRow extends StatefulWidget {
   /// whole tab strip accepts a drop and not just the width the tabs happen to occupy —
   /// otherwise a tab released over a folder's empty strip resolves to no target at all.
   final Widget Function(Widget row) rowWrapper;
+
+  /// Lays the tabs out in place of the default natural-width Row.
+  final Widget Function(Key key, List<Widget> children)? stripBuilder;
   final void Function(int from, int to)? onReorder;
   final void Function(int insertIndex, int? targetItemId, Offset position)? onDrop;
   final ValueChanged<int>? onTabDragStarted;
@@ -2012,6 +2051,7 @@ class TabDragRow extends StatefulWidget {
     required this.folderState,
     required this.folderWidget,
     required this.rowWrapper,
+    this.stripBuilder,
     this.tabHeight,
     this.onReorder,
     this.onDrop,
@@ -2225,16 +2265,14 @@ class _TabDragRowState extends State<TabDragRow> {
 
     // mainAxisSize.min so the row takes its natural width and the scroll view overflows when
     // tabs don't fit; the default (max) fills and clips instead.
+    final tabs = List<Widget>.generate(
+      count,
+      (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+    );
     final row = Listener(
       onPointerDown: (e) => _pressAt = e.position,
-      child: Row(
-        key: _rowKey,
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(
-          count,
-          (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
-        ),
-      ),
+      child: widget.stripBuilder?.call(_rowKey, tabs) ??
+          Row(key: _rowKey, mainAxisSize: MainAxisSize.min, children: tabs),
     );
 
     return wrapDropTarget<DndDragPayload>(
@@ -2358,12 +2396,15 @@ class TabItemContext {
   final bool isActive;
   // The selected tab of a folder that takes part in activation but does not hold focus.
   final bool isDimmed;
+  // The folder's minimumCharacters while it compresses its tabs (ctabfolder_tab_scroll=false).
+  final int? compressMinimumCharacters;
 
   TabItemContext({
     required this.isSelected,
     required this.isEnabled,
     this.isActive = false,
     this.isDimmed = false,
+    this.compressMinimumCharacters,
   });
 
   static TabItemContext? of(BuildContext context) {
@@ -2382,12 +2423,14 @@ class TabItemContextProvider extends InheritedWidget {
     required bool isEnabled,
     bool isActive = false,
     bool isDimmed = false,
+    int? compressMinimumCharacters,
     required Widget child,
   }) : context = TabItemContext(
          isSelected: isSelected,
          isEnabled: isEnabled,
          isActive: isActive,
          isDimmed: isDimmed,
+         compressMinimumCharacters: compressMinimumCharacters,
        ),
        super(key: key, child: child);
 
@@ -2396,7 +2439,8 @@ class TabItemContextProvider extends InheritedWidget {
     return context.isSelected != oldWidget.context.isSelected ||
         context.isEnabled != oldWidget.context.isEnabled ||
         context.isActive != oldWidget.context.isActive ||
-        context.isDimmed != oldWidget.context.isDimmed;
+        context.isDimmed != oldWidget.context.isDimmed ||
+        context.compressMinimumCharacters != oldWidget.context.compressMinimumCharacters;
   }
 }
 

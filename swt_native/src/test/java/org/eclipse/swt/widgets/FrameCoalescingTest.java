@@ -26,6 +26,9 @@ class FrameCoalescingTest {
 
     private static final int BURST = 200;
 
+    /** FlutterBridge's push interval: a Table is pushed at most once per this many nanoseconds. */
+    private static final long FRAME_NANOS = 16_000_000L;
+
     private RecordingBridge bridge;
 
     @BeforeAll
@@ -55,6 +58,8 @@ class FrameCoalescingTest {
         Table table = newTable();
         Thread.sleep(PAST_THE_FRAME_MS);
 
+        // Taken before the first push, so every push of the burst is at least a frame past it.
+        long burstStart = System.nanoTime();
         table.setSelection(0);
         FlutterBridge.updateFrame();
         int afterFirst = framesFor(table);
@@ -64,11 +69,12 @@ class FrameCoalescingTest {
             table.setSelection(i % 29);
             FlutterBridge.updateFrame();
         }
-        // An order of magnitude, not an exact count: how many frames the burst spans depends on the
-        // machine, so "no extra push at all" fails whenever the loop straddles a frame boundary.
+        long burstFrames = (System.nanoTime() - burstStart) / FRAME_NANOS;
+        // Bounded by the frames the burst spanned, which depends on the machine's speed.
         assertThat(framesFor(table) - afterFirst)
-                .as("%d changes must cost a push per frame, nowhere near %d pushes", BURST, BURST)
-                .isLessThan(BURST / 10);
+                .as("%d changes spanning %d frames must cost at most a push per frame",
+                        BURST, burstFrames)
+                .isLessThanOrEqualTo((int) burstFrames);
 
         int beforeHeld = framesFor(table);
         // A value the burst never set: one the client already holds is rightly not sent again.
