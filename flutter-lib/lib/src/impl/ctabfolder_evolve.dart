@@ -6,7 +6,7 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderMetaData;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport, RenderMetaData;
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
@@ -662,6 +662,7 @@ class _CTabBarState extends State<_CTabBar> {
   bool _revealPending = false;
   bool _revealing = false;
   double? _revealedViewport;
+  double? _revealedExtent;
 
   /// A native CTabFolder keeps the selected tab in view (`showItem`): where upstream picks which
   /// tabs to show and parks the rest behind the chevron, this strip scrolls to it instead.
@@ -679,6 +680,7 @@ class _CTabBarState extends State<_CTabBar> {
     final position = _horizontalScrollController.position;
     if (!position.hasContentDimensions || !position.hasViewportDimension) return;
     _revealedViewport = position.viewportDimension;
+    _revealedExtent = position.maxScrollExtent;
     final index = (widget.state.single ?? false)
         ? 0
         : _computeEffectiveSelected(widget.selectedIndex);
@@ -1410,7 +1412,7 @@ class _CTabBarState extends State<_CTabBar> {
   }
 
   Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {
-    return MouseRegion(
+    return Semantics(identifier: 'chevron:${widget.state.swt}/${widget.state.id}', button: true, child: MouseRegion(
       onEnter: (_) => setState(() => _isChevronHovered = true),
       onExit: (_) => setState(() => _isChevronHovered = false),
       cursor: SystemMouseCursors.click,
@@ -1435,7 +1437,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       )),
-    );
+    ));
   }
 
   void _handleChevronTap(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
@@ -1517,6 +1519,8 @@ class _CTabBarState extends State<_CTabBar> {
           // re-measure on each size change instead of relying on a one-shot check.
           onNotification: (notification) {
             WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+            // A tab that changes width moves the ones after it without rebuilding the row.
+            _rowState.currentState?.scheduleStripReport();
             return false;
           },
           child: NotificationListener<ScrollUpdateNotification>(
@@ -1596,9 +1600,11 @@ class _CTabBarState extends State<_CTabBar> {
     if (overflow != _hasOverflow) {
       setState(() => _hasOverflow = overflow);
     }
-    // A strip that starts to overflow, or narrows while it does, can leave the selected tab out.
+    // A strip that starts to overflow, narrows, or has a tab grow (a dirty marker, the bold label
+    // of an active folder) can leave the selected tab out. A user scroll changes neither.
     if (overflow && position.hasViewportDimension &&
-        position.viewportDimension != _revealedViewport) {
+        (position.viewportDimension != _revealedViewport ||
+            position.maxScrollExtent != _revealedExtent)) {
       _revealSelectedAfterLayout();
     }
   }
@@ -1911,7 +1917,8 @@ class DrawnTab {
 /// Where each of [tabs] is drawn in [folder], as `x,width` pairs in the folder's own coordinates -
 /// what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides which view a drag
 /// picked up - then, after a `;`, each tab's close button as `x,y,width,height` (zeros for a tab
-/// drawn without one).
+/// drawn without one), then, after another `;`, the part of the strip that is shown as `x,width`:
+/// the scrolled viewport, which ends where the chevron and the top-right controls begin.
 ///
 /// Null when a tab cannot be placed: a folder laid out under unbounded constraints for a frame has
 /// an infinite size, and aligning its children in it puts NaN in every offset below it.
@@ -1929,7 +1936,14 @@ String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
         : '${button.left.round()},${button.top.round()},'
             '${button.width.round()},${button.height.round()}');
   }
-  return '${strip.join(',')};${close.join(',')}';
+  final Object? viewport = tabs.isEmpty ? null : RenderAbstractViewport.maybeOf(tabs.first.tab);
+  var shown = '';
+  if (viewport is RenderBox && viewport.hasSize) {
+    final area = _rectIn(folder, viewport);
+    if (!area.isFinite) return null;
+    shown = ';${area.left.round()},${area.width.round()}';
+  }
+  return '${strip.join(',')};${close.join(',')}$shown';
 }
 
 /// Where [child] is drawn within [folder], mapped without going through global coordinates: a panel
