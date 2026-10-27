@@ -151,6 +151,41 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
+    @DisplayName("deselecting all in an editable combo asks the Verify listeners about emptying its text, then tells the Modify listeners, as GTK and Win32 do")
+    void deselectAllVerifiesAndModifies() {
+        Combo combo = abc(SWT.NONE, -1);
+        combo.setText("abcdef");
+        List<String> events = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> events.add("Verify " + e.start + ".." + e.end + " '" + e.text + "'"));
+        combo.addListener(SWT.Modify, e -> events.add("Modify"));
+
+        combo.deselectAll();
+
+        assertThat(events).containsExactly("Verify 0..6 ''", "Modify");
+        assertThat(combo.getText()).isEmpty();
+
+        events.clear();
+        combo.deselectAll();
+
+        assertThat(events).as("text already empty").isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Verify listener that vetoes deselecting all keeps an editable combo's text, and no Modify follows")
+    void deselectAllVetoedKeepsTheText() {
+        Combo combo = abc(SWT.NONE, -1);
+        combo.setText("abcdef");
+        List<Event> modifies = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> e.doit = false);
+        combo.addListener(SWT.Modify, modifies::add);
+
+        combo.deselectAll();
+
+        assertThat(combo.getText()).isEqualTo("abcdef");
+        assertThat(modifies).isEmpty();
+    }
+
+    @Test
     @DisplayName("replacing or emptying the list deselects, and a longer list does not bring the index back")
     void replacingTheListDeselects() {
         for (int style : new int[] {SWT.NONE, SWT.SIMPLE, SWT.READ_ONLY}) {
