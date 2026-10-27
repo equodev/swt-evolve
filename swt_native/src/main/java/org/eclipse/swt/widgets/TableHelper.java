@@ -412,7 +412,7 @@ public class TableHelper {
                 System.arraycopy(newSelection, 0, finalSelection, 0, newCount);
             }
 
-            if (!java.util.Objects.equals(table.selection, finalSelection)) {
+            if (!Arrays.equals(table.selection, finalSelection)) {
                 table.getValue().markDirty(VTable.SELECTION);
             }
             table.selection = finalSelection;
@@ -473,6 +473,21 @@ public class TableHelper {
             table.getValue().markDirty(VTable.SELECTION);
             table.selection = newSelection;
         }
+    }
+
+    /**
+     * Drops the selected rows at or past {@code itemCount}, as a native table does whenever its row
+     * count shrinks: removing the last row, or every row, never shifts the selection otherwise.
+     */
+    public static void dropSelectionPast(DartTable table, int itemCount) {
+        int[] selection = table.selection;
+        if (selection == null)
+            return;
+        int[] kept = Arrays.stream(selection).filter(index -> index < itemCount).toArray();
+        if (kept.length == selection.length)
+            return;
+        table.getValue().markDirty(VTable.SELECTION);
+        table.selection = kept;
     }
 
     public static void fixSelectionRange(DartTable table, int start, int end) {

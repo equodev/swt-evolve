@@ -117,4 +117,23 @@ void main() {
 
     expect(calls.where((c) => c.startsWith('Focus/')), isEmpty);
   });
+
+  testWidgets('a mouse double click on an unfocused field focuses it once and never takes it back',
+      (tester) async {
+    setConfigFlags(ConfigFlags()..double_click_timeout_ms = 60000);
+    final calls = <String>[];
+    await tester.pumpWidget(_app(calls));
+    await tester.pump();
+
+    const at = Offset(40, 15);
+    for (var press = 0; press < 2; press++) {
+      final mouse = await tester.startGesture(at, kind: PointerDeviceKind.mouse);
+      await tester.pump(const Duration(milliseconds: 40));
+      await mouse.up();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(calls.where((c) => c.startsWith('Focus/')), ['Focus/FocusIn:null@null,null']);
+  });
 }

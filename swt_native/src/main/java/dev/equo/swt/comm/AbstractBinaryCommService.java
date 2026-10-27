@@ -25,7 +25,11 @@ import java.util.stream.Collectors;
 public abstract class AbstractBinaryCommService implements CommService {
 
     protected final Serializer serializer = new Serializer();
-    private final Map<String, TypedHandler<?>> typedHandlers = new ConcurrentHashMap<>();
+    /**
+     * Handlers by owner ({@code Type/id}, the name up to its second slash), then by the rest of the
+     * name: a widget's handlers are all dropped with it in one removal (see {@link #removeOwner}).
+     */
+    private final Map<String, Map<String, TypedHandler<?>>> typedHandlers = new ConcurrentHashMap<>();
     private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
@@ -101,12 +105,41 @@ public abstract class AbstractBinaryCommService implements CommService {
 
     @Override
     public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
-        typedHandlers.put(eventName, new TypedHandler<>(cls, callback));
+        int split = ownerEnd(eventName);
+        TypedHandler<T> handler = new TypedHandler<>(cls, callback);
+        typedHandlers.compute(eventName.substring(0, split), (owner, named) -> {
+            if (named == null) named = new ConcurrentHashMap<>(8);
+            named.put(eventName.substring(split), handler);
+            return named;
+        });
     }
 
     @Override
     public void remove(String eventName) {
-        typedHandlers.remove(eventName);
+        int split = ownerEnd(eventName);
+        typedHandlers.computeIfPresent(eventName.substring(0, split), (owner, named) -> {
+            named.remove(eventName.substring(split));
+            return named.isEmpty() ? null : named;
+        });
+    }
+
+    @Override
+    public void removeOwner(String owner) {
+        typedHandlers.remove(owner);
+    }
+
+    /** Where the owner part of {@code eventName} ends: at its second slash, or its end. */
+    private static int ownerEnd(String eventName) {
+        int first = eventName.indexOf('/');
+        if (first < 0) return eventName.length();
+        int second = eventName.indexOf('/', first + 1);
+        return second < 0 ? eventName.length() : second;
+    }
+
+    private TypedHandler<?> handlerFor(String eventName) {
+        int split = ownerEnd(eventName);
+        Map<String, TypedHandler<?>> named = typedHandlers.get(eventName.substring(0, split));
+        return named == null ? null : named.get(eventName.substring(split));
     }
 
     /** State kept for as long as this connection lives, under [key]; [create] makes it on first use. */
@@ -165,10 +198,10 @@ public abstract class AbstractBinaryCommService implements CommService {
     }
 
     private void dispatch(String eventName, byte[] data, int offset, int length) {
-        TypedHandler<?> typed = typedHandlers.get(eventName);
+        TypedHandler<?> typed = handlerFor(eventName);
         if (typed == null) {
             String alternate = alternateName.apply(eventName);
-            if (alternate != null) typed = typedHandlers.get(alternate);
+            if (alternate != null) typed = handlerFor(alternate);
         }
         if (typed != null) {
             typed.handle(data, offset, length, serializer, logTag());
@@ -178,7 +211,8 @@ public abstract class AbstractBinaryCommService implements CommService {
         // type never registered" (none). The list itself runs to hundreds of lines per miss, so it
         // is printed only in debug mode.
         String typePrefix = eventName.substring(0, eventName.indexOf('/') + 1);
-        List<String> sameType = typedHandlers.keySet().stream().filter(k -> k.startsWith(typePrefix)).sorted()
+        List<String> sameType = typedHandlers.entrySet().stream().filter(e -> e.getKey().startsWith(typePrefix))
+                .flatMap(e -> e.getValue().keySet().stream().map(rest -> e.getKey() + rest)).sorted()
                 .collect(Collectors.toList());
         System.err.println(logTag() + " No handler for: " + eventName + " (" + sameType.size() + " registered for "
                 + typePrefix + "*)");

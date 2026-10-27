@@ -107,10 +107,10 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             System.out.println("Eclipse theme ID from preferences: " + themeId);
 
             // Determine if it's dark or light based on theme ID
-            if (themeId.toLowerCase().contains("dark")) {
+            if (themeId.toLowerCase(java.util.Locale.ROOT).contains("dark")) {
                 return "dark";
-            } else if (themeId.toLowerCase().contains("light") ||
-                       themeId.toLowerCase().contains("default") || themeId.toLowerCase().contains("classic")) {
+            } else if (themeId.toLowerCase(java.util.Locale.ROOT).contains("light") ||
+                       themeId.toLowerCase(java.util.Locale.ROOT).contains("default") || themeId.toLowerCase(java.util.Locale.ROOT).contains("classic")) {
                 return "light";
             }
 

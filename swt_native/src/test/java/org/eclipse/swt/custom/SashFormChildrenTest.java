@@ -78,13 +78,13 @@ class SashFormChildrenTest {
     }
 
     @Test
-    @DisplayName("the children sent to Flutter are the panes only")
-    void theValueLeavesTheSashesOut() {
+    @DisplayName("the children sent to Flutter are the panes and the sash between them")
+    void theValueSendsTheSashes() {
         SashForm form = laidOutForm();
 
         Control[] sent = ((DartSashForm) form.getImpl()).getValue().getChildren();
 
-        assertThat(sent).hasSize(2);
-        assertThat(sent).noneMatch(c -> c instanceof Sash);
+        assertThat(sent).containsExactly(form.getChildren());
+        assertThat(sent).filteredOn(c -> c instanceof Sash).hasSize(1);
     }
 }

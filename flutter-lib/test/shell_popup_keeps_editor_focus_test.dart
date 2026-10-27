@@ -22,6 +22,7 @@ import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
+import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
 
 // DisplaySwt caches the last state it saw per display id, so each test uses its own id —
@@ -99,6 +100,9 @@ void main() {
 
     // Click into the editor, as the user does before asking for content assist.
     await tester.tapAt(const Offset(60, 40));
+    // Java focuses the pressed editor and asks the client to move its keyboard focus there.
+    FocusRequests.instance.request(base + 3);
+    addTearDown(FocusRequests.instance.reset);
     await tester.pumpAndSettle();
     expect(canvasEditorFocused, isTrue,
         reason: 'sanity: a clicked StyledText holds the keyboard');

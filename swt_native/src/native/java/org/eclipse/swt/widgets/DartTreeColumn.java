@@ -464,7 +464,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.movable, moveable)) {
+        if (this.movable != moveable) {
             getValue().markDirty(VTreeColumn.MOVEABLE);
         }
         this.movable = moveable;
@@ -485,7 +485,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         checkWidget();
-        if (!java.util.Objects.equals(this.resizable, newValue)) {
+        if (this.resizable != newValue) {
             getValue().markDirty(VTreeColumn.RESIZABLE);
         }
         this.resizable = newValue;
@@ -548,9 +548,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         int newValue = width;
-        boolean widthChanged = !java.util.Objects.equals(this.width, newValue);
+        boolean widthChanged = this.width != newValue;
         checkWidget();
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        if (this.width != newValue) {
             getValue().markDirty(VTreeColumn.WIDTH);
         }
         if (width < 0)

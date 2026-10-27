@@ -6,9 +6,15 @@
 //
 // Java never says it. A disposed widget is simply not carried any more: it drops out of its
 // parent's child list, its table's item list, its shell's dialog list. So a departure is read out
-// of what arrives, and a widget is forgotten when the last thing describing it lets go.
+// of what arrives, and a widget is forgotten when the last thing describing it lets go - once every
+// frame received so far is applied, since a widget that moves can be let go of by one parent before
+// the other takes it.
+
+import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:swtflutter/src/comm/comm_frame.dart';
 
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/composite.dart';
@@ -29,24 +35,32 @@ VComposite _composite(int id, {required int seq, List<VControl> children = const
       ..style = SWT.NONE
       ..children = [...children];
 
+/// Every frame received so far applied: when the registry settles what was let go of.
+Future<void> _applied() {
+  final applied = Completer<void>();
+  EquoCommBase.whenApplied(applied.complete);
+  return applied.future;
+}
+
 void main() {
   late VRegistry registry;
 
   setUp(() => registry = VRegistry());
 
-  test('a child that stops being carried is forgotten', () {
+  test('a child that stops being carried is forgotten', () async {
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
     expect(registry.size, 2);
 
     registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
 
+    await _applied();
     expect(registry.valueOn('Label/9'), isNull);
     expect(registry.size, 1,
         reason: 'nothing describes that widget any more, and holding its state forever is the '
             'price of a value that outlives what renders it');
   });
 
-  test('what the departed widget was holding goes with it', () {
+  test('what the departed widget was holding goes with it', () async {
     registry.register(_composite(1, seq: 10, children: [
       _composite(2, seq: 10, children: [_label(9, seq: 10)])
     ]));
@@ -54,12 +68,13 @@ void main() {
 
     registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
 
+    await _applied();
     expect(registry.size, 1,
         reason: 'a disposed composite takes its subtree with it, and only the root of that subtree '
             'is ever named in what arrives');
   });
 
-  test('a widget two places refer to survives one of them letting go', () {
+  test('a widget two places refer to survives one of them letting go', () async {
     final shared = _label(9, seq: 10);
     registry.register(_composite(1, seq: 10, children: [shared]));
     registry.register(_composite(2, seq: 10, children: [shared]));
@@ -67,13 +82,14 @@ void main() {
 
     registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
 
+    await _applied();
     expect(registry.valueOn('Label/9'), isNotNull,
         reason: 'a tab body is both a child of its folder and the control of its item; one of them '
             'dropping it is not a disposal');
     expect(registry.size, 3, reason: 'both composites and the widget they share');
   });
 
-  test('a widget that moved on is not forgotten by the parent it left', () {
+  test('a widget that moved on is not forgotten by the parent it left', () async {
     // The reparent, in the order that makes it dangerous: the new parent is described first, and
     // the old parent's update - written earlier, arriving later - still carries the widget gone.
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
@@ -81,12 +97,13 @@ void main() {
     registry.register(_composite(2, seq: 30, children: [_label(9, seq: 30)]));
     registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
 
+    await _applied();
     expect(registry.valueOn('Label/9'), isNotNull,
         reason: 'the widget was described after the frame that stopped carrying it was written, so '
             'that frame is the old parent catching up rather than news of a disposal');
   });
 
-  test('a widget that moved on is forgotten by neither ordering', () {
+  test('a widget that moved on is forgotten by neither ordering', () async {
     // The same reparent the other way round: the old parent lets go first, and the new parent's
     // description arrives after. Forgetting in between is allowed - what may not happen is the
     // widget ending up gone once both have been heard.
@@ -95,11 +112,12 @@ void main() {
     registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
     registry.register(_composite(2, seq: 30, children: [_label(9, seq: 30)]));
 
+    await _applied();
     expect(registry.valueOn('Label/9'), isNotNull);
     expect(registry.size, 3);
   });
 
-  test('re-describing the same tree forgets nothing and counts nothing twice', () {
+  test('re-describing the same tree forgets nothing and counts nothing twice', () async {
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
 
     for (var seq = 20; seq <= 60; seq += 10) {
@@ -112,12 +130,14 @@ void main() {
             ]);
     }
 
+    await _applied();
     expect(registry.size, 2,
         reason: 'a tree described over and over is one tree; growing here would be the leak this '
             'exists to prevent');
     expect(registry.valueOn('Label/9'), isNotNull);
 
     registry.apply('Composite/1', _composite(1, seq: 70).toJson()..['_s'] = 70);
+    await _applied();
     expect(registry.size, 1,
         reason: 'and the count has to still be right after all those repeats, or the widget is '
             'held by a reference nothing can let go of');
@@ -128,18 +148,19 @@ void main() {
   // what it is carrying instead. Without that, every shell ever opened would be kept for the life
   // of the session, along with everything under it.
   group('a holder that is not a widget', () {
-    test('what it stops carrying is forgotten', () {
+    test('what it stops carrying is forgotten', () async {
       registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
       registry.holds('Display/1', [registry.valueOn('Composite/1')!]);
       expect(registry.size, 2);
 
       registry.holds('Display/1', const []);
 
+      await _applied();
       expect(registry.size, 0,
           reason: 'a shell that closes takes its subtree with it; nothing else could have said so');
     });
 
-    test('what it keeps carrying is kept', () {
+    test('what it keeps carrying is kept', () async {
       registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
       registry.register(_composite(2, seq: 10));
       registry.holds('Display/1', [
@@ -149,12 +170,13 @@ void main() {
 
       registry.holds('Display/1', [registry.valueOn('Composite/2')!]);
 
+      await _applied();
       expect(registry.valueOn('Composite/2'), isNotNull);
       expect(registry.valueOn('Composite/1'), isNull);
       expect(registry.size, 1);
     });
 
-    test('it can name a widget before that widget arrives', () {
+    test('it can name a widget before that widget arrives', () async {
       // The display lists a shell in the same update that first describes it, and the shell only
       // reaches the registry when something mounts it.
       registry.holds('Display/1', [_composite(1, seq: 10)]);
@@ -162,13 +184,14 @@ void main() {
 
       registry.holds('Display/1', const []);
 
+      await _applied();
       expect(registry.size, 0,
           reason: 'the interest was recorded before the widget existed and still has to be the '
               'thing that lets go of it');
     });
   });
 
-  test('a widget nothing referred to in the first place is not swept up', () {
+  test('a widget nothing referred to in the first place is not swept up', () async {
     // A shell is registered by the widget that mounts it and named by nothing else. Forgetting it
     // for want of a referrer would empty the screen.
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
@@ -181,6 +204,7 @@ void main() {
             (_label(9, seq: 20).toJson()..['_s'] = 20)
           ]);
 
+    await _applied();
     expect(registry.valueOn('Composite/1'), isNotNull);
     expect(registry.size, 2);
   });

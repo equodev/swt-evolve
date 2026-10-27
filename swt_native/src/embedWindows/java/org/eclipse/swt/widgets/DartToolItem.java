@@ -577,9 +577,9 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._background, newValue)) {
             getValue().markDirty(VToolItem.BACKGROUND);
         }
@@ -669,7 +669,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        if (this.enabled != newValue) {
             getValue().markDirty(VToolItem.ENABLED);
         }
         if (enabled) {
@@ -705,8 +705,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.disabledImage, image)) {
             getValue().markDirty(VToolItem.DISABLED_IMAGE);
         }
@@ -741,9 +741,9 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VToolItem.FOREGROUND);
         }
@@ -777,8 +777,8 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.hotImage, image)) {
             getValue().markDirty(VToolItem.HOT_IMAGE);
         }
@@ -844,7 +844,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (this.selection != newValue) {
             getValue().markDirty(VToolItem.SELECTION);
         }
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
@@ -1007,7 +1007,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     void setWidthInPixels(int width) {
         int newValue = width;
-        if (!java.util.Objects.equals(this.width, newValue)) {
+        if (this.width != newValue) {
             getValue().markDirty(VToolItem.WIDTH);
         }
         if ((getApi().style & SWT.SEPARATOR) == 0)

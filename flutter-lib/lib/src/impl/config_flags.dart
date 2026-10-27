@@ -59,6 +59,12 @@ class ConfigFlags {
   /// True when the OS owns the menu bar (macOS desktop) and this side must not draw one.
   bool? system_menu_bar;
 
+  /// The decimal separator of the JVM's locale, which a desktop client writes numbers with.
+  String? decimal_separator;
+
+  /// The JVM's locale as a language tag, the user's locale on desktop.
+  String? locale;
+
   /// Logical pixels per SWT font point on the host the application runs on, as the Java side
   /// measured its text extents at. Not derivable here: this client's platform is the browser's.
   double? font_point_scale;
@@ -66,6 +72,10 @@ class ConfigFlags {
   /// Transparent margin on each side of a bezelled push or toggle button, configured on the Java
   /// side (`swt.evolve.push_button_margin`). 0 paints the button over its whole bounds.
   int? push_button_margin;
+
+  /// CHECK and RADIO menu items draw no box or ring, only the mark while selected
+  /// (`swt.evolve.transparent_menu_check_box`). Off by default: the theme's box is drawn.
+  bool? transparent_menu_check_box;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

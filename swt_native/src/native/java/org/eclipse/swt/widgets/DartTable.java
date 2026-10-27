@@ -709,25 +709,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void fixSelection(int index, boolean add) {
-        int[] selection = getSelectionIndices();
-        if (selection.length == 0)
-            return;
-        int newCount = 0;
-        boolean fix = false;
-        for (int i = 0; i < selection.length; i++) {
-            if (!add && selection[i] == index) {
-                fix = true;
-            } else {
-                int newIndex = newCount++;
-                selection[newIndex] = selection[i];
-                if (selection[newIndex] >= index) {
-                    selection[newIndex] += add ? 1 : -1;
-                    fix = true;
-                }
-            }
-        }
-        if (fix)
-            select(selection, newCount, true);
+        TableHelper.fixSelection(this, index, add);
     }
 
     int getCheckColumnWidth() {
@@ -1436,26 +1418,7 @@ public class DartTable extends DartComposite implements ITable {
                 if (item != null)
                     item.getImpl().release(false);
             }
-            //fix selection
-            int[] selection = getSelectionIndices();
-            if (selection.length != 0) {
-                int newCount = 0;
-                boolean fix = false;
-                for (int i = 0; i < selection.length; i++) {
-                    if (selection[i] >= start && selection[i] <= end) {
-                        fix = true;
-                    } else {
-                        int newIndex = newCount++;
-                        selection[newIndex] = selection[i];
-                        if (selection[newIndex] > end) {
-                            selection[newIndex] -= numOfItemsRemoved;
-                            fix = true;
-                        }
-                    }
-                }
-                if (fix)
-                    select(selection, newCount, true);
-            }
+            TableHelper.fixSelectionRange(this, start, end);
             //fix items array
             System.arraycopy(items, start + numOfItemsRemoved, items, start, itemCount - (start + numOfItemsRemoved));
             for (int i = itemCount - numOfItemsRemoved; i < itemCount; i++) {
@@ -1665,11 +1628,11 @@ public class DartTable extends DartComposite implements ITable {
 
     void select(int[] indices, int count, boolean clear) {
         int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
-        ;
-        ;
+        ignoreSelect = true;
+        ignoreSelect = false;
         this.selection = newValue;
     }
 
@@ -1783,9 +1746,9 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
@@ -1818,9 +1781,9 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
         if (!java.util.Objects.equals(this._headerForeground, newValue)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }
@@ -1852,7 +1815,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, newValue)) {
+        if (this.headerVisible != newValue) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
         this.headerVisible = newValue;
@@ -1952,7 +1915,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
         this.linesVisible = newValue;
@@ -2415,6 +2378,7 @@ public class DartTable extends DartComposite implements ITable {
     void updateRowCount() {
         getValue().markDirty(VTable.ITEM_COUNT);
         getValue().markDirty(VTable.ITEMS);
+        TableHelper.dropSelectionPast(this, itemCount);
         setRedraw(false);
         ;
         ;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -45,8 +46,10 @@ void main() {
     final seen = <String>[];
     EquoCommService.onRaw('GC/41/drawLine', (p) => seen.add('line:${(p as Map)["x1"]}'));
     EquoCommService.onRaw('GC/41/broken', (_) => throw StateError('broken handler'));
+    final failedLater = Completer<void>();
     EquoCommService.onRaw('GC/41/failsLater', (_) async {
       await Future<void>.delayed(Duration.zero);
+      failedLater.complete();
       throw StateError('broken later');
     });
 
@@ -57,7 +60,9 @@ void main() {
       ['GC/41/failsLater', {}],
       ['GC/41/drawLine', {'x1': 3}],
     ]);
-    await Future.delayed(const Duration(milliseconds: 10));
+    // The entries after failsLater apply once it has thrown, in microtasks a zero timer outlasts.
+    await failedLater.future;
+    await Future<void>.delayed(Duration.zero);
 
     expect(seen, ['line:1', 'line:2', 'line:3']);
   });

@@ -143,6 +143,11 @@ public abstract class FlutterBridge {
         handleWidgetRefresh(Long.toString(id));
     }
 
+    /** Whether the table refresh requests are looked up in holds an entry for this {@link #id}. */
+    public static boolean holdsId(long id) {
+        return widgetsById.containsKey(id);
+    }
+
     /** The live widget or resource with this {@link #id}, or null when there is none. */
     public static Object findById(long id) {
         java.lang.ref.WeakReference<Object> ref = widgetsById.get(id);
@@ -239,7 +244,7 @@ public abstract class FlutterBridge {
         Object value = payload.get("url");
         if (!(value instanceof String)) return null;
         String url = ((String) value).trim();
-        String lower = url.toLowerCase();
+        String lower = url.toLowerCase(java.util.Locale.ROOT);
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
@@ -1396,6 +1401,7 @@ public abstract class FlutterBridge {
     private static final java.util.Set<CompletableFuture<?>> pendingDeferredSends =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    @SuppressWarnings("CollectionUndefinedEquality") // a future is equal only to itself, which is what this set tracks
     private static void trackDeferredSend(CompletableFuture<Void> future) {
         pendingDeferredSends.add(future);
         future.whenComplete((r, e) -> pendingDeferredSends.remove(future));
@@ -1438,6 +1444,8 @@ public abstract class FlutterBridge {
     }
 
     public static void send(DartWidget resource, String event, Object args) {
+        if (drawnByParent(resource))
+            return;
         CommService comm = commFor(resource);
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
@@ -1513,13 +1521,22 @@ public abstract class FlutterBridge {
     }
 
     public void dirty(DartWidget widget) {
-        if (widget == null)
+        if (widget == null || drawnByParent(widget))
             return;
         registerForRefresh(widget);
         synchronized (dirty) {
             dirty.add(widget);
         }
         wakeForDirty();
+    }
+
+    /** A control its parent draws itself, such as a CCombo's field, has no client-side peer: nothing is sent for it. */
+    private static boolean drawnByParent(DartWidget widget) {
+        if (!(widget instanceof DartControl))
+            return false;
+        Composite parent = ((DartControl) widget)._parent();
+        return parent != null && parent.getImpl() instanceof DartComposite
+                && ((DartComposite) parent.getImpl())._drawsItself(((DartControl) widget).getApi());
     }
 
     /**
@@ -1628,6 +1645,29 @@ public abstract class FlutterBridge {
         comm().remove(event(control,"ClientReady"));
     }
 
+    /**
+     * Drops what a disposed {@code widget} left registered: every handler it registered, under
+     * either of its names, and its entry in the table refresh requests are looked up in. The comm is
+     * found as {@link #commFor} found it rather than through the widget's bridge: an Item has none,
+     * and its handlers would otherwise keep it, and all it refers to, reachable.
+     */
+    public static void releaseRegistrations(DartWidget widget) {
+        Object api = widget.getApi();
+        if (api != null) {
+            // Ids are identity hash codes, so another widget may hold this one's id by now.
+            widgetsById.computeIfPresent((long) api.hashCode(), (id, ref) -> {
+                Object held = ref.get();
+                return held == null || held == widget || held == api ? null : ref;
+            });
+        }
+        CommService comm = commFor(widget);
+        if (comm == null) return;
+        String owner = event(widget);
+        comm.removeOwner(owner);
+        String alternate = alternateAddress(owner);
+        if (alternate != null) comm.removeOwner(alternate);
+    }
+
     public void setBounds(DartControl control, Rectangle bounds) {
     }
 
@@ -1660,6 +1700,15 @@ public abstract class FlutterBridge {
     }
 
     public boolean hasFocus(DartControl control) {
+        return false;
+    }
+
+    /**
+     * Makes {@code control} the active control of its shell, sending Deactivate to the chain that was active
+     * and Activate, carrying {@code detail}, to the new one. False when this bridge leaves activation to its
+     * caller.
+     */
+    public boolean activate(DartControl control, int detail) {
         return false;
     }
 

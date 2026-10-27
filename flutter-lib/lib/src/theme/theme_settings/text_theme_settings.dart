@@ -12,6 +12,9 @@ import '../../impl/utils/font_utils.dart';
 import '../../impl/utils/widget_utils.dart';
 import '../../impl/widget_config.dart';
 
+/// The inset between a single-line Text's frame, or its bounds when it has none, and the text.
+const EdgeInsets singleLineTextInset = EdgeInsets.symmetric(horizontal: 3.0);
+
 TextThemeExtension getTextLightTheme({
   required ColorScheme colorScheme,
   required TextTheme textTheme,
@@ -214,7 +217,8 @@ InputDecoration getInputDecoration(
     hintText: state.message,
     hintStyle: TextStyle(color: hintColor),
     isDense: true,
-    contentPadding: widgetTheme.contentPadding,
+    // Without SWT.BORDER there is no frame, so none of the frame's padding either, as natively.
+    contentPadding: isBorderless ? singleLineTextInset : widgetTheme.contentPadding,
     prefixIcon: hasSearchIcon
         ? Icon(Icons.search, color: iconColor, size: iconSize)
         : null,
