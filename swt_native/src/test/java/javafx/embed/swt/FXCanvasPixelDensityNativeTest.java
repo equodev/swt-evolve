@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -202,16 +201,8 @@ class FXCanvasPixelDensityNativeTest {
     }
 
     private int frameArgb(int x, int y) {
-        try {
-            Field pixels = FXCanvas.class.getDeclaredField("framePixels");
-            Field width = FXCanvas.class.getDeclaredField("frameWidth");
-            pixels.setAccessible(true);
-            width.setAccessible(true);
-            synchronized (canvas) {
-                return ((int[]) pixels.get(canvas))[y * width.getInt(canvas) + x];
-            }
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
+        synchronized (canvas) {
+            return canvas.framePixels[y * canvas.frameWidth + x];
         }
     }
 

@@ -98,9 +98,10 @@ public class FXCanvas extends Canvas {
     // Latest rendered frame (ARGB, row-major), produced on the FX thread by a
     // snapshot and consumed on the SWT thread by paintControl. Guarded by 'this'.
     // Its size is in pixels, the canvas's (pWidth/pHeight) in points: they differ on a scaled display.
-    private int[] framePixels;
-    private int frameWidth;
-    private int frameHeight;
+    // Package-private so FXCanvasPixelDensityNativeTest can read the frame's pixels.
+    int[] framePixels;
+    int frameWidth;
+    int frameHeight;
 
     private int pWidth;
     private int pHeight;
