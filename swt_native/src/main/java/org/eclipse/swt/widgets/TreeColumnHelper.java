@@ -49,7 +49,7 @@ public final class TreeColumnHelper {
         String text = Mnemonics.display(column.getText());
         if (!text.isEmpty()) {
             // A tree with several columns draws its headers in capitals.
-            if (tree.columnCount > 1) text = text.toUpperCase();
+            if (tree.columnCount > 1) text = text.toUpperCase(java.util.Locale.ROOT);
             width += measure(text, tree.getApi().getFont());
         }
         Image image = column.getImage();
