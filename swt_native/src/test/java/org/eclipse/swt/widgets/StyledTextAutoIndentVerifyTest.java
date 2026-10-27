@@ -91,10 +91,14 @@ class StyledTextAutoIndentVerifyTest {
         pumpAsync();
     }
 
-    /** JFace's DefaultIndentLineAutoEditStrategy, reduced to what it does to the VerifyEvent. */
+    /**
+     * JFace's DefaultIndentLineAutoEditStrategy, reduced to what it does to the VerifyEvent. The
+     * real one accepts any of the document's legal line delimiters; Enter inserts the widget's
+     * own, {@code \r\n} on Windows, so that is the one this stand-in matches.
+     */
     private void installAutoIndent(StyledText st) {
         st.addVerifyListener(e -> {
-            if (!"\n".equals(e.text)) {
+            if (!st.getLineDelimiter().equals(e.text)) {
                 return;
             }
             String upToCaret = st.getText().substring(0, e.start);
@@ -121,7 +125,7 @@ class StyledTextAutoIndentVerifyTest {
 
         assertThat(st.getText())
                 .as("the auto-indent strategy's rewrite must be the text the document keeps")
-                .isEqualTo("\tint alpha = 1;\n\t");
+                .isEqualTo("\tint alpha = 1;" + st.getLineDelimiter() + "\t");
     }
 
     @Test
@@ -132,11 +136,12 @@ class StyledTextAutoIndentVerifyTest {
 
         pressEnterFromFlutter(st, 15);
 
+        int lineStart = 15 + st.getLineDelimiter().length();
         assertThat(st.getCaretOffset())
-                .as("the new line carries one tab, so the caret belongs after it (17), not "
-                        + "between the newline and the indent (16) — typing on from 16 puts the "
-                        + "user's text at column 0 with the indent stranded after it")
-                .isEqualTo(17);
+                .as("the new line carries one tab, so the caret belongs after it, not between the "
+                        + "line break and the indent — typing on from there puts the user's text at "
+                        + "column 0 with the indent stranded after it")
+                .isEqualTo(lineStart + 1);
     }
 
 }
