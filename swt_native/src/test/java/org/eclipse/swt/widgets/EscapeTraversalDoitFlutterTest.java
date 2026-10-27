@@ -85,6 +85,27 @@ class EscapeTraversalDoitFlutterTest {
     }
 
     @Test
+    @DisplayName("a dialog stays open on Escape in a Canvas with a key listener, and closes on it in a StyledText")
+    void dialogClosesOnEscapeOnlyWhenTheControlLetsItGo() {
+        Shell dialog = new Shell(shell, SWT.DIALOG_TRIM);
+        Canvas canvas = new Canvas(dialog, SWT.NONE);
+        canvas.addListener(SWT.KeyDown, e -> { });
+        StyledText text = new StyledText(dialog, SWT.NONE);
+        java.util.List<String> closes = new ArrayList<>();
+        dialog.addListener(SWT.Close, e -> {
+            closes.add("closed");
+            e.doit = false;
+        });
+        dialog.open();
+
+        pressEscape(canvas);
+        assertThat(closes).isEmpty();
+
+        pressEscape(text);
+        assertThat(closes).containsExactly("closed");
+    }
+
+    @Test
     @DisplayName("a Text is offered Escape with doit=true")
     void textIsOfferedEscapeWithDoitTrue() {
         pressEscape(new Text(shell, SWT.MULTI));
