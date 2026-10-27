@@ -498,6 +498,81 @@ class ShellLifecycleFlutterTest {
     }
 
     @Test
+    void theActiveDialogOfAHiddenShellGoingHandsActivationToTheShellLeftShowing() {
+        Shell other = new Shell(display, SWT.SHELL_TRIM);
+        other.setBounds(400, 120, 300, 200);
+        other.setVisible(true);
+        Shell shown = dialog();
+        shown.open();
+        runLoop();
+        main.setVisible(false);
+        List<Integer> events = new ArrayList<>();
+        other.addListener(SWT.Activate, e -> events.add(e.type));
+        shown.dispose();
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+        assertThat(display.getActiveShell()).isSameAs(other);
+    }
+
+    @Test
+    void theActiveDialogGoingWithItsParentDisposedBeforeTheHandOffHandsActivationToTheShellLeftShowing() {
+        Shell other = new Shell(display, SWT.SHELL_TRIM);
+        other.setBounds(400, 120, 300, 200);
+        other.setVisible(true);
+        Shell shown = dialog();
+        shown.open();
+        runLoop();
+        main.setVisible(false);
+        List<Integer> events = new ArrayList<>();
+        other.addListener(SWT.Activate, e -> events.add(e.type));
+        shown.dispose();
+        main.dispose();
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+        assertThat(display.getActiveShell()).isSameAs(other);
+    }
+
+    @Test
+    void theActiveDialogGoingHandsActivationToItsParentLeftShowing() {
+        Shell parent = new Shell(display, SWT.SHELL_TRIM);
+        parent.setBounds(400, 120, 300, 200);
+        parent.setVisible(true);
+        Shell shown = new Shell(parent, SWT.DIALOG_TRIM);
+        shown.setBounds(450, 160, 200, 100);
+        shown.open();
+        runLoop();
+        main.setVisible(false);
+        List<Integer> events = new ArrayList<>();
+        parent.addListener(SWT.Activate, e -> events.add(e.type));
+        shown.dispose();
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+        assertThat(display.getActiveShell()).isSameAs(parent);
+    }
+
+    @Test
+    void aShellOpenedBeforeTheHandOffRunsKeepsTheActivation() {
+        Shell parent = new Shell(display, SWT.SHELL_TRIM);
+        parent.setBounds(400, 120, 300, 200);
+        parent.setVisible(true);
+        Shell shown = new Shell(parent, SWT.DIALOG_TRIM);
+        shown.setBounds(450, 160, 200, 100);
+        shown.open();
+        runLoop();
+        main.setVisible(false);
+        shown.dispose();
+        Shell next = new Shell(display, SWT.SHELL_TRIM);
+        next.setBounds(100, 400, 300, 200);
+        next.open();
+        List<Integer> events = new ArrayList<>();
+        parent.addListener(SWT.Activate, e -> events.add(e.type));
+        next.addListener(SWT.Deactivate, e -> events.add(e.type));
+        runLoop();
+        assertThat(events).isEmpty();
+        assertThat(display.getActiveShell()).isSameAs(next);
+    }
+
+    @Test
     void maximizingAShownShellTwiceKeepsItMaximizedUntilItIsRestored() {
         Shell shell = dialog();
         shell.open();
