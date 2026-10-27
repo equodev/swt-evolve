@@ -68,6 +68,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   // Tab content area
   final Color tabContentBackgroundColor;
   final Color tabContentBorderColor;
+  // Outline of a bordered folder, in the colour of a Group's frame
+  final Color outlineColor;
   
   // Tab sizes
   final double tabIconSize;
@@ -150,6 +152,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     this.tabSelectedTextStyle,
     required this.tabContentBackgroundColor,
     required this.tabContentBorderColor,
+    required this.outlineColor,
     required this.tabIconSize,
     required this.tabCloseIconSize,
     required this.controlButtonSize,

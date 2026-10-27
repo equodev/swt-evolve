@@ -614,8 +614,8 @@ public class Sizes {
 
     private static int getGroupTitleHeight(DartGroup widget) {
         String text = widget._text();
-        if (text != null && !text.isEmpty()) {
-            Point textSize = GCHelper.textExtent(text, SWT.DRAW_MNEMONIC, widget.getFont());
+        if (!text.isEmpty()) {
+            Point textSize = GCHelper.textExtent(text, SWT.DRAW_MNEMONIC | SWT.DRAW_DELIMITER, widget.getFont());
             return textSize.y + GROUP_TITLE_PADDING * 2;
         }
         return 0;
