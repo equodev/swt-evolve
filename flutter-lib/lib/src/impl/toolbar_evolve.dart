@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/item.dart';
 import '../gen/event.dart';
@@ -15,6 +16,7 @@ import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/focus_report.dart';
 import 'utils/tab_only_focus_node.dart';
 
 VEvent? toolItemGeometryEvent(BuildContext context) {
@@ -33,6 +35,29 @@ VEvent? toolItemGeometryEvent(BuildContext context) {
     ..width = (bottomRight.dx - topLeft.dx).round()
     ..height = (bottomRight.dy - topLeft.dy).round();
 }
+
+/// A tool item's focus stop. [arrow] marks a DROP_DOWN item's arrow, which belongs to the same
+/// item as the stop before it.
+class ToolItemFocusNode extends TabOnlyFocusNode {
+  ToolItemFocusNode({super.debugLabel, this.arrow = false});
+
+  final bool arrow;
+}
+
+/// Down on a focused DROP_DOWN item opens its menu, as on a native ToolBar.
+Widget openMenuOnDown({required bool enabled, required VoidCallback openMenu, required Widget child}) =>
+    Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (!enabled || event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.arrowDown) {
+          return KeyEventResult.ignored;
+        }
+        openMenu();
+        return KeyEventResult.handled;
+      },
+      child: child,
+    );
 
 /// Carries toolbar layout config down to ToolItem children.
 /// [textOnRight]: true when the ToolBar has SWT.RIGHT style (icon left, text right).
@@ -59,6 +84,66 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   /// A click never focuses a ToolBar natively, empty or not.
   @override
   void takeFocusOnPress() {}
+
+  final FocusReport _focusReport = FocusReport();
+  final FocusNode _barNode = FocusNode(debugLabel: 'ToolBar', canRequestFocus: false, skipTraversal: true);
+
+  bool _ownsItem(FocusNode? node) =>
+      node is ToolItemFocusNode && node.context?.findAncestorStateOfType<ToolBarImpl>() == this;
+
+  /// The ToolBar holds the focus while one of its own items does; a control hosted in a separator
+  /// item reports its own focus.
+  void _onFocusChange() {
+    _focusReport.update(_ownsItem(FocusManager.instance.primaryFocus),
+        focusIn: () => widget.sendFocusFocusIn(state, null),
+        focusOut: () => widget.sendFocusFocusOut(state, null));
+  }
+
+  /// With an item focused, Left/Right move to the previous/next enabled item, wrapping around as on
+  /// Windows. The arrow keys never walk the focus out of the bar.
+  KeyEventResult _onItemKey(FocusNode node, KeyEvent event) {
+    final primary = FocusManager.instance.primaryFocus;
+    if (!_ownsItem(primary)) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final int step;
+    if (key == LogicalKeyboardKey.arrowRight) {
+      step = 1;
+    } else if (key == LogicalKeyboardKey.arrowLeft) {
+      step = -1;
+    } else if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.arrowDown) {
+      return KeyEventResult.handled;
+    } else {
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyUpEvent) return KeyEventResult.handled;
+    final direction = StyleBits(state.style).has(SWT.RIGHT_TO_LEFT) ? -step : step;
+    TabOnlyFocusNode.keyMove(() {
+      final stops = _barNode.descendants.where(_ownsItem).cast<ToolItemFocusNode>().toList();
+      var index = stops.indexOf(primary as ToolItemFocusNode);
+      if (primary.arrow && index > 0) index--;
+      for (var i = 1; i < stops.length; i++) {
+        final next = stops[(index + direction * i) % stops.length];
+        if (!next.arrow && next.canRequestFocus) {
+          next.requestFocus();
+          break;
+        }
+      }
+    });
+    return KeyEventResult.handled;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_onFocusChange);
+    _barNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +336,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
                   child: ParentForegroundScope(
                     foreground: state.foreground,
                     font: state.font,
-                    child: bar,
+                    child: Focus(focusNode: _barNode, onKeyEvent: _onItemKey, child: bar),
                   ),
                 ),
               ),
@@ -682,8 +767,8 @@ class _SpecialDropdownWidget extends StatefulWidget {
 }
 
 class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
-  final _buttonFocus = TabOnlyFocusNode(debugLabel: 'ToolItem');
-  final _arrowFocus = TabOnlyFocusNode(debugLabel: 'ToolItem arrow');
+  final _buttonFocus = ToolItemFocusNode(debugLabel: 'ToolItem');
+  final _arrowFocus = ToolItemFocusNode(debugLabel: 'ToolItem arrow', arrow: true);
 
   @override
   void dispose() {
@@ -691,6 +776,9 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     _arrowFocus.dispose();
     super.dispose();
   }
+
+  void _openMenu() =>
+      ToolItemSwt(value: widget.toolItem).sendSelectionOpenMenu(widget.toolItem, toolItemGeometryEvent(context));
 
   @override
   Widget build(BuildContext context) {
@@ -753,13 +841,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
       color: Colors.transparent,
       child: InkWell(
         focusNode: _arrowFocus,
-        onTap: enabled
-            ? () {
-                final itemWidget = ToolItemSwt(value: widget.toolItem);
-                itemWidget.sendSelectionOpenMenu(
-                    widget.toolItem, toolItemGeometryEvent(context));
-              }
-            : null,
+        onTap: enabled ? _openMenu : null,
         splashColor: widgetTheme.specialDropdownTextColor.withOpacity(
           widgetTheme.splashOpacity,
         ),
@@ -793,12 +875,16 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
       ),
     );
 
-    return IntrinsicWidth(
-      child: IntrinsicHeight(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [mainContentButton, separator, dropdownArrow],
+    return openMenuOnDown(
+      enabled: enabled,
+      openMenu: _openMenu,
+      child: IntrinsicWidth(
+        child: IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [mainContentButton, separator, dropdownArrow],
+          ),
         ),
       ),
     );
