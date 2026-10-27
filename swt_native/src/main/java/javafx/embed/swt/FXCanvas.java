@@ -10,7 +10,6 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -69,8 +68,8 @@ import com.sun.javafx.stage.EmbeddedWindow;
  *       canvas is redrawn and {@link #paintControl} blits the cached frame.</li>
  * </ul>
  *
- * <p>v1 scope: a single interactive scene with pointer + key forwarding, resize
- * and lifecycle. HiDPI/popups/IME/DnD/animation-pumping are follow-ups.</p>
+ * <p>v1 scope: a single interactive scene with pointer + key forwarding, resize,
+ * lifecycle and HiDPI rasterisation. Popups/IME/DnD/animation-pumping are follow-ups.</p>
  */
 public class FXCanvas extends Canvas {
 
@@ -98,9 +97,7 @@ public class FXCanvas extends Canvas {
 
     // Latest rendered frame (ARGB, row-major), produced on the FX thread by a
     // snapshot and consumed on the SWT thread by paintControl. Guarded by 'this'.
-    //
-    // Measured in PIXELS, while pWidth/pHeight below are the canvas in POINTS. The scene is
-    // rasterised at the display scale, so on a scaled monitor the two differ by that factor.
+    // Its size is in pixels, the canvas's (pWidth/pHeight) in points: they differ on a scaled display.
     private int[] framePixels;
     private int frameWidth;
     private int frameHeight;
@@ -531,57 +528,9 @@ public class FXCanvas extends Canvas {
         }
     }
 
-    /**
-     * The pixel extent of a canvas dimension given in points, at {@code zoomPercent} (100 = no
-     * scaling).
-     *
-     * <p>Zooms under 100 are treated as 100: they would rasterise the scene smaller than the slot
-     * it is blitted into, throwing away detail to no purpose.</p>
-     */
-    static int pixelExtent(int points, int zoomPercent) {
-        if (zoomPercent <= 100) {
-            return points;
-        }
-        return Math.max(1, (int) Math.round(points * zoomPercent / 100.0));
-    }
-
-    /**
-     * {@code DPIUtil.getNativeDeviceZoom()}, or null before SWT 3.128 added it.
-     */
-    private static final java.lang.reflect.Method NATIVE_DEVICE_ZOOM = nativeDeviceZoomMethod();
-
-    private static java.lang.reflect.Method nativeDeviceZoomMethod() {
-        try {
-            return DPIUtil.class.getMethod("getNativeDeviceZoom");
-        } catch (Throwable notThere) {
-            return null;
-        }
-    }
-
-    /**
-     * The display's scale as a percentage (100 = unscaled). The Evolve display keeps this in step
-     * with the client's real device pixel ratio, unlike {@code Device.getDPI()}, which reports a
-     * fixed 96 here.
-     *
-     * <p>Prefers the device's own ratio to {@link DPIUtil#getDeviceZoom()}, which is that ratio
-     * after {@code swt.autoScale} has rounded it for layout: at the default {@code integer}
-     * setting a 125% display rounds to 100, and rasterising at that would just be the unscaled
-     * frame again. What this raster has to match is the density the render side composites at,
-     * which no layout policy changes. The unrounded accessor only exists from SWT 3.128, hence
-     * the reflective reach and the fall back to the rounded value on older ones.</p>
-     *
-     * <p>Falls back to 100 rather than failing a frame, so a scene still renders where neither
-     * value can be read.</p>
-     */
-    static int deviceZoomPercent() {
-        try {
-            int zoom = NATIVE_DEVICE_ZOOM != null
-                    ? ((Number) NATIVE_DEVICE_ZOOM.invoke(null)).intValue()
-                    : DPIUtil.getDeviceZoom();
-            return zoom > 0 ? zoom : 100;
-        } catch (Throwable unavailable) {
-            return 100;
-        }
+    /** The pixels a canvas extent of {@code points} takes at {@code scale} pixels per point. */
+    static int pixelExtent(int points, double scale) {
+        return scale == 1.0 ? points : Math.max(1, (int) Math.round(points * scale));
     }
 
     /** Renders the current scene synchronously. Must run on the FX thread. */
@@ -611,51 +560,42 @@ public class FXCanvas extends Canvas {
                 root.applyCss();
                 root.layout();
             }
-            // Rasterise at the display's pixel density rather than at the layout size. The blit
-            // lands this in a point-sized slot, which the render side composites at the monitor's
-            // real resolution — so a frame captured at the point size is magnified there, and
-            // everything the scene drew at sub-point precision (glyph stems, shape edges) is
-            // already gone by then. Snapshotting at the pixel extent is what preserves it.
-            //
-            // The scale has to go on the root node, so without one this stays at the layout size.
-            int zoom = root == null ? 100 : deviceZoomPercent();
-            int rw = pixelExtent(w, zoom), rh = pixelExtent(h, zoom);
-            WritableImage img = new WritableImage(rw, rh);
-            if (rw == w && rh == h) {
+            // The blit composites this frame at the pixel density the UI is drawn at, so a frame
+            // taken at the point size would be magnified there and come out soft.
+            double scale = root == null ? 1.0 : dev.equo.swt.Config.rasterScale();
+            int pw = pixelExtent(w, scale), ph = pixelExtent(h, scale);
+            WritableImage img = new WritableImage(pw, ph);
+            if (pw == w && ph == h) {
                 s.snapshot(img);
             } else {
-                // Scene.snapshot() has no parameterised form, hence the root node. The viewport is
-                // in post-transform space and pins the result to the canvas rather than to the
-                // root's bounds, which an effect or a negatively-placed child can push outside it.
+                // Scene.snapshot() takes no transform, so the root is snapshotted instead, with the
+                // scene's fill behind it and a viewport (post-transform) pinned to the canvas.
                 SnapshotParameters params = new SnapshotParameters();
-                params.setTransform(new Scale(zoom / 100.0, zoom / 100.0));
-                params.setViewport(new Rectangle2D(0, 0, rw, rh));
+                params.setTransform(new Scale(scale, scale));
+                params.setViewport(new Rectangle2D(0, 0, pw, ph));
                 params.setFill(s.getFill());
                 root.snapshot(params, img);
             }
-            int[] px = new int[rw * rh];
-            img.getPixelReader().getPixels(0, 0, rw, rh,
-                    PixelFormat.getIntArgbInstance(), px, 0, rw);
-            // From here the frame is described in pixels; the canvas stays in points.
-            w = rw;
-            h = rh;
+            int[] px = new int[pw * ph];
+            img.getPixelReader().getPixels(0, 0, pw, ph,
+                    PixelFormat.getIntArgbInstance(), px, 0, pw);
             // Only repaint when the frame actually changed. Repainting on every
             // render would spam the SWT canvas with Paint events (and re-blits)
             // even when nothing on screen differs.
             boolean changed;
             synchronized (this) {
-                changed = frameWidth != w || frameHeight != h
+                changed = frameWidth != pw || frameHeight != ph
                         || framePixels == null || !java.util.Arrays.equals(framePixels, px);
                 if (changed) {
                     framePixels = px;
-                    frameWidth = w;
-                    frameHeight = h;
+                    frameWidth = pw;
+                    frameHeight = ph;
                 }
             }
             if (!changed) {
                 return;
             }
-            debugFrame(px, w, h);
+            debugFrame(px, pw, ph);
         } catch (Throwable t) {
             // A failed render should never take down the host app.
             System.err.println("[FXCanvas] snapshot failed: " + t);

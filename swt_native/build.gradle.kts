@@ -198,12 +198,6 @@ dependencies {
         compileOnly("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
         compileOnly("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
         compileOnly("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
-        // compileOnly keeps the FX jars out of the platform jars; it also leaves them off the
-        // test classpath, where FXCanvas then cannot be loaded at all. Tests get them too — the
-        // flattening above is unaffected, and no test starts the FX toolkit, so no native loads.
-        testImplementation("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
-        testImplementation("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
-        testImplementation("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
     }
 }
 
