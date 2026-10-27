@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
+import '../gen/event.dart';
 import '../gen/menu.dart';
 import '../gen/widget.dart';
 import '../gen/shell.dart';
@@ -18,6 +19,7 @@ import 'menu_evolve.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
 import 'utils/key_edit_order.dart';
+import 'focus_requests.dart';
 import 'utils/traversal_veto_scope.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
@@ -42,6 +44,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   void initState() {
     super.initState();
     _display = widget.value;
+    FocusRequests.instance.holderFromDisplay(_display.focusHolderId);
     _publishHoldings();
     applySystemMenu(_heldSystemMenu());
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
@@ -98,6 +101,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (OpenMenus.any) return false;
     final int id = widget.value.id ?? 0;
     if (openListClaimsKey(event)) return false;
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.contextMenu) {
+      EquoCommService.sendPayload('Display/$id/MenuKey', VEvent());
+      return false;
+    }
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
       if (compositionOwnsKey(event.character ?? '')) return false;
@@ -132,6 +139,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       applyConfigFlags(updated.config);
       _display = updated;
+      FocusRequests.instance.holderFromDisplay(updated.focusHolderId);
       _publishHoldings();
       applySystemMenu(_heldSystemMenu());
       if (mounted) setState(() {});

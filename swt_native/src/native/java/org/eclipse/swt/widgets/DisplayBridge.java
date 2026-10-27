@@ -32,12 +32,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
     /** The client's answer to a focus request, sent as it receives the request: {@code {seq}}. */
     private static final String FOCUS_SEEN_CHANNEL = "swt.evolve.focus.seen";
+    /** Display-wide: which control Java holds as its focus control, without moving the client's. */
+    private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
 
     protected DartDisplay forDisplay;
     private DartControl focused = null;
     /** Last control the client was asked to focus, so one focus move is not sent twice: a single
      *  {@code Control.forceFocus()} reaches {@link #setFocus} again through the shell's restoreFocus. */
     private DartControl focusRequested = null;
+    /** Last control the client was told holds the focus, on {@link #FOCUS_HOLDER_CHANNEL} or in the Display state. */
+    private DartControl focusHolderSent = null;
 
     /**
      * The control the client was last asked to focus and has not reported back yet, or null.
@@ -398,6 +402,20 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyDown, ev));
         comm().on("Display/" + displayId + "/Key/KeyUp", Event.class,
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyUp, ev));
+        // The Menu key has no SWT key code: natively it reaches the control as a context-menu
+        // request, never as a KeyDown.
+        comm().on("Display/" + displayId + "/MenuKey", Event.class, ev -> {
+            Display api = display.getApi();
+            if (api == null || api.isDisposed())
+                return;
+            api.asyncExec(() -> {
+                if (api.isDisposed())
+                    return;
+                Control focus = api.getFocusControl();
+                if (focus != null && !focus.isDisposed() && focus.getImpl() instanceof DartControl)
+                    ControlHelper.showMenuFromKeyboard((DartControl) focus.getImpl());
+            });
+        });
     }
 
     private void routeKeyToFocused(DartDisplay display, int type, Event ev) {
@@ -628,6 +646,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             vd.activeShellId = publishedActiveShell = activeShellId();
             vd.mainShellId = publishedMainShell = mainShellId(display);
             vd.windowedShellIds = windowedShellIds();
+            vd.focusHolderId = liveId(focusHolderSent = focused);
             serializeAndSend("Display/" + vd.id, vd);
             syncShellPopups();
             syncDisplayWindow(display, leftOwnWindow);
@@ -1475,9 +1494,37 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             requestActivatedShellFocus(widget);
         else
             requestClientFocus(widget, leavesCCombo);
+        publishFocusHolder(widget);
         if (forDisplay != null)
             forDisplay.checkFocus();
         return true;
+    }
+
+    /**
+     * Tells the client which control is the focus control. A focus Java takes on its own does not move
+     * the client's keyboard focus for an ordinary control (see {@link #requestClientFocus}), yet SWT
+     * traverses from the focus control, so the client starts Tab from the one named here whenever its
+     * own focus is not inside it. The Display state carries it too, so nothing is sent when a Display
+     * push already did. Queued like a focus request: the control may not have been sent yet.
+     */
+    private static long liveId(DartControl widget) {
+        Control api = widget == null ? null : widget.getApi();
+        return api == null || api.isDisposed() ? 0 : FlutterBridge.id(widget);
+    }
+
+    private void publishFocusHolder(DartControl widget) {
+        Control api = widget == null ? null : widget.getApi();
+        if (api == null || api.isDisposed() || widget == focusHolderSent)
+            return;
+        focusHolderSent = widget;
+        long id = FlutterBridge.id(widget);
+        FlutterBridge.update().whenComplete((result, error) -> {
+            try {
+                serializeAndSend(FOCUS_HOLDER_CHANNEL, dev.equo.swt.Java8.map("id", id));
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**

@@ -50,6 +50,7 @@ import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
+import 'src/impl/utils/traversal_veto_scope.dart';
 
 /// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
 Future<void> _loadWebFallbackFonts() async {
@@ -550,6 +551,7 @@ class EvolveApp extends StatelessWidget {
           darkTheme: darkTheme,
           themeMode: effectiveThemeMode,
           debugShowCheckedModeBanner: false,
+          actions: {...WidgetsApp.defaultActions, ...TraversalVetoScope.appActions},
           builder: (ctx, navigator) => SwtZoomScale(child: navigator!),
           home: Scaffold(
             backgroundColor: effectiveThemeMode == ThemeMode.dark

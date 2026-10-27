@@ -18,6 +18,7 @@ import '../impl/color_utils.dart';
 import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/font_utils.dart';
+import 'utils/viewport_clip.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
@@ -592,7 +593,6 @@ class _CellHoverZoom extends StatefulWidget {
 class _CellHoverZoomState extends State<_CellHoverZoom> {
   final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
-  ScrollableState? _scrollable;
 
   bool get _showing => _entry != null;
 
@@ -615,7 +615,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
   void _remove() {
     _entry?.remove();
     _entry = null;
-    _scrollable = null;
   }
 
   void _show() {
@@ -624,7 +623,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
     final box = context.findRenderObject() as RenderBox?;
     if (overlay == null || box == null || !box.hasSize) return;
 
-    _scrollable = Scrollable.maybeOf(context);
     final entry = OverlayEntry(builder: (_) => _buildCopy());
     overlay.insert(entry);
     setState(() => _entry = entry);
@@ -640,8 +638,9 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       alignment: widget.alignment,
       child: widget.child,
     );
-    final viewport = _viewportRect(cell);
-    if (viewport != null) copy = ClipRect(clipper: _FixedRect(viewport), child: copy);
+    // Keeps a copy anchored to a half-scrolled row from painting over the header.
+    final viewport = visibleViewportRect(context, cell);
+    if (viewport != null) copy = ClipRect(clipper: FixedRectClipper(viewport), child: copy);
 
     return Positioned(
       width: cell.size.width,
@@ -662,16 +661,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
         ),
       ),
     );
-  }
-
-  /// The table body's visible rect, in the cell's own coordinates -- what keeps a copy anchored to a
-  /// half-scrolled row from painting over the header. Null while the cell is not inside a viewport.
-  Rect? _viewportRect(RenderBox cell) {
-    final box = _scrollable?.context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return null;
-    // Back through the cell's transform rather than subtracting view positions, which at any zoom
-    // are in other pixels than the size they are combined with.
-    return cell.globalToLocal(box.localToGlobal(Offset.zero)) & box.size;
   }
 
   void _hide() {
@@ -697,18 +686,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       ),
     );
   }
-}
-
-class _FixedRect extends CustomClipper<Rect> {
-  const _FixedRect(this.rect);
-
-  final Rect rect;
-
-  @override
-  Rect getClip(Size size) => rect;
-
-  @override
-  bool shouldReclip(_FixedRect oldClipper) => oldClipper.rect != rect;
 }
 
 /// Animates from the cell's own size up to [scale] as soon as it is mounted, so the overlay copy
