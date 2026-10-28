@@ -1345,7 +1345,9 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setAlignment(int align) {
         getValue().markDirty(VCCombo.ALIGNMENT);
         checkWidget();
-        CComboHelper.setAlignment(this, align);
+        int styleWithoutAlign = getStyle() & ~(SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+        createText(styleWithoutAlign | align);
+        this.alignment = align;
     }
 
     @Override
