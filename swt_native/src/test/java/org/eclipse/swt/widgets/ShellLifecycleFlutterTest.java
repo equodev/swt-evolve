@@ -435,17 +435,19 @@ class ShellLifecycleFlutterTest {
     }
 
     @Test
-    void aShowListenerThatHidesTheActiveShellLeavesItUndeactivated() {
+    void aShowListenerThatHidesTheActiveShellDeactivatesItOnce() {
         Shell first = dialog();
         first.open();
         runLoop();
-        List<Integer> events = new ArrayList<>();
-        first.addListener(SWT.Deactivate, e -> events.add(e.type));
+        List<String> events = new ArrayList<>();
+        first.addListener(SWT.Deactivate, e -> events.add("first.Deactivate"));
         Shell second = dialog();
         second.addListener(SWT.Show, e -> first.setVisible(false));
+        second.addListener(SWT.Activate, e -> events.add("second.Activate"));
         second.open();
         runLoop();
-        assertThat(events).isEmpty();
+        // The hide deactivates it, as natively; the open that follows finds it hidden and leaves it be.
+        assertThat(events).containsExactly("first.Deactivate", "second.Activate");
     }
 
     @Test
