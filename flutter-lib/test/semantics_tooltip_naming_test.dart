@@ -24,17 +24,8 @@ const List<int> _pngBytes = <int>[
   0x42, 0x60, 0x82,
 ];
 
-/// The accessible name Flutter Web gives a node, mirroring the engine's
-/// `computeDomSemanticsLabel`: the tooltip, then a line break, then label and value.
-/// A locator written against a visible caption matches this string, not the label alone.
-String? domAccessibleName(SemanticsData d) {
-  final labelValue = [d.label, d.value]
-      .where((s) => s.trim().isNotEmpty)
-      .join(' ');
-  final tooltip = d.tooltip.isEmpty ? null : d.tooltip;
-  if (tooltip == null) return labelValue.isEmpty ? null : labelValue;
-  return labelValue.isEmpty ? tooltip : '$tooltip\n$labelValue';
-}
+// Flutter Web names a node "tooltip\nlabel" and describes it by its hint; the engine-level name
+// is checked by the E2E ToolBarTest.
 
 SemanticsData _byIdentifier(WidgetTester tester, String identifier) {
   SemanticsData? found;
@@ -86,7 +77,10 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(domAccessibleName(_byIdentifier(tester, 'ToolItem/201')), 'Show List');
+    final data = _byIdentifier(tester, 'ToolItem/201');
+    expect(data.label, '');
+    expect(data.tooltip, 'Show List');
+    expect(data.hint, '');
     handle.dispose();
   });
 
@@ -116,7 +110,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final data = _byIdentifier(tester, 'Button/301');
-    expect(domAccessibleName(data), 'Files opened in editors');
+    expect(data.label, 'Files opened in editors');
+    expect(data.tooltip, '');
     expect(data.hint, 'Only workspace files (in projects) are supported',
         reason: 'the tooltip stays reachable as the description');
     handle.dispose();
@@ -153,7 +148,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final data = _byIdentifier(tester, 'ToolItem/211');
-    expect(domAccessibleName(data), 'Search');
+    expect(data.label, 'Search');
+    expect(data.tooltip, '');
     expect(data.hint, 'Search the workspace');
     handle.dispose();
   });
