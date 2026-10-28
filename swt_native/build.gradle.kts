@@ -488,11 +488,12 @@ tasks.withType<JavaCompile> {
         else -> {
             sourceCompatibility = targetJavaRelease.toString()
             targetCompatibility = targetJavaRelease.toString()
-            // -source/-target compiles against THIS JDK's API, so javac warns it cannot verify the
-            // result runs on the older one. checkJavaApiLevel is what actually verifies it.
-            options.compilerArgs.add("-Xlint:-options")
         }
     }
+    // JDK 21's javac warns about both ways: release 8 is obsolete, and -source/-target compiles
+    // against THIS JDK's API, so it cannot verify the result runs on the older one.
+    // checkJavaApiLevel is what actually verifies it.
+    if (targetJavaRelease != null) options.compilerArgs.add("-Xlint:-options")
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.

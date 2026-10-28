@@ -2504,6 +2504,12 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
     int scrollOffset;
 
     int columnlessWidth;

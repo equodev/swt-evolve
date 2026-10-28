@@ -441,6 +441,7 @@ public interface IBrowser extends IComposite, ImplBrowser {
      * @deprecated SWT.MOZILLA is deprecated and XULRunner as a browser renderer is no longer supported.
      */
     @Deprecated
+    @SuppressWarnings("removal")
     Object getWebBrowser();
 
     /**

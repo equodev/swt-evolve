@@ -149,6 +149,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.1
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }

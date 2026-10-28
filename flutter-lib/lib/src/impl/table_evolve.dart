@@ -220,12 +220,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final items = state.items;
     final columns = state.columns;
     final editors = state.editors;
+    final ownerDrawItemHeight = state.ownerDrawItemHeight;
     super.didUpdateWidget(oldWidget);
     // Use new data from Java if present; fall back to preserved ones only when
     // the serializer omitted the field (null) due to an unrelated dirty() flush.
     state.items = state.items ?? items;
     state.columns = state.columns ?? columns;
     state.editors = state.editors ?? editors;
+    // The owner-draw row height (VTable.ownerDrawItemHeight) is a dirty-gated computed property, so
+    // a later full push omits it; keep the last value or the rows snap back to one font line.
+    state.ownerDrawItemHeight = state.ownerDrawItemHeight ?? ownerDrawItemHeight;
   }
 
   @override
@@ -306,7 +310,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
       ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
-    _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
+    // An owner-drawing Table (CDT's project-template chooser) paints a bold title + description —
+    // two lines — into each row and asks for that height in SWT.MeasureItem; it travels as
+    // ownerDrawItemHeight. A row sized to the font alone clips it, so take the taller of the two.
+    _cachedRowHeight = math.max(
+        calculateRowHeight(rowTextStyle, widgetTheme),
+        (state.ownerDrawItemHeight ?? 0).toDouble());
     double headerOff = frameBorderWidth(widgetTheme);
     if (showHeader) {
       final headerTextStyle = getTextStyle(

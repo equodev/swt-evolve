@@ -181,6 +181,33 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         assertThat(measured).isNotEmpty().doesNotContainNull();
     }
 
+    /**
+     * An owner-drawing Tree shares one row height, known only from the height it asks for in
+     * SWT.MeasureItem. Capturing a cell must keep that height ({@code ownerDrawItemHeight}, sent as
+     * {@code VTree.ownerDrawItemHeight}); discarding it leaves every row one font line tall and the
+     * owner drawing overruns the next row — the Table bug's twin.
+     */
+    @Test
+    void measureItem_height_isKept_soTheRowFitsTheDrawing() {
+        Tree tree = tree();
+        DartTree treeImpl = ownerDrawnTree(tree, 2);
+        when(treeImpl.hooks(SWT.MeasureItem)).thenReturn(true);
+        // The app asks for a 58px row — a bold title above a description, vs the 20px font line.
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            event.height = 58;
+            return null;
+        }).when(treeImpl).sendEvent(eq(SWT.MeasureItem), any(Event.class));
+        doAnswer(invocation -> null).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+        item.setText(new String[] { "Renesas RA C/C++ Project", "An FSP solution for Renesas RA" });
+
+        serialize(item);
+
+        assertThat(treeImpl.ownerDrawItemHeight).isEqualTo(58);
+    }
+
     private Image solidImage(int width, int height) {
         return new Image(device(), new ImageData(width, height, 24, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF)));
     }
