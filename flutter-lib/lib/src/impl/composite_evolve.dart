@@ -105,7 +105,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
         // composite, not with an ancestor further up.
         if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
-        if (!impl.forwardsControlMouseDown) return;
+        if (!impl.forwardsMouseDownOf(e)) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
@@ -125,7 +125,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           // own area -- the gap a container with a lazily-built context menu falls into.
           // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
           if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
-            impl.handleMenuDetect(e.pointer, e.localPosition);
+            impl.handleMenuDetect(e);
           }
         }
       },

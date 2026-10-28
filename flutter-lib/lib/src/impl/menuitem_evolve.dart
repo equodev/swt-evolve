@@ -467,7 +467,12 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   late final _CascadeMenuController _menuController = _CascadeMenuController(() =>
       _isHovered ||
       _isPressed ||
-      HardwareKeyboard.instance.logicalKeysPressed.any(_cascadeOpenKeys.contains));
+      (_keyDownHere != null &&
+          _cascadeOpenKeys.contains(_keyDownHere) &&
+          HardwareKeyboard.instance.isLogicalKeyPressed(_keyDownHere!)));
+  // The last key pressed while this row was current. An opening key still held from before (the
+  // Enter that opened the menu this row is first in) does not open its submenu.
+  LogicalKeyboardKey? _keyDownHere;
   late final FocusNode _buttonFocusNode =
       FocusNode(debugLabel: 'Cascade', onKeyEvent: _enterOpenSubmenu);
   final FocusNode _submenuFocusNode = FocusNode(debugLabel: 'Cascade.menu');
@@ -550,10 +555,30 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
 
   // Natively a hover-opened submenu takes Up/Down; one the keyboard opened already holds the focus.
   KeyEventResult _enterOpenSubmenu(FocusNode node, KeyEvent event) {
+    final key = event.logicalKey;
+    if (event is KeyDownEvent) _keyDownHere = key;
+    // Flutter's own Escape on a submenu button closes every menu up to the root.
+    if (event is KeyDownEvent && key == LogicalKeyboardKey.escape) {
+      if (_menuController.isOpen) {
+        _menuController.close();
+      } else {
+        MenuMnemonics.closeMenuOf(context);
+      }
+      return KeyEventResult.handled;
+    }
+    if (event is KeyDownEvent && !_menuController.isOpen && widget.isEnabled &&
+        (MenuMnemonics.of(context)?.activeBar ?? false) &&
+        (key == LogicalKeyboardKey.arrowDown ||
+            key == LogicalKeyboardKey.arrowUp ||
+            key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.numpadEnter ||
+            key == LogicalKeyboardKey.space)) {
+      _openFromMnemonic();
+      return KeyEventResult.handled;
+    }
     if (event is KeyUpEvent || !_menuController.isOpen || !_isHovered) {
       return KeyEventResult.ignored;
     }
-    final key = event.logicalKey;
     if (key != LogicalKeyboardKey.arrowDown && key != LogicalKeyboardKey.arrowUp) {
       return KeyEventResult.ignored;
     }

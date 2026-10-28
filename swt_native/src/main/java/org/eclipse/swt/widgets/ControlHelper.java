@@ -150,6 +150,7 @@ public class ControlHelper {
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        MenuHelper.noteKeyDown(control.getApi(), key);
         if (AcceleratorHelper.translate(control.getApi(), key))
             return new RoutedKey(false, false, false);
         int detail = traverseDetail(key.keyCode, key.stateMask);
@@ -196,9 +197,21 @@ public class ControlHelper {
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
         rememberTypingKey(control, key);
-        if (key.doit && !control.isDisposed())
+        if (key.doit && !control.isDisposed()) {
             applyPlatformKey(control, key);
+            // The key's own action (a Spinner step's Verify, say) may have disposed the control.
+            if (!control.isDisposed())
+                MenuHelper.keyDownDelivered(control.getApi(), key);
+        }
         return new RoutedKey(true, key.doit, traverseDoit);
+    }
+
+    /** Delivers a KeyUp to the focused control; the release of a lone Alt then activates the menu bar. */
+    public static void routeKeyUp(DartControl control, Event key) {
+        key.doit = true;
+        control.sendEvent(SWT.KeyUp, key);
+        if (!control.isDisposed())
+            MenuHelper.keyUpDelivered(control.getApi(), key);
     }
 
     /**
@@ -447,7 +460,7 @@ public class ControlHelper {
     }
 
     /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */
-    private static boolean isMnemonicTrigger(Event ev) {
+    static boolean isMnemonicTrigger(Event ev) {
         if ((ev.stateMask & SWT.ALT) == 0)
             return false;
         if ((ev.stateMask & (SWT.CTRL | SWT.COMMAND)) != 0)
@@ -885,6 +898,7 @@ public class ControlHelper {
      * a microtask after the press, behind the MouseDown it caused.
      */
     public static void pressed(DartControl control, Event event) {
+        MenuHelper.forgetLoneAlt(control.getDisplay());
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;

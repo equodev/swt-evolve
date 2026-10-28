@@ -84,8 +84,9 @@ public class MacLauncherSplashNativeTest {
             NSRect bounds = new NSRect();
             bounds.width = 120;
             bounds.height = 80;
+            // NSWindowStyleMaskBorderless (0): SWT named it NSBorderlessWindowMask until 3.134, and no name exists in both.
             NSWindow window = ((NSWindow) new NSWindow().alloc())
-                    .initWithContentRect(bounds, OS.NSWindowStyleMaskBorderless, OS.NSBackingStoreBuffered, false);
+                    .initWithContentRect(bounds, 0, OS.NSBackingStoreBuffered, false);
             window.orderFront(null);
             // The launcher pumps its splash onto the screen while the framework starts.
             NSRunLoop.currentRunLoop().runMode(OS.NSDefaultRunLoopMode, NSDate.dateWithTimeIntervalSinceNow(0.2));

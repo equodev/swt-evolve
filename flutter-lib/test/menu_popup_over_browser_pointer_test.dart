@@ -26,6 +26,8 @@ import 'package:swtflutter/src/impl/decorations_align.dart';
 import 'package:swtflutter/src/impl/utils/pointer.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'support/menu_shown_ack.dart';
+
 const double _viewportWidth = 800;
 const double _viewportHeight = 400;
 
@@ -137,6 +139,7 @@ void main() {
 
     await tester.tap(find.text('File'));
     await tester.pumpAndSettle();
+    await ackMenuShown(tester, 300);
 
     _expectEntryCovered('Exit');
   });

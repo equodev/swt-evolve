@@ -5,6 +5,9 @@ import dev.equo.swt.FlutterBridge;
 
 public class MenuHelper {
 
+    /** Display data set while the last KeyDown was Alt and no other key has been pressed since. */
+    private static final String ALT_ALONE = "org.eclipse.swt.internal.menuBarAltAlone";
+
     static void hookEvents(DartMenu menu) {
         FlutterBridge.on(menu, "Help", "Help", e -> {
             menu.getDisplay().asyncExec(() -> {
@@ -56,6 +59,56 @@ public class MenuHelper {
         api.style = (api.style & ~flags) | wanted;
         menu.getValue().markDirty(VMenu.STYLE);
         menu.getValue().markDirty(VMenu.ORIENTATION);
+    }
+
+    /** Notes a KeyDown for the lone Alt, which activates the menu bar when it is released before any other key. */
+    static void noteKeyDown(Control control, Event key) {
+        control.getDisplay().setData(ALT_ALONE, key.keyCode == SWT.ALT ? Boolean.TRUE : null);
+    }
+
+    /** A mouse press or the shell losing the keyboard ends a lone Alt, so its release does not activate the bar. */
+    static void forgetLoneAlt(Display display) {
+        display.setData(ALT_ALONE, null);
+    }
+
+    /**
+     * Once its KeyDown went through unvetoed, F10 with no modifier activates the menu bar and an
+     * Alt+letter no control took opens the menu bar title carrying it, as on Windows and GTK. Cocoa
+     * has neither: its menu bar is the system's, and Option+letter types a character.
+     */
+    static void keyDownDelivered(Control control, Event key) {
+        if ("cocoa".equals(DisplayHelper.keyboardPlatform(control.getDisplay())))
+            return;
+        if (key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == 0)
+            activateMenuBar(control);
+        else if (ControlHelper.isMnemonicTrigger(key))
+            MnemonicHelper.openMenuBarTitle(control, (char) key.keyCode);
+    }
+
+    /**
+     * The release of a lone Alt activates the menu bar on Windows, unless a KeyUp listener vetoed it.
+     * GTK and Cocoa do nothing on it.
+     */
+    static void keyUpDelivered(Control control, Event key) {
+        Display display = control.getDisplay();
+        if (key.keyCode != SWT.ALT || display.getData(ALT_ALONE) == null)
+            return;
+        display.setData(ALT_ALONE, null);
+        if (key.doit && "win32".equals(DisplayHelper.keyboardPlatform(display)))
+            activateMenuBar(control);
+    }
+
+    /** The client takes the keyboard into the shell's menu bar, with its first title current. */
+    private static void activateMenuBar(Control control) {
+        Menu bar = usableMenuBar(control);
+        if (bar != null)
+            FlutterBridge.sendEvent(bar.getImpl(), "activate");
+    }
+
+    /** The menu bar of the control's shell when the keyboard can enter it: enabled, with a title. */
+    static Menu usableMenuBar(Control control) {
+        Menu bar = control.getShell().getMenuBar();
+        return bar != null && bar.isEnabled() && bar.getItemCount() > 0 ? bar : null;
     }
 
     static MenuItem[] removeItem(MenuItem[] items, MenuItem item) {
