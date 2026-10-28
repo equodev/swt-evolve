@@ -247,6 +247,8 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
     void measureItem_height_isKept_soTheRowFitsTheDrawing() {
         Table table = table();
         DartTable tableImpl = ownerDrawnTable(table, 2);
+        VTable value = new VTable(tableImpl);
+        when(tableImpl.getValue()).thenReturn(value);
         when(tableImpl.hooks(SWT.MeasureItem)).thenReturn(true);
         // The app asks for a 58px row — a bold title above a description, vs the 20px font line.
         doAnswer(invocation -> {
@@ -262,6 +264,7 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
         serialize(item);
 
         assertThat(tableImpl.ownerDrawItemHeight).isEqualTo(58);
+        assertThat(value.changedKeys()).as("the raised height is sent to the client").contains(VTable.OWNER_DRAW_ITEM_HEIGHT);
     }
 
     /**
@@ -273,6 +276,8 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
     void measureItem_height_onlyGrows_soAShorterLaterMeasureKeepsTheRow() {
         Table table = table();
         DartTable tableImpl = ownerDrawnTable(table, 2);
+        VTable value = new VTable(tableImpl);
+        when(tableImpl.getValue()).thenReturn(value);
         when(tableImpl.hooks(SWT.MeasureItem)).thenReturn(true);
         int[] asked = { 58 };
         doAnswer(invocation -> {
@@ -287,11 +292,13 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
 
         serialize(item);
         assertThat(tableImpl.ownerDrawItemHeight).isEqualTo(58);
+        value.clearDirty();
 
         // A later, shorter measure (still taller than the 20px font line) must not lower the row.
         asked[0] = 30;
         serialize(item);
         assertThat(tableImpl.ownerDrawItemHeight).isEqualTo(58);
+        assertThat(value.changedKeys()).as("an unchanged height is not sent again").doesNotContain(VTable.OWNER_DRAW_ITEM_HEIGHT);
     }
 
     private Image solidImage(int width, int height) {
