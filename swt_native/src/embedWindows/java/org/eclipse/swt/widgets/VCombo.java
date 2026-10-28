@@ -18,6 +18,14 @@ public class VCombo extends VComposite {
         super(impl);
     }
 
+    public int getCaretPosition() {
+        return ((DartCombo) impl).getCaretPosition();
+    }
+
+    public void setCaretPosition(int value) {
+        ((DartCombo) impl).caretPosition = value;
+    }
+
     public String[] getItems() {
         String[] values = ((DartCombo) impl).items;
         if (values == null)
@@ -76,6 +84,8 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).visibleCount = value;
     }
 
+    public static final String CARET_POSITION = "caretPosition";
+
     public static final String ITEMS = "items";
 
     public static final String LIST_VISIBLE = "listVisible";
@@ -85,6 +95,9 @@ public class VCombo extends VComposite {
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
+            case "caretPosition":
+                Serializer.writeKeyValue(writer, "caretPosition", getCaretPosition());
+                return;
             case "items":
                 Serializer.writeKeyValue(writer, "items", getItems());
                 return;

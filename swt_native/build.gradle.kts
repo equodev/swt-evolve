@@ -2,11 +2,13 @@ import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
+import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     java
     `java-library`
     jacoco
+    alias(libs.plugins.errorprone)
 }
 
 val eclipseUrl: String by project
@@ -306,28 +308,67 @@ sourceSets {
             if (currentOs != "windows") exclude("**/Win32*NativeTest.java")
             // ImageDataAtSizeProvider and the at-size machinery it drives only exist from 3.132
             // (absent in 3.131), so the test covering that path cannot compile against older SWT.
+            // Older releases do not read SVG either.
             val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
-            if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+            if (swtMinorNative < 132) {
+                exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+                exclude("org/eclipse/swt/graphics/ImageAtSizeDrawNativeTest.java")
+                exclude("org/eclipse/swt/graphics/ImageSvgNativeTest.java")
+            }
+            // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
+            // The widget tracker is told of each widget from 3.130.
+            if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
+            // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
+            if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
+            // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
             // tests covering that constructor cannot compile against older SWT.
             if (swtMinorNative < 129) {
                 exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java")
                 exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
+                exclude("org/eclipse/swt/graphics/ImageGcDrawerEqualityNativeTest.java")
             }
             // The committed WorkbenchTree bench fixture is generated against the DEFAULT SWT and
             // bakes in APIs newer than the oldest supported versions (e.g.
             // CTabFolder.setSelectionBarThickness, added in 3.121). The bench suite is tagged
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
-            if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            if (swtMinorNative < 121) {
+                exclude("dev/equo/swt/bench/**")
+                // MessageBox.setButtonLabels was added in 3.121.
+                exclude("org/eclipse/swt/widgets/MessageBoxButtonLabelsNativeTest.java")
+            }
+            // Image.getImageData(int zoom) was added in 3.106.
+            if (swtMinorNative < 106) {
+                exclude("org/eclipse/swt/graphics/ImageProviderZoomNativeTest.java")
+                exclude("org/eclipse/swt/graphics/ImageDisposeAndBackgroundNativeTest.java")
+                exclude("org/eclipse/swt/graphics/GCRasterScaleNativeTest.java")
+            }
+            // These assert what SWT 3.134's BusyIndicator does when the display goes away; earlier releases differ.
+            if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
             // TextLayout.setFixedLineMetrics was added in 3.125.
             if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
+            // FileDialog.openDialog() and DirectoryDialog.openDialog() were added in 3.126; open(),
+            // which the rest of the dialog tests go through, is in every release.
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/DialogOpenDialogNativeTest.java")
             // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
             // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
+            // Tree.setHeaderForeground was added in 3.106.
+            if (swtMinorNative < 106) exclude("org/eclipse/swt/widgets/TreeHeaderForegroundNativeTest.java")
+            // Cocoa's Tree gained keyDown, one of the fields the accessors answer, in 3.126.
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/TreeAccessorsNativeTest.java")
+            // Shell.setMaximumSize/getMaximumSize were added in 3.116.
+            if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
+            // Text's paste goes through _paste(boolean) from 3.114.100 on, where the Verify fix and the clipboard recipe live.
+            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextPasteVerifyTest.java")
+            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextClipboardPasteTest.java")
             // StyledText.setLineVerticalIndent was added in 3.109.
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
@@ -358,6 +399,8 @@ sourceSets {
                 // so the API class the generator writes only carries it from there; this test reads
                 // one image back at three zooms.
                 exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
+                // Table/Tree.setHeaderBackground and setHeaderForeground were added in 3.106.
+                exclude("org/eclipse/swt/widgets/WidgetCheckedFirstTest.java")
             }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
@@ -420,6 +463,31 @@ if (chromiumMode) {
     }
 }
 
+dependencies { errorprone(libs.errorprone.core) }
+
+// Error Prone on the one compile holding all our code once: every native backend shares main/ and
+// native/, Windows adds our only per-OS file. Upstream copies are skipped; a Dart* finding is fixed
+// in the generator. -PerrorProne=false turns it off where CI runs it as a job of its own.
+val errorProne = findProperty("errorProne")?.toString() != "false"
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        enabled.set(errorProne && name == "compileNativeWindowsJava")
+        disableAllWarnings.set(true)
+        // Checks off or only warnings by default that found real defects here, or guard against
+        // common ones, as errors.
+        error(
+            "StringCaseLocaleUsage", "DefaultLocale", "ObjectEqualsForPrimitives",
+            "JavaTimeDefaultTimeZone", "UndefinedEquals", "CollectionUndefinedEquality",
+            "ToStringReturnsNull", "InterruptedExceptionSwallowed",
+            "FallThrough", "MissingCasesInEnumSwitch", "ModifiedButNotUsed",
+        )
+        // dsl-json's converters under build/generated are not ours either.
+        excludedPaths.set("(.*/src/native[A-Za-z]*/java/(?!dev/equo/)(?!.*/Dart[^/]*\\.java$)|.*/build/generated/).*")
+    }
+    // That compile is warning-free; keep it so.
+    if (errorProne && name == "compileNativeWindowsJava") options.compilerArgs.add("-Werror")
+}
+
 // Configure Java compilation
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
@@ -439,11 +507,12 @@ tasks.withType<JavaCompile> {
         else -> {
             sourceCompatibility = targetJavaRelease.toString()
             targetCompatibility = targetJavaRelease.toString()
-            // -source/-target compiles against THIS JDK's API, so javac warns it cannot verify the
-            // result runs on the older one. checkJavaApiLevel is what actually verifies it.
-            options.compilerArgs.add("-Xlint:-options")
         }
     }
+    // JDK 21's javac warns about both ways: release 8 is obsolete, and -source/-target compiles
+    // against THIS JDK's API, so it cannot verify the result runs on the older one.
+    // checkJavaApiLevel is what actually verifies it.
+    if (targetJavaRelease != null) options.compilerArgs.add("-Xlint:-options")
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.
@@ -515,6 +584,8 @@ val handWrittenInGeneratedTrees = listOf(
     "**/TextLayoutMeasurement.java",
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
+    "**/TrackerHelper.java",
+    "**/ShellActivation.java",
     "**/NativeCursorHotspot.java",
 )
 
@@ -1040,8 +1111,10 @@ val chromiumImportPackage = "com.equo.chromium;resolution:=optional," +
         "com.equo.chromium.utils;resolution:=optional," +
         "com.equo.chromium.events;resolution:=optional"
 val fxImportPackges = "javafx.application;resolution:=optional," +
+        "javafx.geometry;resolution:=optional," +
         "javafx.scene;resolution:=optional," +
         "javafx.scene.image;resolution:=optional," +
+        "javafx.scene.transform;resolution:=optional," +
         "com.sun.javafx.cursor;resolution:=optional," +
         "com.sun.javafx.embed;resolution:=optional," +
         "com.sun.javafx.stage;resolution:=optional"

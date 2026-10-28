@@ -20,6 +20,7 @@ import '../gen/image.dart';
 import '../gen/path.dart';
 import '../gen/pathdata.dart';
 import '../gen/pattern.dart';
+import '../gen/rgb.dart';
 import '../gen/swt.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'assets_manager.dart';
@@ -27,6 +28,7 @@ import 'color_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/glyph_tone.dart';
 import 'utils/image_utils.dart';
+import 'utils/widget_utils.dart';
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
 
@@ -126,6 +128,7 @@ class GCDrawer extends GCDrawerBase {
     // JSON, so it can travel in the same message as the ops it ends.
     _localTokens["${state.swt}/${state.id}/gcDispose"] =
         EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (raw) async {
+      _settleNormalFill();
       final payload = (raw is String ? jsonDecode(raw) : raw) as Map;
       final ref = (payload['ref'] as num).toInt();
       final wantPixels = payload['pixels'] == true;
@@ -170,17 +173,12 @@ class GCDrawer extends GCDrawerBase {
   /// full-area Paint, which collapses them back into one display list.
   final void Function()? onFullRepaintNeeded;
 
-  // The ceiling for a control that only ever invalidates disjoint areas: a full-area Paint, which
-  // arrives on nearly every Canvas rebuild, collapses the layers anyway.
+  // Layers inside a later damage are dropped, so only damage that keeps shifting by less than its
+  // own size (a drag) stacks this deep. Every layer is replayed on every frame, so it stays low.
   static const int _maxRegionLayers = 16;
 
-  // Rect.contains excludes the right and bottom edges, so it never reports a rectangle as holding
-  // itself — the case that matters here, a cell repainted on hover and again on unhover.
-  static bool _covers(Rect outer, Rect inner) =>
-      inner.left >= outer.left &&
-      inner.top >= outer.top &&
-      inner.right <= outer.right &&
-      inner.bottom <= outer.bottom;
+  // Set once the full-area Paint is asked for, so the cycles before it arrives don't ask again.
+  bool _fullRepaintRequested = false;
 
   /// The rectangle a Paint was scoped to, or null when it covered the whole client area.
   static Rect? _damageOf(Object? payload) {
@@ -208,6 +206,7 @@ class GCDrawer extends GCDrawerBase {
           !(payload is Map && payload['fullRepaint'] == false);
       final cycleStaging = _staging;
       _staging = [];
+      _settleNormalFill();
 
       final pending = List<Future<Shape>>.from(_pendingImages);
       _pendingImages.clear();
@@ -234,21 +233,24 @@ class GCDrawer extends GCDrawerBase {
         final damage = _damageOf(payload);
         if (damage != null) {
           // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
-          // stays and this cycle becomes a layer over it, superseding any layer it covers.
-          shapes.removeWhere((s) {
-            if (s is! RegionShape || !_covers(damage, s.rect)) return false;
-            disposeShapeImages(s.ops, keep: keep);
-            return true;
-          });
+          // stays and this cycle becomes a layer over it. It erases its rectangle first, so
+          // whatever was painted entirely inside it is gone; anything whose area is unknown stays.
+          _dropShapes((s) {
+            final area = s.paintedBounds;
+            return area != null && _containsRect(damage, area);
+          }, keep);
           shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
           _lateLoadedImages.clear();
-          if (shapes.whereType<RegionShape>().length > _maxRegionLayers) {
+          if (!_fullRepaintRequested &&
+              shapes.whereType<RegionShape>().length > _maxRegionLayers) {
+            _fullRepaintRequested = true;
             onFullRepaintNeeded?.call();
           }
         } else {
           // A full-area Paint repaints the whole client area, so nothing the previous cycle left
           // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
           if (fullRepaint) {
+            _fullRepaintRequested = false;
             disposeShapeImages(shapes, keep: keep);
             shapes.clear();
           } else {
@@ -294,13 +296,29 @@ class GCDrawer extends GCDrawerBase {
       if (area != null && !area.isEmpty) covered.add(area);
     }
     if (covered.isEmpty) return;
-    shapes.removeWhere((s) {
+    _dropShapes((s) {
       final area = s.paintedBounds;
-      if (area == null) return false;
-      if (!covered.any((c) => _containsRect(c, area))) return false;
-      disposeShapeImages([s], keep: keep);
-      return true;
-    });
+      return area != null && covered.any((c) => _containsRect(c, area));
+    }, keep);
+  }
+
+  /// Removes the shapes [hidden] selects and releases their images, except those a surviving shape
+  /// still draws: copyArea gives its copy the original's image.
+  void _dropShapes(bool Function(Shape) hidden, Set<ui.Image> keep) {
+    final dropped = <Shape>[];
+    final kept = <Shape>[];
+    for (final s in shapes) {
+      (hidden(s) ? dropped : kept).add(s);
+    }
+    if (dropped.isEmpty) return;
+    shapes
+      ..clear()
+      ..addAll(kept);
+    final droppedImages = <ui.Image>{};
+    collectShapeImages(dropped, droppedImages);
+    if (droppedImages.isEmpty) return;
+    collectShapeImages(shapes, keep);
+    disposeShapeImages(dropped, keep: keep);
   }
 
   /// Called by GCImpl.build() to provide context for text style resolution.
@@ -348,11 +366,93 @@ class GCDrawer extends GCDrawerBase {
   // drawing side a background or a foreground; the role says what it is being used for.
   Color get bg =>
       _themed(state.background, _canvasTheme?.backgroundColor, _swtBackground);
-  Color get fillColor =>
-      _themed(state.background, _canvasTheme?.fillColor, _swtBackground);
+  Color get fillColor => _keepingContrast(
+      _themed(state.background, _canvasTheme?.fillColor, _swtBackground));
   Color get textBackgroundColor =>
       _hostGround ??
-      _themed(state.background, _canvasTheme?.textBackgroundColor, _swtBackground);
+      _keepingContrast(_themed(
+          state.background, _canvasTheme?.textBackgroundColor, _swtBackground));
+
+  // L* a fill that differs from the normal one moves away from the theme's fill: a little more than
+  // its own L* distance to the normal fill while that is small, approaching the maximum as it grows.
+  static const double _maxOffset = 40;
+  static const double _offsetScale = 20;
+  // How far the most chromatic fill goes toward highlightColor.
+  static const double _maxHighlight = 0.6;
+  // Below both, a fill reads as the normal one and takes the theme fill as it is.
+  static const double _minLstarDifference = 1;
+  static const double _minTint = 0.01;
+  // Mid-grey L*: a theme fill darker than it has its room above, a lighter one below.
+  static const double _midLstar = 50;
+  static const int _maxTrackedFills = 256;
+
+  // Keeps a hover or selection apart from the normal fill under the theme, moving it toward the side
+  // with room (a light app darkens its highlights, which on a dark fill would sink into black). The
+  // hue it adds tints it toward highlightColor and its lightness, or a light fill shows a pastel.
+  Color _keepingContrast(Color themed) {
+    final highlight = _canvasTheme?.highlightColor;
+    final swtColor = state.background;
+    if (!_useThemeColors || highlight == null || swtColor == null) return themed;
+    final app = colorFromVColor(swtColor);
+    final declared = _declaredRoleFill(app);
+    if (declared != null) return declared;
+    final normal = _normalFill(app);
+    final key = (app.toARGB32(), normal.toARGB32(), themed.toARGB32(), highlight.toARGB32());
+    if (_contrasted.length >= _maxTrackedFills) _contrasted.clear();
+    return _contrasted.putIfAbsent(key, () => _contrastedFill(app, normal, themed, highlight));
+  }
+
+  // Fills already moved apart, keyed by everything the result depends on.
+  final Map<(int, int, int, int), Color> _contrasted = {};
+
+  static Color _contrastedFill(Color app, Color normal, Color themed, Color highlight) {
+    final difference = (lstar(app) - lstar(normal)).abs();
+    final tint = (chroma(app) - chroma(normal)).clamp(0.0, 1.0) * _maxHighlight;
+    if (difference < _minLstarDifference && tint < _minTint) return themed;
+    final fill = lstar(themed);
+    final offset = _maxOffset * (1 - math.exp(-difference / _offsetScale));
+    final apart = fill < _midLstar ? fill + offset : fill - offset;
+    return withLstar(Color.lerp(themed, highlight, tint)!, apart + (lstar(highlight) - apart) * tint);
+  }
+
+  // The theme's color for a fill the integrator declared a hover or a selection
+  // (VGC.hoverFills / VGC.selectionFills), or null when the color has no declared role.
+  Color? _declaredRoleFill(Color app) {
+    if (_isAnyOf(state.hoverFills, app)) return _canvasTheme?.hoverFillColor;
+    if (_isAnyOf(state.selectionFills, app)) return _canvasTheme?.selectionFillColor;
+    return null;
+  }
+
+  static bool _isAnyOf(List<VRGB?>? fills, Color app) =>
+      fills?.any((c) => c != null && (c.red << 16 | c.green << 8 | c.blue) == app.toARGB32() & 0xFFFFFF) ??
+      false;
+
+  // The control's own background or, when it sets none, the fill this GC has painted with most.
+  // The counts span the control's paints; within one paint the normal is what the paints before it
+  // settled on, so one application color never paints two ways in the same frame.
+  final Map<int, int> _fillCounts = {};
+  int? _commonestFill;
+  int? _settledNormalFill;
+
+  Color _normalFill(Color app) {
+    final ground = _controlBackground;
+    if (ground != null) return colorFromVColor(ground);
+    final key = app.toARGB32();
+    if (_fillCounts.length < _maxTrackedFills || _fillCounts.containsKey(key)) {
+      final count = _fillCounts.update(key, (n) => n + 1, ifAbsent: () => 1);
+      if (count > (_fillCounts[_commonestFill] ?? 0)) _commonestFill = key;
+    }
+    return Color(_settledNormalFill ?? _commonestFill ?? key);
+  }
+
+  void _settleNormalFill() => _settledNormalFill = _commonestFill;
+
+  VColor? get _controlBackground {
+    final host = widgetContext;
+    if (host is! StatefulElement || !host.mounted) return null;
+    final ground = host.state;
+    return ground is GCGround ? (ground as GCGround).swtGround : null;
+  }
 
   Color? get _hostGround {
     final host = widgetContext;
@@ -866,18 +966,21 @@ class GCDrawer extends GCDrawerBase {
 
   void _addPathShape(VPath? path, {required bool isFilled}) {
     final built = _buildPath(path);
-    if (built != null) _addPathGeometry(built, isFilled: isFilled);
-    for (final text in _pathTexts(path, isFilled: isFilled)) {
+    // One fill op, so the strings take the geometry's color rather than resolving it again.
+    final color = built != null ? _addPathGeometry(built, isFilled: isFilled) : null;
+    for (final text in _pathTexts(path, isFilled: isFilled, color: color)) {
       _addShape(text);
     }
   }
 
-  void _addPathGeometry(Path built, {required bool isFilled}) {
-    if (isFilled && _addPatternFill(built)) return;
+  /// The color the geometry was drawn with, or null when a pattern filled it.
+  Color? _addPathGeometry(Path built, {required bool isFilled}) {
+    if (isFilled && _addPatternFill(built)) return null;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
-    if (!isFilled && _addDashedStroke(() => built, color)) return;
+    if (!isFilled && _addDashedStroke(() => built, color)) return color;
     _addShape(PathShape(built, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
         isFilled: isFilled, clipRect: _childClip));
+    return color;
   }
 
   /// The strings a Path holds, filled or outlined as its geometry would be. Path.addString has no
@@ -1243,6 +1346,17 @@ class GCDrawer extends GCDrawerBase {
   // LineNumberRulerColumn re-uses one buffer Image across paints and shifts it by the
   // scroll delta, redrawing only the newly exposed band, so without the base copy the
   // retained band keeps its pre-scroll content.
+  /// A picture-backed blit that [clip] has to bound. The web renderers ignore a clip around a
+  /// nested picture -- it draws in full, past the clip (see [_drawPicture]) -- so the picture goes
+  /// to pixels first. [ui.Picture.toImageSync] keeps them on the GPU, so nothing is read back, and
+  /// [disposeShapeImages] owns the image the shape carries.
+  static ImageShape _boundedPicture(
+      ui.Picture picture, Rect srcRect, Rect destRect, Rect clip,
+      {int alpha = 255}) {
+    final raster = picture.toImageSync(srcRect.right.ceil(), srcRect.bottom.ceil());
+    return ImageShape.raster(raster, srcRect, destRect, clipRect: clip, alpha: alpha);
+  }
+
   @visibleForTesting
   static List<Shape> copyAreaShapes({
     required ui.Image? baseImage,
@@ -1256,7 +1370,7 @@ class GCDrawer extends GCDrawerBase {
     return [
       // Under the shapes drawn through this GC, so the copy keeps their z-order.
       if (basePicture != null)
-        ImageShape.picture(basePicture, srcRect, destRect, clipRect: destRect)
+        _boundedPicture(basePicture, srcRect, destRect, destRect)
       else if (baseImage != null)
         ImageShape.raster(baseImage.clone(), srcRect.shift(baseOffset), destRect, clipRect: destRect),
       for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
@@ -1328,9 +1442,9 @@ class GCDrawer extends GCDrawerBase {
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha,
           opaqueSource: s.opaqueSource, inkMask: s.inkMask),
-      ImageShape s when s.type == ImageType.picture => ImageShape.picture(
+      ImageShape s when s.type == ImageType.picture => _boundedPicture(
           s.remotePicture!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea, alpha: s.alpha),
+          clipArea, alpha: s.alpha),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
@@ -2062,7 +2176,7 @@ class RegionShape extends Shape {
     c.restore();
   }
 
-  // Headless image rendering, which never scopes a Paint and has no canvas background to erase to.
+  // Headless rendering (copyArea snapshots) has no canvas background to erase to.
   @override
   void draw(ui.Canvas c) {
     c.save();
@@ -2436,8 +2550,9 @@ class RectShape extends Shape {
   @override
   final Rect? clipRect;
 
+  // A hairline still covers a pixel, on the centres past the rectangle's right and bottom edges.
   @override
-  Rect? get paintedBounds => isFilled ? rect : rect.inflate(strokeWidth);
+  Rect? get paintedBounds => isFilled ? rect : rect.inflate(math.max(strokeWidth, 1));
 
   @override
   Rect? get opaqueCoverage =>
@@ -3180,13 +3295,13 @@ class ImageShape extends Shape {
       if (replacement == null && remoteRef != null && !useThemeColors) {
         final render = ImageUtils.remoteRender(remoteRef);
         // Once rasterised, blit the texture: replaying the list re-runs every op on every frame.
-        final asPicture = render != null && !render.hasPixels ? render.picture : null;
-        if (asPicture != null) {
+        final asPicture = render == null || render.hasPixels ? null : render.picture;
+        if (render != null && asPicture != null) {
           final src = Rect.fromLTWH(
               (opArgs.srcX).toDouble(),
               (opArgs.srcY).toDouble(),
-              opArgs.srcWidth == -1 ? render!.width.toDouble() : (opArgs.srcWidth).toDouble(),
-              opArgs.srcHeight == -1 ? render!.height.toDouble() : (opArgs.srcHeight).toDouble());
+              opArgs.srcWidth == -1 ? render.width.toDouble() : (opArgs.srcWidth).toDouble(),
+              opArgs.srcHeight == -1 ? render.height.toDouble() : (opArgs.srcHeight).toDouble());
           final dest = Rect.fromLTWH(
               (opArgs.destX).toDouble(),
               (opArgs.destY).toDouble(),
@@ -3194,7 +3309,18 @@ class ImageShape extends Shape {
               opArgs.destHeight == -1 ? src.height : (opArgs.destHeight).toDouble());
           // A scaled blit has to resample, which a picture draw would not do the same way.
           if (src.width == dest.width && src.height == dest.height) {
-            return ImageShape.picture(asPicture, src, dest,
+            // The whole render with nothing bounding it is the only blit a picture survives (see
+            // [_drawPicture]); every other 1:1 blit has to be bounded, so it takes the pixels. A
+            // source rectangle may ask for more than the render holds, hence >= and not ==.
+            final unbounded = clipRect == null &&
+                src.left == 0 &&
+                src.top == 0 &&
+                src.width >= render.width &&
+                src.height >= render.height;
+            if (unbounded) {
+              return ImageShape.picture(asPicture, src, dest, alpha: alpha);
+            }
+            return ImageShape.raster(render.rasteriseSync().clone(), src, dest,
                 clipRect: clipRect, alpha: alpha);
           }
         }
@@ -3326,12 +3452,14 @@ class ImageShape extends Shape {
     c.restore();
   }
 
+  /// Deliberately unbounded: the web renderers ignore a clip around a nested picture, so a clip
+  /// here would not hold it and the picture would draw past it. A picture reaches here only for a
+  /// draw that needs no bounding; a blit that needs one goes to pixels ([fromVImageDetailed]) or
+  /// through [_boundedPicture].
   void _drawPicture(ui.Canvas c) {
     final picture = remotePicture;
     if (picture == null) return;
     c.save();
-    // Clip first so a picture larger than the blit cannot spill past it.
-    c.clipRect(destRect);
     c.translate(destRect.left - (srcRect?.left ?? 0), destRect.top - (srcRect?.top ?? 0));
     c.drawPicture(picture);
     c.restore();

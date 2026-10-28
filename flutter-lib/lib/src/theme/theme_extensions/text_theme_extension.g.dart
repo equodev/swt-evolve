@@ -85,6 +85,7 @@ TextThemeExtension _$TextThemeExtensionFromJson(Map<String, dynamic> json) =>
       ),
       passwordToggleSize: (json['passwordToggleSize'] as num).toDouble(),
       searchIconSize: (json['searchIconSize'] as num).toDouble(),
+      minTextContrast: (json['minTextContrast'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$TextThemeExtensionToJson(
@@ -145,4 +146,5 @@ Map<String, dynamic> _$TextThemeExtensionToJson(
   ),
   'passwordToggleSize': instance.passwordToggleSize,
   'searchIconSize': instance.searchIconSize,
+  'minTextContrast': instance.minTextContrast,
 };

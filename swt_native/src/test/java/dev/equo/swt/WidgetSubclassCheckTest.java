@@ -65,4 +65,21 @@ class WidgetSubclassCheckTest {
         assertThat(new Canvas(shell, SWT.NONE) {}).isNotNull();
         assertThat(new CLabel(shell, SWT.NONE) {}).isNotNull();
     }
+
+    @Test
+    @DisplayName("a subclass that overrides checkSubclass to allow itself is built")
+    void acceptsSubclassesThatAllowThemselves() {
+        Button button = new Button(shell, SWT.PUSH) {
+            @Override
+            protected void checkSubclass() {
+            }
+        };
+        Label label = new Label(shell, SWT.NONE) {
+            @Override
+            protected void checkSubclass() {
+            }
+        };
+        assertThat(button.getStyle() & SWT.PUSH).isNotZero();
+        assertThat(label.isDisposed()).isFalse();
+    }
 }

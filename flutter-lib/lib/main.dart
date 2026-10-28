@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -48,6 +50,16 @@ import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
+import 'src/impl/utils/traversal_veto_scope.dart';
+
+/// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
+Future<void> _loadWebFallbackFonts() async {
+  if (!kIsWeb) return;
+  await (FontLoader('Roboto')
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))
+        ..addFont(rootBundle.load('assets/fonts/Roboto-Bold.ttf')))
+      .load();
+}
 
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
@@ -81,6 +93,18 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  final fallbackFonts = _loadWebFallbackFonts();
+  // Registered before the first await: Java hands a client what it sent before the comm connected
+  // (setPort) as soon as it connects, possibly while the fonts load, and a frame nothing listens to is
+  // replayed in order on its own channel only, so an Image GC's drawer has to exist first.
+  // Every topology, not just under a Display: the Image channels are keyed by remoteRef rather than
+  // by widget, and an off-screen engine never reaches the Display branch below.
+  _registerImageReleaseListener();
+  registerImagePixelsListener();
+  // Display-scoped: GC/create is one channel for the whole session, so a detached window listening
+  // too would draw every GC a second time.
+  if (widgetName == "Display") _registerGcCreateListener(fallbackFonts);
+  await fallbackFonts;
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
@@ -96,10 +120,6 @@ void main(List<String> args) async {
     SemanticsBinding.instance.ensureSemantics();
   }
   startSemanticsGhostNodeGuard();
-  // Every topology, not just under a Display: the Image channels are keyed by remoteRef rather than
-  // by widget, and an off-screen engine never reaches the Display branch below.
-  _registerImageReleaseListener();
-  registerImagePixelsListener();
 
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
@@ -151,10 +171,8 @@ void main(List<String> args) async {
     );
   }
   if (widgetName == "Display") {
-    // Display-scoped, both of them: GC/create and the window commands are one channel for the
-    // whole session, so a detached window listening too would draw every GC a second time and
-    // race this one to open every window.
-    _registerGcCreateListener();
+    // Display-scoped, as GC/create is: one channel for the whole session, so a detached window
+    // listening too would race this one to open every window.
     registerWindowCommands(widgetId);
   }
 
@@ -187,17 +205,30 @@ final Map<int, GCDrawer> _activeGcDrawers = {};
 int _readInt64BE(ByteData v, int offset) =>
     v.getInt32(offset, Endian.big) * 0x100000000 + v.getUint32(offset + 4, Endian.big);
 
-void _registerGcCreateListener() {
+/// Listens for the drawers of Images' GCs. One that arrives before [fallbackFonts] are in waits for
+/// them, as it did when it could not arrive any earlier: what it draws is laid out in those fonts.
+/// Waiting here holds the frames behind it too, so its state and ops still apply in order after it.
+void _registerGcCreateListener(Future<void> fallbackFonts) {
+  var fontsIn = false;
+  fallbackFonts.then((_) => fontsIn = true, onError: (Object _) => fontsIn = true);
   // Raw-bytes path: Java sends the gcId as 8 big-endian bytes, no JSON round-trip.
   EquoCommService.onBytes("GC/create", (bytes) {
     final gcId = _readInt64BE(ByteData.sublistView(bytes), 0);
-    final state = VGC()
-      ..swt = "GC"
-      ..id = gcId;
-    _activeGcDrawers[gcId] = GCDrawer.standalone(
-      state,
-      onDisposed: () => _activeGcDrawers.remove(gcId),
-    );
+    void create() {
+      final state = VGC()
+        ..swt = "GC"
+        ..id = gcId;
+      _activeGcDrawers[gcId] = GCDrawer.standalone(
+        state,
+        onDisposed: () => _activeGcDrawers.remove(gcId),
+      );
+    }
+
+    if (fontsIn) {
+      create();
+      return null;
+    }
+    return fallbackFonts.then((_) => create(), onError: (Object _) => create());
   });
 }
 
@@ -538,6 +569,7 @@ class EvolveApp extends StatelessWidget {
           darkTheme: darkTheme,
           themeMode: effectiveThemeMode,
           debugShowCheckedModeBanner: false,
+          actions: {...WidgetsApp.defaultActions, ...TraversalVetoScope.appActions},
           builder: (ctx, navigator) => SwtZoomScale(child: navigator!),
           home: Scaffold(
             backgroundColor: effectiveThemeMode == ThemeMode.dark

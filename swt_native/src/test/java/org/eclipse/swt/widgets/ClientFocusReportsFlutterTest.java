@@ -129,7 +129,24 @@ class ClientFocusReportsFlutterTest {
     }
 
     @Test
-    void onlyTheOneReportInFlightIsDroppedSoTheNextOneIsStillTracked() {
+    void everyReportSentBeforeTheClientSawTheRequestIsDropped() {
+        web = install(TestWebBridge::new);
+        Shell shell = openBareShell();
+        Tree tree = new Tree(shell, SWT.NONE);
+        Text editor = cellEditorOn(newTable(shell), 0);
+        clientReports(tree, "Focus/FocusIn");
+        editor.setFocus();
+
+        // A click sends more than one: the tree reports the press that focused it and Flutter's
+        // focus change after it, both on their way before the request reaches the client.
+        clientReports(tree, "Focus/FocusIn");
+        clientReports(tree, "Focus/FocusIn");
+
+        assertThat(display.getFocusControl()).isSameAs(editor);
+    }
+
+    @Test
+    void aReportSentAfterTheClientSawTheRequestIsTracked() {
         web = install(TestWebBridge::new);
         Shell shell = openBareShell();
         Tree tree = new Tree(shell, SWT.NONE);
@@ -138,7 +155,9 @@ class ClientFocusReportsFlutterTest {
         editor.setFocus();
         clientReports(tree, "Focus/FocusIn");
 
-        // A request stops standing once a report answers it, whichever control that report named.
+        // The client echoes the request as it receives it, whether or not the editor takes the
+        // focus, so a client that never honours it cannot freeze focus tracking.
+        clientSaw(lastFocusRequestSeq());
         clientReports(tree, "Focus/FocusIn");
 
         assertThat(display.getFocusControl()).isSameAs(tree);
@@ -166,6 +185,21 @@ class ClientFocusReportsFlutterTest {
         org.eclipse.swt.custom.TableEditor editor = new org.eclipse.swt.custom.TableEditor(table);
         editor.setEditor(text, table.getItem(0), column);
         return text;
+    }
+
+    /** The {@code seq} of the last {@code swt.evolve.focus} request sent. */
+    private long lastFocusRequestSeq() {
+        String json = web.comm.sent.stream()
+                .filter(f -> f.event.equals("swt.evolve.focus"))
+                .reduce((a, b) -> b)
+                .orElseThrow(() -> new AssertionError("no focus request was sent")).json;
+        return Long.parseLong(json.replaceAll(".*\"seq\"\\s*:\\s*(\\d+).*", "$1"));
+    }
+
+    private void clientSaw(long seq) {
+        web.comm.fireContaining("swt.evolve.focus.seen", java.util.Map.of("seq", seq));
+        while (display.readAndDispatch()) {
+        }
     }
 
     private static String channel(Widget widget, String suffix) {

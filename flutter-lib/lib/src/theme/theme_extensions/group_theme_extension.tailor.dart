@@ -32,6 +32,7 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
   double get shadowEtchedBlurRadius;
   double get shadowInBorderFactor;
   double get shadowInBgFactor;
+  double get minTextContrast;
 
   @override
   GroupThemeExtension copyWith({
@@ -57,6 +58,7 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
     double? shadowEtchedBlurRadius,
     double? shadowInBorderFactor,
     double? shadowInBgFactor,
+    double? minTextContrast,
   }) {
     return GroupThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -85,6 +87,7 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
           shadowEtchedBlurRadius ?? this.shadowEtchedBlurRadius,
       shadowInBorderFactor: shadowInBorderFactor ?? this.shadowInBorderFactor,
       shadowInBgFactor: shadowInBgFactor ?? this.shadowInBgFactor,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -139,6 +142,7 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
           ? shadowInBorderFactor
           : other.shadowInBorderFactor,
       shadowInBgFactor: t < 0.5 ? shadowInBgFactor : other.shadowInBgFactor,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -225,6 +229,10 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
             const DeepCollectionEquality().equals(
               shadowInBgFactor,
               other.shadowInBgFactor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -254,6 +262,7 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
       const DeepCollectionEquality().hash(shadowEtchedBlurRadius),
       const DeepCollectionEquality().hash(shadowInBorderFactor),
       const DeepCollectionEquality().hash(shadowInBgFactor),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -286,4 +295,5 @@ extension GroupThemeExtensionBuildContextProps on BuildContext {
       groupThemeExtension.shadowEtchedBlurRadius;
   double get shadowInBorderFactor => groupThemeExtension.shadowInBorderFactor;
   double get shadowInBgFactor => groupThemeExtension.shadowInBgFactor;
+  double get minTextContrast => groupThemeExtension.minTextContrast;
 }

@@ -129,6 +129,7 @@ public class DynComposite extends DynScrollable implements IComposite {
      * @since 3.1
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void changed(Control[] changed) {
         System.out.println("+++ CONVERTING DynComposite from Composite#changed(Control[]) #" + getApi().hashCode());
         IComposite newImpl = convert();

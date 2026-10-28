@@ -30,13 +30,13 @@ public final class Metrics {
             && Double.compare(descent, other.descent) == 0
             && Double.compare(height, other.height) == 0
             && Double.compare(avgCharWidth, other.avgCharWidth) == 0
-            && java.util.Objects.equals(glyphWidths, other.glyphWidths);
+            && java.util.Arrays.equals(glyphWidths, other.glyphWidths);
     }
 
     @Override
-    public int hashCode() { return java.util.Objects.hash(ascent, descent, height, avgCharWidth, glyphWidths); }
+    public int hashCode() { return 31 * java.util.Objects.hash(ascent, descent, height, avgCharWidth) + java.util.Arrays.hashCode(glyphWidths); }
 
     @Override
-    public String toString() { return "Metrics[ascent=" + ascent + ", descent=" + descent + ", height=" + height + ", avgCharWidth=" + avgCharWidth + ", glyphWidths=" + glyphWidths + "]"; }
+    public String toString() { return "Metrics[ascent=" + ascent + ", descent=" + descent + ", height=" + height + ", avgCharWidth=" + avgCharWidth + ", glyphWidths=" + java.util.Arrays.toString(glyphWidths) + "]"; }
 
 }

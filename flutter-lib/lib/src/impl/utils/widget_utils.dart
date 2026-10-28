@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../gen/rectangle.dart';
 import '../../gen/swt.dart';
@@ -9,6 +11,12 @@ import '../../gen/widget.dart';
 import '../../impl/color_utils.dart';
 import '../../impl/widget_config.dart';
 import 'font_utils.dart';
+
+/// Runs [callback] once the next frame has been laid out, scheduling that frame if none is pending.
+void afterNextFrame(VoidCallback callback) {
+  WidgetsBinding.instance.addPostFrameCallback((_) => callback());
+  WidgetsBinding.instance.scheduleFrame();
+}
 
 /// Checks if a style flag is set in the given style value
 bool hasStyle(int style, int flag) {
@@ -62,16 +70,18 @@ TextAlign getTextAlignFromStyle(int style, TextAlign defaultAlign) {
   return defaultAlign;
 }
 
+/// Whether the application's own backgrounds are painted: `use_swt_colors`, or a [SwtColorScope].
+bool _appPaintsColors(BuildContext? context) =>
+    (getConfigFlags().use_swt_colors ?? false) ||
+    (context != null && SwtColorScope.isActive(context));
+
 /// Gets background color with SWT color support
 Color? getBackgroundColor({
   required VColor? background,
   required Color? defaultColor,
   BuildContext? context,
 }) {
-  final useSwtColors = (getConfigFlags().use_swt_colors ?? false) ||
-      (context != null && SwtColorScope.isActive(context));
-
-  if (useSwtColors && background != null) {
+  if (_appPaintsColors(context) && background != null) {
     return colorFromVColor(background, defaultColor: defaultColor);
   }
 
@@ -83,18 +93,93 @@ Color? getBackgroundColor({
 T? cellValue<T>(List<T?>? cells, int column) =>
     cells != null && column >= 0 && column < cells.length ? cells[column] : null;
 
+/// The WCAG 2 contrast ratio between two opaque colours, from 1 to 21.
+double contrastRatio(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+}
+
+/// The default minimum contrast for application text on the theme's ground: WCAG AA for body text.
+const double kMinTextContrast = 4.5;
+
+/// [color] when it reads on [ground] at [minRatio], else the same hue and saturation at the
+/// lightness nearest to it that does, on the side of the ground with more room. A colour on the
+/// wrong side is mirrored first, so black on a dark ground turns white, not grey.
+Color legibleOn(Color color, Color ground, {required double minRatio}) {
+  if (contrastRatio(color, ground) >= minRatio) return color;
+  final hsl = HSLColor.fromColor(color);
+  final lighten = contrastRatio(Colors.white, ground) >= contrastRatio(Colors.black, ground);
+  final extreme = lighten ? 1.0 : 0.0;
+  Color at(double lightness) => hsl.withLightness(lightness).toColor();
+
+  final mirrored = 1 - hsl.lightness;
+  final start = lighten ? math.max(hsl.lightness, mirrored) : math.min(hsl.lightness, mirrored);
+  if (contrastRatio(at(start), ground) >= minRatio) return at(start);
+  if (contrastRatio(at(extreme), ground) < minRatio) return at(extreme);
+  return at(_bisectLightness(hsl,
+      holds: extreme, fails: start, test: (c) => contrastRatio(c, ground) >= minRatio));
+}
+
+// CIE 1976: below this luminance L* is linear in it.
+const double _cieEpsilon = 216 / 24389;
+const double _cieKappa = 24389 / 27;
+
+/// The CIE 1976 L* of [color], from 0 (black) to 100 (white).
+double lstar(Color color) {
+  final y = color.computeLuminance();
+  return y > _cieEpsilon ? 116 * math.pow(y, 1 / 3) - 16 : _cieKappa * y;
+}
+
+/// The spread between the strongest and the weakest channel of [color]: 0 for a grey.
+double chroma(Color color) =>
+    math.max(color.r, math.max(color.g, color.b)) - math.min(color.r, math.min(color.g, color.b));
+
+/// [color]'s hue and saturation at the HSL lightness whose L* is [target].
+Color withLstar(Color color, double target) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl
+      .withLightness(_bisectLightness(hsl, holds: 1, fails: 0, test: (c) => lstar(c) >= target))
+      .toColor();
+}
+
+/// The lightness between [holds], where [test] passes, and [fails], where it does not, closest to
+/// where it stops passing.
+double _bisectLightness(HSLColor hsl,
+    {required double holds, required double fails, required bool Function(Color) test}) {
+  for (var i = 0; i < 16; i++) {
+    final mid = (holds + fails) / 2;
+    if (test(hsl.withLightness(mid).toColor())) {
+      holds = mid;
+    } else {
+      fails = mid;
+    }
+  }
+  return holds;
+}
+
 /// The text colour: [foreground] when the control [context] builds for honours the application's
 /// (see `useSwtFontColors`), else [defaultColor].
+///
+/// The application picked its colour against its own ground, so on the theme's -- [background],
+/// what is painted behind the text, else the theme's surface -- it is kept legible at the widget
+/// theme's [minContrast] ([legibleOn]). Where the application's backgrounds are painted too
+/// (use_swt_colors, a [SwtColorScope]) the pair is its own choice and the colour is drawn as given.
 Color getForegroundColor({
   required BuildContext context,
   required VColor? foreground,
   required Color defaultColor,
+  required double minContrast,
+  Color? background,
 }) {
-  final useSwtForeground = useSwtFontColors(SwtControlScope.nameOf(context)) ||
-      SwtColorScope.isActive(context);
+  final useSwtForeground =
+      useSwtFontColors(SwtControlScope.nameOf(context)) || SwtColorScope.isActive(context);
 
   if (useSwtForeground && foreground != null) {
-    return colorFromVColor(foreground, defaultColor: defaultColor);
+    final color = colorFromVColor(foreground, defaultColor: defaultColor);
+    if (_appPaintsColors(context)) return color;
+    return legibleOn(color, background ?? Theme.of(context).colorScheme.surface,
+        minRatio: minContrast);
   }
 
   return defaultColor;

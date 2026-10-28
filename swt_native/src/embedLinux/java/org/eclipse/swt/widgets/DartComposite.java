@@ -201,6 +201,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.1
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }
@@ -1135,7 +1136,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void setBackgroundMode(int mode) {
         checkWidget();
-        if (!java.util.Objects.equals(this.backgroundMode, mode)) {
+        if (this.backgroundMode != mode) {
             getValue().markDirty(VComposite.BACKGROUND_MODE);
         }
         backgroundMode = mode;
@@ -1454,6 +1455,10 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     public Control[] _displayedChildren() {
         return _getChildren();
+    }
+
+    public boolean _drawsItself(Control child) {
+        return false;
     }
 
     protected void _hookEvents() {

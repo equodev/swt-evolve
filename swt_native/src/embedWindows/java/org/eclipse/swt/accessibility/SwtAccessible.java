@@ -158,6 +158,7 @@ public class SwtAccessible implements IIAccessible {
      * @deprecated
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected SwtAccessible(Accessible api) {
         setApi(api);
     }

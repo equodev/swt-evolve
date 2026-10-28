@@ -18,6 +18,7 @@ import '../gen/widgets.dart';
 import '../nolayout.dart';
 import '../styles.dart';
 import 'composite_evolve.dart';
+import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
@@ -109,13 +110,14 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  final int _alpha = 255;
-  Rect? clipRect;
-
   // Keyboard focus for a childless Canvas so it can be typed into (e.g. an FXCanvas
   // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
   // it on pointer-down and forward keystrokes to SWT below.
   final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
+
+  /// Whether a press gives this Canvas the keyboard focus; false for a Canvas that only paints, which
+  /// no native focuses on a click.
+  bool get focusesOnPress => true;
 
   // The Canvas grabs Flutter keyboard focus on tap (build's onPointerDown) so a childless Canvas can
   // be typed into. In whole-tree/web mode nothing forwards its keys directly (onKeyEvent stays
@@ -151,11 +153,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // window rather than a surface the application paints content onto: its children are ordinary
   // widgets and keep the theme. Only a plain Canvas hands its own colors to what is hosted over it.
   bool get hostsAppColoredContent => true;
-
-  Color applyAlpha(Color color) {
-    if (_alpha == 255) return color;
-    return color.withOpacity(_alpha / 255.0);
-  }
 
   @override
   void initState() {
@@ -226,7 +223,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
         // the Canvas hosts child widgets — they manage their own focus and stealing
         // it on every click would break them.
-        if (!hasActiveChildren) _keyboardFocus.requestFocus();
+        if (!hasActiveChildren && focusesOnPress) _keyboardFocus.requestFocus();
       },
       child: wrapWithScrollbars(base),
     );
@@ -507,12 +504,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   void sendScrollBarSelection(VScrollBar bar, int newValue, int detail) =>
       _sendSelection(bar, newValue, detail);
 
-  void _sendSelection(VScrollBar bar, int newValue, int detail) {
-    EquoCommService.sendPayload(
-      "ScrollBar/${bar.id}/Selection/Selection",
-      (VEvent()..index = newValue..detail = detail).toJson(),
-    );
-  }
+  void _sendSelection(VScrollBar bar, int newValue, int detail) =>
+      sendScrollBarSelectionEvent(bar, newValue, detail: detail);
 
   /// Java runs the wheel listeners, which may veto, then scrolls the bar of each axis.
   void _sendWheel(PointerScrollEvent event) {
@@ -589,51 +582,32 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   int? _dragStartSelection;
   int? _currentDragSelection;
   bool _hovered = false;
-  double _opacity = 0.0;
-  Timer? _hideTimer;
   Timer? _dragThrottleTimer;
+  // Kept as a value: the registry updates the bar in place, so oldWidget.bar is widget.bar.
+  int? _lastSelection;
 
   @override
   void initState() {
     super.initState();
-    _showBar();
-    _scheduleHide();
+    _lastSelection = widget.bar.selection;
   }
 
   @override
   void didUpdateWidget(_CanvasScrollBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.bar.selection != widget.bar.selection) {
-      _showBar();
-      _scheduleHide();
+    if (_lastSelection != widget.bar.selection) {
+      _lastSelection = widget.bar.selection;
 
-      if (_dragStartPointerOffset == null) {
-        if (_currentDragSelection == null || widget.bar.selection == _currentDragSelection) {
-          _currentDragSelection = null;
-          widget.onDragPixelDelta?.call(0.0);
-        }
-      }
+      // Java does not echo a selection it got from the bar, so the next move it sends is the one
+      // to show. The Canvas drops its own drag offset when it sees the selection move.
+      if (_dragStartPointerOffset == null) _currentDragSelection = null;
     }
   }
 
   @override
   void dispose() {
-    _hideTimer?.cancel();
     _dragThrottleTimer?.cancel();
     super.dispose();
-  }
-
-  void _showBar() {
-    _hideTimer?.cancel();
-    if (!mounted) return;
-    setState(() => _opacity = 1.0);
-  }
-
-  void _scheduleHide() {
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(milliseconds: 800), () {
-      if (mounted && !_hovered) setState(() => _opacity = 0.0);
-    });
   }
 
   int get _minimum => widget.bar.minimum ?? 0;
@@ -668,7 +642,6 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _currentDragSelection = _displaySelection;
     widget.onDragPixelDelta?.call(0.0);
     widget.onDragStateChanged?.call(true);
-    _showBar();
   }
 
   void _onDragUpdate(DragUpdateDetails details, double trackSize) {
@@ -688,8 +661,16 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragThrottleTimer ??= Timer(const Duration(milliseconds: 50), () {
       _dragThrottleTimer = null;
       final sel = _currentDragSelection;
-      if (sel != null) widget.onSelection(widget.bar, sel, 0);
+      if (sel != null) _send(sel);
     });
+  }
+
+  /// Java keeps a selection the bar sends without echoing it, so the model takes it here; any
+  /// value Java sends later, the pre-drag one included, then shows as a change.
+  void _send(int sel) {
+    widget.bar.selection = sel;
+    _lastSelection = sel;
+    widget.onSelection(widget.bar, sel, 0);
   }
 
   /// Centres the thumb under a track press, so a drag that follows carries on from there.
@@ -708,8 +689,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     );
     if (target == null || target == _displaySelection) return;
     setState(() => _currentDragSelection = target);
-    _showBar();
-    widget.onSelection(widget.bar, target, 0);
+    _send(target);
   }
 
   void _onDragEnd(DragEndDetails details) {
@@ -719,8 +699,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragStartPointerOffset = null;
     _dragStartSelection = null;
     widget.onDragStateChanged?.call(false);
-    widget.onSelection(widget.bar, finalSel, 0);
-    _scheduleHide();
+    _send(finalSel);
   }
 
   void _onDragCancel() {
@@ -731,7 +710,6 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _currentDragSelection = null;
     widget.onDragStateChanged?.call(false);
     widget.onDragPixelDelta?.call(0.0);
-    _scheduleHide();
   }
 
   @override
@@ -768,14 +746,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
         return MouseRegion(
           // The platform arrow, whatever cursor the owning control shows.
           cursor: SystemMouseCursors.basic,
-          onEnter: (_) {
-            setState(() => _hovered = true);
-            _showBar();
-          },
-          onExit: (_) {
-            setState(() => _hovered = false);
-            _scheduleHide();
-          },
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
           child: Listener(
             onPointerDown: enabled ? (e) => _onTrackPress(e, trackSize) : null,
             child: GestureDetector(
@@ -797,13 +769,10 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
                   (!widget.vertical && enabled) ? (d) => _onDragEnd(d) : null,
               onHorizontalDragCancel:
                   (!widget.vertical && enabled) ? _onDragCancel : null,
-              child: AnimatedOpacity(
-                opacity: _opacity,
-                duration: const Duration(milliseconds: 200),
-                child: CustomPaint(
-                  painter: painter,
-                  size: Size(constraints.maxWidth, constraints.maxHeight),
-                ),
+              // Always shown, as a native SWT bar is; the client area already leaves its room.
+              child: CustomPaint(
+                painter: painter,
+                size: Size(constraints.maxWidth, constraints.maxHeight),
               ),
             ),
           ),

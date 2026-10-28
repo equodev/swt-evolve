@@ -49,6 +49,7 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   theme_tailor_annotation: ^4.0.0
   web: ^1.1.1
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +60,9 @@ dev_dependencies:
   # by lib/main.dart, so it never reaches a production build.
   flutter_driver:
     sdk: flutter
+
+  # Lets a widget test stand in a fake webview platform for the Browser.
+  webview_platform_interface: ^1.4.4
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

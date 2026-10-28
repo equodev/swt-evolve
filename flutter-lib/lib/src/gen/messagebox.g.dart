@@ -11,7 +11,10 @@ VMessageBox _$VMessageBoxFromJson(Map<String, dynamic> json) => VMessageBox()
   ..id = (json['id'] as num).toInt()
   ..style = (json['style'] as num?)?.toInt()
   ..text = json['text'] as String?
-  ..message = json['message'] as String?;
+  ..message = json['message'] as String?
+  ..buttonLabels = (json['buttonLabels'] as List<dynamic>?)
+      ?.map((e) => e as String?)
+      .toList();
 
 Map<String, dynamic> _$VMessageBoxToJson(VMessageBox instance) =>
     <String, dynamic>{
@@ -20,4 +23,5 @@ Map<String, dynamic> _$VMessageBoxToJson(VMessageBox instance) =>
       'style': ?instance.style,
       'text': ?instance.text,
       'message': ?instance.message,
+      'buttonLabels': ?instance.buttonLabels,
     };

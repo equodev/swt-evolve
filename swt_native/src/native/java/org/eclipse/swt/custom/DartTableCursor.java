@@ -314,51 +314,47 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
         if (row == null)
             return;
         int columnIndex = column == null ? 0 : table.indexOf(column);
+        GC gc = event.gc;
+        gc.setBackground(getBackground());
+        gc.setForeground(getForeground());
+        gc.fillRectangle(event.x, event.y, event.width, event.height);
         int x = 0;
         Point size = getSize();
         Image image = row.getImage(columnIndex);
         if (image != null) {
             Rectangle imageSize = image.getBounds();
+            int imageY = (size.y - imageSize.height) / 2;
+            gc.drawImage(image, x, imageY);
             x += imageSize.width;
         }
         String text = row.getText(columnIndex);
         if (text.length() > 0) {
-            // Temporary code - need a better way to determine table trim
-            String platform = SWT.getPlatform();
-            if ("win32".equals(platform)) {
-                //$NON-NLS-1$
-                if (table.getColumnCount() == 0 || columnIndex == 0) {
-                    x += 2;
-                } else {
-                    int alignmnent = column.getAlignment();
-                    switch(alignmnent) {
-                        case SWT.LEFT:
-                            x += 6;
-                            break;
-                        case SWT.RIGHT:
-                            break;
-                        case SWT.CENTER:
-                            break;
-                    }
-                }
+            Rectangle bounds = row.getBounds(columnIndex);
+            Point extent = gc.stringExtent(text);
+            if (table.getColumnCount() == 0) {
+                x += 5;
             } else {
-                if (table.getColumnCount() == 0) {
-                    x += 5;
-                } else {
-                    int alignmnent = column.getAlignment();
-                    switch(alignmnent) {
-                        case SWT.LEFT:
-                            x += 5;
-                            break;
-                        case SWT.RIGHT:
-                            break;
-                        case SWT.CENTER:
-                            break;
-                    }
+                int alignmnent = column.getAlignment();
+                switch(alignmnent) {
+                    case SWT.LEFT:
+                        x += 5;
+                        break;
+                    case SWT.RIGHT:
+                        x = bounds.width - extent.x - 2;
+                        break;
+                    case SWT.CENTER:
+                        x += (bounds.width - x - extent.x) / 2 + 2;
+                        break;
                 }
             }
+            int textY = (size.y - extent.y) / 2;
+            gc.drawString(text, x, textY);
         }
         if (isFocusControl()) {
+            Display display = getDisplay();
+            gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+            gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
+            gc.drawFocus(0, 0, size.x, size.y);
         }
     }
 

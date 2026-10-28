@@ -21,6 +21,8 @@ import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'support/visible_region.dart';
+
 // A one-item ToolBar sized to its content, the way the stepper's GridLayout cell sizes each arrow.
 const _itemBox = 24;
 
@@ -75,23 +77,9 @@ void main() {
     await tester.pumpAndSettle();
     while (tester.takeException() != null) {}
 
-    // The region the absolute layout actually clips this ToolBar to. The ClipRect's own box is the
-    // child's bounds; with the zoom on it carries a clipper that inflates that box, so the region
-    // has to be read from the clipper rather than from the widget's rect.
-    final clipFinder = find.ancestor(
-      of: find.byType(ToolBarSwt),
-      matching: find.byType(ClipRect),
-    ).first;
-    final clipWidget = tester.widget<ClipRect>(clipFinder);
-    final clipBox = tester.getRect(clipFinder);
-    final clip = (clipWidget.clipper?.getClip(clipBox.size) ?? (Offset.zero & clipBox.size))
-        .shift(clipBox.topLeft);
-
     final atRest = tester.getRect(_icon);
-    expect(clipBox.height, lessThanOrEqualTo(_itemBox.toDouble()),
+    expect(tester.getRect(find.byType(ToolBarSwt)).height, lessThanOrEqualTo(_itemBox.toDouble()),
         reason: 'precondition: the control is sized to its content, not given slack');
-    expect(clip, isNot(clipBox),
-        reason: 'the zoom is on by default, so the clip must be inflated past the bare bounds');
 
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer(location: Offset.zero);
@@ -103,16 +91,16 @@ void main() {
     final hovered = tester.getRect(_icon);
     expect(hovered.height, greaterThan(atRest.height), reason: 'the zoom did not apply');
 
-    // The grown icon must be drawn whole. It reaches past the control's own bounds -- that is the
-    // point, the zoom has nowhere else to go on a control sized to its content -- so what it must
-    // stay inside is the inflated clip.
+    // The grown icon reaches past the control's own bounds -- the zoom has nowhere else to go on a
+    // control sized to its content -- and must still be drawn whole.
+    final visible = visibleRegion(tester.renderObject<RenderBox>(_icon));
     final cut = <String, double>{
-      'left': clip.left - hovered.left,
-      'right': hovered.right - clip.right,
-      'top': clip.top - hovered.top,
-      'bottom': hovered.bottom - clip.bottom,
+      'left': visible.left - hovered.left,
+      'right': hovered.right - visible.right,
+      'top': visible.top - hovered.top,
+      'bottom': hovered.bottom - visible.bottom,
     }..removeWhere((_, px) => px <= 0.01);
     expect(cut, isEmpty,
-        reason: 'the zoomed icon is cut off (clip=$clip hovered=$hovered)');
+        reason: 'the zoomed icon is cut off (visible=$visible hovered=$hovered)');
   });
 }

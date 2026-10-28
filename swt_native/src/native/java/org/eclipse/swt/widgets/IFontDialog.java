@@ -27,6 +27,8 @@ public interface IFontDialog extends IDialog, ImplFontDialog {
      * @return the FontData for the selected font, or null
      * @deprecated use #getFontList ()
      */
+    @Deprecated
+    @SuppressWarnings("removal")
     FontData getFontData();
 
     /**
@@ -86,6 +88,8 @@ public interface IFontDialog extends IDialog, ImplFontDialog {
      * @param fontData the FontData to use initially, or null
      * @deprecated use #setFontList (FontData [])
      */
+    @Deprecated
+    @SuppressWarnings("removal")
     void setFontData(FontData fontData);
 
     /**

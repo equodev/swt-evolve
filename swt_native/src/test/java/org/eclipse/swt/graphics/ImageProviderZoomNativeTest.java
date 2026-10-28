@@ -1,0 +1,66 @@
+package org.eclipse.swt.graphics;
+
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.RecordingBridge;
+import org.eclipse.swt.widgets.DartMocks;
+import org.eclipse.swt.widgets.Display;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * A provider image answers another zoom from its provider, for any zoom, as on GTK and Win32. Where the provider
+ * has nothing for the zoom, the held pixels are scaled.
+ */
+@Tag("native-unit")
+class ImageProviderZoomNativeTest {
+
+    private Display display;
+
+    @BeforeEach
+    void setUp() {
+        FlutterBridge.set(new RecordingBridge());
+        display = DartMocks.dartDisplay();
+    }
+
+    @AfterEach
+    void tearDown() {
+        FlutterBridge.set(null);
+    }
+
+    private static ImageData direct(int size) {
+        return new ImageData(size, size, 24, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+    }
+
+    private static final ImageDataProvider PROVIDER = zoom -> direct(zoom / 50);
+
+    @Test
+    void the_provider_is_asked_for_any_zoom() {
+        assertThat(GraphicsUtils.imageDataAtZoom(PROVIDER, null, 150).width).isEqualTo(3);
+        assertThat(GraphicsUtils.imageDataAtZoom(PROVIDER, null, 200).width).isEqualTo(4);
+    }
+
+    @Test
+    void an_image_answers_a_zoom_it_is_not_held_at_from_its_provider() {
+        Image image = new Image(display, (ImageDataProvider) zoom -> direct(zoom == 100 ? 2 : 5));
+        assertThat(image.getImageData(150).width).as("the provider's, not the 100% pixels scaled").isEqualTo(5);
+        image.dispose();
+    }
+
+    @Test
+    void a_provider_with_nothing_for_the_zoom_leaves_it_to_scaling() {
+        assertThat(GraphicsUtils.imageDataAtZoom(zoom -> null, null, 200)).isNull();
+        assertThat(GraphicsUtils.imageDataAtZoom(null, zoom -> null, 200)).isNull();
+        assertThat(GraphicsUtils.imageDataAtZoom(null, null, 200)).isNull();
+    }
+
+    @Test
+    void the_provider_data_is_copied() {
+        ImageData held = direct(4);
+        ImageData answered = GraphicsUtils.imageDataAtZoom(zoom -> held, null, 200);
+        assertThat(answered).isNotSameAs(held);
+    }
+}

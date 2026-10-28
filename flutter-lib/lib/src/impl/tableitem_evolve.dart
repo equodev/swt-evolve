@@ -15,8 +15,10 @@ import '../impl/table_evolve.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
+import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/font_utils.dart';
+import 'utils/viewport_clip.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
@@ -91,6 +93,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
     final columns = _context?.parentTableValue.columns ?? [];
+    final rowGround = Color.alphaBlend(
+        _context?.tableImpl?.rowBackgroundColor(rowIndex, state, theme) ?? Colors.transparent,
+        enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
 
     return List.generate(effectiveColumnCount, (columnIndex) {
       final cellText = columnIndex < cellTexts.length
@@ -102,6 +107,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         theme,
         isSelected,
         enabled,
+        background: rowGround,
       );
       // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
       // painted twice.
@@ -178,7 +184,10 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final cellImage = _cellImageForColumn(columnIndex);
     final enabled = _context?.parentTableValue.enabled ?? true;
     final cellBackgroundColor = getCellBackgroundColor(columnIndex, theme);
-    final rowHeight = calculateRowHeight(textStyle, theme);
+    // Rows share one height; the parent's cached value already honours an owner-draw row that asked
+    // for more than the font line (VTable.ownerDrawItemHeight), so the cell matches the slot.
+    final rowHeight = _context?.tableImpl?.cachedRowHeight ??
+        calculateRowHeight(textStyle, theme);
     final checkboxOnly = showCheckbox && cellText.isEmpty && cellImage == null;
     final imageOnly = !showCheckbox && cellText.isEmpty && cellImage != null;
     final cellAlignment = _swtToAlignment(columnAlignment);
@@ -342,11 +351,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
   int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {
     final columnWidths = _context?.tableImpl?.cachedColumnWidths;
+    final tableImpl = _context?.tableImpl;
     double x = 0.0;
-    if (columnWidths != null) {
-      for (int i = 0; i < columnIndex; i++) {
-        final w = columnWidths[i];
-        if (w is FixedColumnWidth) x += w.value;
+    if (columnWidths != null && tableImpl != null) {
+      final count = tableImpl.getColumns().length;
+      if (columnIndex < count) {
+        x = columnLefts(tableImpl.fixedColumnWidths(count), tableImpl.displayOrder)[columnIndex];
       }
       final colW = columnWidths[columnIndex];
       if (colW is FixedColumnWidth) x += colW.value / 2;
@@ -370,7 +380,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   ) {
     final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
     final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
-    return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
+    // In the table's own coordinates, as Table.getItem(Point) reads them: the scrolled rows moved up.
+    final scrolled = _context?.tableImpl?.verticalScrollOffset ?? 0.0;
+    return (headerOffset + rowIndex * rowHeight + rowHeight / 2 - scrolled).round();
   }
 
   Widget buildCheckbox(TableThemeExtension theme, bool enabled) {
@@ -441,8 +453,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     int columnIndex,
     TableThemeExtension theme,
     bool isSelected,
-    bool enabled,
-  ) {
+    bool enabled, {
+    Color? background,
+  }) {
     final defaultColor = getTableCellDefaultTextColor(theme, isSelected, enabled);
 
     final cellForeground = getCellForeground(columnIndex);
@@ -451,6 +464,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // Cell, else row, else the Table's own -- the cascade SWT resolves.
       foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
       defaultColor: defaultColor,
+      minContrast: theme.minTextContrast,
+      background: background,
     );
   }
 
@@ -581,7 +596,6 @@ class _CellHoverZoom extends StatefulWidget {
 class _CellHoverZoomState extends State<_CellHoverZoom> {
   final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
-  ScrollableState? _scrollable;
 
   bool get _showing => _entry != null;
 
@@ -604,7 +618,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
   void _remove() {
     _entry?.remove();
     _entry = null;
-    _scrollable = null;
   }
 
   void _show() {
@@ -613,7 +626,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
     final box = context.findRenderObject() as RenderBox?;
     if (overlay == null || box == null || !box.hasSize) return;
 
-    _scrollable = Scrollable.maybeOf(context);
     final entry = OverlayEntry(builder: (_) => _buildCopy());
     overlay.insert(entry);
     setState(() => _entry = entry);
@@ -629,8 +641,9 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       alignment: widget.alignment,
       child: widget.child,
     );
-    final viewport = _viewportRect(cell);
-    if (viewport != null) copy = ClipRect(clipper: _FixedRect(viewport), child: copy);
+    // Keeps a copy anchored to a half-scrolled row from painting over the header.
+    final viewport = visibleViewportRect(context, cell);
+    if (viewport != null) copy = ClipRect(clipper: FixedRectClipper(viewport), child: copy);
 
     return Positioned(
       width: cell.size.width,
@@ -651,16 +664,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
         ),
       ),
     );
-  }
-
-  /// The table body's visible rect, in the cell's own coordinates -- what keeps a copy anchored to a
-  /// half-scrolled row from painting over the header. Null while the cell is not inside a viewport.
-  Rect? _viewportRect(RenderBox cell) {
-    final box = _scrollable?.context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return null;
-    // Back through the cell's transform rather than subtracting view positions, which at any zoom
-    // are in other pixels than the size they are combined with.
-    return cell.globalToLocal(box.localToGlobal(Offset.zero)) & box.size;
   }
 
   void _hide() {
@@ -686,18 +689,6 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       ),
     );
   }
-}
-
-class _FixedRect extends CustomClipper<Rect> {
-  const _FixedRect(this.rect);
-
-  final Rect rect;
-
-  @override
-  Rect getClip(Size size) => rect;
-
-  @override
-  bool shouldReclip(_FixedRect oldClipper) => oldClipper.rect != rect;
 }
 
 /// Animates from the cell's own size up to [scale] as soon as it is mounted, so the overlay copy

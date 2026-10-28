@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons, Icon, Divider, Theme;
@@ -15,12 +16,13 @@ import '../theme/theme_settings/combo_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
 import 'utils/pointer.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
-    extends CompositeImpl<T, V> with PendingTextEchoes {
+    extends CompositeImpl<T, V> with PendingTextEchoes, ClientCaretReport {
   @override
   bool get keepsWheel => true;
 
@@ -34,12 +36,19 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   bool? _lastJavaListVisible;
   /// The item the keyboard points at while the list is open; Enter commits it.
   int _highlighted = -1;
+  /// Whether the highlighted item is already the selection, chosen by a typed letter.
+  bool _highlightSelected = false;
   final GlobalKey _highlightedKey = GlobalKey();
+
+  /// The field is the only node a Combo mounts, and the one its keys are handled on.
+  @override
+  FocusNode? get swtFocusNode => _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
+    _controller.addListener(_reportCaret);
     _focusNode.addListener(_handleFocusChange);
     _focusNode.onKeyEvent = _handleKey;
     addOpenListKeyClaim(_listClaimsKey);
@@ -120,7 +129,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   }
 
   @override
-  void extraSetState() {
+  void extraSetState() => fromJava(_applyJavaState);
+
+  void _applyJavaState() {
     final String newText = state.text ?? "";
     // Ignore a stale echo of our own in-flight typing (see PendingTextEchoes); a value we
     // never sent is a genuine external change and still updates the controller below.
@@ -138,9 +149,12 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     }
   }
 
+  /// Java's echo of a list the user opened lands on an open list, which keeps its highlight.
   void _showList(bool show) {
+    if (show == _overlayController.isShowing) return;
     if (show) {
       _highlighted = (state.items ?? const <String>[]).indexOf(state.text ?? "");
+      _highlightSelected = false;
       _overlayController.show();
     } else {
       _overlayController.hide();
@@ -168,17 +182,20 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     final bool alt = HardwareKeyboard.instance.isAltPressed;
     final bool down = key == LogicalKeyboardKey.arrowDown;
     final bool up = key == LogicalKeyboardKey.arrowUp;
+    final List<String> items = state.items ?? const <String>[];
     if (!_overlayController.isShowing) {
       if (key == LogicalKeyboardKey.f4 || (alt && down)) {
         _toggleOverlay();
         return KeyEventResult.handled;
       }
-      return KeyEventResult.ignored;
+      return _handleClosedListKey(event, items);
     }
-    final List<String> items = state.items ?? const <String>[];
     if ((up || down) && !alt) {
       if (items.isNotEmpty) {
-        setState(() => _highlighted = (_highlighted + (down ? 1 : -1)).clamp(0, items.length - 1));
+        setState(() {
+          _highlighted = (_highlighted + (down ? 1 : -1)).clamp(0, items.length - 1);
+          _highlightSelected = false;
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final BuildContext? item = _highlightedKey.currentContext;
           if (item != null) Scrollable.ensureVisible(item);
@@ -187,7 +204,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
-      if (_highlighted >= 0 && _highlighted < items.length) {
+      if (_highlightSelected) {
+        _setListOpen(false);
+      } else if (_highlighted >= 0 && _highlighted < items.length) {
         _onItemSelected(items[_highlighted]);
       } else {
         _toggleOverlay();
@@ -198,7 +217,96 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       _toggleOverlay();
       return KeyEventResult.handled;
     }
+    if (_selectsByLetterWithListOpen && _isTypedLetter(event)) {
+      final int? target = _nextStartingWith(items, items.indexOf(state.text ?? ""), event.character!);
+      if (target != null) {
+        setState(() {
+          _highlighted = target;
+          _highlightSelected = true;
+        });
+        _selectKeepingListOpen(items[target]);
+      }
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
+  }
+
+  /// A READ_ONLY Combo's open list answers a typed letter as Win32 does: the letter selects, as it
+  /// does with the list closed. GTK's list ignores it, and so does this one on macOS.
+  bool get _selectsByLetterWithListOpen =>
+      StyleBits(state.style).has(SWT.READ_ONLY) &&
+      defaultTargetPlatform != TargetPlatform.linux &&
+      defaultTargetPlatform != TargetPlatform.macOS &&
+      defaultTargetPlatform != TargetPlatform.iOS;
+
+  /// GTK's closed READ_ONLY Combo ignores a typed letter; Win32 selects with it.
+  static bool get _selectsByLetterWithListClosed => defaultTargetPlatform != TargetPlatform.linux;
+
+  bool _isTypedLetter(KeyEvent event) {
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    return !keyboard.isAltPressed &&
+        !keyboard.isControlPressed &&
+        !keyboard.isMetaPressed &&
+        _isTypedCharacter(event.character);
+  }
+
+  /// The rows a Page key moves, as a Windows list showing SWT's default five items does.
+  static const int _pageStep = 4;
+
+  /// A focused Combo with its list closed, as on Windows: the arrows step through the items, a
+  /// READ_ONLY one also takes Home, End, the Page keys and a typed letter, and Enter is the default
+  /// selection. An editable Combo leaves the rest to its text.
+  KeyEventResult _handleClosedListKey(KeyEvent event, List<String> items) {
+    final LogicalKeyboardKey key = event.logicalKey;
+    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      widget.sendSelectionDefaultSelection(state, VEvent()..text = state.text);
+      return KeyEventResult.handled;
+    }
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    if (keyboard.isAltPressed || keyboard.isControlPressed || keyboard.isMetaPressed) {
+      return KeyEventResult.ignored;
+    }
+    final bool readOnly = StyleBits(state.style).has(SWT.READ_ONLY);
+    final int current = items.indexOf(state.text ?? "");
+    final int last = items.length - 1;
+    int? target;
+    if (key == LogicalKeyboardKey.arrowDown) {
+      target = current + 1;
+    } else if (key == LogicalKeyboardKey.arrowUp) {
+      target = current < 0 ? 0 : current - 1;
+    } else if (readOnly && key == LogicalKeyboardKey.home) {
+      target = 0;
+    } else if (readOnly && key == LogicalKeyboardKey.end) {
+      target = last;
+    } else if (readOnly && key == LogicalKeyboardKey.pageDown) {
+      target = current + _pageStep;
+    } else if (readOnly && key == LogicalKeyboardKey.pageUp) {
+      target = current < 0 ? 0 : current - _pageStep;
+    } else if (readOnly && _isTypedCharacter(event.character)) {
+      if (!_selectsByLetterWithListClosed) return KeyEventResult.ignored;
+      target = _nextStartingWith(items, current, event.character!);
+      if (target == null) return KeyEventResult.handled;
+    } else {
+      return KeyEventResult.ignored;
+    }
+    if (items.isNotEmpty) {
+      final int index = target.clamp(0, last);
+      if (index != current) _onItemSelected(items[index]);
+    }
+    return KeyEventResult.handled;
+  }
+
+  static bool _isTypedCharacter(String? character) =>
+      character != null && character.length == 1 && character.codeUnitAt(0) >= 0x20;
+
+  /// The first item after [current] that starts with [character], wrapping around the list.
+  static int? _nextStartingWith(List<String> items, int current, String character) {
+    final String prefix = character.toLowerCase();
+    for (int step = 1; step <= items.length; step++) {
+      final int i = (current + step) % items.length;
+      if (items[i].toLowerCase().startsWith(prefix)) return i;
+    }
+    return null;
   }
 
   void _handleFocusChange() {
@@ -222,7 +330,22 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     state.text = value;
     recordSentText(value);
     widget.sendModifyModify(state, VEvent()..text = value);
+    _reportCaret();
   }
+
+  @override
+  int? get reportedCaret => state.caretPosition;
+
+  @override
+  set reportedCaret(int? caret) => state.caretPosition = caret;
+
+  @override
+  void sendCaretReport(VEvent event) => widget.sendVerifyVerify(state, event);
+
+  /// A typed edit reaches Java as the Modify after this listener runs, and resets Java's selection
+  /// there: its caret is reported once the Modify is sent.
+  void _reportCaret() =>
+      reportCaret(_controller, editPending: _controller.text != (state.text ?? ""));
 
   @override
   Widget build(BuildContext context) {
@@ -322,9 +445,13 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             onSelected: _onItemSelected,
             onTextChanged: _handleTextChanged,
             onToggleOverlay: _toggleOverlay,
+            onDismiss: () => _setListOpen(false),
             highlighted: _highlighted,
             highlightedKey: _highlightedKey,
-            onHighlight: (i) => setState(() => _highlighted = i),
+            onHighlight: (i) => setState(() {
+              _highlighted = i;
+              _highlightSelected = false;
+            }),
             width: width,
             textPadding: textPadding,
             arrowSpacing: arrowSpacing,
@@ -340,25 +467,34 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     ));
   }
 
-  /// Toggles the dropdown keeping [VCombo.listVisible] truthful, so a value push that reuses the
-  /// state object cannot resurrect a stale flag.
-  ///
-  /// Opening it focuses the Combo, as a click on a native one does: its keys belong to the list.
+  /// Opening the list focuses the Combo, as a click on a native one does: its keys belong to the list.
   void _toggleOverlay() {
     final bool showing = !_overlayController.isShowing;
     if (showing) _focusNode.requestFocus();
+    _setListOpen(showing);
+  }
+
+  /// Opens or closes the list on the user's behalf. [VCombo.listVisible] stays truthful, so a value
+  /// push that reuses the state object cannot resurrect a stale flag, and Java is told: Flutter draws
+  /// the list, so Java has no other way to know.
+  void _setListOpen(bool open) {
+    if (open == _overlayController.isShowing) return;
     setState(() {
-      state.listVisible = showing;
-      _showList(showing);
+      state.listVisible = open;
+      _showList(open);
     });
+    widget.sendEvent(state, "List/Visible", VEvent()..detail = open ? 1 : 0);
   }
 
   void _onItemSelected(String? value) {
+    _setListOpen(false);
+    _selectKeepingListOpen(value);
+  }
+
+  void _selectKeepingListOpen(String? value) {
     setState(() {
       state.text = value;
       _controller.text = value ?? "";
-      state.listVisible = false;
-      _overlayController.hide();
     });
     widget.sendSelectionSelection(state, VEvent()..text = value);
   }
@@ -366,6 +502,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   @override
   void dispose() {
     removeOpenListKeyClaim(_listClaimsKey);
+    _controller.removeListener(_reportCaret);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -384,6 +521,7 @@ class _DropdownComboLayout extends StatelessWidget {
   final ValueChanged<String?> onSelected;
   final ValueChanged<String> onTextChanged;
   final VoidCallback onToggleOverlay;
+  final VoidCallback onDismiss;
   final int highlighted;
   final GlobalKey highlightedKey;
   final ValueChanged<int> onHighlight;
@@ -406,6 +544,7 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.onSelected,
     required this.onTextChanged,
     required this.onToggleOverlay,
+    required this.onDismiss,
     required this.highlighted,
     required this.highlightedKey,
     required this.onHighlight,
@@ -494,7 +633,7 @@ class _DropdownComboLayout extends StatelessWidget {
     return CustomSingleChildLayout(
       delegate: _ComboListLayout(field),
       child: pointerInterceptor(TapRegion(
-        onTapOutside: (_) => overlayController.hide(),
+        onTapOutside: (_) => onDismiss(),
         // SWT sizes the list to its widest item and never narrower than the
         // field. Pinning it to the field's width wraps every item of a Combo
         // an application hinted below its preferred width, and the list then

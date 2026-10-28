@@ -54,6 +54,9 @@ VTable _$VTableFromJson(Map<String, dynamic> json) => VTable()
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
   ..itemCount = (json['itemCount'] as num?)?.toInt()
+  ..columnOrder = (json['columnOrder'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..columns = (json['columns'] as List<dynamic>?)
       ?.map((e) => VTableColumn.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -73,7 +76,9 @@ VTable _$VTableFromJson(Map<String, dynamic> json) => VTable()
   ..linesVisible = json['linesVisible'] as bool?
   ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
-      .toList();
+      .toList()
+  ..topIndex = (json['topIndex'] as num?)?.toInt()
+  ..ownerDrawItemHeight = (json['ownerDrawItemHeight'] as num?)?.toInt();
 
 Map<String, dynamic> _$VTableToJson(VTable instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -100,6 +105,7 @@ Map<String, dynamic> _$VTableToJson(VTable instance) => <String, dynamic>{
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
   'itemCount': ?instance.itemCount,
+  'columnOrder': ?instance.columnOrder,
   'columns': ?instance.columns,
   'editors': ?instance.editors,
   'headerBackground': ?instance.headerBackground,
@@ -108,4 +114,6 @@ Map<String, dynamic> _$VTableToJson(VTable instance) => <String, dynamic>{
   'items': ?instance.items,
   'linesVisible': ?instance.linesVisible,
   'selection': ?instance.selection,
+  'topIndex': ?instance.topIndex,
+  'ownerDrawItemHeight': ?instance.ownerDrawItemHeight,
 };

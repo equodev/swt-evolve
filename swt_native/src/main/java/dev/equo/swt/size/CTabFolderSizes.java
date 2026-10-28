@@ -21,7 +21,7 @@ public class CTabFolderSizes {
     public static final int TAB_LABEL_SURROUND = 14;
 
     /** What a close button adds to a tab's width, including its gap to the label. */
-    public static final int TAB_CLOSE_EXTRA = 30;
+    public static final int TAB_CLOSE_EXTRA = 20;
 
     /** What an image adds to a tab's width, including its gap to the label. */
     public static final int TAB_IMAGE_EXTRA = 19;

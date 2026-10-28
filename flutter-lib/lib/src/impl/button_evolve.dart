@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show BoxHitTestResult;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import '../gen/button.dart';
 import '../gen/color.dart';
 import '../gen/swt.dart';
@@ -12,6 +13,7 @@ import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
@@ -92,8 +94,18 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     } else {
       button = _buildPushButton(context, widgetTheme, enabled, text);
     }
-    return _selectOnReleaseInside(button);
+    return _selectOnReleaseInside(_leaveEnterToTheShell(button));
   }
+
+  /// Enter is the shell's: Java runs the traversal and presses the default button. Flutter's own
+  /// Enter activation would press this button as well. Space still presses it, as natively.
+  Widget _leaveEnterToTheShell(Widget button) => Shortcuts(
+        shortcuts: const <ShortcutActivator, Intent>{
+          SingleActivator(LogicalKeyboardKey.enter): DoNothingAndStopPropagationIntent(),
+          SingleActivator(LogicalKeyboardKey.numpadEnter): DoNothingAndStopPropagationIntent(),
+        },
+        child: button,
+      );
 
   bool _primaryPressed = false;
   /// Whether the button was selected during this press, by Flutter's tap or by the keyboard.
@@ -587,6 +599,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
                     foreground: _ownForeground,
                     defaultColor: widgetTheme.pushButtonTextColor,
                     context: context,
+                    minContrast: widgetTheme.minTextContrast,
                   )
                 : widgetTheme.disabledForegroundColor,
           ),
@@ -650,6 +663,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       foreground: _ownForeground,
       defaultColor: defaultTextColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textStyle = getTextStyle(
@@ -683,8 +697,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
 
         if (hasText)
           Flexible(
-            child: Text(
-              text!,
+            child: MnemonicText(
+              state.text,
               style: textStyle,
               overflow: shouldWrap
                   ? TextOverflow.visible

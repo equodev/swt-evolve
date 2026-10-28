@@ -473,9 +473,9 @@ public class DartLink extends DartControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color != null ? color : display.getSystemColor(SWT.COLOR_LINK_FOREGROUND);
-        checkWidget();
         if (!java.util.Objects.equals(this._linkForeground, newValue)) {
             getValue().markDirty(VLink.LINK_FOREGROUND);
         }
@@ -539,17 +539,14 @@ public class DartLink extends DartControl implements ILink {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
             getValue().markDirty(VLink.TEXT);
-            getDisplay().asyncExec(() -> {
-                org.eclipse.swt.widgets.Control control = (org.eclipse.swt.widgets.Control) getApi();
-                if (!control.isDisposed())
-                    getShell().layout(new org.eclipse.swt.widgets.Control[] { control });
-            });
+            LinkHelper.relayout(this);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (string.equals(text))
             return;
         text = string;
+        parse(text);
         focusIndex = offsets.length > 0 ? 0 : -1;
         for (int i = 0; i < offsets.length; i++) {
         }

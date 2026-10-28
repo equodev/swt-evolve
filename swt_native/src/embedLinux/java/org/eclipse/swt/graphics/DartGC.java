@@ -1668,6 +1668,8 @@ public final class DartGC extends DartResource implements IGC {
                 bounds = new Rectangle(0, 0, b.width, b.height);
         } else if (drawable instanceof Image) {
             bounds = ((Image) drawable).getBounds();
+        } else if (drawable instanceof Device) {
+            bounds = ((Device) drawable).getBounds();
         }
         Rectangle clip = this.clipping == null ? bounds : new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         if (clip == null)
@@ -1701,7 +1703,8 @@ public final class DartGC extends DartResource implements IGC {
         region.subtract(region);
         Rectangle bounds = getClipping();
         if (clippingRects != null && clippingRects.length >= 4) {
-            for (int i = 0; i + 3 < clippingRects.length; i += 4) region.add(clippingRects[i], clippingRects[i + 1], clippingRects[i + 2], clippingRects[i + 3]);
+            int[] rects = GCHelper.isTransforming(transform) ? GCHelper.transformRects(transform, clippingRects, true) : clippingRects;
+            for (int i = 0; i + 3 < rects.length; i += 4) region.add(GCHelper.rectAt(rects, i));
             region.intersect(bounds);
         } else {
             region.add(bounds);
@@ -1777,9 +1780,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Color getForeground() {
         if (isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return this.foreground;
     }
 
@@ -2343,7 +2346,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         alpha &= 0xFF;
         int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
+        if (this.alpha != newValue) {
             getValue().markDirty(VGC.ALPHA);
         }
         if (getApi().handle == 0)
@@ -2387,7 +2390,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = antialias;
-        if (!java.util.Objects.equals(this.antialias, newValue)) {
+        if (this.antialias != newValue) {
             getValue().markDirty(VGC.ANTIALIAS);
         }
         if (getApi().handle == 0)
@@ -2794,7 +2797,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = rule;
-        if (!java.util.Objects.equals(this.fillRule, newValue)) {
+        if (this.fillRule != newValue) {
             getValue().markDirty(VGC.FILL_RULE);
         }
         if (getApi().handle == 0)
@@ -2914,7 +2917,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = interpolation;
-        if (!java.util.Objects.equals(this.interpolation, newValue)) {
+        if (this.interpolation != newValue) {
             getValue().markDirty(VGC.INTERPOLATION);
         }
         if (getApi().handle == 0)
@@ -3095,7 +3098,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = cap;
-        if (!java.util.Objects.equals(this.lineCap, newValue)) {
+        if (this.lineCap != newValue) {
             getValue().markDirty(VGC.LINE_CAP);
         }
         if (getApi().handle == 0)
@@ -3137,7 +3140,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int[] newValue = dashes;
-        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         if (getApi().handle == 0)
@@ -3200,7 +3203,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = join;
-        if (!java.util.Objects.equals(this.lineJoin, newValue)) {
+        if (this.lineJoin != newValue) {
             getValue().markDirty(VGC.LINE_JOIN);
         }
         if (getApi().handle == 0)
@@ -3240,7 +3243,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineStyle;
-        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+        if (this.lineStyle != newValue) {
             getValue().markDirty(VGC.LINE_STYLE);
         }
         if (getApi().handle == 0)
@@ -3291,7 +3294,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineWidth;
-        if (!java.util.Objects.equals(this.lineWidth, newValue)) {
+        if (this.lineWidth != newValue) {
             getValue().markDirty(VGC.LINE_WIDTH);
         }
         if (getApi().handle == 0)
@@ -3452,7 +3455,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         boolean newValue = xor;
-        if (!java.util.Objects.equals(this.XORMode, newValue)) {
+        if (this.XORMode != newValue) {
             getValue().markDirty(VGC.XORMODE);
         }
         if (getApi().handle == 0)
@@ -3724,6 +3727,14 @@ public final class DartGC extends DartResource implements IGC {
 
     Boolean wireThemedCanvas() {
         return dev.equo.swt.Config.canvasColorsOverride(drawable);
+    }
+
+    RGB[] wireHoverFills() {
+        return dev.equo.swt.Config.canvasHoverFills(drawable);
+    }
+
+    RGB[] wireSelectionFills() {
+        return dev.equo.swt.Config.canvasSelectionFills(drawable);
     }
 
     /**

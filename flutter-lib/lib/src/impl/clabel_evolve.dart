@@ -18,6 +18,10 @@ import '../custom/toolbar_composite.dart';
 
 class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     extends CanvasImpl<T, V> {
+  /// A CLabel paints no scrollable content, so it reports the wheel from [wrap] like a plain control.
+  @override
+  bool get forwardsWheelFromWrap => true;
+
   bool _isHovered = false;
 
   bool get _isChipMode =>
@@ -58,6 +62,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       context: context,
       foreground: state.foreground,
       defaultColor: clabelTheme.primaryTextColor,
+      minContrast: clabelTheme.minTextContrast,
     );
     final textStyle = getTextStyle(
       context: context,
@@ -178,6 +183,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
             context: context,
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
+            minContrast: widgetTheme.minTextContrast,
           )
         : widgetTheme.disabledTextColor;
 

@@ -7,6 +7,7 @@ import '../gen/cursor.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
+import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
@@ -41,6 +42,9 @@ class VScrolledComposite extends VComposite {
   bool? expandVertical;
   int? minHeight;
   int? minWidth;
+  VPoint? origin;
+
+  int? originRequest;
 
   @override
   void copyFrom(VWidget other) {
@@ -52,6 +56,8 @@ class VScrolledComposite extends VComposite {
       expandVertical = other.expandVertical;
       minHeight = other.minHeight;
       minWidth = other.minWidth;
+      origin = other.origin;
+      originRequest = other.originRequest;
     }
   }
 
@@ -72,6 +78,12 @@ class VScrolledComposite extends VComposite {
         minHeight = (json['minHeight'] as num?)?.toInt();
       case 'minWidth':
         minWidth = (json['minWidth'] as num?)?.toInt();
+      case 'origin':
+        origin = json['origin'] == null
+            ? null
+            : VPoint.fromJson(json['origin'] as Map<String, dynamic>);
+      case 'originRequest':
+        originRequest = (json['originRequest'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

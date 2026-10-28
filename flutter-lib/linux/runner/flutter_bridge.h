@@ -19,7 +19,8 @@ JNIEXPORT jlong JNICALL
 Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, jlong parent,
                                            jlong widget_id, jstring widget_name, jstring theme,
                                            jint background_color, jint parent_background_color,
-                                           jint width, jint height, jboolean csd_enabled);
+                                           jint width, jint height, jboolean csd_enabled,
+                                           jboolean impeller_enabled);
 
 JNIEXPORT jlong JNICALL
 Java_dev_equo_swt_FlutterNative_GetView(JNIEnv *env, jclass cls, jlong context);
@@ -58,6 +59,9 @@ Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv *env, jclass cls, jlong context)
 
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong context, jboolean visible);
+
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv *env, jclass cls, jlong context, jlong owner);
 
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetState(JNIEnv *env, jclass cls, jlong context, jint state);

@@ -25,6 +25,8 @@ public interface IComposite extends IScrollable, ImplComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
+    @Deprecated
+    @SuppressWarnings("removal")
     void changed(Control[] changed);
 
     void checkSubclass();

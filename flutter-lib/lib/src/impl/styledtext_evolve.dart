@@ -40,8 +40,10 @@ import 'utils/wheel_input.dart';
 /// selection and scroll offset are Java's and nothing here edits them.
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> implements RenderFactsSource {
+  /// With scroll bars the wheel scrolls the text, through [_onWheel]; without them a StyledText
+  /// reports it like any other control and passes it on.
   @override
-  bool get forwardsWheelFromWrap => false;
+  bool get forwardsWheelFromWrap => !hasStyle(state.style, SWT.H_SCROLL | SWT.V_SCROLL);
 
   // Keys are forwarded from [_onKeyEvent], which also keeps them away from Flutter's shortcuts.
   @override
@@ -94,6 +96,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         context: context,
         foreground: state.foreground,
         defaultColor: _styledTextTheme.foregroundColor,
+        minContrast: _styledTextTheme.minTextContrast,
       );
 
   /// The editor fill marks a place to type. A read-only StyledText is text to read, so it sits on the
@@ -255,6 +258,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   bool get _focused => _focusNode.hasFocus;
 
+  /// Java focuses a pressed StyledText (ControlHelper.pressed, StyledText.handleMouseDown) and asks
+  /// the client to move its keyboard focus there, onto [swtFocusNode].
+  @override
+  void takeFocusOnPress() {}
+
   void _onFocusChange() {
     if (!mounted) return;
     setCanvasEditorFocus(this, _focused);
@@ -319,14 +327,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return KeyEventResult.handled;
   }
 
-  /// The platform focuses a control on any button press, ahead of the MouseDown that
-  /// [ControlImpl.wrap] sends for the same press.
-  void _onPointerDown(PointerDownEvent event) {
-    if (scrollBarPointers.contains(event.pointer)) return;
-    widget.sendFocusFocusIn(state, null);
-    _focusNode.requestFocus();
-  }
-
   /// Line count and longest line in one pass, over code units — `text[i]` allocates a
   /// one-character String per character.
   void _ensureTextMetrics(String text) {
@@ -379,7 +379,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       // 0 asks the shape for the height of the row the caret sits on, as a native caret is
       // as tall as its line.
       height: (caretBounds?.height ?? 0) > 0 ? caretBounds!.height.toDouble() : 0,
-      color: applyAlpha(_textColor),
+      color: _textColor,
       styledTextId: state.id,
       blinkRate: _caretBlinkMs,
     );
@@ -422,7 +422,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       text,
       Offset((state.leftMargin ?? 0).toDouble(), (state.topMargin ?? 0).toDouble()),
       defaultStyle,
-      clipRect,
       null,
       caretInfo,
       state.wordWrap ?? false,
@@ -488,7 +487,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Object? _paletteBasis;
 
   void _checkPaletteBasis() {
-    final basis = (_getDefaultTextStyle(), applyAlpha(_textColor), _linkForeground);
+    final basis = (_getDefaultTextStyle(), _textColor, _linkForeground);
     if (basis != _paletteBasis || _paletteByContent.length > 512) _paletteByContent.clear();
     _paletteBasis = basis;
   }
@@ -653,7 +652,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextStyle debugRangeStyle(VStyleRange vRange) => _convertVStyleRangeToTextStyle(vRange);
 
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
-    final defaultTextColor = applyAlpha(_textColor);
+    final defaultTextColor = _textColor;
     final baseStyle = _getDefaultTextStyle();
 
     Color? foreground;
@@ -760,7 +759,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   /// Get default text style from state.font or fallback
   TextStyle _getDefaultTextStyle() {
-    final defaultTextColor = applyAlpha(_textColor);
+    final defaultTextColor = _textColor;
 
     if (state.font != null) {
        return FontUtils.textStyleFromVFont(
@@ -909,18 +908,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // repaints up to the nearest boundary above it.
     return RepaintBoundary(
       child: wrap(
-        Listener(
-          onPointerDown: _onPointerDown,
-          child: SizedBox(
-            width: bounds.width,
-            height: bounds.height,
-            child: Stack(
-              children: [
-                Positioned.fill(child: contentLayer),
-                ..._marginStrips(showVBar ? trackSize : 0, showHBar ? trackSize : 0),
-                Positioned.fill(child: interactionLayer),
-              ],
-            ),
+        SizedBox(
+          width: bounds.width,
+          height: bounds.height,
+          child: Stack(
+            children: [
+              Positioned.fill(child: contentLayer),
+              ..._marginStrips(showVBar ? trackSize : 0, showHBar ? trackSize : 0),
+              Positioned.fill(child: interactionLayer),
+            ],
           ),
         ),
       ),
@@ -1761,16 +1757,12 @@ class TextShape extends Shape {
   String describe() => 'StyledText "$text" @ ${off.dx.round()},${off.dy.round()} '
       'font=${style.fontFamily}/${style.fontSize} '
       'color=${style.color == null ? "-" : style.color!.toString()} '
-      'wrap=$wordWrap tabs=$tabs lineHeight=$lineHeight'
-      '${clipRect == null ? "" : " clip=${clipRect!.left.round()},${clipRect!.top.round()} "
-          "${clipRect!.width.round()}x${clipRect!.height.round()}"}';
+      'wrap=$wordWrap tabs=$tabs lineHeight=$lineHeight';
 
   final String text;
   final Offset off;
   final TextStyle style;
   final TextSpan? textSpan;
-  @override
-  final Rect? clipRect;
   final CaretInfo? caretInfo;
   final bool? wordWrap;
   final Size? canvasSize;
@@ -1808,7 +1800,6 @@ class TextShape extends Shape {
     this.text,
     this.off,
     this.style, [
-    this.clipRect,
     this.textSpan,
     this.caretInfo,
     this.wordWrap,
@@ -2249,11 +2240,6 @@ class TextShape extends Shape {
     final paintersAtStart = debugPainterLayouts;
     int firstPainted = -1, lastPainted = -1;
     final paintedRows = <List<double>>[];
-    if (clipRect != null) {
-      c.save();
-      c.clipRect(clipRect!);
-    }
-
     final lines = _lines;
     final paintOffset = off;
     double currentY = paintOffset.dy;
@@ -2337,9 +2323,6 @@ class TextShape extends Shape {
       if (selection.hasSelection) _drawSelection(c, selection);
     }
 
-    if (clipRect != null) {
-      c.restore();
-    }
     debugPaintersLastDraw = debugPainterLayouts - paintersAtStart;
     debugDrawCalls++;
     debugDrawMicros += drawWatch.elapsedMicroseconds;
@@ -2359,7 +2342,6 @@ class TextShape extends Shape {
         other.style == style &&
         other.styleToken == styleToken &&
         other.textSpan == textSpan &&
-        other.clipRect == clipRect &&
         other.wordWrap == wordWrap &&
         other.canvasSize == canvasSize &&
         other.lineHeight == lineHeight &&
@@ -2404,18 +2386,12 @@ class TextShape extends Shape {
   void drawCarets(Canvas c) {
     final caret = caretInfo;
     if (caret == null) return;
-    final clip = clipRect;
-    if (clip != null) {
-      c.save();
-      c.clipRect(clip);
-    }
     for (final offset in allCarets) {
       final rect = caretRectAt(offset);
       if (rect != null) {
         c.drawRect(rect, Paint()..color = caret.color..style = PaintingStyle.fill);
       }
     }
-    if (clip != null) c.restore();
   }
 
   /// StyledText#setLineBullet: the bullet sits in the width it reserved before the text, right
@@ -3550,7 +3526,6 @@ class TextShape extends Shape {
       text,
       off,
       style,
-      clipRect,
       textSpan,
       caretInfo,
       wordWrap,
@@ -3582,7 +3557,6 @@ class TextShape extends Shape {
       text,
       off,
       style,
-      clipRect,
       TextRenderer.buildFinalTextSpan(text, newEditingState, style),
       caretInfo,
       wordWrap,
@@ -3634,7 +3608,6 @@ class TextShape extends Shape {
       newText,
       off,
       style,
-      clipRect,
       newEditingState != null
           ? TextRenderer.buildFinalTextSpan(newText, newEditingState, style)
           : textSpan,
@@ -3666,7 +3639,6 @@ class TextShape extends Shape {
       text,
       off,
       style,
-      clipRect,
       textSpan,
       caretInfo,
       wordWrap,
@@ -4007,7 +3979,7 @@ class TextShape extends Shape {
 
   @override
   String toString() =>
-      'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}${clipRect != null ? " [clipped]" : ""}';
+      'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}';
 }
 
 /// The rectangle a block selection covers, painted over the text it selects.

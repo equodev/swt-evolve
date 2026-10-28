@@ -8,7 +8,6 @@ import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 
-@CompiledJson()
 public class VProgram {
 
     protected VProgram() {
@@ -45,6 +44,24 @@ public class VProgram {
                 writer.writeNull();
             else
                 writer.serializeObject(api.getImpl());
+        }
+    }
+
+    @JsonConverter(target = VProgram.class)
+    public static class EmptyJson {
+
+        public static VProgram read(JsonReader<?> reader) throws IOException {
+            if (reader.wasNull())
+                return null;
+            reader.skip();
+            return new VProgram();
+        }
+
+        public static void write(JsonWriter writer, VProgram value) {
+            if (value == null)
+                writer.writeNull();
+            else
+                writer.writeAscii("{}");
         }
     }
 }

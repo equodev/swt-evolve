@@ -37,12 +37,20 @@ class SwingHostFrameOwnerTest {
     private static final long APP_WINDOW = 0x4708B6L;
 
     private static Canvas canvasInWindow(long window) {
-        FlutterBridge bridge = mock(FlutterBridge.class, withSettings().extraInterfaces(WindowBridge.class));
+        FlutterBridge bridge = windowBridge();
+        when(((WindowBridge) bridge).nativeWindowHandle(any())).thenReturn(window);
+        return canvasOn(bridge);
+    }
+
+    private static FlutterBridge windowBridge() {
+        return mock(FlutterBridge.class, withSettings().extraInterfaces(WindowBridge.class));
+    }
+
+    private static Canvas canvasOn(FlutterBridge bridge) {
         Shell shell = mock(Shell.class);
         DartShell impl = mock(DartShell.class);
         when(shell.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(bridge);
-        when(((WindowBridge) bridge).nativeWindowHandle(shell)).thenReturn(window);
         Canvas canvas = mock(Canvas.class);
         when(canvas.isDisposed()).thenReturn(false);
         when(canvas.getShell()).thenReturn(shell);
@@ -85,11 +93,13 @@ class SwingHostFrameOwnerTest {
 
     @Test
     void withNoNativeWindowTheFrameIsLeftAlone() {
-        // A browser-hosted surface has no window of its own to offer; overriding with 0 would drop
-        // the peer's own handle.
+        // A browser-hosted surface has no window of its own to offer: its bridge keeps WindowBridge's
+        // answer, 0. Overriding with 0 would drop the peer's own handle.
         JLightweightFrame frame = mock(JLightweightFrame.class);
+        FlutterBridge bridge = windowBridge();
+        when(((WindowBridge) bridge).nativeWindowHandle(any())).thenCallRealMethod();
 
-        long owner = EvolveSwingHost.syncFrameOwner(canvasInWindow(0), frame, 0);
+        long owner = EvolveSwingHost.syncFrameOwner(canvasOn(bridge), frame, 0);
 
         verify(frame, never()).overrideNativeWindowHandle(anyLong(), any());
         assertThat(owner).isZero();

@@ -41,6 +41,12 @@ public class VDisplay {
     public long mainShellId;
 
     /**
+     * The control SWT holds as its focus control, or 0 when none. Filled in by the Display bridge; the
+     * client starts Tab from it when its own keyboard focus is on no control.
+     */
+    public long focusHolderId;
+
+    /**
      * The shells drawn in a window of their own rather than inside this one, or null when there are
      * none. The client must leave each out of its own stack: a second Flutter client, rooted at that
      * shell, is drawing it, and rendering it here as well would put it on screen twice.
@@ -171,6 +177,8 @@ public class VDisplay {
             com.dslplatform.json.NumberConverter.serialize(v.activeShellId, writer);
             writer.writeAscii(",\"mainShellId\":");
             com.dslplatform.json.NumberConverter.serialize(v.mainShellId, writer);
+            writer.writeAscii(",\"focusHolderId\":");
+            com.dslplatform.json.NumberConverter.serialize(v.focusHolderId, writer);
             if (v.windowedShellIds != null && v.windowedShellIds.length > 0) {
                 writer.writeAscii(",\"windowedShellIds\":");
                 writer.writeByte((byte) '[');

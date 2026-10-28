@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import '../gen/color.dart';
@@ -81,21 +82,20 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         isVertical: isVertical,
         widgetTheme: widgetTheme,
         onMarginPress: () => _pressOnMargin = true,
+        // The value is the application's: it changes when the application sends it back, which is
+        // how the slider below tells an answer to its own report from a value set by the application.
         onChanged: (value) {
           _changedDuringPress = true;
-          state.selection = value.round();
           widget.sendSelectionSelection(
             state,
             VEvent()
-              ..index = state.selection
+              ..index = value.round()
               ..stateMask = _pressed ? SWT.BUTTON1 : 0,
           );
         },
-        onChangeEnd: (value) {
-          // No event of its own: a Scale sends Selection and nothing else, and the change that
-          // ends the gesture has already sent one through onChanged.
-          state.selection = value.round();
-        },
+        // No event of its own: a Scale sends Selection and nothing else, and the change that ends
+        // the gesture has already sent one through onChanged.
+        onChangeEnd: (_) {},
         focusNode: _focusNode,
         onFocusChanged: (hasFocus) {
           if (hasFocus) {
@@ -151,7 +151,17 @@ class _ThemedScale extends StatefulWidget {
 }
 
 class _ThemedScaleState extends State<_ThemedScale> {
+  /// The value this Scale last reported, shown until the application has it: the Slider steps its
+  /// keys from the value it shows, so a key pressed before the round trip completes would otherwise
+  /// step from the value before it.
   double? _localValue;
+
+  /// The values reported and not yet seen back from the application, oldest first.
+  final List<int> _unconfirmed = [];
+
+  /// Drops [_localValue] when the application never sends a reported value back: one it already
+  /// held, or one it changed before showing.
+  Timer? _confirmTimeout;
   bool _isHovered = false;
 
   /// How far the pointer pressed on the knob is from the knob's value. A press on the knob moves
@@ -167,8 +177,33 @@ class _ThemedScaleState extends State<_ThemedScale> {
 
   @override
   void dispose() {
+    _confirmTimeout?.cancel();
     widget.focusNode.removeListener(_reportFocus);
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_ThemedScale old) {
+    super.didUpdateWidget(old);
+    // Only a value the application sends says anything: a rebuild that brings the same one is no
+    // answer, even when it equals a value reported since.
+    if (_unconfirmed.isEmpty || widget.value == old.value) return;
+    final shown = widget.value.round();
+    final at = _unconfirmed.indexOf(shown);
+    if (at >= 0) {
+      _unconfirmed.removeRange(0, at + 1);
+    } else if (shown != old.value.round()) {
+      // A value this Scale never reported: the application set it.
+      _unconfirmed.clear();
+    }
+    if (_unconfirmed.isEmpty) _settle();
+  }
+
+  void _settle() {
+    _confirmTimeout?.cancel();
+    _confirmTimeout = null;
+    _unconfirmed.clear();
+    _localValue = null;
   }
 
   void _reportFocus() => widget.onFocusChanged(widget.focusNode.hasFocus);
@@ -352,13 +387,18 @@ class _ThemedScaleState extends State<_ThemedScale> {
     final value = (raw - _grabOffset).clamp(widget.min, widget.max).toDouble();
     if (value.round() == (_localValue ?? widget.value).round()) return;
     setState(() => _localValue = value);
+    _unconfirmed.add(value.round());
+    _confirmTimeout?.cancel();
+    _confirmTimeout = Timer(const Duration(seconds: 1), () {
+      if (mounted) setState(_settle);
+    });
     widget.onChanged(value);
   }
 
   void _handleChangeEnd(double raw) {
     final value = _localValue ?? widget.value;
     _grabOffset = 0;
-    setState(() => _localValue = null);
+    if (_unconfirmed.isEmpty) setState(() => _localValue = null);
     widget.onChangeEnd(value);
   }
 }
