@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,8 +72,14 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
     @DisplayName("Shift+F10 does not activate the menu bar")
     void shiftF10DoesNotActivate() {
         menuBar();
-
-        press(focus, SWT.F10, SWT.SHIFT);
+        // Shift+F10 asks for the context menu, which opens at the pointer; the display mock is shared, so the pointer is put back.
+        Display display = focus.getDisplay();
+        when(display.getCursorLocation()).thenReturn(new Point(0, 0));
+        try {
+            press(focus, SWT.F10, SWT.SHIFT);
+        } finally {
+            when(display.getCursorLocation()).thenReturn(null);
+        }
 
         assertThat(activations()).isEmpty();
     }
