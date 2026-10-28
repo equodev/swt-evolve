@@ -73,6 +73,9 @@ Future<void> _press(WidgetTester tester, LogicalKeyboardKey key) async {
 }
 
 void main() {
+  // The comm service records frames for the whole run; each test reads only what it sent.
+  setUp(() => EquoCommService.commForTesting.clearSentFrames());
+
   testWidgets('the keyboard opens a cascade and selects its item', (tester) async {
     EquoCommBase.recordSentFrames = true;
     addTearDown(() => EquoCommBase.recordSentFrames = false);
