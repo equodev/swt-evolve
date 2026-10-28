@@ -33,7 +33,6 @@ public class VTreeColumn extends VItem {
         ((DartTreeColumn) impl).movable = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getResizable() {
         return ((DartTreeColumn) impl).getResizable();
     }
@@ -63,6 +62,8 @@ public class VTreeColumn extends VItem {
 
     public static final String MOVEABLE = "moveable";
 
+    public static final String RESIZABLE = "resizable";
+
     public static final String WIDTH = "width";
 
     @Override
@@ -73,6 +74,9 @@ public class VTreeColumn extends VItem {
                 return;
             case "moveable":
                 Serializer.writeKeyValue(writer, "moveable", getMoveable());
+                return;
+            case "resizable":
+                Serializer.writeKeyValue(writer, "resizable", getResizable());
                 return;
             case "width":
                 Serializer.writeKeyValue(writer, "width", getWidth());

@@ -216,6 +216,10 @@ public class DartTable extends DartComposite implements ITable {
             sendEvent(SWT.SetData, event);
             //widget could be disposed at this point
             currentItem = null;
+            if (fixScrollWidth && !isDisposed()) {
+                fixScrollWidth = false;
+                setScrollWidth(items, true);
+            }
             if (isDisposed() || item.isDisposed())
                 return false;
             if (!setScrollWidth(item))
@@ -404,6 +408,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void createColumn(TableItem item, int index) {
+        TableHelper.keepFirstImage(item, columnCount - 1);
         String[] strings = ((DartTableItem) item.getImpl()).strings;
         if (strings != null) {
             String[] temp = new String[columnCount];
@@ -465,6 +470,7 @@ public class DartTable extends DartComposite implements ITable {
         ((DartWidget) column.getImpl()).register();
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
+        TableHelper.insertColumnOrder(this, index);
         for (int i = 0; i < itemCount; i++) {
             TableItem item = items[i];
             if (item != null) {
@@ -602,9 +608,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void deselectAll() {
         checkWidget();
-        ;
-        ;
-        selection = new int[0];
+        TableHelper.replaceSelection(this, new int[0], 0);
     }
 
     void destroyItem(TableColumn column) {
@@ -673,6 +677,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        int shownAt = ColumnHelper.displayIndex(getColumnOrder(), index);
         System.arraycopy(columns, index + 1, columns, index, --columnCount - index);
         columns[columnCount] = null;
         TableHelper.updateColumnOrderOnDestroy(this, index);
@@ -680,6 +685,7 @@ public class DartTable extends DartComposite implements ITable {
             setScrollWidth();
         } else {
         }
+        ColumnHelper.columnsShiftedFrom(this.getApi(), shownAt);
         getValue().markDirty(VTable.COLUMNS);
     }
 
@@ -989,9 +995,8 @@ public class DartTable extends DartComposite implements ITable {
             return null;
         int headerH = getHeaderHeight();
         int y = point.y - headerH;
-        // point is in viewport coordinates; the rows are laid out and scrolled on the
-        // Dart side, so the scroll distance has to be added back before indexing.
-        int index = y >= 0 ? (y + scrollOffsetY) / itemHeight : -1;
+        // point is in viewport coordinates; the rows count from the top of the model.
+        int index = y >= 0 ? (y + TableHelper.scrollOffsetY(this)) / itemHeight : -1;
         boolean valid = y >= 0 && index >= 0 && index < getItemCount() && items[index] != null;
         if (!valid)
             return null;
@@ -1154,7 +1159,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int[] getSelectionIndices() {
         checkWidget();
-        return this.selection;
+        return TableHelper.selectionIndices(this);
     }
 
     /**
@@ -1213,7 +1218,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getTopIndex() {
         checkWidget();
-        return this.topIndex;
+        return TableHelper.getTopIndex(this);
     }
 
     /**
@@ -1625,13 +1630,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void select(int[] indices, int count, boolean clear) {
-        int[] newValue = indices;
-        if (!java.util.Arrays.equals(this.selection, newValue)) {
-            getValue().markDirty(VTable.SELECTION);
-        }
-        ignoreSelect = true;
-        ignoreSelect = false;
-        this.selection = newValue;
+        TableHelper.replaceSelection(this, indices, count);
     }
 
     /**
@@ -1679,6 +1678,9 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
+            getValue().markDirty(VTable.COLUMN_ORDER);
+        }
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -1694,14 +1696,14 @@ public class DartTable extends DartComposite implements ITable {
         for (int i = 0; i < order.length; i++) {
             int index = order[i];
             if (index < 0 || index >= columnCount)
-                error(SWT.ERROR_INVALID_ARGUMENT);
+                error(SWT.ERROR_INVALID_RANGE);
             if (seen[index])
                 error(SWT.ERROR_INVALID_ARGUMENT);
             seen[index] = true;
             if (order[i] != oldOrder[i])
                 reorder = true;
         }
-        this.columnOrder = newValue;
+        this.columnOrder = order.clone();
         if (reorder) {
             int[] oldX = new int[oldOrder.length];
             for (int i = 0; i < oldOrder.length; i++) {
@@ -1709,6 +1711,8 @@ public class DartTable extends DartComposite implements ITable {
             int[] newX = new int[order.length];
             for (int i = 0; i < order.length; i++) {
             }
+            oldX = ColumnHelper.positions(this.getApi(), oldOrder);
+            newX = ColumnHelper.positions(this.getApi(), order);
             TableColumn[] newColumns = new TableColumn[columnCount];
             System.arraycopy(columns, 0, newColumns, 0, columnCount);
             for (int i = 0; i < columnCount; i++) {
@@ -1931,12 +1935,10 @@ public class DartTable extends DartComposite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        return false;
+        return TableHelper.growColumnlessWidth(this, ((DartTableItem) item.getImpl()).contentWidth());
     }
 
     boolean setScrollWidth(TableItem[] items, boolean set) {
-        if (items == null)
-            return false;
         if (columnCount != 0)
             return false;
         if (!getDrawing())
@@ -1945,14 +1947,13 @@ public class DartTable extends DartComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        for (int i = 0; i < items.length; i++) {
-            TableItem item = items[i];
-            if (item != null) {
-            }
+        // Older SWT versions' remove(int, int) leave the released rows in the array, past itemCount.
+        int widest = 0;
+        for (TableItem item : items) {
+            if (item != null && !item.isDisposed())
+                widest = Math.max(widest, ((DartTableItem) item.getImpl()).contentWidth());
         }
-        if (!set) {
-        }
-        return true;
+        return TableHelper.setColumnlessWidth(this, widest);
     }
 
     /**
@@ -1971,12 +1972,8 @@ public class DartTable extends DartComposite implements ITable {
      * @see Table#select(int)
      */
     public void setSelection(int index) {
-        getValue().markDirty(VTable.SELECTION);
-        int[] newValue = new int[] { index };
         checkWidget();
-        //TODO - optimize to use expand flag
         deselectAll();
-        this.selection = newValue;
         if (0 <= index && index < itemCount) {
             select(index);
             showIndex(index);
@@ -2131,9 +2128,10 @@ public class DartTable extends DartComposite implements ITable {
             // Trim the array to the actual count
             int[] trimmedIndices = new int[count];
             System.arraycopy(indices, 0, trimmedIndices, 0, count);
+            int shown = TableHelper.rowToShowForSelection(trimmedIndices, count);
             Arrays.sort(trimmedIndices);
             select(trimmedIndices);
-            showIndex(trimmedIndices[0]);
+            showIndex(shown);
         }
     }
 
@@ -2213,9 +2211,8 @@ public class DartTable extends DartComposite implements ITable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        int newValue = index;
         checkWidget();
-        this.topIndex = newValue;
+        TableHelper.setTopIndex(this, index);
     }
 
     /**
@@ -2249,8 +2246,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void showIndex(int index) {
-        if (0 <= index && index < itemCount) {
-        }
+        TableHelper.showIndex(this, index);
     }
 
     /**
@@ -2379,6 +2375,8 @@ public class DartTable extends DartComposite implements ITable {
         ;
         ;
         setRedraw(true);
+        TableHelper.keepSelectionInRows(this);
+        TableHelper.keepScrollInRows(this);
     }
 
     int[] columnOrder = new int[0];
@@ -2501,11 +2499,19 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
-    int scrollOffsetY;
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
 
     public void _dirty() {
         getValue().markDirty(VTable.EDITORS);
     }
+
+    int scrollOffset;
+
+    int columnlessWidth;
 
     boolean loadingVirtualData = false;
 
@@ -2530,7 +2536,7 @@ public class DartTable extends DartComposite implements ITable {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTable.EDITORS);
         }
     }
@@ -2549,7 +2555,7 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                scrollOffsetY = Math.max(0, e.y);
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

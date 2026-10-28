@@ -19,11 +19,12 @@ import 'utils/key_edit_order.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
+import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
 import 'control_evolve.dart' show ControlImpl;
 
 class TextImpl<T extends TextSwt, V extends VText>
-    extends ScrollableImpl<T, V> with PendingTextEchoes {
+    extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport {
   late TextEditingController _controller;
 
   final FocusNode _focusNode = FocusNode();
@@ -44,7 +45,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _modifyGate.attach(state.swt, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fromJava(_updateCaretPosition));
+    WidgetsBinding.instance.addPostFrameCallback((_) => fromJava(_updateCaretPosition));
   }
 
   /// Holds an edit while the field is vetoable: the proposal goes to Java as the Modify, the
@@ -85,7 +86,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     if (!mounted) return;
     final authoritative = state.text ?? '';
     if (_controller.text != authoritative) {
-      _fromJava(() => _controller.value = _controller.value.copyWith(
+      fromJava(() => _controller.value = _controller.value.copyWith(
             text: authoritative,
             selection: TextSelection.collapsed(offset: authoritative.length),
             composing: TextRange.empty,
@@ -94,7 +95,7 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 
   @override
-  void extraSetState() => _fromJava(_applyJavaState);
+  void extraSetState() => fromJava(_applyJavaState);
 
   void _applyJavaState() {
     String newText = state.text ?? "";
@@ -322,10 +323,13 @@ class TextImpl<T extends TextSwt, V extends VText>
               : TextSelection.collapsed(
                   offset: (state.caretPosition ?? 0).clamp(0, _controller.text.length));
         },
-        onPointerUp: (_) {
+        onPointerUp: (e) {
           final before = _selectionBeforeSecondary;
           _selectionBeforeSecondary = null;
           if (before == null) return;
+          // The field's own secondary-tap recognizer wins the gesture arena over the one
+          // ControlImpl.applyMenu() adds, so the release opens the application Menu here.
+          if (state.menu != null) openContextMenu(e.position);
           // Flutter's field places the caret on a secondary tap, which the gesture delivers after
           // this release; a native Text leaves it where it was, as on Win32 and GTK.
           scheduleMicrotask(() {
@@ -410,48 +414,16 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
   }
 
-  /// True while the controller is being set from a value Java pushed: the caret it lands on is
-  /// Java's own, so it is not reported back as a move.
-  bool _applyingJavaValue = false;
+  @override
+  int? get reportedCaret => state.caretPosition;
 
-  /// The selection anchor last reported to Java, alongside [VText.caretPosition].
-  int? _reportedAnchor;
+  @override
+  set reportedCaret(int? caret) => state.caretPosition = caret;
 
-  void _fromJava(void Function() apply) {
-    _applyingJavaValue = true;
-    try {
-      apply();
-    } finally {
-      _applyingJavaValue = false;
-    }
-  }
+  @override
+  void sendCaretReport(VEvent event) => widget.sendVerifyVerify(state, event);
 
-  void _updateCaretPosition() {
-    if (!mounted) return;
-
-    // The caret is the selection's moving end; the anchor is the end it was started from.
-    final selection = _controller.selection;
-    final cursorOffset = selection.extentOffset;
-    final anchor = selection.baseOffset;
-    if (cursorOffset < 0 || anchor < 0) return;
-
-    final caretMoved = state.caretPosition != cursorOffset;
-    final anchorMoved = _reportedAnchor != anchor;
-    if (!caretMoved && !anchorMoved) return;
-    state.caretPosition = cursorOffset;
-    _reportedAnchor = anchor;
-    if (_applyingJavaValue) return;
-
-    // A Verify that proposes no edit reports the caret (start) and the anchor (index) to Java.
-    widget.sendVerifyVerify(
-      state,
-      VEvent()
-        ..start = cursorOffset
-        ..end = cursorOffset
-        ..index = anchor
-        ..text = "",
-    );
-  }
+  void _updateCaretPosition() => reportCaret(_controller);
 
   @override
   void dispose() {

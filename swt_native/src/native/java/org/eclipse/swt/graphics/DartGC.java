@@ -675,6 +675,16 @@ public final class DartGC extends DartResource implements IGC {
             imageCapture.accept(image);
             return;
         }
+        if (image.getImpl() instanceof DartImage) {
+            Image[] atSize = { image };
+            float scale = GCHelper.transformationScale(transform);
+            ((DartImage) image.getImpl()).executeOnImageAtSizeBestFittingSize(found -> atSize[0] = found, Math.round(destWidth * scale), Math.round(destHeight * scale));
+            if (atSize[0] != image) {
+                Rectangle bounds = atSize[0].getBounds();
+                drawImage(atSize[0], 0, 0, bounds.width, bounds.height, destX, destY, destWidth, destHeight);
+                return;
+            }
+        }
         VGCDrawImageImageintintintint drawOp = new VGCDrawImageImageintintintint();
         drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
         drawOp.destX = destX;
@@ -1491,7 +1501,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Pattern getBackgroundPattern() {
         if (isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.backgroundPattern;
     }
 
@@ -1611,6 +1621,8 @@ public final class DartGC extends DartResource implements IGC {
                 bounds = new Rectangle(0, 0, b.width, b.height);
         } else if (drawable instanceof Image) {
             bounds = ((Image) drawable).getBounds();
+        } else if (drawable instanceof Device) {
+            bounds = ((Device) drawable).getBounds();
         }
         Rectangle clip = this.clipping == null ? bounds : new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         if (clip == null)
@@ -1644,7 +1656,8 @@ public final class DartGC extends DartResource implements IGC {
         region.subtract(region);
         Rectangle bounds = getClipping();
         if (clippingRects != null && clippingRects.length >= 4) {
-            for (int i = 0; i + 3 < clippingRects.length; i += 4) region.add(clippingRects[i], clippingRects[i + 1], clippingRects[i + 2], clippingRects[i + 3]);
+            int[] rects = GCHelper.isTransforming(transform) ? GCHelper.transformRects(transform, clippingRects, true) : clippingRects;
+            for (int i = 0; i + 3 < rects.length; i += 4) region.add(GCHelper.rectAt(rects, i));
             region.intersect(bounds);
         } else {
             region.add(bounds);
@@ -1713,7 +1726,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Color getForeground() {
         if (isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return this.foreground;
     }
 
@@ -1733,7 +1746,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Pattern getForegroundPattern() {
         if (isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.foregroundPattern;
     }
 
@@ -1761,7 +1774,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public GCData getGCData() {
         if (isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data;
     }
 
@@ -3568,6 +3581,8 @@ public final class DartGC extends DartResource implements IGC {
     /**
      * Takes the shape of a clip set from a Path, as a snapshot: the caller may dispose the
      * path as soon as this returns, long before the next drawing op serializes the GC state.
+     * The shape is held in device space, as setClipping(int, int, int, int) holds its
+     * rectangle, and an empty path admits nothing.
      */
     void setClipShape(Path path) {
         clearClipShape();
@@ -3582,17 +3597,24 @@ public final class DartGC extends DartResource implements IGC {
             this.clipping = confineToPaint(bounds);
             return;
         }
-        if (data == null || data.types.length == 0) {
+        if (data == null) {
             this.clipping = confineToPaint(null);
             return;
         }
+        if (data.types.length == 0) {
+            this.clipping = confineToPaint(new Rectangle(0, 0, 0, 0));
+            return;
+        }
+        if (GCHelper.isTransforming(transform))
+            data = GCHelper.transformPathData(transform, data);
         clippingPath = data;
         getValue().markDirty(VGC.CLIPPING_PATH);
         this.clipping = confineToPaint(pathBounds(data));
     }
 
     /**
-     * Takes the shape of a clip set from a Region: the rectangles it is the union of.
+     * Takes the shape of a clip set from a Region: the rectangles it is the union of, held in
+     * device space.
      */
     void setClipShape(Region region) {
         clearClipShape();
@@ -3600,18 +3622,12 @@ public final class DartGC extends DartResource implements IGC {
             this.clipping = confineToPaint(null);
             return;
         }
-        java.util.List<int[]> rects = ((DartRegion) region.getImpl()).rects;
-        int[] flattened = new int[rects.size() * 4];
-        int i = 0;
-        for (int[] rect : rects) {
-            flattened[i++] = rect[0];
-            flattened[i++] = rect[1];
-            flattened[i++] = rect[2];
-            flattened[i++] = rect[3];
-        }
+        int[] flattened = RegionHelper.flatten(((DartRegion) region.getImpl()).rects);
+        if (GCHelper.isTransforming(transform))
+            flattened = GCHelper.transformRects(transform, flattened, false);
         clippingRects = flattened;
         getValue().markDirty(VGC.CLIPPING_RECTS);
-        this.clipping = confineToPaint(region.getBounds());
+        this.clipping = confineToPaint(GCHelper.boundsOfRects(flattened));
     }
 
     /**

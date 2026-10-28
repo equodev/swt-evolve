@@ -9,6 +9,7 @@ class ConfigFlags {
 
   bool? ctabfolder_visible_controls;
   bool? ctabfolder_topright_auto_hide;
+  bool? ctabfolder_tab_scroll;
   bool? image_disable_icons_replacement;
   String? assets_path;
   bool? disable_evolve_icons;
@@ -76,6 +77,10 @@ class ConfigFlags {
   /// CHECK and RADIO menu items draw no box or ring, only the mark while selected
   /// (`swt.evolve.transparent_menu_check_box`). Off by default: the theme's box is drawn.
   bool? transparent_menu_check_box;
+
+  /// A bordered CTabFolder draws the native renderer's outline, joined over the selected tab
+  /// (`swt.use_swt_border`). Off by default: the theme's flat frame is drawn.
+  bool? use_swt_border;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

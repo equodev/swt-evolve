@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
@@ -30,9 +31,35 @@ public class ComboHelper {
         return new Point(combo.selection.x, combo.selection.y);
     }
 
-    /** The caret is at the start of the selection, as Win32 and Cocoa answer when there is one. */
+    /**
+     * The caret is the end of the selection the user left it at ({@link #clientCaretMoved}); a selection set from
+     * code has it at its start, as Win32 and Cocoa answer when there is one.
+     */
     public static int getCaretPosition(DartCombo combo) {
-        return combo.selection.x;
+        Point selection = combo.selection;
+        return combo.caretPosition == selection.y ? selection.y : selection.x;
+    }
+
+    /**
+     * The user moved the caret or the selection in the client's field without editing: the caret at {@code offset},
+     * the selection running from {@code anchor} to it. getSelection() and getCaretPosition() answer from Java's
+     * copy, so it follows.
+     */
+    public static void clientCaretMoved(DartCombo combo, int offset, int anchor) {
+        if (readOnly(combo))
+            return;
+        TextHelper.ClientCaret moved = new TextHelper.ClientCaret(offset, anchor, getCharCount(combo));
+        combo.caretPosition = moved.caret;
+        combo.selection = moved.selection;
+        Serializer.clientChanged(combo.getValue(), VCombo.CARET_POSITION);
+    }
+
+    /**
+     * Whether a Verify from the client only reports a caret move ({@link TextHelper#proposesNoChange}). Named here so
+     * DartCombo does not name TextHelper, which the widget parity gate then counts as Text's alone.
+     */
+    public static boolean proposesNoChange(Event e) {
+        return TextHelper.proposesNoChange(e);
     }
 
     /** Collapses the selection in the text onto its end, as Win32 and GTK do; a read-only combo has none. */
@@ -138,6 +165,7 @@ public class ComboHelper {
         int start = Math.min(Math.max(Math.min(selection.x, selection.y), 0), length);
         int end = Math.min(Math.max(Math.max(selection.x, selection.y), 0), length);
         combo.selection = new Point(start, end);
+        combo.caretPosition = start;
     }
 
     /** All items are gone, and the selection with them. */
@@ -160,15 +188,19 @@ public class ComboHelper {
 
     /**
      * Deselects the selected item and empties the text that showed it, as GTK and Win32 do. A read-only combo says
-     * so, even when nothing was selected; an editable one does not.
+     * so, even when nothing was selected. An editable one with a text asks the Verify listeners about emptying it,
+     * and tells the Modify listeners once they allow it.
      */
     public static void deselect(DartCombo combo) {
         combo.selectedIndex = -1;
         if (readOnly(combo)) {
             syncReadOnlyText(combo);
             combo.sendEvent(SWT.Modify);
-        } else {
-            clearText(combo);
+        } else if (getCharCount(combo) > 0) {
+            String text = verify(combo, "", 0, getCharCount(combo));
+            // A listener that deselected again has already emptied the text and said so.
+            if (text != null && !text.equals(combo.text))
+                setText(combo, text, true, false);
         }
     }
 
@@ -223,6 +255,13 @@ public class ComboHelper {
     public static void sendSegments(DartCombo combo) {
         if (!combo.isDisposed())
             sendSegments(combo, combo.getText());
+    }
+
+    /** Flutter draws the drop-down list, so only Flutter can say that it opened or closed. */
+    public static void listShownByFlutter(DartCombo combo, boolean shown) {
+        combo.listVisible = shown;
+        // Only a change from what Java last sent reaches Flutter, so Java's own close must follow this.
+        combo.getValue().markDirty(VCombo.LIST_VISIBLE);
     }
 
     /** Asks the Segments listeners for the segments of {@code text}; the separators are not drawn. */

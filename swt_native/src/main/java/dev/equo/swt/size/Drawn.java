@@ -1,7 +1,5 @@
 package dev.equo.swt.size;
 
-import java.util.regex.Pattern;
-
 import dev.equo.swt.Java8;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCCombo;
@@ -15,6 +13,7 @@ import org.eclipse.swt.widgets.DartTableItem;
 import org.eclipse.swt.widgets.DartText;
 import org.eclipse.swt.widgets.DartToolItem;
 import org.eclipse.swt.widgets.DartTreeItem;
+import org.eclipse.swt.widgets.LinkHelper;
 
 import static dev.equo.swt.Styles.hasFlags;
 
@@ -23,8 +22,6 @@ import static dev.equo.swt.Styles.hasFlags;
  * {@code measure.dart} emits ask here.
  */
 final class Drawn {
-
-    private static final Pattern LINK_MARKUP = Pattern.compile("<[^>]+>");
 
     private Drawn() {
     }
@@ -45,10 +42,9 @@ final class Drawn {
         return text == null ? "" : Mnemonics.display(text);
     }
 
-    /** Without its markup and without the mnemonic marker. */
+    /** Without its markup and without the mnemonic marker, read as SWT parses it; never null. */
     static String text(DartLink widget) {
-        String text = widget.getText();
-        return text == null ? null : Mnemonics.display(LINK_MARKUP.matcher(text).replaceAll(""));
+        return LinkHelper.displayText(widget.getText());
     }
 
     /** As typed, or its echo character once per character when it hides what is typed. */

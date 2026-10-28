@@ -43,6 +43,7 @@ class VTreeColumn extends VItem {
 
   int? alignment;
   bool? moveable;
+  bool? resizable;
   int? width;
 
   @override
@@ -51,6 +52,7 @@ class VTreeColumn extends VItem {
     if (other is VTreeColumn) {
       alignment = other.alignment;
       moveable = other.moveable;
+      resizable = other.resizable;
       width = other.width;
     }
   }
@@ -62,6 +64,8 @@ class VTreeColumn extends VItem {
         alignment = (json['alignment'] as num?)?.toInt();
       case 'moveable':
         moveable = json['moveable'] as bool?;
+      case 'resizable':
+        resizable = json['resizable'] as bool?;
       case 'width':
         width = (json['width'] as num?)?.toInt();
       default:

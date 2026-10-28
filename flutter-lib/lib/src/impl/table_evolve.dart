@@ -16,11 +16,14 @@ import '../gen/tablecolumn.dart';
 import '../gen/tableeditor.dart';
 import '../gen/droptarget.dart';
 import '../gen/font.dart';
+import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/item_list_children.dart';
 import '../gen/image.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
@@ -65,6 +68,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   final Set<int> _userResizedColumns = {};
 
+  final GlobalKey _headerKey = GlobalKey(debugLabel: 'table header');
+
+  /// Where the header drag of a moveable column has got to.
+  Offset? _columnDragPosition;
+
   /// Consecutive-click count of the most recent row tap (1, 2 or 3), as SWT
   /// numbers the clicks of a multi-click on MouseDown. JFace's ColumnViewer
   /// skips its cell-editor activation when MouseDown reports count == 2, so a
@@ -90,6 +98,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     super.initState();
     _verticalScrollController.addListener(() => setState(() {}));
     _verticalScrollController.addListener(_reportScrollOffset);
+    if (state.topIndex != null) _scrollToTopIndexAfterLayout();
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
     _registerGetItemHeightListener();
@@ -161,23 +170,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  double get _scrollOffset =>
-      _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
-
-  /// Java lays out no rows of its own, so every coordinate-to-row lookup it makes -- the hit test
-  /// behind getItem(Point) and an item's bounds -- counts from the top of the model. Tell it how far
-  /// this table has scrolled so it can take that off. Rounded to whole pixels and skipped when
-  /// unchanged, which drops the notifications a ScrollController fires without movement.
-  int _reportedScrollOffset = 0;
-
-  void _reportScrollOffset() {
-    if (!_verticalScrollController.hasClients) return;
-    final offset = _verticalScrollController.offset.round();
-    if (offset == _reportedScrollOffset) return;
-    _reportedScrollOffset = offset;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
-  }
-
   /// Returns the VTableItem id at the given viewport coordinates, or null.
   Object? findItemIdAtPosition(double x, double y) {
     final rowHeight = _cachedRowHeight;
@@ -185,7 +177,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerOffset = _cachedHeaderOffset ?? 0.0;
     final bodyY = y - headerOffset;
     if (bodyY < 0) return null;
-    final itemIndex = ((bodyY + _scrollOffset) / rowHeight).floor();
+    final itemIndex = ((bodyY + verticalScrollOffset) / rowHeight).floor();
     final items = getItems();
     if (itemIndex < 0 || itemIndex >= items.length) return null;
     return items[itemIndex].id;
@@ -208,17 +200,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     if (itemIndex < 0) return Rect.zero;
 
-    final y = headerOffset + itemIndex * rowHeight - _scrollOffset;
+    final y = headerOffset + itemIndex * rowHeight - verticalScrollOffset;
 
     final columns = getColumns();
     double x = 0.0;
     double width = state.bounds?.width?.toDouble() ?? 200.0;
 
-    if (columns.isNotEmpty && columnWidths != null) {
-      for (int i = 0; i < columnIndex && i < columns.length; i++) {
-        final w = columnWidths[i];
-        if (w is FixedColumnWidth) x += w.value;
-      }
+    if (columns.isNotEmpty && columnWidths != null && columnIndex < columns.length) {
+      x = columnLefts(fixedColumnWidths(columns.length), displayOrder)[columnIndex];
       final colW = columnWidths[columnIndex];
       if (colW is FixedColumnWidth) width = colW.value;
     }
@@ -231,12 +220,56 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final items = state.items;
     final columns = state.columns;
     final editors = state.editors;
+    final ownerDrawItemHeight = state.ownerDrawItemHeight;
     super.didUpdateWidget(oldWidget);
     // Use new data from Java if present; fall back to preserved ones only when
     // the serializer omitted the field (null) due to an unrelated dirty() flush.
     state.items = state.items ?? items;
     state.columns = state.columns ?? columns;
     state.editors = state.editors ?? editors;
+    // The owner-draw row height (VTable.ownerDrawItemHeight) is a dirty-gated computed property, so
+    // a later full push omits it; keep the last value or the rows snap back to one font line.
+    state.ownerDrawItemHeight = state.ownerDrawItemHeight ?? ownerDrawItemHeight;
+  }
+
+  @override
+  void setValue(V value) {
+    super.setValue(value);
+    if (lastChange?.touches('topIndex') ?? true) _scrollToTopIndexAfterLayout();
+  }
+
+  /// How far the rows are scrolled.
+  double get verticalScrollOffset =>
+      _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+
+  int _reportedScrollOffset = 0;
+
+  /// Java keeps how far the rows are scrolled: the row at the top, a row's bounds and API scrolling
+  /// are computed from it.
+  void _reportScrollOffset() {
+    if (!_verticalScrollController.hasClients) return;
+    final offset = _verticalScrollController.offset.round();
+    if (offset == _reportedScrollOffset) return;
+    _reportedScrollOffset = offset;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+  }
+
+  /// Brings the row Java asked for to the top, once the rows are laid out. Flutter clamps the distance
+  /// at the end of the rows, as a native table does; a table already showing that row at the top does
+  /// not move.
+  void _scrollToTopIndexAfterLayout() {
+    final target = state.topIndex;
+    if (target == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_verticalScrollController.hasClients) return;
+      final rowHeight = _cachedRowHeight;
+      if (rowHeight == null || rowHeight <= 0) return;
+      final position = _verticalScrollController.position;
+      if ((position.pixels / rowHeight).floor() == target) return;
+      _verticalScrollController.jumpTo(
+        (target * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
   }
 
   @override
@@ -277,7 +310,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
       ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
-    _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
+    // An owner-drawing Table (CDT's project-template chooser) paints a bold title + description —
+    // two lines — into each row and asks for that height in SWT.MeasureItem; it travels as
+    // ownerDrawItemHeight. A row sized to the font alone clips it, so take the taller of the two.
+    _cachedRowHeight = math.max(
+        calculateRowHeight(rowTextStyle, widgetTheme),
+        (state.ownerDrawItemHeight ?? 0).toDouble());
     double headerOff = frameBorderWidth(widgetTheme);
     if (showHeader) {
       final headerTextStyle = getTextStyle(
@@ -325,9 +363,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final wrappedTable = super.wrap(tableContent);
 
+    final childControls = buildChildControlLayer(
+      state,
+      (state.editors ?? const <VTableEditor>[]).map((e) => e.editor),
+    );
+
     return Stack(
       children: [
         wrappedTable,
+        if (childControls != null) childControls,
         ...editorOverlays,
       ],
     );
@@ -391,7 +435,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final grip = theme.columnResizeHandleWidth * 2;
     final handles = <Widget>[];
     double boundary = 0.0;
-    for (int i = 0; i < columns.length; i++) {
+    for (final i in displayOrder) {
       final width = columnWidths[i];
       if (width is! FixedColumnWidth) return const [];
       boundary += width.value;
@@ -450,18 +494,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
     TableThemeExtension theme,
   ) {
     return Table(
-      columnWidths: columnWidths,
+      key: _headerKey,
+      columnWidths: inDisplayOrder(columnWidths),
       border: buildHeaderBorder(showLines, theme),
       children: <TableRow>[
         TableRow(
           children: [
-            ...columns
-                .asMap()
-                .entries
-                .map(
-                  (entry) =>
-                      buildHeaderCell(entry.value, textStyle, theme, entry.key),
-                ),
+            for (final index in displayOrder)
+              buildHeaderCell(columns[index], textStyle, theme, index),
             const SizedBox.shrink(),
           ],
         ),
@@ -479,6 +519,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final showCheckboxSpace = hasCheckStyle && columnIndex == 0;
     final headerHeight = calculateHeaderHeight(textStyle, theme);
 
+    final headerText = stripAccelerators(column.text);
     final double? columnWidth = _columnWidthAt(columnIndex);
     final EdgeInsets headerPadding = columnWidth == null
         ? theme.headerPadding
@@ -486,7 +527,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
             theme.headerPadding,
             available: columnWidth -
                 (showCheckboxSpace ? 20.0 + theme.cellPadding.left : 0.0),
-            contentWidth: measureTableText(column.text ?? "", textStyle),
+            contentWidth: measureTableText(headerText, textStyle),
           );
 
     Widget cell = SizedBox(
@@ -516,7 +557,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
               ),
             Expanded(
               child: Text(
-                column.text ?? "",
+                headerText,
                 style: textStyle,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -525,6 +566,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         ),
       ),
     );
+    final moveable = column.moveable ?? false;
     return tagItemSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -533,6 +575,24 @@ class TableImpl<T extends TableSwt, V extends VTable>
           null,
         );
       },
+      // A native header drag reorders the columns where it is dropped; Java applies the order and
+      // sends SWT.Move to the columns whose place changed.
+      onHorizontalDragStart:
+          moveable ? (details) => _columnDragPosition = details.globalPosition : null,
+      onHorizontalDragUpdate:
+          moveable ? (details) => _columnDragPosition = details.globalPosition : null,
+      onHorizontalDragEnd: moveable
+          ? (_) {
+              final position = _columnDragPosition;
+              _columnDragPosition = null;
+              if (position == null) return;
+              TableColumnSwt<VTableColumn>(value: column).sendControlMove(
+                column,
+                VEvent()..index = headerDropIndexAt(position),
+              );
+            }
+          : null,
+      onHorizontalDragCancel: moveable ? () => _columnDragPosition = null : null,
       onSecondaryTapDown: (details) {
         MenuDetectGate.withhold(
           state.swt,
@@ -556,10 +616,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   int _computeHeaderCellCenterX(int columnIndex) {
     double x = 0.0;
     if (_cachedColumnWidths != null) {
-      for (int i = 0; i < columnIndex; i++) {
-        final w = _cachedColumnWidths![i];
-        if (w is FixedColumnWidth) x += w.value;
-      }
+      x = columnLefts(fixedColumnWidths(getColumns().length), displayOrder)[columnIndex];
       final colW = _cachedColumnWidths![columnIndex];
       if (colW is FixedColumnWidth) x += colW.value / 2;
     } else {
@@ -608,7 +665,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     // at half the list width with an empty gap on the right.
     final trailingColumnWidths = columns.isEmpty
         ? const {0: FlexColumnWidth(), 1: FixedColumnWidth(0)}
-        : columnWidths;
+        : inDisplayOrder(columnWidths);
 
     return Container(
       color: backgroundColor,
@@ -700,7 +757,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     final viewport =
         constraints.maxHeight.isFinite ? constraints.maxHeight : totalRows * rowHeight;
-    final offset = _scrollOffset;
+    final offset = verticalScrollOffset;
     final visibleRows = (viewport / rowHeight).ceil() + 1;
     // Half a screenful each side: enough that a small scroll shows no blank frame, and proportional
     // so the window stays inside SWT's budget of three times the visible rows of SetData.
@@ -779,13 +836,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
       tableForeground: state.foreground,
     ).buildCells(context, theme);
 
+    final order = displayOrder;
+    final shown = order.length == cells.length ? [for (final i in order) cells[i]] : cells;
     return TableRow(
       decoration: BoxDecoration(
         color: backgroundColor,
         border: getTableRowBorder(isSelected, theme, showLines: showLines),
       ),
       children: [
-        ...cells.map((cell) => wrapCellForRowDrag(cell, rowIndex, item)),
+        ...shown.map((cell) => wrapCellForRowDrag(cell, rowIndex, item)),
         const SizedBox.shrink(),
       ],
     );
@@ -997,19 +1056,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
       // which row is selected. Java's editor list is the source of truth for
       // which editors exist.
 
-      final editorY = headerOffset + (itemIndex * rowHeight) - _scrollOffset;
+      final editorY = headerOffset + (itemIndex * rowHeight) - verticalScrollOffset;
 
       double editorX = borderWidth;
       double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
 
-      if (columns.isNotEmpty && columnWidths != null) {
-        for (int i = 0; i < columnIndex && i < columns.length; i++) {
-          final w = columnWidths[i];
-          if (w is FixedColumnWidth) {
-            editorX += w.value;
-          }
-          editorX += lineWidth;
-        }
+      if (columns.isNotEmpty && columnWidths != null && columnIndex < columns.length) {
+        final order = displayOrder;
+        editorX += columnLefts(fixedColumnWidths(columns.length), order)[columnIndex] +
+            lineWidth * order.indexOf(columnIndex);
 
         final colW = columnWidths[columnIndex];
         if (colW is FixedColumnWidth) {
@@ -1226,7 +1281,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double checkboxWidth,
   ) {
     if ((column.width ?? 0) <= 0) return 0.0;
-    final headerText = column.text ?? "";
+    final headerText = stripAccelerators(column.text);
     if (headerText.isEmpty) return 0.0;
 
     double floor = measureTableText(headerText, headerTextStyle);
@@ -1345,7 +1400,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     TextStyle headerTextStyle,
     TableThemeExtension theme,
   ) {
-    final headerText = column.text ?? "";
+    final headerText = stripAccelerators(column.text);
     if (headerText.isEmpty) return 0.0;
 
     final headerPainter = TextPainter(
@@ -1414,6 +1469,41 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   List<VTableColumn> getColumns() {
     return state.columns ?? [];
+  }
+
+  /// The column indexes in the order the columns are shown.
+  List<int> get displayOrder => columnDisplayOrder(state.columnOrder, getColumns().length);
+
+  /// Each column's drawn width, by column index; 0 for one that is not a fixed width.
+  List<double> fixedColumnWidths(int count) => [
+        for (int i = 0; i < count; i++)
+          switch (_cachedColumnWidths?[i]) {
+            FixedColumnWidth(:final value) => value,
+            _ => 0.0,
+          },
+      ];
+
+  /// [widths], keyed by column index, keyed instead by the place each column is shown at, as a Flutter
+  /// Table lays its cells out; the filler after the last column keeps its key.
+  Map<int, TableColumnWidth>? inDisplayOrder(Map<int, TableColumnWidth>? widths) {
+    if (widths == null) return null;
+    final order = displayOrder;
+    return {
+      for (int position = 0; position < order.length; position++)
+        if (widths[order[position]] != null) position: widths[order[position]]!,
+      if (widths[order.length] != null) order.length: widths[order.length]!,
+    };
+  }
+
+  /// Where on the header a column dragged to [globalPosition] is dropped.
+  int headerDropIndexAt(Offset globalPosition) {
+    final box = _headerKey.currentContext?.findRenderObject();
+    if (box is! RenderBox) return 0;
+    return dropDisplayIndex(
+      fixedColumnWidths(getColumns().length),
+      displayOrder,
+      box.globalToLocal(globalPosition).dx,
+    );
   }
 
   List<VTableItem> getItems() {

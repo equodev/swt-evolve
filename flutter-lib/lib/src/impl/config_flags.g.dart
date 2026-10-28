@@ -10,6 +10,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..ctabfolder_visible_controls = json['ctabfolder_visible_controls'] as bool?
   ..ctabfolder_topright_auto_hide =
       json['ctabfolder_topright_auto_hide'] as bool?
+  ..ctabfolder_tab_scroll = json['ctabfolder_tab_scroll'] as bool?
   ..image_disable_icons_replacement =
       json['image_disable_icons_replacement'] as bool?
   ..assets_path = json['assets_path'] as String?
@@ -55,13 +56,15 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..locale = json['locale'] as String?
   ..font_point_scale = (json['font_point_scale'] as num?)?.toDouble()
   ..push_button_margin = (json['push_button_margin'] as num?)?.toInt()
-  ..transparent_menu_check_box = json['transparent_menu_check_box'] as bool?;
+  ..transparent_menu_check_box = json['transparent_menu_check_box'] as bool?
+  ..use_swt_border = json['use_swt_border'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
 ) => <String, dynamic>{
   'ctabfolder_visible_controls': ?instance.ctabfolder_visible_controls,
   'ctabfolder_topright_auto_hide': ?instance.ctabfolder_topright_auto_hide,
+  'ctabfolder_tab_scroll': ?instance.ctabfolder_tab_scroll,
   'image_disable_icons_replacement': ?instance.image_disable_icons_replacement,
   'assets_path': ?instance.assets_path,
   'disable_evolve_icons': ?instance.disable_evolve_icons,
@@ -99,4 +102,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'font_point_scale': ?instance.font_point_scale,
   'push_button_margin': ?instance.push_button_margin,
   'transparent_menu_check_box': ?instance.transparent_menu_check_box,
+  'use_swt_border': ?instance.use_swt_border,
 };

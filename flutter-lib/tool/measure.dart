@@ -11,6 +11,7 @@ import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/treecolumn_evolve.dart' show TreeColumnImpl;
 
 import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
@@ -70,6 +71,12 @@ const String defaultSizeOutputDir =
 /// below. Only the numbers need a real window, real fonts and a GPU — so committing them is what
 /// lets a machine without one re-emit the Java and check it (`tool/emit_sizes.dart`).
 const String sizesModelPath = 'tool/sizes-model.json';
+
+/// Hand-written answers the emitted Java asks instead of deciding itself. What they compute is
+/// application state or the column order, which no measurement sees.
+const String _tableUsesApplicationFont =
+    'org.eclipse.swt.widgets.TableHelper.usesApplicationFont';
+const String _treeColumnLeft = 'org.eclipse.swt.widgets.Sizes.treeColumnLeft';
 
 /// Bumped when the shape below changes, so a stale model fails loudly instead of emitting
 /// half-populated Java.
@@ -2807,12 +2814,16 @@ class WidgetMeasurer {
         '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
       );
 
-      // A widget with no font of its own letters in its parent's.
+      // A table row is measured in the application's font when its table was given one too, which
+      // only the table knows; every other widget answers from its own font, or from its parent's when
+      // it has none of its own.
       final fontOwner = fontFromParentFqns.contains(fqn)
           ? '((DartControl) widget.getParent().getImpl())'
           : 'widget';
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts || $fontOwner.getExplicitFont() == null) {',
+        widgetType == 'TableItem'
+            ? '            if (!$_tableUsesApplicationFont(widget)) {'
+            : '            if (!Config.getConfigFlags().use_swt_fonts || $fontOwner.getExplicitFont() == null) {',
       );
       buffer.writeln(
         '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom($fontOwner.getFont());',
@@ -3542,18 +3553,20 @@ public class CoolBarSizes {
       buffer.writeln(
         '    public static int getCellContentWidth($itemType item) {',
       );
-      buffer.writeln('        TextStyle ts = getTextStyle(item);');
-      buffer.writeln('        int cellWidth = 0;');
-      buffer.writeln('        String text = item.getText();');
-      buffer.writeln('        if (text != null && !text.isEmpty()) {');
-      buffer.writeln(
-        '            cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
-      buffer.writeln('        }');
+      buffer.writeln('        int cellWidth = getTextWidth(item);');
       buffer.writeln('        if (item.getImage() != null) {');
       buffer.writeln('            cellWidth += getIconSpace(item);');
       buffer.writeln('        }');
       buffer.writeln('        return cellWidth;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The width the first cell\'s text takes. */');
+      buffer.writeln('    public static int getTextWidth($itemType item) {');
+      buffer.writeln('        String text = item.getText();');
+      buffer.writeln('        if (text.isEmpty()) return 0;');
+      buffer.writeln(
+        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());',
+      );
       buffer.writeln('    }');
       buffer.writeln();
       // The icon is drawn in a square of the cell's font size whatever the image's own size, and
@@ -3564,7 +3577,7 @@ public class CoolBarSizes {
       buffer.writeln(
         '    public static int getIconSize($itemType item) {',
       );
-      buffer.writeln('        return getTextStyle(item).size();');
+      buffer.writeln('        return cellTextStyle(item).size();');
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
@@ -3583,11 +3596,9 @@ public class CoolBarSizes {
       buffer.writeln('        return CELL_PADDING_LEFT;');
       buffer.writeln('    }');
       buffer.writeln();
+      buffer.writeln('    private static TextStyle cellTextStyle($itemType item) {');
       buffer.writeln(
-        '    private static TextStyle getTextStyle($itemType item) {',
-      );
-      buffer.writeln(
-        '        if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+        '        if (!$_tableUsesApplicationFont((Dart$itemType) item.getImpl())) {',
       );
       buffer.writeln(
         '            return $themeClass.get().textStyle().withStyleFrom(item.getFont());',
@@ -3855,6 +3866,9 @@ public class CoolBarSizes {
       // reserves ahead of column 0 — both mirror what the row impl draws.
       buffer.writeln('    private static final int CELL_MARGIN = 2;');
       buffer.writeln('    private static final int CHECKBOX_WIDTH = 20;');
+      buffer.writeln();
+      buffer.writeln('    private ${widgetType}Sizes() {');
+      buffer.writeln('    }');
     }
     if (plain.hasExpander) {
       // Horizontal row geometry: the left edge gap is a fraction of the widget width, then a
@@ -3887,7 +3901,7 @@ public class CoolBarSizes {
       final row = sizingTheme.extension<TreeThemeExtension>();
       if (row != null) {
         buffer.writeln(
-          '    private static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
+          '    public static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
         );
         buffer.writeln(
           '    private static final double CHECKBOX_SPACE = ${_d(row.checkboxSize)} + ${_d(row.checkboxSpacing)};',
@@ -3899,16 +3913,27 @@ public class CoolBarSizes {
           '    private static final int ICON_SPACE = ICON_SIZE + ${row.itemIconSpacing.round()};',
         );
         buffer.writeln(
-          '    private static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
+          '    public static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
         );
-        // A multi-column cell and header add their insets, the alignment inset the row and header
-        // builders apply to left-aligned text, and the gap before the next column.
+        // The alignment inset the row builder applies to left-aligned text.
         const alignmentInset = 4.0;
         buffer.writeln(
-          '    private static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
+          '    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment\'s. */',
         );
         buffer.writeln(
-          '    private static final int HEADER_PADDING = ${(row.columnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
+          '    public static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset).round()};',
+        );
+        buffer.writeln(
+          '    /** The gap before the divider that every column but the last draws at its right. */',
+        );
+        buffer.writeln(
+          '    public static final int DIVIDER_GAP = ${row.columnDividerGap.round()};',
+        );
+        buffer.writeln(
+          '    /** The room a header image takes before the text. */',
+        );
+        buffer.writeln(
+          '    public static final int HEADER_IMAGE_GAP = ${TreeColumnImpl.headerImageGap.round()};',
         );
         buffer.writeln(
           '    private static final int CELL_INSET = ${row.cellMultiColumnPadding.left.round()};',
@@ -3971,7 +3996,11 @@ public class CoolBarSizes {
     buffer.writeln('        return (bounds != null ? bounds.width : 0) * gapFraction;');
     buffer.writeln('    }');
     // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
+    // It sits inside the first column shown, which is not at 0 once the columns are reordered.
     buffer.writeln();
+    buffer.writeln(
+      '    /** Where an item\'s expander starts: inside the $param column, wherever the column order shows it. */',
+    );
     buffer.writeln(
       '    public static double getExpanderLeft(Dart$widgetType $param, int level) {',
     );
@@ -3983,7 +4012,7 @@ public class CoolBarSizes {
       '        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
     );
     buffer.writeln(
-      '        return getRowLeft($param) + paddingLeft + indent * level;',
+      '        return $_treeColumnLeft($param, 0) + getRowLeft($param) + paddingLeft + indent * level;',
     );
     buffer.writeln('    }');
     // Where an item's own content begins, and what its parts are reported to take. These answer
@@ -4049,46 +4078,6 @@ public class CoolBarSizes {
         '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
       );
       buffer.writeln('        return width + TEXT_PADDING;');
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    /** The width a multi-column cell needs to show its text whole. */',
-      );
-      buffer.writeln(
-        '    public static int getPackedCellWidth($itemType item, int index) {',
-      );
-      buffer.writeln(
-        '        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;',
-      );
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    /** The width a column\'s header needs to show its title whole: a multi-column header shows it in capitals. */',
-      );
-      buffer.writeln(
-        '    public static int getPackedHeaderWidth(${widgetType}Column column) {',
-      );
-      buffer.writeln('        String text = column.getText();');
-      buffer.writeln(
-        '        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);',
-      );
-      buffer.writeln(
-        '        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;',
-      );
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    private static int measure(String text, org.eclipse.swt.graphics.Font font) {',
-      );
-      buffer.writeln(
-        '        if (text == null || text.isEmpty()) return 0;',
-      );
-      buffer.writeln(
-        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(font);',
-      );
-      buffer.writeln(
-        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln('    static int levelOf($itemType item) {');

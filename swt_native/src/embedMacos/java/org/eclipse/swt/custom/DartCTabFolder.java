@@ -1266,6 +1266,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @deprecated Curved tabs are no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-06")
+    @SuppressWarnings("removal")
     public boolean getSimple() {
         checkWidget();
         return true;
@@ -3721,6 +3722,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @deprecated Curved tabs are no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-06")
+    @SuppressWarnings("removal")
     public void setSimple(boolean simple) {
     }
 
@@ -4778,6 +4780,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     int showListPopupSeq = 0;
 
     int[] drawnCloseButtons;
+
+    int[] shownStrip;
 
     int stripHeight;
 

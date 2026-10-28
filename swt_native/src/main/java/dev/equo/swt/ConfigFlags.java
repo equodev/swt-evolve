@@ -53,6 +53,11 @@ public class ConfigFlags {
      *  hidden underneath that floating overlay. */
     public boolean ctabfolder_topright_auto_hide;
 
+    /** Default true: a CTabFolder whose tabs do not fit scrolls its tab strip. Set to false to lay
+     *  the tabs out as SWT does: they shrink towards minimumCharacters and the ones that still do
+     *  not fit go behind the chevron. */
+    public boolean ctabfolder_tab_scroll;
+
     public boolean image_disable_icons_replacement;
 
     public String assets_path;
@@ -227,6 +232,11 @@ public class ConfigFlags {
      *  drawn. Set with {@code -Dswt.evolve.transparent_menu_check_box=true}. */
     public boolean transparent_menu_check_box;
 
+    /** Draws a bordered ({@code SWT.BORDER}) CTabFolder's outline as the native renderer does: one line
+     *  round the folder, joined over the selected tab. Off by default: the theme's flat frame is drawn.
+     *  Set with {@code -Dswt.use_swt_border=true}. */
+    public boolean use_swt_border;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -239,6 +249,7 @@ public class ConfigFlags {
                 "mode=" + mode() +
                 ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", ctabfolder_topright_auto_hide=" + ctabfolder_topright_auto_hide +
+                ", ctabfolder_tab_scroll=" + ctabfolder_tab_scroll +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
                 ", disable_evolve_icons=" + disable_evolve_icons +
@@ -251,6 +262,7 @@ public class ConfigFlags {
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +
                 ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
+                ", use_swt_border=" + use_swt_border +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +

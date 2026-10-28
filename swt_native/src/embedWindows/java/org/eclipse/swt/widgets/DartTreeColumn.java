@@ -511,6 +511,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setResizable(boolean resizable) {
         checkWidget();
+        if (this.resizable != resizable) {
+            getValue().markDirty(VTreeColumn.RESIZABLE);
+        }
         this.resizable = resizable;
     }
 
@@ -591,8 +594,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         ((DartControl) parent.getImpl()).forceResize();
         this.width = newValue;
         ((DartTree) parent.getImpl()).setScrollWidth();
-        if (widthChanged)
+        if (widthChanged) {
             sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     void updateToolTip(int index) {
@@ -661,7 +666,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Move, e);
+                ColumnHelper.movedByUser(getApi(), e.index);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {

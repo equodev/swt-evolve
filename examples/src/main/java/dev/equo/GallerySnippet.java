@@ -381,6 +381,9 @@ public class GallerySnippet {
             ToolItem item = new ToolItem(toolBar, SWT.PUSH);
             item.setText("Tool " + i);
             int toolIndex = i;
+            if (i == 3) {
+                item.setToolTipText("Runs tool 3");
+            }
             item.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Tool " + toolIndex + " clicked")));
         }
         // Style variants: the loop above only ever created SWT.PUSH items.

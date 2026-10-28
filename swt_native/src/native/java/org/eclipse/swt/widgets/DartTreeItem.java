@@ -264,6 +264,19 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         font = null;
         cellFont = null;
         width = -1;
+        getValue().markDirty(VTreeItem.TEXT);
+        getValue().markDirty(VTreeItem.IMAGE);
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
+        getValue().markDirty(VTreeItem.CHECKED);
+        getValue().markDirty(VTreeItem.GRAYED);
+        getValue().markDirty(VTreeItem.FOREGROUND);
+        getValue().markDirty(VTreeItem.BACKGROUND);
+        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        getValue().markDirty(VTreeItem.FONT);
+        getValue().markDirty(VTreeItem.FONTS);
+        getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
     }
 
@@ -396,6 +409,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public Rectangle getBounds() {
+        checkWidget();
+        if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
+            error(SWT.ERROR_WIDGET_DISPOSED);
         return Sizes.getBounds(this);
     }
 
@@ -415,6 +431,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
+        if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
+            error(SWT.ERROR_WIDGET_DISPOSED);
         return Sizes.getBounds(this, index);
     }
 

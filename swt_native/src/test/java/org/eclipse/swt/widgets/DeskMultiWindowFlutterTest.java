@@ -963,6 +963,11 @@ class DeskMultiWindowFlutterTest {
         }
 
         @Override
+        protected int workAreaTop(Rectangle window) {
+            return 0;
+        }
+
+        @Override
         protected void wakeNativeWindow() {
             // a stood-in window has no handle to post into
         }

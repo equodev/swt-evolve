@@ -96,6 +96,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     // Tab content area
     tabContentBackgroundColor: colorScheme.surface,
     tabContentBorderColor: colorSchemeExtension.surfaceBorderEnabled,
+    outlineColor: colorScheme.outlineVariant,
     
     // Tab sizes
     tabIconSize: 16.0,

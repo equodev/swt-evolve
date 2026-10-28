@@ -2054,6 +2054,9 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
+            getValue().markDirty(VTable.COLUMN_ORDER);
+        }
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -2569,6 +2572,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setTopIndex(int index) {
         checkWidget();
+        if (this.topIndex != index) {
+            getValue().markDirty(VTable.TOP_INDEX);
+        }
         if (!(0 <= index && index < itemCount))
             return;
         topIndex = index;
@@ -2870,7 +2876,15 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
-    int scrollOffsetY;
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
+    int scrollOffset;
+
+    int columnlessWidth;
 
     boolean loadingVirtualData = false;
 
@@ -2899,7 +2913,7 @@ public class DartTable extends DartComposite implements ITable {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTable.EDITORS);
         }
     }
@@ -2918,7 +2932,7 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                scrollOffsetY = Math.max(0, e.y);
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

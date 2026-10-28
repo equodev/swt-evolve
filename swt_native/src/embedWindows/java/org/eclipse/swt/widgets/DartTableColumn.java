@@ -535,6 +535,9 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
+        if (this.moveable != moveable) {
+            getValue().markDirty(VTableColumn.MOVEABLE);
+        }
         this.moveable = moveable;
         ((DartTable) parent.getImpl()).updateMoveable();
     }
@@ -669,8 +672,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         if (index == -1)
             return;
         this.width = newValue;
-        if (widthChanged)
+        if (widthChanged) {
             sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     void updateToolTip(int index) {
@@ -734,7 +739,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Move, e);
+                ColumnHelper.movedByUser(getApi(), e.index);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {

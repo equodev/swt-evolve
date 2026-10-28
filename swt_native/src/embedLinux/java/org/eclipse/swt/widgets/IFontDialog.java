@@ -29,6 +29,7 @@ public interface IFontDialog extends IDialog {
      * @deprecated use #getFontList ()
      */
     @Deprecated
+    @SuppressWarnings("removal")
     FontData getFontData();
 
     /**
@@ -89,6 +90,7 @@ public interface IFontDialog extends IDialog {
      * @deprecated use #setFontList (FontData [])
      */
     @Deprecated
+    @SuppressWarnings("removal")
     void setFontData(FontData fontData);
 
     /**

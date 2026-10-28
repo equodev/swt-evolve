@@ -633,6 +633,11 @@ class DisplayResizeFlutterTest {
         }
 
         @Override
+        protected int workAreaTop(org.eclipse.swt.graphics.Rectangle window) {
+            return 0;
+        }
+
+        @Override
         protected void wakeNativeWindow() {
             // a stood-in window has no handle to post into
         }

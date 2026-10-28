@@ -420,13 +420,26 @@ public class TextHelper {
      * client was last sent of either stops counting as what it holds.
      */
     public static void clientCaretMoved(DartText text, int offset, int anchor) {
-        int count = text.getCharCount();
-        int caret = Math.max(0, Math.min(offset, count));
-        int from = Math.max(0, Math.min(anchor, count));
-        text.caretPosition = caret;
-        text.selection = new Point(Math.min(from, caret), Math.max(from, caret));
+        ClientCaret moved = new ClientCaret(offset, anchor, text.getCharCount());
+        text.caretPosition = moved.caret;
+        text.selection = moved.selection;
         Serializer.clientChanged(text.getValue(), VText.CARET_POSITION);
         Serializer.clientChanged(text.getValue(), VText.SELECTION);
+    }
+
+    /**
+     * Where a client's caret report leaves the caret and the selection in a text of {@code count} characters: the
+     * caret at {@code offset}, the selection running from {@code anchor} to it, both within the text.
+     */
+    static final class ClientCaret {
+        final int caret;
+        final Point selection;
+
+        ClientCaret(int offset, int anchor, int count) {
+            caret = Math.max(0, Math.min(offset, count));
+            int from = Math.max(0, Math.min(anchor, count));
+            selection = new Point(Math.min(from, caret), Math.max(from, caret));
+        }
     }
 
     public static void setText(DartText text, String string) {

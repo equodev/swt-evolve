@@ -872,6 +872,7 @@ public class Config {
             String eclipseThemeId = EclipseWorkspaceTheme.detectThemeId();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
+            configFlags.ctabfolder_tab_scroll = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_tab_scroll", "true"));
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
             configFlags.disable_evolve_icons = Boolean.getBoolean("swt.evolve.disable_evolve_icons");
@@ -891,6 +892,7 @@ public class Config {
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
+            configFlags.use_swt_border = Boolean.getBoolean("swt.use_swt_border");
             configFlags.use_swt_font_colors = optionalBoolean(System.getProperty(USE_SWT_FONT_COLORS));
             configFlags.use_swt_font_colors_by_widget = fontColorsByWidgetFromProperties();
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));

@@ -1186,7 +1186,7 @@ public class DartTable extends DartComposite implements ITable {
         int y = point.y - getHeaderHeight();
         if (y < 0)
             return null;
-        int index = (y + scrollOffsetY) / itemHeight;
+        int index = (y + TableHelper.scrollOffsetY(this)) / itemHeight;
         if (index >= 0 && index < getItemCount() && items[index] != null)
             return items[index];
         return null;
@@ -2007,6 +2007,9 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
+            getValue().markDirty(VTable.COLUMN_ORDER);
+        }
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -2799,6 +2802,9 @@ public class DartTable extends DartComposite implements ITable {
     public void setTopIndex(int index) {
         int newValue = index;
         checkWidget();
+        if (this.topIndex != newValue) {
+            getValue().markDirty(VTable.TOP_INDEX);
+        }
         if (!painted && hooks(SWT.MeasureItem))
             hitTestSelection(index, 0, 0);
         /*
@@ -3283,7 +3289,15 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
-    int scrollOffsetY;
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
+    int scrollOffset;
+
+    int columnlessWidth;
 
     boolean loadingVirtualData = false;
 
@@ -3331,7 +3345,7 @@ public class DartTable extends DartComposite implements ITable {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTable.EDITORS);
         }
     }
@@ -3350,7 +3364,7 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                scrollOffsetY = Math.max(0, e.y);
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

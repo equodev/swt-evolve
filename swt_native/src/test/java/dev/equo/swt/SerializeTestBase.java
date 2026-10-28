@@ -462,6 +462,17 @@ public class SerializeTestBase {
             };
         }
 
+        public Consumer<? super Object> equalsTo(Item value, Object def) {
+            return n -> {
+                if (value == def)
+                    assertThatJson(n).node(field).isAbsent();
+                else
+                    // An item travels as a reference to the item, which the client resolves by id.
+                    assertThatJson(n).node(field).isObject()
+                            .containsEntry("id", value.hashCode());
+            };
+        }
+
         public Consumer<? super Object> equalsTo(Caret value, Object def) {
             return n -> {
                 if (value == def)

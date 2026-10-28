@@ -490,6 +490,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         checkWidget();
+        if (this.resizable != newValue) {
+            getValue().markDirty(VTreeColumn.RESIZABLE);
+        }
         this.resizable = newValue;
     }
 
@@ -560,8 +563,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         // TODO how to differentiate 0 and 1 cases?
         width = Math.max(0, width - DartTree.CELL_GAP);
         this.width = newValue;
-        if (widthChanged)
+        if (widthChanged) {
             sendEvent(SWT.Resize);
+            ColumnHelper.columnResized(parent, getApi());
+        }
     }
 
     @Override
@@ -611,7 +616,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Move, e);
+                ColumnHelper.movedByUser(getApi(), e.index);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {
