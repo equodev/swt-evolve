@@ -139,6 +139,13 @@ public class VTree extends VComposite {
         ((DartTree) impl).topItem = value;
     }
 
+    public int getOwnerDrawItemHeight() {
+        return ((DartTree) impl).wireOwnerDrawItemHeight();
+    }
+
+    public void setOwnerDrawItemHeight(int value) {
+    }
+
     public static final String COLUMN_ORDER = "columnOrder";
 
     public static final String COLUMNS = "columns";
@@ -154,6 +161,8 @@ public class VTree extends VComposite {
     public static final String ITEMS = "items";
 
     public static final String LINES_VISIBLE = "linesVisible";
+
+    public static final String OWNER_DRAW_ITEM_HEIGHT = "ownerDrawItemHeight";
 
     public static final String SELECTION = "selection";
 
@@ -201,6 +210,9 @@ public class VTree extends VComposite {
                 return;
             case "topItem":
                 Serializer.writeKeyValue(writer, "topItem", getTopItem());
+                return;
+            case "ownerDrawItemHeight":
+                Serializer.writeKeyValue(writer, "ownerDrawItemHeight", getOwnerDrawItemHeight());
                 return;
         }
         super.writeProperty(writer, key);

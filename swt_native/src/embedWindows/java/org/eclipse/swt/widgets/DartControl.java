@@ -1602,6 +1602,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     @Override
     public long internal_new_GC(GCData data) {
+        checkWidget();
         return 0;
     }
 
