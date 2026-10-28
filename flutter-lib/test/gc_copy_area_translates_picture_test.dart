@@ -1,4 +1,5 @@
-// A copyArea must shift a picture-backed blit like every other shape.
+// A copyArea must shift a picture-backed blit like every other shape, and bound it to the area it
+// copied: the web renderers ignore a clip around a nested picture, so the shape has to carry pixels.
 
 import 'dart:ui' as ui;
 
@@ -35,7 +36,9 @@ void main() {
     expect(rect.rect.top, 20, reason: 'the ordinary shape moves');
     expect(picture.destRect.top, 20,
         reason: 'the picture-backed blit has to move with it');
-    expect(picture.type, ImageType.picture,
-        reason: 'and stay a picture — rasterising it here is the readback we removed');
+    expect(picture.type, ImageType.raster,
+        reason: 'and carry pixels, since a clip does not bound a nested picture');
+    expect(picture.clipRect, const Rect.fromLTWH(0, 20, 10, 10),
+        reason: 'bounded to the area the copy landed on');
   });
 }

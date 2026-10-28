@@ -1016,6 +1016,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         ((SwtDevice) device.getImpl()).deregisterResourceWithZoomSupport(this.getApi());
         this.isDestroyed = true;
         destroyHandles();
+        GCHelper.disposeImageGC(memGC);
         memGC = null;
         _releaseRemoteRefOnDart(remoteRef);
         _releaseRemoteRefOnDart(previousRemoteRef);
@@ -1043,7 +1044,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object != null && !(((Image) object).getImpl() instanceof DartImage))
+        if (object instanceof Image && !(((Image) object).getImpl() instanceof DartImage))
             return (this.getImageData().equals(((Image) object).getImageData()));
         if (object == this.getApi())
             return true;
@@ -1078,6 +1079,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (imageData == null || imageData.transparentPixel == -1)
             return null;
+        if (this.background == null)
+            this.background = GraphicsUtils.transparentColor(device, imageData);
         return this.background;
     }
 

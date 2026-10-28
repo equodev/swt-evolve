@@ -126,6 +126,23 @@ public class SpinnerHelper {
     }
 
     /**
+     * Takes the new digits, then offers the text they write as a Verify over the one the field shows, as natively:
+     * a refused text stays in the field with the new digits taken, a rewritten one is what the field shows.
+     */
+    static void setDigits(DartSpinner c, int value) {
+        c.checkWidget();
+        if (value < 0)
+            c.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (value == c.digits)
+            return;
+        String shown = getText(c);
+        c.getValue().markDirty(VSpinner.DIGITS);
+        c.digits = value;
+        keepText(c, shown);
+        setSelection(c, c.selection, false, true, false);
+    }
+
+    /**
      * Moves the spinner to {@code value}. With {@code setText} the text follows, as natively: a Verify listener
      * hears the new text first and may refuse it, which keeps the old text and sends no Modify or Selection, or
      * rewrite it, which the field then shows; the position has moved already, as the native stepper's has.
