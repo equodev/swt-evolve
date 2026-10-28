@@ -56,6 +56,88 @@ class ShellActivationFlutterTest {
         assertThat(events).containsExactly("Activate");
     }
 
+    @Test
+    void activatingTheMainShellDeactivatesTheDialogFirst() {
+        openMainAndDialog();
+
+        main.setActive();
+
+        assertThat(log).containsSubsequence("Dialog.Deactivate", "Main.Activate");
+        assertThat(log).containsOnlyOnce("Dialog.Deactivate").doesNotContain("Main.Deactivate");
+        assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    @Test
+    void activatingTheDialogAgainDeactivatesTheMainShellFirst() {
+        openMainAndDialog();
+        main.setActive();
+        log.clear();
+
+        dialog.setActive();
+
+        assertThat(log).containsSubsequence("Main.Deactivate", "Dialog.Activate");
+        assertThat(log).containsOnlyOnce("Main.Deactivate").doesNotContain("Dialog.Deactivate");
+        assertThat(display.getActiveShell()).isSameAs(dialog);
+    }
+
+    @Test
+    void hidingTheActiveDialogHandsActivationBackToTheMainShell() {
+        openMainAndDialog();
+
+        dialog.setVisible(false);
+
+        assertThat(log).containsSubsequence("Dialog.Deactivate", "Main.Activate");
+        assertThat(log).contains("Dialog.FocusOut", "Dialog.Hide");
+        assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    @Test
+    void closingTheActiveDialogSendsItNoFocusOutAfterItsDispose() {
+        openMainAndDialog();
+        main.setActive();
+        dialog.setActive();
+        log.clear();
+
+        dialog.close();
+
+        assertThat(log).contains("Dialog.Dispose", "Main.Activate");
+        assertThat(log.subList(log.indexOf("Dialog.Dispose"), log.size())).doesNotContain("Dialog.FocusOut");
+        assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    // ---- two shells -------------------------------------------------------------------------------
+
+    private Shell main;
+    private Shell dialog;
+    private final List<String> log = new ArrayList<>();
+
+    /** A main shell and a dialog opened over it, which is the active shell. */
+    private void openMainAndDialog() {
+        install(TestWebBridge::new);
+        main = new Shell(display);
+        main.setSize(400, 300);
+        main.open();
+        dialog = new Shell(main, SWT.DIALOG_TRIM);
+        dialog.setBounds(400, 100, 200, 120);
+        dialog.open();
+        assertThat(display.getActiveShell()).as("precondition: the dialog is active").isSameAs(dialog);
+        record(main, "Main");
+        record(dialog, "Dialog");
+    }
+
+    /** Through display filters, which still hear a widget once its Dispose has cleared its listeners. */
+    private void record(Shell shell, String name) {
+        int[] types = {SWT.Activate, SWT.Deactivate, SWT.FocusIn, SWT.FocusOut, SWT.Hide, SWT.Dispose};
+        String[] names = {"Activate", "Deactivate", "FocusIn", "FocusOut", "Hide", "Dispose"};
+        for (int i = 0; i < types.length; i++) {
+            String event = name + "." + names[i];
+            display.addFilter(types[i], e -> {
+                if (e.widget == shell)
+                    log.add(event);
+            });
+        }
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     /** See {@code ControlFocusRequestFlutterTest.install} — a Display whose bridge is the test bridge. */
