@@ -166,7 +166,7 @@ public class DartFontDialog extends DartDialog implements IFontDialog {
      * </ul>
      */
     public FontData open() {
-        Display display = parent != null ? ((DartWidget) parent.getImpl()).display : DartDisplay.getCurrent();
+        Display display = parent.getDisplay();
         boolean create = fontData != null;
         Font font = create ? new Font(display, fontData) : display.getSystemFont();
         fontData = null;

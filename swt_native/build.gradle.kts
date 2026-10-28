@@ -336,7 +336,11 @@ sourceSets {
             // CTabFolder.setSelectionBarThickness, added in 3.121). The bench suite is tagged
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
-            if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            if (swtMinorNative < 121) {
+                exclude("dev/equo/swt/bench/**")
+                // MessageBox.setButtonLabels was added in 3.121.
+                exclude("org/eclipse/swt/widgets/MessageBoxButtonLabelsNativeTest.java")
+            }
             // Image.getImageData(int zoom) was added in 3.106.
             if (swtMinorNative < 106) {
                 exclude("org/eclipse/swt/graphics/ImageProviderZoomNativeTest.java")
@@ -347,6 +351,9 @@ sourceSets {
             if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
             // TextLayout.setFixedLineMetrics was added in 3.125.
             if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
+            // FileDialog.openDialog() and DirectoryDialog.openDialog() were added in 3.126; open(),
+            // which the rest of the dialog tests go through, is in every release.
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/DialogOpenDialogNativeTest.java")
             // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.

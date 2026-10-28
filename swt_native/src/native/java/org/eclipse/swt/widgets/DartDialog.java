@@ -152,7 +152,7 @@ public abstract class DartDialog implements IDialog {
      * @see Widget#checkSubclass
      */
     public void checkSubclass() {
-        if (!DartDisplay.isValidClass(getClass())) {
+        if (!DartDisplay.isValidClass(getApi().getClass())) {
             error(SWT.ERROR_INVALID_SUBCLASS);
         }
     }
@@ -319,16 +319,20 @@ public abstract class DartDialog implements IDialog {
             });
         }
         Shell host = dialogHost();
-        DartShell shell = (host != null && host.getImpl() instanceof DartShell) ? (DartShell) host.getImpl() : null;
+        DartShell shell = host.getImpl() instanceof DartShell ? (DartShell) host.getImpl() : null;
         if (shell != null)
             shell.addDialog(this);
-        while (!done[0]) {
+        // The dialog is drawn on its host, so once the host is disposed nobody can answer it; and once
+        // its own parent is disposed the dialog itself is gone, even if an ancestor host is still up.
+        while (!done[0] && !host.isDisposed() && !parent.isDisposed()) {
             if (!display.readAndDispatch())
                 display.sleep();
         }
         if (bridge != null)
             bridge.offChannel(closeChannel);
-        if (shell != null)
+        // A disposed host has already released the dialogs it was drawing, and marking a disposed
+        // Shell dirty would send Flutter a value for a Shell it does not draw.
+        if (shell != null && !host.isDisposed())
             shell.removeDialog(this);
         return response[0];
     }
@@ -345,6 +349,10 @@ public abstract class DartDialog implements IDialog {
                 host = active;
         }
         return host != null && !host.isDisposed() ? host : parent;
+    }
+
+    static boolean sheetsEnabled() {
+        return !"false".equals(System.getProperty("org.eclipse.swt.sheet"));
     }
 
     public Dialog getApi() {

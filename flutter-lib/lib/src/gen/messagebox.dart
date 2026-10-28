@@ -9,6 +9,9 @@ class VMessageBox extends VDialog {
   VMessageBox.empty() : super.empty();
 
   String? message;
+  // The label of each button a message box can show, in the order OK, Cancel, Yes, No, Abort,
+  // Retry, Ignore.
+  List<String?>? buttonLabels;
 
   factory VMessageBox.fromJson(Map<String, dynamic> json) =>
       _$VMessageBoxFromJson(json);
