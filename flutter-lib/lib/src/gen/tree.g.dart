@@ -82,7 +82,8 @@ VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..sortDirection = (json['sortDirection'] as num?)?.toInt()
   ..topItem = json['topItem'] == null
       ? null
-      : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>);
+      : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>)
+  ..ownerDrawItemHeight = (json['ownerDrawItemHeight'] as num?)?.toInt();
 
 Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -120,4 +121,5 @@ Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'sortColumn': ?instance.sortColumn,
   'sortDirection': ?instance.sortDirection,
   'topItem': ?instance.topItem,
+  'ownerDrawItemHeight': ?instance.ownerDrawItemHeight,
 };

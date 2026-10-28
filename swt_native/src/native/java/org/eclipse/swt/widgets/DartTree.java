@@ -2362,6 +2362,12 @@ public class DartTree extends DartComposite implements ITree {
         return topItem;
     }
 
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
     void loadVirtualPage(TreeItem parentItem) {
         if ((getApi().style & SWT.VIRTUAL) == 0)
             return;

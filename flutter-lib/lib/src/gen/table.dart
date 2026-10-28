@@ -63,6 +63,8 @@ class VTable extends VComposite {
   List<int>? selection;
   int? topIndex;
 
+  int? ownerDrawItemHeight;
+
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
@@ -78,6 +80,7 @@ class VTable extends VComposite {
       selection = other.selection;
       topIndex = other.topIndex;
       itemCount = other.itemCount;
+      ownerDrawItemHeight = other.ownerDrawItemHeight;
     }
   }
 
@@ -116,6 +119,8 @@ class VTable extends VComposite {
         topIndex = (json['topIndex'] as num?)?.toInt();
       case 'itemCount':
         itemCount = (json['itemCount'] as num?)?.toInt();
+      case 'ownerDrawItemHeight':
+        ownerDrawItemHeight = (json['ownerDrawItemHeight'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

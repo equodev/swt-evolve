@@ -236,6 +236,71 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
         assertThat(measured).isNotEmpty().doesNotContainNull();
     }
 
+    /**
+     * An owner-drawing Table shares one row height, and the height it asks for in SWT.MeasureItem is
+     * the only place a taller row is known — CDT's "New C/C++ Project" template chooser raises it to
+     * fit a bold title above a description. Capturing a cell must keep that height
+     * ({@code ownerDrawItemHeight}, sent as {@code VTable.ownerDrawItemHeight}); discarding it leaves
+     * every row one font line tall and the owner drawing overruns the next row's title.
+     */
+    @Test
+    void measureItem_height_isKept_soTheRowFitsTheDrawing() {
+        Table table = table();
+        DartTable tableImpl = ownerDrawnTable(table, 2);
+        VTable value = new VTable(tableImpl);
+        when(tableImpl.getValue()).thenReturn(value);
+        when(tableImpl.hooks(SWT.MeasureItem)).thenReturn(true);
+        // The app asks for a 58px row — a bold title above a description, vs the 20px font line.
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            event.height = 58;
+            return null;
+        }).when(tableImpl).sendEvent(eq(SWT.MeasureItem), any(Event.class));
+        doAnswer(invocation -> null).when(tableImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TableItem item = new TableItem(table, SWT.NONE);
+        item.setText(new String[] { "Managed Build Project", "A C/C++ project built with the managed build system" });
+
+        serialize(item);
+
+        assertThat(tableImpl.ownerDrawItemHeight).isEqualTo(58);
+        assertThat(value.changedKeys()).as("the raised height is sent to the client").contains(VTable.OWNER_DRAW_ITEM_HEIGHT);
+    }
+
+    /**
+     * SWT fixes a Table's row height at the tallest it has measured; it never shrinks mid-life. A
+     * later capture that measures a shorter row must leave the kept height alone, so the rows do not
+     * snap back and clip a drawing that an earlier, taller row established.
+     */
+    @Test
+    void measureItem_height_onlyGrows_soAShorterLaterMeasureKeepsTheRow() {
+        Table table = table();
+        DartTable tableImpl = ownerDrawnTable(table, 2);
+        VTable value = new VTable(tableImpl);
+        when(tableImpl.getValue()).thenReturn(value);
+        when(tableImpl.hooks(SWT.MeasureItem)).thenReturn(true);
+        int[] asked = { 58 };
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            event.height = asked[0];
+            return null;
+        }).when(tableImpl).sendEvent(eq(SWT.MeasureItem), any(Event.class));
+        doAnswer(invocation -> null).when(tableImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TableItem item = new TableItem(table, SWT.NONE);
+        item.setText(new String[] { "Managed Build Project", "A C/C++ project built with the managed build system" });
+
+        serialize(item);
+        assertThat(tableImpl.ownerDrawItemHeight).isEqualTo(58);
+        value.clearDirty();
+
+        // A later, shorter measure (still taller than the 20px font line) must not lower the row.
+        asked[0] = 30;
+        serialize(item);
+        assertThat(tableImpl.ownerDrawItemHeight).isEqualTo(58);
+        assertThat(value.changedKeys()).as("an unchanged height is not sent again").doesNotContain(VTable.OWNER_DRAW_ITEM_HEIGHT);
+    }
+
     private Image solidImage(int width, int height) {
         return new Image(device(), new ImageData(width, height, 24, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF)));
     }
