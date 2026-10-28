@@ -806,8 +806,7 @@ public class TreeHelper {
             // property, so a plain re-send on every capture would be churn with no effect.
             if (measured > itemHeight && measured > tree.ownerDrawItemHeight) {
                 tree.ownerDrawItemHeight = measured;
-                VTree value = tree.getValue();
-                if (value != null) value.markDirty(VTree.OWNER_DRAW_ITEM_HEIGHT);
+                tree.getValue().markDirty(VTree.OWNER_DRAW_ITEM_HEIGHT);
             }
             suppressed = suppressedForegrounds(item, parent, count, gc);
             for (int i = 0; i < count; i++) {

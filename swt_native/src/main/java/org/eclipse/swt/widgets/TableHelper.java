@@ -906,8 +906,7 @@ public class TableHelper {
             // property, so a plain re-send on every capture would be churn with no effect.
             if (measured > itemHeight && measured > table.ownerDrawItemHeight) {
                 table.ownerDrawItemHeight = measured;
-                VTable value = table.getValue();
-                if (value != null) value.markDirty(VTable.OWNER_DRAW_ITEM_HEIGHT);
+                table.getValue().markDirty(VTable.OWNER_DRAW_ITEM_HEIGHT);
             }
             suppressed = suppressedForegrounds(item, parent, count, gc);
             for (int i = 0; i < count; i++) {
