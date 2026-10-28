@@ -335,17 +335,17 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// parent is only reached when nothing below handled the request. Flutter delivers a
   /// pointer to every control under it, innermost first, so the walk itself comes for free
   /// and this only has to stop it.
-  void handleMenuDetect(int pointer, Offset localPosition) {
-    if (_menuDetectHandledPointer == pointer) return;
-    if (state.menu != null) _menuDetectHandledPointer = pointer;
-    // Table drives MenuDetect from its own per-cell and per-header detectors, which carry
-    // the coordinates of the cell that was hit; this would add a second event.
-    if (!forwardsControlMouseDown) return;
+  void handleMenuDetect(PointerDownEvent press) {
+    if (_menuDetectHandledPointer == press.pointer) return;
+    if (state.menu != null) _menuDetectHandledPointer = press.pointer;
+    // The press a control's own parts report (a Table's cells and header, which carry the
+    // coordinates of the part that was hit) gets its MenuDetect from them too.
+    if (!forwardsMouseDownOf(press)) return;
     widget.sendMenuDetectMenuDetect(
       state,
       VEvent()
-        ..x = localPosition.dx.round()
-        ..y = localPosition.dy.round(),
+        ..x = press.localPosition.dx.round()
+        ..y = press.localPosition.dy.round(),
     );
   }
 
@@ -627,6 +627,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// the chrome Listener would fire a second event with different coordinates.
   bool get forwardsControlMouseDown => true;
 
+  /// Whether [wrap] sends the MouseDown of this press: [forwardsControlMouseDown], unless the
+  /// control tells its own parts' presses apart from the rest of its area.
+  bool forwardsMouseDownOf(PointerDownEvent event) => forwardsControlMouseDown;
+
   /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
   /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
   /// otherwise every keystroke reaches SWT KeyDown listeners twice.
@@ -870,7 +874,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       onPointerDown: (e) {
         if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
         registerPointerDown(e);
-        if (forwardsControlMouseDown) {
+        if (forwardsMouseDownOf(e)) {
           final event = VEvent()
             ..button = swtButton
             ..x = e.localPosition.dx.round()
@@ -891,7 +895,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         // item under the cursor there, and a menu built ahead of it describes the previous
         // selection. Still ahead of the menu opening, which applyMenu does on the release.
         if (isMenuDetectTrigger(swtButton)) {
-          handleMenuDetect(e.pointer, e.localPosition);
+          handleMenuDetect(e);
         }
       },
       onPointerUp: (e) {

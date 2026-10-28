@@ -360,6 +360,8 @@ sourceSets {
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
             // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
+            // CCombo.setAlignment was added in 3.113.
+            if (swtMinorNative < 113) exclude("org/eclipse/swt/custom/CComboSetAlignmentTest.java")
             // Tree.setHeaderForeground was added in 3.106.
             if (swtMinorNative < 106) exclude("org/eclipse/swt/widgets/TreeHeaderForegroundNativeTest.java")
             // Cocoa's Tree gained keyDown, one of the fields the accessors answer, in 3.126.
