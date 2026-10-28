@@ -516,6 +516,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   void cancelHover() => _hoverTimer?.cancel();
 
+  /// The pointer rests on this control's own area at [position]: its hover counts from there.
+  void restartHover(V state, VEvent event, Offset position) {
+    _lastHoverPosition = position;
+    _resetHoverTimer(state, event);
+  }
+
   void forgetDragDetect(int pointer) {
     if (pointer != _dragDetectPointer) return;
     _dragDetectPointer = null;
@@ -912,10 +918,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         // A mouse rests where the release left it; the hover starts counting from there. A touch
         // leaves nothing under the pointer.
         if (e.kind == PointerDeviceKind.mouse && isOverSelf(e)) {
-          _lastHoverPosition = e.position;
-          _resetHoverTimer(state, VEvent()
+          restartHover(state, VEvent()
             ..x = event.x
-            ..y = event.y);
+            ..y = event.y, e.position);
         }
       },
       onPointerCancel: (e) {
@@ -954,10 +959,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        _lastHoverPosition = e.position;
         _removeTooltip();
         sendThrottledMouseMove(state, event, e.buttons);
-        _resetHoverTimer(state, event);
+        restartHover(state, event, e.position);
       },
       child: child,
     );

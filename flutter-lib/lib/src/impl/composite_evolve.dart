@@ -94,6 +94,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
       impl.sendThrottledMouseMove(state, event, e.buttons);
+      impl.restartHover(state, event, e.position);
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
@@ -144,6 +145,13 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           ..stateMask =
               impl.swtStateMask(released: true, flutterButtons: e.buttons);
         impl.widget.sendMouseMouseUp(state, event);
+        // A mouse rests where the release left it, as on a childless control; over a child, the
+        // child counts its own hover.
+        if (e.kind == PointerDeviceKind.mouse && impl.isOverSelf(e) && !_hitsAnyChild(state, pos)) {
+          impl.restartHover(state, VEvent()
+            ..x = event.x
+            ..y = event.y, e.position);
+        }
       },
       onPointerCancel: (e) {
         if (!forwardsPointer) return;

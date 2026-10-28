@@ -131,4 +131,39 @@ void main() {
     expect(exits(sent), isEmpty);
     expect(sent.where((s) => s.$1.contains('MouseEnter')), hasLength(1));
   });
+
+  testWidgets('a parent the pointer rests on after a release reports one hover there', (tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pumpCompositeWithCanvas(tester, sent);
+
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(50, 100)));
+    await tester.pump();
+    await tester.sendEventToBinding(pointer.down(const Offset(50, 100)));
+    await tester.sendEventToBinding(pointer.move(const Offset(300, 120)));
+    await tester.pump();
+    await tester.sendEventToBinding(pointer.move(const Offset(60, 100)));
+    await tester.pump();
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump(hold * 2);
+
+    final hovers = _hovers(sent).toList();
+    expect(hovers, hasLength(1), reason: 'the pointer rests at (60, 100) once the button is released');
+    expect((hovers.single.$2!.x, hovers.single.$2!.y), (60, 100));
+  });
+
+  testWidgets('a parent hovered on to a new point counts its hover from there', (tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pumpCompositeWithCanvas(tester, sent);
+
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(50, 100)));
+    await tester.pump(hold ~/ 2);
+    await tester.sendEventToBinding(pointer.hover(const Offset(70, 100)));
+    await tester.pump(hold);
+
+    final hovers = _hovers(sent).toList();
+    expect(hovers, hasLength(1), reason: 'the pointer only rested at (70, 100)');
+    expect((hovers.single.$2!.x, hovers.single.$2!.y), (70, 100));
+  });
 }
