@@ -162,6 +162,17 @@ class ShellActivationFlutterTest {
         assertThat(display.getActiveShell()).isSameAs(main);
     }
 
+    @Test
+    void anActiveDialogDisposedWithItsParentHandsNoActivationBackToThatParent() {
+        openMainAndDialog();
+        dialog.addListener(SWT.Deactivate, e -> main.dispose());
+
+        main.setActive();
+
+        assertThat(main.isDisposed()).isTrue();
+        assertThat(log.subList(log.indexOf("Main.Dispose"), log.size())).doesNotContain("Main.FocusIn", "Main.Activate");
+    }
+
     // ---- two shells -------------------------------------------------------------------------------
 
     private Shell main;
