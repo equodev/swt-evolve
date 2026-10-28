@@ -29,7 +29,6 @@ mixin _$ExpandBarThemeExtensionTailorMixin
   EdgeInsets get headerPadding;
   EdgeInsets get contentPadding;
   EdgeInsets get containerPadding;
-  double get itemSpacing;
   TextStyle? get headerTextStyle;
   Duration get animationDuration;
   Curve get animationCurve;
@@ -55,7 +54,6 @@ mixin _$ExpandBarThemeExtensionTailorMixin
     EdgeInsets? headerPadding,
     EdgeInsets? contentPadding,
     EdgeInsets? containerPadding,
-    double? itemSpacing,
     TextStyle? headerTextStyle,
     Duration? animationDuration,
     Curve? animationCurve,
@@ -87,7 +85,6 @@ mixin _$ExpandBarThemeExtensionTailorMixin
       headerPadding: headerPadding ?? this.headerPadding,
       contentPadding: contentPadding ?? this.contentPadding,
       containerPadding: containerPadding ?? this.containerPadding,
-      itemSpacing: itemSpacing ?? this.itemSpacing,
       headerTextStyle: headerTextStyle ?? this.headerTextStyle,
       animationDuration: animationDuration ?? this.animationDuration,
       animationCurve: animationCurve ?? this.animationCurve,
@@ -153,7 +150,6 @@ mixin _$ExpandBarThemeExtensionTailorMixin
       headerPadding: t < 0.5 ? headerPadding : other.headerPadding,
       contentPadding: t < 0.5 ? contentPadding : other.contentPadding,
       containerPadding: t < 0.5 ? containerPadding : other.containerPadding,
-      itemSpacing: t < 0.5 ? itemSpacing : other.itemSpacing,
       headerTextStyle: TextStyle.lerp(
         headerTextStyle,
         other.headerTextStyle,
@@ -240,10 +236,6 @@ mixin _$ExpandBarThemeExtensionTailorMixin
               other.containerPadding,
             ) &&
             const DeepCollectionEquality().equals(
-              itemSpacing,
-              other.itemSpacing,
-            ) &&
-            const DeepCollectionEquality().equals(
               headerTextStyle,
               other.headerTextStyle,
             ) &&
@@ -280,7 +272,6 @@ mixin _$ExpandBarThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(headerPadding),
       const DeepCollectionEquality().hash(contentPadding),
       const DeepCollectionEquality().hash(containerPadding),
-      const DeepCollectionEquality().hash(itemSpacing),
       const DeepCollectionEquality().hash(headerTextStyle),
       const DeepCollectionEquality().hash(animationDuration),
       const DeepCollectionEquality().hash(animationCurve),
@@ -317,7 +308,6 @@ extension ExpandBarThemeExtensionBuildContextProps on BuildContext {
   EdgeInsets get headerPadding => expandBarThemeExtension.headerPadding;
   EdgeInsets get contentPadding => expandBarThemeExtension.contentPadding;
   EdgeInsets get containerPadding => expandBarThemeExtension.containerPadding;
-  double get itemSpacing => expandBarThemeExtension.itemSpacing;
   TextStyle? get headerTextStyle => expandBarThemeExtension.headerTextStyle;
   Duration get animationDuration => expandBarThemeExtension.animationDuration;
   Curve get animationCurve => expandBarThemeExtension.animationCurve;

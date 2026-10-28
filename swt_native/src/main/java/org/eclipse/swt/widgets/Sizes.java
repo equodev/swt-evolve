@@ -279,43 +279,15 @@ public class Sizes {
     }
 
     public static Point computeSize(DartExpandBar dartExpandBar, int wHint, int hHint, boolean changed) {
-        ExpandItem[] items = dartExpandBar.getItems();
-        int spacing = dartExpandBar._spacing();
+        return dev.equo.swt.size.ExpandBarSizes.computeSize(dartExpandBar.getApi(), wHint, hHint);
+    }
 
-        if (items == null || items.length == 0) {
-            return new Point(200, 100);
+    /** SWT's header band: the chevron until the bar is given a font, then the taller of chevron and a line. */
+    static int getBandHeight(DartExpandBar dartExpandBar, Font font) {
+        if (font == null) {
+            return dev.equo.swt.size.ExpandBarSizes.CHEVRON_SIZE;
         }
-
-        int totalHeight = spacing;
-        int maxWidth = 0;
-        int headerHeight = 56;
-
-        for (ExpandItem item : items) {
-            DartExpandItem dartItem = (DartExpandItem) item.getImpl();
-            totalHeight += headerHeight;
-
-            String text = dartItem._text();
-            int textLength = (text != null ? text.length() : 0);
-            int itemWidth = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) + 40;
-            maxWidth = Math.max(maxWidth, itemWidth);
-
-            Control control = dartItem._control();
-            if (control != null) {
-                Rectangle controlBounds = ((DartControl)control.getImpl()).getBounds();
-                int controlHeight = controlBounds.height > 0 ? controlBounds.height :
-                        control.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT).y;
-                int controlWidth = controlBounds.width > 0 ? controlBounds.width :
-                        control.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT).x;
-
-                totalHeight += controlHeight;
-                maxWidth = Math.max(maxWidth, controlWidth + 32);
-            }
-
-            totalHeight += spacing;
-        }
-
-        maxWidth = Math.max(maxWidth, 200);
-        return new Point(maxWidth, totalHeight);
+        return dev.equo.swt.size.ExpandBarSizes.bandHeight(dartExpandBar.getApi());
     }
 
     public static Point computeSize(DartLabel c, int wHint, int hHint, boolean changed) {

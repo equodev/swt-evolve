@@ -53,7 +53,6 @@ ExpandBarThemeExtension _$ExpandBarThemeExtensionFromJson(
   containerPadding: const EdgeInsetsConverter().fromJson(
     json['containerPadding'] as Map<String, dynamic>,
   ),
-  itemSpacing: (json['itemSpacing'] as num).toDouble(),
   headerTextStyle: const TextStyleConverter().fromJson(
     json['headerTextStyle'] as Map<String, dynamic>?,
   ),
@@ -105,7 +104,6 @@ Map<String, dynamic> _$ExpandBarThemeExtensionToJson(
   'containerPadding': const EdgeInsetsConverter().toJson(
     instance.containerPadding,
   ),
-  'itemSpacing': instance.itemSpacing,
   'headerTextStyle': ?const TextStyleConverter().toJson(
     instance.headerTextStyle,
   ),

@@ -28,6 +28,8 @@ class VExpandItem extends VItem {
   bool? expanded;
   int? height;
 
+  int? headerHeight;
+
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
@@ -35,6 +37,7 @@ class VExpandItem extends VItem {
       control = other.control;
       expanded = other.expanded;
       height = other.height;
+      headerHeight = other.headerHeight;
     }
   }
 
@@ -49,6 +52,8 @@ class VExpandItem extends VItem {
         expanded = json['expanded'] as bool?;
       case 'height':
         height = (json['height'] as num?)?.toInt();
+      case 'headerHeight':
+        headerHeight = (json['headerHeight'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

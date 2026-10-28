@@ -59,9 +59,6 @@ ExpandBarThemeExtension _getExpandBarTheme({
     contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
     containerPadding: EdgeInsets.zero,
 
-    // Spacing
-    itemSpacing: 2.0,
-
     // Typography
     headerTextStyle: textTheme.bodyMedium,
 
