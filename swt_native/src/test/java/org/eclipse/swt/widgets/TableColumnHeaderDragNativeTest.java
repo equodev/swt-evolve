@@ -70,6 +70,12 @@ class TableColumnHeaderDragNativeTest {
         return ((DartTable) table.getImpl()).getValue();
     }
 
+    private static Event droppedAt(int displayIndex) {
+        Event event = new Event();
+        event.index = displayIndex;
+        return event;
+    }
+
     @Test
     @DisplayName("a moveable column dragged in the header is shown where it was dropped, and the columns that moved hear it")
     void headerDragReordersTheColumns() {
@@ -82,14 +88,12 @@ class TableColumnHeaderDragNativeTest {
             column.addListener(SWT.Move, e -> moved.add(column));
         }
         columns[2].setMoveable(true);
-        Event dropped = new Event();
-        dropped.index = 0;
 
-        fromFlutter(columns[1], "Control/Move", dropped);
+        fromFlutter(columns[1], "Control/Move", droppedAt(0));
         runQueued();
         assertThat(table.getColumnOrder()).containsExactly(0, 1, 2);
 
-        fromFlutter(columns[2], "Control/Move", dropped);
+        fromFlutter(columns[2], "Control/Move", droppedAt(0));
         runQueued();
         assertThat(table.getColumnOrder()).containsExactly(2, 0, 1);
         assertThat(moved).containsExactlyInAnyOrder(columns);
@@ -103,9 +107,7 @@ class TableColumnHeaderDragNativeTest {
         TableColumn first = new TableColumn(table, SWT.NONE);
         new TableColumn(table, SWT.NONE);
         first.setMoveable(true);
-        Event dropped = new Event();
-        dropped.index = 1;
-        fromFlutter(first, "Control/Move", dropped);
+        fromFlutter(first, "Control/Move", droppedAt(1));
         runQueued();
 
         new TableColumn(table, SWT.NONE);
