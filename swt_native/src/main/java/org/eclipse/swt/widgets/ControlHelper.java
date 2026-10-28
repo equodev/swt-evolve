@@ -223,7 +223,9 @@ public class ControlHelper {
         rememberTypingKey(control, key);
         if (key.doit && !control.isDisposed()) {
             applyPlatformKey(control, key);
-            MenuHelper.keyDownDelivered(control.getApi(), key);
+            // The key's own action (a Spinner step's Verify, say) may have disposed the control.
+            if (!control.isDisposed())
+                MenuHelper.keyDownDelivered(control.getApi(), key);
         }
         return new RoutedKey(true, key.doit, traverseDoit);
     }
