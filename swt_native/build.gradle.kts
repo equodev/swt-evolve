@@ -308,8 +308,13 @@ sourceSets {
             if (currentOs != "windows") exclude("**/Win32*NativeTest.java")
             // ImageDataAtSizeProvider and the at-size machinery it drives only exist from 3.132
             // (absent in 3.131), so the test covering that path cannot compile against older SWT.
+            // Older releases do not read SVG either.
             val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
-            if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+            if (swtMinorNative < 132) {
+                exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+                exclude("org/eclipse/swt/graphics/ImageAtSizeDrawNativeTest.java")
+                exclude("org/eclipse/swt/graphics/ImageSvgNativeTest.java")
+            }
             // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
             if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
@@ -324,6 +329,7 @@ sourceSets {
             if (swtMinorNative < 129) {
                 exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java")
                 exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
+                exclude("org/eclipse/swt/graphics/ImageGcDrawerEqualityNativeTest.java")
             }
             // The committed WorkbenchTree bench fixture is generated against the DEFAULT SWT and
             // bakes in APIs newer than the oldest supported versions (e.g.
@@ -331,6 +337,12 @@ sourceSets {
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
             if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            // Image.getImageData(int zoom) was added in 3.106.
+            if (swtMinorNative < 106) {
+                exclude("org/eclipse/swt/graphics/ImageProviderZoomNativeTest.java")
+                exclude("org/eclipse/swt/graphics/ImageDisposeAndBackgroundNativeTest.java")
+                exclude("org/eclipse/swt/graphics/GCRasterScaleNativeTest.java")
+            }
             // These assert what SWT 3.134's BusyIndicator does when the display goes away; earlier releases differ.
             if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
             // TextLayout.setFixedLineMetrics was added in 3.125.
