@@ -200,7 +200,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   Widget tagItemSemantics(VWidget item, Widget child) =>
       _taggedSemantics(item, child);
 
-  /// Widgets whose `text` is the content the user edits or views, not a caption.
   static const _valueTextSwt = {
     'Text',
     'Combo',
@@ -230,8 +229,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     final tooltip = (toolTipText is String && toolTipText.isNotEmpty)
         ? toolTipText
         : null;
-    // Flutter Web names a node "tooltip\nlabel": next to a caption, the tooltip
-    // becomes the description so the caption stays the accessible name.
     final namedByOwnText =
         !_valueTextSwt.contains(node.swt) &&
         text is String &&
