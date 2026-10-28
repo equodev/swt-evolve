@@ -121,7 +121,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         _hoverTimer?.cancel();
         widget.sendMouseTrackMouseExit(state, event);
       }
-    });
+    }, onLeftWhileHeld: () => _hoverTimer?.cancel());
     FocusRequests.instance.addListener(_applyFocusRequest);
     _applyFocusRequest();
     FocusRequests.instance.register(state.id, context);
