@@ -546,7 +546,7 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if (!java.util.Objects.equals(this.isVisible, visible)) {
+        if (this.isVisible != visible) {
             getValue().markDirty(VCaret.VISIBLE);
         }
         Canvas canvas = getParent();
