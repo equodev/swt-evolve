@@ -614,6 +614,7 @@ public class Browser extends Composite {
      * @deprecated SWT.MOZILLA is deprecated and XULRunner as a browser renderer is no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public Object getWebBrowser() {
         return getImpl().getWebBrowser();
     }

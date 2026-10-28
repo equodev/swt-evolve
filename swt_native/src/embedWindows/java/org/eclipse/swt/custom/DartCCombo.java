@@ -180,7 +180,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     static int checkStyle(int style) {
-        int mask = SWT.BORDER | SWT.READ_ONLY | SWT.FLAT | SWT.SIMPLE | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT | SWT.LEAD | SWT.CENTER | SWT.TRAIL;
+        int mask = SWT.BORDER | SWT.READ_ONLY | SWT.FLAT | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT | SWT.LEAD | SWT.CENTER | SWT.TRAIL;
         return SWT.NO_FOCUS | (style & mask);
     }
 
@@ -301,11 +301,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (index < 0 || index > items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        String[] newItems = new String[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = string;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
+        items = ListItemsHelper.insert(items, index, string);
         if (selectionIndex >= index)
             selectionIndex++;
         getValue().markDirty(VCCombo.ITEMS);
@@ -389,7 +385,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void checkSubclass() {
-        String name = getClass().getName();
+        String name = getApi().getClass().getName();
         int index = name.lastIndexOf('.');
         if (!name.substring(0, index + 1).equals(PACKAGE_PREFIX)) {
             SWT.error(SWT.ERROR_INVALID_SUBCLASS);
@@ -534,6 +530,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     void dropDown(boolean drop) {
         if (drop == listVisible)
+            return;
+        if (drop && !isVisible())
             return;
         getValue().markDirty(VCCombo.ITEMS);
         getValue().markDirty(VCCombo.LIST_VISIBLE);
@@ -697,7 +695,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public String[] getItems() {
         checkWidget();
-        return this.items;
+        return items.clone();
     }
 
     /**
@@ -1145,10 +1143,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         checkWidget();
         if (index < 0 || index >= items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        String[] newItems = new String[items.length - 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
-        items = newItems;
+        items = ListItemsHelper.remove(items, index, index);
         if (selectionIndex == index)
             selectionIndex = -1;
         else if (selectionIndex > index)
@@ -1178,11 +1173,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
             return;
         if (start < 0 || end >= items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
+        items = ListItemsHelper.remove(items, start, end);
         int count = end - start + 1;
-        String[] newItems = new String[items.length - count];
-        System.arraycopy(items, 0, newItems, 0, start);
-        System.arraycopy(items, end + 1, newItems, start, items.length - end - 1);
-        items = newItems;
         if (selectionIndex > end)
             selectionIndex -= count;
         else if (selectionIndex >= start)
@@ -1327,7 +1319,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             //$NON-NLS-1$
             text.setText("");
             selectionIndex = -1;
-        } else if (0 <= index && index < items.length) {
+        } else if (0 <= index && index < items.length && index != selectionIndex) {
             text.setText(items[index]);
             if (text.getEditable() && text.isFocusControl())
                 text.selectAll();
@@ -1470,7 +1462,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             if (item == null)
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        this.items = items;
+        this.items = items.clone();
         selectionIndex = -1;
         //$NON-NLS-1$
         if (!text.getEditable())
@@ -1518,12 +1510,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        boolean newValue = visible;
         checkWidget();
-        if (!java.util.Objects.equals(this.listVisible, newValue)) {
-            getValue().markDirty(VCCombo.LIST_VISIBLE);
-        }
-        this.listVisible = newValue;
         dropDown(visible);
     }
 
@@ -1613,7 +1600,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setTextLimit(int limit) {
         int newValue = limit;
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+        if (this.textLimit != newValue) {
             getValue().markDirty(VCCombo.TEXT_LIMIT);
         }
         this.textLimit = newValue;
@@ -1674,7 +1661,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     void textEvent(Event event) {
-        if (CComboHelper.routeToOpenList(this, event))
+        if (CComboHelper.routeToOpenList(this, event) || CComboHelper.keyDefaultAction(this, event))
             return;
         switch(event.type) {
             case SWT.FocusIn:
@@ -2019,7 +2006,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         if ("org.eclipse.swt.custom.CCombo.itemToolTips".equals(key)) {
             this.itemTooltips = value instanceof String[] ? (String[]) value : null;
             getValue().markDirty(VCCombo.ITEM_TOOLTIPS);
-            return;
         }
         super.setData(key, value);
     }

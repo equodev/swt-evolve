@@ -332,6 +332,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         } else {
         }
         bar.getImpl().sendEvent(visible ? SWT.Show : SWT.Hide);
+        if ((getApi().state & CANVAS) == 0)
+            return true;
         sendEvent(SWT.Resize);
         return true;
     }

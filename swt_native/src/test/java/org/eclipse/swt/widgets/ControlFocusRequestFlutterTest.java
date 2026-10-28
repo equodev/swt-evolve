@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ControlFocusRequestFlutterTest {
 
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+    private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
 
     private Display display;
 
@@ -101,6 +102,42 @@ class ControlFocusRequestFlutterTest {
         // event-loop pass, with no gesture the render side could have seen -- is pushed.
         assertThat(focusRequests(web))
                 .as("an ordinary field is not pushed at the client")
+                .isEmpty();
+    }
+
+    @Test
+    void anOrdinaryFieldIsNamedAsTheFocusHolder() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        new Button(shell, SWT.PUSH);
+        web.comm.sent.clear();
+
+        first.setFocus();
+
+        // SWT traverses from the focus control: the client starts Tab from this field even though its
+        // own keyboard focus was never moved onto it.
+        assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
+                .as("the client is told which control Java holds the focus on")
+                .containsExactly(String.valueOf(first.hashCode()));
+    }
+
+    @Test
+    void theDisplayStateCarriesTheFocusHolderSoAReloadNeedsNoSeparateMessage() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        web.sendDisplayUpdate((DartDisplay) display.getImpl());
+
+        assertThat(web.comm.sent.stream().filter(f -> f.event.startsWith("Display/")
+                        && f.json.contains("\"focusHolderId\":" + first.hashCode())))
+                .as("the Display state names the focus holder")
+                .isNotEmpty();
+        assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
+                .as("no separate holder message alongside it")
                 .isEmpty();
     }
 
@@ -197,12 +234,55 @@ class ControlFocusRequestFlutterTest {
                 .isEmpty();
     }
 
+    @Test
+    void aPrimaryPressOnAStyledTextActivatesAndFocusesItAheadOfItsMouseDown() {
+        assertThat(pressStyledText(1)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "FocusIn", "MouseDown", "client focus");
+    }
+
+    @Test
+    void aSecondaryPressOnAStyledTextFocusesItFromItsOwnMouseDown() {
+        assertThat(pressStyledText(3)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "MouseDown", "FocusIn", "client focus");
+    }
+
+    /** What reaches a StyledText, and the client, from a press of {@code button} the client reports. */
+    private java.util.List<String> pressStyledText(int button) {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text field = new Text(shell, SWT.SINGLE);
+        org.eclipse.swt.custom.StyledText styled = new org.eclipse.swt.custom.StyledText(shell, SWT.NONE);
+        field.setFocus();
+        java.util.List<String> events = new java.util.ArrayList<>();
+        // Filters, as the input parity recorder uses: they see the MouseDown ahead of the StyledText's
+        // own listener, which focuses it on any button.
+        display.addFilter(SWT.Activate, e -> { if (e.widget == styled) events.add("Activate detail=" + e.detail); });
+        display.addFilter(SWT.FocusIn, e -> { if (e.widget == styled) events.add("FocusIn"); });
+        display.addFilter(SWT.MouseDown, e -> { if (e.widget == styled) events.add("MouseDown"); });
+        web.comm.sent.clear();
+
+        Event press = new Event();
+        press.button = button;
+        web.comm.fireContaining(FlutterBridge.event((DartWidget) styled.getImpl(), "Mouse", "MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+
+        if (focusRequests(web).equals(java.util.List.of(String.valueOf(styled.hashCode()))))
+            events.add("client focus");
+        return events;
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     /** The control ids named by every {@code swt.evolve.focus} frame sent so far, in order. */
     private static java.util.List<String> focusRequests(TestWebBridge web) {
+        return ids(web, FOCUS_CHANNEL);
+    }
+
+    /** The control ids named by every frame sent on {@code channel} so far, in order. */
+    private static java.util.List<String> ids(TestWebBridge web, String channel) {
         return web.comm.sent.stream()
-                .filter(f -> f.event.equals(FOCUS_CHANNEL))
+                .filter(f -> f.event.equals(channel))
                 .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
                 .toList();
     }

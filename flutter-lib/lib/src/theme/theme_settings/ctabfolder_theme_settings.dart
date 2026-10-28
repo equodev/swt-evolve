@@ -96,15 +96,18 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     // Tab content area
     tabContentBackgroundColor: colorScheme.surface,
     tabContentBorderColor: colorSchemeExtension.surfaceBorderEnabled,
+    outlineColor: colorScheme.outlineVariant,
     
     // Tab sizes
     tabIconSize: 16.0,
+    // CTabFolderRenderer's BUTTON_SIZE: what SWT gives a tab's close button.
     tabCloseIconSize: 16.0,
     controlButtonSize: 14.0,
     
     // Tab spacing
     tabIconTextSpacing: 14.0,
-    tabCloseButtonSpacing: 14.0,
+    // CTabFolderRenderer's INTERNAL_SPACING between the label and the close button.
+    tabCloseButtonSpacing: 4.0,
     
     // Tab icon/text padding
     tabIconBottomPadding: 1.0,

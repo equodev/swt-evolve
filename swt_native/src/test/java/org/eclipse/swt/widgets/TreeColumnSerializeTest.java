@@ -29,6 +29,7 @@ class TreeColumnSerializeTest extends SerializeTestBase {
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("moveable").equalsTo(w.getMoveable(), orAbsentIfFalse));
+        assertJ.satisfies(node("resizable").equalsTo(w.getResizable(), orAbsentIfFalse));
         assertJ.satisfies(node("width").equalsTo(w.getWidth(), orAbsentIf0));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }

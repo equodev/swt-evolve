@@ -19,6 +19,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -83,6 +85,17 @@ public final class EvolveSwingHost {
     private EvolveSwingHost() {}
 
     private static final AtomicBoolean TOOLKIT_STARTED = new AtomicBoolean(false);
+
+    private static final AtomicBoolean DISPATCH_MERGE_INSTALLED = new AtomicBoolean(false);
+
+    /**
+     * Records what the dispatch merge did, readable from outside the JVM with
+     * {@code jcmd <pid> VM.system_properties}. A product launcher that starts the application
+     * detached leaves no stdout to read, and "did this run at all" is the first question any hang
+     * in the host's AWT bridge raises — a value of {@code reinstated} additionally says the merge
+     * was installed and then displaced by someone else.
+     */
+    static final String DISPATCH_MERGE_PROPERTY = "dev.equo.swt.dispatchMerge";
 
     private static final AtomicBoolean SWING_OPEN_TRIED = new AtomicBoolean(false);
 
@@ -195,7 +208,10 @@ public final class EvolveSwingHost {
         if (parent == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
         // Under swing-evolve's engine there is no LightweightFrame peer to blit from: the island
         // path replaces this one, toolkit set-up included.
-        if (Config.hasSwingEngine()) return SwingIslandHost.newFrame(parent);
+        if (Config.hasSwingEngine()) {
+            if (javaFxOwnsTheQueue()) installDispatchMerge();
+            return SwingIslandHost.newFrame(parent);
+        }
         // Idempotent with the canHost() gate the Jdk9 guard already ran; keeps this method correct
         // even if a caller reaches it without that gate.
         openSwingInternals();
@@ -421,8 +437,67 @@ public final class EvolveSwingHost {
         installPopupFactory();
         shareFrameBuffer();
         Toolkit.getDefaultToolkit();
-        installEvolveDispatcher();
+        if (javaFxOwnsTheQueue()) installDispatchMerge();
         installHeavyweightRepaintListener();
+    }
+
+    /**
+     * Whether this process's AWT event queue is already someone else's, which is the one case the
+     * dispatch merge exists for — and the one case it may be installed in.
+     *
+     * <p>A host that runs AWT through its own {@code FwDispatcher} — an RCP product shipping
+     * {@code -Djavafx.embed.singleThread=true} does — serves an {@code EventQueue.invokeAndWait}
+     * issued from the SWT thread on the JavaFX thread; a {@code Display.syncExec} from inside that
+     * task then waits for the SWT thread, which is already blocked in that same
+     * {@code invokeAndWait}. Neither side holds a monitor, so the JDK's deadlock detector says
+     * nothing. Installing {@link EvolveDispatcherWrapper} makes the SWT thread the dispatch
+     * thread, and that inner {@code syncExec} runs inline instead of waiting.
+     *
+     * <p><b>One slot, two opposite requirements.</b> In that host the slot must be taken, and
+     * taken early. In a host with no JavaFX it must not be taken at all: there is no foreign
+     * dispatcher to displace, and a dispatcher of ours takes the lifetime of the event dispatch
+     * thread away from AWT, so the EDT outlives everything and the JVM cannot end — measured, still
+     * alive ninety seconds after its Display was disposed, {@code AWT-EventQueue-0} parked
+     * non-daemon and the only application thread left. Claiming it unconditionally broke the
+     * second host; claiming it only for an {@code FXCanvas} broke the first, which deadlocked on
+     * its first workbench view — and booting it on the class from before that change brought it
+     * up. This property is the difference between them.
+     *
+     * <p>It gates the island branch of {@link #newFrame} (which returns before
+     * {@link #startToolkit()}) and {@link #startToolkit()} itself. {@code FXCanvas} asks
+     * explicitly. Without the engine, {@link #newFrame} also reinstates the dispatcher on every
+     * embedding, unconditionally: there AWT running its own dispatch thread deadlocks against
+     * AppKit's main thread on macOS, and the JVM-exit concern above is the island's, whose frames
+     * the engine owns.
+     *
+     * <p><b>Not at {@code Display} creation, and that is measured, not a preference.</b> Installed
+     * there, the same host's boot died in fifteen seconds: it issues an unguarded
+     * {@code SwingUtilities.invokeAndWait} from the SWT thread before it embeds anything, and
+     * {@code EventQueue.invokeAndWait} throws outright from the dispatch thread
+     * ({@code EventQueue.java:1353}) — which the SWT thread is, once the merge is in. So the slot is
+     * taken at the first embedding, after that set-up has run, which is also where upstream's own
+     * dispatcher arrives.
+     */
+    public static boolean javaFxOwnsTheQueue() {
+        return Boolean.getBoolean("javafx.embed.singleThread");
+    }
+
+    /**
+     * Installs the merge against {@code display}. Called by {@code FXCanvas}, which asks for it
+     * explicitly and has its own display in hand; every other path goes through
+     * {@link #javaFxOwnsTheQueue()} instead.
+     */
+    public static void installDispatchMergeOn(Display display) {
+        installDispatchMerge(display);
+    }
+
+    private static void installDispatchMerge() {
+        installDispatchMerge(null);
+    }
+
+    private static void installDispatchMerge(Display display) {
+        if (!DISPATCH_MERGE_INSTALLED.compareAndSet(false, true)) return;
+        installEvolveDispatcher(display);
         installDispatcherReinstateListener();
         installStalledFocusRepair();
     }
@@ -470,10 +545,7 @@ public final class EvolveSwingHost {
             frame.add(contents);
             return;
         }
-        hostAsLightweight(contents);
-        host.contentRoot.add(contents);
-        host.contentRoot.revalidate();
-        host.contentRoot.repaint();
+        host.contentRoot.attach(contents);
     }
 
     private static final ThreadLocal<Boolean> BLITTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -488,7 +560,8 @@ public final class EvolveSwingHost {
      * component that repaints itself while painting — feeds itself without bound.
      */
     /** Drops every reference this class holds to a disposed embedding's component tree. */
-    private static void forgetEmbed(Container root, Window frame) {
+    private static void forgetEmbed(ContentRoot root, Window frame) {
+        root.dropHeld();
         EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
         REPAINT_PENDING.remove(root);
@@ -595,6 +668,8 @@ public final class EvolveSwingHost {
             EvolveDispatcherWrapper wrapper = new EvolveDispatcherWrapper(display);
             if (wrapper.isDispatchThread() == EventQueue.isDispatchThread()) return;
             setFwDispatcher(Toolkit.getDefaultToolkit().getSystemEventQueue(), wrapper);
+            System.setProperty(DISPATCH_MERGE_PROPERTY,
+                    "reinstated on " + Thread.currentThread().getName());
         } catch (Throwable notInstallable) {
         }
     }
@@ -611,13 +686,16 @@ public final class EvolveSwingHost {
      * its own dispatcher first, and that specific panel's handshake is not protected by this —
      * only dispatch from this point forward is.
      */
-    private static void installEvolveDispatcher() {
+    private static void installEvolveDispatcher(Display display) {
         try {
-            Display display = Display.getDefault();
+            Display target = display != null ? display : Display.getDefault();
             EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
-            setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
-        } catch (Throwable ignored) {
+            setFwDispatcher(eq, new EvolveDispatcherWrapper(target));
+            System.setProperty(DISPATCH_MERGE_PROPERTY,
+                    "installed on " + Thread.currentThread().getName());
+        } catch (Throwable notInstallable) {
             // Falls back to default AWT/JavaFX dispatch behavior.
+            System.setProperty(DISPATCH_MERGE_PROPERTY, "failed: " + notInstallable);
         }
     }
 
@@ -805,6 +883,7 @@ public final class EvolveSwingHost {
      */
     static final class ContentRoot extends JPanel {
         private final Runnable drawn;
+        private final List<Component> held = new ArrayList<>();
         private volatile boolean placed;
 
         ContentRoot(Runnable drawn) {
@@ -812,9 +891,48 @@ public final class EvolveSwingHost {
             this.drawn = drawn;
         }
 
-        /** Lets the hosted tree paint from now on; until then it is laid out but never painted. */
+        /**
+         * Attaches held content and lets the hosted tree paint from now on. Runs on the EDT; {@code
+         * held} is still empty at the first call, from {@code newFrame} on the SWT thread.
+         */
         void place() {
+            if (placed) return;
             placed = true;
+            List<Component> attach;
+            synchronized (held) {
+                attach = new ArrayList<>(held);
+                held.clear();
+            }
+            attach.forEach(this::attach);
+        }
+
+        /**
+         * Adds application content, held out of the tree until {@link #place}: an applet repaints
+         * from itself rather than through {@link #paintChildren}, and a {@code JSplitPane} painted at
+         * the applet's own placeholder size keeps that layout when the frame grows.
+         */
+        void host(Component child) {
+            synchronized (held) {
+                if (!placed) {
+                    held.add(child);
+                    return;
+                }
+            }
+            attach(child);
+        }
+
+        /** Drops content held for a canvas disposed before it ever had a size. */
+        void dropHeld() {
+            synchronized (held) {
+                held.clear();
+            }
+        }
+
+        void attach(Component child) {
+            hostAsLightweight(child);
+            add(child);
+            revalidate();
+            repaint();
         }
 
         @Override
@@ -990,10 +1108,7 @@ public final class EvolveSwingHost {
                         try {
                             frame.remove(child);
                             frame.add(frame.getRootPane(), BorderLayout.CENTER);
-                            hostAsLightweight(child);
-                            contentRoot.add(child);
-                            contentRoot.revalidate();
-                            contentRoot.repaint();
+                            contentRoot.host(child);
                             frame.revalidate();
                         } finally {
                             relocating = false;

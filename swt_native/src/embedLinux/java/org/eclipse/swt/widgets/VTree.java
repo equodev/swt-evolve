@@ -19,7 +19,6 @@ public class VTree extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getColumnOrder() {
         return ((DartTree) impl).columnOrder;
     }
@@ -58,7 +57,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).headerBackground = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Color getHeaderForeground() {
         return ((DartTree) impl).headerForeground;
     }
@@ -111,7 +109,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).selection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TreeColumn getSortColumn() {
         TreeColumn val = ((DartTree) impl).sortColumn;
         if (val != null && !(val.getImpl() instanceof DartTreeColumn))
@@ -123,7 +120,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).sortColumn = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getSortDirection() {
         return ((DartTree) impl).getSortDirection();
     }
@@ -132,7 +128,6 @@ public class VTree extends VComposite {
         ((DartTree) impl).sortDirection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TreeItem getTopItem() {
         TreeItem val = ((DartTree) impl).topItem;
         if (val != null && !(val.getImpl() instanceof DartTreeItem))
@@ -144,11 +139,22 @@ public class VTree extends VComposite {
         ((DartTree) impl).topItem = value;
     }
 
+    public int getOwnerDrawItemHeight() {
+        return ((DartTree) impl).wireOwnerDrawItemHeight();
+    }
+
+    public void setOwnerDrawItemHeight(int value) {
+    }
+
+    public static final String COLUMN_ORDER = "columnOrder";
+
     public static final String COLUMNS = "columns";
 
     public static final String EDITORS = "editors";
 
     public static final String HEADER_BACKGROUND = "headerBackground";
+
+    public static final String HEADER_FOREGROUND = "headerForeground";
 
     public static final String HEADER_VISIBLE = "headerVisible";
 
@@ -156,11 +162,22 @@ public class VTree extends VComposite {
 
     public static final String LINES_VISIBLE = "linesVisible";
 
+    public static final String OWNER_DRAW_ITEM_HEIGHT = "ownerDrawItemHeight";
+
     public static final String SELECTION = "selection";
+
+    public static final String SORT_COLUMN = "sortColumn";
+
+    public static final String SORT_DIRECTION = "sortDirection";
+
+    public static final String TOP_ITEM = "topItem";
 
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
+            case "columnOrder":
+                Serializer.writeKeyValue(writer, "columnOrder", getColumnOrder());
+                return;
             case "columns":
                 Serializer.writeKeyValue(writer, "columns", getColumns());
                 return;
@@ -169,6 +186,9 @@ public class VTree extends VComposite {
                 return;
             case "headerBackground":
                 Serializer.writeKeyValue(writer, "headerBackground", getHeaderBackground());
+                return;
+            case "headerForeground":
+                Serializer.writeKeyValue(writer, "headerForeground", getHeaderForeground());
                 return;
             case "headerVisible":
                 Serializer.writeKeyValue(writer, "headerVisible", getHeaderVisible());
@@ -181,6 +201,18 @@ public class VTree extends VComposite {
                 return;
             case "selection":
                 Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "sortColumn":
+                Serializer.writeKeyValue(writer, "sortColumn", getSortColumn());
+                return;
+            case "sortDirection":
+                Serializer.writeKeyValue(writer, "sortDirection", getSortDirection());
+                return;
+            case "topItem":
+                Serializer.writeKeyValue(writer, "topItem", getTopItem());
+                return;
+            case "ownerDrawItemHeight":
+                Serializer.writeKeyValue(writer, "ownerDrawItemHeight", getOwnerDrawItemHeight());
                 return;
         }
         super.writeProperty(writer, key);

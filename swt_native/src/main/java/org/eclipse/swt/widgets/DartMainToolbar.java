@@ -206,8 +206,8 @@ public class DartMainToolbar extends DartComposite {
         ConfigFlags flags = Config.getConfigFlags();
         if (flags == null) return 0;
         String placement = flags.csd_placement;
-        if (placement != null && !"toolbar".equals(placement.trim().toLowerCase())) return 0;
-        String os = flags.csd_os != null ? flags.csd_os.trim().toLowerCase() : "linux";
+        if (placement != null && !"toolbar".equals(placement.trim().toLowerCase(java.util.Locale.ROOT))) return 0;
+        String os = flags.csd_os != null ? flags.csd_os.trim().toLowerCase(java.util.Locale.ROOT) : "linux";
         switch (os) {
             case "mac":     return CsdSizes.CSD_WIDTH_MAC;
             case "windows": return CsdSizes.CSD_WIDTH_WINDOWS;

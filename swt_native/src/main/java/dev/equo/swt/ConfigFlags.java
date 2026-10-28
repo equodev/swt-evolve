@@ -53,6 +53,11 @@ public class ConfigFlags {
      *  hidden underneath that floating overlay. */
     public boolean ctabfolder_topright_auto_hide;
 
+    /** Default true: a CTabFolder whose tabs do not fit scrolls its tab strip. Set to false to lay
+     *  the tabs out as SWT does: they shrink towards minimumCharacters and the ones that still do
+     *  not fit go behind the chevron. */
+    public boolean ctabfolder_tab_scroll;
+
     public boolean image_disable_icons_replacement;
 
     public String assets_path;
@@ -185,6 +190,13 @@ public class ConfigFlags {
      *  the system bar belongs to the browser. */
     public boolean system_menu_bar;
 
+    /** The decimal separator of the JVM's locale, which a desktop client writes numbers with. A browser
+     *  client uses its own locale's instead, the one it reports to the Display. */
+    public String decimal_separator;
+
+    /** The JVM's locale as a language tag, which a desktop client writes dates in. A browser client uses its own. */
+    public String locale;
+
     /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
@@ -215,6 +227,16 @@ public class ConfigFlags {
      *  Set with {@code -Dswt.evolve.bigger_icon_size=true}. */
     public boolean bigger_icon_size;
 
+    /** Draws a CHECK or RADIO menu item without its box or ring: only the mark, in the item text
+     *  colour, while the item is selected, as native menus do. Off by default: the theme's box is
+     *  drawn. Set with {@code -Dswt.evolve.transparent_menu_check_box=true}. */
+    public boolean transparent_menu_check_box;
+
+    /** Draws a bordered ({@code SWT.BORDER}) CTabFolder's outline as the native renderer does: one line
+     *  round the folder, joined over the selected tab. Off by default: the theme's flat frame is drawn.
+     *  Set with {@code -Dswt.use_swt_border=true}. */
+    public boolean use_swt_border;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -227,6 +249,7 @@ public class ConfigFlags {
                 "mode=" + mode() +
                 ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", ctabfolder_topright_auto_hide=" + ctabfolder_topright_auto_hide +
+                ", ctabfolder_tab_scroll=" + ctabfolder_tab_scroll +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
                 ", disable_evolve_icons=" + disable_evolve_icons +
@@ -239,6 +262,7 @@ public class ConfigFlags {
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +
                 ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
+                ", use_swt_border=" + use_swt_border +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +
@@ -260,7 +284,10 @@ public class ConfigFlags {
                 ", font_point_scale=" + font_point_scale +
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
+                ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", system_menu_bar=" + system_menu_bar +
+                ", decimal_separator='" + decimal_separator + '\'' +
+                ", locale='" + locale + '\'' +
                 '}';
     }
 

@@ -6,7 +6,7 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderMetaData;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport, RenderMetaData;
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
@@ -26,6 +26,7 @@ import '../gen/rectangle.dart';
 import '../custom/toolbar_composite.dart';
 import 'composite_evolve.dart';
 import 'control_evolve.dart';
+import 'ctab_tab_compression.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
@@ -39,7 +40,14 @@ import 'color_utils.dart';
 /// take. Java reserves the same width in `Sizes.getClientArea(DartCTabFolder)`, so a page laid out
 /// in the client area Java reports lands exactly inside this frame rather than under it.
 double ctabFolderBodyBorderWidth(int? style) =>
-    (style != null && (style & SWT.BORDER) != 0) ? 3 : 2;
+    ((style != null && (style & SWT.BORDER) != 0) ? ctabFolderOutlineWidth : 0) +
+    _ctabFolderHighlightMargin;
+
+/// Width of a bordered folder's outline, which native's renderer fixes at one pixel.
+const double ctabFolderOutlineWidth = 1;
+
+/// Band between the outline and the page, which native fills with the folder's ground.
+const double _ctabFolderHighlightMargin = 2;
 
 /// Java sends the strip height it reserves, and leaves it out at this default.
 const double _defaultTabStripHeight = 32;
@@ -55,7 +63,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   bool get raisesDragDetectFromPointer => false;
 
   late int _selectedIndex;
-  int? _lastShowListPopupSeq;
+  int _lastShowListPopupSeq = 0;
   int? _pendingTabIndex;
   Object? _activationToken;
 
@@ -67,6 +75,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
     final selection = state.selection;
     _selectedIndex = (selection != null && selection >= 0) ? selection : 0;
+    // Java leaves a zero seq off the wire, so null is 0; a list requested before this mounted is
+    // not reopened.
+    _lastShowListPopupSeq = state.showListPopupSeq ?? 0;
     _activationToken = EquoCommService.onRaw(_activationChannel, (args) {
       final decoded = args is String ? jsonDecode(args) : args;
       if (mounted && decoded is Map && decoded['active'] is bool) {
@@ -123,12 +134,13 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       }
     }
 
-    if (state.showListPopupSeq != null) {
-      final seq = state.showListPopupSeq!;
-      if (_lastShowListPopupSeq == null) {
-        _lastShowListPopupSeq = seq;
-      } else if (seq != _lastShowListPopupSeq) {
-        _lastShowListPopupSeq = seq;
+    // Java bumps the seq when no CTabFolder2Listener took the chevron's showList (doit stayed
+    // true): the folder's own list is what the user gets then.
+    final seq = state.showListPopupSeq ?? 0;
+    if (seq != _lastShowListPopupSeq) {
+      final requested = seq > _lastShowListPopupSeq;
+      _lastShowListPopupSeq = seq;
+      if (requested) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _doShowChevronPopup();
         });
@@ -174,8 +186,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final isTabBottom = state.tabPosition == SWT.BOTTOM;
 
-    final double tabRowHeight = _defaultTabStripHeight;
+    // Java sends the strip height it reserves: a fixed height, or the default grown by a tall image.
     final double stripHeight = state.tabHeight?.toDouble() ?? _defaultTabStripHeight;
+    final double tabRowHeight = math.max(stripHeight, _defaultTabStripHeight);
     final constraints = getConstraintsFromBounds(state.bounds);
 
     final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
@@ -186,6 +199,42 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             color: widgetTheme.tabContentBorderColor,
             width: ctabFolderBodyBorderWidth(state.style),
           );
+    // With use_swt_border, a bordered folder draws one outline, as native's renderer does: round the
+    // folder, along the strip's edge on the page side, and over the selected tab, which stays open
+    // into its page. Without it the theme's flat frame is drawn.
+    final bordered =
+        useSwtBorder && (state.borderVisible ?? (state.style & SWT.BORDER) != 0);
+    final BorderSide? outline = stripHeight == 0 || !bordered
+        ? null
+        : BorderSide(
+            // Opaque, so the line reads the same over the strip, the tabs and the page.
+            color: Color.alphaBlend(widgetTheme.outlineColor, widgetTheme.tabContentBackgroundColor),
+            width: ctabFolderOutlineWidth,
+          );
+    final frameInset = ctabFolderBodyBorderWidth(state.style);
+    // Behind the page is the folder's own ground. Native fills the band inside the outline with the
+    // selection background while the folder is highlighted and a tab is selected, and with that
+    // ground otherwise.
+    final highlighted = (state.highlightEnabled ?? false) &&
+        (state.highlight ?? false) &&
+        (state.selection ?? -1) >= 0 &&
+        tabItems.isNotEmpty;
+    final Color? folderGround = outline == null
+        ? null
+        : getBackgroundColor(
+                background: state.background,
+                defaultColor: widgetTheme.tabBarBackgroundColor,
+                context: context,
+              ) ??
+              widgetTheme.tabBarBackgroundColor;
+    final Color? marginColor = !highlighted || folderGround == null
+        ? folderGround
+        : getBackgroundColor(
+                background: state.selectionBackground,
+                defaultColor: widgetTheme.tabSelectedBackgroundColor,
+              ) ??
+              widgetTheme.tabSelectedBackgroundColor;
+    final stripClip = math.max(0.0, tabRowHeight - stripHeight);
 
     Widget column = Column(
       children: [
@@ -197,6 +246,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             tabItems: tabItems,
             tabHeight: tabRowHeight,
             useSimpleStyle: false,
+            outline: outline,
+            stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
             onTabSelected: _handleTabSelection,
             onTabClose: _handleTabClose,
@@ -217,14 +268,30 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         // fly-out gets a full client area and must show its content.
         Expanded(
           child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                left: bodyFrame,
-                right: bodyFrame,
-                top: isTabBottom ? bodyFrame : BorderSide.none,
-                bottom: isTabBottom ? BorderSide.none : bodyFrame,
-              ),
-            ),
+            // The outline is a line inside the frame Java reserves, painted over the band that fills
+            // the rest of it.
+            decoration: outline != null
+                ? BoxDecoration(
+                    color: folderGround,
+                    border: Border(
+                      left: BorderSide(color: marginColor!, width: frameInset),
+                      right: BorderSide(color: marginColor, width: frameInset),
+                      top: isTabBottom
+                          ? BorderSide(color: marginColor, width: frameInset)
+                          : BorderSide.none,
+                      bottom: isTabBottom
+                          ? BorderSide.none
+                          : BorderSide(color: marginColor, width: frameInset),
+                    ),
+                  )
+                : BoxDecoration(
+                    border: Border(
+                      left: bodyFrame,
+                      right: bodyFrame,
+                      top: isTabBottom ? bodyFrame : BorderSide.none,
+                      bottom: isTabBottom ? BorderSide.none : bodyFrame,
+                    ),
+                  ),
             child: IndexedStack(
               index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
               children: tabBodies,
@@ -239,6 +306,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             tabItems: tabItems,
             tabHeight: tabRowHeight,
             useSimpleStyle: false,
+            outline: outline,
+            stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
             onTabSelected: _handleTabSelection,
             onTabClose: _handleTabClose,
@@ -255,6 +324,16 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           )),
       ],
     );
+    if (outline != null) {
+      column = CustomPaint(
+        foregroundPainter: _FolderOutline(
+          outline,
+          radius: widgetTheme.tabBorderRadius,
+          stripAtBottom: isTabBottom,
+        ),
+        child: column,
+      );
+    }
 
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
@@ -332,9 +411,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   CTabItem getWidgetForTabItem(VCTabItem tabItem) {
     final tabItemWidget = CTabItemSwt(value: tabItem);
 
+    // SWT.CLOSE on the folder puts a close button on every tab, as the tab's own flag does.
+    final folderCloses = (state.style & SWT.CLOSE) != 0;
     return CTabItem(
       label: tabItem.text ?? "",
-      showCloseButton: tabItem.showClose ?? false,
+      showCloseButton: (tabItem.showClose ?? false) || folderCloses,
       customContent: tabItemWidget,
       toolTipText: tabItem.toolTipText,
       vItem: tabItem,
@@ -385,9 +466,18 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     } else {
       _chevronButtonRect = null;
     }
-    // Web-mode Java can't measure the viewport (marks every item showing=true), so drive
-    // the overflow menu client-side rather than round-tripping through Java.
-    _doShowChevronPopup();
+    // The chevron is CTabFolder2Listener.showList with its bounds in folder coordinates: a listener
+    // with its own list sets doit=false, otherwise Java bumps showListPopupSeq. An unmeasured chevron
+    // sends nothing, or a listener would anchor its list at the folder's origin.
+    final folderBox = context.findRenderObject();
+    if (box == null || !box.hasSize || folderBox is! RenderBox || !folderBox.hasSize) return;
+    final origin = box.localToGlobal(Offset.zero, ancestor: folderBox);
+    final e = VEvent()
+      ..x = origin.dx.round()
+      ..y = origin.dy.round()
+      ..width = box.size.width.round()
+      ..height = box.size.height.round();
+    widget.sendCTabFolder2showList(state, e);
   }
 
   void _doShowChevronPopup() {
@@ -544,6 +634,12 @@ class _CTabBar extends StatefulWidget {
   final List<CTabItem> tabItems;
   final double? tabHeight;
   final bool useSimpleStyle;
+  /// The folder's outline, which the strip carries along its page-side edge and over the selected
+  /// tab; null when the folder draws none.
+  final BorderSide? outline;
+  /// How much of the laid-out strip the folder clips off on its page side to fit a shorter
+  /// tabHeight; the outline runs along the edge that stays visible.
+  final double stripClip;
   final VComposite? topRightComposite;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<int> onTabClose;
@@ -574,6 +670,8 @@ class _CTabBar extends StatefulWidget {
     required this.tabItems,
     required this.tabHeight,
     required this.useSimpleStyle,
+    this.outline,
+    this.stripClip = 0,
     required this.topRightComposite,
     required this.onTabSelected,
     required this.onTabClose,
@@ -627,6 +725,7 @@ class _CTabBarState extends State<_CTabBar> {
   void initState() {
     super.initState();
     _horizontalScrollController = ScrollController();
+    _revealSelectedAfterLayout();
   }
 
   @override
@@ -635,6 +734,47 @@ class _CTabBarState extends State<_CTabBar> {
     if (_pendingFrom != null) {
       _pendingFrom = null;
       _pendingTo = null;
+    }
+    if (widget.selectedIndex != oldWidget.selectedIndex ||
+        widget.tabItems.length != oldWidget.tabItems.length) {
+      _revealSelectedAfterLayout();
+    }
+  }
+
+  bool _revealPending = false;
+  bool _revealing = false;
+  double? _revealedViewport;
+  double? _revealedExtent;
+
+  /// A native CTabFolder keeps the selected tab in view (`showItem`): where upstream picks which
+  /// tabs to show and parks the rest behind the chevron, this strip scrolls to it instead.
+  void _revealSelectedAfterLayout() {
+    if (_revealPending) return;
+    _revealPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealPending = false;
+      if (mounted) _revealSelected();
+    });
+  }
+
+  void _revealSelected() {
+    if (!_horizontalScrollController.hasClients) return;
+    final position = _horizontalScrollController.position;
+    if (!position.hasContentDimensions || !position.hasViewportDimension) return;
+    _revealedViewport = position.viewportDimension;
+    _revealedExtent = position.maxScrollExtent;
+    final index = (widget.state.single ?? false)
+        ? 0
+        : _computeEffectiveSelected(widget.selectedIndex);
+    final tab = _rowState.currentState?.tabBox(index);
+    if (tab == null || !tab.attached || !tab.hasSize) return;
+    // The end first, then the start: a tab wider than the strip shows its leading edge.
+    _revealing = true;
+    try {
+      position.ensureVisible(tab, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+      position.ensureVisible(tab, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart);
+    } finally {
+      _revealing = false;
     }
   }
 
@@ -798,10 +938,18 @@ class _CTabBarState extends State<_CTabBar> {
       folderState: widget.state,
       folderWidget: widget.folderWidget,
       tabHeight: widget.tabHeight,
-      rowWrapper: (row) => _buildHorizontalScrollableTabs(
-        widgetTheme: widgetTheme,
-        child: row,
-      ),
+      rowWrapper: ctabTabScroll()
+          ? (row) => _buildHorizontalScrollableTabs(widgetTheme: widgetTheme, child: row)
+          : (row) => ClipRect(child: SizedBox(width: double.infinity, child: row)),
+      stripBuilder: ctabTabScroll()
+          ? null
+          : (key, children) => CompressedTabRow(
+                key: key,
+                selectedIndex: effectiveSelected,
+                onOverflowChanged: _setOverflow,
+                onTabsMoved: () => _rowState.currentState?.scheduleStripReport(),
+                children: children,
+              ),
       onReorder: (from, to) {
         setState(() {
           _pendingFrom = from;
@@ -1112,6 +1260,9 @@ class _CTabBarState extends State<_CTabBar> {
 
     final showHighlight = widget.state.highlightEnabled ?? false;
     final enabled = widget.state.enabled ?? false;
+    final compressTo = ctabTabScroll()
+        ? null
+        : widget.state.minimumCharacters ?? ctabDefaultMinimumCharacters;
     final useDefaultTheme = getConfigFlags().theme_name == null;
     final active = showHighlight && (widget.state.highlight ?? false);
 
@@ -1165,7 +1316,33 @@ class _CTabBarState extends State<_CTabBar> {
       baseTextStyle: getCTabTextStyle(widgetTheme, isSelected, enabled),
     );
 
-    final border = Border(
+    final selectionBarSide = BorderSide(
+      color: backgroundColor,
+      width: (widget.state.selectionBarThickness != null && widget.state.selectionBarThickness! > 0)
+          ? widget.state.selectionBarThickness!.toDouble()
+          : widgetTheme.tabSelectedBorderWidth,
+    );
+    final outline = widget.outline;
+    final highlightSide = isSelected && enabled && showHighlight
+        ? BorderSide(color: widgetTheme.tabHighlightColor, width: widgetTheme.tabHighlightBorderWidth)
+        : null;
+    // Outlined, the selected tab is closed on three sides and open into its page; every other tab
+    // carries the outline along the strip's page-side edge.
+    final Border? outlined = outline == null
+        ? null
+        : isSelected
+        ? Border(
+            left: outline,
+            right: outline,
+            top: isTabBottom ? selectionBarSide : highlightSide ?? outline,
+            bottom: isTabBottom ? highlightSide ?? outline : selectionBarSide,
+          )
+        : Border(
+            right: BorderSide(color: borderColor, width: widgetTheme.tabBorderWidth),
+            top: isTabBottom ? outline : BorderSide.none,
+            bottom: isTabBottom ? BorderSide.none : outline,
+          );
+    final border = outlined ?? Border(
       top: !isTabBottom && isSelected && enabled && showHighlight
           ? BorderSide(
               color: widgetTheme.tabHighlightColor,
@@ -1234,6 +1411,7 @@ class _CTabBarState extends State<_CTabBar> {
         child: CustomPaint(
           foregroundPainter: _RectangularSides(
             border,
+            clipped: outline == null ? EdgeInsets.zero : _clippedEdge(isTabBottom),
             ring: getCTabFocusRingSide(
               widgetTheme,
               selected: isSelected,
@@ -1265,12 +1443,13 @@ class _CTabBarState extends State<_CTabBar> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              tab.customContent != null
+              _shrinkable(compressTo, tab.customContent != null
                   ? TabItemContextProvider(
                       isSelected: isSelected,
                       isEnabled: enabled,
                       isActive: isSelected && enabled && active,
                       isDimmed: isSelected && enabled && showHighlight && !active,
+                      compressMinimumCharacters: compressTo,
                       child: tab.customContent!,
                     )
                   : Row(
@@ -1307,19 +1486,25 @@ class _CTabBarState extends State<_CTabBar> {
                               },
                             ),
                           ),
-                        Padding(
+                        _shrinkable(compressTo, Padding(
                           padding: EdgeInsets.only(
                             bottom: widgetTheme.tabTextBottomPadding,
                           ),
-                          child: Text(
-                            _getTabText(tab.label),
-                            style:
-                                textStyle?.copyWith(color: textColor) ??
-                                TextStyle(color: textColor),
-                          ),
-                        ),
+                          child: compressTo == null
+                              ? Text(
+                                  _getTabText(tab.label),
+                                  style: textStyle?.copyWith(color: textColor) ??
+                                      TextStyle(color: textColor),
+                                )
+                              : ShrinkableTabLabel(
+                                  tab.label,
+                                  style: textStyle?.copyWith(color: textColor) ??
+                                      TextStyle(color: textColor),
+                                  minimumCharacters: compressTo,
+                                ),
+                        )),
                       ],
-                    ),
+                    )),
               if (shouldShowClose) ...[
                 SizedBox(width: widgetTheme.tabCloseButtonSpacing),
                 MouseRegion(
@@ -1354,7 +1539,7 @@ class _CTabBarState extends State<_CTabBar> {
   }
 
   Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {
-    return MouseRegion(
+    return Semantics(identifier: 'chevron:${widget.state.swt}/${widget.state.id}', button: true, child: MouseRegion(
       onEnter: (_) => setState(() => _isChevronHovered = true),
       onExit: (_) => setState(() => _isChevronHovered = false),
       cursor: SystemMouseCursors.click,
@@ -1379,7 +1564,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       )),
-    );
+    ));
   }
 
   void _handleChevronTap(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
@@ -1461,12 +1646,16 @@ class _CTabBarState extends State<_CTabBar> {
           // re-measure on each size change instead of relying on a one-shot check.
           onNotification: (notification) {
             WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+            // A tab that changes width moves the ones after it without rebuilding the row.
+            _rowState.currentState?.scheduleStripReport();
             return false;
           },
           child: NotificationListener<ScrollUpdateNotification>(
             onNotification: (notification) {
-              _showScrollbar();
-              _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              if (!_revealing) {
+                _showScrollbar();
+                _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              }
               // Scrolling moves the tabs without rebuilding the row, so the row is asked to say
               // where they are once this frame has painted them at the new offset.
               _rowState.currentState?.scheduleStripReport();
@@ -1538,6 +1727,17 @@ class _CTabBarState extends State<_CTabBar> {
     if (overflow != _hasOverflow) {
       setState(() => _hasOverflow = overflow);
     }
+    // A strip that starts to overflow, narrows, or has a tab grow (a dirty marker, the bold label
+    // of an active folder) can leave the selected tab out. A user scroll changes neither.
+    if (overflow && position.hasViewportDimension &&
+        (position.viewportDimension != _revealedViewport ||
+            position.maxScrollExtent != _revealedExtent)) {
+      _revealSelectedAfterLayout();
+    }
+  }
+
+  void _setOverflow(bool overflow) {
+    if (mounted && overflow != _hasOverflow) setState(() => _hasOverflow = overflow);
   }
 
   void _hideScrollbarAfterDelay(Duration delay) {
@@ -1560,6 +1760,11 @@ class _CTabBarState extends State<_CTabBar> {
     }
   }
 
+  /// The part of the laid-out strip the folder clips off on its page side.
+  EdgeInsets _clippedEdge(bool isTabBottom) => isTabBottom
+      ? EdgeInsets.only(top: widget.stripClip)
+      : EdgeInsets.only(bottom: widget.stripClip);
+
   Widget _buildTabBarContainer({
     required CTabFolderThemeExtension widgetTheme,
     required double? height,
@@ -1567,6 +1772,7 @@ class _CTabBarState extends State<_CTabBar> {
     required bool isTabBottom,
   }) {
     final borderVisible = widget.state.borderVisible ?? true;
+    final outline = widget.outline;
     final decoration = BoxDecoration(
       // The band the tabs sit on is the folder's own ground: an application that coloured the
       // CTabFolder expects it here, not just behind the selected tab.
@@ -1576,7 +1782,7 @@ class _CTabBarState extends State<_CTabBar> {
             context: context,
           ) ??
           widgetTheme.tabBarBackgroundColor,
-      border: borderVisible
+      border: borderVisible && outline == null
           ? (isTabBottom
                 ? Border(
                     top: BorderSide(
@@ -1593,6 +1799,20 @@ class _CTabBarState extends State<_CTabBar> {
           : null,
     );
 
+    // Painted under the tabs, so the selected tab's own ground leaves it open into its page.
+    if (outline != null) {
+      child = CustomPaint(
+        painter: _RectangularSides(
+          Border(
+            top: isTabBottom ? outline : BorderSide.none,
+            bottom: isTabBottom ? BorderSide.none : outline,
+          ),
+          clipped: _clippedEdge(isTabBottom),
+        ),
+        child: child,
+      );
+    }
+
     if (height != null) {
       return Container(height: height, decoration: decoration, child: child);
     }
@@ -1601,6 +1821,10 @@ class _CTabBarState extends State<_CTabBar> {
       child: Container(decoration: decoration, child: child),
     );
   }
+
+  /// [child] free to shrink below its natural width when the strip compresses its tabs.
+  static Widget _shrinkable(int? compressTo, Widget child) =>
+      compressTo == null ? child : Flexible(child: child);
 
   String _getTabText(String label) {
     final minChars = widget.state.minimumCharacters;
@@ -1848,7 +2072,8 @@ class DrawnTab {
 /// Where each of [tabs] is drawn in [folder], as `x,width` pairs in the folder's own coordinates -
 /// what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides which view a drag
 /// picked up - then, after a `;`, each tab's close button as `x,y,width,height` (zeros for a tab
-/// drawn without one).
+/// drawn without one), then, after another `;`, the part of the strip that is shown as `x,width`:
+/// the scrolled viewport, which ends where the chevron and the top-right controls begin.
 ///
 /// Null when a tab cannot be placed: a folder laid out under unbounded constraints for a frame has
 /// an infinite size, and aligning its children in it puts NaN in every offset below it.
@@ -1866,7 +2091,23 @@ String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
         : '${button.left.round()},${button.top.round()},'
             '${button.width.round()},${button.height.round()}');
   }
-  return '${strip.join(',')};${close.join(',')}';
+  final Object? viewport = tabs.isEmpty ? null : _shownStrip(tabs.first.tab);
+  var shown = '';
+  if (viewport is RenderBox && viewport.hasSize) {
+    final area = _rectIn(folder, viewport);
+    if (!area.isFinite) return null;
+    shown = ';${area.left.round()},${area.width.round()}';
+  }
+  return '${strip.join(',')};${close.join(',')}$shown';
+}
+
+/// The box that bounds the shown tabs: the scrolled viewport, or a compressed row, which ends where
+/// the chevron begins and parks the tabs that do not fit past that end.
+RenderObject? _shownStrip(RenderBox tab) {
+  for (RenderObject? node = tab.parent; node != null; node = node.parent) {
+    if (node is RenderCompressedTabRow || node is RenderAbstractViewport) return node;
+  }
+  return null;
 }
 
 /// Where [child] is drawn within [folder], mapped without going through global coordinates: a panel
@@ -1912,6 +2153,9 @@ class TabDragRow extends StatefulWidget {
   /// whole tab strip accepts a drop and not just the width the tabs happen to occupy —
   /// otherwise a tab released over a folder's empty strip resolves to no target at all.
   final Widget Function(Widget row) rowWrapper;
+
+  /// Lays the tabs out in place of the default natural-width Row.
+  final Widget Function(Key key, List<Widget> children)? stripBuilder;
   final void Function(int from, int to)? onReorder;
   final void Function(int insertIndex, int? targetItemId, Offset position)? onDrop;
   final ValueChanged<int>? onTabDragStarted;
@@ -1935,6 +2179,7 @@ class TabDragRow extends StatefulWidget {
     required this.folderState,
     required this.folderWidget,
     required this.rowWrapper,
+    this.stripBuilder,
     this.tabHeight,
     this.onReorder,
     this.onDrop,
@@ -1998,6 +2243,9 @@ class _TabDragRowState extends State<TabDragRow> {
   }
 
   RenderBox? get _row => _rowKey.currentContext?.findRenderObject() as RenderBox?;
+
+  /// The tab at [index] as drawn, for the strip to scroll it into view.
+  RenderBox? tabBox(int index) => _itemBox(index);
 
   /// Where the last press on the strip went down.
   Offset? _pressAt;
@@ -2145,16 +2393,14 @@ class _TabDragRowState extends State<TabDragRow> {
 
     // mainAxisSize.min so the row takes its natural width and the scroll view overflows when
     // tabs don't fit; the default (max) fills and clips instead.
+    final tabs = List<Widget>.generate(
+      count,
+      (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+    );
     final row = Listener(
       onPointerDown: (e) => _pressAt = e.position,
-      child: Row(
-        key: _rowKey,
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(
-          count,
-          (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
-        ),
-      ),
+      child: widget.stripBuilder?.call(_rowKey, tabs) ??
+          Row(key: _rowKey, mainAxisSize: MainAxisSize.min, children: tabs),
     );
 
     return wrapDropTarget<DndDragPayload>(
@@ -2213,6 +2459,11 @@ class _TabDragRowState extends State<TabDragRow> {
   /// Enough to read as "this row", not enough to fight the tabs drawn on it.
   static const double _receivingStripTint = 0.12;
 }
+
+/// Side of the square a tab image is drawn in: the theme's icon size, or the image's own height when
+/// it is taller.
+double ctabIconSize(VImage? image, double iconSize) =>
+    math.max(iconSize, (image?.height ?? 0).toDouble());
 
 class CTabItem {
   final String label;
@@ -2273,12 +2524,15 @@ class TabItemContext {
   final bool isActive;
   // The selected tab of a folder that takes part in activation but does not hold focus.
   final bool isDimmed;
+  // The folder's minimumCharacters while it compresses its tabs (ctabfolder_tab_scroll=false).
+  final int? compressMinimumCharacters;
 
   TabItemContext({
     required this.isSelected,
     required this.isEnabled,
     this.isActive = false,
     this.isDimmed = false,
+    this.compressMinimumCharacters,
   });
 
   static TabItemContext? of(BuildContext context) {
@@ -2297,12 +2551,14 @@ class TabItemContextProvider extends InheritedWidget {
     required bool isEnabled,
     bool isActive = false,
     bool isDimmed = false,
+    int? compressMinimumCharacters,
     required Widget child,
   }) : context = TabItemContext(
          isSelected: isSelected,
          isEnabled: isEnabled,
          isActive: isActive,
          isDimmed: isDimmed,
+         compressMinimumCharacters: compressMinimumCharacters,
        ),
        super(key: key, child: child);
 
@@ -2311,25 +2567,30 @@ class TabItemContextProvider extends InheritedWidget {
     return context.isSelected != oldWidget.context.isSelected ||
         context.isEnabled != oldWidget.context.isEnabled ||
         context.isActive != oldWidget.context.isActive ||
-        context.isDimmed != oldWidget.context.isDimmed;
+        context.isDimmed != oldWidget.context.isDimmed ||
+        context.compressMinimumCharacters != oldWidget.context.compressMinimumCharacters;
   }
 }
 
 /// The tab's sides, drawn as straight strips the way Flutter's release build draws a
 /// non-uniform Border under a rounded corner (it ignores the radius for the sides); the debug
 /// build refuses that combination in a BoxDecoration, so the sides are painted here instead.
+/// A strip paints its page-side outline edge with it too.
 class _RectangularSides extends CustomPainter {
   final Border border;
   // Painted after the sides, which would otherwise cover it.
   final BorderSide? ring;
+  // Left out of the painted rect: the part of the tab or strip the folder clips off.
+  final EdgeInsets clipped;
 
-  const _RectangularSides(this.border, {this.ring});
+  const _RectangularSides(this.border, {this.ring, this.clipped = EdgeInsets.zero});
 
   @override
   void paint(Canvas canvas, Size size) {
+    final rect = clipped.deflateRect(Offset.zero & size);
     paintBorder(
       canvas,
-      Offset.zero & size,
+      rect,
       top: border.top,
       right: border.right,
       bottom: border.bottom,
@@ -2337,11 +2598,37 @@ class _RectangularSides extends CustomPainter {
     );
     final ring = this.ring;
     if (ring != null) {
-      paintBorder(canvas, Offset.zero & size, top: ring, right: ring, bottom: ring, left: ring);
+      paintBorder(canvas, rect, top: ring, right: ring, bottom: ring, left: ring);
     }
   }
 
   @override
   bool shouldRepaint(_RectangularSides oldDelegate) =>
-      oldDelegate.border != border || oldDelegate.ring != ring;
+      oldDelegate.border != border || oldDelegate.ring != ring || oldDelegate.clipped != clipped;
+}
+
+/// A bordered folder's outline: both sides the full height, past the strip, the corners on the
+/// strip's side rounded, and straight across the far edge of the page.
+class _FolderOutline extends CustomPainter {
+  final BorderSide side;
+  final double radius;
+  final bool stripAtBottom;
+
+  const _FolderOutline(this.side, {required this.radius, required this.stripAtBottom});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(side.width / 2);
+    final corner = Radius.circular(radius);
+    final shape = stripAtBottom
+        ? RRect.fromRectAndCorners(rect, bottomLeft: corner, bottomRight: corner)
+        : RRect.fromRectAndCorners(rect, topLeft: corner, topRight: corner);
+    canvas.drawRRect(shape, side.toPaint());
+  }
+
+  @override
+  bool shouldRepaint(_FolderOutline oldDelegate) =>
+      oldDelegate.side != side ||
+      oldDelegate.radius != radius ||
+      oldDelegate.stripAtBottom != stripAtBottom;
 }

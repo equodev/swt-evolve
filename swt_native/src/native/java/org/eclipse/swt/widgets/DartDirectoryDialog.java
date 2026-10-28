@@ -91,7 +91,7 @@ public class DartDirectoryDialog extends DartDialog implements IDirectoryDialog 
      */
     public DartDirectoryDialog(Shell parent, int style, DirectoryDialog api) {
         super(parent, checkStyle(parent, style), api);
-        if (DartDisplay.getSheetEnabled()) {
+        if (sheetsEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
@@ -174,27 +174,7 @@ public class DartDirectoryDialog extends DartDialog implements IDirectoryDialog 
      * @since 3.126
      */
     public Optional<String> openDialog() {
-        directoryPath = null;
-        String configuredPath = System.getProperty("dev.equo.swt.test.directoryDialog.path");
-        String configuredUri = System.getProperty("dev.equo.swt.test.directoryDialog.path.uri");
-        if (configuredPath == null && configuredUri != null) {
-            configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
-        }
-        if (configuredPath != null) {
-            directoryPath = configuredPath.trim().isEmpty() ? null : configuredPath;
-            return Optional.ofNullable(directoryPath);
-        }
-        if (method_performKeyEquivalent != 0) {
-        }
-        /*
-	 * This line is intentionally commented. Don't show hidden files forcefully,
-	 * instead allow Directory dialog to use the system preference.
-	 */
-        if (parent != null && (style & SWT.SHEET) != 0) {
-        } else {
-        }
-        //	options.optionFlags = OS.kNavSupportPackages | OS.kNavAllowOpenPackages | OS.kNavAllowInvisibleFiles;
-        return Optional.ofNullable(directoryPath);
+        return Optional.ofNullable(choosePath(System.getProperty("dev.equo.swt.test.directoryDialog.path"), System.getProperty("dev.equo.swt.test.directoryDialog.path.uri")));
     }
 
     void releaseHandles() {
@@ -247,6 +227,20 @@ public class DartDirectoryDialog extends DartDialog implements IDirectoryDialog 
 
     public String _filterPath() {
         return filterPath;
+    }
+
+    String choosePath(String configuredPath, String configuredUri) {
+        if (parent.isDisposed())
+            error(SWT.ERROR_WIDGET_DISPOSED);
+        directoryPath = null;
+        if (configuredPath == null && configuredUri != null) {
+            configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
+        }
+        if (configuredPath == null || configuredPath.trim().isEmpty()) {
+            return directoryPath;
+        }
+        directoryPath = configuredPath;
+        return directoryPath;
     }
 
     public DirectoryDialog getApi() {

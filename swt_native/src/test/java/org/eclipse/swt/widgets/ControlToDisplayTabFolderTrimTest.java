@@ -9,9 +9,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.shell;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.when;
+import static org.eclipse.swt.widgets.Mocks.echoingShell;
 
 /**
  * {@code Control.toDisplay} — which is what {@code Display.map(control, null, …)} resolves to — has
@@ -33,17 +31,6 @@ class ControlToDisplayTabFolderTrimTest extends SerializeTestBase {
 
     private static final int FOLDER_X = 40;
     private static final int FOLDER_Y = 100;
-
-    /**
-     * A shell whose own toDisplay is the identity, so what these assert is the offset the walk up
-     * from the control accumulates -- not the mock's answer for where the shell sits.
-     */
-    private static Shell echoingShell() {
-        Shell shell = shell();
-        when(shell.toDisplay(anyInt(), anyInt()))
-                .thenAnswer(call -> new Point(call.getArgument(0), call.getArgument(1)));
-        return shell;
-    }
 
     @Test
     void aChildOfATabFolderMapsToItsOwnPositionNotOneStripLower() {

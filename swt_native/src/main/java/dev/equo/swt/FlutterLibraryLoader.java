@@ -323,7 +323,7 @@ public class FlutterLibraryLoader {
         if (osName.equalsIgnoreCase(OS_LINUX)) return OS_LINUX;
         if (osName.equalsIgnoreCase("Mac OS X")) return OS_MACOSX;
         if (osName.startsWith(OS_WINDOWS_PREFIX)) return OS_WIN;
-        return osName.toLowerCase().replaceAll("\\s+", "");
+        return osName.toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", "");
     }
 
     private static String getArch() {

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
+import '../gen/point.dart';
+import '../gen/scrollbar.dart';
 import '../gen/scrolledcomposite.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
@@ -6,6 +9,7 @@ import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_settings/scrolledcomposite_theme_settings.dart';
+import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import 'utils/widget_utils.dart';
 
 class ScrolledCompositeImpl<
@@ -21,23 +25,135 @@ class ScrolledCompositeImpl<
   ScrollController? _verticalController;
 
   bool _userScrolled = false;
+  int? _reportedH;
+  int? _reportedV;
 
-  void _pinToTopIfNeeded() {
+  /// The number of `setOrigin`/`showControl` requests already acted on. Java counts only those, never a
+  /// scroll by the user, so a different number is a request and the same number is not.
+  int _takenRequest = 0;
+
+  /// The origin Java last sent, which a request moves the view to. Kept apart from `state.origin`, which
+  /// shows where the view is: Java does not send an origin again when it is asked for once more.
+  VPoint? _requestedOrigin;
+
+  /// Until the user scrolls, the view follows the selection of the scroll bars (zero on open, or what
+  /// `setOrigin` set), so a reveal on open cannot leave it elsewhere. After that it keeps its own offset.
+  void _followSelectionUntilScrolled() {
     if (_userScrolled) return;
+    final h = state.horizontalBar?.selection ?? 0;
+    final v = state.verticalBar?.selection ?? 0;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _userScrolled) return;
-      final h = _horizontalController;
-      final v = _verticalController;
-      if (h != null && h.hasClients && h.offset != 0) h.jumpTo(0);
-      if (v != null && v.hasClients && v.offset != 0) v.jumpTo(0);
+      _jumpTo(_horizontalController, h);
+      _jumpTo(_verticalController, v);
     });
   }
+
+  void _jumpTo(ScrollController? controller, int offset) {
+    if (controller == null || !controller.hasClients) return;
+    final target = offset.toDouble().clamp(0.0, controller.position.maxScrollExtent);
+    if (controller.offset != target) controller.jumpTo(target);
+  }
+
+  /// A request moves the view to the origin it came with, once; what Java holds is not reported back, and
+  /// afterwards the view keeps its own offset as it does after a scroll by the user.
+  @override
+  void setValue(V value) {
+    if (lastChange?.touches('origin') ?? true) _requestedOrigin = state.origin;
+    super.setValue(value);
+    if (!mounted) return;
+    _showOrigin();
+    final request = state.originRequest ?? 0;
+    if (request == _takenRequest) return;
+    _takenRequest = request;
+    final origin = _requestedOrigin;
+    if (origin == null) return;
+    final x = origin.x;
+    final y = origin.y;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _moveTo(_horizontalController, x, vertical: false);
+      _moveTo(_verticalController, y, vertical: true);
+    });
+  }
+
+  /// Puts where the view is into `state.origin`, as `getOrigin` answers it: the live state shows the
+  /// origin the user scrolled to. Java is not told through it; it learns a scroll as the selection of a
+  /// scroll bar.
+  void _showOrigin() {
+    final h = _horizontalController;
+    final v = _verticalController;
+    final hasH = h != null && h.hasClients;
+    final hasV = v != null && v.hasClients;
+    if (!hasH && !hasV) return;
+    final x = hasH ? h.offset.round() : 0;
+    final y = hasV ? v.offset.round() : 0;
+    final shown = state.origin;
+    if (shown != null && shown.x == x && shown.y == y) return;
+    state.origin = VPoint()
+      ..x = x
+      ..y = y;
+  }
+
+  void _moveTo(ScrollController? controller, int offset, {required bool vertical}) {
+    if (controller == null || !controller.hasClients) return;
+    _userScrolled = true;
+    if (vertical) {
+      _reportedV = offset;
+    } else {
+      _reportedH = offset;
+    }
+    _jumpTo(controller, offset);
+  }
+
+  /// A scroll of this widget's own views, not of a scrollable inside the content.
+  bool _isOwn(ScrollNotification n) {
+    final vertical = hasStyle(state.style, SWT.V_SCROLL);
+    return n.metrics.axis == Axis.vertical
+        ? n.depth == 0
+        : n.depth == (vertical ? 1 : 0);
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (!_isOwn(n)) return false;
+    if ((n is UserScrollNotification && n.direction != ScrollDirection.idle) ||
+        (n is ScrollStartNotification && n.dragDetails != null)) {
+      _userScrolled = true;
+    }
+    if (n is ScrollUpdateNotification || n is ScrollEndNotification) {
+      _showOrigin();
+      if (_userScrolled) _reportOffset(n.metrics);
+    }
+    return false;
+  }
+
+  /// Tells Java where the view is, as a selection of the matching scroll bar, so `getOrigin` follows it.
+  void _reportOffset(ScrollMetrics metrics) {
+    final vertical = metrics.axis == Axis.vertical;
+    final bar = vertical ? state.verticalBar : state.horizontalBar;
+    if (bar == null) return;
+    final offset = metrics.pixels.clamp(0.0, metrics.maxScrollExtent).round();
+    final reported = vertical ? _reportedV : _reportedH;
+    if (offset == (reported ?? bar.selection ?? 0)) return;
+    if (vertical) {
+      _reportedV = offset;
+    } else {
+      _reportedH = offset;
+    }
+    sendBarSelection(bar, offset);
+  }
+
+  @protected
+  void sendBarSelection(VScrollBar bar, int selection) =>
+      sendScrollBarSelectionEvent(bar, selection);
 
   @override
   void initState() {
     super.initState();
     _horizontalController = ScrollController();
     _verticalController = ScrollController();
+    _takenRequest = state.originRequest ?? 0;
+    _requestedOrigin = state.origin;
   }
 
   @override
@@ -84,16 +200,11 @@ class ScrolledCompositeImpl<
       expandVertical,
     );
 
-    _pinToTopIfNeeded();
+    _followSelectionUntilScrolled();
 
     return wrap(
       NotificationListener<ScrollNotification>(
-        onNotification: (n) {
-          if (n is ScrollStartNotification && n.dragDetails != null) {
-            _userScrolled = true;
-          }
-          return false;
-        },
+        onNotification: _onScroll,
         child: _ThemedScrolledComposite(
           horizontalController: _horizontalController!,
           verticalController: _verticalController!,

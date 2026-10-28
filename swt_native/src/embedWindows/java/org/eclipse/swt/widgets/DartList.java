@@ -783,7 +783,7 @@ public class DartList extends DartScrollable implements IList {
 
     void select(int[] indices, boolean scroll) {
         int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VList.SELECTION);
         }
         int i = 0;

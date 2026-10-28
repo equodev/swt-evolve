@@ -33,7 +33,7 @@ public class Win32LauncherSplashNativeTest {
         // The suite runs with the native library switched off; the launcher's window is native.
         loadLibrary = System.getProperty(DisplayBridgePlatform.LOAD_LIBRARY);
         System.clearProperty(DisplayBridgePlatform.LOAD_LIBRARY);
-        splash = OS.CreateWindowEx(0, new TCHAR(0, "STATIC", true), null, OS.WS_POPUP | OS.WS_VISIBLE,
+        splash = OS.CreateWindowEx(0, new TCHAR("STATIC", true), null, OS.WS_POPUP | OS.WS_VISIBLE,
                 0, 0, 120, 80, 0, 0, 0, null);
         assertThat(splash).as("a splash window to close").isNotZero();
     }

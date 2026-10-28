@@ -106,7 +106,7 @@ public class DartMessageBox extends DartDialog implements IMessageBox {
      */
     public DartMessageBox(Shell parent, int style, MessageBox api) {
         super(parent, checkStyle(parent, checkStyle(style)), api);
-        if (DartDisplay.getSheetEnabled()) {
+        if (sheetsEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
@@ -242,6 +242,10 @@ public class DartMessageBox extends DartDialog implements IMessageBox {
 
     public Map<Integer, String> _labels() {
         return labels;
+    }
+
+    String[] wireButtonLabels() {
+        return dev.equo.swt.MessageBoxLabels.wire(labels);
     }
 
     public MessageBox getApi() {

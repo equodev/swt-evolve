@@ -55,33 +55,24 @@ public class ListHelper {
     }
 
     public static void deselectIndex(DartList list, int index) {
+        deselectRange(list, index, index);
+    }
+
+    public static void deselectRange(DartList list, int start, int end) {
         int[] selection = list._selection();
-        int position = -1;
-        for (int i = 0; i < selection.length; i++) {
-            if (selection[i] == index) {
-                position = i;
-            }
-        }
-        if (position != -1) {
-            int[] newSelection = new int[selection.length - 1];
-            System.arraycopy(selection, 0, newSelection, 0, position);
-            System.arraycopy(selection, position + 1, newSelection, position, selection.length - position - 1);
+        int[] newSelection = ListItemsHelper.deselect(selection, start, end);
+        if (newSelection.length != selection.length) {
             list.selection = newSelection;
             list.getValue().markDirty(VList.SELECTION);
         }
     }
 
-    public static void deselectRange(DartList list, int start, int end) {
+    /** The items from {@code start} to {@code end} are about to go: their selection goes and the later ones move up. */
+    public static void itemsRemoved(DartList list, int start, int end) {
         int[] selection = list._selection();
-        int count = 0;
-        int[] newSelection = new int[selection.length];
-        for (int idx : selection) {
-            if (idx < start || idx > end) {
-                newSelection[count++] = idx;
-            }
-        }
-        if (count != selection.length) {
-            list.selection = Arrays.copyOf(newSelection, count);
+        int[] newSelection = ListItemsHelper.indicesAfterRemove(selection, start, end);
+        if (!Arrays.equals(newSelection, selection)) {
+            list.selection = newSelection;
             list.getValue().markDirty(VList.SELECTION);
         }
     }

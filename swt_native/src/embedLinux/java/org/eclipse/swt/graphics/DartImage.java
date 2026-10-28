@@ -344,6 +344,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
+    @SuppressWarnings("removal")
     public DartImage(Device device, Rectangle bounds, Image api) {
         super(device, api);
         if (bounds == null)
@@ -771,6 +772,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     @Override
     void destroy() {
         getApi().surface = getApi().mask = 0;
+        GCHelper.disposeImageGC(memGC);
         memGC = null;
         _releaseRemoteRefOnDart(remoteRef);
         _releaseRemoteRefOnDart(previousRemoteRef);
@@ -857,7 +859,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object != null && !(((Image) object).getImpl() instanceof DartImage))
+        if (object instanceof Image && !(((Image) object).getImpl() instanceof DartImage))
             return (this.getImageData().equals(((Image) object).getImageData()));
         if (object == this.getApi())
             return true;
@@ -900,6 +902,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (imageData == null || imageData.transparentPixel == -1)
             return null;
+        if (this.background == null)
+            this.background = GraphicsUtils.transparentColor(device, imageData);
         return this.background;
     }
 
@@ -937,6 +941,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *             multiple monitors with different DPIs, hence deprecated.
      */
     @Deprecated(since = "2025-09", forRemoval = true)
+    @SuppressWarnings("removal")
     public Rectangle getBoundsInPixels() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -988,6 +993,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *             {@link #getImageData(int)} instead.
      */
     @Deprecated(since = "2025-09", forRemoval = true)
+    @SuppressWarnings("removal")
     public ImageData getImageDataAtCurrentZoom() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
