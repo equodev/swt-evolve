@@ -414,6 +414,7 @@ public interface IWidget extends ImplWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated
+    @SuppressWarnings("removal")
     void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener);
 
     /**

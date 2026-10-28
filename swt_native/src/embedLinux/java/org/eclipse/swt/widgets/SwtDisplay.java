@@ -6567,6 +6567,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      *             during instantiation to take proper effect
      */
     @Deprecated(since = "2025-03", forRemoval = true)
+    @SuppressWarnings("removal")
     public boolean setRescalingAtRuntime(boolean activate) {
         // not implemented for GTK
         return false;

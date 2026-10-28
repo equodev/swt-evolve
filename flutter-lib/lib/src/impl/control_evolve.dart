@@ -846,14 +846,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   /// The pointer events a native control reports on its own: MouseDown and MouseUp, MouseEnter and
   /// MouseExit settled by [HoverExclusivityArbiter], MouseMove while the pointer is over it,
-  /// MouseHover once it rests -- none while it is disabled, and none for a child's pointer. [wrap]
-  /// applies it; a control that builds its own tree instead has to call this, or it reports none of
-  /// them.
+  /// MouseHover once it rests -- none while it is disabled, and none for a child's pointer -- and
+  /// the right-click that opens its Menu. [wrap] applies it; a control that builds its own tree
+  /// instead has to call this, or it reports none of them.
   Widget trackPointer(Widget child) {
     final hoverDepth = ControlNestingScope.depthOf(context);
     return ControlNestingScope(
       depth: hoverDepth + 1,
-      child: blockWhenDisabled(_pointerListener(_pointerRegion(hoverDepth, child))),
+      child: blockWhenDisabled(_pointerListener(_pointerRegion(hoverDepth, applyMenu(child)))),
     );
   }
 

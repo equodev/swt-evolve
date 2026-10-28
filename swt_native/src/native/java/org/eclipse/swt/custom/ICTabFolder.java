@@ -332,6 +332,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * @deprecated Curved tabs are no longer supported.
      */
     @Deprecated
+    @SuppressWarnings("removal")
     boolean getSimple();
 
     /**
@@ -950,6 +951,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * @deprecated Curved tabs are no longer supported.
      */
     @Deprecated
+    @SuppressWarnings("removal")
     void setSimple(boolean simple);
 
     /**

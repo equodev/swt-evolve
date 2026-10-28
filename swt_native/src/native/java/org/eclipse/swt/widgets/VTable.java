@@ -139,6 +139,13 @@ public class VTable extends VComposite {
     public void setItemCount(int value) {
     }
 
+    public int getOwnerDrawItemHeight() {
+        return ((DartTable) impl).wireOwnerDrawItemHeight();
+    }
+
+    public void setOwnerDrawItemHeight(int value) {
+    }
+
     public static final String COLUMN_ORDER = "columnOrder";
 
     public static final String COLUMNS = "columns";
@@ -156,6 +163,8 @@ public class VTable extends VComposite {
     public static final String ITEMS = "items";
 
     public static final String LINES_VISIBLE = "linesVisible";
+
+    public static final String OWNER_DRAW_ITEM_HEIGHT = "ownerDrawItemHeight";
 
     public static final String SELECTION = "selection";
 
@@ -196,6 +205,9 @@ public class VTable extends VComposite {
                 return;
             case "itemCount":
                 Serializer.writeKeyValue(writer, "itemCount", getItemCount());
+                return;
+            case "ownerDrawItemHeight":
+                Serializer.writeKeyValue(writer, "ownerDrawItemHeight", getOwnerDrawItemHeight());
                 return;
         }
         super.writeProperty(writer, key);

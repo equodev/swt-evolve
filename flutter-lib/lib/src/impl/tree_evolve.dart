@@ -63,6 +63,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   double? _columnsContentWidth;
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
+
+  /// The row height last laid out, honouring an owner-draw row's measured
+  /// height (VTree.ownerDrawItemHeight); rows read it so every row matches the
+  /// slot. Null until the first layout, where the caller falls back to theme.
+  double? get cachedItemHeight => _cachedItemHeight;
+
   List<VTreeItem>? _pendingSelection;
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;

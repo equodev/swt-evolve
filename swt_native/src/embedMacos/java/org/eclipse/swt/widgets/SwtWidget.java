@@ -1595,6 +1595,7 @@ public abstract class SwtWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
+    @SuppressWarnings("removal")
     public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
