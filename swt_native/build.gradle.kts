@@ -566,6 +566,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
     "**/TrackerHelper.java",
+    "**/ShellActivation.java",
     "**/NativeCursorHotspot.java",
 )
 
