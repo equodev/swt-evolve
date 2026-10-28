@@ -939,6 +939,9 @@ public class DartShell extends DartDecorations implements IShell {
             _takeFocusHolder(true);
             return;
         }
+        ShellActivation.deactivatePrevious(display.getActiveShell(), this.getApi());
+        if (isDisposed())
+            return;
         // The client reports the focus this moves into the shell as an activation of its own.
         _awaitClientActivate();
         // Activate first, then the focus: a listener that focuses a control of its own keeps it.
@@ -982,12 +985,7 @@ public class DartShell extends DartDecorations implements IShell {
         setWindowVisible(true, true);
         if (isDisposed())
             return;
-        if (prevActiveShell != null && prevActiveShell != this.getApi() && !prevActiveShell.isDisposed() && prevActiveShell.isVisible()) {
-            DartShell prevImpl = (DartShell) prevActiveShell.getImpl();
-            prevImpl.setActiveControl(null);
-            prevImpl.sendEvent(SWT.Deactivate);
-            prevImpl._suppressNextFlutterDeactivate = true;
-        }
+        ShellActivation.deactivatePrevious(prevActiveShell, this.getApi());
         _awaitClientActivate();
         sendEvent(SWT.Activate);
         if (isDisposed())
@@ -1059,6 +1057,8 @@ public class DartShell extends DartDecorations implements IShell {
         } else {
             wasActive = true;
         }
+        if (((DartDisplay) display.getImpl()).currentFocusControl == this.getApi())
+            ((DartDisplay) display.getImpl()).currentFocusControl = null;
         super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
@@ -1079,8 +1079,9 @@ public class DartShell extends DartDecorations implements IShell {
         if (!wasActive)
             return;
         // The active shell going away hands activation back to the one active before it, at
-        // once, as a window manager does when the active window is destroyed.
-        if (returnTo != null && !returnTo.isDisposed() && returnTo.isVisible()) {
+        // once, as a window manager does when the active window is destroyed; never to a shell that is
+        // itself going away, as a parent disposing its active dialog is.
+        if (returnTo != null && !returnTo.isDisposed() && (returnTo.state & DISPOSE_SENT) == 0 && returnTo.isVisible()) {
             ((DartShell) returnTo.getImpl())._takeFocusHolder(true);
             ((DartShell) returnTo.getImpl())._awaitClientActivate();
             ((DartShell) returnTo.getImpl()).sendEvent(SWT.Activate);
@@ -1695,6 +1696,7 @@ public class DartShell extends DartDecorations implements IShell {
             invalidateVisibleRegion();
             sendEvent(SWT.Hide);
         }
+        ShellActivation.handBackAfterHide(this);
         if (isDisposed())
             return;
         ((DartDisplay) display.getImpl()).updateQuitMenu();
