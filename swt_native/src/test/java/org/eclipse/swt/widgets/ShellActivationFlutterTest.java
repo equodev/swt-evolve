@@ -6,6 +6,8 @@ import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
@@ -83,22 +85,12 @@ class ShellActivationFlutterTest {
         assertThat(display.getActiveShell()).isSameAs(dialog);
     }
 
-    @Test
-    void hidingTheActiveDialogHandsActivationBackToTheMainShell() {
+    @ParameterizedTest
+    @ValueSource(strings = {"gtk", "win32", "cocoa"})
+    void hidingTheActiveDialogHandsActivationBackAfterTheHideOnEveryPlatform(String platform) {
         openMainAndDialog();
 
-        onPlatform("web", () -> dialog.setVisible(false));
-
-        assertThat(log).containsSubsequence("Dialog.Deactivate", "Main.Activate");
-        assertThat(log).contains("Dialog.FocusOut", "Dialog.Hide");
-        assertThat(display.getActiveShell()).isSameAs(main);
-    }
-
-    @Test
-    void hidingTheActiveDialogOnGtkHandsActivationBackAfterTheHide() {
-        openMainAndDialog();
-
-        onPlatform("gtk", () -> dialog.setVisible(false));
+        onPlatform(platform, () -> dialog.setVisible(false));
 
         assertThat(log).containsSubsequence("Dialog.Hide", "Dialog.Deactivate", "Main.Activate");
         assertThat(log).contains("Dialog.FocusOut");
@@ -106,12 +98,28 @@ class ShellActivationFlutterTest {
     }
 
     @Test
-    void hidingTheActiveDialogOnWin32OnlyTakesItsFocus() {
+    void hidingTheActiveDialogHandsActivationBackAfterTheHideOnTheWeb() {
         openMainAndDialog();
 
-        onPlatform("win32", () -> dialog.setVisible(false));
+        dialog.setVisible(false);
 
-        assertThat(log).containsExactly("Dialog.FocusOut", "Dialog.Hide");
+        assertThat(log).containsSubsequence("Dialog.Hide", "Dialog.Deactivate", "Main.Activate");
+        assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    @Test
+    void showingAHiddenShellAgainAnnouncesNoDeactivate() {
+        install(TestWebBridge::new);
+        main = new Shell(display);
+        main.setSize(400, 300);
+        main.open();
+        record(main, "Main");
+        main.setVisible(false);
+        log.clear();
+
+        main.setVisible(true);
+
+        assertThat(log).doesNotContain("Main.Deactivate");
     }
 
     private static void onPlatform(String platform, Runnable action) {
