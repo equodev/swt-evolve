@@ -128,6 +128,47 @@ class SpinnerProgrammaticVerifyTest {
     }
 
     @Test
+    void setDigitsOffersTheReformattedTextAndThenModify() {
+        spinner.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "020 0-2", "Modify 0" + separator + "020");
+        assertThat(spinner.getDigits()).isEqualTo(3);
+    }
+
+    @Test
+    void setDigitsToTheCurrentDigitsSendsNothing() {
+        spinner.setDigits(3);
+        heard.clear();
+
+        spinner.setDigits(3);
+
+        assertThat(heard).isEmpty();
+    }
+
+    @Test
+    void aRefusedDigitsTextKeepsTheOldTextButTakesTheDigits() {
+        spinner.addListener(SWT.Verify, e -> e.doit = false);
+
+        spinner.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "020 0-2");
+        assertThat(spinner.getDigits()).isEqualTo(3);
+        assertThat(spinner.getText()).isEqualTo("20");
+    }
+
+    @Test
+    void aDigitsTextTheListenerRewritesIsTheOneTheFieldShows() {
+        spinner.addListener(SWT.Verify, e -> e.text = e.text + "!");
+
+        spinner.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "020 0-2", "Modify 0" + separator + "020!");
+    }
+
+    @Test
     void aSpinnerDisposedByItsVerifyListenerStopsThere() {
         spinner.addListener(SWT.Verify, e -> spinner.dispose());
 
