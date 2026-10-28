@@ -62,6 +62,25 @@ class ShellActivationFlutterTest {
     }
 
     @Test
+    void aShellTheDeactivatedShellDisposesAnnouncesNoActivate() {
+        install(TestWebBridge::new);
+        Shell first = new Shell(display);
+        first.setSize(200, 100);
+        first.open();
+        Shell second = new Shell(display);
+        second.setBounds(300, 0, 200, 100);
+        second.open();
+        record(first, "First");
+        record(second, "Second");
+        second.addListener(SWT.Deactivate, e -> first.dispose());
+
+        first.setActive();
+
+        assertThat(first.isDisposed()).isTrue();
+        assertThat(log).containsExactly("Second.Deactivate", "First.Dispose");
+    }
+
+    @Test
     void activatingTheMainShellDeactivatesTheDialogFirst() {
         openMainAndDialog();
 
