@@ -143,4 +143,11 @@ public class CComboHelper {
             return 0;
         return fontData[0].getHeight() + 4;
     }
+
+    /** Recreates the inner Text with {@code align} on every call, the current alignment included, as native SWT does. */
+    static void setAlignment(DartCCombo combo, int align) {
+        int styleWithoutAlign = combo.getStyle() & ~(SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+        combo.createText(styleWithoutAlign | align);
+        combo.alignment = align;
+    }
 }
