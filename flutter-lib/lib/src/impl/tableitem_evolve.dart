@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart' show kPrimaryButton;
+import 'package:flutter/gestures.dart' show PointerDeviceKind, kPrimaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
@@ -25,10 +25,6 @@ import 'control_evolve.dart' show ControlImpl;
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
-  // Set when a pointer press has already sent this row's MouseDown, so the tap the same click
-  // completes does not send it again.
-  bool _pressSent = false;
-
   TableItemContext? _context;
 
   void setContext(TableItemContext context) {
@@ -269,38 +265,31 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // SWT delivers the press first. The click count is registered here too, because that is
       // the event SWT numbers -- onTap only decides what the completed gesture was.
       onPointerDown: (e) {
+        _context?.tableImpl?.takePress(e);
         final button = ControlImpl.swtButtonOf(e.buttons);
         if (ControlImpl.isMenuDetectTrigger(button)) {
           menuPress(button, e.position);
           return;
         }
         if (e.buttons != kPrimaryButton) return;
-        _pressSent = true;
         final count = enabled && _context?.tableImpl != null
             ? _context!.tableImpl!.registerRowTap(rowIndex, e.timeStamp)
             : 1;
         sendMouseDown(1, count, e.position);
         if (count == 2) sendDoubleClick(1, e.position);
       },
-      // A press whose tap lost the arena before tap-down (a drag) reaches neither tap callback; once
-      // the arena has settled on the release, the press is over either way.
-      onPointerUp: (_) => scheduleMicrotask(() => _pressSent = false),
-      onPointerCancel: (_) => scheduleMicrotask(() => _pressSent = false),
       child: GestureDetector(
-      // A tap through the semantics tree arrives here with no press before it; one that follows a
-      // pointer press was already sent above.
-      onTapDown: (_) {
-        if (_pressSent) {
-          _pressSent = false;
-          return;
-        }
+      // A tap through the semantics tree arrives here with no press before it, and of no pointer
+      // kind; one a pointer made was already sent above. In a table that scrolls, the pointer's
+      // tap wins the arena only once its drag has given up, after the release.
+      onTapDown: (details) {
+        if (details.kind != null && details.kind != PointerDeviceKind.unknown) return;
         final count = enabled && _context?.tableImpl != null
             ? _context!.tableImpl!.registerRowTap(rowIndex)
             : 1;
         sendMouseDown(1, count);
         if (count == 2) sendDoubleClick(1);
       },
-      onTapCancel: () => _pressSent = false,
       onTertiaryTapDown: (_) => sendMouseDown(2, 1),
       child: SizedBox(
         height: rowHeight,
