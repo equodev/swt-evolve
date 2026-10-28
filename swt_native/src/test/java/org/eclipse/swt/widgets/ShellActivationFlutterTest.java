@@ -6,12 +6,15 @@ import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * {@code Shell.setActive()} announces the activation before it moves the focus into the shell: a shell that its
@@ -84,11 +87,38 @@ class ShellActivationFlutterTest {
     void hidingTheActiveDialogHandsActivationBackToTheMainShell() {
         openMainAndDialog();
 
-        dialog.setVisible(false);
+        onPlatform("web", () -> dialog.setVisible(false));
 
         assertThat(log).containsSubsequence("Dialog.Deactivate", "Main.Activate");
         assertThat(log).contains("Dialog.FocusOut", "Dialog.Hide");
         assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    @Test
+    void hidingTheActiveDialogOnGtkHandsActivationBackAfterTheHide() {
+        openMainAndDialog();
+
+        onPlatform("gtk", () -> dialog.setVisible(false));
+
+        assertThat(log).containsSubsequence("Dialog.Hide", "Dialog.Deactivate", "Main.Activate");
+        assertThat(log).contains("Dialog.FocusOut");
+        assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    @Test
+    void hidingTheActiveDialogOnWin32OnlyTakesItsFocus() {
+        openMainAndDialog();
+
+        onPlatform("win32", () -> dialog.setVisible(false));
+
+        assertThat(log).containsExactly("Dialog.FocusOut", "Dialog.Hide");
+    }
+
+    private static void onPlatform(String platform, Runnable action) {
+        try (MockedStatic<SWT> swt = mockStatic(SWT.class, CALLS_REAL_METHODS)) {
+            swt.when(SWT::getPlatform).thenReturn(platform);
+            action.run();
+        }
     }
 
     @Test

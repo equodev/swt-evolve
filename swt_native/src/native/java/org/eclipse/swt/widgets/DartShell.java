@@ -939,6 +939,11 @@ public class DartShell extends DartDecorations implements IShell {
             _takeFocusHolder(true);
             return;
         }
+        Shell prevActiveShell = display.getActiveShell();
+        if (prevActiveShell != null && prevActiveShell != this.getApi() && !prevActiveShell.isDisposed() && prevActiveShell.isVisible())
+            ((DartShell) prevActiveShell.getImpl())._announceDeactivate();
+        if (isDisposed())
+            return;
         // The client reports the focus this moves into the shell as an activation of its own.
         _awaitClientActivate();
         // Activate first, then the focus: a listener that focuses a control of its own keeps it.
@@ -982,12 +987,8 @@ public class DartShell extends DartDecorations implements IShell {
         setWindowVisible(true, true);
         if (isDisposed())
             return;
-        if (prevActiveShell != null && prevActiveShell != this.getApi() && !prevActiveShell.isDisposed() && prevActiveShell.isVisible()) {
-            DartShell prevImpl = (DartShell) prevActiveShell.getImpl();
-            prevImpl.setActiveControl(null);
-            prevImpl.sendEvent(SWT.Deactivate);
-            prevImpl._suppressNextFlutterDeactivate = true;
-        }
+        if (prevActiveShell != null && prevActiveShell != this.getApi() && !prevActiveShell.isDisposed() && prevActiveShell.isVisible())
+            ((DartShell) prevActiveShell.getImpl())._announceDeactivate();
         _awaitClientActivate();
         sendEvent(SWT.Activate);
         if (isDisposed())
@@ -1059,6 +1060,9 @@ public class DartShell extends DartDecorations implements IShell {
         } else {
             wasActive = true;
         }
+        // As natively, a shell going away is sent no FocusOut for the focus it held.
+        if (savedDisplay != null && ((DartDisplay) savedDisplay.getImpl()).currentFocusControl == this.getApi())
+            ((DartDisplay) savedDisplay.getImpl()).currentFocusControl = null;
         super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
@@ -1657,6 +1661,7 @@ public class DartShell extends DartDecorations implements IShell {
                 return;
             getApi().state |= HIDDEN;
         }
+        _handOffOnHide(false);
         if (visible) {
             ((DartDisplay) display.getImpl()).clearPool();
             if (center && !moved) {
@@ -1695,6 +1700,7 @@ public class DartShell extends DartDecorations implements IShell {
             invalidateVisibleRegion();
             sendEvent(SWT.Hide);
         }
+        _handOffOnHide(true);
         if (isDisposed())
             return;
         ((DartDisplay) display.getImpl()).updateQuitMenu();
@@ -2004,6 +2010,39 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     boolean _suppressNextFlutterDeactivate;
+
+    void _announceDeactivate() {
+        setActiveControl(null);
+        sendEvent(SWT.Deactivate);
+        _suppressNextFlutterDeactivate = true;
+    }
+
+    void _handOffOnHide(boolean hidden) {
+        String platform = SWT.getPlatform();
+        if (isDisposed() || hidden != "gtk".equals(platform))
+            return;
+        DisplayBridge db = getBridge() instanceof DisplayBridge ? (DisplayBridge) getBridge() : null;
+        Control focus = display.getFocusControl();
+        boolean holdsFocus = focus != null && !focus.isDisposed() && focus.getShell() == this.getApi();
+        if (!holdsFocus && (db == null || !db.isActiveShell(this.getApi())))
+            return;
+        if ("win32".equals(platform)) {
+            if (holdsFocus && db != null)
+                db.clearFocus((DartControl) focus.getImpl());
+            return;
+        }
+        Shell returnTo = db != null ? db.shellToReturnTo(this.getApi()) : null;
+        if (returnTo == null && parent instanceof Shell && parent.isVisible())
+            returnTo = (Shell) parent;
+        _announceDeactivate();
+        if (isDisposed() || returnTo == null || returnTo.isDisposed() || !returnTo.isVisible())
+            return;
+        DartShell to = (DartShell) returnTo.getImpl();
+        to._awaitClientActivate();
+        to.sendEvent(SWT.Activate);
+        if (!returnTo.isDisposed())
+            to._takeFocusHolder(true);
+    }
 
     void _awaitClientActivate() {
         ((DartDisplay) display.getImpl()).awaitedActivation = this.getApi();
