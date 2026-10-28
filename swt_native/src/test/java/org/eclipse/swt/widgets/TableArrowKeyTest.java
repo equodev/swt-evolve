@@ -195,5 +195,88 @@ class TableArrowKeyTest extends KeyRoutingTestBase {
             assertThat(table.getSelectionIndex()).isEqualTo(1);
         }
     }
+
+    @Test
+    @DisplayName("keypad Enter is the DefaultSelection too; with a modifier, and with nothing selected, Enter is not")
+    void keypadEnterAndTheEntersThatAreNot() {
+        Table table = table();
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.DefaultSelection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, SWT.KEYPAD_CR);
+        Event shiftEnter = new Event();
+        shiftEnter.keyCode = SWT.CR;
+        shiftEnter.stateMask = SWT.SHIFT;
+        ControlHelper.routeKeyDown((DartControl) table.getImpl(), shiftEnter);
+        table.deselectAll();
+        press(table, SWT.CR);
+
+        assertThat(events).containsExactly("bravo");
+    }
+
+    @Test
+    @DisplayName("Enter falls back to the first selected row once the focus row is gone")
+    void enterFallsBackWhenTheFocusRowIsRemoved() {
+        Table table = table();
+        Event click = new Event();
+        click.segments = new int[] {3};
+        TableHelper.sendSelection((DartTable) table.getImpl(), click, SWT.Selection);
+        table.remove(3);
+        table.setSelection(0);
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.DefaultSelection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, SWT.CR);
+
+        assertThat(events).containsExactly("alpha");
+    }
+
+    @Test
+    @DisplayName("Space toggles a checked box off again; it toggles nothing in a table without check boxes")
+    void spaceTogglesBackAndOnlyInACheckTable() {
+        Table check = new Table(new Composite(shell(), SWT.NONE), SWT.CHECK);
+        new TableItem(check, SWT.NONE).setText("alpha");
+        check.setSelection(0);
+        press(check, ' ');
+        press(check, ' ');
+        assertThat(check.getItem(0).getChecked()).isFalse();
+
+        Table plain = table();
+        List<String> events = new ArrayList<>();
+        plain.addListener(SWT.Selection, e -> events.add(e.detail == SWT.CHECK ? "check" : "select"));
+        press(plain, ' ');
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Selection listener that disposes the table ends the toggling of the selected boxes")
+    void disposingTheTableEndsTheToggle() {
+        Table table = new Table(new Composite(shell(), SWT.NONE), SWT.MULTI | SWT.CHECK);
+        for (String text : new String[] {"alpha", "bravo"})
+            new TableItem(table, SWT.NONE).setText(text);
+        table.setSelection(new int[] {0, 1});
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> {
+            events.add(((TableItem) e.item).getText());
+            table.dispose();
+        });
+
+        press(table, ' ');
+
+        assertThat(events).containsExactly("alpha");
+    }
+
+    @Test
+    @DisplayName("typing the letter of the selected row, its only match, selects nothing new")
+    void typingTheSelectedRowsOnlyLetterSelectsNothing() {
+        Table table = table();
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, 'b');
+
+        assertThat(events).isEmpty();
+        assertThat(table.getSelectionIndex()).isEqualTo(1);
+    }
 }
 

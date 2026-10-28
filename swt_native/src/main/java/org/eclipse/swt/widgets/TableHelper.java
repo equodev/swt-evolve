@@ -340,10 +340,10 @@ public class TableHelper {
     /** Names the focus row, as Win32's focused item and GTK's cursor row; the first selected row until input set one. */
     private static void sendDefaultSelection(DartTable table) {
         int index = table.focusRow >= 0 && table.focusRow < table.getItemCount() ? table.focusRow : table.getSelectionIndex();
-        if (index < 0 || table.items == null || index >= table.items.length)
+        if (index < 0)
             return;
         Event event = new Event();
-        event.item = table.items[index];
+        event.item = table.getApi().getItem(index);
         table.sendSelectionEvent(SWT.DefaultSelection, event, true);
     }
 
@@ -352,9 +352,7 @@ public class TableHelper {
         for (int index : table.getSelectionIndices()) {
             if (table.isDisposed())
                 return;
-            if (table.items == null || index < 0 || index >= table.items.length)
-                continue;
-            TableItem item = table.items[index];
+            TableItem item = table.getApi().getItem(index);
             item.setChecked(!item.getChecked());
             Event event = new Event();
             event.item = item;
@@ -383,7 +381,8 @@ public class TableHelper {
         if (!Character.isLetterOrDigit(c))
             return false;
         long now = key.time & 0xFFFFFFFFL;
-        if (now - table.typedAt > TYPING_TIMEOUT_MS || now < table.typedAt)
+        // A key's time is a wrapping 32-bit count: a pause either way of the last key ends the text.
+        if (Math.abs(now - table.typedAt) > TYPING_TIMEOUT_MS)
             table.typedText = "";
         table.typedAt = now;
         String typed = table.typedText + Character.toLowerCase(c);
@@ -396,7 +395,7 @@ public class TableHelper {
         for (int n = 0; n < count; n++) {
             int index = Math.floorMod(start + n, count);
             String text = table.getApi().getItem(index).getText();
-            if (text != null && text.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)) {
+            if (text.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)) {
                 if (index != current) {
                     Event selection = new Event();
                     selection.segments = new int[] { index };
