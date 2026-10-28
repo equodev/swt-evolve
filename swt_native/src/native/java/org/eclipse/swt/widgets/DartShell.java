@@ -940,7 +940,7 @@ public class DartShell extends DartDecorations implements IShell {
             return;
         }
         // The client reports the focus this moves into the shell as an activation of its own.
-        _suppressNextFlutterActivate = true;
+        _awaitClientActivate();
         // Activate first, then the focus: a listener that focuses a control of its own keeps it.
         sendEvent(SWT.Activate);
         if (!isDisposed())
@@ -988,6 +988,7 @@ public class DartShell extends DartDecorations implements IShell {
             prevImpl.sendEvent(SWT.Deactivate);
             prevImpl._suppressNextFlutterDeactivate = true;
         }
+        _awaitClientActivate();
         sendEvent(SWT.Activate);
         if (isDisposed())
             return;
@@ -2002,6 +2003,18 @@ public class DartShell extends DartDecorations implements IShell {
 
     boolean _suppressNextFlutterActivate;
 
+    void _awaitClientActivate() {
+        _clearAwaitedActivations();
+        _suppressNextFlutterActivate = true;
+    }
+
+    void _clearAwaitedActivations() {
+        for (Shell s : display.getShells()) {
+            if (s.getImpl() instanceof DartShell)
+                ((DartShell) s.getImpl())._suppressNextFlutterActivate = false;
+        }
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Shell", "Activate", e -> {
@@ -2011,8 +2024,9 @@ public class DartShell extends DartDecorations implements IShell {
                 _suppressNextFlutterDeactivate = false;
                 if (getBridge() instanceof DisplayBridge)
                     ((DisplayBridge) getBridge()).noteClientActivated(this);
-                if (_suppressNextFlutterActivate) {
-                    _suppressNextFlutterActivate = false;
+                boolean _awaited = _suppressNextFlutterActivate;
+                _clearAwaitedActivations();
+                if (_awaited) {
                     _takeFocusHolder(false);
                     return;
                 }
