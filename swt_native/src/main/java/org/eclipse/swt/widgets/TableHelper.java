@@ -895,9 +895,20 @@ public class TableHelper {
         // This GC only ever draws through textCapture/imageCapture below — Flutter never
         // learns it exists, so its dispose must not tell Flutter otherwise.
         dartGc.silentDispose = true;
-        int itemHeight = ((DartTable) item.parent.getImpl()).getItemHeight();
+        DartTable table = (DartTable) item.parent.getImpl();
+        int itemHeight = table.getItemHeight();
         try {
-            measureCells(item, parent, count, gc, itemHeight);
+            int measured = measureCells(item, parent, count, gc, itemHeight);
+            // An owner-drawing Table shares one row height: the tallest any cell asks for in
+            // SWT.MeasureItem above the font line. It only ever grows — SWT fixes a Table's row
+            // height at the tallest it has measured — so raise and re-send it only when it actually
+            // rises; the client keeps the last value across pushes that omit this dirty-gated
+            // property, so a plain re-send on every capture would be churn with no effect.
+            if (measured > itemHeight && measured > table.ownerDrawItemHeight) {
+                table.ownerDrawItemHeight = measured;
+                VTable value = table.getValue();
+                if (value != null) value.markDirty(VTable.OWNER_DRAW_ITEM_HEIGHT);
+            }
             suppressed = suppressedForegrounds(item, parent, count, gc);
             for (int i = 0; i < count; i++) {
                 if (!suppressed[i] && own[i] != null) {
@@ -938,13 +949,16 @@ public class TableHelper {
      * compute its cell layout in {@code measure()} and read it back in {@code paint()}. A capture
      * that only paints leaves that layout uninitialised and the app's own paint code fails on it.
      *
-     * <p>What the listener writes back is discarded: a Dart widget's size comes from Sizes, not
-     * from the row metrics native SWT would derive here.
+     * <p>Returns the tallest height any cell asked for — an owner-drawing app raises it to fit a
+     * multi-line row (CDT's project-template chooser draws a bold title above a description). A
+     * Dart row is otherwise one font line tall, so this travels as {@code VTable.ownerDrawItemHeight}
+     * or the drawing overruns the next row. Returns 0 when no listener runs.
      */
-    private static void measureCells(DartTableItem item, DartWidget parent, int count, GC gc, int itemHeight) {
+    private static int measureCells(DartTableItem item, DartWidget parent, int count, GC gc, int itemHeight) {
         if (!parent.hooks(SWT.MeasureItem)) {
-            return;
+            return 0;
         }
+        int measured = itemHeight;
         for (int i = 0; i < count; i++) {
             Event event = new Event();
             event.item = item.getApi();
@@ -952,7 +966,9 @@ public class TableHelper {
             event.gc = gc;
             event.height = itemHeight;
             parent.sendEvent(SWT.MeasureItem, event);
+            measured = Math.max(measured, event.height);
         }
+        return measured;
     }
 
     /**

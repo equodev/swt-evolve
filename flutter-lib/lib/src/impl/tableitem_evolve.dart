@@ -184,7 +184,10 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final cellImage = _cellImageForColumn(columnIndex);
     final enabled = _context?.parentTableValue.enabled ?? true;
     final cellBackgroundColor = getCellBackgroundColor(columnIndex, theme);
-    final rowHeight = calculateRowHeight(textStyle, theme);
+    // Rows share one height; the parent's cached value already honours an owner-draw row that asked
+    // for more than the font line (VTable.ownerDrawItemHeight), so the cell matches the slot.
+    final rowHeight = _context?.tableImpl?.cachedRowHeight ??
+        calculateRowHeight(textStyle, theme);
     final checkboxOnly = showCheckbox && cellText.isEmpty && cellImage == null;
     final imageOnly = !showCheckbox && cellText.isEmpty && cellImage != null;
     final cellAlignment = _swtToAlignment(columnAlignment);
