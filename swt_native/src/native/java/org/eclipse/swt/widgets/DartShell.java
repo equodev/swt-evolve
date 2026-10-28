@@ -1057,8 +1057,8 @@ public class DartShell extends DartDecorations implements IShell {
         } else {
             wasActive = true;
         }
-        if (savedDisplay != null && ((DartDisplay) savedDisplay.getImpl()).currentFocusControl == this.getApi())
-            ((DartDisplay) savedDisplay.getImpl()).currentFocusControl = null;
+        if (((DartDisplay) display.getImpl()).currentFocusControl == this.getApi())
+            ((DartDisplay) display.getImpl()).currentFocusControl = null;
         super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
