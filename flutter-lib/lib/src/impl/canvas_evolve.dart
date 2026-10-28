@@ -622,7 +622,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
 
   int get _displaySelection => _currentDragSelection ?? _selection;
 
-  /// The 16px floor a thumb is never drawn below, so it stays grabbable.
+  /// The 16px floor a thumb is never drawn below, so it stays grabbable. Java repeats this arithmetic in
+  /// ScrollBarHelper (MIN_THUMB) to answer getThumbBounds without a round trip: change both together.
   static const double _minThumbSize = 16.0;
 
   double _thumbSize(double trackSize) {
