@@ -72,6 +72,8 @@ class VTree extends VComposite {
   int? sortDirection;
   VTreeItem? topItem;
 
+  int? ownerDrawItemHeight;
+
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
@@ -88,6 +90,7 @@ class VTree extends VComposite {
       sortColumn = other.sortColumn;
       sortDirection = other.sortDirection;
       topItem = other.topItem;
+      ownerDrawItemHeight = other.ownerDrawItemHeight;
     }
   }
 
@@ -132,6 +135,8 @@ class VTree extends VComposite {
         topItem = json['topItem'] == null
             ? null
             : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>);
+      case 'ownerDrawItemHeight':
+        ownerDrawItemHeight = (json['ownerDrawItemHeight'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

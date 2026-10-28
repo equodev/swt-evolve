@@ -297,6 +297,9 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       ) ??
       Tooltip(
         message: stripAccelerators(message),
+        // tagSemantics already places the tooltip in the semantics tree, as the name or
+        // the description; letting Tooltip add it too puts it back into the name.
+        excludeFromSemantics: true,
         preferBelow: widgetTheme.tooltipPreferBelow,
         verticalOffset: widgetTheme.tooltipVerticalOffset,
         margin: widgetTheme.tooltipMargin,

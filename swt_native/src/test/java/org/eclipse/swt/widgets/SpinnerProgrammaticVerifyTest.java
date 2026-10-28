@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
@@ -21,13 +22,14 @@ import org.junit.jupiter.api.Test;
 class SpinnerProgrammaticVerifyTest {
 
     private Spinner spinner;
+    private Display api;
     private DartDisplay display;
     private final List<String> heard = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
-        Display api = DartMocks.dartDisplay();
+        api = DartMocks.dartDisplay();
         display = (DartDisplay) api.getImpl();
         doCallRealMethod().when(display).sendEvent(any(EventTable.class), any(Event.class));
         spinner = new Spinner(DartMocks.dartShell(api), SWT.NONE);
@@ -125,6 +127,74 @@ class SpinnerProgrammaticVerifyTest {
         spinner.setSelection(7);
 
         assertThat(seen).containsExactly("20");
+    }
+
+    @Test
+    void setDigitsOffersTheReformattedTextAndThenModify() {
+        spinner.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "020 0-2", "Modify 0" + separator + "020");
+        assertThat(spinner.getDigits()).isEqualTo(3);
+    }
+
+    @Test
+    void setDigitsToTheCurrentDigitsSendsNothing() {
+        spinner.setDigits(3);
+        heard.clear();
+
+        spinner.setDigits(3);
+
+        assertThat(heard).isEmpty();
+    }
+
+    @Test
+    void aRefusedDigitsTextKeepsTheOldTextButTakesTheDigits() {
+        spinner.addListener(SWT.Verify, e -> e.doit = false);
+
+        spinner.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "020 0-2");
+        assertThat(spinner.getDigits()).isEqualTo(3);
+        assertThat(spinner.getText()).isEqualTo("20");
+    }
+
+    @Test
+    void aDigitsTextTheListenerRewritesIsTheOneTheFieldShows() {
+        spinner.addListener(SWT.Verify, e -> e.text = e.text + "!");
+
+        spinner.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        assertThat(heard).containsExactly("Verify 0" + separator + "020 0-2", "Modify 0" + separator + "020!");
+    }
+
+    @Test
+    void setDigitsWithNoVerifyListenerWritesTheTextAndSendsModify() {
+        Spinner plain = new Spinner(DartMocks.dartShell(api), SWT.NONE);
+        plain.setSelection(20);
+        List<String> modified = new ArrayList<>();
+        plain.addListener(SWT.Modify, e -> modified.add(plain.getText()));
+        VSpinner value = ((DartSpinner) plain.getImpl()).getValue();
+
+        plain.setDigits(3);
+
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) plain.getImpl());
+        assertThat(modified).containsExactly("0" + separator + "020");
+        assertThat(value.getKeptText()).as("nothing refused the new text, so the field shows it").isNull();
+    }
+
+    @Test
+    void negativeDigitsAreRefusedAndChangeNothing() {
+        VSpinner value = ((DartSpinner) spinner.getImpl()).getValue();
+        value.clearDirty();
+
+        assertThatThrownBy(() -> spinner.setDigits(-1)).isInstanceOf(IllegalArgumentException.class);
+
+        assertThat(spinner.getDigits()).isZero();
+        assertThat(heard).isEmpty();
+        assertThat(value.changedKeys()).doesNotContain(VSpinner.DIGITS);
     }
 
     @Test
