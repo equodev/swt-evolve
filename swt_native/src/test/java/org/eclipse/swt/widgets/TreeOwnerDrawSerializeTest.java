@@ -191,6 +191,8 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
     void measureItem_height_isKept_soTheRowFitsTheDrawing() {
         Tree tree = tree();
         DartTree treeImpl = ownerDrawnTree(tree, 2);
+        VTree value = new VTree(treeImpl);
+        when(treeImpl.getValue()).thenReturn(value);
         when(treeImpl.hooks(SWT.MeasureItem)).thenReturn(true);
         // The app asks for a 58px row — a bold title above a description, vs the 20px font line.
         doAnswer(invocation -> {
@@ -206,6 +208,36 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         serialize(item);
 
         assertThat(treeImpl.ownerDrawItemHeight).isEqualTo(58);
+        assertThat(value.changedKeys()).as("the raised height is sent to the client").contains(VTree.OWNER_DRAW_ITEM_HEIGHT);
+    }
+
+    /** SWT never shrinks a Tree's row height mid-life, so a later, shorter measure keeps the row and sends nothing. */
+    @Test
+    void measureItem_height_onlyGrows_soAShorterLaterMeasureKeepsTheRow() {
+        Tree tree = tree();
+        DartTree treeImpl = ownerDrawnTree(tree, 2);
+        VTree value = new VTree(treeImpl);
+        when(treeImpl.getValue()).thenReturn(value);
+        when(treeImpl.hooks(SWT.MeasureItem)).thenReturn(true);
+        int[] asked = { 58 };
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            event.height = asked[0];
+            return null;
+        }).when(treeImpl).sendEvent(eq(SWT.MeasureItem), any(Event.class));
+        doAnswer(invocation -> null).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+        item.setText(new String[] { "Renesas RA C/C++ Project", "An FSP solution for Renesas RA" });
+
+        serialize(item);
+        assertThat(treeImpl.ownerDrawItemHeight).isEqualTo(58);
+        value.clearDirty();
+
+        asked[0] = 30;
+        serialize(item);
+        assertThat(treeImpl.ownerDrawItemHeight).isEqualTo(58);
+        assertThat(value.changedKeys()).as("an unchanged height is not sent again").doesNotContain(VTree.OWNER_DRAW_ITEM_HEIGHT);
     }
 
     private Image solidImage(int width, int height) {
