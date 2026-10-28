@@ -94,6 +94,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
       impl.sendThrottledMouseMove(state, event, e.buttons);
+      impl.restartHover(state, event, e.position);
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
@@ -104,7 +105,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
         // composite, not with an ancestor further up.
         if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
-        if (!impl.forwardsControlMouseDown) return;
+        if (!impl.forwardsMouseDownOf(e)) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
@@ -124,7 +125,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           // own area -- the gap a container with a lazily-built context menu falls into.
           // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
           if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
-            impl.handleMenuDetect(e.pointer, e.localPosition);
+            impl.handleMenuDetect(e);
           }
         }
       },
@@ -144,6 +145,13 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           ..stateMask =
               impl.swtStateMask(released: true, flutterButtons: e.buttons);
         impl.widget.sendMouseMouseUp(state, event);
+        // A mouse rests where the release left it, as on a childless control; over a child, the
+        // child counts its own hover.
+        if (e.kind == PointerDeviceKind.mouse && impl.isOverSelf(e) && !_hitsAnyChild(state, pos)) {
+          impl.restartHover(state, VEvent()
+            ..x = event.x
+            ..y = event.y, e.position);
+        }
       },
       onPointerCancel: (e) {
         if (!forwardsPointer) return;
@@ -153,6 +161,8 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       },
       onPointerMove: (e) {
         if (!forwardsPointer) return;
+        // No hover while a button is held: the pointer is moving, not resting.
+        impl.cancelHover();
         impl.maybeSendDragDetect(e);
         // Same exclusivity as onPointerDown above, which already refuses a press that landed
         // on a child. Without it every composite between the Shell and the control under the

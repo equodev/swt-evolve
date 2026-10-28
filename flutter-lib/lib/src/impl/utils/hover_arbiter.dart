@@ -25,15 +25,20 @@ class HoverExclusivityArbiter {
 
   final Map<Object, int> _activeDepths = {};
   final Map<Object, HoverChanged> _callbacks = {};
+  final Map<Object, void Function()> _leftWhileHeld = {};
   Object? _winner;
   bool _resolveScheduled = false;
 
-  void register(Object owner, HoverChanged onHoverChanged) {
+  /// [onLeftWhileHeld] runs when the pointer leaves [owner] while a button is held, which defers
+  /// its MouseExit to the release.
+  void register(Object owner, HoverChanged onHoverChanged, {void Function()? onLeftWhileHeld}) {
     _callbacks[owner] = onHoverChanged;
+    if (onLeftWhileHeld != null) _leftWhileHeld[owner] = onLeftWhileHeld;
   }
 
   void unregister(Object owner) {
     _callbacks.remove(owner);
+    _leftWhileHeld.remove(owner);
     _activeDepths.remove(owner);
     if (_winner == owner) _winner = null;
   }
@@ -71,15 +76,12 @@ class HoverExclusivityArbiter {
     _resolveScheduled = false;
     // A held button is SWT's implicit capture: nothing is entered or left until release, when
     // [settle] resolves what the pointer ended up over.
-    if (ActiveDragTracker.isSuppressingHover) return;
-    Object? newWinner;
-    var bestDepth = -1;
-    _activeDepths.forEach((owner, depth) {
-      if (depth > bestDepth) {
-        bestDepth = depth;
-        newWinner = owner;
-      }
-    });
+    final newWinner = _deepestActive();
+    if (ActiveDragTracker.isSuppressingHover) {
+      final winner = _winner;
+      if (winner != null && newWinner != winner) _leftWhileHeld[winner]?.call();
+      return;
+    }
     if (newWinner != _winner) {
       final oldWinner = _winner;
       _winner = newWinner;
@@ -88,5 +90,17 @@ class HoverExclusivityArbiter {
     }
     // Kept no longer than this hover: in another view, a later one has coordinates of its own.
     _pointerPosition = null;
+  }
+
+  Object? _deepestActive() {
+    Object? deepest;
+    var bestDepth = -1;
+    _activeDepths.forEach((owner, depth) {
+      if (depth > bestDepth) {
+        bestDepth = depth;
+        deepest = owner;
+      }
+    });
+    return deepest;
   }
 }
