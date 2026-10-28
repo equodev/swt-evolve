@@ -103,4 +103,180 @@ class TableArrowKeyTest extends KeyRoutingTestBase {
 
         assertThat(table.getSelectionIndex()).isEqualTo(4);
     }
+
+    @Test
+    @DisplayName("Enter is the selected row's DefaultSelection, and moves nothing")
+    void enterIsTheDefaultSelection() {
+        Table table = table();
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> events.add("Selection " + ((TableItem) e.item).getText()));
+        table.addListener(SWT.DefaultSelection, e -> events.add("DefaultSelection " + ((TableItem) e.item).getText()));
+
+        press(table, SWT.CR);
+
+        assertThat(events).containsExactly("DefaultSelection bravo");
+        assertThat(table.getSelectionIndex()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Space toggles the box of every selected row of a CHECK table, each with a CHECK Selection")
+    void spaceTogglesTheSelectedChecks() {
+        Table table = new Table(new Composite(shell(), SWT.NONE), SWT.MULTI | SWT.CHECK);
+        for (String text : new String[] {"alpha", "bravo", "charlie", "delta"})
+            new TableItem(table, SWT.NONE).setText(text);
+        table.setSelection(new int[] {0, 2});
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> events.add((e.detail == SWT.CHECK ? "check " : "select ") + ((TableItem) e.item).getText()));
+
+        press(table, ' ');
+
+        assertThat(events).containsExactly("check alpha", "check charlie");
+        assertThat(table.getItem(0).getChecked()).isTrue();
+        assertThat(table.getItem(1).getChecked()).isFalse();
+        assertThat(table.getItem(2).getChecked()).isTrue();
+        assertThat(table.getSelectionIndices()).containsExactly(0, 2);
+    }
+
+    @Test
+    @DisplayName("a typed letter selects the next row it starts, again the one after, and more letters narrow it")
+    void typingSelectsTheRowItStarts() {
+        Table table = table();
+        for (String text : new String[] {"bob", "dora"})
+            new TableItem(table, SWT.NONE).setText(text);
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, 'd');
+        press(table, 'd');
+        press(table, 'd');
+        assertThat(events).containsExactly("delta", "dora", "delta");
+
+        Table other = table();
+        new TableItem(other, SWT.NONE).setText("bob");
+        other.setSelection(0);
+        events.clear();
+        other.addListener(SWT.Selection, e -> events.add(((TableItem) e.item).getText()));
+        press(other, 'b');
+        press(other, 'o');
+        assertThat(events).containsExactly("bravo", "bob");
+    }
+
+    @Test
+    @DisplayName("Enter names the row the last selection by input landed on, not the first selected one")
+    void enterNamesTheFocusRow() {
+        Table table = new Table(new Composite(shell(), SWT.NONE), SWT.MULTI);
+        for (String text : new String[] {"alpha", "bravo", "charlie", "delta"})
+            new TableItem(table, SWT.NONE).setText(text);
+        Event click = new Event();
+        click.segments = new int[] {2};
+        TableHelper.sendSelection((DartTable) table.getImpl(), click, SWT.Selection);
+        table.select(0);
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.DefaultSelection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, SWT.CR);
+
+        assertThat(table.getSelectionIndices()).containsExactly(0, 2);
+        assertThat(events).containsExactly("charlie");
+    }
+
+    @Test
+    @DisplayName("a NO_SEARCH or VIRTUAL table selects no row by a typed letter")
+    void noTypingSearchWhereTheStyleTurnsItOff() {
+        for (int style : new int[] {TableHelper.NO_SEARCH, SWT.VIRTUAL}) {
+            Table table = new Table(new Composite(shell(), SWT.NONE), SWT.SINGLE | style);
+            table.addListener(SWT.SetData, e -> ((TableItem) e.item).setText("delta"));
+            table.setItemCount(4);
+            for (int i = 0; i < 4; i++) table.getItem(i).setText(new String[] {"alpha", "bravo", "charlie", "delta"}[i]);
+            table.setSelection(1);
+
+            press(table, 'd');
+
+            assertThat(table.getSelectionIndex()).isEqualTo(1);
+        }
+    }
+
+    @Test
+    @DisplayName("keypad Enter is the DefaultSelection too; with a modifier, and with nothing selected, Enter is not")
+    void keypadEnterAndTheEntersThatAreNot() {
+        Table table = table();
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.DefaultSelection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, SWT.KEYPAD_CR);
+        Event shiftEnter = new Event();
+        shiftEnter.keyCode = SWT.CR;
+        shiftEnter.stateMask = SWT.SHIFT;
+        ControlHelper.routeKeyDown((DartControl) table.getImpl(), shiftEnter);
+        table.deselectAll();
+        press(table, SWT.CR);
+
+        assertThat(events).containsExactly("bravo");
+    }
+
+    @Test
+    @DisplayName("Enter falls back to the first selected row once the focus row is gone")
+    void enterFallsBackWhenTheFocusRowIsRemoved() {
+        Table table = table();
+        Event click = new Event();
+        click.segments = new int[] {3};
+        TableHelper.sendSelection((DartTable) table.getImpl(), click, SWT.Selection);
+        table.remove(3);
+        table.setSelection(0);
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.DefaultSelection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, SWT.CR);
+
+        assertThat(events).containsExactly("alpha");
+    }
+
+    @Test
+    @DisplayName("Space toggles a checked box off again; it toggles nothing in a table without check boxes")
+    void spaceTogglesBackAndOnlyInACheckTable() {
+        Table check = new Table(new Composite(shell(), SWT.NONE), SWT.CHECK);
+        new TableItem(check, SWT.NONE).setText("alpha");
+        check.setSelection(0);
+        press(check, ' ');
+        press(check, ' ');
+        assertThat(check.getItem(0).getChecked()).isFalse();
+
+        Table plain = table();
+        List<String> events = new ArrayList<>();
+        plain.addListener(SWT.Selection, e -> events.add(e.detail == SWT.CHECK ? "check" : "select"));
+        press(plain, ' ');
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Selection listener that disposes the table ends the toggling of the selected boxes")
+    void disposingTheTableEndsTheToggle() {
+        Table table = new Table(new Composite(shell(), SWT.NONE), SWT.MULTI | SWT.CHECK);
+        for (String text : new String[] {"alpha", "bravo"})
+            new TableItem(table, SWT.NONE).setText(text);
+        table.setSelection(new int[] {0, 1});
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> {
+            events.add(((TableItem) e.item).getText());
+            table.dispose();
+        });
+
+        press(table, ' ');
+
+        assertThat(events).containsExactly("alpha");
+    }
+
+    @Test
+    @DisplayName("typing the letter of the selected row, its only match, selects nothing new")
+    void typingTheSelectedRowsOnlyLetterSelectsNothing() {
+        Table table = table();
+        List<String> events = new ArrayList<>();
+        table.addListener(SWT.Selection, e -> events.add(((TableItem) e.item).getText()));
+
+        press(table, 'b');
+
+        assertThat(events).isEmpty();
+        assertThat(table.getSelectionIndex()).isEqualTo(1);
+    }
 }
+
