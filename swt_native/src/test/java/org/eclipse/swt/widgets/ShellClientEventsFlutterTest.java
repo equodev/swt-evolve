@@ -108,6 +108,33 @@ class ShellClientEventsFlutterTest {
         assertThat(events).containsExactly(SWT.Activate);
     }
 
+    // Disposing the active shell hands activation back to the previous one, which the client then
+    // reports once that shell's focus scope regains the focus.
+    @Test
+    void theClientReportingTheActivationADisposedShellHandedBackAnnouncesNoSecondOne() {
+        List<Integer> events = new ArrayList<>();
+        main.addListener(SWT.Activate, e -> events.add(e.type));
+        shell.dispose();
+        runLoop();
+        fromClient(main, "Activate", new Event());
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+    }
+
+    // Both shells opened before the client reported either: only the one opened last waits for its
+    // report, since nothing in a report tells a late one from a return to the shell that opened with
+    // nothing to focus. Each of the two reports is then announced as an activation of its own.
+    @Test
+    void theClientReportingBothOpenedShellsInOrderAnnouncesEachReport() {
+        List<String> events = new ArrayList<>();
+        main.addListener(SWT.Activate, e -> events.add("main Activate"));
+        shell.addListener(SWT.Activate, e -> events.add("shell Activate"));
+        fromClient(main, "Activate", new Event());
+        fromClient(shell, "Activate", new Event());
+        runLoop();
+        assertThat(events).containsExactly("main Activate", "shell Activate");
+    }
+
     @Test
     void aDeactivationReachesTheShellAndKeepsItsFocus() {
         Text field = new Text(shell, SWT.SINGLE);
