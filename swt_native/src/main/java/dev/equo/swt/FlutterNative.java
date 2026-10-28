@@ -33,7 +33,9 @@ public final class FlutterNative {
      * Creates a Flutter surface and returns its native handle.
      * <ul>
      *   <li>{@code width > 0 && height > 0} → a top-level <b>window</b> hosting the whole Display
-     *       (desktop-native). {@code parent} is ignored; {@code widgetId} is the Display id.</li>
+     *       (desktop-native). {@code parent} is the surface of the window that owns this one, or 0
+     *       for an unowned window (the Win32 and Cocoa runners honour it); {@code widgetId} is the id of
+     *       the Display or Shell the window is rooted at.</li>
      *   <li>otherwise → an <b>embedded</b> view inside {@code parent} (or an offscreen view if
      *       {@code parent == 0}, the limbo case).</li>
      * </ul>
@@ -46,7 +48,22 @@ public final class FlutterNative {
         // leave a window with no title bar, no buttons and nothing to drag.
         boolean csdEnabled = !"false".equals(Config.getConfigFlags().csd_placement);
         return Initialize(port, parent, widgetId, widgetName, theme,
-                backgroundColor, parentBackgroundColor, width, height, csdEnabled);
+                backgroundColor, parentBackgroundColor, width, height, csdEnabled, impellerEnabled());
+    }
+
+    /** {@code -Ddev.equo.swt.impeller=true|false} forces the Windows engines' renderer either way. */
+    public static final String IMPELLER_PROPERTY = "dev.equo.swt.impeller";
+
+    /**
+     * Whether the Windows engines render with Impeller, which compiles its pipelines on every engine
+     * start, on the UI thread. On unless shells can get windows of their own: each of those starts an
+     * engine. The measuring engines follow the same choice, so text is measured by the renderer that
+     * paints it. Other runners ignore it.
+     */
+    static boolean impellerEnabled() {
+        String forced = System.getProperty(IMPELLER_PROPERTY);
+        if (forced != null && !forced.trim().isEmpty()) return Boolean.parseBoolean(forced.trim());
+        return WindowPolicy.isSingleWindow();
     }
 
     /** Native view handle of a surface: the embedded view, or a window's content view. */
@@ -126,6 +143,14 @@ public final class FlutterNative {
         SetVisible(context, visible);
     }
 
+    /**
+     * Re-owns a window surface: {@code owner} is the surface of the window that now owns it, as in
+     * {@link #initialize}, or 0 for none. No-op for an embedded surface.
+     */
+    public static void setOwner(long context, long owner) {
+        SetOwner(context, owner);
+    }
+
     /** No window, or one whose position cannot be told. */
     /**
      * Whether this surface's window currently has keyboard focus from the OS, i.e. is the key or
@@ -162,6 +187,16 @@ public final class FlutterNative {
         return (int) packed;
     }
 
+    public static final int WORK_AREA_UNKNOWN = Integer.MIN_VALUE;
+
+    /**
+     * The top of the work area of the monitor nearest the window rect {@code (x, y, w, h)}, in the
+     * units {@link #setBounds} takes, or {@link #WORK_AREA_UNKNOWN}. Windows runner only.
+     */
+    public static int getWorkAreaTop(long context, int x, int y, int w, int h) {
+        return GetWorkAreaTop(context, x, y, w, h);
+    }
+
     /**
      * Points the native bridge at an external app-bundle directory (the EWT-owned combined
      * bundle: {@code <dir>/lib/libapp.so} + {@code <dir>/data/flutter_assets}). Must be
@@ -174,7 +209,11 @@ public final class FlutterNative {
 
     private static native void SetVisible(long context, boolean visible);
 
+    private static native void SetOwner(long context, long owner);
+
     private static native long GetOrigin(long context);
+
+    private static native int GetWorkAreaTop(long context, int x, int y, int w, int h);
 
     private static native boolean IsActive(long context);
 
@@ -185,7 +224,8 @@ public final class FlutterNative {
 
     private static native long Initialize(int port, long parent, long widgetId, String widgetName,
                                            String theme, int backgroundColor, int parentBackgroundColor,
-                                           int width, int height, boolean csdEnabled);
+                                           int width, int height, boolean csdEnabled,
+                                           boolean impellerEnabled);
 
     private static native long GetView(long context);
 

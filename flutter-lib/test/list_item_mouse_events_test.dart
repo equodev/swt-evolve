@@ -5,6 +5,7 @@
 // pointer and only Selection was sent.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -71,6 +72,34 @@ void main() {
         reason: "App MouseListeners open the item on the List's mouseUp, with the "
             'selection already applied.',
       );
+    },
+  );
+
+  testWidgets(
+    'a tap through the semantics tree selects the item, once',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      final calls = <String>[];
+      final value = _list(['Alpha', 'Bravo', 'Charlie']);
+
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: SizedBox(
+          width: 300,
+          height: 200,
+          child: _RecordingListSwt(value: value, calls: calls),
+        ),
+      ));
+      await tester.pump();
+
+      final node = tester.getSemantics(find.text('Bravo'));
+      tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+      await tester.pump(Duration.zero);
+
+      expect(calls.where((c) => c.startsWith('Selection')).toList(), equals(['Selection:[1]']),
+          reason: 'accessibility and test drivers tap through the semantics tree, with no pointer '
+              'press before the tap');
+      handle.dispose();
     },
   );
 }

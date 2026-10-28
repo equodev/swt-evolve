@@ -320,10 +320,10 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setIncrement(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.increment, newValue)) {
+        checkWidget();
+        if (this.increment != newValue) {
             getValue().markDirty(VSlider.INCREMENT);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.increment = newValue;
@@ -344,10 +344,10 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setMaximum(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.maximum, newValue)) {
+        checkWidget();
+        if (this.maximum != newValue) {
             getValue().markDirty(VSlider.MAXIMUM);
         }
-        checkWidget();
         this.maximum = newValue;
     }
 
@@ -366,10 +366,10 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setMinimum(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.minimum, newValue)) {
+        checkWidget();
+        if (this.minimum != newValue) {
             getValue().markDirty(VSlider.MINIMUM);
         }
-        checkWidget();
         if (value < 0)
             return;
         this.minimum = newValue;
@@ -399,10 +399,10 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setPageIncrement(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
+        checkWidget();
+        if (this.pageIncrement != newValue) {
             getValue().markDirty(VSlider.PAGE_INCREMENT);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.pageIncrement = newValue;
@@ -447,10 +447,10 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setThumb(int value) {
         int newValue = value;
-        if (!java.util.Objects.equals(this.thumb, newValue)) {
+        checkWidget();
+        if (this.thumb != newValue) {
             getValue().markDirty(VSlider.THUMB);
         }
-        checkWidget();
         if (value < 1)
             return;
         this.thumb = newValue;

@@ -98,6 +98,11 @@ public class DartAccessible implements IAccessible {
             Relation relation = (Relation) object;
             return (relation.type == this.type) && (relation.target == this.target);
         }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(type, target);
+        }
     }
 
     /**
@@ -133,7 +138,8 @@ public class DartAccessible implements IAccessible {
      * @since 3.5
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected DartAccessible(Accessible api) {
         setApi(api);
     }

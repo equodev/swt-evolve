@@ -8,6 +8,7 @@ import '../gen/path.dart';
 import '../gen/pathdata.dart';
 import '../gen/pattern.dart';
 import '../gen/rectangle.dart';
+import '../gen/rgb.dart';
 import '../gen/transform.dart';
 import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
@@ -56,6 +57,9 @@ class VGC extends VWidget {
   VPath? clippingText;
   double? lineDashOffset;
   double? bufferScale;
+  bool? themedCanvas;
+  List<VRGB?>? hoverFills;
+  List<VRGB?>? selectionFills;
 
   @override
   void copyFrom(VWidget other) {
@@ -83,6 +87,9 @@ class VGC extends VWidget {
       clippingText = other.clippingText;
       lineDashOffset = other.lineDashOffset;
       bufferScale = other.bufferScale;
+      themedCanvas = other.themedCanvas;
+      hoverFills = other.hoverFills;
+      selectionFills = other.selectionFills;
     }
   }
 
@@ -155,6 +162,22 @@ class VGC extends VWidget {
         lineDashOffset = (json['lineDashOffset'] as num?)?.toDouble();
       case 'bufferScale':
         bufferScale = (json['bufferScale'] as num?)?.toDouble();
+      case 'themedCanvas':
+        themedCanvas = json['themedCanvas'] as bool?;
+      case 'hoverFills':
+        hoverFills = (json['hoverFills'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VRGB.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
+      case 'selectionFills':
+        selectionFills = (json['selectionFills'] as List<dynamic>?)
+            ?.map(
+              (e) =>
+                  e == null ? null : VRGB.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       default:
         super.readProperty(key, json);
     }

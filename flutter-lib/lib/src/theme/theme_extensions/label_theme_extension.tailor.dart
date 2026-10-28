@@ -49,6 +49,8 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
   TextDecoration get textDecoration;
   TextDecoration get hoverTextDecoration;
   double get decorationThickness;
+  double get separatorThickness;
+  double get minTextContrast;
 
   @override
   LabelThemeExtension copyWith({
@@ -91,6 +93,8 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
     TextDecoration? textDecoration,
     TextDecoration? hoverTextDecoration,
     double? decorationThickness,
+    double? separatorThickness,
+    double? minTextContrast,
   }) {
     return LabelThemeExtension(
       primaryTextColor: primaryTextColor ?? this.primaryTextColor,
@@ -134,6 +138,8 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       textDecoration: textDecoration ?? this.textDecoration,
       hoverTextDecoration: hoverTextDecoration ?? this.hoverTextDecoration,
       decorationThickness: decorationThickness ?? this.decorationThickness,
+      separatorThickness: separatorThickness ?? this.separatorThickness,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -243,6 +249,10 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       decorationThickness: t < 0.5
           ? decorationThickness
           : other.decorationThickness,
+      separatorThickness: t < 0.5
+          ? separatorThickness
+          : other.separatorThickness,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -394,6 +404,14 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
             const DeepCollectionEquality().equals(
               decorationThickness,
               other.decorationThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorThickness,
+              other.separatorThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -440,6 +458,8 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       const DeepCollectionEquality().hash(textDecoration),
       const DeepCollectionEquality().hash(hoverTextDecoration),
       const DeepCollectionEquality().hash(decorationThickness),
+      const DeepCollectionEquality().hash(separatorThickness),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -491,4 +511,8 @@ extension LabelThemeExtensionBuildContextProps on BuildContext {
   TextDecoration get hoverTextDecoration =>
       labelThemeExtension.hoverTextDecoration;
   double get decorationThickness => labelThemeExtension.decorationThickness;
+
+  /// The thickness of the box a separator takes, across its line.
+  double get separatorThickness => labelThemeExtension.separatorThickness;
+  double get minTextContrast => labelThemeExtension.minTextContrast;
 }

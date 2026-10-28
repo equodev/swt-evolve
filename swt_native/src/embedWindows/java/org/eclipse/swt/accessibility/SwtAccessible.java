@@ -157,7 +157,8 @@ public class SwtAccessible implements IIAccessible {
      * @since 3.5
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected SwtAccessible(Accessible api) {
         setApi(api);
     }
@@ -4705,6 +4706,7 @@ public class SwtAccessible implements IIAccessible {
     }
 
     /* IAccessibleTable2::get_caption([out] ppAccessible) */
+    @SuppressWarnings("deprecation")
     int get_caption(long ppAccessible) {
         if (control != null && control.isDisposed())
             return COM.CO_E_OBJNOTCONNECTED;
@@ -4917,6 +4919,7 @@ public class SwtAccessible implements IIAccessible {
     }
 
     /* IAccessibleTable2::get_summary([out] ppAccessible) */
+    @SuppressWarnings("deprecation")
     int get_summary(long ppAccessible) {
         if (control != null && control.isDisposed())
             return COM.CO_E_OBJNOTCONNECTED;

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -58,6 +59,9 @@ public final class LocalFileServing {
 
     /** Only worth scanning for a {@code <base>} tag in the head, so cap the read. */
     private static final int BASE_HREF_SCAN_LIMIT = 32 * 1024;
+
+    /** Whether filesystem paths here may start with a drive letter. */
+    private static final boolean DRIVE_PATHS = File.separatorChar == '\\';
 
     /**
      * Matches a {@code file:} URL as it appears in markup — an attribute value, a CSS
@@ -275,7 +279,7 @@ public final class LocalFileServing {
     }
 
     /**
-     * Rewrites a served page's {@code <base href>} when it is a root-absolute filesystem path
+     * Rewrites a served page's {@code <base href>} when it is an absolute filesystem path
      * (the scheme-less form {@link #resolveBaseHrefTarget} accepts) into a path relative to the
      * page's own {@code /local-file/<token>/} URL. Left as written, the browser resolves the
      * page's relative resources against the server root, outside {@code /local-file/}: that only
@@ -290,14 +294,48 @@ public final class LocalFileServing {
         Matcher m = BASE_HREF_PATTERN.matcher(html);
         if (!m.find() || m.start() > BASE_HREF_SCAN_LIMIT) return html;
         String href = m.group(1);
-        if (!href.startsWith("/") || href.startsWith("//")) return html;
+        if (absoluteFilesystemPath(href) == null) return html;
         if (resolveBaseHrefTarget(href) == null) return html;
+        String path = DRIVE_PATHS ? href.replace('\\', '/') : href;
+        if (path.startsWith("/")) path = path.substring(1);
         StringBuilder relative = new StringBuilder();
         for (int i = documentRelativePath.indexOf('/'); i >= 0; i = documentRelativePath.indexOf('/', i + 1)) {
             relative.append("../");
         }
-        relative.append(href, 1, href.length());
+        // "./" keeps a first segment holding a colon ("C:/...") from reading as a URL scheme.
+        if (relative.length() == 0) relative.append("./");
+        relative.append(path);
         return html.substring(0, m.start(1)) + relative + html.substring(m.end(1));
+    }
+
+    private static Path absoluteFilesystemPath(String path) {
+        return absoluteFilesystemPath(path, DRIVE_PATHS);
+    }
+
+    /**
+     * The absolute filesystem path a scheme-less {@code path} names: root-absolute
+     * ({@code /...}), plus, when {@code drivePaths}, a drive path written {@code C:\...},
+     * {@code C:/...} or {@code /C:/...} (a {@code file:} URL's path). {@code null} for anything
+     * else: a relative path, a network path ({@code //host/share}), or one this platform cannot
+     * represent. A network path is refused because page content must not make the server reach
+     * out to another host.
+     */
+    static Path absoluteFilesystemPath(String path, boolean drivePaths) {
+        if (path.startsWith("//") || (drivePaths && path.startsWith("\\\\"))) return null;
+        if (drivePaths && path.startsWith("/") && startsWithDrive(path.substring(1))) {
+            path = path.substring(1);
+        }
+        if (!path.startsWith("/") && !(drivePaths && startsWithDrive(path))) return null;
+        try {
+            return Paths.get(path);
+        } catch (InvalidPathException e) {
+            return null;
+        }
+    }
+
+    private static boolean startsWithDrive(String path) {
+        return path.length() > 2 && Character.isLetter(path.charAt(0)) && path.charAt(1) == ':'
+                && (path.charAt(2) == '/' || path.charAt(2) == '\\');
     }
 
     /** Reads up to {@code limit} bytes of {@code file} as UTF-8, for a bounded head-of-file scan. */
@@ -314,19 +352,15 @@ public final class LocalFileServing {
      * Resolves a {@code <base href>} value to the {@link File} it names, or
      * {@code null} if it's remote ({@code http(s):}/{@code data:}), relative (the
      * primary root already covers that case), or doesn't exist on disk. Accepts
-     * both {@code file:} URLs and the root-absolute, scheme-less filesystem paths
-     * tools like Eclipse's {@code FileLocator} commonly emit.
+     * both {@code file:} URLs and the scheme-less absolute filesystem paths
+     * tools like Eclipse's {@code FileLocator} commonly emit (see
+     * {@link #absoluteFilesystemPath}).
      */
     private static File resolveBaseHrefTarget(String href) {
         if (href == null || href.isEmpty()) return null;
-        Path p;
-        if (href.regionMatches(true, 0, "file:", 0, 5)) {
-            p = parseFileUrl(href);
-        } else if (href.startsWith("/")) {
-            p = Paths.get(href);
-        } else {
-            return null;
-        }
+        Path p = href.regionMatches(true, 0, "file:", 0, 5)
+                ? parseFileUrl(href)
+                : absoluteFilesystemPath(href);
         if (p == null) return null;
         File f = p.toFile();
         return f.exists() ? f : null;
@@ -339,7 +373,7 @@ public final class LocalFileServing {
      * process — or, combined with a CORS misconfiguration, any web page — probe
      * small integers and read files back out of a registered directory.
      */
-    private static String newToken() {
+    static String newToken() {
         byte[] bytes = new byte[16];
         RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -354,7 +388,8 @@ public final class LocalFileServing {
      * <p>
      * Falls back to the token's {@code <base href>} directory (see
      * {@link #registerBaseHrefRoot}) when the primary root doesn't have it, treating
-     * {@code "/" + relativePath} as the resource's real absolute filesystem path.
+     * {@code "/" + relativePath} as the resource's real absolute filesystem path
+     * ({@code C:/...} on Windows, see {@link #relativizeBaseHref}).
      */
     public static File resolve(String token, String relativePath) {
         File root = rootsByToken.get(token);
@@ -369,10 +404,17 @@ public final class LocalFileServing {
         File baseRoot = baseHrefRootsByToken.get(token);
         if (baseRoot != null) {
             Path basePath = baseRoot.toPath().normalize();
-            Path absolute = Paths.get("/" + relativePath).normalize();
-            if (absolute.startsWith(basePath)) {
-                File file = absolute.toFile();
-                if (file.isFile()) return file;
+            Path absolute = absoluteFilesystemPath("/" + relativePath);
+            if (absolute != null) {
+                // The root is canonical; so must the request be, or a base href written through a
+                // symlink, a junction or an 8.3 short name never matches it.
+                File file;
+                try {
+                    file = absolute.toFile().getCanonicalFile();
+                } catch (Exception e) {
+                    return null;
+                }
+                if (file.toPath().startsWith(basePath) && file.isFile()) return file;
             }
         }
         return null;
@@ -419,7 +461,7 @@ public final class LocalFileServing {
         String rawPath = "/" + rest.substring(i);
         // A Windows drive-letter path ("file:/C:/foo") collapses to "/C:/foo"
         // above; strip the extra leading slash so it reads as "C:/foo".
-        if (rawPath.length() > 2 && rawPath.charAt(2) == ':') {
+        if (DRIVE_PATHS && startsWithDrive(rawPath.substring(1))) {
             rawPath = rawPath.substring(1);
         }
         File direct = new File(rawPath);

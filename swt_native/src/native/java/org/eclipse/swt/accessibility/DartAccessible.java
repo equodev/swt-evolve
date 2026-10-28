@@ -110,7 +110,8 @@ public class DartAccessible implements IAccessible {
      * @since 3.5
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected DartAccessible(Accessible api) {
         setApi(api);
     }
@@ -1323,8 +1324,7 @@ public class DartAccessible implements IAccessible {
 
     /* checkWidget was copied from Widget, and rewritten to work in this package */
     void checkWidget() {
-        if (!isValidThread())
-            SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
+        ;
         if (control.isDisposed())
             SWT.error(SWT.ERROR_WIDGET_DISPOSED);
     }

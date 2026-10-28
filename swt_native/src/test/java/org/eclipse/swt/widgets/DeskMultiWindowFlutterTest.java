@@ -1,12 +1,15 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.IntegerOn150;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowPolicy;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -107,6 +111,39 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
+    @DisplayName("a detached window opens at its shell's size in the window system's pixels")
+    void opensAtTheShellsSizeInWindowPixels() {
+        TestDeskBridge desk = install();
+        // A 600-unit shell is drawn in 400 logical pixels.
+        IntegerOn150.run(() -> {
+            openShell("Main");
+            Shell detached = new Shell(display, SWT.SHELL_TRIM);
+            detached.setBounds(300, 150, 600, 450);
+            detached.setVisible(true);
+
+            OpenedWindow window = desk.opened.get(0);
+            assertThat(window.width).isEqualTo(400);
+            assertThat(window.height).isEqualTo(300);
+        });
+    }
+
+    @Test
+    @DisplayName("a detached window that reports while it is still opening is sent its configuration")
+    void answersAReportMadeWhileTheWindowOpens() {
+        TestDeskBridge desk = install();
+        desk.clientReportsWhileOpening();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+
+        assertThat(desk.unansweredReports)
+                .as("the client's first report arrives before the engine has finished starting; "
+                        + "nobody listening then means it is never sent its scale or window chrome")
+                .isEmpty();
+        assertThat(desk.comm.sent).extracting(f -> f.event)
+                .contains("swt.evolve.properties", "Shell/" + detached.hashCode());
+    }
+
+    @Test
     @DisplayName("a detached window's view is handed to its shell")
     void bindsTheViewToTheShell() {
         TestDeskBridge desk = install();
@@ -125,6 +162,9 @@ class DeskMultiWindowFlutterTest {
     // the native window it is given; that ownership is what keeps it above the application window.
 
     private static final long MAIN_WINDOW_VIEW = 0x4708B6L;
+
+    /** The Display's own window is never opened here, so its context stays 0. */
+    private static final long MAIN_WINDOW_CONTEXT = 0L;
 
     @Test
     @DisplayName("the main shell is drawn into the Display's window")
@@ -178,6 +218,111 @@ class DeskMultiWindowFlutterTest {
         desk.disposeNativeWindow();
 
         assertThat(desk.nativeWindowHandle(main)).isZero();
+    }
+
+    // ---- which window owns a detached one ------------------------------------------------------------
+    //
+    // A shell with a parent is an owned window natively: it stays above its owner, minimizes with it
+    // and has no task-switcher entry of its own. The owner is the window its parent is drawn into.
+
+    /** Stands in for the Display's own window, so being owned by it is distinguishable from none. */
+    private static final long MAIN_WINDOW_OWNER = 0x5A11L;
+
+    @Test
+    @DisplayName("a parentless detached shell's window has no owner")
+    void topLevelShellIsUnowned() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        openShell("Detached");
+
+        assertThat(desk.opened.get(0).owner).isZero();
+    }
+
+    @Test
+    @DisplayName("a detached child of the main shell is owned by the Display's window")
+    void childOfMainShellIsOwnedByTheDisplayWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell child = new Shell(main, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+
+        assertThat(desk.opened).hasSize(1);
+        assertThat(desk.opened.get(0).owner).isEqualTo(MAIN_WINDOW_OWNER);
+    }
+
+    @Test
+    @DisplayName("a detached child of a detached shell is owned by that shell's window")
+    void childOfDetachedShellIsOwnedByItsWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+        Shell child = new Shell(detached, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+
+        assertThat(desk.opened).hasSize(2);
+        assertThat(desk.opened.get(1).owner).isEqualTo(desk.opened.get(0).handle);
+    }
+
+    @Test
+    @DisplayName("a detached child of an inline shell is owned by the window that inline shell is in")
+    void childOfInlineShellIsOwnedByTheWindowItIsDrawnInto() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell inline = new Shell(main, SWT.DIALOG_TRIM);
+        inline.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        inline.setVisible(true);
+        Shell child = new Shell(inline, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+
+        assertThat(desk.opened).hasSize(1);
+        assertThat(desk.opened.get(0).owner).isEqualTo(MAIN_WINDOW_OWNER);
+    }
+
+    @Test
+    @DisplayName("a detached child is re-owned once its parent gets a window of its own")
+    void childIsReownedWhenItsParentGetsAWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell parent = new Shell(main, SWT.SHELL_TRIM);
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        parent.setVisible(true);
+        Shell child = new Shell(parent, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+        long childWindow = handleOf(desk, child);
+
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        parent.setVisible(false);
+        parent.setVisible(true);
+        child.setVisible(false);
+        child.setVisible(true);
+
+        assertThat(desk.owners.get(childWindow)).containsExactly(handleOf(desk, parent));
+    }
+
+    @Test
+    @DisplayName("a detached child is re-owned by the next window up once its parent's window closes")
+    void childIsReownedWhenItsParentLosesItsWindow() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        Shell parent = new Shell(main, SWT.SHELL_TRIM);
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        parent.setVisible(true);
+        Shell child = new Shell(parent, SWT.SHELL_TRIM);
+        child.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.TRUE);
+        child.setVisible(true);
+        long childWindow = handleOf(desk, child);
+
+        parent.setData(WindowPolicy.SHELL_DATA_KEY, Boolean.FALSE);
+        parent.setVisible(false);
+        parent.setVisible(true);
+        child.setVisible(false);
+        child.setVisible(true);
+
+        assertThat(desk.owners.get(childWindow)).containsExactly(MAIN_WINDOW_OWNER);
     }
 
     // ---- driving them ---------------------------------------------------------------------------------
@@ -239,6 +384,19 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
+    @DisplayName("a detached shell without text gets a window without a title")
+    void untitledShellGetsAnUntitledWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setVisible(true);
+
+        assertThat(desk.titles.get(handleOf(desk, detached)))
+                .as("the window is created under the client's widget name; the shell's empty text replaces it")
+                .isEmpty();
+    }
+
+    @Test
     @DisplayName("maximizing a detached shell maximizes its window, not the application's")
     void maximizeIsScopedToItsOwnWindow() {
         TestDeskBridge desk = install();
@@ -253,6 +411,74 @@ class DeskMultiWindowFlutterTest {
                 .as("the application's own window must not move when a detached one is maximized")
                 .isEmpty();
         assertThat(main.getMaximized()).isFalse();
+    }
+
+    @Test
+    @DisplayName("a shell maximized before it opens gets a maximized window, not a screen-sized one")
+    void maximizedBeforeOpenOpensMaximized() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setMaximized(true);
+        detached.setVisible(true);
+        long handle = handleOf(desk, detached);
+
+        assertThat(desk.states.get(handle)).containsExactly(ShellWindow.STATE_MAXIMIZED);
+        assertThat(detached.getLocation())
+                .as("a maximized shell sits at the screen origin; it is not cascaded like an unplaced one")
+                .isEqualTo(new Point(0, 0));
+    }
+
+    @Test
+    @DisplayName("a shell maximized before it opens restores to the bounds it had, not to the screen")
+    void maximizedBeforeOpenRestoresToItsBounds() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setBounds(100, 120, 800, 500);
+        detached.setMaximized(true);
+        detached.setVisible(true);
+        long handle = handleOf(desk, detached);
+
+        assertThat(desk.bounds.get(handle)).isEqualTo(new Rectangle(100, 120, 800, 500));
+        assertThat(desk.states.get(handle)).containsExactly(ShellWindow.STATE_MAXIMIZED);
+    }
+
+    @Test
+    @DisplayName("a shell made full-screen before it opens gets a full-screen window")
+    void fullScreenBeforeOpenOpensFullScreen() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setFullScreen(true);
+        detached.setVisible(true);
+
+        assertThat(desk.states.get(handleOf(desk, detached))).containsExactly(ShellWindow.STATE_FULLSCREEN);
+        assertThat(detached.getLocation())
+                .as("a full-screen shell is not moved to a cascaded spot")
+                .isEqualTo(new Point(0, 0));
+    }
+
+    @Test
+    @DisplayName("a shell minimized before it opens gets a minimized window")
+    void minimizedBeforeOpenOpensMinimized() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setMinimized(true);
+        detached.setVisible(true);
+
+        assertThat(desk.states.get(handleOf(desk, detached))).containsExactly(ShellWindow.STATE_MINIMIZED);
+    }
+
+    @Test
+    @DisplayName("a shell opened in the normal state is not told a state at all")
+    void normalShellGetsNoState() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = openShell("Detached");
+
+        assertThat(desk.states.get(handleOf(desk, detached))).isNull();
     }
 
     // ---- closing --------------------------------------------------------------------------------------
@@ -400,7 +626,228 @@ class DeskMultiWindowFlutterTest {
                 .contains(firstHandle, secondHandle);
     }
 
+    // ---- hiding the shell that holds the Display's window ---------------------------------------------
+
+    /** The flags an application runs with when every shell but its modals gets a window. */
+    private void everyShellButModalsInItsOwnWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+    }
+
+    @Test
+    @DisplayName("hiding the main shell hands the Display's window to the visible top-level")
+    void hidingTheMainShellHandsItsWindowOver() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        long workbenchWindow = handleOf(desk, workbench);
+
+        welcome.setVisible(false);
+
+        assertThat(desk.hostsAsMainShell(workbench))
+                .as("a hidden shell must not keep the window: it would stay on screen with nothing "
+                        + "of its own in it, and everything drawn inline would land there")
+                .isTrue();
+        assertThat(desk.disposed)
+                .as("the shell is now drawn in the Display's window, so the one it had goes")
+                .contains(workbenchWindow);
+        assertThat(desk.nativeWindowHandle(workbench)).isEqualTo(MAIN_WINDOW_VIEW);
+        assertThat(desk.titles.get(MAIN_WINDOW_CONTEXT))
+                .as("the window now shows Workbench, so it carries Workbench's title")
+                .isEqualTo("Workbench");
+        assertThat(desk.mainWindowBounds).last().isEqualTo(workbench.getBounds());
+        assertThat(desk.mainWindowVisibility())
+                .as("the window still has a shell to show")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("hiding the only shell in the Display's window hides the window, and showing it back shows it")
+    void hidingTheMainShellHidesItsWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell child = new Shell(welcome, SWT.SHELL_TRIM);
+        child.setVisible(true);
+        assertThat(desk.windowedShells()).contains(child);
+
+        welcome.setVisible(false);
+        assertThat(desk.mainWindowVisibility())
+                .as("nothing is drawn in it any more; left up, it shows a stale frame")
+                .containsExactly(false);
+
+        welcome.setVisible(true);
+        assertThat(desk.mainWindowVisibility()).containsExactly(false, true);
+    }
+
+    @Test
+    @DisplayName("a main shell that has not been shown yet does not hide the Display's window")
+    void startupDoesNotHideTheWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell splash = new Shell(display, SWT.NO_TRIM);
+        splash.setVisible(true);
+        Shell workbench = new Shell(display, SWT.SHELL_TRIM);
+        splash.dispose();
+        workbench.setVisible(true);
+
+        assertThat(desk.mainWindowVisibility())
+                .as("a splash disposed before the real shell opens is no reason to flash the window")
+                .isEmpty();
+        assertThat(desk.hostsAsMainShell(workbench)).isTrue();
+    }
+
+    @Test
+    @DisplayName("taking the window over keeps the shell's size, growing the window by its chrome")
+    void takeoverKeepsTheShellSize() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        workbench.setBounds(120, 120, 900, 568);
+        desk.applyClientInsetTop(32);
+        desk.mainWindowBounds.clear();
+
+        welcome.setVisible(false);
+
+        assertThat(desk.mainWindowBounds)
+                .as("the window grows by the strip the client draws above the shell instead of the "
+                        + "shell shrinking by it, and starts that much higher")
+                .containsExactly(new Rectangle(120, 88, 900, 600));
+        assertThat(workbench.getSize().y).isEqualTo(568);
+    }
+
+    @Test
+    @DisplayName("the strip the client draws above the shell grows its window upwards by its height")
+    void reportedInsetGrowsTheWindowAboveTheShell() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(100, 100, 800, 500);
+        desk.mainWindowBounds.clear();
+
+        desk.applyClientInsetTop(30);
+
+        assertThat(desk.mainWindowBounds)
+                .as("the shell is the area below the strip, so a shell placed before the strip was known "
+                        + "gets a window that much taller, starting that much higher")
+                .containsExactly(new Rectangle(100, 70, 800, 530));
+    }
+
+    @Test
+    @DisplayName("an inline modal is drawn in the window of the shell it belongs to")
+    void inlineModalFollowsItsParentsWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        welcome.setVisible(false);
+
+        Shell modal = new Shell(workbench, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        modal.setSize(400, 200);
+        modal.setVisible(true);
+
+        assertThat(desk.windowedShells())
+                .as("a modal is drawn inline under these flags")
+                .doesNotContain(modal);
+        assertThat(windowedShellIdsSent(desk))
+                .as("the client draws the modal itself, so it must not be told the modal is windowed")
+                .doesNotContain(String.valueOf(modal.hashCode()));
+        assertThat(desk.nativeWindowHandle(workbench))
+                .as("the Display's client draws the inline modal, so its parent has to be the shell "
+                        + "that client fills its window with")
+                .isEqualTo(MAIN_WINDOW_VIEW);
+    }
+
+    @Test
+    @DisplayName("closing a shell that took the window over hands it to the next top-level")
+    void disposingTheTakerHandsTheWindowOn() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        Shell workbench = openShell("Workbench");
+        welcome.setVisible(false);
+        clientReportsViewport(desk, 1728, 1200);
+        Shell second = openShell("Second workbench window");
+        second.setBounds(300, 200, 700, 500);
+        long secondWindow = handleOf(desk, second);
+        desk.mainWindowBounds.clear();
+
+        workbench.dispose();
+        desk.onUpdate();
+        drainEventLoop();
+
+        assertThat(desk.hostsAsMainShell(second))
+                .as("the only top-level left is drawn in the Display's window")
+                .isTrue();
+        assertThat(desk.disposed)
+                .as("so the window it had goes, instead of standing next to the Display's")
+                .contains(secondWindow);
+        assertThat(desk.mainWindowBounds)
+                .as("and the Display's window moves to where it was, instead of staying where the "
+                        + "closed shell was, with nothing drawn in it")
+                .containsExactly(new Rectangle(300, 200, 700, 500));
+        assertThat(desk.titles.get(MAIN_WINDOW_CONTEXT)).isEqualTo("Second workbench window");
+        assertThat(second.getSize())
+                .as("never sized to the Display's window while still in its own")
+                .isEqualTo(new Point(700, 500));
+    }
+
+    @Test
+    @DisplayName("a top-level opened after the main shell was hidden gets a window of its own")
+    void laterTopLevelGetsItsOwnWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        openShell("Workbench");
+        welcome.setVisible(false);
+
+        Shell late = openShell("Late top-level");
+
+        assertThat(desk.hostsAsMainShell(late)).isFalse();
+        assertThat(desk.windowedShells()).contains(late);
+    }
+
+    @Test
+    @DisplayName("a shell in a window of its own maps to the screen from its bounds, with no title bar")
+    void windowedShellMapsWithoutATitleBar() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        openShell("Workbench");
+        Shell second = openShell("Second workbench window");
+        assertThat(desk.windowedShells()).contains(second);
+        second.setBounds(1760, 332, 1100, 868);
+
+        assertThat(second.toDisplay(0, 0))
+                .as("its window draws the shell without a Flutter title bar, so a point mapped through "
+                        + "one lands that much below what is painted")
+                .isEqualTo(new Point(1760, 332));
+    }
+
     // ---- harness ---------------------------------------------------------------------------------------
+
+    /** The windowed shell ids the last Display frame told the client, as sent. */
+    private String windowedShellIdsSent(TestDeskBridge desk) {
+        String channel = "Display/" + display.hashCode();
+        List<RecordingComm.Frame> frames =
+                desk.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
+        assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
+        java.util.regex.Matcher ids = java.util.regex.Pattern
+                .compile("\"windowedShellIds\":\\[([^\\]]*)\\]")
+                .matcher(frames.get(frames.size() - 1).json);
+        return ids.find() ? ids.group(1) : "";
+    }
+
+    /** The Display's window reports its viewport, as its client does once it has drawn. */
+    private void clientReportsViewport(TestDeskBridge desk, int width, int height) {
+        ClientReadyPayload report = new ClientReadyPayload();
+        report.width = width;
+        report.height = height;
+        @SuppressWarnings("unchecked")
+        Consumer<ClientReadyPayload> handler = (Consumer<ClientReadyPayload>)
+                desk.comm.handlers.get("Display/" + display.hashCode() + "/ClientReady");
+        handler.accept(report);
+    }
 
     private long handleOf(TestDeskBridge desk, Shell shell) {
         return desk.opened.stream()
@@ -438,39 +885,19 @@ class DeskMultiWindowFlutterTest {
     /** One {@code FlutterNative.initialize} the bridge asked for. */
     private static final class OpenedWindow {
         final long handle;
+        final long owner;
         final long widgetId;
         final String widgetName;
         final int width;
         final int height;
 
-        OpenedWindow(long handle, long widgetId, String widgetName, int width, int height) {
+        OpenedWindow(long handle, long owner, long widgetId, String widgetName, int width, int height) {
             this.handle = handle;
+            this.owner = owner;
             this.widgetId = widgetId;
             this.widgetName = widgetName;
             this.width = width;
             this.height = height;
-        }
-    }
-
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
         }
     }
 
@@ -483,9 +910,11 @@ class DeskMultiWindowFlutterTest {
         final Map<Long, Rectangle> bounds = new LinkedHashMap<>();
         final Map<Long, List<Integer>> states = new LinkedHashMap<>();
         final Map<Long, List<Boolean>> visibility = new LinkedHashMap<>();
+        final Map<Long, List<Long>> owners = new LinkedHashMap<>();
         final Map<Shell, Long> boundViews = new LinkedHashMap<>();
         final List<Long> disposed = new ArrayList<>();
         final List<Integer> mainWindowStates = new ArrayList<>();
+        final List<Rectangle> mainWindowBounds = new ArrayList<>();
         final Deque<Integer> mainPumpStatus = new ArrayDeque<>();
 
         private final Map<Long, Deque<Integer>> scriptedStatus = new LinkedHashMap<>();
@@ -529,8 +958,13 @@ class DeskMultiWindowFlutterTest {
         }
 
         @Override
-        protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
+        protected Point shellWindowOrigin(long context) {
             return null; // a stood-in window sits nowhere; only a real one has a screen position
+        }
+
+        @Override
+        protected int workAreaTop(Rectangle window) {
+            return 0;
         }
 
         @Override
@@ -540,6 +974,12 @@ class DeskMultiWindowFlutterTest {
 
         @Override
         protected void forwardWindowBounds(Rectangle bounds) {
+            mainWindowBounds.add(new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height));
+        }
+
+        /** Shows and hides of the Display's own window, recorded under its context. */
+        List<Boolean> mainWindowVisibility() {
+            return visibility.getOrDefault(MAIN_WINDOW_CONTEXT, List.of());
         }
 
         // The Display's own window has no handle here, so every operation on it is recorded rather
@@ -592,9 +1032,27 @@ class DeskMultiWindowFlutterTest {
         // The detached windows: handed out as fake handles, with every call recorded.
 
         @Override
-        protected long openNativeWindow(long widgetId, String widgetName, int width, int height) {
+        protected long openNativeWindow(long owner, long widgetId, String widgetName, int width, int height) {
             long handle = ++nextHandle;
-            opened.add(new OpenedWindow(handle, widgetId, widgetName, width, height));
+            opened.add(new OpenedWindow(handle, owner, widgetId, widgetName, width, height));
+            if (clientReportsWhileOpening) {
+                // The client runs on its own thread and reports as soon as its view has metrics,
+                // which happens while the engine is still being created here.
+                Shell opening = null;
+                for (Shell s : forDisplay._shells()) if (s != null && s.hashCode() == widgetId) opening = s;
+                String channel = shellClientReadyChannel(opening);
+                @SuppressWarnings("unchecked")
+                Consumer<ClientReadyPayload> handler = (Consumer<ClientReadyPayload>) comm.handlers.get(channel);
+                if (handler == null) {
+                    unansweredReports.add(channel);
+                } else {
+                    ClientReadyPayload report = new ClientReadyPayload();
+                    report.width = width;
+                    report.height = height;
+                    report.isFirst = true;
+                    handler.accept(report);
+                }
+            }
             if (reenterOnOpen) {
                 // What the real bridge does here: opening a window pumps, and a pump dispatches
                 // whatever is queued -- including another update for this same Display.
@@ -605,6 +1063,13 @@ class DeskMultiWindowFlutterTest {
         }
 
         private boolean reenterOnOpen;
+
+        private boolean clientReportsWhileOpening;
+        final List<String> unansweredReports = new ArrayList<>();
+
+        void clientReportsWhileOpening() {
+            clientReportsWhileOpening = true;
+        }
 
         void reenterOnNextOpen() {
             reenterOnOpen = true;
@@ -625,6 +1090,16 @@ class DeskMultiWindowFlutterTest {
         @Override
         protected long mainWindowView() {
             return MAIN_WINDOW_VIEW;
+        }
+
+        @Override
+        protected long mainWindowContext() {
+            return MAIN_WINDOW_OWNER;
+        }
+
+        @Override
+        protected void setShellWindowOwner(long context, long owner) {
+            owners.computeIfAbsent(context, c -> new ArrayList<>()).add(owner);
         }
 
         @Override

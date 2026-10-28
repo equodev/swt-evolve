@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.ExceptionStash;
+import org.eclipse.swt.internal.*;
 
 public interface IComposite extends IScrollable, ImplComposite {
 
@@ -26,6 +26,8 @@ public interface IComposite extends IScrollable, ImplComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
+    @Deprecated
+    @SuppressWarnings("removal")
     void changed(Control[] changed);
 
     Point computeSize(int wHint, int hHint, boolean changed);

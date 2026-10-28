@@ -25,6 +25,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/utils/region_clip.dart';
 import 'package:swtflutter/src/impl/utils/tracker_session.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -52,6 +53,9 @@ VShell _feedback(int x, int y) => VShell()
   ..children = [];
 
 Future<void> _pump(WidgetTester tester, List<VShell> shells) async {
+  // Room for the 800x600 main shell at a scale of 1.5: a shell that does not fit is moved into view.
+  tester.view.physicalSize = const Size(3600, 2700);
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: DisplaySwt(
@@ -83,7 +87,10 @@ void main() {
       if (action == 'Control/Move') reported.add(event);
     };
   });
-  tearDown(() => TrackerSession.sendForTesting = null);
+  tearDown(() {
+    TrackerSession.sendForTesting = null;
+    setAppScaleOverride(null);
+  });
 
   /// Drags to [pointer] with a Tracker open on [host], and answers the position the Tracker loop
   /// was told the pointer is.
@@ -103,52 +110,60 @@ void main() {
     return Offset(reported.last.x!.toDouble(), reported.last.y!.toDouble());
   }
 
-  testWidgets('a pointer over the main shell is reported at its own window position',
-      (tester) async {
-    const pointer = Offset(420, 310);
+  // Above 100 % display scale the app is drawn at a factor other than 1, and a position read off
+  // the pointer is in the view's pixels while Java works in SWT units. At 1.0 the two coincide, so
+  // only a run at another factor shows a missed conversion.
+  // The pointer is always at (420, 310) in the view's pixels; [expected] is that in SWT units.
+  const pointer = Offset(420, 310);
+  for (final (scale, expected) in [(1.0, Offset(420, 310)), (1.5, Offset(280, 207))]) {
+    group('at scale $scale', () {
+      setUp(() => setAppScaleOverride(scale));
 
-    expect(await reportedFor(tester, [_mainShell()], 'Shell/1', pointer), pointer);
-  });
+      testWidgets('a pointer over the main shell is reported at its own window position',
+          (tester) async {
+        expect(await reportedFor(tester, [_mainShell()], 'Shell/1', pointer), expected);
+      });
 
-  testWidgets('a Tracker hosted by a shell away from the origin reports the same position',
-      (tester) async {
-    // The host's own origin cancels: the conversion subtracts where its content sits and adds the
-    // bounds Java gave it back. A Tracker opened on a Composite in a secondary window must not
-    // report a position shifted by that window's position.
-    const pointer = Offset(420, 310);
+      testWidgets('a Tracker hosted by a shell away from the origin reports the same position',
+          (tester) async {
+        // The host's own origin cancels: the conversion subtracts where its content sits and adds
+        // the bounds Java gave it back. A Tracker opened on a Composite in a secondary window must
+        // not report a position shifted by that window's position.
+        expect(
+            await reportedFor(
+                tester, [_mainShell(), _feedback(200, 150)..id = 2], 'Shell/2', pointer),
+            expected);
+      });
 
-    expect(
-        await reportedFor(tester, [_mainShell(), _feedback(200, 150)..id = 2], 'Shell/2', pointer),
-        pointer);
-  });
+      testWidgets('a Tracker hosted by a titled secondary window reports the same position',
+          (tester) async {
+        // A view torn off into a window of its own: the drag back starts on that window's tabs, so
+        // the Tracker opens on it. Its bounds include the title bar this side draws, exactly as
+        // Java's toDisplay counts it, so the title bar must not come off the position a second time.
+        final torn = VShell()
+          ..id = 3
+          ..style = SWT.SHELL_TRIM
+          ..text = 'torn off'
+          ..bounds = _rect(300, 200, 400, 300)
+          ..children = [];
 
-  testWidgets('a Tracker hosted by a titled secondary window reports the same position',
-      (tester) async {
-    // A view torn off into a window of its own: the drag back starts on that window's tabs, so the
-    // Tracker opens on it. Its bounds include the title bar this side draws, exactly as Java's
-    // toDisplay counts it, so the title bar must not come off the position a second time.
-    const pointer = Offset(420, 310);
-    final torn = VShell()
-      ..id = 3
-      ..style = SWT.SHELL_TRIM
-      ..text = 'torn off'
-      ..bounds = _rect(300, 200, 400, 300)
-      ..children = [];
+        expect(await reportedFor(tester, [_mainShell(), torn], 'Shell/3', pointer), expected);
+      });
 
-    expect(await reportedFor(tester, [_mainShell(), torn], 'Shell/3', pointer), pointer);
-  });
+      testWidgets('a shell renders where its bounds say, which is what makes the trip cancel',
+          (tester) async {
+        await _pump(tester, [_mainShell(), _feedback(200, 150)..id = 2]);
 
-  testWidgets('a shell renders where its bounds say, which is what makes the trip cancel',
-      (tester) async {
-    await _pump(tester, [_mainShell(), _feedback(200, 150)..id = 2]);
-
-    final shells = tester.widgetList<ShellSwt>(find.byType(ShellSwt)).toList();
-    expect(shells, hasLength(2));
-    for (final shell in shells) {
-      final b = shell.value.bounds!;
-      expect(tester.getTopLeft(find.byWidget(shell)), Offset(b.x.toDouble(), b.y.toDouble()),
-          reason: 'a shell drawn anywhere but at its own bounds breaks the round trip the '
-              'Tracker conversion depends on');
-    }
-  });
+        final shells = tester.widgetList<ShellSwt>(find.byType(ShellSwt)).toList();
+        expect(shells, hasLength(2));
+        for (final shell in shells) {
+          final b = shell.value.bounds!;
+          expect(tester.getTopLeft(find.byWidget(shell)),
+              Offset(b.x.toDouble(), b.y.toDouble()) * scale,
+              reason: 'a shell drawn anywhere but at its own bounds breaks the round trip the '
+                  'Tracker conversion depends on');
+        }
+      });
+    });
+  }
 }

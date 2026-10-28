@@ -51,7 +51,9 @@ class ImmediateModeDrawingTest {
         EvolveSwingHost.shareFrameBuffer();
 
         AtomicInteger pushRequests = new AtomicInteger();
-        BufferCapture content = new BufferCapture(new EvolveSwingHost.ContentRoot(pushRequests::incrementAndGet));
+        EvolveSwingHost.ContentRoot placed = new EvolveSwingHost.ContentRoot(pushRequests::incrementAndGet);
+        placed.place();
+        BufferCapture content = new BufferCapture(placed);
         JLightweightFrame[] frame = new JLightweightFrame[1];
         JPanel tile = new JPanel() {
             @Override

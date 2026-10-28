@@ -35,6 +35,7 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("expandVertical").equalsTo(w.getExpandVertical(), orAbsentIfFalse));
         assertJ.satisfies(node("minHeight").equalsTo(w.getMinHeight(), orAbsentIf0));
         assertJ.satisfies(node("minWidth").equalsTo(w.getMinWidth(), orAbsentIf0));
+        assertJ.satisfies(node("origin").equalsTo(value(w).getOrigin(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));

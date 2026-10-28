@@ -53,6 +53,11 @@ public class RecordingComm implements CommService {
     }
 
     @Override
+    public void removeOwner(String owner) {
+        handlers.keySet().removeIf(name -> name.equals(owner) || name.startsWith(owner + "/"));
+    }
+
+    @Override
     public int getPort() {
         return 0;
     }

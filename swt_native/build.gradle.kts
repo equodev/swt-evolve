@@ -2,11 +2,13 @@ import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
+import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     java
     `java-library`
     jacoco
+    alias(libs.plugins.errorprone)
 }
 
 val eclipseUrl: String by project
@@ -202,10 +204,12 @@ dependencies {
 val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
 
 // Classes that need a JDK newer than Java 8 and have no Java 8 equivalent to fall back on:
-// dev/equo/swt/awt is built on jdk.swing.interop (added in 9) and dev/equo/swt/jdk9 on StackWalker.
+// dev/equo/swt/awt opens its JDK internals through java.lang.Module (added in 9) and dev/equo/swt/jdk9
+// is built on StackWalker.
 // Everything reaches them through dev.equo.swt.Jdk9, which resolves them reflectively, so a fragment
-// built for an older SWT release can leave them out and still work -- SWT_AWT falls back to native
-// reparenting, Config to a Throwable-based stack read. Excluding them is what lets the rest of the
+// built for an older SWT release can leave them out and still work -- SWT_AWT.new_Frame fails with
+// ERROR_NOT_IMPLEMENTED for a Dart-backed composite, and Config reads the stack through a Throwable.
+// Excluding them is what lets the rest of the
 // tree compile at --release 8, where those packages are not visible at all.
 //
 // javafx/embed/swt (FXCanvas) is the same case: it opens the host's javafx.graphics module to this
@@ -306,6 +310,15 @@ sourceSets {
             // (absent in 3.131), so the test covering that path cannot compile against older SWT.
             val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
             if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
+            // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
+            // The widget tracker is told of each widget from 3.130.
+            if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
+            // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
+            if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
+            // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
+            if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
             // tests covering that constructor cannot compile against older SWT.
             if (swtMinorNative < 129) {
@@ -318,14 +331,58 @@ sourceSets {
             // 'bench' and never runs in a version job — it only needs to compile — so below that
             // baseline it is dropped rather than made to compile.
             if (swtMinorNative < 121) exclude("dev/equo/swt/bench/**")
+            // These assert what SWT 3.134's BusyIndicator does when the display goes away; earlier releases differ.
+            if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
+            // TextLayout.setFixedLineMetrics was added in 3.125.
+            if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
             // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
             // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
             if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
+            // Tree.setHeaderForeground was added in 3.106.
+            if (swtMinorNative < 106) exclude("org/eclipse/swt/widgets/TreeHeaderForegroundNativeTest.java")
+            // Cocoa's Tree gained keyDown, one of the fields the accessors answer, in 3.126.
+            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/TreeAccessorsNativeTest.java")
+            // Shell.setMaximumSize/getMaximumSize were added in 3.116.
+            if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
+            // Text's paste goes through _paste(boolean) from 3.114.100 on, where the Verify fix and the clipboard recipe live.
+            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextPasteVerifyTest.java")
+            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextClipboardPasteTest.java")
+            // StyledText.setLineVerticalIndent was added in 3.109.
+            if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
+            // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
+            if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextLineProvidersWireNativeTest.java")
+            // TextLayout.setVerticalIndent was added in 3.109.
+            if (swtMinorNative < 109) exclude("org/eclipse/swt/graphics/TextLayoutVerticalIndentNativeTest.java")
             // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
             if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
+            // 3.107 added the lambda listener factories (ProgressListener.completedAdapter,
+            // LocationListener.changedAdapter), StyledText.getOffsetAtPoint and
+            // StyledText.setLineSpacingProvider, which these tests call directly.
+            if (swtMinorNative < 107) {
+                exclude("dev/equo/swt/test/BrowserFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFileUrlFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserFirstLoadFlutterTest.java")
+                exclude("dev/equo/swt/test/BrowserProgressPlaceholderFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
+            }
+            // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
+            // CompositeImageDescriptor API ships with the JFace paired with it, and CTabFolder only
+            // highlights the active stack (onActivate/onDeactivate) from that release on.
+            if (swtMinorNative < 106) {
+                exclude("org/eclipse/swt/custom/CTabFolderActiveHighlightFlutterTest.java")
+                exclude("org/eclipse/swt/dnd/DndFlutterTest.java")
+                exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
+                // Image.getImageData(int zoom) is package-private in 3.105 and public from 3.106 on,
+                // so the API class the generator writes only carries it from there; this test reads
+                // one image back at three zooms.
+                exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
+                // Table/Tree.setHeaderBackground and setHeaderForeground were added in 3.106.
+                exclude("org/eclipse/swt/widgets/WidgetCheckedFirstTest.java")
+            }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
@@ -387,6 +444,31 @@ if (chromiumMode) {
     }
 }
 
+dependencies { errorprone(libs.errorprone.core) }
+
+// Error Prone on the one compile holding all our code once: every native backend shares main/ and
+// native/, Windows adds our only per-OS file. Upstream copies are skipped; a Dart* finding is fixed
+// in the generator. -PerrorProne=false turns it off where CI runs it as a job of its own.
+val errorProne = findProperty("errorProne")?.toString() != "false"
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        enabled.set(errorProne && name == "compileNativeWindowsJava")
+        disableAllWarnings.set(true)
+        // Checks off or only warnings by default that found real defects here, or guard against
+        // common ones, as errors.
+        error(
+            "StringCaseLocaleUsage", "DefaultLocale", "ObjectEqualsForPrimitives",
+            "JavaTimeDefaultTimeZone", "UndefinedEquals", "CollectionUndefinedEquality",
+            "ToStringReturnsNull", "InterruptedExceptionSwallowed",
+            "FallThrough", "MissingCasesInEnumSwitch", "ModifiedButNotUsed",
+        )
+        // dsl-json's converters under build/generated are not ours either.
+        excludedPaths.set("(.*/src/native[A-Za-z]*/java/(?!dev/equo/)(?!.*/Dart[^/]*\\.java$)|.*/build/generated/).*")
+    }
+    // That compile is warning-free; keep it so.
+    if (errorProne && name == "compileNativeWindowsJava") options.compilerArgs.add("-Werror")
+}
+
 // Configure Java compilation
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
@@ -397,7 +479,7 @@ tasks.withType<JavaCompile> {
     //
     // Two ways of saying it, because javac refuses --add-exports on a system module together with
     // --release, at ANY level. Below 9 the Swing bridge that needs those exports is excluded anyway
-    // (jdk.swing.interop does not exist there), so --release applies and brings its API check with
+    // (java.lang.Module does not exist there), so --release applies and brings its API check with
     // it. From 9 up the bridge ships, so the level is set with -source/-target and the API check is
     // left to checkJavaApiLevel, which excludes the bridge and can therefore use --release.
     when {
@@ -406,26 +488,26 @@ tasks.withType<JavaCompile> {
         else -> {
             sourceCompatibility = targetJavaRelease.toString()
             targetCompatibility = targetJavaRelease.toString()
-            // -source/-target compiles against THIS JDK's API, so javac warns it cannot verify the
-            // result runs on the older one. checkJavaApiLevel is what actually verifies it.
-            options.compilerArgs.add("-Xlint:-options")
         }
     }
+    // JDK 21's javac warns about both ways: release 8 is obsolete, and -source/-target compiles
+    // against THIS JDK's API, so it cannot verify the result runs on the older one.
+    // checkJavaApiLevel is what actually verifies it.
+    if (targetJavaRelease != null) options.compilerArgs.add("-Xlint:-options")
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.
-    // jdk.swing.interop.DispatcherWrapper: lets EvolveSwingHost install its own AWT/Swing
-    // dispatcher on java.awt.EventQueue, routed through the SWT Display's own pump, instead of
-    // leaving whatever JavaFX/host bridge code installs last (which routes through a JavaFX
-    // event loop DartDisplay never pumps, so posted tasks never run). The runtime JVM this
-    // actually executes under also needs the matching --add-exports on its own command line
-    // (the deployment's own -vmargs), independent of this compile-time one.
+    // sun.awt.FwDispatcher: lets EvolveSwingHost install its own AWT/Swing dispatcher on
+    // java.awt.EventQueue, routed through the SWT Display's own pump, instead of leaving whatever
+    // JavaFX/host bridge code installs last (which routes through a JavaFX event loop DartDisplay
+    // never pumps, so posted tasks never run). At runtime the bridge exports both packages to
+    // itself (EvolveSwingHost.openSwingInternals), or takes the matching --add-exports from the
+    // deployment's own -vmargs.
     // Only meaningful from 9 on: below that there are no modules to export from, javac rejects the
     // flag outright, and the Swing bridge that needs them is excluded from the build anyway.
     if (!dropJdk9Sources) options.compilerArgs.addAll(listOf(
         "--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-        "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED"
+        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED"
     ))
 }
 
@@ -436,7 +518,7 @@ tasks.withType<JavaCompile> {
 // surface too, so Map.ofEntries or String.isBlank fail here instead of at a customer's runtime.
 //
 // dev/equo/swt/awt (and the SWT_AWT that calls into it) is excluded: the Swing bridge is built on
-// sun.swing / jdk.swing.interop, which --release hides because they are not documented API. That
+// sun.swing / sun.awt, which --release hides because they are not documented API. That
 // pair is the one thing still standing between this check and dropping the bytecode downgrader --
 // either the bridge leaves the fragments built for pre-9 releases, or it keeps them on -source 8
 // with no API check.
@@ -471,6 +553,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/*Bridge*.java",
     "**/WebFlutterServer.java",
     "**/ProxyHandler.java",
+    "**/InlineDocumentHandler.java",
     "**/HeadlessChrome.java",
     "**/VDisplay.java",
     "**/VShellPopups.java",
@@ -478,9 +561,11 @@ val handWrittenInGeneratedTrees = listOf(
     "**/WidgetSpy.java",
     "**/MacApplicationMenu.java",
     "**/MacMenuBar.java",
+    "**/AppKitValues.java",
     "**/TextLayoutMeasurement.java",
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
+    "**/TrackerHelper.java",
     "**/NativeCursorHotspot.java",
 )
 
@@ -656,8 +741,7 @@ tasks.register<Test>("embedTest") {
     // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
     // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
     systemProperty("harness.client", "native")
     // Lets a run choose how state is delivered, so the two modes can be compared against each
     // other on the same suite. Read once at class-load, so it has to reach the test JVM itself
@@ -733,8 +817,7 @@ tasks.test {
     // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
     // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
     // equo.swt.diff: lets this suite run against either way of delivering state, so the whole
     // end-to-end path can be compared between them rather than only the Java side.
     // fontsize.seed: FontSizeTest fuzzes over random sizes and texts and prints the seed it used,
@@ -989,10 +1072,9 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     inputs.dir("../flutter-lib/web")
     inputs.dir("../flutter-lib/assets")
     outputs.dir("../flutter-lib/build/web")
-    // Both builds in one bundle: the loader runs the wasm one (Skwasm, which rasterises off the
-    // main thread when the page is cross-origin isolated) where the browser supports WasmGC, and
-    // the JavaScript one (CanvasKit) everywhere else.
-    commandLine = flutterCmd() + listOf("build", "web", "--wasm")
+    // JavaScript build only, so every browser runs CanvasKit. Under Skwasm (--wasm) a GC-painted
+    // Canvas that repaints while scrolling makes the whole window flicker; CanvasKit does not.
+    commandLine = flutterCmd() + listOf("build", "web")
 }
 
 val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {

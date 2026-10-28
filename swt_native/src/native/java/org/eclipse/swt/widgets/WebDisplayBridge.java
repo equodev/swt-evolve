@@ -7,7 +7,6 @@ import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 
 import java.util.concurrent.Executors;
@@ -55,6 +54,9 @@ public class WebDisplayBridge extends DisplayBridge {
     WebDisplayBridge(DartDisplay display) {
         super(display);
         DisplayBridgePlatform.init();
+        // In a browser the splash is drawn like any other shell; the launcher's own window is left
+        // on the desktop with no event loop behind it.
+        DisplayBridgePlatform.dismissLauncherSplash();
     }
 
     /** How long a paste waits for the browser to hand over its clipboard. */
@@ -195,6 +197,7 @@ public class WebDisplayBridge extends DisplayBridge {
         webServer = serverBuilder.build();
         try {
             webServer.start();
+            WebFlutterServer.carryPortAcrossRelaunch(webServer.getPort());
             if (isChromium) {
                 try {
                     chromiumLauncher = new ChromiumStandaloneLauncher();
@@ -207,6 +210,8 @@ public class WebDisplayBridge extends DisplayBridge {
                     e.printStackTrace();
                     webServer.launchBrowser();
                 }
+            } else if (webServer.servesRelaunchedPage()) {
+                launchBrowserUnlessThePageReturns(webServer);
             } else {
                 webServer.launchBrowser();
             }
@@ -218,6 +223,27 @@ public class WebDisplayBridge extends DisplayBridge {
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
         dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
+    }
+
+    /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */
+    private static final long RETURNING_PAGE_WAIT_MS = 5_000;
+
+    /**
+     * The page the previous JVM served reloads into this one when it is still open, so a browser is
+     * only opened when no page asks within the wait: the user had closed it.
+     */
+    private static void launchBrowserUnlessThePageReturns(WebFlutterServer server) {
+        Thread waiter = new Thread(() -> {
+            try {
+                if (!server.awaitReturningPage(RETURNING_PAGE_WAIT_MS)) server.launchBrowser();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.io.IOException e) {
+                System.err.println("[WebDisplayBridge] Could not open a browser on " + server.getApplicationUrl() + ": " + e);
+            }
+        }, "relaunch-browser");
+        waiter.setDaemon(true);
+        waiter.start();
     }
 
     /**
@@ -283,9 +309,9 @@ public class WebDisplayBridge extends DisplayBridge {
     }
 
     @Override
-    protected boolean ownsWindow(Shell shell) {
+    protected boolean windowEligible(Shell shell) {
         if (shell != null && rejectedShellWindows.contains((long) shell.hashCode())) return false;
-        return super.ownsWindow(shell);
+        return super.windowEligible(shell);
     }
 
     @Override
@@ -542,41 +568,11 @@ public class WebDisplayBridge extends DisplayBridge {
      * A refreshed browser client has reconnected and re-sent ClientReady within the grace window: it was
      * a refresh, not a close, so cancel the deferred tab-close armed by {@link #scheduleDeferredClose}.
      */
+    // A refreshed client paints nothing it is not asked for: each control's GC overlay asks for its
+    // first paint once it is listening, so a paint fired here, before that, would only be repeated.
     @Override
     protected void onDisplayClientReady(boolean first) {
         cancelDeferredClose();
-        // On refresh, a fresh client reconnects with the widget-tree state but not the one-shot GC
-        // paints Java already fired — re-fire them so custom-drawn content isn't blank.
-        if (!first) {
-            refirePaintsForFreshClient();
-        }
-    }
-
-    /** Re-fire SWT.Paint for every custom-painted control in the tree, on the Display thread. */
-    private void refirePaintsForFreshClient() {
-        DartDisplay display = forDisplay;
-        if (display == null) return;
-        Display api = display.getApi();
-        if (api == null || api.isDisposed()) return;
-        api.asyncExec(() -> {
-            if (api.isDisposed()) return;
-            for (Shell shell : api.getShells()) {
-                refirePaints(shell);
-            }
-        });
-    }
-
-    private void refirePaints(Control c) {
-        if (c == null || c.isDisposed()) return;
-        // Only paint-listening controls emit GC ops; skip the rest to avoid needless GC churn.
-        if (c.isListening(SWT.Paint) && c.getImpl() instanceof DartControl) {
-            ControlHelper.paint((DartControl) c.getImpl());
-        }
-        if (c instanceof Composite) {
-            for (Control child : ((Composite) c).getChildren()) {
-                refirePaints(child);
-            }
-        }
     }
 
     private void onClientWindowClosed() {
@@ -650,6 +646,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
+        noteBoundsSet(control);
         if (!isChromiumWindow(control) || bounds == null)
             return;
         // The main shell is slaved to the Chromium viewport: applyClientViewport()/setVisible() resize

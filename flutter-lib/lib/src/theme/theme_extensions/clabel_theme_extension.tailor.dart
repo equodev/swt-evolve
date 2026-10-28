@@ -23,6 +23,7 @@ mixin _$CLabelThemeExtensionTailorMixin
   TextAlign get textAlign;
   MainAxisAlignment get mainAxisAlignment;
   CrossAxisAlignment get crossAxisAlignment;
+  double get minTextContrast;
 
   @override
   CLabelThemeExtension copyWith({
@@ -38,6 +39,7 @@ mixin _$CLabelThemeExtensionTailorMixin
     TextAlign? textAlign,
     MainAxisAlignment? mainAxisAlignment,
     CrossAxisAlignment? crossAxisAlignment,
+    double? minTextContrast,
   }) {
     return CLabelThemeExtension(
       primaryTextColor: primaryTextColor ?? this.primaryTextColor,
@@ -52,6 +54,7 @@ mixin _$CLabelThemeExtensionTailorMixin
       textAlign: textAlign ?? this.textAlign,
       mainAxisAlignment: mainAxisAlignment ?? this.mainAxisAlignment,
       crossAxisAlignment: crossAxisAlignment ?? this.crossAxisAlignment,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -92,6 +95,7 @@ mixin _$CLabelThemeExtensionTailorMixin
       crossAxisAlignment: t < 0.5
           ? crossAxisAlignment
           : other.crossAxisAlignment,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -141,6 +145,10 @@ mixin _$CLabelThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               crossAxisAlignment,
               other.crossAxisAlignment,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -160,6 +168,7 @@ mixin _$CLabelThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(textAlign),
       const DeepCollectionEquality().hash(mainAxisAlignment),
       const DeepCollectionEquality().hash(crossAxisAlignment),
+      const DeepCollectionEquality().hash(minTextContrast),
     );
   }
 }
@@ -181,4 +190,5 @@ extension CLabelThemeExtensionBuildContextProps on BuildContext {
       cLabelThemeExtension.mainAxisAlignment;
   CrossAxisAlignment get crossAxisAlignment =>
       cLabelThemeExtension.crossAxisAlignment;
+  double get minTextContrast => cLabelThemeExtension.minTextContrast;
 }

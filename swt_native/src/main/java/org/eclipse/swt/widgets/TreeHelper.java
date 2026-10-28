@@ -4,6 +4,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.DartImage;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 
 import dev.equo.swt.FlutterBridge;
@@ -11,35 +12,180 @@ import dev.equo.swt.Serializer;
 
 public class TreeHelper {
 
-    // How far Flutter has scrolled the tree, in pixels. A Tree's rows are laid out and scrolled on
+    private TreeHelper() {
+    }
+
+    // How far Flutter has scrolled the tree, in pixels: down as y, and sideways as x, which a tree
+    // whose columns are wider than it does with H_SCROLL. A Tree's rows are laid out and scrolled on
     // the Dart side, so Java has no other way to know: without it every coordinate-to-row lookup
-    // counts from the first item of the model and resolves the wrong row on a scrolled tree.
+    // counts from the first item of the model and resolves the wrong row on a scrolled tree, and a
+    // click after scrolling sideways maps to the column that was there before.
     // Weak keys so a disposed Tree does not hold its entry.
-    private static final java.util.Map<DartTree, Integer> SCROLL_OFFSETS =
+    private static final java.util.Map<DartTree, org.eclipse.swt.graphics.Point> SCROLL_OFFSETS =
         java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
+    /**
+     * Flutter scrolled the tree. The row now at the top also becomes the item Flutter is asked to
+     * show at the top, so describing the tree again does not move it back to where the API last
+     * put it.
+     */
     public static void recordScrollOffset(DartTree tree, Event event) {
-        SCROLL_OFFSETS.put(tree, Math.max(0, event.y));
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int offset = Math.min(Math.max(0, event.y), maxScrollOffset(tree, rows.size(), itemHeight));
+        SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(Math.max(0, event.x), offset));
+        int row = offset / itemHeight;
+        tree.topItem = row < rows.size() ? rows.get(row) : null;
     }
 
     public static int scrollOffsetY(DartTree tree) {
-        Integer offset = SCROLL_OFFSETS.get(tree);
-        return offset == null ? 0 : offset;
+        org.eclipse.swt.graphics.Point offset = SCROLL_OFFSETS.get(tree);
+        return offset == null ? 0 : offset.y;
+    }
+
+    /** Cell bounds are in the tree's client area, as natively, so they move left by this much. */
+    public static int scrollOffsetX(DartTree tree) {
+        org.eclipse.swt.graphics.Point offset = SCROLL_OFFSETS.get(tree);
+        return offset == null ? 0 : offset.x;
+    }
+
+    private static void setScrollOffsetY(DartTree tree, int offset) {
+        SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(scrollOffsetX(tree), offset));
+    }
+
+    /** The row at the top of the tree, null when it has no rows. */
+    public static TreeItem getTopItem(DartTree tree) {
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        if (rows.isEmpty()) return null;
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
+        return rows.get(Math.min(offset / itemHeight, rows.size() - 1));
+    }
+
+    /** Scrolls so that {@code item} is the row at the top, as far as the rows below it allow. */
+    public static void setTopItem(DartTree tree, TreeItem item) {
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        int row = rows.indexOf(item);
+        if (row >= 0) scrollToRow(tree, rows, row);
+    }
+
+    /** Scrolls the least that shows all of {@code item}'s row; a row already shown does not scroll. */
+    public static void showItem(DartTree tree, TreeItem item) {
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        int row = rows.indexOf(item);
+        if (row < 0) return;
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int viewport = viewportHeight(tree);
+        int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
+        if (row * itemHeight < offset) {
+            scrollToRow(tree, rows, row);
+        } else if ((row + 1) * itemHeight > offset + viewport) {
+            scrollToRow(tree, rows, Math.max(0, row + 1 - Math.max(1, viewport / itemHeight)));
+        }
+    }
+
+    /** The tree was emptied: whatever comes next starts at the top. */
+    public static void resetScroll(DartTree tree) {
+        SCROLL_OFFSETS.remove(tree);
+        tree.topItem = null;
+    }
+
+    /**
+     * Flutter is told which item to bring to the top and clamps the distance itself; Java records the
+     * distance it will end at, so what the API reads back right away is where the tree will be.
+     */
+    private static void scrollToRow(DartTree tree, java.util.List<TreeItem> rows, int row) {
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        setScrollOffsetY(tree, Math.min(row * itemHeight, maxScrollOffset(tree, rows.size(), itemHeight)));
+        tree.topItem = rows.get(row);
+        tree.getValue().markDirty(VTree.TOP_ITEM);
+    }
+
+    /** The height the rows scroll in: Flutter's scroll bars float over the rows and take none of it. */
+    private static int viewportHeight(DartTree tree) {
+        return Math.max(0, tree.getBounds().height - tree.getHeaderHeight());
+    }
+
+    private static int maxScrollOffset(DartTree tree, int rowCount, int itemHeight) {
+        return Math.max(0, rowCount * itemHeight - viewportHeight(tree));
+    }
+
+    /** The selection Cocoa reports: each item once, in the order of the rows they show on. */
+    static TreeItem[] inRowOrder(DartTree tree, TreeItem[] items) {
+        java.util.LinkedHashSet<TreeItem> unique = new java.util.LinkedHashSet<>();
+        for (TreeItem item : items) {
+            if (item != null && !item.isDisposed()) unique.add(item);
+        }
+        if (unique.size() < 2) return unique.toArray(new TreeItem[0]);
+        java.util.List<TreeItem> rows = visibleItems(tree);
+        java.util.List<TreeItem> ordered = new java.util.ArrayList<>(unique.size());
+        for (TreeItem row : rows) {
+            if (unique.remove(row)) ordered.add(row);
+        }
+        ordered.addAll(unique);
+        return ordered.toArray(new TreeItem[0]);
+    }
+
+    static void setSelection(DartTree tree, TreeItem[] selection) {
+        if (!java.util.Arrays.equals(tree.selection, selection)) {
+            tree.selection = selection;
+            tree.getValue().markDirty(VTree.SELECTION);
+        }
+    }
+
+    /** Adds {@code item} to the selection of a multi-selection tree; a single-selection tree selects only it. */
+    public static void select(DartTree tree, TreeItem item) {
+        boolean multi = (tree.getApi().style & SWT.MULTI) != 0;
+        TreeItem[] current = multi ? tree.selection : new TreeItem[0];
+        TreeItem[] next = java.util.Arrays.copyOf(current, current.length + 1);
+        next[current.length] = item;
+        setSelection(tree, inRowOrder(tree, next));
+    }
+
+    public static void deselect(DartTree tree, TreeItem item) {
+        java.util.List<TreeItem> kept = new java.util.ArrayList<>(java.util.Arrays.asList(tree.selection));
+        if (kept.remove(item)) setSelection(tree, kept.toArray(new TreeItem[0]));
+    }
+
+    public static void deselectAll(DartTree tree) {
+        setSelection(tree, new TreeItem[0]);
+    }
+
+    /** Selects every row the tree shows: the children of a collapsed item are not rows. */
+    public static void selectAll(DartTree tree) {
+        setSelection(tree, visibleItems(tree).toArray(new TreeItem[0]));
+    }
+
+    /**
+     * Inserts the column created at {@code index} into a column order the application set: Cocoa
+     * shows a new column at the position of its index, and shifts the indexes after it.
+     */
+    public static void insertColumnOrder(DartTree tree, int index) {
+        int[] order = tree.columnOrder;
+        int count = tree.columnCount;
+        if (order.length != count - 1 || count < 2) return;
+        int[] next = new int[count];
+        for (int i = 0, j = 0; i < count; i++) {
+            next[i] = i == index ? index : (order[j] >= index ? order[j++] + 1 : order[j++]);
+        }
+        tree.columnOrder = next;
+        tree.getValue().markDirty(VTree.COLUMN_ORDER);
+    }
+
+    /**
+     * The first column was disposed: the column that takes its place is left aligned, as Win32 and GTK
+     * do and as the first column always is.
+     */
+    public static void leftAlignTheFirstColumn(DartTree tree) {
+        if (tree.columnCount == 0) return;
+        TreeColumn first = tree.columns[0];
+        first.style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        first.style |= SWT.LEFT;
+        ((DartTreeColumn) first.getImpl()).getValue().markDirty(VTreeColumn.ALIGNMENT);
     }
 
     /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */
     public static final int EMPTINESS_CHANGED = 56;
-
-    public static TreeItem[] collectAllItems(DartTree dartTree) {
-        java.util.List<TreeItem> result = new java.util.ArrayList<>();
-        TreeItem[] rootItems = dartTree.getApi().getItems();
-        for (TreeItem rootItem : rootItems) {
-            if (rootItem != null) {
-                collectAllItemsRecursive(rootItem, result);
-            }
-        }
-        return result.toArray(new TreeItem[result.size()]);
-    }
 
     /**
      * Sends a selection event for the tree item at the specified visual index.
@@ -56,12 +202,39 @@ public class TreeHelper {
             return;
         }
 
+        TreeItem[] selection = selectionOf(tree, event, item);
+        event.segments = null;
         event.item = item;
         if (event.detail == SWT.CHECK) {
             item.setChecked(!item.getChecked());
         }
-        tree.setSelection(item);
+        // The row the user clicked is on screen already: selecting it must not scroll.
+        setSelection(tree, selection);
         tree.sendSelectionEvent(selectionType, event, true);
+    }
+
+    /**
+     * The selection a client event leaves the tree with. The client names the items it shows
+     * selected after the event in {@code segments}, by id: on a multi-selection tree a modifier click
+     * adds the clicked row to the selection or takes it out, and a Shift+click selects the rows from
+     * the anchor, so the selection is more than the row the event is about. A single-selection tree,
+     * or a client that names none, selects that row alone.
+     */
+    private static TreeItem[] selectionOf(DartTree tree, Event event, TreeItem item) {
+        if (event.segments == null || (tree.getApi().style & SWT.MULTI) == 0) {
+            return new TreeItem[] {item};
+        }
+        // A row just picked is shown; one selected before may have been hidden since by collapsing
+        // its parent, and is still in the selection the tree holds.
+        java.util.Map<Long, TreeItem> byId = new java.util.HashMap<>();
+        for (TreeItem row : visibleItems(tree)) byId.put(FlutterBridge.id(row), row);
+        for (TreeItem selected : tree.selection) byId.put(FlutterBridge.id(selected), selected);
+        java.util.List<TreeItem> picked = new java.util.ArrayList<>(event.segments.length);
+        for (int id : event.segments) {
+            TreeItem selected = byId.get((long) id);
+            if (selected != null) picked.add(selected);
+        }
+        return inRowOrder(tree, picked.toArray(new TreeItem[0]));
     }
 
     public static void sendExpand(DartTree dartTree, Event event, boolean expand) {
@@ -247,30 +420,6 @@ public class TreeHelper {
         }
     }
 
-    public static int getNonNullItemCount(DartTree dartTree) {
-        TreeItem[] items = dartTree.getItems();
-        if (items == null) return 0;
-        int count = 0;
-        for (TreeItem item : items) {
-            if (item != null) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static void collectAllItemsRecursive(TreeItem item, java.util.List<TreeItem> result) {
-        if (item != null) {
-            result.add(item);
-            TreeItem[] childItems = item.getItems();
-            for (TreeItem childItem : childItems) {
-                if (childItem != null) {
-                    collectAllItemsRecursive(childItem, result);
-                }
-            }
-        }
-    }
-
     /**
      * The row a client event is about. The client names it by id: its row index counts the rows it
      * shows, and the tree may have been rebuilt since (a filter refresh), putting another item at
@@ -292,7 +441,7 @@ public class TreeHelper {
      * @return the TreeItem at the specified index, or null if invalid
      */
     private static TreeItem getVisibleItemAtIndex(DartTree tree, int index) {
-        if (tree == null || index < 0) {
+        if (index < 0) {
             return null;
         }
 
@@ -306,35 +455,32 @@ public class TreeHelper {
         return visibleItems.get(index);
     }
 
-    /** The items the tree shows, in visual order. */
-    private static java.util.List<TreeItem> visibleItems(DartTree tree) {
+    /** The items the tree shows as rows, in row order: the roots and the children of every expanded item. */
+    static java.util.List<TreeItem> visibleItems(DartTree tree) {
         java.util.List<TreeItem> visibleItems = new java.util.ArrayList<>();
         for (TreeItem rootItem : tree.getApi().getItems()) {
-            if (rootItem != null) {
-                collectVisibleItemsRecursive(rootItem, visibleItems);
-            }
+            collectVisibleItemsRecursive(rootItem, visibleItems);
         }
         return visibleItems;
     }
 
     /**
      * Recursively collects only visible (expanded) tree items in visual order.
-     * This mimics the behavior of how items appear in the tree UI.
+     * This mimics the behavior of how items appear in the tree UI. A released item is skipped: while a Tree
+     * is being disposed its items go one by one, and a Dispose listener of a later item (a TreeCursor moving
+     * to its neighbour) still shows that neighbour.
      *
      * @param item   the current tree item
      * @param result the list to collect visible items into
      */
     private static void collectVisibleItemsRecursive(TreeItem item, java.util.List<TreeItem> result) {
-        if (item != null) {
-            result.add(item);
-            // Only add children if this item is expanded
-            if (item.getExpanded()) {
-                TreeItem[] childItems = item.getItems();
-                for (TreeItem childItem : childItems) {
-                    if (childItem != null) {
-                        collectVisibleItemsRecursive(childItem, result);
-                    }
-                }
+        if (item.isDisposed()) {
+            return;
+        }
+        result.add(item);
+        if (item.getExpanded()) {
+            for (TreeItem childItem : item.getItems()) {
+                collectVisibleItemsRecursive(childItem, result);
             }
         }
     }
@@ -665,7 +811,7 @@ public class TreeHelper {
                     if (drawn != null)
                         text.append(drawn);
                 };
-                dartGc.imageCapture = drawn -> image[0] = drawn;
+                dartGc.imageCapture = drawn -> image[0] = GraphicsUtils.copyImage(item.getDisplay(), drawn);
                 Event event = new Event();
                 event.item = item.getApi();
                 event.index = i;

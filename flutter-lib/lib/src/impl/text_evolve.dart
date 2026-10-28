@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
@@ -14,14 +15,16 @@ import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
-import 'utils/hover_arbiter.dart';
+import 'utils/key_edit_order.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
+import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
+import 'control_evolve.dart' show ControlImpl;
 
 class TextImpl<T extends TextSwt, V extends VText>
-    extends ScrollableImpl<T, V> with PendingTextEchoes {
+    extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport {
   late TextEditingController _controller;
 
   final FocusNode _focusNode = FocusNode();
@@ -38,10 +41,11 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller = TextEditingController(text: state.text);
     _controller.addListener(_updateCaretPosition);
     _focusNode.addListener(_handleFocusChange);
+    KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping);
     _modifyGate.attach(state.swt, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateCaretPosition());
+    WidgetsBinding.instance.addPostFrameCallback((_) => fromJava(_updateCaretPosition));
   }
 
   /// Holds an edit while the field is vetoable: the proposal goes to Java as the Modify, the
@@ -70,6 +74,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         ..text = newValue.text
         ..start = newValue.selection.baseOffset,
     );
+    KeyEditOrder.instance.editApplied();
     return oldValue;
   }
 
@@ -81,16 +86,18 @@ class TextImpl<T extends TextSwt, V extends VText>
     if (!mounted) return;
     final authoritative = state.text ?? '';
     if (_controller.text != authoritative) {
-      _controller.value = _controller.value.copyWith(
-        text: authoritative,
-        selection: TextSelection.collapsed(offset: authoritative.length),
-        composing: TextRange.empty,
-      );
+      fromJava(() => _controller.value = _controller.value.copyWith(
+            text: authoritative,
+            selection: TextSelection.collapsed(offset: authoritative.length),
+            composing: TextRange.empty,
+          ));
     }
   }
 
   @override
-  void extraSetState() {
+  void extraSetState() => fromJava(_applyJavaState);
+
+  void _applyJavaState() {
     String newText = state.text ?? "";
     // A Java value push may be the echo of a Modify this field sent moments ago. If the user
     // has typed further in the meantime, resetting the controller to the echoed (older) text
@@ -111,11 +118,12 @@ class TextImpl<T extends TextSwt, V extends VText>
       );
 
       if (state.selection != null) {
-        final newSelection = TextSelection(
-          baseOffset: state.selection!.x,
-          extentOffset: state.selection!.y,
+        // The selection Java last sent may belong to a longer text.
+        final end = newText.length;
+        _controller.selection = TextSelection(
+          baseOffset: state.selection!.x.clamp(0, end),
+          extentOffset: state.selection!.y.clamp(0, end),
         );
-        _controller.selection = newSelection;
       }
     }
 
@@ -161,23 +169,14 @@ class TextImpl<T extends TextSwt, V extends VText>
       isMultiLine,
       hasValidBounds,
     );
-    final hoverDepth = ControlNestingScope.depthOf(context);
     return tagSemantics(
       wrapDnd(
         // When a whole-tree Display forwards keys from its single top-level handler, that handler
         // already delivers shortcuts to Java while a Text has focus, so skip the per-field wrapper
         // to avoid double-dispatch. In the embedded backend (no whole-tree Display) it is the only
         // path — Text builds its own field via [wrapDnd] and never routes through [ControlImpl.wrap].
-        // MouseRegion here mirrors ControlImpl.wrap(), which Text also never routes through --
-        // otherwise MouseEnter/MouseExit (e.g. a hover highlighter) never fire on a Text.
-        MouseRegion(
-          onEnter: (_) => HoverExclusivityArbiter.instance
-              .setActive(this, hoverDepth, true),
-          onExit: (_) => HoverExclusivityArbiter.instance
-              .setActive(this, hoverDepth, false),
-          child: displayLevelKeyForwardingActive
-              ? fieldWrapper
-              : _forwardShortcutKeys(fieldWrapper),
+        trackPointer(
+          displayLevelKeyForwardingActive ? fieldWrapper : _forwardShortcutKeys(fieldWrapper),
         ),
       ),
     );
@@ -249,7 +248,7 @@ class TextImpl<T extends TextSwt, V extends VText>
             (!isSearch && b is OutlineInputBorder) ? b.copyWith(gapPadding: 0.0) : b!;
         decoration = decoration.copyWith(
           isDense: false,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 3.0),
+          contentPadding: singleLineTextInset,
           border: noGap(decoration.border),
           enabledBorder: noGap(decoration.enabledBorder),
           focusedBorder: noGap(decoration.focusedBorder),
@@ -260,10 +259,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         );
       } else {
         decoration = decoration.copyWith(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 3.0,
-            vertical: 4.0,
-          ),
+          contentPadding: singleLineTextInset.copyWith(top: 4.0, bottom: 4.0),
         );
       }
     }
@@ -272,6 +268,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       foreground: state.foreground,
       defaultColor: widgetTheme.textColor,
       context: context,
+      minContrast: widgetTheme.minTextContrast,
     );
 
     final textField = TextField(
@@ -300,27 +297,49 @@ class TextImpl<T extends TextSwt, V extends VText>
       onSubmitted: _handleSubmitted,
       onTapOutside: (_) {},
       cursorColor: cursorColor,
+      // No Flutter toolbar on a right-click: SWT's edit field opens the platform's own menu, which an
+      // application Menu replaces and MenuDetect can cancel, and Flutter's toolbar follows neither.
+      contextMenuBuilder: null,
     );
     return DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
       text: state.text ?? '',
+      // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
+      // as a selection report, through _updateCaretPosition.
       onWordSelected: (start, end) {
         state.selection = VPoint()
           ..x = start
           ..y = end;
-        widget.sendMouseMouseDoubleClick(
-          state,
-          VEvent()
-            ..button = 1
-            ..count = 2
-            ..start = start
-            ..end = end,
-        );
       },
-      child: textField,
+      child: Listener(
+        onPointerDown: (e) {
+          if (!ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(e.buttons))) return;
+          // A field that never held a caret has Java's, which the focus this press brings would
+          // otherwise move to the end.
+          final selection = _controller.selection;
+          _selectionBeforeSecondary = selection.isValid
+              ? selection
+              : TextSelection.collapsed(
+                  offset: (state.caretPosition ?? 0).clamp(0, _controller.text.length));
+        },
+        onPointerUp: (_) {
+          final before = _selectionBeforeSecondary;
+          _selectionBeforeSecondary = null;
+          if (before == null) return;
+          // Flutter's field places the caret on a secondary tap, which the gesture delivers after
+          // this release; a native Text leaves it where it was, as on Win32 and GTK.
+          scheduleMicrotask(() {
+            if (mounted && _controller.selection != before) _controller.selection = before;
+          });
+        },
+        child: textField,
+      ),
     );
   }
+
+  /// The selection when a secondary press began, put back once its click is done.
+  TextSelection? _selectionBeforeSecondary;
 
   Widget _buildTextFieldWrapper(
     Widget textField,
@@ -369,7 +388,10 @@ class TextImpl<T extends TextSwt, V extends VText>
       ..text = value
       ..start = _controller.selection.baseOffset;
     widget.sendModifyModify(state, e);
+    KeyEditOrder.instance.editApplied();
   }
+
+  bool _takesTyping() => (state.editable ?? true) && !hasStyle(state.style, SWT.READ_ONLY);
 
   void _handleSubmitted(String value) {
     widget.sendSelectionDefaultSelection(state, null);
@@ -389,25 +411,16 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
   }
 
-  void _updateCaretPosition() {
-    if (!mounted) return;
+  @override
+  int? get reportedCaret => state.caretPosition;
 
-    // Get the character index position of the cursor
-    final cursorOffset = _controller.selection.baseOffset;
-    if (cursorOffset < 0) return;
+  @override
+  set reportedCaret(int? caret) => state.caretPosition = caret;
 
-    // Only update if position actually changed
-    if (state.caretPosition == null || state.caretPosition != cursorOffset) {
-      state.caretPosition = cursorOffset;
+  @override
+  void sendCaretReport(VEvent event) => widget.sendVerifyVerify(state, event);
 
-      // Send the caret position to Java via Verify event
-      var e = VEvent()
-        ..start = cursorOffset
-        ..end = cursorOffset
-        ..text = "";
-      widget.sendVerifyVerify(state, e);
-    }
-  }
+  void _updateCaretPosition() => reportCaret(_controller);
 
   @override
   void dispose() {
@@ -415,6 +428,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller.removeListener(_updateCaretPosition);
     _controller.dispose();
     _focusNode.removeListener(_handleFocusChange);
+    KeyEditOrder.instance.unregisterEditor(_focusNode);
     _focusNode.dispose();
     super.dispose();
   }

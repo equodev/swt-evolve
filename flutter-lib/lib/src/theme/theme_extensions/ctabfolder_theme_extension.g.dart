@@ -83,6 +83,7 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   tabContentBorderColor: const ColorConverter().fromJson(
     json['tabContentBorderColor'] as String,
   ),
+  outlineColor: const ColorConverter().fromJson(json['outlineColor'] as String),
   tabIconSize: (json['tabIconSize'] as num).toDouble(),
   tabCloseIconSize: (json['tabCloseIconSize'] as num).toDouble(),
   controlButtonSize: (json['controlButtonSize'] as num).toDouble(),
@@ -130,6 +131,7 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   chevronMenuItemPadding: const EdgeInsetsConverter().fromJson(
     json['chevronMenuItemPadding'] as Map<String, dynamic>,
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
@@ -202,6 +204,7 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   'tabContentBorderColor': const ColorConverter().toJson(
     instance.tabContentBorderColor,
   ),
+  'outlineColor': const ColorConverter().toJson(instance.outlineColor),
   'tabIconSize': instance.tabIconSize,
   'tabCloseIconSize': instance.tabCloseIconSize,
   'controlButtonSize': instance.controlButtonSize,
@@ -239,4 +242,5 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   'chevronMenuItemPadding': const EdgeInsetsConverter().toJson(
     instance.chevronMenuItemPadding,
   ),
+  'minTextContrast': instance.minTextContrast,
 };

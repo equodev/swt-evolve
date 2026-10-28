@@ -391,6 +391,13 @@ public class VStyledText extends VCanvas {
     public void setStyleIndex(int[] value) {
     }
 
+    public boolean getFixedLineHeight() {
+        return ((DartStyledText) impl).isFixedLineHeight();
+    }
+
+    public void setFixedLineHeight(boolean value) {
+    }
+
     public static final String ALIGNMENT = "alignment";
 
     public static final String ALWAYS_SHOW_SCROLL_BARS = "alwaysShowScrollBars";
@@ -408,6 +415,8 @@ public class VStyledText extends VCanvas {
     public static final String DOUBLE_CLICK_ENABLED = "doubleClickEnabled";
 
     public static final String EDITABLE = "editable";
+
+    public static final String FIXED_LINE_HEIGHT = "fixedLineHeight";
 
     public static final String HORIZONTAL_PIXEL = "horizontalPixel";
 
@@ -543,6 +552,9 @@ public class VStyledText extends VCanvas {
                 return;
             case "styleIndex":
                 Serializer.writeKeyValue(writer, "styleIndex", getStyleIndex());
+                return;
+            case "fixedLineHeight":
+                Serializer.writeKeyValue(writer, "fixedLineHeight", getFixedLineHeight());
                 return;
         }
         super.writeProperty(writer, key);

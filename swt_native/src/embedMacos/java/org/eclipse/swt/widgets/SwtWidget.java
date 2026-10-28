@@ -169,7 +169,7 @@ public abstract class SwtWidget implements IWidget {
      */
     public SwtWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
+        getApi().checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();
@@ -1100,7 +1100,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;
@@ -1250,7 +1250,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
+        return SwtDisplay.isValidClass(getApi().getClass());
     }
 
     boolean isValidThread() {
@@ -1595,7 +1595,8 @@ public abstract class SwtWidget implements IWidget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
-    public void removeListener(int eventType, SWTEventListener listener) {
+    @SuppressWarnings("removal")
+    public void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -1961,11 +1962,11 @@ public abstract class SwtWidget implements IWidget {
         long modifierFlags = nsEvent.modifierFlags();
         if ((modifierFlags & OS.NSAlternateKeyMask) != 0)
             event.stateMask |= SWT.ALT;
-        if ((modifierFlags & OS.NSShiftKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagShift) != 0)
             event.stateMask |= SWT.SHIFT;
-        if ((modifierFlags & OS.NSControlKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagControl) != 0)
             event.stateMask |= SWT.CONTROL;
-        if ((modifierFlags & OS.NSCommandKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0)
             event.stateMask |= SWT.COMMAND;
         long state = NSEvent.pressedMouseButtons();
         if ((state & 0x1) != 0)

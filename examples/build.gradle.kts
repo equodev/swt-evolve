@@ -127,6 +127,21 @@ tasks.withType<JavaExec>().configureEach {
     }
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
             "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
+    // Forwarded when the caller sets them, because -D on the Gradle command line sets a property
+    // on the Gradle JVM, where nothing reads it, and the run then looks silently unconfigured.
+    // These are the switches a reproduction is driven with: `workbench.plainSwing` runs the
+    // workbench as an ordinary SWT_AWT application, which is the oracle every defect reproduced
+    // there is measured against, and `map.scriptedBandDrag` drives the gesture that found one.
+    for (name in listOf("workbench.plainSwing", "map.scriptedBandDrag", "map.statusFollowsPointer",
+            "tabs", "dev.equo.swing.traceFrames"))
+        System.getProperty(name)?.let { systemProperty(name, it) }
+    // And every switch of the two reproduction families by prefix rather than by name: `gl.` is
+    // the 3D-like canvas and its producer, `dev.equo.swing.nativeSurface` is the engine's own
+    // configuration of the route. Naming each one here meant a new switch looked ignored until
+    // somebody remembered this list, which happened.
+    System.getProperties().stringPropertyNames()
+        .filter { it.startsWith("gl.") || it.startsWith("dev.equo.swing.nativeSurface") }
+        .forEach { systemProperty(it, System.getProperty(it)) }
 }
 
 tasks.register<JavaExec>("runExample") {
@@ -205,12 +220,7 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
         // Forward the theming switches, so a snippet can be run the way a themed product runs:
         // an application that paints itself (e4 CSS) needs its own colors/fonts, not Evolve's theme.
-        // theme_color_* is a prefix -- one property per widget -- so it is matched, not listed.
-        // swt.autoScale picks the zoom the UI is drawn at, and updateOnRuntime is what rejects a mode
-        // monitor-specific scaling cannot honour — so a snippet can be run at a zoom of its own.
-        for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts", "swt.evolve.force_theme",
-                "swt.evolve.theme_color", "swt.evolve.theme_name",
-                "swt.evolve.preserve_icon_colors", "swt.evolve.disable_evolve_icons",
+        for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts",
                 // Which shells get a window of their own -- see dev.equo.swt.WindowPolicy. Forwarded
                 // so MultiWindowSnippet can be run under each policy without editing anything.
                 "dev.equo.swt.windows", "dev.equo.swt.windows.dialogs", "dev.equo.swt.windows.modal",
@@ -224,11 +234,10 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
                 "swt.autoScale", "swt.autoScale.updateOnRuntime")) {
             System.getProperty(name)?.let { systemProperty(name, it) }
         }
+        // Every swt.evolve.* config flag (theme_color_* included), so a snippet runs under any of them.
         System.getProperties().stringPropertyNames()
-            .filter { it.startsWith("swt.evolve.theme_color_") }
+            .filter { it.startsWith("swt.evolve.") }
             .forEach { systemProperty(it, System.getProperty(it)) }
-        // Forward the double-click window (ms) an external driver needs — see ConfigFlags#double_click_timeout_ms.
-        System.getProperty("swt.evolve.double_click_timeout_ms")?.let { systemProperty("swt.evolve.double_click_timeout_ms", it) }
         // -PdartDebug: run the Dart/Flutter rendering side in debug so its Dart VM Service is available
         // for DTD/MCP + flutter_driver. One flag for both render modes: desk builds the frameworks with
         // --debug (JIT) and FlutterLibraryLoader loads the Debug build-dir; web serves via a live
@@ -369,4 +378,29 @@ tasks.register<JavaExec>("runEmbedExample") {
 
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+}
+
+// The oracle runs with no `-XstartOnFirstThread`: that flag is SWT's on macOS and it is exactly
+// what AWT cannot live with — Swing's own toolkit wants the primordial thread for AppKit, and with
+// the flag set it spins in `LWCToolkit.initAppkit` and never opens a window. A pure-Swing snippet
+// is the one example here that must not get it.
+tasks.register<JavaExec>("runPlainSwing") {
+    group = "examples"
+    description = "Run a plain-Swing example with no SWT flags. Usage: -PmainClass=…"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set(project.findProperty("mainClass")?.toString()
+            ?: "dev.equo.swing.PlainSwingWorkbenchSnippet")
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
+}
+
+
+// The oracle is launched with `java` directly, not through this task: a Gradle JavaExec does not
+// hand the application the primordial thread, and AWT on macOS spins in `LWCToolkit.initAppkit`
+// waiting for it. This prints what to put on `-cp`.
+tasks.register("printClasspath") {
+    group = "examples"
+    description = "The runtime class path, for launching a plain-Swing example with java directly."
+    val cp = sourceSets["main"].runtimeClasspath
+    doLast { println(cp.asPath) }
 }

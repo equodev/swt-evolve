@@ -25,8 +25,10 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
 
 const _labels = ['Cube 1', 'Map 2', 'Section 3'];
 
-VCTabFolder _folder() => VCTabFolder()
+VCTabFolder _folder({bool controls = false}) => VCTabFolder()
   ..id = 1
+  ..minimizeVisible = controls
+  ..maximizeVisible = controls
   ..style = SWT.NONE
   ..enabled = true
   ..selection = 0
@@ -47,7 +49,7 @@ void main() {
   });
   tearDown(() => DoubleTapDetector.clock = DateTime.now);
 
-  Future<List<VEvent>> pumpFolder(WidgetTester tester) async {
+  Future<List<VEvent>> pumpFolder(WidgetTester tester, {bool controls = false}) async {
     final doubleClicks = <VEvent>[];
     await tester.pumpWidget(EvolveApp(
       theme: ThemeMode.light,
@@ -55,7 +57,7 @@ void main() {
         width: 500,
         height: 240,
         child: _CapturingCTabFolderSwt(
-          value: _folder(),
+          value: _folder(controls: controls),
           onEvent: (ev, payload) {
             if (ev == 'Mouse/MouseDoubleClick') doubleClicks.add(payload ?? VEvent());
           },
@@ -121,7 +123,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   });
 
-  testWidgets('a secondary-button double-click is not reported as a double-click',
+  // GTK and Win32 report a double click of any button; the workbench and CTabFolder act on button 1 only.
+  testWidgets('a secondary-button double-click is reported with its button',
       (WidgetTester tester) async {
     final doubleClicks = await pumpFolder(tester);
 
@@ -129,8 +132,57 @@ void main() {
     await click(tester, tab, buttons: kSecondaryButton);
     await click(tester, tab, buttons: kSecondaryButton);
 
+    expect(doubleClicks, hasLength(1));
+    expect(doubleClicks.single.button, 3);
+
+    await tester.pump(const Duration(milliseconds: 400));
+  });
+
+  // A native CTabFolder draws its minimize and maximize buttons as a ToolBar of its own, which takes
+  // the press; a workbench that hears the folder's MouseDoubleClick there maximizes the part.
+  testWidgets('double-clicking the maximize button reports no MouseDoubleClick on the folder',
+      (WidgetTester tester) async {
+    final doubleClicks = await pumpFolder(tester, controls: true);
+
+    final button = tester.getCenter(find.byIcon(Icons.fullscreen));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: button);
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 2; i++) {
+      await mouse.down(button);
+      await tester.pump();
+      await mouse.up();
+      await tester.pump();
+      fake = fake.add(const Duration(milliseconds: 60));
+    }
+    await mouse.removePointer();
+
     expect(doubleClicks, isEmpty);
 
     await tester.pump(const Duration(milliseconds: 400));
+  });
+
+  testWidgets('a click on a tab focuses no CTabFolder', (WidgetTester tester) async {
+    final focus = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 500,
+        height: 240,
+        child: _CapturingCTabFolderSwt(
+          value: _folder(),
+          onEvent: (ev, payload) {
+            if (ev.startsWith('Focus/')) focus.add(ev);
+          },
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    while (tester.takeException() != null) {}
+
+    await click(tester, tester.getCenter(find.text(_labels[1])));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(focus, isEmpty);
   });
 }

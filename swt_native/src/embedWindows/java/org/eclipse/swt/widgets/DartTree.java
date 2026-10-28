@@ -604,6 +604,7 @@ public class DartTree extends DartComposite implements ITree {
         setScrollWidth();
         updateImageList();
         updateScrollBar();
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     /**
@@ -669,6 +670,7 @@ public class DartTree extends DartComposite implements ITree {
         items = new TreeItem[4];
         columns = new TreeColumn[4];
         cachedItemCount = -1;
+        getValue().markDirty(VTree.COLUMNS);
         getValue().markDirty(VTree.ITEMS);
     }
 
@@ -866,6 +868,7 @@ public class DartTree extends DartComposite implements ITree {
             dirty();
         }
         ;
+        getValue().markDirty(VTree.COLUMNS);
     }
 
     void destroyItem(TreeItem item, long hItem) {
@@ -1346,7 +1349,8 @@ public class DartTree extends DartComposite implements ITree {
         if (index < 0 || index >= flat.size())
             return null;
         TreeItem item = flat.get(index);
-        if (TreeSizes.isOverExpander(this, item, point.x))
+        // Likewise across: the expander sits where the rows put it before scrolling sideways.
+        if (TreeSizes.isOverExpander(this, item, point.x + TreeHelper.scrollOffsetX(this)))
             return null;
         return item;
     }
@@ -1535,7 +1539,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public TreeItem[] getSelection() {
         checkWidget();
-        return this.selection;
+        return this.selection.clone();
     }
 
     /**
@@ -2031,7 +2035,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, show)) {
+        if (this.linesVisible != show) {
             getValue().markDirty(VTree.LINES_VISIBLE);
         }
         if (linesVisible == show)
@@ -2092,9 +2096,7 @@ public class DartTree extends DartComposite implements ITree {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        items = TreeHelper.collectAllItems(this);
-        selection = items;
-        getValue().markDirty(VTree.ITEMS);
+        TreeHelper.selectAll(this);
     }
 
     Event sendMeasureItemEvent(TreeItem item, int index, long hDC, int detail) {
@@ -2186,6 +2188,9 @@ public class DartTree extends DartComposite implements ITree {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
+            getValue().markDirty(VTree.COLUMN_ORDER);
+        }
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -2227,6 +2232,9 @@ public class DartTree extends DartComposite implements ITree {
     void setCheckboxImageList() {
         if ((getApi().style & SWT.CHECK) == 0)
             return;
+        Control control = findBackgroundControl();
+        if (control == null)
+            control = this.getApi();
     }
 
     @Override
@@ -2272,12 +2280,12 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._headerBackground, newValue)) {
             getValue().markDirty(VTree.HEADER_BACKGROUND);
         }
-        checkWidget();
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -2312,9 +2320,12 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        checkWidget();
+        if (!java.util.Objects.equals(this._headerForeground, newValue)) {
+            getValue().markDirty(VTree.HEADER_FOREGROUND);
+        }
         int pixel = -1;
         if (color != null) {
             if (color.isDisposed())
@@ -2349,10 +2360,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setHeaderVisible(boolean show) {
         boolean newValue = show;
-        if (!java.util.Objects.equals(this.headerVisible, newValue)) {
+        checkWidget();
+        if (this.headerVisible != newValue) {
             getValue().markDirty(VTree.HEADER_VISIBLE);
         }
-        checkWidget();
         if (show) {
         } else {
         }
@@ -2472,10 +2483,10 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
-        checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = items.length;
@@ -2586,6 +2597,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortColumn(TreeColumn column) {
         checkWidget();
+        if (!java.util.Objects.equals(this.sortColumn, column)) {
+            getValue().markDirty(VTree.SORT_COLUMN);
+        }
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (sortColumn != null && !sortColumn.isDisposed()) {
@@ -2612,6 +2626,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortDirection(int direction) {
         checkWidget();
+        if (this.sortDirection != direction) {
+            getValue().markDirty(VTree.SORT_DIRECTION);
+        }
         if ((direction & (SWT.UP | SWT.DOWN)) == 0 && direction != SWT.NONE)
             return;
         sortDirection = direction;
@@ -2643,6 +2660,9 @@ public class DartTree extends DartComposite implements ITree {
     public void setTopItem(TreeItem item) {
         TreeItem newValue = item;
         checkWidget();
+        if (!java.util.Objects.equals(this.topItem, newValue)) {
+            getValue().markDirty(VTree.TOP_ITEM);
+        }
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
@@ -3161,7 +3181,7 @@ public class DartTree extends DartComposite implements ITree {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTree.EDITORS);
         }
     }

@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.*;
 
@@ -17,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 
@@ -30,7 +32,7 @@ public class Config {
     static Impl statusBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.statusbar", defaultImpl.name()));
     static Impl mainCompositeImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maincomposite", defaultImpl.name()));
 
-    private static final String os = System.getProperty("os.name").toLowerCase();
+    private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
     static final Map<Class<?>, Impl> equoEnabled;
     static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
     static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
@@ -747,11 +749,13 @@ public class Config {
     }
 
     /**
-     * Hosts a Swing scene on the Flutter surface, or null when this fragment was built without the
-     * Swing bridge (see {@link Jdk9}). SWT_AWT calls this and falls back to native reparenting.
+     * Hosts a Swing scene on the Flutter surface. SWT_AWT calls this for a Dart-backed composite,
+     * which has no native window for its own embedding to reparent a frame into — so when the bridge
+     * cannot run here (see {@link Jdk9}) this fails the way SWT_AWT does on a JRE that cannot embed,
+     * with the reason as the error's cause.
      */
     public static java.awt.Frame newSwingFrame(org.eclipse.swt.widgets.Composite parent) {
-        if (Jdk9.SWING_HOST_NEW_FRAME == null) return null;
+        if (Jdk9.SWING_HOST_NEW_FRAME == null) return swingUnavailable(Jdk9.swingHostFailure(false));
         try {
             return (java.awt.Frame) Jdk9.SWING_HOST_NEW_FRAME.invoke(null, parent);
         } catch (java.lang.reflect.InvocationTargetException e) {
@@ -760,8 +764,15 @@ public class Config {
             if (cause instanceof Error) throw (Error) cause;
             throw new RuntimeException(cause);
         } catch (IllegalAccessException e) {
-            return null;
+            return swingUnavailable(e);
         }
+    }
+
+    /** Throws SWT_AWT's error for a JRE that cannot embed; never returns. */
+    private static java.awt.Frame swingUnavailable(Throwable cause) {
+        SWT.error(SWT.ERROR_NOT_IMPLEMENTED, cause, " [Swing cannot be embedded here: the SWT Evolve "
+                + "Swing bridge is not in this build or cannot run on this Java runtime]");
+        return null;
     }
 
     private static boolean isInStackTrace(String className, String methodName) {
@@ -827,9 +838,32 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
+    /** The double-click time when none is configured: Win32's and Cocoa's default. */
+    public static final int DOUBLE_CLICK_TIME_MS = 500;
+
+    /** The hover and tooltip delay when none is configured: Cocoa SWT's getToolTipTime(). */
+    public static final int HOVER_DELAY_MS = 560;
+
+    /** How long the pointer rests before MouseHover and the tooltip, in milliseconds; Java and the client share it. */
+    public static int hoverDelay() {
+        int ms = getConfigFlags().hover_delay_ms;
+        return ms > 0 ? ms : HOVER_DELAY_MS;
+    }
+
+    /** The double-click time both Java and the client use, in milliseconds. */
+    public static int doubleClickTime() {
+        int ms = getConfigFlags().double_click_timeout_ms;
+        return ms > 0 ? ms : DOUBLE_CLICK_TIME_MS;
+    }
+
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
         return configFlags;
+    }
+
+    /** The locale numbers and dates are written in on desktop, where the JVM serves a single user. */
+    public static java.util.Locale formatLocale() {
+        return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
     }
 
     public static ConfigFlags getConfigFlags() {
@@ -838,6 +872,7 @@ public class Config {
             String eclipseThemeId = EclipseWorkspaceTheme.detectThemeId();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
+            configFlags.ctabfolder_tab_scroll = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_tab_scroll", "true"));
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
             configFlags.disable_evolve_icons = Boolean.getBoolean("swt.evolve.disable_evolve_icons");
@@ -850,10 +885,14 @@ public class Config {
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
+            configFlags.disable_swt_canvas_colors_by_class = canvasColorsByClassFromProperties();
+            configFlags.canvas_hover_fills_by_class = fillsByClassFromProperties(CANVAS_HOVER_FILLS_BY_CLASS);
+            configFlags.canvas_selection_fills_by_class = fillsByClassFromProperties(CANVAS_SELECTION_FILLS_BY_CLASS);
             // Drops what an application paints over a control through its GC, keeping only what the
             // control draws for itself: -Dswt.evolve.disable_control_gc_overlay=true
             configFlags.disable_control_gc_overlay = Boolean.getBoolean("swt.evolve.disable_control_gc_overlay");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
+            configFlags.use_swt_border = Boolean.getBoolean("swt.use_swt_border");
             configFlags.use_swt_font_colors = optionalBoolean(System.getProperty(USE_SWT_FONT_COLORS));
             configFlags.use_swt_font_colors_by_widget = fontColorsByWidgetFromProperties();
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));
@@ -896,20 +935,25 @@ public class Config {
             boolean desktopMode = ConfigFlags.isDesktopMode();
             String csdDefault = chromiumMode ? "toolbar" : desktopMode ? "overlay" : "false";
             configFlags.csd_placement = System.getProperty(
-                    "dev.equo.swt.csd", csdDefault).toLowerCase();
+                    "dev.equo.swt.csd", csdDefault).toLowerCase(java.util.Locale.ROOT);
             // OS picks the native control styling; override to test other platforms:
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
             configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
+            configFlags.bigger_icon_size = Boolean.getBoolean("swt.evolve.bigger_icon_size");
+            configFlags.transparent_menu_check_box = Boolean.getBoolean("swt.evolve.transparent_menu_check_box");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
             //   -Ddev.equo.swt.csd.maximize=direct|bounds|native|fullscreen
             configFlags.csd_maximize = System.getProperty("dev.equo.swt.csd.maximize", "direct");
-            // Double-click pairing window (ms) for the Flutter-side DoubleTapDetector. Unset/0 keeps
-            // Flutter's kDoubleTapTimeout; a test harness whose synthetic click pairs land further
-            // apart than a real user's widens it without a rebuild.
-            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", 0);
+            // Double-click pairing window (ms): Display.getDoubleClickTime() answers it and the
+            // client's DoubleTapDetectors pair clicks with it, so both sides agree. A test harness
+            // whose synthetic click pairs land further apart than a real user's widens it.
+            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", DOUBLE_CLICK_TIME_MS);
+            // Hover and tooltip delay (ms): MouseHover fires, and the tooltip shows, once the pointer
+            // has rested this long. A test harness that waits for hovers shortens it.
+            configFlags.hover_delay_ms = Integer.getInteger("swt.evolve.hover_delay_ms", HOVER_DELAY_MS);
             // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).
@@ -926,6 +970,9 @@ public class Config {
         // Also derived, and for the same reason: the client reports the monitor's zoom only once it
         // is up, and swt.autoScale is applied to it after these flags were first read.
         configFlags.ui_zoom = uiZoom();
+        configFlags.decimal_separator =
+                String.valueOf(java.text.DecimalFormatSymbols.getInstance(formatLocale()).getDecimalSeparator());
+        configFlags.locale = formatLocale().toLanguageTag();
         return configFlags;
     }
 
@@ -1006,6 +1053,19 @@ public class Config {
     }
 
     /**
+     * An SWT coordinate in the render side's logical pixels, the units a native window is placed and
+     * sized in. Java-side conversions go through this pair, so the scale is read in one place.
+     */
+    public static int swtToLogical(int swt) {
+        return (int) Math.round(swt * uiScale());
+    }
+
+    /** A coordinate in the render side's logical pixels, in SWT units: the inverse of {@link #swtToLogical}. */
+    public static int logicalToSwt(int logical) {
+        return (int) Math.round(logical / uiScale());
+    }
+
+    /**
      * Device pixels per SWT coordinate — how many pixels an off-screen buffer needs per unit the
      * application draws in.
      *
@@ -1040,7 +1100,7 @@ public class Config {
 
     /** Maps a raw {@code os.name} to the CSD styling key the Flutter side understands. */
     private static String normalizeOs(String osName) {
-        String n = osName == null ? "" : osName.toLowerCase();
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
         if (n.startsWith("mac") || n.contains("darwin")) return "mac";
         if (n.startsWith("win")) return "windows";
         return "linux";
@@ -1070,6 +1130,73 @@ public class Config {
     static final String USE_SWT_FONT_COLORS = "swt.use_swt_font_colors";
     static final String USE_SWT_FONT_COLORS_BY_WIDGET = "swt.evolve.use_swt_font_colors_";
 
+    static final String DISABLE_SWT_CANVAS_COLORS_BY_CLASS = "swt.evolve.disable_swt_canvas_colors_";
+
+    /**
+     * {@code -Dswt.evolve.disable_swt_canvas_colors_<fully.qualified.Class>=true|false}, keyed by the
+     * class name as written: unlike the per-widget flags, the key is the application's own class.
+     */
+    static Map<String, Boolean> canvasColorsByClassFromProperties() {
+        return byPrefix(DISABLE_SWT_CANVAS_COLORS_BY_CLASS, Function.identity(), Config::optionalBoolean);
+    }
+
+    /**
+     * {@code disable_swt_canvas_colors} for what a GC draws on: as set for the control's class or a
+     * superclass of it or, failing that, for the nearest control containing it that is listed; null
+     * when none is, which leaves the global flag to decide. Containers are matched so that a bare
+     * Composite inside a listed control follows it. A GC on an Image has no control and gets null.
+     */
+    public static Boolean canvasColorsOverride(Drawable drawable) {
+        return nearestListed(getConfigFlags().disable_swt_canvas_colors_by_class, drawable);
+    }
+
+    static final String CANVAS_HOVER_FILLS_BY_CLASS = "swt.evolve.canvas_hover_fills_";
+    static final String CANVAS_SELECTION_FILLS_BY_CLASS = "swt.evolve.canvas_selection_fills_";
+
+    /**
+     * {@code -D<prefix><fully.qualified.Class>=RRGGBB,...}, keyed by the application's class name as
+     * written: the colors that class fills a hover or a selection with, so a themed GC paints them
+     * with the theme's color for that role.
+     */
+    static Map<String, RGB[]> fillsByClassFromProperties(String prefix) {
+        return byPrefix(prefix, Function.identity(), Config::fillColors);
+    }
+
+    /** The hover fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static RGB[] canvasHoverFills(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_hover_fills_by_class, drawable);
+    }
+
+    /** The selection fills for what a GC draws on, resolved like {@link #canvasColorsOverride}. */
+    public static RGB[] canvasSelectionFills(Drawable drawable) {
+        return nearestListed(getConfigFlags().canvas_selection_fills_by_class, drawable);
+    }
+
+    /** The six-digit colors (an optional {@code #} before each) of a comma-separated list; null when none is. */
+    static RGB[] fillColors(String value) {
+        if (value == null) return null;
+        ArrayList<RGB> colors = new ArrayList<>();
+        for (String entry : value.split(",")) {
+            String hex = entry.trim();
+            if (hex.startsWith("#")) hex = hex.substring(1);
+            if (!hex.matches("[0-9a-fA-F]{6}")) continue;
+            int rgb = Integer.parseInt(hex, 16);
+            colors.add(new RGB(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF));
+        }
+        return colors.isEmpty() ? null : colors.toArray(new RGB[0]);
+    }
+
+    private static <T> T nearestListed(Map<String, T> byClass, Drawable drawable) {
+        if (byClass == null || byClass.isEmpty() || !(drawable instanceof Control)) return null;
+        for (Control c = (Control) drawable; c != null && !c.isDisposed(); c = c.getParent()) {
+            for (Class<?> type = c.getClass(); type != null; type = type.getSuperclass()) {
+                T value = byClass.get(type.getName());
+                if (value != null) return value;
+            }
+        }
+        return null;
+    }
+
     /** Null when unset or blank, so the flag can tell "not configured" from "false". */
     static Boolean optionalBoolean(String value) {
         return value == null || value.trim().isEmpty() ? null : Boolean.parseBoolean(value.trim());
@@ -1080,14 +1207,22 @@ public class Config {
      * name, like {@code swt.evolve.theme_color_<widget>}.
      */
     static Map<String, Boolean> fontColorsByWidgetFromProperties() {
-        TreeMap<String, Boolean> byWidget = new TreeMap<>();
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (!key.startsWith(USE_SWT_FONT_COLORS_BY_WIDGET)) continue;
-            String widget = key.substring(USE_SWT_FONT_COLORS_BY_WIDGET.length()).trim().toLowerCase();
-            Boolean value = optionalBoolean(System.getProperty(key));
-            if (!widget.isEmpty() && value != null) byWidget.put(widget, value);
+        return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, k -> k.toLowerCase(java.util.Locale.ROOT), Config::optionalBoolean);
+    }
+
+    /**
+     * The system properties named {@code prefix<key>}, keyed by {@code keyOf} of the trimmed suffix;
+     * a blank key or a value {@code parse} maps to null is left out. Null when nothing is left.
+     */
+    private static <T> Map<String, T> byPrefix(String prefix, Function<String, String> keyOf, Function<String, T> parse) {
+        TreeMap<String, T> byKey = new TreeMap<>();
+        for (String property : System.getProperties().stringPropertyNames()) {
+            if (!property.startsWith(prefix)) continue;
+            String key = keyOf.apply(property.substring(prefix.length()).trim());
+            T value = parse.apply(System.getProperty(property));
+            if (!key.isEmpty() && value != null) byKey.put(key, value);
         }
-        return byWidget.isEmpty() ? null : byWidget;
+        return byKey.isEmpty() ? null : byKey;
     }
 
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {
@@ -1108,7 +1243,7 @@ public class Config {
             if (value == null || value.trim().isEmpty()) {
                 continue;
             }
-            String widgetKey = key.substring(prefix.length()).trim().toLowerCase();
+            String widgetKey = key.substring(prefix.length()).trim().toLowerCase(java.util.Locale.ROOT);
             if (widgetKey.isEmpty()) {
                 continue;
             }

@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
@@ -12,6 +13,162 @@ import java.util.Arrays;
 import java.lang.reflect.Array;
 
 public class TableHelper {
+
+    /**
+     * A row of a table without columns was given what it shows, {@code width} wide: the one cell grows to hold
+     * it, as Win32 and Cocoa grow their one column to the widest row. GTK stretches it across the table.
+     */
+    static boolean growColumnlessWidth(DartTable table, int width) {
+        if (width <= table.columnlessWidth) return false;
+        table.columnlessWidth = width;
+        return true;
+    }
+
+    /** The one cell of a table without columns was measured again, {@code widest} being its widest row. */
+    static boolean setColumnlessWidth(DartTable table, int widest) {
+        table.columnlessWidth = widest;
+        return true;
+    }
+
+    /** The width the first cell's image and text take in a row. */
+    static int contentWidth(TableItem item) {
+        return dev.equo.swt.size.TableSizes.getCellContentWidth(item);
+    }
+
+    /**
+     * Flutter scrolled the table. The top index Flutter is sent is read from here, so describing the table
+     * again does not move it back to where the API last put it.
+     */
+    public static void recordScrollOffset(DartTable table, Event event) {
+        table.scrollOffset = Math.max(0, event.y);
+    }
+
+    /**
+     * Whether a row is measured in the font the application gave it or its table, and not the theme's.
+     * Read by the emitted {@code TableSizes} and {@code TableItemSizes}.
+     */
+    public static boolean usesApplicationFont(DartTableItem item) {
+        return Config.getConfigFlags().use_swt_fonts
+            && (item.getExplicitFont() != null || ((DartTable) item.getParent().getImpl()).getExplicitFont() != null);
+    }
+
+    /**
+     * How far the rows are scrolled, never past the point where the last row is shown. The rows are laid out
+     * and scrolled on the Dart side, so this is what the row at the top, a row's bounds and API scrolling are
+     * computed from.
+     */
+    public static int scrollOffsetY(DartTable table) {
+        // A table never scrolled is not measured: measuring a row asks a virtual table for its data.
+        if (table.scrollOffset == 0) return 0;
+        return Math.min(table.scrollOffset, maxScrollOffset(table, Math.max(1, table.getItemHeight())));
+    }
+
+    /** The rows changed: a scroll past where they now end stops at their end. */
+    public static void keepScrollInRows(DartTable table) {
+        if (table.scrollOffset > 0) table.scrollOffset = scrollOffsetY(table);
+    }
+
+    /** The index of the row at the top; 0 for an empty table. */
+    public static int getTopIndex(DartTable table) {
+        if (table.getItemCount() == 0) return 0;
+        return Math.min(scrollOffsetY(table) / Math.max(1, table.getItemHeight()), table.getItemCount() - 1);
+    }
+
+    /**
+     * Scrolls so that row {@code index} is at the top, or as near as the rows below it allow. An index before
+     * the first row is the first one and an index past the last row is the last one, as on Win32. The
+     * platforms differ there: Cocoa goes to the top for an index past the last row, and GTK reports the index
+     * it was given whether or not the rows can scroll that far.
+     */
+    public static void setTopIndex(DartTable table, int index) {
+        if (table.getItemCount() == 0) return;
+        scrollToRow(table, Math.max(0, Math.min(index, table.getItemCount() - 1)));
+    }
+
+    /**
+     * The row {@code setSelection(TableItem[])} scrolls to, out of {@code count} selected {@code indices}
+     * in the order their items were given: the first row of the selection, as on Win32 and GTK. Cocoa shows
+     * the last item given.
+     */
+    public static int rowToShowForSelection(int[] indices, int count) {
+        return Arrays.stream(indices, 0, count).min().getAsInt();
+    }
+
+    /**
+     * Scrolls the least that shows all of row {@code index}; a row already shown does not scroll. A table
+     * not laid out yet shows every row, as Cocoa makes it when its view has no size, so it does not scroll.
+     */
+    public static void showIndex(DartTable table, int index) {
+        if (!(0 <= index && index < table.getItemCount())) return;
+        int viewport = viewportHeight(table);
+        if (viewport <= 0) return;
+        int itemHeight = Math.max(1, table.getItemHeight());
+        int offset = scrollOffsetY(table);
+        if (index * itemHeight < offset) {
+            scrollToRow(table, index);
+        } else if ((index + 1) * itemHeight > offset + viewport) {
+            scrollToRow(table, Math.max(0, index + 1 - Math.max(1, viewport / itemHeight)));
+        }
+    }
+
+    /**
+     * Flutter is told which row to bring to the top and clamps the distance itself; Java records the distance
+     * it will end at, so what the API reads back right away is where the table will be.
+     */
+    private static void scrollToRow(DartTable table, int row) {
+        int itemHeight = Math.max(1, table.getItemHeight());
+        table.scrollOffset = Math.min(row * itemHeight, maxScrollOffset(table, itemHeight));
+        table.getValue().markDirty(VTable.TOP_INDEX);
+    }
+
+    /** The height the rows scroll in: Flutter's scroll bars float over the rows and take none of it. */
+    private static int viewportHeight(DartTable table) {
+        return Math.max(0, table.getBounds().height - table.getHeaderHeight());
+    }
+
+    private static int maxScrollOffset(DartTable table, int itemHeight) {
+        return Math.max(0, table.getItemCount() * itemHeight - viewportHeight(table));
+    }
+
+    /** A column is about to be inserted: the image of the first cell moves into the images of the cells. */
+    public static void keepFirstImage(TableItem item, int columnsBefore) {
+        DartTableItem impl = (DartTableItem) item.getImpl();
+        if (impl.images == null && impl.image != null) {
+            impl.images = new Image[columnsBefore];
+            impl.images[0] = impl.image;
+        }
+    }
+
+    /** The selected rows, in row order; the caller may keep or change the array. */
+    public static int[] selectionIndices(DartTable table) {
+        return table.selection == null ? new int[0] : table.selection.clone();
+    }
+
+    /** The first {@code count} of {@code indices} become the selection. */
+    public static void replaceSelection(DartTable table, int[] indices, int count) {
+        int[] next = Arrays.copyOf(indices, count);
+        if (!Arrays.equals(table.selection, next)) {
+            table.getValue().markDirty(VTable.SELECTION);
+            table.selection = next;
+        }
+    }
+
+    /** The rows changed: a selected row that is no longer one is dropped from the selection. */
+    public static void keepSelectionInRows(DartTable table) {
+        int[] selection = table.selection;
+        if (selection == null) return;
+        int rows = table.getItemCount();
+        int kept = 0;
+        for (int index : selection)
+            if (index < rows) kept++;
+        if (kept < selection.length) {
+            int[] next = new int[kept];
+            for (int i = 0, j = 0; i < selection.length; i++)
+                if (selection[i] < rows) next[j++] = selection[i];
+            table.selection = next;
+            table.getValue().markDirty(VTable.SELECTION);
+        }
+    }
 
     public static void selectAll(DartTable table, int itemCount) {
         table.selection = new int[itemCount];
@@ -34,18 +191,16 @@ public class TableHelper {
      * that count from 0 to 1 before JFace's listener sees it -- see {@link ClickSelection}.
      */
     public static void handleMouseDownSelection(DartTable table, Event event) {
-        if (table == null || table.isDisposed())
-            return;
-        if (event == null || (event.button != 1 && event.button != 3))
+        if (event.button != 1 && event.button != 3)
             return;
         if (event.segments == null || event.segments.length == 0)
             return;
         int index = event.segments[0];
-        if (table.items == null || index < 0 || index >= table.items.length)
+        if (index < 0 || index >= table.getItemCount())
             return;
         int[] current = table.selection;
-        boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
-        boolean hadExistingSelection = current != null && current.length > 0;
+        boolean sameSingleRow = current.length == 1 && current[0] == index;
+        boolean hadExistingSelection = current.length > 0;
         event.data = sameSingleRow;
         if (!sameSingleRow && hadExistingSelection) {
             table.setSelection(new int[] { index });
@@ -79,12 +234,12 @@ public class TableHelper {
         public void handleEvent(Event event) {
             if (table.isDisposed())
                 return;
-            if (event == null || (event.button != 1 && event.button != 3))
+            if (event.button != 1 && event.button != 3)
                 return;
             if (event.segments == null || event.segments.length == 0)
                 return;
             int index = event.segments[0];
-            if (table.items == null || index < 0 || index >= table.items.length)
+            if (index < 0 || index >= table.getItemCount())
                 return;
             if (Boolean.TRUE.equals(event.data))
                 return;
@@ -92,25 +247,94 @@ public class TableHelper {
             // Event it is handed and EventTable's send loop re-reads that type on every step, so
             // passing the in-flight MouseDown event would leave it typed SWT.Selection and drop
             // every MouseDown listener still behind this one.
+            // A native Table's click Selection names the item and nothing about the click itself, but
+            // for the button still held: its stateMask carries it, as the event fires before release.
             Event selection = new Event();
             selection.segments = event.segments;
             selection.detail = event.detail;
-            selection.stateMask = event.stateMask;
-            selection.button = event.button;
-            selection.count = event.count;
-            selection.x = event.x;
-            selection.y = event.y;
+            selection.stateMask = event.stateMask | buttonMask(event.button);
             selection.time = event.time;
             sendSelection(table, selection, SWT.Selection);
         }
+    }
+
+    /** The stateMask bit of a held mouse button; SWT's BUTTON4 and BUTTON5 do not follow BUTTON3. */
+    static int buttonMask(int button) {
+        switch (button) {
+            case 1: return SWT.BUTTON1;
+            case 2: return SWT.BUTTON2;
+            case 3: return SWT.BUTTON3;
+            case 4: return SWT.BUTTON4;
+            case 5: return SWT.BUTTON5;
+            default: return 0;
+        }
+    }
+
+    /**
+     * Up and Down move a single selection to the row above or below, Home and End to the first and
+     * last row, and Page Down and Page Up to the last or first row in view, or a page on when already
+     * there, as the platform's table does for a key no listener vetoed, and report it as a Selection
+     * naming the item. The page keys read the top index, which the client does not report when it
+     * scrolls. A MULTI table moves from its first selected row, not a focus row of its own, and ends
+     * with that one row selected; Shift and Ctrl with a key are not handled.
+     */
+    public static void moveSelectionByKey(DartTable table, Event key) {
+        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+            return;
+        int count = table.getItemCount();
+        if (count == 0)
+            return;
+        int current = table.getSelectionIndex();
+        int next;
+        switch (key.keyCode) {
+            case SWT.ARROW_UP:
+                next = current < 0 ? 0 : current - 1;
+                break;
+            case SWT.ARROW_DOWN:
+                next = current < 0 ? 0 : current + 1;
+                break;
+            case SWT.HOME:
+                next = 0;
+                break;
+            case SWT.END:
+                next = count - 1;
+                break;
+            case SWT.PAGE_DOWN: {
+                // The last row of the page in view, or a page on from there when already on it.
+                int bottom = table.getTopIndex() + visibleRows(table) - 1;
+                next = current < bottom ? bottom : current + visibleRows(table) - 1;
+                break;
+            }
+            case SWT.PAGE_UP: {
+                int top = table.getTopIndex();
+                next = current > top ? top : current - visibleRows(table) + 1;
+                break;
+            }
+            default:
+                return;
+        }
+        next = Math.max(0, Math.min(count - 1, next));
+        if (next == current)
+            return;
+        Event selection = new Event();
+        selection.segments = new int[] { next };
+        sendSelection(table, selection, SWT.Selection);
+    }
+
+    /** How many whole rows the table shows below its header. */
+    static int visibleRows(DartTable table) {
+        Table api = table.getApi();
+        int itemHeight = Math.max(1, api.getItemHeight());
+        int height = api.getClientArea().height - (api.getHeaderVisible() ? api.getHeaderHeight() : 0);
+        return Math.max(1, height / itemHeight);
     }
 
     public static void sendSelection(DartTable table, Event event, int selectionType) {
         if (event.detail == SWT.CHECK) {
             if (event.segments != null && event.segments.length > 0) {
                 int index = event.segments[0];
-                if (table.items != null && index >= 0 && index < table.items.length) {
-                    TableItem item = table.items[index];
+                if (index >= 0 && index < table.getItemCount()) {
+                    TableItem item = table._getItem(index);
                     item.setChecked(!item.getChecked());
                     event.item = item;
                     event.index = index;
@@ -120,11 +344,14 @@ public class TableHelper {
             if (event.segments != null) {
                 table.setSelection(event.segments);
             }
-            if (event.item == null && event.segments != null && event.segments.length > 0) {
+            if (event.segments != null && event.segments.length > 0) {
                 int index = event.segments[0];
-                if (table.items != null && index >= 0 && index < table.items.length) {
+                if (index >= 0 && index < table.getItemCount()) {
                     event.item = table.items[index];
-                    event.index = index;
+                    // A native Table's Selection names the row by its item alone; the index is only
+                    // the cell edit's own (read below), which arrives carrying text.
+                    if (event.text != null)
+                        event.index = index;
                 }
             }
         }
@@ -135,9 +362,8 @@ public class TableHelper {
         if (event.text != null && event.index >= 0 && event.start >= 0) {
             int rowIndex = event.index;
             int columnIndex = event.start;
-            TableItem[] items = table.items;
-            if (items != null && rowIndex >= 0 && rowIndex < items.length) {
-                TableItem item = items[rowIndex];
+            if (rowIndex < table.getItemCount()) {
+                TableItem item = table.items[rowIndex];
                 if (item != null) {
                     item.setText(columnIndex, event.text);
                 }
@@ -340,7 +566,7 @@ public class TableHelper {
                 System.arraycopy(newSelection, 0, finalSelection, 0, newCount);
             }
 
-            if (!java.util.Objects.equals(table.selection, finalSelection)) {
+            if (!Arrays.equals(table.selection, finalSelection)) {
                 table.getValue().markDirty(VTable.SELECTION);
             }
             table.selection = finalSelection;
@@ -358,7 +584,23 @@ public class TableHelper {
             }
             return order;
         }
-        return table.columnOrder;
+        return table.columnOrder.clone();
+    }
+
+    /**
+     * Inserts the column created at {@code index} into a column order the application set: Cocoa shows a
+     * new column at the position of its index, and shifts the indexes after it.
+     */
+    public static void insertColumnOrder(DartTable table, int index) {
+        int[] order = table.columnOrder;
+        int count = table.columnCount;
+        if (order.length != count - 1 || count < 2) return;
+        int[] next = new int[count];
+        for (int i = 0, j = 0; i < count; i++) {
+            next[i] = i == index ? index : (order[j] >= index ? order[j++] + 1 : order[j++]);
+        }
+        table.columnOrder = next;
+        table.getValue().markDirty(VTable.COLUMN_ORDER);
     }
 
     public static TableItem[] getSelection(DartTable table) {
@@ -401,6 +643,21 @@ public class TableHelper {
             table.getValue().markDirty(VTable.SELECTION);
             table.selection = newSelection;
         }
+    }
+
+    /**
+     * Drops the selected rows at or past {@code itemCount}, as a native table does whenever its row
+     * count shrinks: removing the last row, or every row, never shifts the selection otherwise.
+     */
+    public static void dropSelectionPast(DartTable table, int itemCount) {
+        int[] selection = table.selection;
+        if (selection == null)
+            return;
+        int[] kept = Arrays.stream(selection).filter(index -> index < itemCount).toArray();
+        if (kept.length == selection.length)
+            return;
+        table.getValue().markDirty(VTable.SELECTION);
+        table.selection = kept;
     }
 
     public static void fixSelectionRange(DartTable table, int start, int end) {
@@ -471,6 +728,7 @@ public class TableHelper {
                 }
             }
             table.columnOrder = newOrder;
+            table.getValue().markDirty(VTable.COLUMN_ORDER);
         }
     }
 
@@ -653,7 +911,7 @@ public class TableHelper {
                     if (drawn != null)
                         text.append(drawn);
                 };
-                dartGc.imageCapture = drawn -> image[0] = drawn;
+                dartGc.imageCapture = drawn -> image[0] = GraphicsUtils.copyImage(item.getDisplay(), drawn);
                 Event event = new Event();
                 event.item = item.getApi();
                 event.index = i;
@@ -750,9 +1008,7 @@ public class TableHelper {
             return false;
         if (item.images == null && (index != 0 || initializeFromPrimaryImage)) {
             item.images = new Image[count];
-            if (initializeFromPrimaryImage) {
-                item.images[0] = item.image;
-            }
+            item.images[0] = item.image;
         }
         if (item.images != null) {
             Image toStore = index == 0 ? item.image : dartImage;
@@ -802,6 +1058,8 @@ public class TableHelper {
         try {
             for (int i = 0; i < end; i++) {
                 if (table.isDisposed()) return;
+                // A SetData listener may dispose rows, which leaves fewer than there were.
+                if (i >= table.getItemCount()) break;
                 TableItem item = table._getItem(i);
                 if (item == null || ((DartTableItem) item.getImpl()).cached) continue;
                 table.checkData(item, i);

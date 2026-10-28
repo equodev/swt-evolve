@@ -91,7 +91,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      */
     public SwtFontDialog(Shell parent, int style, FontDialog api) {
         super(parent, checkStyle(parent, style), api);
-        checkSubclass();
+        getApi().checkSubclass();
     }
 
     void changeFont(long id, long sel, long arg0) {
@@ -122,7 +122,8 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * @return the FontData for the selected font, or null
      * @deprecated use #getFontList ()
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public FontData getFontData() {
         return fontData;
     }
@@ -241,7 +242,8 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * @param fontData the FontData to use initially, or null
      * @deprecated use #setFontList (FontData [])
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void setFontData(FontData fontData) {
         this.fontData = fontData;
     }
@@ -282,7 +284,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
     }
 
     int validModesForFontPanel(long id, long sel, long arg0) {
-        return effectsVisible ? OS.NSFontPanelAllModesMask : OS.NSFontPanelAllModesMask & ~OS.NSFontPanelAllEffectsModeMask;
+        return effectsVisible ? OS.NSFontPanelModeMaskAllModes : OS.NSFontPanelModeMaskAllModes & ~OS.NSFontPanelModeMaskAllEffects;
     }
 
     void windowWillClose(long id, long sel, long sender) {

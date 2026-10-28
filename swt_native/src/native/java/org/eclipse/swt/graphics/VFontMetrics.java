@@ -4,7 +4,6 @@ import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
 
-@CompiledJson()
 public class VFontMetrics {
 
     protected VFontMetrics() {
@@ -41,6 +40,24 @@ public class VFontMetrics {
                 writer.writeNull();
             else
                 writer.serializeObject(api.getImpl());
+        }
+    }
+
+    @JsonConverter(target = VFontMetrics.class)
+    public static class EmptyJson {
+
+        public static VFontMetrics read(JsonReader<?> reader) throws IOException {
+            if (reader.wasNull())
+                return null;
+            reader.skip();
+            return new VFontMetrics();
+        }
+
+        public static void write(JsonWriter writer, VFontMetrics value) {
+            if (value == null)
+                writer.writeNull();
+            else
+                writer.writeAscii("{}");
         }
     }
 }

@@ -22,6 +22,10 @@ typedef OnSuccessCallback<T> = FutureOr<void> Function(T response);
 typedef OnErrorCallback = void Function(SDKCommError error);
 typedef Payload = dynamic;
 
+void _logHandlerError(String actionId, Object error, StackTrace stack) {
+  print('[comm] Handler error for "$actionId": $error\n$stack');
+}
+
 class SendArgs {
   bool sequential;
   SendArgs({required this.sequential});
@@ -71,6 +75,10 @@ class UserEventCallback {
 abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, List<dynamic>> _pending = {};
+
+  /// The channels a handler is registered on.
+  @visibleForTesting
+  Iterable<String> get handledChannels => _handlers.keys;
 
   /// Channels whose held run overflowed and has had no whole frame since: the changes arriving
   /// after it describe a state this side no longer has, so they are not kept.
@@ -336,11 +344,17 @@ abstract class EquoCommBase {
           : (first is int && first >= 0 && first < i ? names[first] : null);
       if (name == null) continue;
       names[i] = name;
-      final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
-      if (identical(delivered, _noHandler)) {
-        _hold(name, entry[1]);
-      } else if (delivered is Future) {
-        await delivered;
+      // An entry that fails is that entry's failure alone: the rest of the run applies, as it would
+      // have arriving in frames of its own.
+      try {
+        final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
+        if (identical(delivered, _noHandler)) {
+          _hold(name, entry[1]);
+        } else if (delivered is Future) {
+          await delivered;
+        }
+      } catch (e, st) {
+        _logHandlerError(name, e, st);
       }
     }
   }
@@ -425,17 +439,51 @@ abstract class EquoCommBase {
         final applied = apply();
         if (applied is Future) {
           return applied.catchError((Object e, StackTrace st) {
-            print('[comm] Handler error for "$actionId": $e\n$st');
+            _logHandlerError(actionId, e, st);
           });
         }
       } catch (e, st) {
-        print('[comm] Handler error for "$actionId": $e\n$st');
+        _logHandlerError(actionId, e, st);
       }
       return null;
     });
     if (!_applying) {
       _applying = true;
+      _applyingCount++;
       scheduleMicrotask(_drainApplyQueue);
+    }
+  }
+
+  /// How many connections have frames received and not yet applied. Static because what waits on
+  /// it, the widget registry, is one for the whole client.
+  static int _applyingCount = 0;
+  static final List<void Function()> _whenApplied = [];
+
+  /// Runs [callback] once every frame received so far has been applied: when the apply queue runs
+  /// dry, or in a microtask when nothing is waiting to be applied.
+  ///
+  /// A batch can await a handler halfway through, so the end of the current microtask is not the
+  /// end of the frames that arrived together.
+  static void whenApplied(void Function() callback) {
+    _whenApplied.add(callback);
+    if (_applyingCount == 0 && _whenApplied.length == 1) {
+      scheduleMicrotask(() {
+        if (_applyingCount == 0) _runWhenApplied();
+      });
+    }
+  }
+
+  static void _runWhenApplied() {
+    while (_whenApplied.isNotEmpty) {
+      final callbacks = List.of(_whenApplied);
+      _whenApplied.clear();
+      for (final callback in callbacks) {
+        try {
+          callback();
+        } catch (e, st) {
+          _logHandlerError('whenApplied', e, st);
+        }
+      }
     }
   }
 
@@ -449,10 +497,17 @@ abstract class EquoCommBase {
       }
     } finally {
       _applying = false;
+      if (--_applyingCount == 0) _runWhenApplied();
     }
   }
 
+  /// Sees every event the client sends to Java, so a widget test can check what controls built
+  /// from state report.
+  @visibleForTesting
+  static void Function(String actionId, Payload? payload)? sendObserverForTesting;
+
   Future send(String actionId, [Payload? payload]) {
+    sendObserverForTesting?.call(actionId, payload);
     final body = payload != null ? (_jsonBytes.encode(payload) as Uint8List) : Uint8List(0);
     _enqueue(_frame(actionId, body));
     return Future.value();

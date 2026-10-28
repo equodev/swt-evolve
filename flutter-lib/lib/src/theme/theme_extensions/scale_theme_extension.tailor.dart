@@ -37,6 +37,7 @@ mixin _$ScaleThemeExtensionTailorMixin on ThemeExtension<ScaleThemeExtension> {
   int get defaultSelection;
   int get defaultIncrement;
   int get defaultPageIncrement;
+  double get minTextContrast;
 
   @override
   ScaleThemeExtension copyWith({
@@ -67,6 +68,7 @@ mixin _$ScaleThemeExtensionTailorMixin on ThemeExtension<ScaleThemeExtension> {
     int? defaultSelection,
     int? defaultIncrement,
     int? defaultPageIncrement,
+    double? minTextContrast,
   }) {
     return ScaleThemeExtension(
       animationDuration: animationDuration ?? this.animationDuration,
@@ -99,6 +101,7 @@ mixin _$ScaleThemeExtensionTailorMixin on ThemeExtension<ScaleThemeExtension> {
       defaultSelection: defaultSelection ?? this.defaultSelection,
       defaultIncrement: defaultIncrement ?? this.defaultIncrement,
       defaultPageIncrement: defaultPageIncrement ?? this.defaultPageIncrement,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -162,6 +165,7 @@ mixin _$ScaleThemeExtensionTailorMixin on ThemeExtension<ScaleThemeExtension> {
       defaultPageIncrement: t < 0.5
           ? defaultPageIncrement
           : other.defaultPageIncrement,
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -271,6 +275,10 @@ mixin _$ScaleThemeExtensionTailorMixin on ThemeExtension<ScaleThemeExtension> {
             const DeepCollectionEquality().equals(
               defaultPageIncrement,
               other.defaultPageIncrement,
+            ) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
             ));
   }
 
@@ -305,6 +313,7 @@ mixin _$ScaleThemeExtensionTailorMixin on ThemeExtension<ScaleThemeExtension> {
       const DeepCollectionEquality().hash(defaultSelection),
       const DeepCollectionEquality().hash(defaultIncrement),
       const DeepCollectionEquality().hash(defaultPageIncrement),
+      const DeepCollectionEquality().hash(minTextContrast),
     ]);
   }
 }
@@ -341,4 +350,5 @@ extension ScaleThemeExtensionBuildContextProps on BuildContext {
   int get defaultSelection => scaleThemeExtension.defaultSelection;
   int get defaultIncrement => scaleThemeExtension.defaultIncrement;
   int get defaultPageIncrement => scaleThemeExtension.defaultPageIncrement;
+  double get minTextContrast => scaleThemeExtension.minTextContrast;
 }

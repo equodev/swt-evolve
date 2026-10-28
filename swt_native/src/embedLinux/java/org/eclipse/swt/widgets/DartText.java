@@ -633,10 +633,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCaretPosition() {
         checkWidget();
-        if (selection != null) {
-            return selection.x;
-        }
-        return 0;
+        return TextHelper.getCaretPosition(this);
     }
 
     /**
@@ -859,7 +856,7 @@ public class DartText extends DartScrollable implements IText {
         if (selection == null) {
             return new Point(caretPosition, caretPosition);
         }
-        return this.selection;
+        return new Point(selection.x, selection.y);
     }
 
     /**
@@ -1363,10 +1360,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         char newValue = echo;
-        if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
+        checkWidget();
+        if (this.echoCharacter != newValue) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
-        checkWidget();
         this.echoCharacter = newValue;
         if ((getApi().style & SWT.SINGLE) != 0) {
         }
@@ -1384,10 +1381,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
-        if (!java.util.Objects.equals(this.editable, newValue)) {
+        checkWidget();
+        if (this.editable != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
-        checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
         if (!editable)
             getApi().style |= SWT.READ_ONLY;
@@ -1719,10 +1716,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         int newValue = limit;
-        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+        checkWidget();
+        if (this.textLimit != newValue) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
-        checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         this.textLimit = newValue;
@@ -2031,27 +2028,27 @@ public class DartText extends DartScrollable implements IText {
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed() && !isActive())
+                if (isDisposed())
                     return;
-                if (!isDisposed()) {
-                    if (e.detail == SWT.ICON_CANCEL) {
-                        if (getCharCount() != 0) {
-                            setText("");
-                        }
-                        if (!isDisposed()) {
-                            sendEvent(SWT.DefaultSelection, e);
-                        }
-                        return;
-                    }
-                    if (!traverse(SWT.TRAVERSE_RETURN)) {
-                        Event crEvent = new Event();
-                        crEvent.keyCode = SWT.CR;
-                        crEvent.character = '\r';
-                        sendEvent(SWT.KeyDown, crEvent);
+                if (!isActive())
+                    return;
+                if (e.detail == SWT.ICON_CANCEL) {
+                    if (getCharCount() != 0) {
+                        setText("");
                     }
                     if (!isDisposed()) {
                         sendEvent(SWT.DefaultSelection, e);
                     }
+                    return;
+                }
+                if (!traverse(SWT.TRAVERSE_RETURN)) {
+                    Event crEvent = new Event();
+                    crEvent.keyCode = SWT.CR;
+                    crEvent.character = '\r';
+                    sendEvent(SWT.KeyDown, crEvent);
+                }
+                if (!isDisposed()) {
+                    sendEvent(SWT.DefaultSelection, e);
                 }
             });
         });
@@ -2066,9 +2063,11 @@ public class DartText extends DartScrollable implements IText {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (!isDisposed() && !TextHelper.proposesNoChange(e)) {
-                    sendEvent(SWT.Verify, e);
+                if (TextHelper.proposesNoChange(e)) {
+                    TextHelper.clientCaretMoved(this, e.start, e.index);
+                    return;
                 }
+                sendEvent(SWT.Verify, e);
             });
         });
     }

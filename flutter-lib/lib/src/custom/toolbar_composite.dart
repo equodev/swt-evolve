@@ -22,7 +22,6 @@ import 'csd/window_controls.dart';
 import 'main_toolbar_scope.dart';
 import 'toast.dart';
 import '../nolayout.dart';
-import '../theme/theme_extensions/clabel_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'controls_item.dart';
@@ -78,9 +77,14 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
   @override
   Widget buildComposite() {
-    final children = state.children;
+    // Dropped like a hidden Composite: a hidden main toolbar leaves the menu bar to the Shell.
+    if (state.visible == false) return const SizedBox.shrink();
 
-    if (children == null || children.isEmpty) {
+    final children = state.children ?? const <VControl>[];
+
+    // An empty main toolbar still hosts the menu bar: the Shell leaves it to any visible one.
+    if (children.isEmpty &&
+        !(_isRootToolbar && DecorationsMenuData.of(context)?.hasItems == true)) {
       return wrap(const SizedBox.shrink());
     }
 
@@ -358,33 +362,6 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     );
   }
 
-  bool _isVCLabelChip(VCLabel vcl) =>
-      vcl.cursor?.cursorStyle == SWT.CURSOR_HAND &&
-      vcl.image != null &&
-      ((vcl.text?.isNotEmpty == true && vcl.text != '<none>') ||
-          vcl.toolTipText?.isNotEmpty == true);
-
-  double _measureChipW(VCLabel vcl) {
-    final text = (vcl.text == null || vcl.text == '<none>') ? '' : vcl.text!;
-    final clabelTheme = Theme.of(context).extension<CLabelThemeExtension>()!;
-    final margins = (vcl.leftMargin ?? 0) + (vcl.rightMargin ?? 0);
-    double textW = 0;
-    if (text.isNotEmpty && clabelTheme.primaryTextStyle != null) {
-      textW = (TextPainter(text: TextSpan(text: text, style: clabelTheme.primaryTextStyle), textDirection: TextDirection.ltr)..layout()).width;
-    }
-    return math.max(
-      margins + clabelTheme.iconSize + (text.isNotEmpty ? clabelTheme.iconTextSpacing + textW : 0.0),
-      (vcl.bounds?.width ?? 0).toDouble(),
-    );
-  }
-
-  double _getVCLabelCompositeW(VComposite composite) {
-    final vcLabels = (composite.children ?? []).whereType<VCLabel>().toList();
-    if (vcLabels.isEmpty) return (composite.bounds?.width ?? 0).toDouble();
-    return vcLabels.fold(0.0, (total, vcl) =>
-        total + (_isVCLabelChip(vcl) ? _measureChipW(vcl) : (vcl.bounds?.width ?? 0).toDouble()));
-  }
-
   static bool _containsKeyword(VControl child, String keywordTextLower) {
     if (child is VToolBar) {
       return child.items?.any(
@@ -583,17 +560,18 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final containerBox = _containerKey.currentContext?.findRenderObject() as RenderBox?;
       if (containerBox == null) return;
-      final containerGlobalY = containerBox.localToGlobal(Offset.zero).dy;
 
+      // Measured against the container rather than the view, whose pixels differ from the
+      // container's own at any zoom.
       final newDividers = <double>[];
       for (var i = 0; i < visibleChildren.length - 1; i++) {
         final box = _childKeys[i]?.currentContext?.findRenderObject() as RenderBox?;
         final boxNext = _childKeys[i + 1]?.currentContext?.findRenderObject() as RenderBox?;
         if (box == null || boxNext == null) continue;
-        final endGlobal = box.localToGlobal(Offset(0, box.size.height)).dy;
-        final startNextGlobal = boxNext.localToGlobal(Offset.zero).dy;
-        if (!endGlobal.isNaN && !startNextGlobal.isNaN) {
-          newDividers.add((endGlobal + startNextGlobal) / 2 - containerGlobalY);
+        final end = box.localToGlobal(Offset(0, box.size.height), ancestor: containerBox).dy;
+        final startNext = boxNext.localToGlobal(Offset.zero, ancestor: containerBox).dy;
+        if (!end.isNaN && !startNext.isNaN) {
+          newDividers.add((end + startNext) / 2);
         }
       }
 

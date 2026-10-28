@@ -1477,11 +1477,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
         long modifierFlags = nsEvent.modifierFlags();
         if ((modifierFlags & OS.NSAlternateKeyMask) != 0)
             stateMask |= SWT.ALT;
-        if ((modifierFlags & OS.NSShiftKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagShift) != 0)
             stateMask |= SWT.SHIFT;
-        if ((modifierFlags & OS.NSControlKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagControl) != 0)
             stateMask |= SWT.CONTROL;
-        if ((modifierFlags & OS.NSCommandKeyMask) != 0)
+        if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0)
             stateMask |= SWT.COMMAND;
         if (type != SWT.KeyDown)
             return result;
@@ -1526,7 +1526,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 	* queue.
 	*/
         long modifiers = nsEvent.modifierFlags();
-        if ((modifiers & OS.NSShiftKeyMask) == 0) {
+        if ((modifiers & OS.NSEventModifierFlagShift) == 0) {
             short keyCode = nsEvent.keyCode();
             switch(keyCode) {
                 case 125:

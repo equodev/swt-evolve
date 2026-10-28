@@ -10,6 +10,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..ctabfolder_visible_controls = json['ctabfolder_visible_controls'] as bool?
   ..ctabfolder_topright_auto_hide =
       json['ctabfolder_topright_auto_hide'] as bool?
+  ..ctabfolder_tab_scroll = json['ctabfolder_tab_scroll'] as bool?
   ..image_disable_icons_replacement =
       json['image_disable_icons_replacement'] as bool?
   ..assets_path = json['assets_path'] as String?
@@ -48,16 +49,22 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..csd_os = json['csd_os'] as String?
   ..csd_maximize = json['csd_maximize'] as String?
   ..double_click_timeout_ms = (json['double_click_timeout_ms'] as num?)?.toInt()
+  ..hover_delay_ms = (json['hover_delay_ms'] as num?)?.toInt()
   ..csd_titlebar_color = json['csd_titlebar_color'] as String?
   ..system_menu_bar = json['system_menu_bar'] as bool?
+  ..decimal_separator = json['decimal_separator'] as String?
+  ..locale = json['locale'] as String?
   ..font_point_scale = (json['font_point_scale'] as num?)?.toDouble()
-  ..push_button_margin = (json['push_button_margin'] as num?)?.toInt();
+  ..push_button_margin = (json['push_button_margin'] as num?)?.toInt()
+  ..transparent_menu_check_box = json['transparent_menu_check_box'] as bool?
+  ..use_swt_border = json['use_swt_border'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
 ) => <String, dynamic>{
   'ctabfolder_visible_controls': ?instance.ctabfolder_visible_controls,
   'ctabfolder_topright_auto_hide': ?instance.ctabfolder_topright_auto_hide,
+  'ctabfolder_tab_scroll': ?instance.ctabfolder_tab_scroll,
   'image_disable_icons_replacement': ?instance.image_disable_icons_replacement,
   'assets_path': ?instance.assets_path,
   'disable_evolve_icons': ?instance.disable_evolve_icons,
@@ -87,8 +94,13 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'csd_os': ?instance.csd_os,
   'csd_maximize': ?instance.csd_maximize,
   'double_click_timeout_ms': ?instance.double_click_timeout_ms,
+  'hover_delay_ms': ?instance.hover_delay_ms,
   'csd_titlebar_color': ?instance.csd_titlebar_color,
   'system_menu_bar': ?instance.system_menu_bar,
+  'decimal_separator': ?instance.decimal_separator,
+  'locale': ?instance.locale,
   'font_point_scale': ?instance.font_point_scale,
   'push_button_margin': ?instance.push_button_margin,
+  'transparent_menu_check_box': ?instance.transparent_menu_check_box,
+  'use_swt_border': ?instance.use_swt_border,
 };

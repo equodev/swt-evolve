@@ -148,7 +148,8 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void changed(Control[] changed) {
         layout(changed, SWT.DEFER);
     }
@@ -275,9 +276,41 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
-        int zoom = getAutoscalingZoom();
-        offsetX = DPIUtil.pointToPixel(offsetX, zoom);
-        offsetY = DPIUtil.pointToPixel(offsetY, zoom);
+        if (gc == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (gc.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        org.eclipse.swt.graphics.Image image = getApi().getBackgroundImage();
+        org.eclipse.swt.graphics.Pattern previous = gc.getBackgroundPattern();
+        if (image == null) {
+            // setBackground clears the GC's background pattern, so both are put back.
+            org.eclipse.swt.graphics.Color previousColor = gc.getBackground();
+            gc.setBackground(getApi().getBackground());
+            gc.fillRectangle(x, y, width, height);
+            gc.setBackground(previousColor);
+            gc.setBackgroundPattern(previous);
+            return;
+        }
+        org.eclipse.swt.graphics.Pattern pattern = new org.eclipse.swt.graphics.Pattern(gc.getDevice(), image);
+        org.eclipse.swt.graphics.Transform transform = null;
+        org.eclipse.swt.graphics.Transform previousTransform = null;
+        if (offsetX != 0 || offsetY != 0) {
+            previousTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+            gc.getTransform(previousTransform);
+            transform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+            gc.getTransform(transform);
+            transform.translate(-offsetX, -offsetY);
+            gc.setTransform(transform);
+        }
+        gc.setBackgroundPattern(pattern);
+        gc.fillRectangle(x + offsetX, y + offsetY, width, height);
+        gc.setBackgroundPattern(previous);
+        if (transform != null) {
+            gc.setTransform(previousTransform);
+            transform.dispose();
+            previousTransform.dispose();
+        }
+        pattern.dispose();
     }
 
     void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
@@ -917,7 +950,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void setBackgroundMode(int mode) {
         checkWidget();
-        if (!java.util.Objects.equals(this.backgroundMode, mode)) {
+        if (this.backgroundMode != mode) {
             getValue().markDirty(VComposite.BACKGROUND_MODE);
         }
         backgroundMode = mode;
@@ -1266,6 +1299,14 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     Object contentView() {
         return getBridge().container(this);
+    }
+
+    public Control[] _displayedChildren() {
+        return _getChildren();
+    }
+
+    public boolean _drawsItself(Control child) {
+        return false;
     }
 
     public void updateChildren() {

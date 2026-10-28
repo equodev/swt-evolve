@@ -77,8 +77,8 @@ ScaleThemeExtension _getScaleTheme({
     minVerticalWidth: 40.0,
     minVerticalHeight: 120.0,
 
-    // Padding
-    horizontalPadding: 24.0,
+    // Track inset from each end, as GTK and Cocoa place it: a click maps to the same value.
+    horizontalPadding: 12.0,
 
     // Default scale values
     defaultMinimum: 0,
@@ -86,6 +86,8 @@ ScaleThemeExtension _getScaleTheme({
     defaultSelection: 0,
     defaultIncrement: 1,
     defaultPageIncrement: 10,
+
+    minTextContrast: kMinTextContrast,
   );
 }
 
@@ -105,6 +107,7 @@ Color getScaleActiveTrackColor(
     context: context,
     foreground: foreground,
     defaultColor: widgetTheme.activeTrackColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 
@@ -133,6 +136,7 @@ Color getScaleThumbColor(
     context: context,
     foreground: foreground,
     defaultColor: isHovered ? widgetTheme.thumbHoverColor : widgetTheme.thumbColor,
+    minContrast: widgetTheme.minTextContrast,
   );
 }
 

@@ -69,8 +69,39 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         return DartMocks.dartShell(display);
     }
 
+    /**
+     * A shell whose own toDisplay is the identity, so what a mapping test asserts is the offset the
+     * walk up from the control accumulates -- not the mock's answer for where the shell sits.
+     */
+    public static Shell echoingShell() {
+        Shell shell = shell();
+        when(shell.toDisplay(anyInt(), anyInt()))
+                .thenAnswer(call -> new Point(call.getArgument(0), call.getArgument(1)));
+        return shell;
+    }
+
     public static Display display() {
         return DartMocks.dartDisplay();
+    }
+
+    /** Undoes {@link #deliverEvents}. */
+    public interface Delivery extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    /**
+     * Makes the shared mock display deliver sent events to the widget's listeners, as the real
+     * display does, until the returned handle is closed.
+     */
+    public static Delivery deliverEvents(Display display) {
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        doAnswer(inv -> {
+            EventTable table = inv.getArgument(0);
+            if (table != null) table.sendEvent(inv.getArgument(1));
+            return null;
+        }).when(impl).sendEvent(any(EventTable.class), any(Event.class));
+        return () -> doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
     }
 
     public static Device device() {

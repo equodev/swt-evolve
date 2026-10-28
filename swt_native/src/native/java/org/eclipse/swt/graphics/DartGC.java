@@ -2289,7 +2289,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         alpha &= 0xFF;
         int newValue = alpha;
-        if (!java.util.Objects.equals(this.alpha, newValue)) {
+        if (this.alpha != newValue) {
             getValue().markDirty(VGC.ALPHA);
         }
         data.alpha = alpha & 0xFF;
@@ -2329,7 +2329,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = antialias;
-        if (!java.util.Objects.equals(this.antialias, newValue)) {
+        if (this.antialias != newValue) {
             getValue().markDirty(VGC.ANTIALIAS);
         }
         boolean mode = true;
@@ -2582,7 +2582,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = rule;
-        if (!java.util.Objects.equals(this.fillRule, newValue)) {
+        if (this.fillRule != newValue) {
             getValue().markDirty(VGC.FILL_RULE);
         }
         switch(rule) {
@@ -2730,7 +2730,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = interpolation;
-        if (!java.util.Objects.equals(this.interpolation, newValue)) {
+        if (this.interpolation != newValue) {
             getValue().markDirty(VGC.INTERPOLATION);
         }
         switch(interpolation) {
@@ -2907,7 +2907,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = cap;
-        if (!java.util.Objects.equals(this.lineCap, newValue)) {
+        if (this.lineCap != newValue) {
             getValue().markDirty(VGC.LINE_CAP);
         }
         if (data.lineCap == cap)
@@ -2947,7 +2947,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int[] newValue = dashes;
-        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+        if (!java.util.Arrays.equals(this.lineDash, newValue)) {
             getValue().markDirty(VGC.LINE_DASH);
         }
         float[] lineDashes = data.lineDashes;
@@ -3008,7 +3008,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = join;
-        if (!java.util.Objects.equals(this.lineJoin, newValue)) {
+        if (this.lineJoin != newValue) {
             getValue().markDirty(VGC.LINE_JOIN);
         }
         if (data.lineJoin == join)
@@ -3046,7 +3046,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineStyle;
-        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+        if (this.lineStyle != newValue) {
             getValue().markDirty(VGC.LINE_STYLE);
         }
         if (data.lineStyle == lineStyle)
@@ -3095,7 +3095,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         int newValue = lineWidth;
-        if (!java.util.Objects.equals(this.lineWidth, newValue)) {
+        if (this.lineWidth != newValue) {
             getValue().markDirty(VGC.LINE_WIDTH);
         }
         if (data.lineWidth == lineWidth)
@@ -3114,14 +3114,22 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     /**
-     * If the argument is <code>true</code>, puts the receiver
-     * in a drawing mode where the resulting color in the destination
-     * is the <em>exclusive or</em> of the color values in the source
-     * and the destination, and if the argument is <code>false</code>,
-     * puts the receiver in a drawing mode where the destination color
-     * is replaced with the source color value.
+     * If the argument is <code>true</code>, puts the receiver in a drawing mode
+     * where the resulting color in the destination is the <em>exclusive or</em> of
+     * the color values in the source and the destination, and if the argument is
+     * <code>false</code>, puts the receiver in a drawing mode where the destination
+     * color is replaced with the source color value.
+     * <p>
+     * <b>IMPORTANT:</b> This operation may not work on every platform or with every
+     * configuration. Especially on Windows, GDI+ has no direct support for raster
+     * operations (ROPs). This means that advanced graphics must be <b>disabled</b>
+     * when using XOR mode. More specifically, this means that all operations that
+     * require advanced mode (e.g. {@link Transform}) can't be used in combination
+     * with XOR mode.
+     * </p>
      *
-     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise <em>source copy</em> mode is used
+     * @param xor if <code>true</code>, then <em>xor</em> mode is used, otherwise
+     *            <em>source copy</em> mode is used
      *
      * @exception SWTException <ul>
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
@@ -3131,7 +3139,7 @@ public final class DartGC extends DartResource implements IGC {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         boolean newValue = xor;
-        if (!java.util.Objects.equals(this.XORMode, newValue)) {
+        if (this.XORMode != newValue) {
             getValue().markDirty(VGC.XORMODE);
         }
         this.XORMode = newValue;
@@ -3508,6 +3516,18 @@ public final class DartGC extends DartResource implements IGC {
 
     float wireBufferScale() {
         return bufferScale;
+    }
+
+    Boolean wireThemedCanvas() {
+        return dev.equo.swt.Config.canvasColorsOverride(drawable);
+    }
+
+    RGB[] wireHoverFills() {
+        return dev.equo.swt.Config.canvasHoverFills(drawable);
+    }
+
+    RGB[] wireSelectionFills() {
+        return dev.equo.swt.Config.canvasSelectionFills(drawable);
     }
 
     /**

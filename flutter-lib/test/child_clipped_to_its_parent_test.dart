@@ -1,14 +1,4 @@
-// SWT cuts a child at its parent's edge. NoLayout inflated every child's clip by the room a
-// ToolItem's hover zoom needs (iconSize * (scale - 1) / 2 = 7.5px with the shipped theme), so any
-// control could bleed 7.5px past its parent.
-//
-// Invisible for a control that fits, and wrong for one that does not: an Eclipse Forms Section used
-// as a captioned rule is pinned to `GridData.heightHint = 2` with no client, and its own layout puts
-// a 20px caption Label at y=3. SWT clips that caption away entirely and the Section reads as a plain
-// horizontal rule; the inflated clip leaked the top ~7px of the glyphs instead -- the smear that
-// reads as a field painting over the caption.
-//
-// The ToolBar keeps the inflation: a bar sized to exactly its icons needs the room to grow into.
+// SWT cuts a child at its parent's edge: a 2px Section must show nothing of its 20px caption.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,10 +79,10 @@ void main() {
         reason: 'nothing of the 20px caption may survive a 2px Section -- SWT clips it away');
   });
 
-  testWidgets('a ToolBar keeps the room its hover zoom needs', (WidgetTester tester) async {
+  testWidgets('a ToolBar is cut at its own edge too', (WidgetTester tester) async {
     final r = await _clipAround(tester, _toolBar(), ToolBarSwt<VToolBar>);
 
-    expect(r.clip.top, lessThan(0.0),
-        reason: 'a bar sized to its icons must let the zoomed icon grow past its bounds');
+    expect(r.clip, Offset.zero & r.size,
+        reason: 'a hovered icon grows in the overlay, so the bar needs no room past its bounds');
   });
 }

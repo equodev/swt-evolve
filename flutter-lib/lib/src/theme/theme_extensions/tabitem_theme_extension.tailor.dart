@@ -20,6 +20,7 @@ mixin _$TabItemThemeExtensionTailorMixin
   EdgeInsets get textPadding;
   double get imageTextSpacing;
   TextStyle? get textStyle;
+  double get minTextContrast;
 
   @override
   TabItemThemeExtension copyWith({
@@ -32,6 +33,7 @@ mixin _$TabItemThemeExtensionTailorMixin
     EdgeInsets? textPadding,
     double? imageTextSpacing,
     TextStyle? textStyle,
+    double? minTextContrast,
   }) {
     return TabItemThemeExtension(
       textColor: textColor ?? this.textColor,
@@ -43,6 +45,7 @@ mixin _$TabItemThemeExtensionTailorMixin
       textPadding: textPadding ?? this.textPadding,
       imageTextSpacing: imageTextSpacing ?? this.imageTextSpacing,
       textStyle: textStyle ?? this.textStyle,
+      minTextContrast: minTextContrast ?? this.minTextContrast,
     );
   }
 
@@ -70,6 +73,7 @@ mixin _$TabItemThemeExtensionTailorMixin
       textPadding: t < 0.5 ? textPadding : other.textPadding,
       imageTextSpacing: t < 0.5 ? imageTextSpacing : other.imageTextSpacing,
       textStyle: TextStyle.lerp(textStyle, other.textStyle, t),
+      minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
     );
   }
 
@@ -104,7 +108,11 @@ mixin _$TabItemThemeExtensionTailorMixin
               imageTextSpacing,
               other.imageTextSpacing,
             ) &&
-            const DeepCollectionEquality().equals(textStyle, other.textStyle));
+            const DeepCollectionEquality().equals(textStyle, other.textStyle) &&
+            const DeepCollectionEquality().equals(
+              minTextContrast,
+              other.minTextContrast,
+            ));
   }
 
   @override
@@ -120,6 +128,7 @@ mixin _$TabItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(textPadding),
       const DeepCollectionEquality().hash(imageTextSpacing),
       const DeepCollectionEquality().hash(textStyle),
+      const DeepCollectionEquality().hash(minTextContrast),
     );
   }
 }
@@ -136,4 +145,5 @@ extension TabItemThemeExtensionBuildContextProps on BuildContext {
   EdgeInsets get textPadding => tabItemThemeExtension.textPadding;
   double get imageTextSpacing => tabItemThemeExtension.imageTextSpacing;
   TextStyle? get textStyle => tabItemThemeExtension.textStyle;
+  double get minTextContrast => tabItemThemeExtension.minTextContrast;
 }

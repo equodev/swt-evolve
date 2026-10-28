@@ -200,6 +200,7 @@ public class DartList extends DartScrollable implements IList {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -680,21 +681,7 @@ public class DartList extends DartScrollable implements IList {
             error(SWT.ERROR_INVALID_RANGE);
         }
         int removeCount = end - start + 1;
-        int[] oldSelection = getSelectionIndices();
-        if (oldSelection.length > 0) {
-            int newCount = 0;
-            int[] newSelection = new int[oldSelection.length];
-            for (int idx : oldSelection) {
-                if (idx < start) {
-                    newSelection[newCount++] = idx;
-                } else if (idx > end) {
-                    newSelection[newCount++] = idx - removeCount;
-                }
-            }
-            if (newCount != oldSelection.length) {
-                select(java.util.Arrays.copyOf(newSelection, newCount), newCount, true);
-            }
-        }
+        ListHelper.itemsRemoved(this, start, end);
         System.arraycopy(items, end + 1, items, start, itemCount - end - 1);
         for (int i = itemCount - removeCount; i < itemCount; i++) {
             items[i] = null;
@@ -891,7 +878,7 @@ public class DartList extends DartScrollable implements IList {
     void select(int[] indices, int count, boolean clear) {
         int[] newValue = new int[count];
         System.arraycopy(indices, 0, newValue, 0, count);
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VList.SELECTION);
         }
         ignoreSelect = true;
@@ -1180,6 +1167,7 @@ public class DartList extends DartScrollable implements IList {
     }
 
     void updateRowCount() {
+        ListHelper.deselectRange(this, itemCount, Integer.MAX_VALUE);
         /*
 	 * Feature in Cocoa. Changing the row count while the mouse is tracking will confuse the code that calculates the
 	 * current selection.  Fix is to not call noteNumberOfRowsChanged if the mouse is down.

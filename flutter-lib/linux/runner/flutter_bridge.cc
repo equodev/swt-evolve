@@ -404,6 +404,32 @@ static void on_display_window_active(GObject *object, GParamSpec * /*pspec*/, gp
   fl_method_channel_invoke_method(ctx->window_channel, "active", args, nullptr, nullptr, nullptr);
 }
 
+// A crossing that is not the pointer moving through the view. A window manager restacking or
+// focusing the window on a click reports the pointer leaving and re-entering it while the button is
+// still down, and the view would hand both on as a MouseExit and MouseEnter on every click. Dropped
+// by the rule native SWT applies (Control.gtk_enter_notify_event / gtk_leave_notify_event): a
+// crossing counts only when no button is held -- a held button is SWT's implicit capture -- and only
+// when it is a normal one or the end of a grab. Only crossings on a Flutter view are filtered; a
+// GTK dialog in the same process gets every one. Cocoa and Win32 report no crossing on such a click,
+// so the other runners need no counterpart.
+static bool IsOnFlView(GdkWindow *window) {
+  gpointer data = nullptr;
+  if (window != nullptr) gdk_window_get_user_data(window, &data);
+  return data != nullptr && GTK_IS_WIDGET(data) &&
+         gtk_widget_get_ancestor(GTK_WIDGET(data), fl_view_get_type()) != nullptr;
+}
+
+static void DropCapturedCrossings(GdkEvent *event, gpointer) {
+  if ((event->type == GDK_ENTER_NOTIFY || event->type == GDK_LEAVE_NOTIFY) &&
+      IsOnFlView(event->crossing.window)) {
+    const GdkEventCrossing *crossing = &event->crossing;
+    const guint buttons = GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK;
+    if (crossing->mode != GDK_CROSSING_NORMAL && crossing->mode != GDK_CROSSING_UNGRAB) return;
+    if ((crossing->state & buttons) != 0) return;
+  }
+  gtk_main_do_event(event);
+}
+
 // Creates a visible top-level GtkWindow hosting one FlView for the whole Display.
 FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widget_name,
                                    const char *theme, int backgroundColor, int width, int height,
@@ -441,6 +467,13 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
     return nullptr;
   }
   InstallXErrorHandler();
+  // Replaces GTK's own handler, which the filter hands every event on to; nothing else in this
+  // process installs one. Once per process, however many windows the Display opens.
+  static bool crossing_filter_installed = false;
+  if (!crossing_filter_installed) {
+    gdk_event_handler_set(DropCapturedCrossings, nullptr, nullptr);
+    crossing_filter_installed = true;
+  }
 
   FlutterWindow *ctx = new FlutterWindow;
   ctx->headless_window = nullptr;
@@ -519,7 +552,10 @@ JNIEXPORT jlong JNICALL
 Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, jlong parent,
                                            jlong widget_id, jstring widget_name, jstring theme,
                                            jint background_color, jint parent_background_color,
-                                           jint width, jint height, jboolean csd_enabled) {
+                                           jint width, jint height, jboolean csd_enabled,
+                                           jboolean impeller_enabled) {
+  // The renderer choice is the Windows engine's; this embedder has no Impeller switch.
+  (void)impeller_enabled;
   const char *name = env->GetStringUTFChars(widget_name, NULL);
   const char *th = env->GetStringUTFChars(theme, NULL);
   FlutterWindow *w;
@@ -713,6 +749,10 @@ Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong contex
     gtk_widget_hide(w->top_window);
   }
 }
+
+// GTK windows are not given an owner yet: Initialize ignores it as well.
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv *env, jclass cls, jlong context, jlong owner) {}
 
 // state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen.
 JNIEXPORT void JNICALL

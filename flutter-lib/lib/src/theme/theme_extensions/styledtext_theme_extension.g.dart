@@ -15,6 +15,7 @@ StyledTextThemeExtension _$StyledTextThemeExtensionFromJson(
   foregroundColor: const ColorConverter().fromJson(
     json['foregroundColor'] as String,
   ),
+  minTextContrast: (json['minTextContrast'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$StyledTextThemeExtensionToJson(
@@ -22,4 +23,5 @@ Map<String, dynamic> _$StyledTextThemeExtensionToJson(
 ) => <String, dynamic>{
   'backgroundColor': const ColorConverter().toJson(instance.backgroundColor),
   'foregroundColor': const ColorConverter().toJson(instance.foregroundColor),
+  'minTextContrast': instance.minTextContrast,
 };

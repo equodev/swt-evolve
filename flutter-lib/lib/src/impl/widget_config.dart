@@ -26,7 +26,32 @@ void setCurrentColorSchemeExtension(ColorSchemeExtension? extension) {
 }
 
 ConfigFlags configFlags = ConfigFlags();
+
+/// The factor the app is drawn at: how many of the view's logical pixels one SWT unit takes. The
+/// one scale every conversion between Flutter and SWT space reads -- see `swt_zoom_scale.dart`.
+/// The app sets it only through [refreshAppScale] and [setAppScaleOverride], which keep it in step
+/// with its inputs.
 final ValueNotifier<double> appScaleNotifier = ValueNotifier<double>(1.0);
+
+/// The factor the scale control pinned, or null while the app follows SWT's zoom.
+double? _appScaleOverride;
+
+/// Pins the app's scale to [scale], or with null goes back to following SWT's zoom.
+void setAppScaleOverride(double? scale) {
+  _appScaleOverride = scale;
+  refreshAppScale();
+}
+
+/// Brings [appScaleNotifier] in step with its inputs: the scale control's override, else the UI
+/// zoom Java sent over the monitor zoom the view reports now. Called on every change of either --
+/// the UI zoom stays put when the window moves to a monitor at another zoom, so Java sends nothing
+/// then and only the view's own metrics tell. Answers whether the scale moved.
+bool refreshAppScale() {
+  final scale = _appScaleOverride ?? swtUiScale();
+  if (scale == appScaleNotifier.value) return false;
+  appScaleNotifier.value = scale;
+  return true;
+}
 
 /// Bumped when the flags change; the root [MaterialApp] listens to it and rebuilds with the new theme.
 final ValueNotifier<int> configFlagsVersion = ValueNotifier<int>(0);
@@ -42,7 +67,7 @@ void applyConfigFlags(ConfigFlags? flags) {
   if (mapEquals(json, _lastAppliedConfig)) return;
   _lastAppliedConfig = json;
   setConfigFlags(flags);
-  appScaleNotifier.value = swtUiScale();
+  refreshAppScale();
   configFlagsVersion.value++;
 }
 
@@ -98,6 +123,8 @@ void resetConfigFlags() {
   configFlags = ConfigFlags();
   _lastAppliedConfig = null;
   configFlagsVersion.value = 0;
+  _appScaleOverride = null;
+  appScaleNotifier.value = 1.0;
 }
 
 bool getCurrentTheme() {
@@ -140,6 +167,10 @@ bool useSwtFontColors([String? widget]) {
   return own ?? flags.use_swt_font_colors ?? flags.use_swt_fonts ?? false;
 }
 
+/// True when a bordered control draws the frame its `SWT.BORDER` style asks for rather than the
+/// theme's flat one: `-Dswt.use_swt_border`.
+bool get useSwtBorder => getConfigFlags().use_swt_border ?? false;
+
 /// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the named theme's default.
 bool get focusIndicators {
   final flags = getConfigFlags();
@@ -161,15 +192,29 @@ bool get gcIconsReplacement => getConfigFlags().gc_icons_replacement ?? false;
 
 /// True when a Canvas is drawn in the theme's colors instead of the ones the application painted
 /// with. `use_swt_colors` asks for the application's colors everywhere, so it wins.
-bool get canvasUsesThemeColors {
+bool get canvasUsesThemeColors => gcUsesThemeColors(null);
+
+/// [canvasUsesThemeColors] for one GC. `VGC.themedCanvas` carries a
+/// `disable_swt_canvas_colors_<class>` override that covers the control the GC draws on, in either
+/// direction; null leaves the global flag to decide.
+bool gcUsesThemeColors(bool? themedCanvas) {
   final flags = getConfigFlags();
-  return (flags.disable_swt_canvas_colors ?? false) &&
+  return (themedCanvas ?? flags.disable_swt_canvas_colors ?? false) &&
       !(flags.use_swt_colors ?? false);
 }
 
 /// The shared double-click pairing window, used by every `DoubleTapDetector` whose call site does
-/// not pass an explicit one. Configured with `-Dswt.evolve.double_click_timeout_ms=<ms>`; unset (or
-/// 0) keeps Flutter's [kDoubleTapTimeout], which is what production runs on.
+/// not pass an explicit one: Java's `Display.getDoubleClickTime()`, sent in the config flags
+/// (`-Dswt.evolve.double_click_timeout_ms=<ms>` overrides it). Before the flags arrive, Flutter's
+/// [kDoubleTapTimeout].
+/// How long the pointer rests before a control reports MouseHover and shows its tooltip: Java's
+/// `Display.getToolTipTime()`, sent in the config flags (`-Dswt.evolve.hover_delay_ms=<ms>`
+/// overrides it). Before the flags arrive, 560ms.
+Duration get hoverDelay {
+  final ms = getConfigFlags().hover_delay_ms ?? 0;
+  return Duration(milliseconds: ms > 0 ? ms : 560);
+}
+
 Duration get doubleClickTimeout {
   final ms = getConfigFlags().double_click_timeout_ms ?? 0;
   return ms > 0 ? Duration(milliseconds: ms) : kDoubleTapTimeout;

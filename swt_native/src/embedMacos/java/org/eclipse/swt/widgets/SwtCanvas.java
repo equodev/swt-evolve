@@ -156,7 +156,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             if (isObscured()) {
                 glcontext.setValues(new int[] { -1 }, OS.NSOpenGLCPSurfaceOrder);
                 context.saveGraphicsState();
-                context.setCompositingOperation(OS.NSCompositeClear);
+                context.setCompositingOperation(OS.NSCompositingOperationClear);
                 if (visiblePath == null) {
                     long visibleRegion = getVisibleRegion();
                     visiblePath = getPath(visibleRegion);

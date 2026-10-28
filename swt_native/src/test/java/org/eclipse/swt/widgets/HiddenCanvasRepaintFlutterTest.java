@@ -47,18 +47,7 @@ class HiddenCanvasRepaintFlutterTest {
     void clear() {
         for (Shell s : shell.getShells()) s.dispose();
         for (Control c : shell.getChildren()) c.dispose();
-        settle();
-    }
-
-    private void settle() {
-        int quiet = 0;
-        for (int round = 0; round < 40 && quiet < 3; round++) {
-            long before = flutter.dispatched();
-            flutter.drain();
-            flutter.flush();
-            flutter.drain();
-            quiet = flutter.dispatched() == before ? quiet + 1 : 0;
-        }
+        flutter.settle();
     }
 
     /**
@@ -68,7 +57,7 @@ class HiddenCanvasRepaintFlutterTest {
     private double redShare(Control w) throws Exception {
         double share = 0;
         for (int attempt = 0; attempt < 20; attempt++) {
-            settle();
+            flutter.settle();
             try {
                 share = redShareNow(w);
             } catch (IllegalStateException notRenderedYet) {
@@ -122,17 +111,17 @@ class HiddenCanvasRepaintFlutterTest {
         Composite stack = new Composite(shell, SWT.NONE);
         stack.setBounds(0, 0, 300, 200);
         Canvas canvas = redCanvas(stack);
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("sanity: painted before").isGreaterThan(0.9);
 
         stack.setVisible(false);
-        settle();
+        flutter.settle();
         stack.setVisible(true);
-        settle();
+        flutter.settle();
 
         assertThat(redShare(canvas)).as("painted after being shown again").isGreaterThan(0.9);
         stack.dispose();
-        settle();
+        flutter.settle();
     }
 
     @Test
@@ -142,18 +131,18 @@ class HiddenCanvasRepaintFlutterTest {
         Composite stack = new Composite(shell, SWT.NONE);
         stack.setBounds(0, 0, 300, 200);
         Canvas canvas = redCanvas(stack);
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("sanity: painted before").isGreaterThan(0.9);
 
         stack.setVisible(false);
-        settle();
+        flutter.settle();
         stack.setBounds(0, 0, 380, 260);
         stack.setVisible(true);
-        settle();
+        flutter.settle();
 
         assertThat(redShare(canvas)).as("painted after being shown again").isGreaterThan(0.9);
         stack.dispose();
-        settle();
+        flutter.settle();
     }
 
     @Test
@@ -165,22 +154,22 @@ class HiddenCanvasRepaintFlutterTest {
         Composite folder = new Composite(stack, SWT.NONE);
         folder.setBounds(0, 0, 300, 200);
         Canvas canvas = redCanvas(folder);
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("sanity: painted before").isGreaterThan(0.9);
 
         Shell popup = new Shell(shell, SWT.NO_TRIM);
         popup.setBounds(420, 0, 320, 220);
         popup.open();
         folder.setParent(popup);
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("painted in the popup").isGreaterThan(0.9);
 
         folder.setParent(stack);
         popup.dispose();
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("painted after moving back").isGreaterThan(0.9);
         stack.dispose();
-        settle();
+        flutter.settle();
     }
 
     @Test
@@ -191,18 +180,18 @@ class HiddenCanvasRepaintFlutterTest {
         Tree tree = new Tree(stack, SWT.NONE);
         tree.setBounds(0, 0, 300, 200);
         for (int i = 0; i < 5; i++) new TreeItem(tree, SWT.NONE).setText("item " + i);
-        settle();
+        flutter.settle();
         String before = String.valueOf(flutter.queryState(tree));
         assertThat(before).as("sanity: items rendered").contains("item 3");
 
         stack.setVisible(false);
-        settle();
+        flutter.settle();
         stack.setVisible(true);
-        settle();
+        flutter.settle();
 
         assertThat(String.valueOf(flutter.queryState(tree))).contains("item 3");
         stack.dispose();
-        settle();
+        flutter.settle();
     }
 
     @Test
@@ -215,11 +204,11 @@ class HiddenCanvasRepaintFlutterTest {
         Composite folder = new Composite(left, SWT.NONE);
         folder.setBounds(0, 0, 180, 150);
         Canvas canvas = redCanvas(folder);
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("sanity: painted before").isGreaterThan(0.9);
 
         folder.setParent(right);
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).as("painted where it went").isGreaterThan(0.9);
     }
 
@@ -230,7 +219,7 @@ class HiddenCanvasRepaintFlutterTest {
         popup.setBounds(420, 0, 320, 220);
         Canvas canvas = redCanvas(popup);
         popup.open();
-        settle();
+        flutter.settle();
         assertThat(redShare(canvas)).isGreaterThan(0.9);
     }
 }

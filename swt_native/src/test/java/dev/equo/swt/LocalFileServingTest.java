@@ -184,17 +184,44 @@ class LocalFileServingTest {
 
     @Test
     void relativizeBaseHref_keepsAFilesystemBaseUnderThePagesToken() throws Exception {
+        // Not canonicalized: a base href written through a symlink (/var on macOS) must still match.
         File dir = Files.createTempDirectory("equo-base-href").toFile();
         File target = new File(dir, "welcome.html");
         Files.write(target.toPath(), "<html></html>".getBytes(StandardCharsets.UTF_8));
-        String html = "<html><base href=\"" + target.getAbsolutePath() + "\" /><head></head></html>";
+        File style = new File(dir, "style.css");
+        Files.write(style.toPath(), "body {}".getBytes(StandardCharsets.UTF_8));
+        style = style.getCanonicalFile();
 
-        assertThat(LocalFileServing.relativizeBaseHref(html, "123.html"))
-                .as("relative to /local-file/<token>/, so resources resolve below the token")
-                .contains("<base href=\"" + target.getAbsolutePath().substring(1) + "\" />");
-        assertThat(LocalFileServing.relativizeBaseHref(html, "sub/123.html"))
-                .as("a page below the token's root climbs back to it first")
-                .contains("<base href=\"../" + target.getAbsolutePath().substring(1) + "\" />");
+        // The platform's own path, and the form a file: URL carries (/C:/... on Windows).
+        for (String href : new String[] {target.getAbsolutePath(), target.toURI().getPath()}) {
+            File page = new File(Files.createTempDirectory("equo-base-href-page").toFile(), "page.html");
+            String html = "<html><base href=\"" + href + "\" /><head></head></html>";
+            Files.write(page.toPath(), html.getBytes(StandardCharsets.UTF_8));
+            String token = LocalFileServing.registerIfLocalFile(page.toURI().toString()).token;
+
+            assertThat(servedThroughBase(token, "123.html",
+                    LocalFileServing.relativizeBaseHref(html, "123.html"), "style.css"))
+                    .as("relative to /local-file/<token>/, so resources resolve below the token (%s)", href)
+                    .isEqualTo(style);
+            assertThat(servedThroughBase(token, "sub/123.html",
+                    LocalFileServing.relativizeBaseHref(html, "sub/123.html"), "style.css"))
+                    .as("a page below the token's root climbs back to it first (%s)", href)
+                    .isEqualTo(style);
+        }
+    }
+
+    /**
+     * Resolves {@code resource} the way a browser does, against the {@code <base href>} of
+     * {@code html} served at {@code /local-file/<token>/<pagePath>}, and serves the result.
+     */
+    private static File servedThroughBase(String token, String pagePath, String html, String resource) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("<base href=\"([^\"]*)\"").matcher(html);
+        assertThat(m.find()).as("the page keeps its <base href>").isTrue();
+        String tokenRoot = LocalFileServing.URL_PREFIX + token + "/";
+        String path = java.net.URI.create("http://localhost" + tokenRoot + pagePath)
+                .resolve(m.group(1)).resolve(resource).getPath();
+        assertThat(path).as("the resource stays under the page's token").startsWith(tokenRoot);
+        return LocalFileServing.resolve(token, path.substring(tokenRoot.length()));
     }
 
     @Test
@@ -203,8 +230,36 @@ class LocalFileServingTest {
         assertThat(LocalFileServing.relativizeBaseHref(remote, "p.html")).isSameAs(remote);
         String missing = "<html><base href=\"/no/such/equo/dir/page.html\"></html>";
         assertThat(LocalFileServing.relativizeBaseHref(missing, "p.html")).isSameAs(missing);
+        String missingDrive = "<html><base href=\"/Q:/no/such/equo/dir/page.html\"></html>";
+        assertThat(LocalFileServing.relativizeBaseHref(missingDrive, "p.html")).isSameAs(missingDrive);
+        String network = "<html><base href=\"//host/share/page.html\"></html>";
+        assertThat(LocalFileServing.relativizeBaseHref(network, "p.html")).isSameAs(network);
         String none = "<html><head></head></html>";
         assertThat(LocalFileServing.relativizeBaseHref(none, "p.html")).isSameAs(none);
+    }
+
+    /** Both flavours of the parser, whichever platform runs the test. */
+    @Test
+    void absoluteFilesystemPath_readsDrivePathsOnlyWhereThePlatformHasThem() {
+        assertThat(fsPath("/C:/b/x", true)).as("a file: URL's path").isEqualTo("C:/b/x");
+        assertThat(fsPath("C:/b/x", true)).isEqualTo("C:/b/x");
+        assertThat(fsPath("C:\\b\\x", true)).isEqualTo("C:/b/x");
+        assertThat(fsPath("/opt/b/x", true)).isEqualTo("/opt/b/x");
+        assertThat(fsPath("/opt/b/x", false)).isEqualTo("/opt/b/x");
+
+        assertThat(fsPath("C:/b/x", false)).as("no drive letters on this platform").isNull();
+        assertThat(fsPath("C:b", true)).as("drive-relative").isNull();
+        assertThat(fsPath("b/x", true)).as("relative").isNull();
+        assertThat(fsPath("//host/share", true)).as("network path").isNull();
+        assertThat(fsPath("//host/share", false)).as("network path").isNull();
+        assertThat(fsPath("\\\\host\\share", true)).as("network path").isNull();
+        assertThat(fsPath("/C:/a\u0000b", true)).as("unrepresentable, not thrown").isNull();
+        assertThat(fsPath("/a\u0000b", false)).as("unrepresentable, not thrown").isNull();
+    }
+
+    private static String fsPath(String path, boolean drivePaths) {
+        java.nio.file.Path p = LocalFileServing.absoluteFilesystemPath(path, drivePaths);
+        return p == null ? null : p.toString().replace('\\', '/');
     }
 
     @Test

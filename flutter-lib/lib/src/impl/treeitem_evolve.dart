@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/impl/tree_evolve.dart';
@@ -11,10 +12,12 @@ import '../impl/item_evolve.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
 import 'color_utils.dart';
+import 'control_evolve.dart';
 import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
+import 'utils/column_order.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
@@ -25,8 +28,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   TreeItemContext? _context;
 
   bool _isHovered = false;
+
+  /// What is painted behind this row's text in the current build: its own background over the
+  /// tree's.
+  Color? _rowGround;
   Offset? _lastTapPosition;
   Offset? _lastTapGlobalPosition;
+  int? _secondaryPressPointer;
+  Offset? _secondaryPressAt;
   final DoubleTapDetector _rowTap = DoubleTapDetector();
 
   @override
@@ -40,6 +49,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
   }
 
+  Widget _decorateDropFeedback(BuildContext context, int feedback, Widget row) {
+    final theme = Theme.of(context).extension<TreeThemeExtension>();
+    return decorateDropFeedback(
+      feedback: feedback,
+      color: theme?.selectedBackgroundColor ?? Theme.of(context).colorScheme.primary,
+      lineWidth: theme?.dropFeedbackLineWidth ?? 2.0,
+      highlightAlpha: theme?.dropFeedbackHighlightAlpha ?? 90,
+      child: row,
+    );
+  }
+
   Widget _wrapItemForDrag(Widget row) {
     final ctx = _context;
     if (ctx == null) return row;
@@ -49,15 +69,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final treeImpl = ctx.treeImpl;
     final content = treeImpl == null
         ? row
-        : ValueListenableBuilder<int?>(
-            valueListenable: treeImpl.dragHover.notifier,
-            builder: (context, hoveredId, child) => hoveredId == state.id
-                ? DecoratedBox(
-                    decoration: const BoxDecoration(
-                      border: Border(top: BorderSide(color: Colors.blue, width: 2)),
-                    ),
-                    child: child,
-                  )
+        : ListenableBuilder(
+            listenable: Listenable.merge(
+                [treeImpl.dragHover.notifier, treeImpl.dropFeedback]),
+            builder: (context, child) => treeImpl.dragHover.value == state.id
+                ? _decorateDropFeedback(context, treeImpl.dropFeedback.value, child!)
                 : child!,
             child: row,
           );
@@ -67,13 +83,22 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       data: DndDragPayload(sourceControlId: parentTreeValue.id, itemId: state.id),
       widget: parentTree,
       state: parentTreeValue,
+      // The plain row: the drag image lives in the Overlay, outside the Tree whose drop feedback
+      // [content] follows.
+      feedbackBuilder: (_) => Opacity(
+        opacity: Theme.of(context).extension<TreeThemeExtension>()?.dragImageOpacity ?? 0.85,
+        child: Material(type: MaterialType.transparency, child: row),
+      ),
       dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
-      onDragStarted: () {
-        ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+      beforeDragDetect: () {
+        // A drag carries the selection: starting one on a selected row keeps the rows selected
+        // with it, and only a row outside the selection replaces it.
+        if (treeImpl == null || treeImpl.isItemSelected(state.id)) return;
+        treeImpl.handleTreeItemSelection(state.id, notifyJava: false);
         final e = _createEvent();
         e.count = 1;
         e.button = 1;
-        parentTree.sendSelectionSelection(parentTreeValue, e);
+        parentTree.sendSelectionSelection(parentTreeValue, treeImpl.withSelection(e));
       },
     );
   }
@@ -155,21 +180,52 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return e;
   }
 
-  void _secondaryActivate({required int button}) {
-    final bool enabled = _context?.parentTreeValue.enabled ?? true;
-    final bool selected =
-        _context?.treeImpl?.isItemSelected(state.id) ?? false;
-    if (!enabled) return;
-    if (!selected) {
-      _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
-      final e = _createEvent();
-      e.count = 1;
-      e.button = button;
-      _context?.parentTree.sendSelectionSelection(
-        _context!.parentTreeValue,
-        e,
+  VEvent _withSelection(VEvent e) => _context?.treeImpl?.withSelection(e) ?? e;
+
+  void _selectForContextMenu({required int button}) {
+    if (!(_context?.parentTreeValue.enabled ?? true)) return;
+    if (_context?.treeImpl?.isItemSelected(state.id) ?? false) return;
+    _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+    final e = _createEvent();
+    e.count = 1;
+    e.button = button;
+    _context?.parentTree.sendSelectionSelection(
+      _context!.parentTreeValue,
+      _withSelection(e),
+    );
+  }
+
+  /// Lets the tree select this item right before it sends MenuDetect: this pointer-down
+  /// reaches the item before the tree's own. The menu opens on the secondary release from here,
+  /// not from a tap recognizer: a click that dismisses an open popup loses the gesture arena to
+  /// it, and natively that same click still opens the new menu.
+  Widget _notingContextMenuPress(Widget child) => Listener(
+        onPointerDown: (PointerDownEvent e) {
+          final button = ControlImpl.swtButtonOf(e.buttons);
+          if (!ControlImpl.isMenuDetectTrigger(button)) return;
+          _context?.treeImpl?.selectBeforeMenuDetect =
+              () => _selectForContextMenu(button: button);
+          if (button != 3) return;
+          _secondaryPressPointer = e.pointer;
+          _secondaryPressAt = e.position;
+          _lastTapPosition = e.localPosition;
+          _lastTapGlobalPosition = e.position;
+        },
+        onPointerUp: (PointerUpEvent e) {
+          if (e.pointer != _secondaryPressPointer) return;
+          _secondaryPressPointer = null;
+          if ((e.position - _secondaryPressAt!).distance > kTouchSlop) return;
+          _openContextMenu();
+        },
+        onPointerCancel: (PointerCancelEvent e) {
+          if (e.pointer == _secondaryPressPointer) _secondaryPressPointer = null;
+        },
+        child: child,
       );
-    }
+
+  /// No selection here: the press made it before MenuDetect, and a listener may have changed it.
+  void _openContextMenu() {
+    if (!(_context?.parentTreeValue.enabled ?? true)) return;
     if (_lastTapGlobalPosition != null) {
       _context?.treeImpl?.openContextMenu(_lastTapGlobalPosition!);
     }
@@ -251,6 +307,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool nextItemSelected =
         _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
+    final bgColor = getTreeItemBackgroundColor(
+      state,
+      widgetTheme,
+      selected,
+      _isHovered && !selected,
+      enabled,
+    );
+    final rowGround = Color.alphaBlend(
+        bgColor, enabled ? widgetTheme.backgroundColor : widgetTheme.disabledBackgroundColor);
+    _rowGround = rowGround;
     final textColor = getTreeItemTextColor(
       context,
       state,
@@ -258,13 +324,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       selected,
       enabled,
       parentForeground: ParentForegroundScope.of(context),
-    );
-    final bgColor = getTreeItemBackgroundColor(
-      state,
-      widgetTheme,
-      selected,
-      _isHovered && !selected,
-      enabled,
+      background: rowGround,
     );
 
     double? totalTreeWidth = _context?.treeWidth;
@@ -454,10 +514,20 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
 
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
-      return Row(
-        children: [
-          SizedBox(
+      // Each cell keeps its column's width, as TreeItem.getBounds(i) has it: column 0 holds the
+      // indent and the expander, and what does not fit a cell is clipped instead of pushing the
+      // next column right.
+      final double prefixWidth =
+          widgetTheme.itemIndent * level +
+          widgetTheme.expandIconSize +
+          widgetTheme.expandIconSpacing +
+          (isCheckMode ? widgetTheme.checkboxSize + widgetTheme.checkboxSpacing : 0.0) +
+          (image != null ? widgetTheme.itemIconSize + widgetTheme.itemIconSpacing : 0.0);
+      final cells = <Widget>[
+          TreeCellBox(
+            key: ValueKey('tree_cell_${state.id}_0'),
             width: firstColumnWidth,
+            minContentWidth: prefixWidth,
             child: Row(
               children: [
                 _buildItemPrefix(
@@ -493,7 +563,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             final column = entry.value;
             final String columnText = _getColumnText(texts, columnIndex);
             final double w = effectiveWidths[columnIndex];
-            return SizedBox(
+            return TreeCellBox(
+              key: ValueKey('tree_cell_${state.id}_$columnIndex'),
               width: w,
               child: _buildCellText(
                 context: context,
@@ -507,8 +578,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               ),
             );
           }),
-        ],
-      );
+      ];
+      // Each cell is drawn where the column order shows its column; the tree column keeps the expander.
+      final order = columnDisplayOrder(_context?.treeImpl?.state.columnOrder, cells.length);
+      return Row(children: [for (final index in order) cells[index]]);
     }
 
     return Row(
@@ -803,7 +876,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             final e = _createEvent(detail: SWT.CHECK);
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
-              e,
+              _withSelection(e),
             );
           },
         ),
@@ -876,10 +949,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             width: widgetTheme.rowSeparatorWidthWithCols,
           )
         : BorderSide.none;
-    final selectedSide = BorderSide(
-      color: widgetTheme.itemSelectedBorderColor,
-      width: widgetTheme.itemSelectedBorderWidth,
-    );
+    // A side that paints nothing is left out: Flutter cannot draw a hairline (width 0) side on a
+    // rounded row whose sides differ, which a selected row with a selected row below it has.
+    final selectedSide = widgetTheme.itemSelectedBorderColor.a == 0
+        ? BorderSide.none
+        : BorderSide(
+            color: widgetTheme.itemSelectedBorderColor,
+            width: widgetTheme.itemSelectedBorderWidth,
+          );
     if (selected) {
       return Border(
         left: selectedSide,
@@ -980,18 +1057,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             );
           });
         },
-        child: GestureDetector(
+        child: _notingContextMenuPress(GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: (TapDownDetails details) {
             _lastTapPosition = details.localPosition;
             _lastTapGlobalPosition = details.globalPosition;
           },
+          // Claims the secondary tap so the tree's own menu detector does not open it twice.
           onSecondaryTapDown: (TapDownDetails details) {
             _lastTapPosition = details.localPosition;
             _lastTapGlobalPosition = details.globalPosition;
-          },
-          onSecondaryTap: () {
-            _secondaryActivate(button: 3);
           },
           onTap: () {
             if (!enabled) return;
@@ -1022,9 +1097,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 isControlPressed) {
               // macOS treats Ctrl+Click as a secondary click (it neither
               // toggles multi-selection — that's Cmd — nor counts toward a
-              // double-click): select the item, keeping an existing
-              // multi-selection it belongs to, and open the context menu.
-              _secondaryActivate(button: 1);
+              // double-click): the press already selected the item, so only
+              // open the context menu.
+              _openContextMenu();
               return;
             }
 
@@ -1035,35 +1110,33 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               de.button = 1;
               _context?.parentTree.sendSelectionDefaultSelection(
                 _context!.parentTreeValue,
-                de,
+                _withSelection(de),
               );
               return;
             }
 
-            final isCtrlPressed = isControlPressed || keyboard.isMetaPressed;
+            // Control or Command adds the row to the selection or takes it out, on every OS,
+            // as in a List.
             final isShiftPressed = keyboard.isShiftPressed;
-
             _context?.treeImpl?.handleTreeItemSelection(
               state.id,
-              isCtrlPressed: isCtrlPressed,
+              toggle: isControlPressed || keyboard.isMetaPressed,
               isShiftPressed: isShiftPressed,
               notifyJava: false,
             );
 
             int stateMask = 0;
-            if (isCtrlPressed) {
-              stateMask |= SWT.CTRL;
-            }
-            if (isShiftPressed) {
-              stateMask |= SWT.SHIFT;
-            }
+            if (isControlPressed) stateMask |= SWT.CTRL;
+            if (keyboard.isMetaPressed) stateMask |= SWT.COMMAND;
+            if (isShiftPressed) stateMask |= SWT.SHIFT;
+            if (keyboard.isAltPressed) stateMask |= SWT.ALT;
             final e = _createEvent(stateMask: stateMask);
             e.count = 1;
             e.button = 1;
 
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
-              e,
+              _withSelection(e),
             );
 
             if (selected) {
@@ -1120,7 +1193,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               image,
               hasMultiColumn,
             ),
-          ),
+          )),
         ),
       ),
     );
@@ -1144,6 +1217,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             context: context,
             foreground: cellValue(state.foregrounds, columnIndex) ?? state.foreground,
             defaultColor: textColor,
+            minContrast: theme.minTextContrast,
+            background: _rowGround ?? theme.backgroundColor,
           );
     final TextStyle baseStyle = hasMultiColumn
         ? (theme.itemTextStyleWithCols ?? theme.itemTextStyle ?? const TextStyle())
@@ -1163,13 +1238,50 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       overflow: TextOverflow.ellipsis,
     );
 
+    // The tree column's icon belongs to the row prefix; any other column draws its own, and Java
+    // lays the cell's text out after it.
+    final icon = columnIndex > 0
+        ? _buildItemIcon(
+            theme,
+            _context?.parentTreeValue.enabled ?? true,
+            _context?.treeImpl?.isItemSelected(state.id) ?? false,
+            /* hasChildren */ false,
+            /* expanded */ false,
+            cellValue(state.images, columnIndex),
+          )
+        : null;
+    if (icon != null) {
+      final text = textWidget;
+      final paddedIcon = Padding(
+        padding: EdgeInsets.only(right: theme.itemIconSpacing),
+        child: icon,
+      );
+      final iconSpace = theme.itemIconSize + theme.itemIconSpacing;
+      // A column narrower than the icon clips it rather than overflowing the row.
+      textWidget = LayoutBuilder(
+        builder: (context, constraints) => constraints.maxWidth < iconSpace
+            ? SizedBox(
+                width: constraints.maxWidth,
+                height: theme.itemIconSize,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.centerLeft,
+                    maxWidth: iconSpace,
+                    child: paddedIcon,
+                  ),
+                ),
+              )
+            : Row(children: [paddedIcon, Expanded(child: text)]),
+      );
+    }
+
     EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: cellPadding,
       alignment: columnAlignment,
       extraPadding: 4.0,
     );
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-    if (columns.isNotEmpty && columnIndex < columns.length - 1) {
+    if (columns.isNotEmpty && !(_context?.treeImpl?.isLastShown(columnIndex) ?? false)) {
       adjustedPadding = adjustedPadding.copyWith(
         right: adjustedPadding.right + theme.columnDividerGap,
       );

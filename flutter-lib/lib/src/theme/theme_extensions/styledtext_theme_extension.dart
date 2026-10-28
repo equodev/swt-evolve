@@ -14,10 +14,12 @@ class StyledTextThemeExtension
     with _$StyledTextThemeExtensionTailorMixin {
   final Color backgroundColor;
   final Color foregroundColor;
+  final double minTextContrast;
 
   const StyledTextThemeExtension({
     required this.backgroundColor,
     required this.foregroundColor,
+    required this.minTextContrast,
   });
 
   factory StyledTextThemeExtension.fromJson(Map<String, dynamic> json) =>

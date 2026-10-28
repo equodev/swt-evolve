@@ -1,8 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.NoopBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.junit.jupiter.api.AfterEach;
@@ -130,7 +129,24 @@ class ClientFocusReportsFlutterTest {
     }
 
     @Test
-    void onlyTheOneReportInFlightIsDroppedSoTheNextOneIsStillTracked() {
+    void everyReportSentBeforeTheClientSawTheRequestIsDropped() {
+        web = install(TestWebBridge::new);
+        Shell shell = openBareShell();
+        Tree tree = new Tree(shell, SWT.NONE);
+        Text editor = cellEditorOn(newTable(shell), 0);
+        clientReports(tree, "Focus/FocusIn");
+        editor.setFocus();
+
+        // A click sends more than one: the tree reports the press that focused it and Flutter's
+        // focus change after it, both on their way before the request reaches the client.
+        clientReports(tree, "Focus/FocusIn");
+        clientReports(tree, "Focus/FocusIn");
+
+        assertThat(display.getFocusControl()).isSameAs(editor);
+    }
+
+    @Test
+    void aReportSentAfterTheClientSawTheRequestIsTracked() {
         web = install(TestWebBridge::new);
         Shell shell = openBareShell();
         Tree tree = new Tree(shell, SWT.NONE);
@@ -139,7 +155,9 @@ class ClientFocusReportsFlutterTest {
         editor.setFocus();
         clientReports(tree, "Focus/FocusIn");
 
-        // A request stops standing once a report answers it, whichever control that report named.
+        // The client echoes the request as it receives it, whether or not the editor takes the
+        // focus, so a client that never honours it cannot freeze focus tracking.
+        clientSaw(lastFocusRequestSeq());
         clientReports(tree, "Focus/FocusIn");
 
         assertThat(display.getFocusControl()).isSameAs(tree);
@@ -169,6 +187,21 @@ class ClientFocusReportsFlutterTest {
         return text;
     }
 
+    /** The {@code seq} of the last {@code swt.evolve.focus} request sent. */
+    private long lastFocusRequestSeq() {
+        String json = web.comm.sent.stream()
+                .filter(f -> f.event.equals("swt.evolve.focus"))
+                .reduce((a, b) -> b)
+                .orElseThrow(() -> new AssertionError("no focus request was sent")).json;
+        return Long.parseLong(json.replaceAll(".*\"seq\"\\s*:\\s*(\\d+).*", "$1"));
+    }
+
+    private void clientSaw(long seq) {
+        web.comm.fireContaining("swt.evolve.focus.seen", java.util.Map.of("seq", seq));
+        while (display.readAndDispatch()) {
+        }
+    }
+
     private static String channel(Widget widget, String suffix) {
         return "/" + widget.hashCode() + "/" + suffix;
     }
@@ -185,45 +218,4 @@ class ClientFocusReportsFlutterTest {
         return bridge;
     }
 
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
-    }
-
-    private static final class TestWebBridge extends WebDisplayBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        TestWebBridge(DartDisplay display) {
-            super(display);
-            // Stands in for the client having connected: update() defers every pending send until then.
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        protected void start(DartDisplay display) {
-            registerDisplayClientReady(display);
-        }
-    }
 }

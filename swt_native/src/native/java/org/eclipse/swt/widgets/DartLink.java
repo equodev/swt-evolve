@@ -124,6 +124,7 @@ public class DartLink extends DartControl implements ILink {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
         return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
@@ -446,7 +447,7 @@ public class DartLink extends DartControl implements ILink {
 
     @Override
     void setForeground(double[] color) {
-        if (!getEnabled())
+        if (!getApi().getEnabled())
             return;
     }
 
@@ -472,12 +473,12 @@ public class DartLink extends DartControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
+        checkWidget();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color != null ? color : display.getSystemColor(SWT.COLOR_LINK_FOREGROUND);
         if (!java.util.Objects.equals(this._linkForeground, newValue)) {
             getValue().markDirty(VLink.LINK_FOREGROUND);
         }
-        checkWidget();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -486,7 +487,7 @@ public class DartLink extends DartControl implements ILink {
         //if (equals(linkForeground, this.linkForeground))    return;
         ;
         this.linkForeground = linkForeground;
-        if (getEnabled()) {
+        if (getApi().getEnabled()) {
             setLinkColor(true);
         }
         this._linkForeground = newValue;

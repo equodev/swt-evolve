@@ -588,9 +588,10 @@ public class DartTable extends DartComposite implements ITable {
 	 * new column is queried, GTK returns an incorrect value. The fix is to
 	 * ensure that the columns are resized before any queries.
 	 */
-        if (!isVisible()) {
+        if (!getApi().isVisible()) {
             forceResize();
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void createItem(TableItem item, int index) {
@@ -661,6 +662,7 @@ public class DartTable extends DartComposite implements ITable {
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
         // reset to default font to get the usual behavior
         setFontDescription(defaultFont().handle);
+        getValue().markDirty(VTable.COLUMNS);
         getValue().markDirty(VTable.ITEMS);
     }
 
@@ -814,6 +816,7 @@ public class DartTable extends DartComposite implements ITable {
         if (!searchEnabled()) {
         } else {
         }
+        getValue().markDirty(VTable.COLUMNS);
     }
 
     void destroyItem(TableItem item) {
@@ -1959,10 +1962,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void select(int[] indices) {
         int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
-        checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
@@ -2051,6 +2054,9 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
+            getValue().markDirty(VTable.COLUMN_ORDER);
+        }
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -2105,8 +2111,8 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerBackground, color)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
@@ -2159,8 +2165,8 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerForeground, color)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }
@@ -2192,7 +2198,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, show)) {
+        if (this.headerVisible != show) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
         this.headerHeight = this.getHeaderHeight();
@@ -2258,10 +2264,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        checkWidget();
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
-        checkWidget();
         this.linesVisible = newValue;
     }
 
@@ -2566,6 +2572,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setTopIndex(int index) {
         checkWidget();
+        if (this.topIndex != index) {
+            getValue().markDirty(VTable.TOP_INDEX);
+        }
         if (!(0 <= index && index < itemCount))
             return;
         topIndex = index;
@@ -2867,6 +2876,10 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
+    int scrollOffset;
+
+    int columnlessWidth;
+
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
@@ -2894,7 +2907,7 @@ public class DartTable extends DartComposite implements ITable {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTable.EDITORS);
         }
     }
@@ -2907,6 +2920,13 @@ public class DartTable extends DartComposite implements ITable {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
+            });
+        });
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

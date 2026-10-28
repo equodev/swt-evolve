@@ -148,7 +148,8 @@ public class DartAccessible implements IIAccessible {
      * @since 3.5
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected DartAccessible(Accessible api) {
         setApi(api);
     }
@@ -2579,6 +2580,7 @@ public class DartAccessible implements IIAccessible {
     }
 
     /* IAccessibleTable2::get_caption([out] ppAccessible) */
+    @SuppressWarnings("deprecation")
     int get_caption(long ppAccessible) {
         AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
@@ -2736,6 +2738,7 @@ public class DartAccessible implements IIAccessible {
     }
 
     /* IAccessibleTable2::get_summary([out] ppAccessible) */
+    @SuppressWarnings("deprecation")
     int get_summary(long ppAccessible) {
         AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {

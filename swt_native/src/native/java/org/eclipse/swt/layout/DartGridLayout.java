@@ -654,7 +654,7 @@ public final class DartGridLayout extends DartLayout implements IGridLayout {
     }
 
     String getName() {
-        String string = getClass().getName();
+        String string = getApi().getClass().getName();
         int index = string.lastIndexOf('.');
         if (index == -1)
             return string;

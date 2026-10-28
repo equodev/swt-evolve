@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
@@ -26,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ControlFocusRequestFlutterTest {
 
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+    private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
 
     private Display display;
 
@@ -106,6 +106,42 @@ class ControlFocusRequestFlutterTest {
     }
 
     @Test
+    void anOrdinaryFieldIsNamedAsTheFocusHolder() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        new Button(shell, SWT.PUSH);
+        web.comm.sent.clear();
+
+        first.setFocus();
+
+        // SWT traverses from the focus control: the client starts Tab from this field even though its
+        // own keyboard focus was never moved onto it.
+        assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
+                .as("the client is told which control Java holds the focus on")
+                .containsExactly(String.valueOf(first.hashCode()));
+    }
+
+    @Test
+    void theDisplayStateCarriesTheFocusHolderSoAReloadNeedsNoSeparateMessage() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        web.sendDisplayUpdate((DartDisplay) display.getImpl());
+
+        assertThat(web.comm.sent.stream().filter(f -> f.event.startsWith("Display/")
+                        && f.json.contains("\"focusHolderId\":" + first.hashCode())))
+                .as("the Display state names the focus holder")
+                .isNotEmpty();
+        assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
+                .as("no separate holder message alongside it")
+                .isEmpty();
+    }
+
+    @Test
     void focusRequestFollowsTheEditorJavaFocusesLast() {
         TestWebBridge web = install(TestWebBridge::new);
         Table table = newTable();
@@ -121,12 +157,132 @@ class ControlFocusRequestFlutterTest {
                 .containsExactly(String.valueOf(second.hashCode()));
     }
 
+    @Test
+    void theFieldAPopupDialogFocusesAsItOpensAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        web.comm.sent.clear();
+
+        // The shape of Eclipse's Quick Access: a JFace PopupDialog that opens its shell, then focuses
+        // the filter field in its title area.
+        Text[] filter = new Text[1];
+        new org.eclipse.jface.dialogs.PopupDialog(main, SWT.RESIZE, true, true, false, true, true, null, null) {
+            @Override
+            protected Control createTitleControl(Composite parent) {
+                filter[0] = new Text(parent, SWT.NONE);
+                return filter[0];
+            }
+
+            @Override
+            protected Control getFocusControl() {
+                return filter[0];
+            }
+        }.open();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the field the new shell opened on")
+                .containsExactly(String.valueOf(filter[0].hashCode()));
+    }
+
+    @Test
+    void theFirstShellOpeningOnAFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = new Shell(display);
+        Text field = new Text(shell, SWT.SINGLE);
+        shell.setSize(400, 300);
+
+        shell.open();
+
+        assertThat(display.getFocusControl()).as("sanity: the shell opened on its field").isSameAs(field);
+        assertThat(focusRequests(web))
+                .as("only a shell activated over another active one is pushed")
+                .isEmpty();
+    }
+
+    @Test
+    void aSecondTopLevelShellOpeningOnAFieldIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        web.comm.sent.clear();
+
+        Shell other = new Shell(display);
+        Text field = new Text(other, SWT.SINGLE);
+        other.setSize(400, 300);
+        other.open();
+
+        assertThat(display.getFocusControl()).as("sanity: the new shell opened on its field").isSameAs(field);
+        assertThat(focusRequests(web))
+                .as("a top-level shell is not a popup of the active one")
+                .isEmpty();
+    }
+
+    @Test
+    void aFieldFocusedLaterInTheSameShellIsLeftToTheRenderSide() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text first = new Text(shell, SWT.SINGLE);
+        Text second = new Text(shell, SWT.SINGLE);
+        first.setFocus();
+        web.comm.sent.clear();
+
+        second.setFocus();
+
+        assertThat(focusRequests(web))
+                .as("only a move that activates a shell is pushed")
+                .isEmpty();
+    }
+
+    @Test
+    void aPrimaryPressOnAStyledTextActivatesAndFocusesItAheadOfItsMouseDown() {
+        assertThat(pressStyledText(1)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "FocusIn", "MouseDown", "client focus");
+    }
+
+    @Test
+    void aSecondaryPressOnAStyledTextFocusesItFromItsOwnMouseDown() {
+        assertThat(pressStyledText(3)).containsExactly(
+                "Activate detail=" + SWT.MouseDown, "MouseDown", "FocusIn", "client focus");
+    }
+
+    /** What reaches a StyledText, and the client, from a press of {@code button} the client reports. */
+    private java.util.List<String> pressStyledText(int button) {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        Text field = new Text(shell, SWT.SINGLE);
+        org.eclipse.swt.custom.StyledText styled = new org.eclipse.swt.custom.StyledText(shell, SWT.NONE);
+        field.setFocus();
+        java.util.List<String> events = new java.util.ArrayList<>();
+        // Filters, as the input parity recorder uses: they see the MouseDown ahead of the StyledText's
+        // own listener, which focuses it on any button.
+        display.addFilter(SWT.Activate, e -> { if (e.widget == styled) events.add("Activate detail=" + e.detail); });
+        display.addFilter(SWT.FocusIn, e -> { if (e.widget == styled) events.add("FocusIn"); });
+        display.addFilter(SWT.MouseDown, e -> { if (e.widget == styled) events.add("MouseDown"); });
+        web.comm.sent.clear();
+
+        Event press = new Event();
+        press.button = button;
+        web.comm.fireContaining(FlutterBridge.event((DartWidget) styled.getImpl(), "Mouse", "MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+
+        if (focusRequests(web).equals(java.util.List.of(String.valueOf(styled.hashCode()))))
+            events.add("client focus");
+        return events;
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     /** The control ids named by every {@code swt.evolve.focus} frame sent so far, in order. */
     private static java.util.List<String> focusRequests(TestWebBridge web) {
+        return ids(web, FOCUS_CHANNEL);
+    }
+
+    /** The control ids named by every frame sent on {@code channel} so far, in order. */
+    private static java.util.List<String> ids(TestWebBridge web, String channel) {
         return web.comm.sent.stream()
-                .filter(f -> f.event.equals(FOCUS_CHANNEL))
+                .filter(f -> f.event.equals(channel))
                 .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
                 .toList();
     }
@@ -167,24 +323,4 @@ class ControlFocusRequestFlutterTest {
         return bridge;
     }
 
-    private static final class TestWebBridge extends WebDisplayBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        TestWebBridge(DartDisplay display) {
-            super(display);
-            // Stands in for the client having connected: update() defers every pending send until
-            // then, and the focus request is queued behind it.
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        protected void start(DartDisplay display) {
-            registerDisplayClientReady(display);
-        }
-    }
 }

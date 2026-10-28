@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -578,7 +578,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (!java.util.Objects.equals(this.grayed, grayed)) {
+        if (this.grayed != grayed) {
             getValue().markDirty(VButton.GRAYED);
         }
         if ((getApi().style & SWT.CHECK) == 0)
@@ -603,8 +603,8 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.image, image)) {
             getValue().markDirty(VButton.IMAGE);
         }
@@ -660,10 +660,10 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setSelection(boolean selected) {
         boolean newValue = selected;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        checkWidget();
+        if (this.selection != newValue) {
             getValue().markDirty(VButton.SELECTION);
         }
-        checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if ((getApi().style & SWT.CHECK) != 0) {

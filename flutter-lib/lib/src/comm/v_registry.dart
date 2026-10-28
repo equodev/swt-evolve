@@ -110,6 +110,8 @@ class VRegistry {
   /// The channel a value is addressed by, and the key everything here is stored under.
   static String channelOf(VWidget value) => '${value.swt}/${value.id}';
 
+  static String _idOf(String channel) => channel.substring(channel.indexOf('/') + 1);
+
   /// Whether two values are about the same widget. Identity is the pair that addresses it, which is
   /// all a value named rather than described carries.
   static bool isSameWidget(VWidget a, VWidget b) => a.id == b.id && a.swt == b.swt;
@@ -130,6 +132,9 @@ class VRegistry {
     final channel = channelOf(value);
     final node = _nodes[channel];
     if (node != null && !node.awaitingValue) return _takeNewerOf(channel, node, value);
+    // The stand-in an unresolved reference left, handed back by whatever was built from the name:
+    // nothing has described the widget, so it is still awaited and still asked for.
+    if (node != null && identical(node.value, value)) return value;
 
     if (node == null) {
       // Assigned before subscribing: a payload held for this channel is replayed on subscription,
@@ -137,6 +142,11 @@ class VRegistry {
       final fresh = VNode(value);
       _nodes[channel] = fresh;
       fresh.subscription = _subscribe(channel);
+    } else if (isSameWidget(node.value, value) && !value.isReference) {
+      // A stand-in left by a reference: whatever named this widget holds that object (a parent's
+      // child list), so the description is copied into it, as apply() does. Swapping it would
+      // leave the parent laying out a child with no state at all.
+      return _fill(channel, node, value);
     } else {
       // Something asked to hear about this widget before it arrived, and what it has been waiting
       // on is a stand-in of the wrong type to copy a real widget into. The entry is rebuilt around
@@ -208,21 +218,29 @@ class VRegistry {
         _notify(channel, node, const VChange());
       case FrameAction.merge:
         node.value.mergeJson(frame);
-        node.value.seq = DeliveryGate.seqOf(frame);
-        deliveryGate.applied(channel, node.value.seq);
+        // An unstamped change leaves the stamp held, which is what an older replay is refused by.
+        final seq = DeliveryGate.seqOf(frame);
+        if (seq != 0) {
+          node.value.seq = seq;
+          deliveryGate.applied(channel, seq);
+        }
         _adoptSubtreeOf(channel, node.value);
         _reconcile(channel, node, node.value.seq);
         _notify(channel, node, VChange(changed: _namesIn(frame)));
       case FrameAction.recover:
-        // An update that does not fit what is held. Asking for the widget again is the safe answer,
-        // but never the expected one: it means an update was lost, reordered, or computed from a
-        // state this side never had.
-        EquoCommService.sendPayload(widgetRefreshChannel, '${node.value.id}');
-        // The frame cannot be applied; what it carries still has to be. A widget described inside
-        // it is the only description that widget will ever get - the sender counts it delivered and
-        // names it from then on - and one dropped here is subscribed to by nobody, so not even the
-        // request above can repair it. Judged on its own stamp, as in the branch below.
-        _adoptSubtreeOf(channel, mapWidgetValue(frame));
+        // An update that does not fit what is held: lost, reordered, or computed from a state this
+        // side never had. Never expected, so it is logged. The id comes from the channel, because
+        // a node only watched holds a stand-in.
+        print('[delivery] recover $channel: _s=${frame[kSeq]} _b=${frame[kBase]} '
+            'held=${deliveryGate.heldSeq(channel)} keys=${frame.keys.toList()}');
+        EquoCommService.sendPayload(widgetRefreshChannel, _idOf(channel));
+        // A widget described inside the frame gets no other description, so it is still adopted,
+        // judged on its own stamp. A resource's change describes no widget, only images.
+        if (DeliveryGate.isResourceChange(frame)) {
+          keepImagesIn(frame);
+        } else {
+          _adoptSubtreeOf(channel, mapWidgetValue(frame));
+        }
       case FrameAction.ignore:
         // Nothing here changes - the frame describes this widget as it used to be. But a whole
         // frame carries every widget beneath it, and one of those can be a widget nothing else has
@@ -317,6 +335,7 @@ class VRegistry {
     _adopting.clear();
     _referrers.clear();
     _holdings.clear();
+    _unheld.clear();
     for (final tick in _boundsTicks.values) {
       tick.dispose();
     }
@@ -390,9 +409,15 @@ class VRegistry {
   VWidget _takeNewerOf(String channel, VNode node, VWidget incoming) {
     final held = node.value;
     if (identical(held, incoming) || incoming.seq <= held.seq) return held;
+    return _fill(channel, node, incoming);
+  }
 
-    held.copyFrom(incoming);
+  /// Copies [incoming] into the object held for [channel] and tells whoever is listening. The
+  /// subtree is adopted before anyone is told, for the reason apply() gives.
+  VWidget _fill(String channel, VNode node, VWidget incoming) {
+    final held = node.value..copyFrom(incoming);
     held.seq = incoming.seq;
+    node.awaitingValue = false;
     deliveryGate.applied(channel, held.seq);
     _adoptSubtreeOf(channel, held);
     _reconcile(channel, node, held.seq);
@@ -412,8 +437,9 @@ class VRegistry {
       if (!isAwaiting(channel)) return;
       // Nothing was held for it and nothing describes it: the sender named a widget this client
       // was never given. Recovering works, but it costs a round trip and should not be reachable -
-      // said out loud so that it is noticed rather than absorbed.
-      print('[delivery] unresolved reference $channel: asking for it');
+      // said out loud in debug builds so that it is noticed rather than absorbed; a release build
+      // stays quiet, since the app's console is the user's.
+      if (kDebugMode) print('[delivery] unresolved reference $channel: asking for it');
       EquoCommService.sendPayload(widgetRefreshChannel, '$id');
     });
   }
@@ -443,28 +469,54 @@ class VRegistry {
     }
   }
 
-  /// One reference to [channel] goes away. The widget goes with it when it was the last.
+  /// One reference to [channel] goes away. The widget goes with it when it was the last - once
+  /// every frame received so far is applied, and only if nothing has taken it by then.
+  ///
+  /// A widget that moves is dropped by its old parent and taken by its new one, and the two frames
+  /// can arrive in either order in one run: applied in between, it is held by nothing.
   void _release(String holder, String channel, int? writtenAt) {
-    final holders = _referrers[channel];
-    if (holders != null) {
-      holders.remove(holder);
-      if (holders.isNotEmpty) return;
-      _referrers.remove(channel);
-    }
+    if (!_letGo(holder, channel, writtenAt)) return;
+    if (_unheld.isEmpty) EquoCommBase.whenApplied(_evictUnheld);
+    _unheld[channel] = writtenAt;
+  }
 
+  /// Widgets that lost their last holder, and when the value that let go of each was written.
+  final Map<String, int?> _unheld = {};
+
+  void _evictUnheld() {
+    final unheld = Map.of(_unheld);
+    _unheld.clear();
+    unheld.forEach(_evictIfUnheld);
+  }
+
+  void _evictIfUnheld(String channel, int? writtenAt) {
+    if (_referrers[channel]?.isNotEmpty ?? false) return;
     final node = _nodes[channel];
-    if (node == null) return;
-    // Described more recently than the value letting go of it: the widget moved, and the frame
-    // dropping it is the old parent catching up rather than news of a disposal. Java writes one
-    // stamp per write from one counter, so "newer" is a fact about the two writes, not a guess.
-    if (writtenAt != null && !node.awaitingValue && node.value.seq > writtenAt) return;
-
+    if (node == null || _movedSince(node, writtenAt)) return;
     final held = node.references;
     evict(channel);
     for (final reference in held) {
-      _release(channel, reference, writtenAt);
+      if (_letGo(channel, reference, writtenAt)) _evictIfUnheld(reference, writtenAt);
     }
   }
+
+  /// Takes [holder] off [channel]'s holders; whether that left [channel] held by nothing.
+  bool _letGo(String holder, String channel, int? writtenAt) {
+    final holders = _referrers[channel];
+    if (holders != null) {
+      holders.remove(holder);
+      if (holders.isNotEmpty) return false;
+      _referrers.remove(channel);
+    }
+    final node = _nodes[channel];
+    return node != null && !_movedSince(node, writtenAt);
+  }
+
+  // Described more recently than the value letting go of it: the widget moved, and the frame
+  // dropping it is the old parent catching up rather than news of a disposal. Java writes one
+  // stamp per write from one counter, so "newer" is a fact about the two writes, not a guess.
+  static bool _movedSince(VNode node, int? writtenAt) =>
+      writtenAt != null && !node.awaitingValue && node.value.seq > writtenAt;
 
   /// The channels a value refers to directly. Handed the identity of each widget it holds, which
   /// is all this needs — the values themselves are already the ones the registry holds.
