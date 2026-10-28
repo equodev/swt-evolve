@@ -1668,6 +1668,8 @@ public final class DartGC extends DartResource implements IGC {
                 bounds = new Rectangle(0, 0, b.width, b.height);
         } else if (drawable instanceof Image) {
             bounds = ((Image) drawable).getBounds();
+        } else if (drawable instanceof Device) {
+            bounds = ((Device) drawable).getBounds();
         }
         Rectangle clip = this.clipping == null ? bounds : new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         if (clip == null)
@@ -1701,7 +1703,8 @@ public final class DartGC extends DartResource implements IGC {
         region.subtract(region);
         Rectangle bounds = getClipping();
         if (clippingRects != null && clippingRects.length >= 4) {
-            for (int i = 0; i + 3 < clippingRects.length; i += 4) region.add(clippingRects[i], clippingRects[i + 1], clippingRects[i + 2], clippingRects[i + 3]);
+            int[] rects = GCHelper.isTransforming(transform) ? GCHelper.transformRects(transform, clippingRects, true) : clippingRects;
+            for (int i = 0; i + 3 < rects.length; i += 4) region.add(GCHelper.rectAt(rects, i));
             region.intersect(bounds);
         } else {
             region.add(bounds);
@@ -1777,9 +1780,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Color getForeground() {
         if (isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return this.foreground;
     }
 

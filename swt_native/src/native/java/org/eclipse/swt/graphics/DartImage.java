@@ -360,11 +360,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (bounds == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        try {
-            init(bounds.width, bounds.height);
-            init();
-        } finally {
-        }
+        this.imageData = _allocateScratchBuffer(bounds.width, bounds.height);
+        init(imageData.width, imageData.height);
+        init();
     }
 
     /**
@@ -393,6 +391,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public DartImage(Device device, ImageData data, Image api) {
         super(device, api);
         this.imageData = GraphicsUtils.copyImageData(data);
+        data = this.imageData;
         try {
             init(data, 100);
             init();
@@ -742,6 +741,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     @Override
     void destroy() {
         cachedImageAtSize.destroy();
+        GCHelper.disposeImageGC(memGC);
         memGC = null;
         _releaseRemoteRefOnDart(remoteRef);
         _releaseRemoteRefOnDart(previousRemoteRef);
@@ -759,7 +759,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object != null && !(((Image) object).getImpl() instanceof DartImage))
+        if (object instanceof Image && !(((Image) object).getImpl() instanceof DartImage))
             return (this.getImageData().equals(((Image) object).getImageData()));
         if (object == this.getApi())
             return true;
@@ -801,6 +801,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (imageData == null || imageData.transparentPixel == -1)
             return null;
+        if (this.background == null)
+            this.background = GraphicsUtils.transparentColor(device, imageData);
         return this.background;
     }
 
@@ -984,6 +986,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         int storedZoom = logicalWidth > 0 && this.imageData.width != logicalWidth ? Math.round(100f * this.imageData.width / logicalWidth) : 100;
         if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
+        ImageData atZoom = GraphicsUtils.imageDataAtZoom(imageDataProvider, imageFileNameProvider, zoom);
+        if (atZoom != null)
+            return atZoom;
         if (storedZoom != 100 && org.eclipse.swt.internal.DPIUtil.isSmoothScalingEnabled() && this.imageData.getTransparencyType() != SWT.TRANSPARENCY_MASK)
             return GraphicsUtils.scaleRasterBuffer(device, this.imageData, logicalWidth, logicalHeight, zoom);
         // Scale to the requested zoom (matches upstream, which falls back to
@@ -1032,6 +1037,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         pickUpPendingSvgContent();
         this.width = image.width * 100 / imageZoom;
         this.height = image.height * 100 / imageZoom;
+        this.getApi().type = image.getTransparencyType() == SWT.TRANSPARENCY_MASK ? SWT.ICON : SWT.BITMAP;
         if (alphaInfo_100 == null)
             alphaInfo_100 = new AlphaInfo();
     }

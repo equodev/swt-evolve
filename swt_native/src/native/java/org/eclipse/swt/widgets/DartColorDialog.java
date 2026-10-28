@@ -138,10 +138,12 @@ public class DartColorDialog extends DartDialog implements IColorDialog {
     public RGB open() {
         int packed = openDialogWithFlutter(getValue(), -1);
         selected = packed >= 0;
-        if (!selected)
-            return null;
-        rgb = new RGB((packed >> 16) & 0xFF, (packed >> 8) & 0xFF, packed & 0xFF);
-        return rgb;
+        if (selected) {
+            rgb = new RGB((packed >> 16) & 0xFF, (packed >> 8) & 0xFF, packed & 0xFF);
+            return rgb;
+        }
+        rgb = null;
+        return null;
     }
 
     /**

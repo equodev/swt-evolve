@@ -1346,6 +1346,17 @@ class GCDrawer extends GCDrawerBase {
   // LineNumberRulerColumn re-uses one buffer Image across paints and shifts it by the
   // scroll delta, redrawing only the newly exposed band, so without the base copy the
   // retained band keeps its pre-scroll content.
+  /// A picture-backed blit that [clip] has to bound. The web renderers ignore a clip around a
+  /// nested picture -- it draws in full, past the clip (see [_drawPicture]) -- so the picture goes
+  /// to pixels first. [ui.Picture.toImageSync] keeps them on the GPU, so nothing is read back, and
+  /// [disposeShapeImages] owns the image the shape carries.
+  static ImageShape _boundedPicture(
+      ui.Picture picture, Rect srcRect, Rect destRect, Rect clip,
+      {int alpha = 255}) {
+    final raster = picture.toImageSync(srcRect.right.ceil(), srcRect.bottom.ceil());
+    return ImageShape.raster(raster, srcRect, destRect, clipRect: clip, alpha: alpha);
+  }
+
   @visibleForTesting
   static List<Shape> copyAreaShapes({
     required ui.Image? baseImage,
@@ -1359,7 +1370,7 @@ class GCDrawer extends GCDrawerBase {
     return [
       // Under the shapes drawn through this GC, so the copy keeps their z-order.
       if (basePicture != null)
-        ImageShape.picture(basePicture, srcRect, destRect, clipRect: destRect)
+        _boundedPicture(basePicture, srcRect, destRect, destRect)
       else if (baseImage != null)
         ImageShape.raster(baseImage.clone(), srcRect.shift(baseOffset), destRect, clipRect: destRect),
       for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
@@ -1431,9 +1442,9 @@ class GCDrawer extends GCDrawerBase {
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha,
           opaqueSource: s.opaqueSource, inkMask: s.inkMask),
-      ImageShape s when s.type == ImageType.picture => ImageShape.picture(
+      ImageShape s when s.type == ImageType.picture => _boundedPicture(
           s.remotePicture!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea, alpha: s.alpha),
+          clipArea, alpha: s.alpha),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
@@ -3284,13 +3295,13 @@ class ImageShape extends Shape {
       if (replacement == null && remoteRef != null && !useThemeColors) {
         final render = ImageUtils.remoteRender(remoteRef);
         // Once rasterised, blit the texture: replaying the list re-runs every op on every frame.
-        final asPicture = render != null && !render.hasPixels ? render.picture : null;
-        if (asPicture != null) {
+        final asPicture = render == null || render.hasPixels ? null : render.picture;
+        if (render != null && asPicture != null) {
           final src = Rect.fromLTWH(
               (opArgs.srcX).toDouble(),
               (opArgs.srcY).toDouble(),
-              opArgs.srcWidth == -1 ? render!.width.toDouble() : (opArgs.srcWidth).toDouble(),
-              opArgs.srcHeight == -1 ? render!.height.toDouble() : (opArgs.srcHeight).toDouble());
+              opArgs.srcWidth == -1 ? render.width.toDouble() : (opArgs.srcWidth).toDouble(),
+              opArgs.srcHeight == -1 ? render.height.toDouble() : (opArgs.srcHeight).toDouble());
           final dest = Rect.fromLTWH(
               (opArgs.destX).toDouble(),
               (opArgs.destY).toDouble(),
@@ -3298,7 +3309,18 @@ class ImageShape extends Shape {
               opArgs.destHeight == -1 ? src.height : (opArgs.destHeight).toDouble());
           // A scaled blit has to resample, which a picture draw would not do the same way.
           if (src.width == dest.width && src.height == dest.height) {
-            return ImageShape.picture(asPicture, src, dest,
+            // The whole render with nothing bounding it is the only blit a picture survives (see
+            // [_drawPicture]); every other 1:1 blit has to be bounded, so it takes the pixels. A
+            // source rectangle may ask for more than the render holds, hence >= and not ==.
+            final unbounded = clipRect == null &&
+                src.left == 0 &&
+                src.top == 0 &&
+                src.width >= render.width &&
+                src.height >= render.height;
+            if (unbounded) {
+              return ImageShape.picture(asPicture, src, dest, alpha: alpha);
+            }
+            return ImageShape.raster(render.rasteriseSync().clone(), src, dest,
                 clipRect: clipRect, alpha: alpha);
           }
         }
@@ -3430,12 +3452,14 @@ class ImageShape extends Shape {
     c.restore();
   }
 
+  /// Deliberately unbounded: the web renderers ignore a clip around a nested picture, so a clip
+  /// here would not hold it and the picture would draw past it. A picture reaches here only for a
+  /// draw that needs no bounding; a blit that needs one goes to pixels ([fromVImageDetailed]) or
+  /// through [_boundedPicture].
   void _drawPicture(ui.Canvas c) {
     final picture = remotePicture;
     if (picture == null) return;
     c.save();
-    // Clip first so a picture larger than the blit cannot spill past it.
-    c.clipRect(destRect);
     c.translate(destRect.left - (srcRect?.left ?? 0), destRect.top - (srcRect?.top ?? 0));
     c.drawPicture(picture);
     c.restore();

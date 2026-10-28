@@ -5,6 +5,9 @@ import java.util.List;
 
 public class RegionHelper {
 
+    private RegionHelper() {
+    }
+
     public static void add(List<int[]> rects, int x, int y, int width, int height) {
         if (width == 0 || height == 0) return;
         rects.add(new int[]{ x, y, width, height });
@@ -76,9 +79,13 @@ public class RegionHelper {
         return false;
     }
 
+    /**
+     * Every stored rectangle has a positive width and height: {@code add} drops the degenerate ones
+     * and the set operations only ever store an intersection they measured as positive. So holding
+     * a rectangle is the same thing as covering an area.
+     */
     public static boolean isEmpty(List<int[]> rects) {
-        for (int[] r : rects) if (r[2] > 0 && r[3] > 0) return false;
-        return true;
+        return rects.isEmpty();
     }
 
     public static void intersect(List<int[]> rects, int x, int y, int width, int height) {
@@ -107,12 +114,14 @@ public class RegionHelper {
         rects.addAll(result);
     }
 
+    /** {@code other} may be {@code rects} itself: {@code region.add(region)} leaves the region as it was. */
     public static void addRegion(List<int[]> rects, List<int[]> other) {
-        for (int[] o : other) rects.add(new int[]{ o[0], o[1], o[2], o[3] });
+        for (int[] o : new ArrayList<>(other)) rects.add(new int[]{ o[0], o[1], o[2], o[3] });
     }
 
+    /** {@code other} may be {@code rects} itself: {@code region.subtract(region)} empties the region. */
     public static void subtractRegion(List<int[]> rects, List<int[]> other) {
-        for (int[] o : other) subtract(rects, o[0], o[1], o[2], o[3]);
+        for (int[] o : new ArrayList<>(other)) subtract(rects, o[0], o[1], o[2], o[3]);
     }
 
     public static void translate(List<int[]> rects, int dx, int dy) {
