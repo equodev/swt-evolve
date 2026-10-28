@@ -153,6 +153,8 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       },
       onPointerMove: (e) {
         if (!forwardsPointer) return;
+        // No hover while a button is held: the pointer is moving, not resting.
+        impl.cancelHover();
         impl.maybeSendDragDetect(e);
         // Same exclusivity as onPointerDown above, which already refuses a press that landed
         // on a child. Without it every composite between the Shell and the control under the

@@ -514,6 +514,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ..stateMask = swtStateMask(released: false);
   }
 
+  void cancelHover() => _hoverTimer?.cancel();
+
   void forgetDragDetect(int pointer) {
     if (pointer != _dragDetectPointer) return;
     _dragDetectPointer = null;

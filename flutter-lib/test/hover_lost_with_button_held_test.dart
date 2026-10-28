@@ -94,7 +94,26 @@ void main() {
     expect(exits(sent), hasLength(1), reason: 'the release settles the hover on the Canvas');
   });
 
-  testWidgets('a parent dragged back onto before the release keeps the hover', (tester) async {
+  testWidgets('a held drag that stays inside the parent reports no hover', (tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pumpCompositeWithCanvas(tester, sent);
+
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(50, 100)));
+    await tester.pump();
+    await tester.sendEventToBinding(pointer.down(const Offset(50, 100)));
+    await tester.sendEventToBinding(pointer.move(const Offset(120, 100)));
+    await tester.pump(hold);
+
+    expect(_hovers(sent), isEmpty,
+        reason: 'the pointer moved from (50, 100) with the button held: it never rested there');
+
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump();
+    expect(_hovers(sent), isEmpty);
+  });
+
+  testWidgets('a parent dragged back onto before the release reports no exit', (tester) async {
     final sent = <(String, VEvent?)>[];
     await _pumpCompositeWithCanvas(tester, sent);
 
