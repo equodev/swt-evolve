@@ -51,7 +51,11 @@ class ShellClientEventsFlutterTest {
     }
 
     private void fromClient(String event, Event e) {
-        web.comm.fireContaining(FlutterBridge.event(shell.getImpl(), "Shell", event), e);
+        fromClient(shell, event, e);
+    }
+
+    private void fromClient(Shell target, String event, Event e) {
+        web.comm.fireContaining(FlutterBridge.event(target.getImpl(), "Shell", event), e);
     }
 
     private void runLoop() {
@@ -74,6 +78,61 @@ class ShellClientEventsFlutterTest {
         fromClient("Activate", new Event());
         runLoop();
         assertThat(events).containsExactly(SWT.Activate);
+    }
+
+    // The client reports the opened shell's activation when its first control takes the focus, or on
+    // the first press when it has none; open() already announced it, and no native announces it twice.
+    @Test
+    void theClientReportingTheActivationOpenMadeAnnouncesNoSecondOne() {
+        List<Integer> events = record(SWT.Activate);
+        fromClient("Activate", new Event());
+        runLoop();
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    void anActivationAfterTheClientDeactivatedTheShellReachesIt() {
+        List<Integer> events = record(SWT.Activate);
+        fromClient("Deactivate", new Event());
+        fromClient("Activate", new Event());
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+    }
+
+    @Test
+    void anActivationAfterTheClientActivatedAnotherShellReachesIt() {
+        List<Integer> events = record(SWT.Activate);
+        fromClient(main, "Activate", new Event());
+        fromClient("Activate", new Event());
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+    }
+
+    // Disposing the active shell hands activation back to the previous one, which the client then
+    // reports once that shell's focus scope regains the focus.
+    @Test
+    void theClientReportingTheActivationADisposedShellHandedBackAnnouncesNoSecondOne() {
+        List<Integer> events = new ArrayList<>();
+        main.addListener(SWT.Activate, e -> events.add(e.type));
+        shell.dispose();
+        runLoop();
+        fromClient(main, "Activate", new Event());
+        runLoop();
+        assertThat(events).containsExactly(SWT.Activate);
+    }
+
+    // Both shells opened before the client reported either: only the one opened last waits for its
+    // report, since nothing in a report tells a late one from a return to the shell that opened with
+    // nothing to focus. Each of the two reports is then announced as an activation of its own.
+    @Test
+    void theClientReportingBothOpenedShellsInOrderAnnouncesEachReport() {
+        List<String> events = new ArrayList<>();
+        main.addListener(SWT.Activate, e -> events.add("main Activate"));
+        shell.addListener(SWT.Activate, e -> events.add("shell Activate"));
+        fromClient(main, "Activate", new Event());
+        fromClient(shell, "Activate", new Event());
+        runLoop();
+        assertThat(events).containsExactly("main Activate", "shell Activate");
     }
 
     @Test
