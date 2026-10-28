@@ -1,21 +1,31 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-
 public class DisplayHelper {
 
-    /** The OS each display's client runs on, as Flutter's {@code TargetPlatform} name, from its ClientReady. */
-    private static final Map<Display, String> clientPlatforms = Collections.synchronizedMap(new WeakHashMap<>());
+    /** Display data: the OS the display's client runs on, as Flutter's {@code TargetPlatform} name, from its ClientReady. */
+    private static final String CLIENT_PLATFORM = "org.eclipse.swt.internal.clientPlatform";
 
+    /** Display data is written on the display's thread; a ClientReady that arrives on another one is posted to it. */
     public static void clientReady(Display display, String targetPlatform) {
-        if (targetPlatform != null)
-            clientPlatforms.put(display, targetPlatform);
+        if (targetPlatform == null || display.isDisposed())
+            return;
+        if (display.getThread() == Thread.currentThread()) {
+            display.setData(CLIENT_PLATFORM, targetPlatform);
+            return;
+        }
+        try {
+            display.asyncExec(() -> {
+                if (!display.isDisposed())
+                    display.setData(CLIENT_PLATFORM, targetPlatform);
+            });
+        } catch (SWTException disposed) {
+            // The display went away between the check and asyncExec.
+        }
     }
 
     /**
@@ -25,8 +35,8 @@ public class DisplayHelper {
      * Any other OS follows Windows.
      */
     static String keyboardPlatform(Display display) {
-        String platform = clientPlatforms.get(display);
-        switch (platform != null ? platform : SWT.getPlatform()) {
+        Object platform = display.getData(CLIENT_PLATFORM);
+        switch (platform instanceof String ? (String) platform : SWT.getPlatform()) {
             case "macOS":
             case "iOS":
             case "cocoa":
