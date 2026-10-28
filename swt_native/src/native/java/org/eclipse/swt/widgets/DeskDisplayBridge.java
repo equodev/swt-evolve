@@ -652,8 +652,6 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void destroy(DartWidget control) {
         super.destroy(control);
-        if (control instanceof DartShell)
-            showWindowForItsShells();
         if (closingOnRequest && control instanceof DartShell && hasNativeWindow()
                 && forDisplay != null && mainShell(forDisplay) == null) {
             disposeNativeWindow();
@@ -811,35 +809,7 @@ public class DeskDisplayBridge extends DisplayBridge {
                 ((Shell) ((DartShell) control).getApi()).layout(true, true);
             }
             sendDisplayUpdate(forDisplay);
-            showWindowForItsShells();
         }
-    }
-
-    /** Set while the Display's window is kept off screen for a splash its own window draws. */
-    private boolean hiddenForSplash;
-
-    /**
-     * Keeps the Display's window off screen while the only top-level shells showing are drawn by
-     * windows of their own: the launcher's splash during startup, which the user then sees as it is
-     * rather than an empty window, or the splash stretched across it.
-     */
-    void showWindowForItsShells() {
-        if (!hasNativeWindow() || forDisplay == null)
-            return;
-        boolean splash = false, other = false;
-        for (Shell shell : forDisplay._shells()) {
-            if (shell == null || shell.isDisposed() || shell.getParent() != null || !shell.getVisible())
-                continue;
-            if (NativeWindowShells.drawnByItsOwnWindow(shell))
-                splash = true;
-            else
-                other = true;
-        }
-        boolean hide = splash && !other;
-        if (hide == hiddenForSplash)
-            return;
-        hiddenForSplash = hide;
-        setShellWindowVisible(windowContext, !hide);
     }
 
     /** The shell last shown in the Display's window, or null before one has been or once it is
@@ -868,7 +838,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
         boolean drawsAShell = drawsAnyShell(display);
         boolean holderHidden = shownShell != null && !shownShell.getVisible();
-        boolean hide = !drawsAShell && holderHidden;
+        // A launcher splash alone keeps the window off screen: the user sees it in its own window.
+        boolean hide = !drawsAShell && (holderHidden || showsAShellDrawnByItsOwnWindow(display));
         // Only an actual change crosses JNI. With nothing drawn and no hidden holder (its shell was
         // disposed), the window keeps whatever it shows: the next shell is about to fill it.
         boolean decided = hide || drawsAShell;
@@ -880,7 +851,17 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     private boolean drawsAnyShell(DartDisplay display) {
         for (Shell shell : display._shells()) {
-            if (shell != null && !shell.isDisposed() && shell.getVisible() && !isShellWindowed(shell))
+            if (shell != null && !shell.isDisposed() && shell.getVisible() && !isShellWindowed(shell)
+                    && !NativeWindowShells.drawnByItsOwnWindow(shell))
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean showsAShellDrawnByItsOwnWindow(DartDisplay display) {
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed() && shell.getVisible()
+                    && NativeWindowShells.drawnByItsOwnWindow(shell))
                 return true;
         }
         return false;

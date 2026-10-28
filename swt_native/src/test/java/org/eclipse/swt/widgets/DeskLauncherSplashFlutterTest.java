@@ -53,6 +53,18 @@ class DeskLauncherSplashFlutterTest {
     }
 
     @Test
+    void aDialogOpenedOverTheSplashBringsTheDisplaysWindowUp() {
+        TestDeskBridge desk = install();
+        Shell splash = Shell.internal_new(display, LAUNCHER_WINDOW);
+        splash.setVisible(true);
+
+        Shell workspaceChooser = new Shell(splash, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        workspaceChooser.setVisible(true);
+
+        assertThat(desk.mainWindowVisibility).containsExactly(false, true);
+    }
+
+    @Test
     void theSplashIsLeftToItsOwnWindowAndIsNeverTheMainShell() {
         TestDeskBridge desk = install();
         Shell splash = Shell.internal_new(display, LAUNCHER_WINDOW);
@@ -136,6 +148,14 @@ class DeskLauncherSplashFlutterTest {
         @Override
         protected void setShellWindowVisible(long context, boolean visible) {
             mainWindowVisibility.add(visible);
+        }
+
+        @Override
+        protected void setShellWindowTitle(long context, String title) {
+        }
+
+        @Override
+        protected void setShellWindowState(long context, int state) {
         }
 
         @Override
