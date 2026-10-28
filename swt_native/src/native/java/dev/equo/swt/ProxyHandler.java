@@ -46,11 +46,26 @@ class ProxyHandler implements HttpHandler {
 
     private static final int MAX_REDIRECTS = 5;
 
+    // HttpURLConnection waits forever by default, so an upstream that accepts the connection and
+    // never answers would hold a worker of WebFlutterServer's fixed pool for good. The read
+    // timeout bounds each wait for the next bytes, not the whole transfer, and leaves room for a
+    // page's own long-polling request routed here by the fetch shim.
+    static final int CONNECT_TIMEOUT_MILLIS = 10_000;
+    static final int READ_TIMEOUT_MILLIS = 60_000;
+
     /** The proxied sites' cookies: they reach no browser, since every page is served from here. */
     private final ProxyCookieJar cookies;
+    private final int connectTimeoutMillis;
+    private final int readTimeoutMillis;
 
     ProxyHandler(ProxyCookieJar cookies) {
+        this(cookies, CONNECT_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS);
+    }
+
+    ProxyHandler(ProxyCookieJar cookies, int connectTimeoutMillis, int readTimeoutMillis) {
         this.cookies = cookies;
+        this.connectTimeoutMillis = connectTimeoutMillis;
+        this.readTimeoutMillis = readTimeoutMillis;
     }
 
     // Headers last seen for a given target url, keyed by the exact decoded target. A served
@@ -147,7 +162,8 @@ class ProxyHandler implements HttpHandler {
                 if (value != null) forwardedHeaders.put(name, value);
             }
 
-            Fetched resp = fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies);
+            Fetched resp = fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies,
+                    connectTimeoutMillis, readTimeoutMillis);
             String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
             String lowerContentType = contentType.toLowerCase(java.util.Locale.ROOT);
@@ -273,10 +289,13 @@ class ProxyHandler implements HttpHandler {
      * the hop that redirects to the identity provider and checks it on the one coming back.
      */
     static Fetched fetch(String target, String method, byte[] requestBody, Map<String, String> forwardedHeaders,
-            List<String> headerLines, ProxyCookieJar cookies) throws IOException {
+            List<String> headerLines, ProxyCookieJar cookies, int connectTimeoutMillis, int readTimeoutMillis)
+            throws IOException {
         String url = target;
         for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(connectTimeoutMillis);
+            conn.setReadTimeout(readTimeoutMillis);
             conn.setRequestMethod(method);
             conn.setInstanceFollowRedirects(false);
             for (String header : headerLines) {

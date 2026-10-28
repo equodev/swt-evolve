@@ -58,6 +58,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
   final ScrollController _verticalScrollController = ScrollController();
 
   final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
+
+  /// The second click of a double click on a header is the column's DefaultSelection, as on Win32
+  /// and GTK; the first is its Selection.
+  final DoubleTapDetector _headerTapDetector = DoubleTapDetector();
   int _lastRowTapCount = 1;
 
   int _requestedRowEnd = 0;
@@ -89,6 +93,18 @@ class TableImpl<T extends TableSwt, V extends VTable>
   // avoid a second event with different coordinates.
   @override
   bool get forwardsControlMouseDown => false;
+
+  /// The press a row's cell or the header took, which [wrap] leaves to them.
+  PointerEvent? _partPress;
+
+  /// Called by a cell or the header as a press reaches it, ahead of [wrap]'s listener.
+  void takePress(PointerDownEvent event) => _partPress = event.original ?? event;
+
+  /// A press on the table's own area, past the last column or below the last row, is the Table's
+  /// MouseDown, sent as any control's is.
+  @override
+  bool forwardsMouseDownOf(PointerDownEvent event) =>
+      !identical(_partPress, event.original ?? event);
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -406,15 +422,18 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerHeight = calculateHeaderHeight(textStyle, theme);
     return Semantics(
       identifier: 'sizeprobe:header',
-      child: Container(
-        color: backgroundColor,
-        height: headerHeight,
-        child: Stack(
-          children: [
-            _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
-            ..._buildColumnResizeHandles(
-                columns, columnWidths, headerHeight, theme),
-          ],
+      child: Listener(
+        onPointerDown: takePress,
+        child: Container(
+          color: backgroundColor,
+          height: headerHeight,
+          child: Stack(
+            children: [
+              _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+              ..._buildColumnResizeHandles(
+                  columns, columnWidths, headerHeight, theme),
+            ],
+          ),
         ),
       ),
     );
@@ -570,10 +589,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return tagItemSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        TableColumnSwt<VTableColumn>(value: column).sendSelectionSelection(
-          column,
-          null,
-        );
+        final header = TableColumnSwt<VTableColumn>(value: column);
+        if (_headerTapDetector.registerTap(key: column.id) == 2) {
+          header.sendSelectionDefaultSelection(column, null);
+        } else {
+          header.sendSelectionSelection(column, null);
+        }
       },
       // A native header drag reorders the columns where it is dropped; Java applies the order and
       // sends SWT.Move to the columns whose place changed.
