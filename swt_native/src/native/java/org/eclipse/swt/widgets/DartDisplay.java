@@ -4047,6 +4047,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     Rectangle bounds = new Rectangle(0, 0, 1920, 1080);
 
+    Shell awaitedActivation;
+
     int deviceZoom = 100;
 
     public int getDeviceZoom() {

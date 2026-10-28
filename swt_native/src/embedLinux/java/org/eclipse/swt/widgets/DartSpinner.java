@@ -741,18 +741,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setDigits(int value) {
-        int newValue = value;
-        checkWidget();
-        if (this.digits != newValue) {
-            getValue().markDirty(VSpinner.DIGITS);
-        }
-        if (value < 0)
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        int factor = 1;
-        {
-            climbRate /= factor;
-        }
-        this.digits = newValue;
+        SpinnerHelper.setDigits(this, value);
     }
 
     /**

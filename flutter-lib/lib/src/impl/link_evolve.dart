@@ -7,8 +7,8 @@ import '../gen/link.dart';
 import '../impl/control_evolve.dart';
 import './utils/widget_utils.dart';
 import './utils/font_utils.dart';
+import './utils/link_markup.dart';
 import './utils/mnemonic_text.dart';
-import './utils/text_utils.dart';
 import '../theme/theme_extensions/link_theme_extension.dart';
 
 class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
@@ -84,9 +84,6 @@ class StyledLink extends StatefulWidget {
   final VoidCallback? onFocusIn;
   final VoidCallback? onFocusOut;
 
-  /// Whether the text holds a link: `<a` followed by `>` or whitespace, as SWT's Link parses one.
-  bool get hasLinks => RegExp(r'<a[>\s]', caseSensitive: false).hasMatch(text);
-
   const StyledLink({
     Key? key,
     required this.text,
@@ -108,6 +105,23 @@ class StyledLink extends StatefulWidget {
 class _StyledLinkState extends State<StyledLink> {
   bool _isHovered = false;
   bool _isFocused = false;
+  late List<LinkPart> _parts;
+
+  /// Whether the text holds a link, read with the same parse that renders it, so that the tab stop
+  /// and the rendering never disagree on a malformed tag.
+  bool get _hasLinks => _parts.any((part) => part.href != null);
+
+  @override
+  void initState() {
+    super.initState();
+    _parts = parseLinkMarkup(widget.text);
+  }
+
+  @override
+  void didUpdateWidget(StyledLink oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) _parts = parseLinkMarkup(widget.text);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +134,7 @@ class _StyledLinkState extends State<StyledLink> {
       },
       child: Focus(
         // A tab stop only while it holds a link, as natively.
-        skipTraversal: !widget.hasLinks,
+        skipTraversal: !_hasLinks,
         onFocusChange: (hasFocus) {
           setState(() => _isFocused = hasFocus);
           if (hasFocus) {
@@ -153,12 +167,12 @@ class _StyledLinkState extends State<StyledLink> {
           : widget.widgetTheme.disabledTextStyle,
     );
 
-    if (!widget.hasLinks) {
+    if (!_hasLinks) {
       return MnemonicText(widget.text, style: baseTextStyle);
     }
 
     Widget build(bool underline) => RichText(
-          text: TextSpan(children: _parseText(widget.text, underline), style: baseTextStyle),
+          text: TextSpan(children: _spans(_parts, underline), style: baseTextStyle),
         );
     if (!widget.text.contains('&')) return build(false);
     return ValueListenableBuilder<bool>(
@@ -167,15 +181,9 @@ class _StyledLinkState extends State<StyledLink> {
     );
   }
 
-  /// The text's spans; the first one whose drawn text carries a mnemonic underlines it when
-  /// [underline] is set, as `Link.parse` takes the mnemonic from the text without its markup.
-  List<TextSpan> _parseText(String text, bool underline) {
-    final regex = RegExp(
-      r'<a(?:\s+href="([^"]*)")?>(.+?)<\/a>|([^<]+)',
-      caseSensitive: false,
-    );
-    final matches = regex.allMatches(text);
-
+  /// The parts as spans; the first one carrying a mnemonic underlines it when [underline] is set,
+  /// as `Link.parse` takes the one mnemonic from the whole text without its markup.
+  List<TextSpan> _spans(List<LinkPart> parts, bool underline) {
     final linkColor = widget.enabled
         ? getForegroundColor(
             context: context,
@@ -192,29 +200,22 @@ class _StyledLinkState extends State<StyledLink> {
         : widget.widgetTheme.linkDecoration;
 
     var marked = false;
-    List<TextSpan> spans(String raw, {TextStyle? style, GestureRecognizer? recognizer}) {
-      final mnemonic = parseMnemonic(raw);
-      final index = marked ? -1 : mnemonic.index;
+    List<TextSpan> spans(LinkPart part) {
+      final index = marked ? -1 : part.mnemonicIndex;
       if (index >= 0) marked = true;
-      return mnemonicSpans(mnemonic.text, index,
-          underline: underline, style: style, recognizer: recognizer);
+      final url = part.href;
+      return mnemonicSpans(
+        part.text,
+        index,
+        underline: underline,
+        style:
+            url == null ? null : TextStyle(color: linkColor, decoration: linkDecoration),
+        recognizer: url != null && widget.enabled
+            ? (TapGestureRecognizer()..onTap = () => widget.onTap(url))
+            : null,
+      );
     }
 
-    return [
-      for (final match in matches)
-        if (match.group(2) != null)
-          // Preserve the raw href (URLs may contain '&' query params); only the
-          // visible link label carries an SWT mnemonic marker to strip.
-          ...spans(
-            match.group(2)!,
-            style: TextStyle(color: linkColor, decoration: linkDecoration),
-            recognizer: widget.enabled
-                ? (TapGestureRecognizer()
-                  ..onTap = () => widget.onTap(match.group(1) ?? stripAccelerators(match.group(2)!)))
-                : null,
-          )
-        else
-          ...spans(match.group(3)!),
-    ];
+    return [for (final part in parts) ...spans(part)];
   }
 }

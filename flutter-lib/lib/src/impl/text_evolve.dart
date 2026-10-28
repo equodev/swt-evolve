@@ -323,10 +323,13 @@ class TextImpl<T extends TextSwt, V extends VText>
               : TextSelection.collapsed(
                   offset: (state.caretPosition ?? 0).clamp(0, _controller.text.length));
         },
-        onPointerUp: (_) {
+        onPointerUp: (e) {
           final before = _selectionBeforeSecondary;
           _selectionBeforeSecondary = null;
           if (before == null) return;
+          // The field's own secondary-tap recognizer wins the gesture arena over the one
+          // ControlImpl.applyMenu() adds, so the release opens the application Menu here.
+          if (state.menu != null) openContextMenu(e.position);
           // Flutter's field places the caret on a secondary tap, which the gesture delivers after
           // this release; a native Text leaves it where it was, as on Win32 and GTK.
           scheduleMicrotask(() {

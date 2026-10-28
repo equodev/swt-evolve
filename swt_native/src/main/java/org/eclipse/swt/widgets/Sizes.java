@@ -322,7 +322,15 @@ public class Sizes {
         return LabelSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    /**
+     * A negative hint other than {@link SWT#DEFAULT} counts as zero. A Link that shows no text is as wide
+     * as the measure says, as on Win32 and GTK (Cocoa makes it 64 wide).
+     */
     public static Point computeSize(DartLink c, int wHint, int hHint, boolean changed) {
+        if (wHint != SWT.DEFAULT && wHint < 0)
+            wHint = 0;
+        if (hHint != SWT.DEFAULT && hHint < 0)
+            hHint = 0;
         return LinkSizes.computeSize(c, wHint, hHint, changed);
     }
 
