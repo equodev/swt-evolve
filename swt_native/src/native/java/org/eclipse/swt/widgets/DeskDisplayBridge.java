@@ -836,10 +836,11 @@ public class DeskDisplayBridge extends DisplayBridge {
             shownShell = main;
             shownAShell = true;
         }
-        boolean drawsAShell = drawsAnyShell(display);
+        ShownShells shown = shownShells(display);
+        boolean drawsAShell = shown == ShownShells.DRAWN_IN_WINDOW;
         boolean holderHidden = shownShell != null && !shownShell.getVisible();
         // A launcher splash alone keeps the window off screen: the user sees it in its own window.
-        boolean hide = !drawsAShell && (holderHidden || showsAShellDrawnByItsOwnWindow(display));
+        boolean hide = !drawsAShell && (holderHidden || shown == ShownShells.ONLY_WRAPPED_WINDOWS);
         // Only an actual change crosses JNI. With nothing drawn and no hidden holder (its shell was
         // disposed), the window keeps whatever it shows: the next shell is about to fill it.
         boolean decided = hide || drawsAShell;
@@ -849,22 +850,18 @@ public class DeskDisplayBridge extends DisplayBridge {
         }
     }
 
-    private boolean drawsAnyShell(DartDisplay display) {
-        for (Shell shell : display._shells()) {
-            if (shell != null && !shell.isDisposed() && shell.getVisible() && !isShellWindowed(shell)
-                    && !NativeWindowShells.drawnByItsOwnWindow(shell))
-                return true;
-        }
-        return false;
-    }
+    /** What the visible shells ask of the Display's window: one is drawn in it, none is but one
+     *  wraps a native window its owner draws, or neither. */
+    private enum ShownShells { DRAWN_IN_WINDOW, ONLY_WRAPPED_WINDOWS, NONE }
 
-    private static boolean showsAShellDrawnByItsOwnWindow(DartDisplay display) {
+    private ShownShells shownShells(DartDisplay display) {
+        boolean ownWindow = false;
         for (Shell shell : display._shells()) {
-            if (shell != null && !shell.isDisposed() && shell.getVisible()
-                    && NativeWindowShells.drawnByItsOwnWindow(shell))
-                return true;
+            if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
+            if (NativeWindowShells.drawnByItsOwnWindow(shell)) ownWindow = true;
+            else if (!isShellWindowed(shell)) return ShownShells.DRAWN_IN_WINDOW;
         }
-        return false;
+        return ownWindow ? ShownShells.ONLY_WRAPPED_WINDOWS : ShownShells.NONE;
     }
 
     /** Moves and sizes the window to where {@code shell}'s own window was. */
