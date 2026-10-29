@@ -15,6 +15,8 @@
  */
 package org.eclipse.swt.graphics;
 
+import dev.equo.swt.ApiObjects;
+
 /**
  * Instances of this class provide measurement information
  * about fonts including ascent, descent, height, leading
@@ -134,7 +136,7 @@ public final class FontMetrics {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected IFontMetrics impl;

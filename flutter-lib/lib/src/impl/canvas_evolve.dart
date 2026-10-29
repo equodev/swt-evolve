@@ -200,6 +200,11 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       base = wrap(_paintBackground(content));
     }
 
+    final caret = state.caret;
+    if (caret != null) {
+      base = Stack(children: [base, mapWidgetFromValue(caret)]);
+    }
+
     if (_localVScrollPx != 0.0 || _localHScrollPx != 0.0) {
       base = ColoredBox(
         color: bg,
@@ -617,7 +622,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
 
   int get _displaySelection => _currentDragSelection ?? _selection;
 
-  /// The 16px floor a thumb is never drawn below, so it stays grabbable.
+  /// The 16px floor a thumb is never drawn below, so it stays grabbable. Java repeats this arithmetic in
+  /// ScrollBarHelper (MIN_THUMB) to answer getThumbBounds without a round trip: change both together.
   static const double _minThumbSize = 16.0;
 
   double _thumbSize(double trackSize) {

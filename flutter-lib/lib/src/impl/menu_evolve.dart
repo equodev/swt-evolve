@@ -60,8 +60,12 @@ class OpenPopupMenuTracker {
 /// Every mounted menu anchor's controller, so the Display can tell when a menu holds the keyboard.
 class OpenMenus {
   static final Set<MenuController> _controllers = {};
+  // Menu bars in keyboard mode: they hold the keyboard as an open menu does.
+  static final Set<Object> _activeBars = {};
 
-  static bool get any => _controllers.any((controller) => controller.isOpen);
+  static bool get any => _activeBars.isNotEmpty || _anyOpen;
+
+  static bool get _anyOpen => _controllers.any((controller) => controller.isOpen);
 
   /// Counts [controller]'s menu from its anchor's mount to its [remove].
   static void add(MenuController controller) => _controllers.add(controller);
@@ -140,6 +144,15 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   bool _shownOnce = false;
   Offset? _pendingContextMenuPosition;
 
+  // A menu bar's keyboard mode, as on Windows: F10, a lone Alt or Escape out of a drop-down make the
+  // bar active with one title current; null while it is not.
+  int? _currentTitle;
+  final FocusNode _barFocusNode = FocusNode(debugLabel: 'MenuBar', skipTraversal: true);
+  // Where the keyboard was before the bar took it, given back when the bar leaves keyboard mode.
+  FocusNode? _focusBeforeBar;
+  final Map<int, GlobalKey<_MenuBarItemState>> _titleKeys = {};
+  int? _activatedBarId;
+
   // Every mounted popup per menu: a control's own copy and the one its window renders once shown.
   static final Map<String, Set<MenuImpl>> _mounted = {};
 
@@ -175,6 +188,10 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void _subscribeRawChannels() {
     final channel = "${state.swt}/${state.id}";
     _rawChannel = channel;
+    if ((state.style & SWT.BAR) != 0) {
+      _activatedBarId = state.id;
+      MenuBarActivators.add(state.id, _activateBar);
+    }
     final copies = _mounted.putIfAbsent(channel, () => {});
     copies.add(this);
     if (copies.length > 1) return;
@@ -195,6 +212,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     final channel = _rawChannel;
     if (channel == null) return;
     _rawChannel = null;
+    final barId = _activatedBarId;
+    if (barId != null) {
+      _activatedBarId = null;
+      MenuBarActivators.remove(barId, _activateBar);
+    }
     final copies = _mounted[channel];
     if (copies == null || !copies.remove(this) || copies.isNotEmpty) return;
     _mounted.remove(channel);
@@ -208,7 +230,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       OpenPopupMenuTracker._current = null;
     }
     OpenMenus.remove(_menuController);
+    OpenMenus._activeBars.remove(this);
     _unsubscribeRawChannels();
+    _barFocusNode.dispose();
     _popupAnchorFocusNode.dispose();
     _firstItemFocusNode.dispose();
     _itemsFocusNode.dispose();
@@ -300,6 +324,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     if (menuItems.isEmpty) {
       return const SizedBox.shrink();
     }
+    _titleKeys.removeWhere((id, _) => !menuItems.any((item) => item.id == id));
     final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
     final alignRight = align == DecorationsAlign.hright;
     final backgroundColor = enabled
@@ -332,28 +357,158 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment:
-        alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: menuItems
-            .map(
-              (item) => _MenuBarItem(
-            item: item,
-            widgetTheme: widgetTheme,
-            textStyle: textStyle,
-            textColor: textColor,
-            borderColor: borderColor,
-            onMenuShow: () => widget.sendMenuShow(state, null),
-            onMenuHide: () => _sendPendingChanges(),
-            registerPendingChange: _registerPendingChange,
-            menuState: _menuState,
-          ),
-        )
-            .toList(),
+      child: Focus(
+        focusNode: _barFocusNode,
+        onKeyEvent: _onBarKey,
+        onFocusChange: (focused) {
+          if (!focused && !OpenMenus._anyOpen) _leaveBar();
+        },
+        child: Row(
+          mainAxisAlignment:
+          alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            for (final (index, item) in menuItems.indexed)
+              _MenuBarItem(
+                key: _titleKeys.putIfAbsent(item.id, GlobalKey.new),
+                item: item,
+                widgetTheme: widgetTheme,
+                textStyle: textStyle,
+                textColor: textColor,
+                borderColor: borderColor,
+                current: _currentTitle == index,
+                onOpening: _noteFocusBeforeBar,
+                onOpened: () => _setCurrentTitle(index),
+                onClosed: (byKeyboard) => _onTitleClosed(index, byKeyboard),
+                onMoveTitle: (step) => _moveFromOpenTitle(index, step),
+                registerPendingChange: _registerPendingChange,
+                menuState: _menuState,
+              ),
+          ],
+        ),
       ),
     );
 
     return tagSemantics(menuBar);
+  }
+
+  _MenuBarItemState? _title(int index) {
+    final items = _getMenuItems();
+    if (index < 0 || index >= items.length) return null;
+    return _titleKeys[items[index].id]?.currentState;
+  }
+
+  /// F10 or a lone Alt, resolved by Java: the bar takes the keyboard with its first title current.
+  void _activateBar() {
+    if (!mounted || OpenMenus._anyOpen) return;
+    final first = _nextTitle(-1, 1);
+    if (first == null) return;
+    _noteFocusBeforeBar();
+    _enterBar(first);
+  }
+
+  void _noteFocusBeforeBar() {
+    if (_currentTitle == null && !_barFocusNode.hasFocus) {
+      _focusBeforeBar = FocusManager.instance.primaryFocus;
+    }
+  }
+
+  void _enterBar(int index) {
+    _setCurrentTitle(index);
+    _barFocusNode.requestFocus();
+  }
+
+  void _setCurrentTitle(int index) {
+    if (!mounted) return;
+    OpenMenus._activeBars.add(this);
+    setState(() => _currentTitle = index);
+  }
+
+  void _leaveBar() {
+    OpenMenus._activeBars.remove(this);
+    if (_currentTitle != null && mounted) setState(() => _currentTitle = null);
+    final before = _focusBeforeBar;
+    _focusBeforeBar = null;
+    _giveFocusBack(before);
+    // A closing drop-down that took the keyboard from the bar hands it back to the bar as it goes.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _currentTitle == null) _giveFocusBack(before);
+    });
+  }
+
+  void _giveFocusBack(FocusNode? before) {
+    if (!_barFocusNode.hasPrimaryFocus) return;
+    if (before != null && before.context != null) {
+      before.requestFocus();
+    } else {
+      _barFocusNode.unfocus();
+    }
+  }
+
+  // Escape out of a drop-down leaves the bar active on its title, as natively; any other close ends it.
+  void _onTitleClosed(int index, bool byKeyboard) {
+    if (byKeyboard) {
+      _enterBar(index);
+    } else {
+      _leaveBar();
+    }
+    // A chosen item is selected after its menus are hidden, as natively.
+    _sendPendingChanges();
+  }
+
+  void _moveFromOpenTitle(int index, int step) {
+    final next = _nextTitle(index, step);
+    if (next == null || next == index) return;
+    _title(index)?._closeForNextTitle();
+    _setCurrentTitle(next);
+    _title(next)?._open(focusFirstItem: true);
+  }
+
+  int? _nextTitle(int from, int step) {
+    final items = _getMenuItems();
+    final count = items.length;
+    for (var i = 1; i <= count; i++) {
+      final index = ((from + step * i) % count + count) % count;
+      if ((items[index].style & SWT.SEPARATOR) == 0) return index;
+    }
+    return null;
+  }
+
+  KeyEventResult _onBarKey(FocusNode node, KeyEvent event) {
+    final current = _currentTitle;
+    if (current == null) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final horizontal = key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
+    final step = key == LogicalKeyboardKey.arrowRight ? 1 : -1;
+    if (!node.hasPrimaryFocus) return KeyEventResult.ignored;
+    if (event is KeyUpEvent) return KeyEventResult.handled;
+    if (horizontal) {
+      final next = _nextTitle(current, step);
+      if (next != null) setState(() => _currentTitle = next);
+    } else if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space) {
+      _title(current)?._open(focusFirstItem: true);
+    } else if (key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.f10 ||
+        key == LogicalKeyboardKey.altLeft ||
+        key == LogicalKeyboardKey.altRight) {
+      if (event is KeyDownEvent) _leaveBar();
+    } else {
+      final letter = event.character?.toLowerCase() ?? '';
+      final items = _getMenuItems();
+      for (final (index, item) in items.indexed) {
+        final mnemonic = parseMnemonic(item.text);
+        if (letter.isEmpty || mnemonic.index < 0) continue;
+        if (!mnemonic.text.substring(mnemonic.index).toLowerCase().startsWith(letter)) continue;
+        setState(() => _currentTitle = index);
+        _title(index)?._open(focusFirstItem: true);
+        break;
+      }
+    }
+    // Every other key stays in the bar, as in the platform's menu loop.
+    return KeyEventResult.handled;
   }
 
   Widget _buildPopupMenu(
@@ -555,19 +710,32 @@ class _MenuBarItem extends StatefulWidget {
   final TextStyle textStyle;
   final Color textColor;
   final Color borderColor;
-  final VoidCallback onMenuShow;
-  final VoidCallback onMenuHide;
+
+  /// The bar is in keyboard mode with this title current.
+  final bool current;
+  final VoidCallback onOpening;
+  final VoidCallback onOpened;
+
+  /// The drop-down closed; [byKeyboard] when Escape closed it.
+  final void Function(bool byKeyboard) onClosed;
+
+  /// Left (-1) or Right (1) in the open drop-down: the neighbouring title's drop-down takes its place.
+  final void Function(int step) onMoveTitle;
   final void Function(void Function()) registerPendingChange;
   final MenuState menuState;
 
   const _MenuBarItem({
+    super.key,
     required this.item,
     required this.widgetTheme,
     required this.textStyle,
     required this.textColor,
     required this.borderColor,
-    required this.onMenuShow,
-    required this.onMenuHide,
+    required this.current,
+    required this.onOpening,
+    required this.onOpened,
+    required this.onClosed,
+    required this.onMoveTitle,
     required this.registerPendingChange,
     required this.menuState,
   });
@@ -578,31 +746,39 @@ class _MenuBarItem extends StatefulWidget {
 
 class _MenuBarItemState extends State<_MenuBarItem> {
   bool _isHovered = false;
-  bool _itemsLoaded = false;
-  bool _pendingOpen = false;
   List<Widget> _menuChildren = const [SizedBox.shrink()];
   final MenuController _subMenuController = MenuController();
   final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'MenuBar.items');
-  // Opened by Alt+letter: the keyboard moves onto the first item once the menu is up.
+  // Opened from the keyboard: the keyboard moves onto the first item once the menu is up.
   bool _focusFirstItemWhenOpen = false;
+  // The drop-down whose Show is on its way to Java; it opens on Java's answer.
+  int? _showingMenuId;
+  // Java was told the drop-down is shown, so closing it owes a Hide.
+  bool _shown = false;
+  bool _closingFromKeyboard = false;
+  bool _closingForNextTitle = false;
 
   @override
   void initState() {
     super.initState();
     OpenMenus.add(_subMenuController);
     if (widget.item.menu != null) MenuBarOpeners.add(widget.item, _openFromMnemonic);
-    final preItems = widget.item.menu?.items;
-    if (preItems != null && preItems.isNotEmpty) {
-      _itemsLoaded = true;
-      _menuChildren = preItems
-          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-          .toList();
-    }
+    _menuChildren = _childrenOf(widget.item.menu?.items);
   }
+
+  static List<Widget> _childrenOf(List<VMenuItem>? items) => items == null || items.isEmpty
+      ? const [SizedBox.shrink()]
+      : items.map((item) => MenuItemSwt(key: ValueKey(item.id), value: item)).toList();
 
   @override
   void didUpdateWidget(_MenuBarItem oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final items = widget.item.menu?.items;
+    if (items != null && !identical(items, oldWidget.item.menu?.items)) {
+      _menuChildren = _childrenOf(items);
+    }
+    // Java sends no answer for a drop-down disposed during its Show.
+    if (_showingMenuId != null && widget.item.menu?.id != _showingMenuId) _stopShowing();
     if (oldWidget.item.id == widget.item.id && (oldWidget.item.menu == null) == (widget.item.menu == null)) {
       return;
     }
@@ -614,52 +790,97 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   void dispose() {
     OpenMenus.remove(_subMenuController);
     if (widget.item.menu != null) MenuBarOpeners.remove(widget.item, _openFromMnemonic);
+    _stopShowing();
     _itemsFocusNode.dispose();
-    if (widget.item.menu != null) {
-      EquoCommService.remove("Menu/${widget.item.menu!.id}");
-    }
     super.dispose();
   }
 
-  void _requestItems() {
-    if (_itemsLoaded || widget.item.menu == null) return;
-    final subMenu = widget.item.menu!;
-    final channelName = "Menu/${subMenu.id}";
-    EquoCommService.on<VMenu>(channelName, (VMenu updatedMenu) {
-      EquoCommService.remove(channelName);
-      if (!mounted) return;
-      final items = (updatedMenu.items ?? [])
-          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-          .toList();
-      setState(() {
-        _itemsLoaded = true;
-        _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
-      });
-      if (_pendingOpen) {
-        _pendingOpen = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_subMenuController.isOpen) {
-            _subMenuController.open();
-            _focusFirstItemNextFrame();
-          }
-        });
-      }
+  // Every opening asks Java first, as the platform sends SWT.Show before it shows a menu: an
+  // application fills its menu on Show, and the items it sends back are what opens.
+  void _open({required bool focusFirstItem}) {
+    final menu = widget.item.menu;
+    if (!mounted || menu == null || !(widget.item.enabled ?? false)) return;
+    if (_subMenuController.isOpen || _showingMenuId != null) return;
+    widget.onOpening();
+    _focusFirstItemWhenOpen = focusFirstItem;
+    final channel = 'Menu/${menu.id}';
+    _showingMenuId = menu.id;
+    EquoCommService.on<VMenu>(channel, (VMenu updated) {
+      if (mounted) setState(() => _menuChildren = _childrenOf(updated.items ?? const []));
     });
-    MenuSwt<VMenu>(value: subMenu).sendMenuShow(subMenu, null);
+    EquoCommService.onRaw('$channel/shown', (_) => _onShown());
+    MenuSwt<VMenu>(value: menu).sendMenuShow(menu, null);
+  }
+
+  void _stopShowing() {
+    final id = _showingMenuId;
+    if (id == null) return;
+    _showingMenuId = null;
+    EquoCommService.remove('Menu/$id');
+    EquoCommService.remove('Menu/$id/shown');
+  }
+
+  void _onShown() {
+    if (_showingMenuId == null) return;
+    _stopShowing();
+    if (!mounted) return;
+    _shown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _subMenuController.isOpen) return;
+      _subMenuController.open();
+      widget.onOpened();
+      _focusFirstItemNextFrame();
+    });
+    // The ack arrives in a microtask, so nothing has scheduled the frame this callback needs.
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _onClose() {
+    _focusFirstItemWhenOpen = false;
+    final byKeyboard = _closingFromKeyboard;
+    final forNextTitle = _closingForNextTitle;
+    _closingFromKeyboard = false;
+    _closingForNextTitle = false;
+    final menu = widget.item.menu;
+    if (_shown && menu != null) MenuSwt<VMenu>(value: menu).sendMenuHide(menu, null);
+    _shown = false;
+    if (!forNextTitle) widget.onClosed(byKeyboard);
+  }
+
+  void _closeFromKeyboard() {
+    _closingFromKeyboard = true;
+    _subMenuController.close();
+  }
+
+  void _closeForNextTitle() {
+    if (!_subMenuController.isOpen) return;
+    _closingForNextTitle = true;
+    _subMenuController.close();
+  }
+
+  // Keys in the drop-down itself, as the Windows menu loop answers them; a cascade's submenu
+  // answers its own Escape before this sees it.
+  KeyEventResult _onDropDownKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) {
+      _closeFromKeyboard();
+      return KeyEventResult.handled;
+    }
+    if (key != LogicalKeyboardKey.arrowLeft && key != LogicalKeyboardKey.arrowRight) {
+      return KeyEventResult.ignored;
+    }
+    // Left and Right on or inside a cascade open and close its submenu.
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (focused == null || focused.findAncestorWidgetOfExactType<SubmenuButton>() != null) {
+      return KeyEventResult.ignored;
+    }
+    widget.onMoveTitle(key == LogicalKeyboardKey.arrowRight ? 1 : -1);
+    return KeyEventResult.handled;
   }
 
   // Alt+letter on this title, resolved by Java: the menu opens with its first item current, as natively.
-  void _openFromMnemonic() {
-    if (!mounted || !(widget.item.enabled ?? false) || _subMenuController.isOpen) return;
-    _focusFirstItemWhenOpen = true;
-    if (_itemsLoaded) {
-      _subMenuController.open();
-      _focusFirstItemNextFrame();
-    } else {
-      _pendingOpen = true;
-      _requestItems();
-    }
-  }
+  void _openFromMnemonic() => _open(focusFirstItem: true);
 
   void _focusFirstItemNextFrame() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -682,6 +903,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
         color: widgetTheme.borderColor,
       );
     }
+    final highlighted = (_isHovered || widget.current) && enabled;
 
     if (widget.item.menu != null) {
       return MenuAnchor(
@@ -701,36 +923,34 @@ class _MenuBarItemState extends State<_MenuBarItem> {
             ),
           ),
         ),
-        onOpen: widget.onMenuShow,
-        onClose: () {
-          _focusFirstItemWhenOpen = false;
-          widget.onMenuHide();
-        },
+        onClose: _onClose,
         menuChildren: [
           pointerInterceptor(MenuChangeNotifier(
             registerPendingChange: widget.registerPendingChange,
             menuState: widget.menuState,
             closeMenu: _subMenuController.close,
-            child: MenuMnemonics(
-              focusNode: _itemsFocusNode,
-              close: _subMenuController.close,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: _menuChildren,
+            child: Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              onKeyEvent: _onDropDownKey,
+              child: MenuMnemonics(
+                focusNode: _itemsFocusNode,
+                close: _closeFromKeyboard,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _menuChildren,
+                ),
               ),
             ),
           )),
         ],
         builder: (context, controller, child) {
           return MouseRegion(
-            onEnter: (_) {
-              setState(() => _isHovered = true);
-              _requestItems();
-            },
+            onEnter: (_) => setState(() => _isHovered = true),
             onExit: (_) => setState(() => _isHovered = false),
             child: AnimatedContainer(
               duration: widget.widgetTheme.animationDuration,
-              color: _isHovered && enabled
+              color: highlighted
                   ? widget.widgetTheme.hoverBackgroundColor
                   : Colors.transparent,
               child: Listener(
@@ -738,11 +958,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
                   if (enabled && e.buttons == 0) {
                     if (controller.isOpen) {
                       controller.close();
-                    } else if (_itemsLoaded) {
-                      controller.open();
                     } else {
-                      _pendingOpen = true;
-                      _requestItems();
+                      _open(focusFirstItem: false);
                     }
                   }
                 },
@@ -771,7 +988,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: widget.widgetTheme.animationDuration,
-        color: _isHovered && enabled
+        color: highlighted
             ? widget.widgetTheme.hoverBackgroundColor
             : Colors.transparent,
         child: Listener(

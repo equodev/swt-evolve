@@ -230,19 +230,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         return parent;
     }
 
-    int getPreferredWidth(long hTheme, long hDC) {
-        int width = DartExpandItem.TEXT_INSET * 2 + DartExpandItem.CHEVRON_SIZE;
-        if (image != null) {
-            width += DartExpandItem.TEXT_INSET + imageWidth;
-        }
-        if (text.length() > 0) {
-            if (hTheme != 0) {
-            } else {
-            }
-        }
-        return width;
-    }
-
     boolean isHover(int x, int y) {
         int bandHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         return this.x < x && x < (this.x + width) && this.y < y && y < (this.y + bandHeight);
@@ -460,6 +447,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     public int _imageWidth() {
         return imageWidth;
+    }
+
+    int wireHeaderHeight() {
+        return 0;
     }
 
     public FlutterBridge getBridge() {

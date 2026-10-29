@@ -19,7 +19,8 @@ VExpandItem _$VExpandItemFromJson(Map<String, dynamic> json) => VExpandItem()
       ? null
       : VControl.fromJson(json['control'] as Map<String, dynamic>)
   ..expanded = json['expanded'] as bool?
-  ..height = (json['height'] as num?)?.toInt();
+  ..height = (json['height'] as num?)?.toInt()
+  ..headerHeight = (json['headerHeight'] as num?)?.toInt();
 
 Map<String, dynamic> _$VExpandItemToJson(VExpandItem instance) =>
     <String, dynamic>{
@@ -31,4 +32,5 @@ Map<String, dynamic> _$VExpandItemToJson(VExpandItem instance) =>
       'control': ?instance.control,
       'expanded': ?instance.expanded,
       'height': ?instance.height,
+      'headerHeight': ?instance.headerHeight,
     };

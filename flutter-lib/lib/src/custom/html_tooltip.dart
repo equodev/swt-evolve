@@ -120,6 +120,8 @@ class _HtmlTooltipState extends State<HtmlTooltip> {
       if (text == null || text.isEmpty) return widget.child;
       return Tooltip(
         message: text,
+        // Flutter Web would name the wrapped entry "tooltip\nlabel"; its text alone is its name.
+        excludeFromSemantics: true,
         waitDuration: const Duration(milliseconds: 500),
         child: widget.child,
       );

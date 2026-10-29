@@ -113,6 +113,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
         super(parent, checkStyle(style), api);
         this.parent = parent;
         createWidget();
+        listener = event -> onDispose(event);
+        addListener(SWT.Dispose, listener);
+        parentListener = event -> dispose();
+        parent.addListener(SWT.Dispose, parentListener);
     }
 
     static int checkStyle(int style) {
@@ -148,6 +152,14 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void addSelectionListener(SelectionListener listener) {
         addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
+    }
+
+    void configure() {
+        Point point = x == -1 || y == -1 ? getDisplay().getCursorLocation() : new Point(x, y);
+        if (!point.equals(location)) {
+            location = point;
+            getValue().markDirty(VToolTip.LOCATION);
+        }
     }
 
     /**
@@ -406,7 +418,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.x = x;
         this.y = y;
         this.location = newValue;
-        ;
+        if (visible)
+            configure();
         getValue().markDirty(VToolTip.LOCATION);
         if (display != null) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
@@ -472,7 +485,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutMessage.setText(string);
         }
         this.message = newValue;
-        ;
+        if (visible)
+            configure();
     }
 
     /**
@@ -513,7 +527,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutText.setStyle(style, 0, string.length());
         }
         this.text = newValue;
-        ;
+        if (visible)
+            configure();
     }
 
     /**
@@ -538,7 +553,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
         if (this.visible != newValue) {
             getValue().markDirty(VToolTip.VISIBLE);
         }
-        ;
+        if (visible)
+            configure();
         ;
         Display display = getDisplay();
         if (runnable != null)

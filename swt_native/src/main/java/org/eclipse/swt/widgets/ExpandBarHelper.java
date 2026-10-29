@@ -3,10 +3,13 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 
 /**
- * Shared logic for the Dart-backed ExpandBar. A Flutter-side expand/collapse arrives as an
- * Expand/Collapse event carrying the item index; the Java item's state must follow before the
- * SWT event is fired, or {@code ExpandItem.getExpanded()} goes stale (and a later Java-side
- * value push would silently collapse the item again).
+ * What the Dart-backed ExpandBar needs on the Java side and the generated implementation cannot hold: the
+ * expand/collapse plumbing. Its size and band are measured from the rendered header, in
+ * {@link dev.equo.swt.size.ExpandBarSizes}.
+ * <p>
+ * A Flutter-side expand/collapse arrives as an Expand/Collapse event carrying the item index; the Java item's
+ * state must follow before the SWT event is fired, or {@code ExpandItem.getExpanded()} goes stale (and a later
+ * Java-side value push would silently collapse the item again).
  */
 public class ExpandBarHelper {
 
@@ -19,6 +22,27 @@ public class ExpandBarHelper {
         if (item.getExpanded() != expand) {
             item.setExpanded(expand);
             bar.sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
+        }
+    }
+
+    /**
+     * Return and Space open or close the focused item. The client has no key handling of its own, so it learns the new
+     * state from Java.
+     */
+    static void openedByKey(Event event, ExpandItem focusItem) {
+        if (event.keyCode == SWT.CR || event.keyCode == ' ') {
+            ((DartExpandItem) focusItem.getImpl()).getValue().markDirty("expanded");
+        }
+    }
+
+    /**
+     * The band changed (a font was set), and with it the header of every item.
+     */
+    static void headersChanged(DartExpandBar bar) {
+        for (ExpandItem item : bar.items) {
+            if (item != null) {
+                ((DartExpandItem) item.getImpl()).getValue().markDirty("headerHeight");
+            }
         }
     }
 

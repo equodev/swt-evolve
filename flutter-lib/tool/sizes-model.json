@@ -14472,6 +14472,102 @@
       ],
       "itemsAccessor": "getItems()"
     },
+    "org.eclipse.swt.widgets.ExpandBar": {
+      "cases": [
+        {
+          "discoveredComponents": {
+            "chevron": {
+              "height": 24.0,
+              "left": 568.0,
+              "top": 10.0,
+              "width": 24.0
+            },
+            "header": [
+              {
+                "height": 40.0,
+                "left": 2.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 16.0,
+                "top": 2.0,
+                "width": 596.0
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 16.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 560.0
+            }
+          },
+          "expectedComponents": {
+            "headersOf": "ExpandItemHeader",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "ExpandBar_V_SCROLL_",
+          "style": "V_SCROLL",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "chevron": {
+              "height": 24.0,
+              "left": 568.0,
+              "top": 10.0,
+              "width": 24.0
+            },
+            "header": [
+              {
+                "height": 40.0,
+                "left": 2.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 16.0,
+                "top": 2.0,
+                "width": 596.0
+              }
+            ],
+            "image": {
+              "height": 16.0,
+              "width": 16.0
+            },
+            "text": {
+              "content": "Section",
+              "height": 16.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.1428571428571428
+              },
+              "width": 538.0
+            }
+          },
+          "expectedComponents": {
+            "headersOf": "ExpandItemHeader",
+            "image": [
+              16,
+              16
+            ],
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "ExpandBar_header:image_",
+          "style": "header:image",
+          "useFontTheme": false,
+          "width": 600.0
+        }
+      ]
+    },
     "org.eclipse.swt.widgets.Label": {
       "cases": [
         {

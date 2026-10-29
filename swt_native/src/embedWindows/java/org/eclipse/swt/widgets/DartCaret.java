@@ -94,8 +94,10 @@ public class DartCaret extends DartWidget implements ICaret {
 
     void createWidget() {
         isVisible = true;
+        getValue().markDirty(VCaret.VISIBLE);
         if (parent.getCaret() == null) {
             parent.setCaret(this.getApi());
+            getValue().markDirty(VCaret.FOCUSED);
         }
     }
 
@@ -467,6 +469,9 @@ public class DartCaret extends DartWidget implements ICaret {
     public void setImage(Image image) {
         checkWidget();
         image = GraphicsUtils.copyImage(getDisplay(), image);
+        if (!java.util.Objects.equals(this.image, image)) {
+            getValue().markDirty(VCaret.IMAGE);
+        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -595,6 +600,9 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
+        if (this.isVisible != visible) {
+            getValue().markDirty(VCaret.VISIBLE);
+        }
         if (visible == isVisible)
             return;
         isVisible = visible;

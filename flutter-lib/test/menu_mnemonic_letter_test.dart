@@ -155,6 +155,7 @@ Future<void> _openMenuBarDropDown(WidgetTester tester) async {
   await mouse.down(tester.getCenter(find.text('File')));
   await mouse.up();
   await tester.pumpAndSettle();
+  await ackMenuShown(tester, 32);
   expect(find.text('Open...'), findsOneWidget, reason: 'the drop-down must be open');
   EquoCommService.commForTesting.clearSentFrames();
 }
@@ -361,6 +362,7 @@ void main() {
       await _pumpMenuBar(tester);
 
       await _javaOpensMenuBarMenu(tester, 31);
+      await ackMenuShown(tester, 32);
       expect(find.text('Open...'), findsOneWidget, reason: 'the drop-down must open');
       await _press(tester, LogicalKeyboardKey.enter);
 

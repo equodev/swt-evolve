@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../comm/comm.dart';
 import '../gen/messagebox.dart';
 import '../gen/swt.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_extensions/message_box_theme_extension.dart';
+import 'messagebox_layout.dart';
 import 'utils/pointer.dart';
 
-void showMessageBoxDialog(
-  BuildContext context,
-  VMessageBox value,
-  int dialogId,
-) {
+void showMessageBoxDialog(BuildContext context, VMessageBox value, int dialogId) {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => pointerInterceptor(_MessageBoxDialog(
-      style: value.style ?? 0,
-      title: value.text ?? '',
-      message: value.message ?? '',
-      dialogId: dialogId,
-    )),
+    builder: (ctx) => pointerInterceptor(
+      _MessageBoxDialog(
+        style: value.style ?? 0,
+        title: value.text ?? '',
+        message: value.message ?? '',
+        buttonLabels: value.buttonLabels,
+        dialogId: dialogId,
+      ),
+    ),
   );
 }
 
@@ -27,12 +28,14 @@ class _MessageBoxDialog extends StatelessWidget {
   final int style;
   final String title;
   final String message;
+  final List<String?>? buttonLabels;
   final int dialogId;
 
   const _MessageBoxDialog({
     required this.style,
     required this.title,
     required this.message,
+    required this.buttonLabels,
     required this.dialogId,
   });
 
@@ -41,50 +44,63 @@ class _MessageBoxDialog extends StatelessWidget {
     final msgTheme = Theme.of(context).extension<MessageBoxThemeExtension>()!;
     final btnTheme = Theme.of(context).extension<ButtonThemeExtension>()!;
 
-    final buttons = _buildButtons(context, style, dialogId, msgTheme, btnTheme);
+    final layout = messageBoxLayout(style);
+    final buttons = messageBoxButtons(style, buttonLabels)
+        .map<Widget>(
+          (b) => _MessageBoxButton(
+            label: b.label,
+            swtId: b.id,
+            dialogId: dialogId,
+            isPrimary: b.primary,
+            btnTheme: btnTheme,
+          ),
+        )
+        .toList();
 
-    return Dialog(
-      backgroundColor: msgTheme.backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(msgTheme.borderRadius),
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: msgTheme.minWidth, maxWidth: msgTheme.maxWidth),
-        child: Padding(
-          padding: msgTheme.padding,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+    final escapeId = layout.escapeId;
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): () => _answer(context, dialogId, layout.defaultId),
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): () => _answer(context, dialogId, layout.defaultId),
+        if (escapeId != null)
+          const SingleActivator(LogicalKeyboardKey.escape): () => _answer(context, dialogId, escapeId),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Dialog(
+          backgroundColor: msgTheme.backgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(msgTheme.borderRadius)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: msgTheme.minWidth, maxWidth: msgTheme.maxWidth),
+            child: Padding(
+              padding: msgTheme.padding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildIcon(style, msgTheme),
-                  SizedBox(width: msgTheme.iconTitleSpacing),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: msgTheme.titleStyle ?? const TextStyle(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildIcon(style, msgTheme),
+                      SizedBox(width: msgTheme.iconTitleSpacing),
+                      Expanded(child: Text(title, style: msgTheme.titleStyle ?? const TextStyle())),
+                    ],
+                  ),
+                  if (message.isNotEmpty) ...[
+                    SizedBox(height: msgTheme.titleMessageSpacing),
+                    Padding(
+                      padding: EdgeInsets.only(left: msgTheme.messageIndent),
+                      child: Text(message, style: msgTheme.messageStyle ?? const TextStyle()),
                     ),
+                  ],
+                  SizedBox(height: msgTheme.contentButtonsSpacing),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: _intersperse(buttons, SizedBox(width: msgTheme.buttonSpacing)),
                   ),
                 ],
               ),
-              if (message.isNotEmpty) ...[
-                SizedBox(height: msgTheme.titleMessageSpacing),
-                Padding(
-                  padding: EdgeInsets.only(left: msgTheme.messageIndent),
-                  child: Text(
-                    message,
-                    style: msgTheme.messageStyle ?? const TextStyle(),
-                  ),
-                ),
-              ],
-              SizedBox(height: msgTheme.contentButtonsSpacing),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: _intersperse(buttons, SizedBox(width: msgTheme.buttonSpacing)),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -92,9 +108,14 @@ class _MessageBoxDialog extends StatelessWidget {
   }
 }
 
+/// Closes the box answering [id], as pressing its button does.
+void _answer(BuildContext context, int dialogId, int id) {
+  Navigator.pop(context);
+  EquoCommService.sendPayload('MessageBox/$dialogId/close', '$id');
+}
+
 Widget _buildIcon(int style, MessageBoxThemeExtension theme) {
-  const iconMask =
-      SWT.ICON_ERROR | SWT.ICON_WARNING | SWT.ICON_INFORMATION | SWT.ICON_QUESTION | SWT.ICON_WORKING;
+  const iconMask = SWT.ICON_ERROR | SWT.ICON_WARNING | SWT.ICON_INFORMATION | SWT.ICON_QUESTION | SWT.ICON_WORKING;
   switch (style & iconMask) {
     case SWT.ICON_ERROR:
       return Icon(Icons.error, color: theme.iconErrorColor);
@@ -110,36 +131,23 @@ Widget _buildIcon(int style, MessageBoxThemeExtension theme) {
   }
 }
 
-List<Widget> _buildButtons(
-  BuildContext context,
-  int style,
-  int dialogId,
-  MessageBoxThemeExtension msgTheme,
-  ButtonThemeExtension btnTheme,
-) {
-  primary(String label, int swtId) =>
-      _MessageBoxButton(label: label, swtId: swtId, dialogId: dialogId, isPrimary: true, btnTheme: btnTheme);
-  secondary(String label, int swtId) =>
-      _MessageBoxButton(label: label, swtId: swtId, dialogId: dialogId, isPrimary: false, btnTheme: btnTheme);
+/// A button of a message box: its label, the id open() returns for it, and whether it is the default one.
+typedef MessageBoxButtonSpec = ({String label, int id, bool primary});
 
-  const buttonMask = SWT.OK | SWT.CANCEL | SWT.YES | SWT.NO | SWT.ABORT | SWT.RETRY | SWT.IGNORE;
-  return switch (style & buttonMask) {
-    SWT.OK => [primary('OK', SWT.OK)],
-    const (SWT.OK | SWT.CANCEL) => [secondary('Cancel', SWT.CANCEL), primary('OK', SWT.OK)],
-    const (SWT.YES | SWT.NO) => [secondary('No', SWT.NO), primary('Yes', SWT.YES)],
-    const (SWT.YES | SWT.NO | SWT.CANCEL) => [
-        secondary('Cancel', SWT.CANCEL),
-        secondary('No', SWT.NO),
-        primary('Yes', SWT.YES),
-      ],
-    const (SWT.RETRY | SWT.CANCEL) => [secondary('Cancel', SWT.CANCEL), primary('Retry', SWT.RETRY)],
-    const (SWT.ABORT | SWT.RETRY | SWT.IGNORE) => [
-        secondary('Abort', SWT.ABORT),
-        secondary('Retry', SWT.RETRY),
-        primary('Ignore', SWT.IGNORE),
-      ],
-    _ => [primary('OK', SWT.OK)],
-  };
+/// The order of the labels the Java side sends in `buttonLabels`.
+const List<int> _labelOrder = [SWT.OK, SWT.CANCEL, SWT.YES, SWT.NO, SWT.ABORT, SWT.RETRY, SWT.IGNORE];
+const List<String> _defaultLabels = ['OK', 'Cancel', 'Yes', 'No', 'Abort', 'Retry', 'Ignore'];
+
+String _labelOf(int id, List<String?>? labels) {
+  final index = _labelOrder.indexOf(id);
+  final label = labels != null && index < labels.length ? labels[index] : null;
+  return label ?? _defaultLabels[index];
+}
+
+/// The buttons a message box of [style] shows, left to right, labelled from [buttonLabels].
+List<MessageBoxButtonSpec> messageBoxButtons(int style, List<String?>? buttonLabels) {
+  final layout = messageBoxLayout(style);
+  return [for (final id in layout.order) (label: _labelOf(id, buttonLabels), id: id, primary: id == layout.defaultId)];
 }
 
 List<Widget> _intersperse(List<Widget> items, Widget separator) {
@@ -192,10 +200,7 @@ class _MessageBoxButtonState extends State<_MessageBoxButton> {
         color: bgColor,
         borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
         child: InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            EquoCommService.sendPayload('MessageBox/${widget.dialogId}/close', '${widget.swtId}');
-          },
+          onTap: () => _answer(context, widget.dialogId, widget.swtId),
           borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
           splashColor: theme.splashColor,
           highlightColor: theme.highlightColor,
@@ -203,10 +208,7 @@ class _MessageBoxButtonState extends State<_MessageBoxButton> {
             duration: theme.buttonPressDelay,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
-              border: Border.all(
-                color: borderColor,
-                width: theme.pushButtonBorderWidth,
-              ),
+              border: Border.all(color: borderColor, width: theme.pushButtonBorderWidth),
             ),
             padding: theme.pushButtonPadding,
             child: Text(

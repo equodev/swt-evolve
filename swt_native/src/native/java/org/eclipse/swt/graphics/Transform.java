@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class represent transformation matrices for
@@ -347,7 +348,7 @@ public class Transform extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Transform(ITransform impl) {

@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * This Layout stacks all the controls one on top of the other and resizes all controls
@@ -112,7 +113,7 @@ public class StackLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     public StackLayout() {

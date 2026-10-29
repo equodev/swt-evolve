@@ -1,9 +1,53 @@
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 public class DisplayHelper {
+
+    /** Display data: the OS the display's client runs on, as Flutter's {@code TargetPlatform} name, from its ClientReady. */
+    private static final String CLIENT_PLATFORM = "org.eclipse.swt.internal.clientPlatform";
+
+    /** Display data is written on the display's thread; a ClientReady that arrives on another one is posted to it. */
+    public static void clientReady(Display display, String targetPlatform) {
+        if (targetPlatform == null || display.isDisposed())
+            return;
+        if (display.getThread() == Thread.currentThread()) {
+            display.setData(CLIENT_PLATFORM, targetPlatform);
+            return;
+        }
+        try {
+            display.asyncExec(() -> {
+                if (!display.isDisposed())
+                    display.setData(CLIENT_PLATFORM, targetPlatform);
+            });
+        } catch (SWTException disposed) {
+            // The display went away between the check and asyncExec.
+        }
+    }
+
+    /**
+     * The platform whose keyboard conventions the display's client follows, named as {@link SWT#getPlatform()}
+     * names them: {@code "win32"}, {@code "gtk"} or {@code "cocoa"}. It is the OS the client runs on, which for a
+     * web client is the browser's, not the server's; before the client reports it, the one this jar is built for.
+     * Any other OS follows Windows.
+     */
+    static String keyboardPlatform(Display display) {
+        Object platform = display.getData(CLIENT_PLATFORM);
+        switch (platform instanceof String ? (String) platform : SWT.getPlatform()) {
+            case "macOS":
+            case "iOS":
+            case "cocoa":
+                return "cocoa";
+            case "linux":
+            case "gtk":
+                return "gtk";
+            default:
+                return "win32";
+        }
+    }
 
     static Point mapOrigin(Control from, Control to, int x, int y) {
         int screenX, screenY;

@@ -43,9 +43,18 @@ public class VExpandItem extends VItem {
         ((DartExpandItem) impl).height = value;
     }
 
+    public int getHeaderHeight() {
+        return ((DartExpandItem) impl).wireHeaderHeight();
+    }
+
+    public void setHeaderHeight(int value) {
+    }
+
     public static final String CONTROL = "control";
 
     public static final String EXPANDED = "expanded";
+
+    public static final String HEADER_HEIGHT = "headerHeight";
 
     public static final String HEIGHT = "height";
 
@@ -60,6 +69,9 @@ public class VExpandItem extends VItem {
                 return;
             case "height":
                 Serializer.writeKeyValue(writer, "height", getHeight());
+                return;
+            case "headerHeight":
+                Serializer.writeKeyValue(writer, "headerHeight", getHeaderHeight());
                 return;
         }
         super.writeProperty(writer, key);

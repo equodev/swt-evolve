@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * <code>TextLayout</code> is a graphic object that represents
@@ -1056,7 +1057,7 @@ public final class TextLayout extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     /**

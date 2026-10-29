@@ -416,25 +416,37 @@ class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
   }
 }
 
-final _cascadeOpenKeys = {
-  LogicalKeyboardKey.arrowRight,
-  LogicalKeyboardKey.arrowLeft,
+final _cascadeActivateKeys = {
   LogicalKeyboardKey.enter,
   LogicalKeyboardKey.numpadEnter,
   LogicalKeyboardKey.space,
 };
 
+final _cascadeOpenKeys = {
+  LogicalKeyboardKey.arrowRight,
+  LogicalKeyboardKey.arrowLeft,
+  ..._cascadeActivateKeys,
+};
+
 /// Natively a cascade opens on hover, a click, Right, Enter or Space, never because Up or Down made it
-/// the current item; Flutter opens one whenever it gets the focus.
+/// the current item; Flutter opens one whenever it gets the focus. A click only opens it, where
+/// Flutter's toggle would close the submenu the pointer's hover has just opened. Enter and Space,
+/// which reach the same toggle, never close it either.
 class _CascadeMenuController extends MenuController {
-  _CascadeMenuController(this._mayOpen);
+  _CascadeMenuController(this._mayOpen, this._keepOpen);
 
   final bool Function() _mayOpen;
+  final bool Function() _keepOpen;
 
   /// [force] opens it whatever [_mayOpen] says, for an opening the user asked for by key.
   @override
   void open({Offset? position, bool force = false}) {
     if (force || _mayOpen()) super.open(position: position);
+  }
+
+  @override
+  void close() {
+    if (!_keepOpen()) super.close();
   }
 }
 
@@ -464,10 +476,18 @@ class _CascadeMenuItemRow extends StatefulWidget {
 }
 
 class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemonicItem {
-  late final _CascadeMenuController _menuController = _CascadeMenuController(() =>
-      _isHovered ||
-      _isPressed ||
-      HardwareKeyboard.instance.logicalKeysPressed.any(_cascadeOpenKeys.contains));
+  late final _CascadeMenuController _menuController = _CascadeMenuController(
+      () => _isHovered || _isPressed || _isKeyDownHere(_cascadeOpenKeys),
+      () => _isPressed || _isKeyDownHere(_cascadeActivateKeys));
+  // The last key pressed while this row was current. An opening key still held from before (the
+  // Enter that opened the menu this row is first in) does not open its submenu.
+  LogicalKeyboardKey? _keyDownHere;
+
+  bool _isKeyDownHere(Set<LogicalKeyboardKey> keys) =>
+      _keyDownHere != null &&
+      keys.contains(_keyDownHere) &&
+      HardwareKeyboard.instance.isLogicalKeyPressed(_keyDownHere!);
+
   late final FocusNode _buttonFocusNode =
       FocusNode(debugLabel: 'Cascade', onKeyEvent: _enterOpenSubmenu);
   final FocusNode _submenuFocusNode = FocusNode(debugLabel: 'Cascade.menu');
@@ -477,6 +497,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   // A touch has no hover, so the press itself has to let the tap open the submenu.
   bool _isPressed = false;
   bool _shown = false;
+  AnimationStatus _submenuStatus = AnimationStatus.dismissed;
   // Opened by its mnemonic: the keyboard moves onto the first item as soon as the submenu has one.
   bool _focusFirstItemWhenFilled = false;
 
@@ -550,10 +571,30 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
 
   // Natively a hover-opened submenu takes Up/Down; one the keyboard opened already holds the focus.
   KeyEventResult _enterOpenSubmenu(FocusNode node, KeyEvent event) {
+    final key = event.logicalKey;
+    if (event is KeyDownEvent) _keyDownHere = key;
+    // Flutter's own Escape on a submenu button closes every menu up to the root.
+    if (event is KeyDownEvent && key == LogicalKeyboardKey.escape) {
+      if (_menuController.isOpen) {
+        _menuController.close();
+      } else {
+        MenuMnemonics.closeMenuOf(context);
+      }
+      return KeyEventResult.handled;
+    }
+    if (event is KeyDownEvent && !_menuController.isOpen && widget.isEnabled &&
+        (MenuMnemonics.of(context)?.activeBar ?? false) &&
+        (key == LogicalKeyboardKey.arrowDown ||
+            key == LogicalKeyboardKey.arrowUp ||
+            key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.numpadEnter ||
+            key == LogicalKeyboardKey.space)) {
+      _openFromMnemonic();
+      return KeyEventResult.handled;
+    }
     if (event is KeyUpEvent || !_menuController.isOpen || !_isHovered) {
       return KeyEventResult.ignored;
     }
-    final key = event.logicalKey;
     if (key != LogicalKeyboardKey.arrowDown && key != LogicalKeyboardKey.arrowUp) {
       return KeyEventResult.ignored;
     }
@@ -578,7 +619,13 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   // Hide goes out when the submenu starts closing: onClose waits for the closing animation, by
   // which time the next cascade has already sent its Show.
   void _onSubmenuAnimation(AnimationStatus status) {
+    _submenuStatus = status;
     if (status == AnimationStatus.reverse || status.isDismissed) _sendHide();
+  }
+
+  // Opening a menu that is already open would close it and open it again.
+  void _openOnSemanticsTap() {
+    if (!_submenuStatus.isForwardOrCompleted) _menuController.open(force: true);
   }
 
   void _openFromMnemonic() {
@@ -637,73 +684,80 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
           onPointerDown: (_) => _isPressed = true,
           onPointerUp: (_) => scheduleMicrotask(() => _isPressed = false),
           onPointerCancel: (_) => _isPressed = false,
-          child: SubmenuButton(
-          controller: _menuController,
-          focusNode: _buttonFocusNode,
-          onHover: _onHover,
-          onOpen: _onSubmenuOpen,
-          onClose: _sendHide,
-          onAnimationStatusChanged: _onSubmenuAnimation,
-          onFocusChange: _handleFocusChange,
-          style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.resolveWith((states) {
-              if (!widget.isEnabled) return widget.widgetTheme.backgroundColor;
-              // SubmenuButton focuses itself on hover, so focus is the single current-item signal.
-              if (states.contains(WidgetState.focused) || _menuController.isOpen) {
-                return widget.widgetTheme.hoverBackgroundColor;
-              }
-              return widget.widgetTheme.backgroundColor;
-            }),
-            overlayColor: WidgetStateProperty.all(Colors.transparent),
-            padding: WidgetStateProperty.all(widget.widgetTheme.itemPadding),
-            minimumSize: WidgetStateProperty.all(
-              Size(widget.widgetTheme.minItemWidth, widget.widgetTheme.itemHeight),
-            ),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+          // A semantics tap (what a click becomes on the web once the semantics tree is on) only
+          // opens the submenu too: merged into this node, the button's own toggle never gets it.
+          child: MergeSemantics(
+            child: Semantics(
+              onTap: _openOnSemanticsTap,
+              child: SubmenuButton(
+                controller: _menuController,
+                focusNode: _buttonFocusNode,
+                onHover: _onHover,
+                onOpen: _onSubmenuOpen,
+                onClose: _sendHide,
+                onAnimationStatusChanged: _onSubmenuAnimation,
+                onFocusChange: _handleFocusChange,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (!widget.isEnabled) return widget.widgetTheme.backgroundColor;
+                    // SubmenuButton focuses itself on hover, so focus is the single current-item signal.
+                    if (states.contains(WidgetState.focused) || _menuController.isOpen) {
+                      return widget.widgetTheme.hoverBackgroundColor;
+                    }
+                    return widget.widgetTheme.backgroundColor;
+                  }),
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  padding: WidgetStateProperty.all(widget.widgetTheme.itemPadding),
+                  minimumSize: WidgetStateProperty.all(
+                    Size(widget.widgetTheme.minItemWidth, widget.widgetTheme.itemHeight),
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+                    ),
+                  ),
+                  animationDuration: widget.widgetTheme.animationDuration,
+                ),
+                menuStyle: MenuStyle(
+                  backgroundColor: WidgetStateProperty.all(widget.menuTheme.popupBackgroundColor),
+                  side: getMenuPopupSide(widget.menuTheme),
+                  elevation: WidgetStateProperty.all(widget.menuTheme.popupElevation),
+                  padding: WidgetStateProperty.all(widget.menuTheme.popupPadding),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(widget.menuTheme.borderRadius),
+                    ),
+                  ),
+                ),
+                menuChildren: [
+                  pointerInterceptor(
+                    MenuMnemonics(
+                      focusNode: _submenuFocusNode,
+                      close: _menuController.close,
+                      onFocusChange: (_) => _closeSubmenuIfFocusLeft(),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
+                    ),
+                  ),
+                ],
+                child: Row(
+                  children: [
+                    if (widget.leading != null) ...[
+                      widget.leading!,
+                      SizedBox(width: widget.widgetTheme.iconTextSpacing),
+                    ],
+                    Expanded(
+                      child: MnemonicText(widget.text, style: textStyle),
+                    ),
+                    if (widget.trailing != null) ...[
+                      SizedBox(width: widget.widgetTheme.textAcceleratorSpacing),
+                      widget.trailing!,
+                    ],
+                  ],
+                ),
               ),
             ),
-            animationDuration: widget.widgetTheme.animationDuration,
           ),
-          menuStyle: MenuStyle(
-            backgroundColor: WidgetStateProperty.all(widget.menuTheme.popupBackgroundColor),
-            side: getMenuPopupSide(widget.menuTheme),
-            elevation: WidgetStateProperty.all(widget.menuTheme.popupElevation),
-            padding: WidgetStateProperty.all(widget.menuTheme.popupPadding),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(widget.menuTheme.borderRadius),
-              ),
-            ),
-          ),
-          menuChildren: [
-            pointerInterceptor(
-              MenuMnemonics(
-                focusNode: _submenuFocusNode,
-                close: _menuController.close,
-                onFocusChange: (_) => _closeSubmenuIfFocusLeft(),
-                child: Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
-              ),
-            ),
-          ],
-          child: Row(
-            children: [
-              if (widget.leading != null) ...[
-                widget.leading!,
-                SizedBox(width: widget.widgetTheme.iconTextSpacing),
-              ],
-              Expanded(
-                child: MnemonicText(widget.text, style: textStyle),
-              ),
-              if (widget.trailing != null) ...[
-                SizedBox(width: widget.widgetTheme.textAcceleratorSpacing),
-                widget.trailing!,
-              ],
-            ],
-          ),
-        ),
         ),
       ),
     );

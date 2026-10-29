@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -40,6 +42,7 @@ public class ProxyHandlerNativeTest {
     private static final String BROWSER_ONLY_ACCEPT_TOKEN = "application/xhtml+xml";
 
     private HttpServer server;
+    private ServerSocket stalled;
     private final List<HttpServer> proxies = new ArrayList<>();
     private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private String base;
@@ -50,8 +53,9 @@ public class ProxyHandlerNativeTest {
     }
 
     @AfterEach
-    public void stopServer() {
+    public void stopServer() throws IOException {
         if (server != null) server.stop(0);
+        if (stalled != null) stalled.close();
         for (HttpServer proxy : proxies) proxy.stop(0);
     }
 
@@ -126,13 +130,14 @@ public class ProxyHandlerNativeTest {
         ProxyCookieJar jar = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
 
         ProxyHandler.Fetched form = ProxyHandler.fetch(base + "/start", "GET", new byte[0],
-                Collections.<String, String>emptyMap(), Collections.<String>emptyList(), jar);
+                Collections.<String, String>emptyMap(), Collections.<String>emptyList(), jar,
+                ProxyHandler.CONNECT_TIMEOUT_MILLIS, ProxyHandler.READ_TIMEOUT_MILLIS);
         assertThat(new String(form.body, StandardCharsets.UTF_8)).isEqualTo("form");
 
         ProxyHandler.Fetched done = ProxyHandler.fetch(base + "/idp/authenticate", "POST",
                 "user=u".getBytes(StandardCharsets.UTF_8),
                 Collections.singletonMap("Content-Type", "application/x-www-form-urlencoded"),
-                Collections.<String>emptyList(), jar);
+                Collections.<String>emptyList(), jar, ProxyHandler.CONNECT_TIMEOUT_MILLIS, ProxyHandler.READ_TIMEOUT_MILLIS);
         assertThat(done.finalUrl).isEqualTo(base + "/done");
         assertThat(new String(done.body, StandardCharsets.UTF_8)).isEqualTo("SESSION=s2");
         assertThat(jar.get("SESSION", base + "/")).isEqualTo("s2");
@@ -177,6 +182,25 @@ public class ProxyHandlerNativeTest {
 
         assertThat(page.headers().firstValue("Content-Type")).hasValue("text/html");
         assertThat(page.body()).contains("<base href=\"" + base + "/info\">");
+    }
+
+    /** The listen backlog completes the handshake, so the upstream accepts and then never answers. */
+    @Test
+    public void an_upstream_that_never_answers_fails_with_502_instead_of_holding_the_worker() throws Exception {
+        stalled = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+        String target = "http://127.0.0.1:" + stalled.getLocalPort() + "/page";
+        HttpServer proxy = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        proxy.createContext("/proxy", new ProxyHandler(new ProxyCookieJar(WebFlutterServer::proxyAllowed), 500, 500));
+        proxy.start();
+        proxies.add(proxy);
+
+        long start = System.nanoTime();
+        HttpResponse<String> page = get(proxy.getAddress().getPort(),
+                "/proxy?url=" + URLEncoder.encode(target, StandardCharsets.UTF_8));
+        long elapsedMillis = (System.nanoTime() - start) / 1_000_000;
+
+        assertThat(page.statusCode()).isEqualTo(502);
+        assertThat(elapsedMillis).as("answered by the 500 ms read timeout").isBetween(400L, 5_000L);
     }
 
     @Test
@@ -411,7 +435,8 @@ public class ProxyHandlerNativeTest {
     private static String fetchBody(String url, Map<String, String> pageHeaders, List<String> setUrlHeaders)
             throws IOException {
         ProxyHandler.Fetched page = ProxyHandler.fetch(url, "GET", new byte[0], pageHeaders, setUrlHeaders,
-                new ProxyCookieJar(WebFlutterServer::proxyAllowed));
+                new ProxyCookieJar(WebFlutterServer::proxyAllowed),
+                ProxyHandler.CONNECT_TIMEOUT_MILLIS, ProxyHandler.READ_TIMEOUT_MILLIS);
         return new String(page.body, StandardCharsets.UTF_8);
     }
 

@@ -46,6 +46,7 @@ public class ExpandBarSnippet {
 
         composite1.pack();
         item1.setControl(composite1);
+        item1.setHeight(composite1.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 
         ExpandItem item2 = new ExpandItem(expandBar, SWT.NONE);
         item2.setText("Actions");
@@ -63,6 +64,7 @@ public class ExpandBarSnippet {
 
         composite2.pack();
         item2.setControl(composite2);
+        item2.setHeight(composite2.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 
         expandBar.pack();
         expandBar.layout(true, true);

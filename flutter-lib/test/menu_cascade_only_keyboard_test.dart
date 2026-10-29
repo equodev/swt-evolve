@@ -76,6 +76,8 @@ void main() {
   testWidgets('the keyboard opens a cascade and selects its item', (tester) async {
     EquoCommBase.recordSentFrames = true;
     addTearDown(() => EquoCommBase.recordSentFrames = false);
+    // The frame log outlives a test: drop what an earlier one in the same isolate recorded.
+    EquoCommService.commForTesting.clearSentFrames();
     await tester.pumpWidget(_wrap());
     await tester.pumpAndSettle();
     await ackMenuShown(tester, 10);
@@ -102,6 +104,8 @@ void main() {
   testWidgets('ArrowDown moves between the cascades', (tester) async {
     EquoCommBase.recordSentFrames = true;
     addTearDown(() => EquoCommBase.recordSentFrames = false);
+    // The frame log outlives a test: drop what an earlier one in the same isolate recorded.
+    EquoCommService.commForTesting.clearSentFrames();
     await tester.pumpWidget(_wrap());
     await tester.pumpAndSettle();
     await ackMenuShown(tester, 10);
@@ -118,6 +122,8 @@ void main() {
   testWidgets('hovering a cascade opens it, with one SWT.Show', (tester) async {
     EquoCommBase.recordSentFrames = true;
     addTearDown(() => EquoCommBase.recordSentFrames = false);
+    // The frame log outlives a test: drop what an earlier one in the same isolate recorded.
+    EquoCommService.commForTesting.clearSentFrames();
     await tester.pumpWidget(_wrap());
     await tester.pumpAndSettle();
     await ackMenuShown(tester, 10);

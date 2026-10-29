@@ -63,6 +63,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   double? _columnsContentWidth;
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
+
+  /// The row height last laid out, honouring an owner-draw row's measured
+  /// height (VTree.ownerDrawItemHeight); rows read it so every row matches the
+  /// slot. Null until the first layout, where the caller falls back to theme.
+  double? get cachedItemHeight => _cachedItemHeight;
+
   List<VTreeItem>? _pendingSelection;
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
@@ -78,11 +84,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   VoidCallback? selectBeforeMenuDetect;
 
   @override
-  void handleMenuDetect(int pointer, Offset localPosition) {
+  void handleMenuDetect(PointerDownEvent press) {
     final select = selectBeforeMenuDetect;
     selectBeforeMenuDetect = null;
     select?.call();
-    super.handleMenuDetect(pointer, localPosition);
+    super.handleMenuDetect(press);
   }
   // The header row and the widths its cells were drawn at, where a dragged header is dropped.
   final GlobalKey _headerRowKey = GlobalKey(debugLabel: 'tree header row');

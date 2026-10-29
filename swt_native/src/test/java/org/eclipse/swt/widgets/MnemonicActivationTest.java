@@ -5,6 +5,7 @@ import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,11 @@ import static org.mockito.Mockito.when;
 
 /** Alt+letter activates what carries that mnemonic in the focused control's shell. */
 class MnemonicActivationTest extends KeyRoutingTestBase {
+
+    @BeforeEach
+    void windowsClient() {
+        DisplayHelper.clientReady(shell().getDisplay(), "windows");
+    }
 
     @Test
     @DisplayName("Alt+letter selects the CTabItem carrying it and notifies the folder")

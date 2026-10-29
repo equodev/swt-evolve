@@ -2499,6 +2499,12 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
     public void _dirty() {
         getValue().markDirty(VTable.EDITORS);
     }
@@ -2510,6 +2516,12 @@ public class DartTable extends DartComposite implements ITable {
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
+
+    String typedText = "";
+
+    long typedAt;
+
+    int focusRow = -1;
 
     public void _addEditor(TableEditor value) {
         TableEditor[] result = ControlEditorHelper.addEditor(editors, value, TableEditor.class);

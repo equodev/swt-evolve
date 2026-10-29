@@ -17,6 +17,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class represent areas of an x-y coordinate
@@ -511,7 +512,7 @@ public final class Region extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Region(IRegion impl) {

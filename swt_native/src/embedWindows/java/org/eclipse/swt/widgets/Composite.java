@@ -21,6 +21,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigDyn;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class are controls which are capable
@@ -603,7 +604,7 @@ public class Composite extends Scrollable {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Composite(IComposite impl) {

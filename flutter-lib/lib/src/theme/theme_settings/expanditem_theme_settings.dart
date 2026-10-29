@@ -54,8 +54,9 @@ ExpandItemThemeExtension _getExpandItemTheme({
     borderWidth: 1.0,
     borderRadius: 4.0,
 
-    // Padding
-    headerPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+    // Padding. A header's horizontal insets and image gap are the ones SWT's ExpandItem reserves
+    // around its text (TEXT_INSET), so a bar packed to its headers fits their text.
+    headerPadding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
 
     // Typography
@@ -69,7 +70,7 @@ ExpandItemThemeExtension _getExpandItemTheme({
     iconSize: 24.0,
 
     // Image spacing
-    imageTextSpacing: 8.0,
+    imageTextSpacing: 6.0,
 
     minTextContrast: kMinTextContrast,
   );
