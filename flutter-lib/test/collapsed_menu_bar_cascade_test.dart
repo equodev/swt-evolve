@@ -196,6 +196,27 @@ void main() {
     expect(find.text('About'), findsOneWidget, reason: "Help's menu must open on hover");
   });
 
+  // Natively Enter and Space open or enter a cascade's submenu; they never close it.
+  for (final (name, key) in [
+    ('Enter', LogicalKeyboardKey.enter),
+    ('NumpadEnter', LogicalKeyboardKey.numpadEnter),
+    ('Space', LogicalKeyboardKey.space),
+  ]) {
+    testWidgets('$name on a title its hover opened keeps the menu open', (tester) async {
+      await _openCollapsedBar(tester);
+      final mouse = await _mouse(tester);
+      await _click(tester, mouse, find.byIcon(Icons.menu));
+      await mouse.moveTo(tester.getCenter(find.text('File')));
+      await tester.pumpAndSettle();
+      expect(find.text('Exit'), findsOneWidget, reason: "File's menu must open on hover");
+
+      await tester.sendKeyEvent(key);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Exit'), findsOneWidget, reason: "$name must not close File's menu");
+    });
+  }
+
   testWidgets('ArrowRight on the current title opens its menu', (tester) async {
     await _openCollapsedBar(tester);
     final mouse = await _mouse(tester);
