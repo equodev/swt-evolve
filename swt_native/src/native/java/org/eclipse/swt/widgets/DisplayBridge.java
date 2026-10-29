@@ -1161,7 +1161,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * The shells the client must leave out of the Display's own window because each is drawn in a
      * window of its own. Null when there are none, so the common frame is unchanged.
      */
-    long[] windowedShellIds() {
+    private long[] windowedShellIds() {
         java.util.List<Shell> windowed = new java.util.ArrayList<>(shellWindows.keySet());
         if (forDisplay != null) {
             for (Shell shell : forDisplay._shells()) {

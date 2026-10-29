@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
@@ -70,7 +72,7 @@ class DeskLauncherSplashFlutterTest {
         Shell splash = Shell.internal_new(display, LAUNCHER_WINDOW);
         splash.setVisible(true);
 
-        assertThat(desk.windowedShellIds()).containsExactly(splash.hashCode());
+        assertThat(windowedShellIdsSent(desk)).isEqualTo(String.valueOf(splash.hashCode()));
         assertThat(desk.hostsAsMainShell(splash)).isFalse();
     }
 
@@ -83,7 +85,18 @@ class DeskLauncherSplashFlutterTest {
         wrapsNothing.setVisible(true);
 
         assertThat(desk.mainWindowVisibility).isEmpty();
-        assertThat(desk.windowedShellIds()).isNull();
+        assertThat(windowedShellIdsSent(desk)).isEmpty();
+    }
+
+    /** The ids the last Display frame told the client to leave out of the Display's window. */
+    private String windowedShellIdsSent(TestDeskBridge desk) {
+        String channel = "Display/" + display.hashCode();
+        List<RecordingComm.Frame> frames =
+                desk.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
+        assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
+        Matcher ids = Pattern.compile("\"windowedShellIds\":\\[([^\\]]*)\\]")
+                .matcher(frames.get(frames.size() - 1).json);
+        return ids.find() ? ids.group(1) : "";
     }
 
     private TestDeskBridge install() {
