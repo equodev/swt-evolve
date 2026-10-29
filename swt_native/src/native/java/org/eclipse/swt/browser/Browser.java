@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class implement the browser user interface
@@ -1006,7 +1007,7 @@ public class Browser extends Composite {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Browser(IBrowser impl) {

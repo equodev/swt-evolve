@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class represent paths through the two-dimensional
@@ -423,7 +424,7 @@ public class Path extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Path(IPath impl) {

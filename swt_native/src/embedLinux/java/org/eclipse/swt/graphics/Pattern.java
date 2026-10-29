@@ -17,6 +17,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cairo.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class represent patterns to use while drawing. Patterns
@@ -191,7 +192,7 @@ public class Pattern extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Pattern(IPattern impl) {

@@ -24,6 +24,7 @@ import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.image.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -771,7 +772,7 @@ public final class Image extends Resource implements Drawable {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     /**

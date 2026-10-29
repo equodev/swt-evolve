@@ -20,6 +20,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import dev.equo.swt.Config;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class are controls which are capable
@@ -588,7 +589,7 @@ public class Composite extends Scrollable {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Composite(IComposite impl) {

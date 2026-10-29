@@ -24,6 +24,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
 import dev.equo.swt.Config;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -2088,7 +2089,7 @@ public final class GC extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     public void dispose() {
