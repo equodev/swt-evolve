@@ -1162,6 +1162,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * window of its own. Null when there are none, so the common frame is unchanged.
      */
     private long[] windowedShellIds() {
+        // Only on the desktop is a shell drawn by the native window it wraps.
+        if (shellWindows.isEmpty() && !ConfigFlags.isDesktopMode()) return null;
         java.util.List<Shell> windowed = new java.util.ArrayList<>(shellWindows.keySet());
         if (forDisplay != null) {
             for (Shell shell : forDisplay._shells()) {
