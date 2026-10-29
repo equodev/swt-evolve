@@ -1909,6 +1909,10 @@ public abstract class DartWidget implements IWidget {
         return data;
     }
 
+    public static int swtDeviceZoom() {
+        return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+    }
+
     protected void _extra_init() {
     }
 

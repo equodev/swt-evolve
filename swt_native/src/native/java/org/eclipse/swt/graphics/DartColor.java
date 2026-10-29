@@ -330,7 +330,7 @@ public final class DartColor extends DartResource implements IColor {
             return false;
         if (this.getBlue() != color.getBlue())
             return false;
-        if (this.getAlpha() != color.getAlpha())
+        if (this.getAlpha() != color.getImpl().getAlpha())
             return false;
         return true;
     }
