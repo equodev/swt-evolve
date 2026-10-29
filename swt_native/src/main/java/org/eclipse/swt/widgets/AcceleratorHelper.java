@@ -28,7 +28,7 @@ public final class AcceleratorHelper {
         if (shell == null || shell.isDisposed() || !shell.isEnabled())
             return false;
         Menu bar = shell.getMenuBar();
-        if (bar == null && "cocoa".equals(SWT.getPlatform()))
+        if (bar == null && "cocoa".equals(dev.equo.swt.ServerPlatform.get()))
             bar = shell.getDisplay().getMenuBar();
         if (bar == null || bar.isDisposed() || !bar.isEnabled())
             return false;

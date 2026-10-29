@@ -102,7 +102,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public DartBrowser(Composite parent, int style, Browser api) {
         super(checkParent(parent), checkStyle(style), api);
         userStyle = style;
-        String platform = SWT.getPlatform();
+        String platform = dev.equo.swt.ServerPlatform.get();
         if ("gtk".equals(platform)) {
             //$NON-NLS-1$
             parent.getDisplay().setData(NO_INPUT_METHOD, null);
@@ -113,7 +113,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
         }
         dispose();
         String errMsg = " because there is no underlying browser available.\n";
-        switch(SWT.getPlatform()) {
+        switch(dev.equo.swt.ServerPlatform.get()) {
             case "gtk":
                 errMsg = errMsg + "Please ensure that WebKit with its GTK 3.x/4.x bindings is installed.";
                 break;
@@ -139,7 +139,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
             webBrowser.create(parent, style);
             return true;
         } catch (SWTError error) {
-            boolean isEdge = "win32".equals(SWT.getPlatform()) && (style & SWT.IE) == 0;
+            boolean isEdge = "win32".equals(dev.equo.swt.ServerPlatform.get()) && (style & SWT.IE) == 0;
             if (isEdge && error.code == SWT.ERROR_NOT_IMPLEMENTED) {
                 WebViewUnavailableDialog.showAsync(getShell());
             }
@@ -208,7 +208,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
     }
 
     static Composite checkParent(Composite parent) {
-        String platform = SWT.getPlatform();
+        String platform = dev.equo.swt.ServerPlatform.get();
         //$NON-NLS-1$
         if (!"gtk".equals(platform))
             return parent;
@@ -231,7 +231,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
     }
 
     static int checkStyle(int style) {
-        String platform = SWT.getPlatform();
+        String platform = dev.equo.swt.ServerPlatform.get();
         if (DefaultType == SWT.DEFAULT) {
             /*
 		* Some Browser clients that explicitly specify the native renderer to use (by

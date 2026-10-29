@@ -110,7 +110,7 @@ public class ControlHelper {
      * reports the latter everywhere, so this follows the platform the application runs on.
      */
     public static void applyControlCharacter(Event key) {
-        if ((key.stateMask & SWT.CTRL) == 0 || key.character > 0x7F || "cocoa".equals(SWT.getPlatform()))
+        if ((key.stateMask & SWT.CTRL) == 0 || key.character > 0x7F || "cocoa".equals(dev.equo.swt.ServerPlatform.get()))
             return;
         int c = key.character;
         if ('a' <= c && c <= 'z')
@@ -121,7 +121,8 @@ public class ControlHelper {
 
     /**
      * Presents a Cmd chord from a Mac client as the {@link SWT#MOD1} chord this platform binds: the
-     * web platform's MOD1 is Ctrl, so Cmd+S must arrive as Ctrl+S for the shortcut to run.
+     * web platform's MOD1 is Ctrl, so Cmd+S must arrive as Ctrl+S for the shortcut to run. Where
+     * MOD1 is Cmd already (Cocoa) the chord is left as it is.
      */
     public static void applyClientModifier(Event key) {
         if ((key.stateMask & SWT.COMMAND) == 0)

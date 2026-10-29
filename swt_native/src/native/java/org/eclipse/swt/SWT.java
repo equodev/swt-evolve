@@ -4874,7 +4874,7 @@ public class SWT {
      * @return the SWT platform name
      */
     public static String getPlatform() {
-        return Platform.PLATFORM;
+        return dev.equo.swt.ClientPlatform.current();
     }
 
     /**
@@ -5060,7 +5060,7 @@ public class SWT {
 	* Therefore they are not initialized in the declaration
 	* to stop the compiler from inlining.
 	*/
-        String platform = getPlatform();
+        String platform = dev.equo.swt.ServerPlatform.get();
         if ("cocoa".equals(platform)) {
             //$NON-NLS-1$
             MOD1 = COMMAND;

@@ -571,6 +571,7 @@ val checkJavaApiLevel by tasks.registering(JavaCompile::class) {
 // hand-written islands inside the generated trees. Mirrors the exclusion list in swtgenerator's
 // generatedJavaTree - HandWrittenSourcesInSyncTest fails the build if the two ever drift.
 val handWrittenInGeneratedTrees = listOf(
+    "**/ClientPlatform.java",
     "**/*Bridge*.java",
     "**/WebFlutterServer.java",
     "**/ProxyHandler.java",

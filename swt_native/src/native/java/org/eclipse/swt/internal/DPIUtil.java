@@ -158,7 +158,7 @@ public class DPIUtil {
      * scaling.
      */
     public static boolean isSetupCompatibleToMonitorSpecificScaling() {
-        if (!"win32".equals(SWT.getPlatform())) {
+        if (!"win32".equals(dev.equo.swt.ServerPlatform.get())) {
             return false;
         }
         if (System.getProperty(SWT_AUTOSCALE) == null || isMonitorSpecificScalingEnforced()) {
@@ -182,7 +182,7 @@ public class DPIUtil {
     }
 
     public static boolean isMonitorSpecificScalingActive() {
-        if (!"win32".equals(SWT.getPlatform())) {
+        if (!"win32".equals(dev.equo.swt.ServerPlatform.get())) {
             return false;
         }
         String updateOnRuntimeValue = System.getProperty(SWT_AUTOSCALE_UPDATE_ON_RUNTIME);
@@ -459,7 +459,7 @@ public class DPIUtil {
         DPIUtil.deviceZoom = deviceZoom;
         System.setProperty("org.eclipse.swt.internal.deviceZoom", Integer.toString(deviceZoom));
         // in GTK, preserve the current method when switching to a 100% monitor
-        boolean preserveScalingMethod = SWT.getPlatform().equals("gtk") && deviceZoom == 100;
+        boolean preserveScalingMethod = dev.equo.swt.ServerPlatform.get().equals("gtk") && deviceZoom == 100;
         if (!preserveScalingMethod && AUTO_SCALE_METHOD_SETTING == AutoScaleMethod.AUTO) {
             if (shouldUseSmoothScaling()) {
                 autoScaleMethod = AutoScaleMethod.SMOOTH;
@@ -470,7 +470,7 @@ public class DPIUtil {
     }
 
     private static boolean shouldUseSmoothScaling() {
-        if ("gtk".equals(SWT.getPlatform())) {
+        if ("gtk".equals(dev.equo.swt.ServerPlatform.get())) {
             return DPIUtil.getDeviceZoom() / 100 * 100 != DPIUtil.getDeviceZoom();
         }
         return isMonitorSpecificScalingActive();

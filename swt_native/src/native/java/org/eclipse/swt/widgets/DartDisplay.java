@@ -4165,8 +4165,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     volatile String clientPlatform;
 
-    boolean isMacWebClient() {
-        return "web".equals(org.eclipse.swt.SWT.getPlatform()) && ("macOS".equals(clientPlatform) || "iOS".equals(clientPlatform));
+    public String getClientPlatform() {
+        return clientPlatform;
     }
 
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();

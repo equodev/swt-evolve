@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.ClientPlatform;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
@@ -319,6 +320,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (p == null) return;
             display.clientPlatform = p.targetPlatform;
             DisplayHelper.clientReady(display.getApi(), p.targetPlatform);
+            if (p.targetPlatform != null)
+                display.getApi().setData(ClientPlatform.DISPLAY_DATA_KEY, ClientPlatform.of(display.getApi()));
             // A client that reconnects reporting p.isFirst=true — a fresh Flutter instance re-established
             // the socket (e.g. a browser refresh) but is NOT the bridge's first ClientReady — needs the
             // swt.evolve properties re-pushed, or its theme/config init is lost on refresh.
@@ -423,7 +426,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Display api = display.getApi();
         if (api == null || api.isDisposed())
             return;
-        if (display.isMacWebClient())
+        if (ClientPlatform.isMac(api))
             ControlHelper.applyClientModifier(ev);
         ControlHelper.applyControlCharacter(ev);
         // Arrives on the comm thread; hop to the Display thread like every other inbound event.

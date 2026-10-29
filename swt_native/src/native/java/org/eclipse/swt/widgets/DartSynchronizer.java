@@ -52,9 +52,9 @@ public class DartSynchronizer implements ISynchronizer {
     static final int MESSAGE_LIMIT = 64;
 
     //TEMPORARY CODE
-    static final boolean IS_COCOA = "cocoa".equals(SWT.getPlatform());
+    static final boolean IS_COCOA = "cocoa".equals(dev.equo.swt.ServerPlatform.get());
 
-    static final boolean IS_GTK = "gtk".equals(SWT.getPlatform());
+    static final boolean IS_GTK = "gtk".equals(dev.equo.swt.ServerPlatform.get());
 
     /**
      * Constructs a new instance of this class.
