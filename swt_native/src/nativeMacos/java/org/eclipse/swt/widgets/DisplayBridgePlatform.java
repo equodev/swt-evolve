@@ -132,13 +132,16 @@ final class DisplayBridgePlatform {
             application.finishLaunching();
     }
 
+    /** NSEventMaskAny: matches every event type. Not declared by every release's OS. */
+    private static final long NS_ANY_EVENT_MASK = -1L;
+
     /** Drains the Cocoa event queue of an NSApp {@link #launch()} started; nothing else would. */
     private static void pumpEvents() {
         if (!launched)
             return;
         NSApplication application = NSApplication.sharedApplication();
         NSEvent event;
-        while ((event = application.nextEventMatchingMask(OS.NSAnyEventMask, null, OS.NSDefaultRunLoopMode, true)) != null)
+        while ((event = application.nextEventMatchingMask(NS_ANY_EVENT_MASK, null, OS.NSDefaultRunLoopMode, true)) != null)
             application.sendEvent(event);
     }
 }
