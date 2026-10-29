@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import java.util.Objects;
-import org.eclipse.swt.internal.DPIUtil;
 import dev.equo.swt.*;
 
 /**
