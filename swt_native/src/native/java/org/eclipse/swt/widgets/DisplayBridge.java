@@ -1121,6 +1121,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // handshake, or it renders the whole shell against default theme and flags.
                 broadcastSwtEvolveProperties();
                 sendShellState(shell);
+                // A focus request sent before this window connected only reached the clients already there.
+                if (p.isFirst && focused != null && focused == focusRequested && shellOf(focused) == shell)
+                    sendFocusRequest(focused);
                 if (p.width <= 0 || p.height <= 0) return;
                 Rectangle current = shell.getBounds();
                 if (current.width == p.width && current.height == p.height) return;

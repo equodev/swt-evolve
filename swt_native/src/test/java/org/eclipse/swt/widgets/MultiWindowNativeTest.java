@@ -473,6 +473,49 @@ class MultiWindowNativeTest {
     }
 
     @Test
+    @DisplayName("a popup window that connects after Java focused its field is told to focus it")
+    void popupWindowIsSentTheFocusItsFieldWasGiven() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        Shell main = openShell();
+        ClientReadyPayload mainReady = new ClientReadyPayload();
+        mainReady.width = 1280;
+        mainReady.height = 800;
+        mainReady.isFirst = true;
+        bridge.comm.fireContaining("Display/" + display.hashCode() + "/ClientReady", mainReady);
+        main.setFocus();
+        drainEventLoop();
+        // A JFace PopupDialog's shape: an on-top tool shell over the active one, focusing its filter
+        // field as it opens.
+        Shell popup = new Shell(main, SWT.ON_TOP | SWT.TOOL | SWT.RESIZE);
+        Text filter = new Text(popup, SWT.SINGLE | SWT.BORDER);
+        popup.setBounds(100, 80, 500, 260);
+        popup.open();
+        filter.setFocus();
+        drainEventLoop();
+        assertThat(bridge.created).as("the popup is given a window of its own")
+                .anyMatch(w -> w.shell == popup);
+        assertThat(focusRequests(bridge)).as("Java asked the client to focus the field")
+                .contains(String.valueOf(filter.hashCode()));
+        bridge.comm.sent.clear();
+
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.width = 500;
+        p.height = 260;
+        p.isFirst = true;
+        bridge.comm.fireContaining("Shell/" + popup.hashCode() + "/ClientReady", p);
+        drainEventLoop();
+
+        // The request went out before this window connected, so only the windows already connected
+        // received it; the one that draws the field has to be told on its own handshake, or typing
+        // goes nowhere until the user clicks the field.
+        assertThat(focusRequests(bridge))
+                .as("the popup's window is asked to focus the field Java focused")
+                .containsExactly(String.valueOf(filter.hashCode()));
+    }
+
+    @Test
     @DisplayName("a detached window's first handshake gets the configuration too")
     void detachedWindowIsSentTheConfiguration() {
         System.setProperty(WindowPolicy.MODE_PROPERTY, "top-level");
@@ -548,6 +591,14 @@ class MultiWindowNativeTest {
     private void pushDisplayUpdate() {
         DartDisplay dd = (DartDisplay) display.getImpl();
         dd.displayBridge.sendDisplayUpdate(dd);
+    }
+
+    /** The control ids named by every focus request sent so far, in order. */
+    private static List<String> focusRequests(TestBridge bridge) {
+        return bridge.comm.sent.stream()
+                .filter(f -> f.event.equals("swt.evolve.focus"))
+                .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
+                .toList();
     }
 
     /** Run the queued UI work (a shell close posted from the registry) to completion. */
