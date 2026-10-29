@@ -341,6 +341,38 @@ sourceSets {
                 // MessageBox.setButtonLabels was added in 3.121.
                 exclude("org/eclipse/swt/widgets/MessageBoxButtonLabelsNativeTest.java")
             }
+            // org.eclipse.swt.internal.DPIUtil is absent from 3.103. IntegerOn150 and AutoScalePolicy
+            // import it, so the tests built on them go with it.
+            if (swtMinorNative < 104) {
+                exclude("dev/equo/swt/AutoScalePolicy.java")
+                exclude("dev/equo/swt/IntegerOn150.java")
+                exclude("dev/equo/swt/ConfigUiZoomTest.java")
+                exclude("dev/equo/swt/size/ThemeTextZoomSizeTest.java")
+                exclude("javafx/embed/swt/FXCanvasPixelDensityNativeTest.java")
+                exclude("org/eclipse/swt/widgets/DeskMultiWindowFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/DeskWindowUnitsTest.java")
+                exclude("org/eclipse/swt/widgets/DisplayResizeFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/ShellMenuBarClientAreaNativeTest.java")
+                // Also absent from 3.103: ImageDataProvider and ImageFileNameProvider,
+                // SWT.AUTO_TEXT_DIRECTION, SWT.Pre/PostExternalEventDispatch, SWT.COLOR_TRANSPARENT
+                // with Color.getAlpha, Control.requestLayout, Link.setLinkForeground and
+                // Browser.evaluate(String, boolean), which the BrowserKit harness wraps.
+                exclude("org/eclipse/swt/graphics/ImageDataProviderConstructorTest.java")
+                exclude("org/eclipse/swt/graphics/ImageDataProviderZoomTest.java")
+                exclude("org/eclipse/swt/graphics/ImageImplementationNativeTest.java")
+                exclude("org/eclipse/swt/graphics/TextLayoutRulesNativeTest.java")
+                exclude("org/eclipse/swt/widgets/DisplayWakeFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/DisplaySystemColorFallbackFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/RequestLayoutRunsLayoutFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/LinkImplementationNativeTest.java")
+                exclude("dev/equo/swt/harness/*BrowserKit.java")
+                exclude("dev/equo/swt/test/BrowserSetTextLocalResourceFlutterTest.java")
+                // JFace 3.10, paired with 3.103, has no default IContentProvider methods and no
+                // StructuredViewer.getStructuredSelection.
+                exclude("org/eclipse/swt/widgets/TreeFilterRefreshSelectionFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/TreeViewerFirstColumnClickFlutterTest.java")
+                exclude("org/eclipse/swt/widgets/TableHandRolledCheckColumnFlutterTest.java")
+            }
             // Image.getImageData(int zoom) was added in 3.106.
             if (swtMinorNative < 106) {
                 exclude("org/eclipse/swt/graphics/ImageProviderZoomNativeTest.java")
