@@ -32,6 +32,7 @@ class ListSerializeTest extends SerializeTestBase {
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
+        assertJ.satisfies(node("topIndex").equalsTo(w.getTopIndex(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));

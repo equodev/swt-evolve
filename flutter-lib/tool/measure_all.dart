@@ -9,6 +9,7 @@ import './measure_clabel.dart' as clabel;
 import './measure_combo.dart' as combo;
 import './measure_label.dart' as label;
 import './measure_link.dart' as link;
+import './measure_list.dart' as list;
 import './measure_progressbar.dart' as progressbar;
 import './measure_sash.dart' as sash;
 import './measure_scale.dart' as scale;
@@ -30,6 +31,10 @@ void main() {
   // its Java file immediately, so the lookup stays in step with the themes even if a measurement
   // run is interrupted.
   theme_scales.writeThemeScalesFile();
+
+  // A List's item height is a theme declaration, not a measurement: it reads ListThemeExtension and
+  // writes ListSizes and ListTheme immediately.
+  list.writeListSizesFiles();
 
   final measurer = WidgetMeasurer();
 

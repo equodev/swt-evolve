@@ -40,6 +40,13 @@ int snapToSupportedWeight(int? weight) {
   return nearest;
 }
 
+/// The family Java measures a theme font with: the platform UI faces Flutter resolves to are all
+/// Java's "System".
+String javaFontFamily(String? family) => (family ?? 'System')
+    .replaceAll('.AppleSystemUIFont', 'System')
+    .replaceAll('Roboto', 'System')
+    .replaceAll('Segoe UI', 'System');
+
 int fontWeightFromStyle(TextStyle? style) {
   final fw = style?.fontWeight;
   final w = fw != null ? (fw.index + 1) * 100 : null;
@@ -3590,10 +3597,7 @@ public class CoolBarSizes {
 
   /// A measured text style as the `new TextStyle(...)` Java measures with.
   String _javaTextStyle(Map style) {
-    final family = ((style['fontFamily'] ?? 'System') as String)
-        .replaceAll('.AppleSystemUIFont', 'System')
-        .replaceAll('Roboto', 'System')
-        .replaceAll('Segoe UI', 'System');
+    final family = javaFontFamily(style['fontFamily'] as String?);
     final size = (style['fontSize'] as num?)?.toInt() ?? 12;
     final weight = snapToSupportedWeight(
       style['fontWeight'] != null
@@ -4386,10 +4390,7 @@ public class CoolBarSizes {
           final stylesMap = themeEntry.value;
           final textStyle = stylesMap.values.first; // All styles are the same
 
-          final fontFamily = ((textStyle['fontFamily'] ?? 'System') as String)
-              .replaceAll(".AppleSystemUIFont", "System")
-              .replaceAll("Roboto", "System")
-              .replaceAll("Segoe UI", "System");
+          final fontFamily = javaFontFamily(textStyle['fontFamily'] as String?);
           final fontSize = textStyle['fontSize'] ?? 12;
           final fontWeight = textStyle['fontWeight'] ?? 400;
           final fontItalic = textStyle['fontItalic'] ?? false;
@@ -4475,10 +4476,7 @@ public class CoolBarSizes {
         for (var styleEntry in stylesMap.entries) {
           final styleName = styleEntry.key;
           final textStyle = styleEntry.value;
-          final fontFamily = ((textStyle['fontFamily'] ?? 'System') as String)
-              .replaceAll(".AppleSystemUIFont", "System")
-              .replaceAll("Roboto", "System")
-              .replaceAll("Segoe UI", "System");
+          final fontFamily = javaFontFamily(textStyle['fontFamily'] as String?);
           final fontSize = textStyle['fontSize'] ?? 12;
           final fontWeight = textStyle['fontWeight'] ?? 400;
           final fontItalic = textStyle['fontItalic'] ?? false;

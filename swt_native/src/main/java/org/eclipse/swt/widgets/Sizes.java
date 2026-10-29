@@ -307,20 +307,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartList c, int wHint, int hHint, boolean changed) {
-        int maxLength = 0;
-        String[] items = c._items();
-        if (items != null) {
-            for (String item : items) {
-                if (item != null && item.length() > maxLength) {
-                    maxLength = item.length();
-                }
-            }
-        }
-
-        int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
-        int height = c.getItemCount() * 24;
-
-        return new Point(width, height);
+        return ListSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartProgressBar c, int wHint, int hHint, boolean changed) {

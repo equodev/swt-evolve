@@ -46,4 +46,65 @@ class ListArrowKeyTest extends KeyRoutingTestBase {
 
         assertThat(list.getSelectionIndex()).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("an arrow held with a modifier moves nothing: Shift and Ctrl ranges are the client's")
+    void anArrowWithAModifierMovesNothing() {
+        List list = list();
+        java.util.List<String> events = new ArrayList<>();
+        list.addListener(SWT.Selection, e -> events.add("Selection"));
+
+        for (int modifier : new int[] {SWT.SHIFT, SWT.CTRL, SWT.ALT, SWT.COMMAND}) {
+            Event key = new Event();
+            key.keyCode = SWT.ARROW_DOWN;
+            key.stateMask = modifier;
+            ControlHelper.routeKeyDown((DartControl) list.getImpl(), key);
+        }
+
+        assertThat(list.getSelectionIndex()).isEqualTo(1);
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a key that is not Up or Down moves nothing")
+    void anotherKeyMovesNothing() {
+        List list = list();
+        java.util.List<String> events = new ArrayList<>();
+        list.addListener(SWT.Selection, e -> events.add("Selection"));
+
+        press(list, SWT.ARROW_LEFT);
+        press(list, SWT.END);
+        press(list, 'a');
+
+        assertThat(list.getSelectionIndex()).isEqualTo(1);
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    @DisplayName("an arrow into a list with nothing selected takes the first row, either direction")
+    void anArrowWithNoSelectionTakesTheFirstRow() {
+        List down = list();
+        down.deselectAll();
+        press(down, SWT.ARROW_DOWN);
+        assertThat(down.getSelectionIndex()).isZero();
+
+        List up = list();
+        up.deselectAll();
+        press(up, SWT.ARROW_UP);
+        assertThat(up.getSelectionIndex()).isZero();
+    }
+
+    @Test
+    @DisplayName("an empty list has no row to move to")
+    void anEmptyListMovesNothing() {
+        List list = new List(new Composite(shell(), SWT.NONE), SWT.SINGLE);
+        java.util.List<String> events = new ArrayList<>();
+        list.addListener(SWT.Selection, e -> events.add("Selection"));
+
+        press(list, SWT.ARROW_DOWN);
+        press(list, SWT.ARROW_UP);
+
+        assertThat(list.getSelectionIndex()).isEqualTo(-1);
+        assertThat(events).isEmpty();
+    }
 }

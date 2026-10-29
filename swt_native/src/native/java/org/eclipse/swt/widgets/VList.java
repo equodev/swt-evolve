@@ -40,7 +40,6 @@ public class VList extends VScrollable {
         ((DartList) impl).selection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartList) impl).getTopIndex();
     }
@@ -53,6 +52,8 @@ public class VList extends VScrollable {
 
     public static final String SELECTION = "selection";
 
+    public static final String TOP_INDEX = "topIndex";
+
     @Override
     protected void writeProperty(JsonWriter writer, String key) {
         switch(key) {
@@ -61,6 +62,9 @@ public class VList extends VScrollable {
                 return;
             case "selection":
                 Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "topIndex":
+                Serializer.writeKeyValue(writer, "topIndex", getTopIndex());
                 return;
         }
         super.writeProperty(writer, key);

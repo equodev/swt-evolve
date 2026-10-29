@@ -3,6 +3,7 @@ import 'dart:io';
 
 import './measure.dart';
 import './measure_canvas.dart' as canvas;
+import './measure_list.dart' as list;
 import './measure_theme_scales.dart' as theme_scales;
 
 /// Re-runs the Java emitters alone, against the analysis a measurement run committed to
@@ -33,9 +34,10 @@ List<String> emitSizes({
   final dir = Directory(outputDir);
   dir.createSync(recursive: true);
 
-  // Both of these read a declaration rather than a measurement, so they need no model entry.
+  // These read a declaration rather than a measurement, so they need no model entry.
   canvas.writeCanvasThemeFile(outputDir: outputDir);
   theme_scales.writeThemeScalesFile(outputDir: outputDir);
+  list.writeListSizesFiles(outputDir: outputDir);
 
   final model =
       jsonDecode(File(modelPath).readAsStringSync()) as Map<String, dynamic>;

@@ -1652,18 +1652,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             index = count;
         if (!(0 <= index && index <= count))
             error(SWT.ERROR_INVALID_RANGE);
-        if (count == items.length) {
-            TreeItem[] newItems = new TreeItem[items.length + 4];
-            System.arraycopy(items, 0, newItems, 0, items.length);
-            items = newItems;
-            if (parentItem != null) {
-                ((DartTreeItem) parentItem.getImpl()).items = items;
-            } else {
-                ((DartTree) parent.getImpl()).items = items;
-            }
+        items = ListItemsHelper.insertInCapacity(items, count++, index, item);
+        if (parentItem != null) {
+            ((DartTreeItem) parentItem.getImpl()).items = items;
+        } else {
+            ((DartTree) parent.getImpl()).items = items;
         }
-        System.arraycopy(items, index, items, index + 1, count++ - index);
-        items[index] = item;
         ((DartTreeItem) item.getImpl()).items = new TreeItem[4];
         if (parentItem != null) {
             ((DartTreeItem) parentItem.getImpl()).setItemCount(count);

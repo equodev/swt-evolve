@@ -597,7 +597,7 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        TableHelper.deselectIndices(this, indices, itemCount);
+        TableHelper.deselectIndices(this, indices);
     }
 
     /**

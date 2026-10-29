@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import java.util.Objects;
+import dev.equo.swt.size.ListSizes;
 import dev.equo.swt.*;
 
 /**
@@ -357,14 +358,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getItemHeight() {
         checkWidget();
-        final int BASE_ITEM_PADDING = 1;
-        int[] h = new int[1];
-        // By default, the item has a base vertical padding around the text
-        int height = h[0] + BASE_ITEM_PADDING * 2;
-        int[] ypad = new int[1];
-        // Add additional top & bottom padding set by the cell renderer
-        height += ypad[0] * 2;
-        return height;
+        return ListSizes.getItemHeight(this);
     }
 
     /**
@@ -1119,6 +1113,9 @@ public class DartList extends DartScrollable implements IList {
      */
     public void setTopIndex(int index) {
         checkWidget();
+        if (this.topIndex != index) {
+            getValue().markDirty(VList.TOP_INDEX);
+        }
         topIndex = index;
     }
 
@@ -1179,8 +1176,19 @@ public class DartList extends DartScrollable implements IList {
         return selection;
     }
 
+    int scrollOffset;
+
+    int keptFocusIndex = -1;
+
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                ListHelper.recordScrollOffset(this, e);
+            });
+        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

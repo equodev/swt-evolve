@@ -52,7 +52,8 @@ VList _$VListFromJson(Map<String, dynamic> json) => VList()
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
-      .toList();
+      .toList()
+  ..topIndex = (json['topIndex'] as num?)?.toInt();
 
 Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -78,4 +79,5 @@ Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
   'verticalBar': ?instance.verticalBar,
   'items': ?instance.items,
   'selection': ?instance.selection,
+  'topIndex': ?instance.topIndex,
 };

@@ -9,12 +9,14 @@
 // with it: what a client last saw is only meaningful about the values it saw them on. So do the
 // image caches and the asset bundle's: they hold futures created in the previous test's fake-async
 // zone, which never complete in the next one and leave its image loading forever. And so does the
-// display config (flags, light/dark, color scheme), which drawing outside a build reads.
+// display config (flags, light/dark, color scheme), which drawing outside a build reads. And so do
+// the frames the comm recorded as sent: a test that reads them must see only its own.
 
 import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
@@ -27,6 +29,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     ImageUtils.clearCache();
     rootBundle.clear();
     resetConfigFlags();
+    EquoCommService.commForTesting.clearSentFrames();
   });
   await testMain();
 }

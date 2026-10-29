@@ -1,11 +1,13 @@
 package org.eclipse.swt.widgets;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * The bookkeeping every list-based widget (List, Combo, CCombo) shares: its items kept as an array, and the indices
- * of its selected items as items come and go. A selected index follows its item; an item that goes takes its
- * selection with it.
+ * The bookkeeping every widget with a list of items (List, Combo, CCombo, Table, Tree) shares: its items kept as an
+ * array, and the indices of its selected items as items come and go. A selected index follows its item; an item that
+ * goes takes its selection with it.
  */
 public final class ListItemsHelper {
 
@@ -13,20 +15,30 @@ public final class ListItemsHelper {
     }
 
     /** {@code items} with {@code item} at {@code index}; the items from there on move one place down. */
-    public static String[] insert(String[] items, int index, String item) {
-        String[] result = new String[items.length + 1];
-        System.arraycopy(items, 0, result, 0, index);
+    public static <T> T[] insert(T[] items, int index, T item) {
+        T[] result = Arrays.copyOf(items, items.length + 1);
         result[index] = item;
         System.arraycopy(items, index, result, index + 1, items.length - index);
         return result;
     }
 
     /** {@code items} without the ones from {@code start} to {@code end}, both included. */
-    public static String[] remove(String[] items, int start, int end) {
+    public static <T> T[] remove(T[] items, int start, int end) {
         int count = end - start + 1;
-        String[] result = new String[items.length - count];
-        System.arraycopy(items, 0, result, 0, start);
+        T[] result = Arrays.copyOf(items, items.length - count);
         System.arraycopy(items, end + 1, result, start, items.length - end - 1);
+        return result;
+    }
+
+    /**
+     * {@code items} with {@code item} at {@code index}, where only the first {@code count} slots hold items: the
+     * array grows by four slots when it is full, and is shifted in place otherwise. Returns the array that holds the
+     * items, which is {@code items} itself unless it grew.
+     */
+    public static <T> T[] insertInCapacity(T[] items, int count, int index, T item) {
+        T[] result = count >= items.length ? Arrays.copyOf(items, items.length + 4) : items;
+        System.arraycopy(result, index, result, index + 1, count - index);
+        result[index] = item;
         return result;
     }
 
@@ -43,6 +55,14 @@ public final class ListItemsHelper {
         if (selected < start)
             return selected;
         return selected <= end ? -1 : selected - (end - start + 1);
+    }
+
+    /** The selected indices once an item went in at {@code index}, in the order they had. */
+    public static int[] indicesAfterInsert(int[] selected, int index) {
+        int[] result = new int[selected.length];
+        for (int i = 0; i < selected.length; i++)
+            result[i] = indexAfterInsert(selected[i], index);
+        return result;
     }
 
     /** The selected indices once the items from {@code start} to {@code end} went, in the order they had. */
@@ -66,5 +86,28 @@ public final class ListItemsHelper {
                 result[count++] = index;
         }
         return Arrays.copyOf(result, count);
+    }
+
+    /** The selected indices without the ones in {@code indices}; the items stay where they are. */
+    public static int[] deselect(int[] selected, int[] indices) {
+        Set<Integer> gone = new HashSet<>();
+        for (int index : indices)
+            gone.add(index);
+        int[] result = new int[selected.length];
+        int count = 0;
+        for (int index : selected) {
+            if (!gone.contains(index))
+                result[count++] = index;
+        }
+        return Arrays.copyOf(result, count);
+    }
+
+    /** Whether {@code index} is one of {@code indices}. */
+    public static boolean contains(int[] indices, int index) {
+        for (int i : indices) {
+            if (i == index)
+                return true;
+        }
+        return false;
     }
 }

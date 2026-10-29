@@ -353,25 +353,12 @@ public class TreeHelper {
         if (!(0 <= index && index <= count))
             SWT.error(SWT.ERROR_INVALID_RANGE);
 
-        // Check if we need to grow the array
-        if (count >= items.length) {
-            // Array is full - need to grow
-            TreeItem[] newItems = new TreeItem[items.length + 4];
-            System.arraycopy(items, 0, newItems, 0, items.length);
-            items = newItems;
-            if (parentItem != null) {
-                ((DartTreeItem) parentItem.getImpl()).items = items;
-            } else {
-                ((DartTree) parent.getImpl()).items = items;
-            }
+        items = ListItemsHelper.insertInCapacity(items, count, index, item);
+        if (parentItem != null) {
+            ((DartTreeItem) parentItem.getImpl()).items = items;
+        } else {
+            ((DartTree) parent.getImpl()).items = items;
         }
-
-        // Always shift and add the item
-        if (index < count) {
-            // Inserting within existing items - shift items
-            System.arraycopy(items, index, items, index + 1, count - index);
-        }
-        items[index] = item;
 
         ((DartTreeItem) item.getImpl()).items = new TreeItem[4];
 

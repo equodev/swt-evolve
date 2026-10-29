@@ -1,21 +1,106 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.size.ListSizes;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 
 import java.util.*;
 
 public class ListHelper {
 
-    public static int getItemHeight(DartList list) {
-        Font font = list.getFont();
-        if (font == null || font.isDisposed())
+    /**
+     * The index of the item with the focus: the selected one, or the one that was selected when the selection
+     * was cleared, as on Win32 and GTK. Cocoa has it only while something is selected.
+     */
+    public static int getFocusIndex(DartList list) {
+        int selected = getMinSelectionIndex(list);
+        if (selected != -1)
+            return selected;
+        int kept = list.keptFocusIndex;
+        return kept < list.getItemCount() ? kept : -1;
+    }
+
+    /** The selection is about to be cleared. */
+    public static void rememberFocus(DartList list) {
+        int selected = getMinSelectionIndex(list);
+        if (selected != -1)
+            list.keptFocusIndex = selected;
+    }
+
+    private static int viewportHeight(DartList list) {
+        return Math.max(0, list.getClientArea().height);
+    }
+
+    private static int maxScrollOffset(DartList list, int pitch) {
+        return Math.max(0, list.getItemCount() * pitch - viewportHeight(list));
+    }
+
+    private static int scrollOffset(DartList list, int pitch) {
+        return Math.min(list.scrollOffset, maxScrollOffset(list, pitch));
+    }
+
+    private static int pitch(DartList list) {
+        return Math.max(1, ListSizes.getItemHeight(list));
+    }
+
+    /** The index of the item at the top; 0 for an empty list. */
+    public static int getTopIndex(DartList list) {
+        int count = list.getItemCount();
+        if (count == 0)
             return 0;
-        FontData[] fontData = font.getFontData();
-        if (fontData == null || fontData.length == 0 || fontData[0] == null)
-            return 0;
-        return fontData[0].getHeight() + 4;
+        int pitch = pitch(list);
+        return Math.min(scrollOffset(list, pitch) / pitch, count - 1);
+    }
+
+    /**
+     * Scrolls so that item {@code index} is at the top, or as near as the items below it allow. An index
+     * before the first item is the first one and an index past the last item is the last one, as on Win32.
+     * The platforms differ there: Cocoa scrolls to the top for an index past the last item, and GTK ignores
+     * an index outside the items.
+     */
+    public static void setTopIndex(DartList list, int index, int itemCount) {
+        if (itemCount == 0)
+            return;
+        scrollToRow(list, Math.max(0, Math.min(index, itemCount - 1)));
+    }
+
+    /** Scrolls the least that shows all of item {@code index}; an item already shown does not scroll. */
+    public static void showIndex(DartList list, int index) {
+        if (!(0 <= index && index < list.getItemCount()))
+            return;
+        int viewport = viewportHeight(list);
+        if (viewport <= 0)
+            return;
+        int pitch = pitch(list);
+        int offset = scrollOffset(list, pitch);
+        if (index * pitch < offset)
+            scrollTo(list, index * pitch);
+        else if ((index + 1) * pitch > offset + viewport)
+            scrollTo(list, Math.min((index + 1) * pitch - viewport, maxScrollOffset(list, pitch)));
+    }
+
+    private static void scrollToRow(DartList list, int row) {
+        int pitch = pitch(list);
+        scrollTo(list, Math.min(row * pitch, maxScrollOffset(list, pitch)));
+    }
+
+    /**
+     * Java records the offset the items will end at, so what the API reads back right away is where the list
+     * will be; Flutter is sent the item to bring to the top.
+     */
+    private static void scrollTo(DartList list, int offset) {
+        list.scrollOffset = offset;
+        list.getValue().markDirty(VList.TOP_INDEX);
+    }
+
+    /**
+     * Flutter scrolled the items to {@code event.y} pixels, in items {@code event.height} pixels high. The
+     * offset is kept in this list's item pitch, so the top index read back is the item Flutter shows at the
+     * top. Flutter is not sent the top index back.
+     */
+    public static void recordScrollOffset(DartList list, Event event) {
+        int y = Math.max(0, event.y);
+        int extent = event.height;
+        list.scrollOffset = extent > 0 ? (int) ((long) y * pitch(list) / extent) : y;
     }
 
     /**
@@ -77,22 +162,22 @@ public class ListHelper {
         }
     }
 
+    /** An item went in at {@code index} ({@code add}) or the one there went: the selection follows its items. */
+    public static void fixSelection(DartList list, int index, boolean add) {
+        int[] selection = list.getSelectionIndices();
+        int[] fixed = add ? ListItemsHelper.indicesAfterInsert(selection, index)
+                : ListItemsHelper.indicesAfterRemove(selection, index, index);
+        if (Arrays.equals(fixed, selection))
+            return;
+        list.selection = fixed;
+        list.getValue().markDirty(VList.SELECTION);
+    }
+
     public static void deselectIndices(DartList list, int[] indices) {
         int[] selection = list._selection();
-        Set<Integer> toRemove = new HashSet<>();
-        for (int idx : indices) {
-            toRemove.add(idx);
-        }
-
-        int count = 0;
-        int[] newSelection = new int[selection.length];
-        for (int idx : selection) {
-            if (!toRemove.contains(idx)) {
-                newSelection[count++] = idx;
-            }
-        }
-        if (count != selection.length) {
-            list.selection = Arrays.copyOf(newSelection, count);
+        int[] newSelection = ListItemsHelper.deselect(selection, indices);
+        if (newSelection.length != selection.length) {
+            list.selection = newSelection;
             list.getValue().markDirty(VList.SELECTION);
         }
     }
@@ -123,13 +208,7 @@ public class ListHelper {
     }
 
     public static boolean isIndexSelected(DartList list, int index) {
-        int[] selection = list._selection();
-        for (int i = 0; i < selection.length; i++) {
-            if (selection[i] == index) {
-                return true;
-            }
-        }
-        return false;
+        return ListItemsHelper.contains(list._selection(), index);
     }
 
     public static void selectIndex(DartList list, int index, int itemCount, int style) {
@@ -243,7 +322,7 @@ public class ListHelper {
             return -1;
 
         if (isSingle) {
-            int index = list.indexOf(selectionItems[0], 0);
+            int index = selectionItems[0] == null ? -1 : list.indexOf(selectionItems[0], 0);
             if (index != -1) {
                 list.selection = new int[] { index };
                 list.getValue().markDirty(VList.SELECTION);
@@ -256,16 +335,23 @@ public class ListHelper {
         Set<Integer> seen = new HashSet<>();
         int firstIndex = -1;
 
-        for (String string : selectionItems) {
+        // Backwards, so firstIndex ends on the earliest string that matched: the item GTK and Win32 show.
+        // A null among the strings is skipped, as GTK and Win32 skip it; only Cocoa rejects it.
+        for (int i = length - 1; i >= 0; i--) {
+            String string = selectionItems[i];
+            if (string == null)
+                continue;
             int index = 0;
+            int firstMatch = -1;
             while ((index = list.indexOf(string, index)) != -1) {
-                if (seen.add(index)) {
+                if (seen.add(index))
                     newSelection.add(index);
-                    if (firstIndex == -1)
-                        firstIndex = index;
-                }
+                if (firstMatch == -1)
+                    firstMatch = index;
                 index++;
             }
+            if (firstMatch != -1)
+                firstIndex = firstMatch;
         }
 
         if (!newSelection.isEmpty()) {
@@ -273,14 +359,6 @@ public class ListHelper {
             list.getValue().markDirty(VList.SELECTION);
         }
         return firstIndex;
-    }
-
-    public static void setTopIndex(DartList list, int index, int itemCount) {
-        if (index < 0 || index >= itemCount)
-            return;
-        if (list._topIndex() != index) {
-            list.topIndex = index;
-        }
     }
 
     public static boolean containsIndex(int[] array, int length, int value) {

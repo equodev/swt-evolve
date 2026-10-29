@@ -61,4 +61,49 @@ class ListItemsHelperTest {
         assertThat(ListItemsHelper.deselect(new int[] {5, 0, 2, 3}, 1, 2)).containsExactly(5, 0, 3);
         assertThat(ListItemsHelper.deselect(new int[] {1}, 1, 1)).isEmpty();
     }
+
+    @Test
+    @DisplayName("an array of any item type keeps its type when an item goes in or out")
+    void insertAndRemoveKeepTheArrayType() {
+        Integer[] numbers = {1, 2, 3};
+        Integer[] inserted = ListItemsHelper.insert(numbers, 1, 9);
+        assertThat(inserted).containsExactly(1, 9, 2, 3);
+        assertThat(inserted.getClass()).isEqualTo(Integer[].class);
+        assertThat(ListItemsHelper.remove(numbers, 0, 0).getClass()).isEqualTo(Integer[].class);
+    }
+
+    @Test
+    @DisplayName("an item goes into spare capacity in place, and a full array grows by four slots")
+    void insertInCapacity() {
+        String[] spare = {"a", "c", null, null};
+        assertThat(ListItemsHelper.insertInCapacity(spare, 2, 1, "b")).isSameAs(spare);
+        assertThat(spare).containsExactly("a", "b", "c", null);
+
+        String[] full = {"a", "b"};
+        String[] grown = ListItemsHelper.insertInCapacity(full, 2, 2, "c");
+        assertThat(grown).containsExactly("a", "b", "c", null, null, null);
+        assertThat(full).containsExactly("a", "b");
+    }
+
+    @Test
+    @DisplayName("every selected index at or after an inserted item moves one place down")
+    void indicesAfterInsert() {
+        assertThat(ListItemsHelper.indicesAfterInsert(new int[] {3, 0, 1}, 1)).containsExactly(4, 0, 2);
+        assertThat(ListItemsHelper.indicesAfterInsert(new int[0], 0)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("the indices given leave the selection, in any order and with ones never selected among them")
+    void deselectIndices() {
+        assertThat(ListItemsHelper.deselect(new int[] {4, 1, 2}, new int[] {2, 7, 4})).containsExactly(1);
+        assertThat(ListItemsHelper.deselect(new int[] {4, 1}, new int[0])).containsExactly(4, 1);
+    }
+
+    @Test
+    @DisplayName("an index is selected only when it is one of the selected indices")
+    void contains() {
+        assertThat(ListItemsHelper.contains(new int[] {2, 5}, 5)).isTrue();
+        assertThat(ListItemsHelper.contains(new int[] {2, 5}, 3)).isFalse();
+        assertThat(ListItemsHelper.contains(new int[0], 0)).isFalse();
+    }
 }

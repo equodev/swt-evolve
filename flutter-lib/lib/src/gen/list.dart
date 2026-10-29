@@ -41,6 +41,7 @@ class VList extends VScrollable {
 
   List<String>? items;
   List<int>? selection;
+  int? topIndex;
 
   @override
   void copyFrom(VWidget other) {
@@ -48,6 +49,7 @@ class VList extends VScrollable {
     if (other is VList) {
       items = other.items;
       selection = other.selection;
+      topIndex = other.topIndex;
     }
   }
 
@@ -62,6 +64,8 @@ class VList extends VScrollable {
         selection = (json['selection'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
             .toList();
+      case 'topIndex':
+        topIndex = (json['topIndex'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

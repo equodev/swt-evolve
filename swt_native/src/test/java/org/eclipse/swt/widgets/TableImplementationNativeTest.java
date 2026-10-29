@@ -155,6 +155,21 @@ class TableImplementationNativeTest extends SerializeTestBase {
         assertThat(named(table, VTable.SELECTION)).isTrue();
     }
 
+    @Test
+    @DisplayName("deselecting indices at or past the item count leaves the rest of the selection as it was")
+    void deselectPastTheItemCount() {
+        Table table = new Table(shell(), SWT.MULTI);
+        for (int i = 0; i < 3; i++)
+            new TableItem(table, SWT.NONE);
+        impl(table).selection = new int[] {0, 2, 5};
+
+        assertThatCode(() -> table.deselect(new int[] {3, 7})).doesNotThrowAnyException();
+        assertThat(impl(table).selection).containsExactly(0, 2, 5);
+
+        table.deselect(new int[] {2, 5, 9});
+        assertThat(impl(table).selection).containsExactly(0);
+    }
+
     private static final String LONG = "a row much wider than the others";
 
     private static int width(TableItem item) {

@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import java.util.Objects;
+import dev.equo.swt.size.ListSizes;
 import dev.equo.swt.*;
 
 /**
@@ -347,7 +348,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getAutoscalingZoom());
+        return ListSizes.getItemHeight(this);
     }
 
     int getItemHeightInPixels() {
@@ -1175,6 +1176,9 @@ public class DartList extends DartScrollable implements IList {
     public void setTopIndex(int index) {
         int newValue = index;
         checkWidget();
+        if (this.topIndex != newValue) {
+            getValue().markDirty(VList.TOP_INDEX);
+        }
         this.topIndex = newValue;
     }
 
@@ -1266,8 +1270,19 @@ public class DartList extends DartScrollable implements IList {
         return topIndex;
     }
 
+    int scrollOffset;
+
+    int keptFocusIndex = -1;
+
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                ListHelper.recordScrollOffset(this, e);
+            });
+        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

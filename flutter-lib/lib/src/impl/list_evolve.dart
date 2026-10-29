@@ -17,12 +17,75 @@ import 'utils/widget_utils.dart';
 
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
+  final ScrollController _scrollController = ScrollController();
+
+  /// The height the items are laid out in.
+  double? _itemExtent;
+
+  int? _reportedScrollOffset;
+
   @override
   bool get keepsWheel => true;
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_reportScrollOffset);
+    if (state.topIndex != null) _scrollToTopIndexAfterLayout();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void setValue(V value) {
+    super.setValue(value);
+    if (lastChange?.touches('topIndex') ?? true) _scrollToTopIndexAfterLayout();
+  }
+
+  /// Java keeps how far the items are scrolled: getTopIndex and API scrolling are computed from it.
+  void _reportScrollOffset() {
+    final extent = _itemExtent;
+    if (!_scrollController.hasClients || extent == null) return;
+    final offset = _scrollController.offset.round();
+    if (offset == _reportedScrollOffset) return;
+    _reportedScrollOffset = offset;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()
+      ..y = offset
+      ..height = extent.round());
+  }
+
+  /// Brings the item Java asked for to the top, once the items are laid out. Flutter clamps the
+  /// distance at the end of the items; a list already showing that item at the top does not move.
+  void _scrollToTopIndexAfterLayout() {
+    final target = state.topIndex;
+    if (target == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final extent = _itemExtent;
+      if (!mounted || !_scrollController.hasClients || extent == null || extent <= 0) return;
+      final position = _scrollController.position;
+      if ((position.pixels / extent).floor() == target) return;
+      _scrollController.jumpTo(
+        (target * extent).clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ListThemeExtension>()!;
+    // The item color does not change the line height, so any color measures the extent.
+    final itemTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: widgetTheme.textColor,
+      baseTextStyle: widgetTheme.textStyle,
+    );
+    final itemExtent = listItemExtent(widgetTheme, itemTextStyle);
+    _itemExtent = itemExtent;
 
     state.selection ??= <int>[];
     state.items ??= <String>[];
@@ -37,21 +100,23 @@ class ListImpl<T extends ListSwt, V extends VList>
 
     return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(_StyledList(
       widgetTheme: widgetTheme,
+      itemExtent: itemExtent,
       state: state,
       items: state.items!,
-      selection: _convertIndicesToItems(state.items!, state.selection!),
+      selection: state.selection!,
+      scrollController: _scrollController,
       enabled: isEnabled,
       isMultiSelect: isMultiSelect,
       width: width,
       height: height,
-      onSelectionChanged: (selectedItems) {
+      onSelectionChanged: (selection) {
         setState(() {
-          state.selection = _convertItemsToIndices(state.items!, selectedItems);
+          state.selection = selection;
         });
         var e = VEvent()..segments = state.selection;
         widget.sendSelectionSelection(state, e);
       },
-      onItemDoubleClick: (item) {
+      onItemDoubleClick: () {
         var e = VEvent()..segments = state.selection;
         widget.sendSelectionDefaultSelection(state, e);
       },
@@ -60,33 +125,20 @@ class ListImpl<T extends ListSwt, V extends VList>
     ))));
   }
 
-  List<String> _convertIndicesToItems(List<String> items, List<int> indices) {
-    return indices
-        .where((index) => index >= 0 && index < items.length)
-        .map((index) => items[index])
-        .toList();
-  }
-
-  List<int> _convertItemsToIndices(
-    List<String> items,
-    List<String> selectedItems,
-  ) {
-    return selectedItems
-        .map((item) => items.indexOf(item))
-        .where((index) => index != -1)
-        .toList();
-  }
 }
 
 class _StyledList extends StatefulWidget {
   final ListThemeExtension widgetTheme;
+  final double itemExtent;
   final VList state;
   final List<String> items;
-  final List<String> selection;
+  /// The selected indices: items with the same text are told apart by where they are.
+  final List<int> selection;
+  final ScrollController scrollController;
   final bool enabled;
   final bool isMultiSelect;
-  final Function(List<String>) onSelectionChanged;
-  final Function(String) onItemDoubleClick;
+  final Function(List<int>) onSelectionChanged;
+  final VoidCallback onItemDoubleClick;
   final VoidCallback onFocusIn;
   final VoidCallback onFocusOut;
   final double? width;
@@ -94,9 +146,11 @@ class _StyledList extends StatefulWidget {
 
   const _StyledList({
     required this.widgetTheme,
+    required this.itemExtent,
     required this.state,
     required this.items,
     required this.selection,
+    required this.scrollController,
     required this.enabled,
     required this.isMultiSelect,
     required this.onSelectionChanged,
@@ -155,19 +209,20 @@ class _StyledListState extends State<_StyledList> {
           child: widget.items.isEmpty
               ? const SizedBox.shrink()
               : ListView.builder(
+                  controller: widget.scrollController,
                   itemCount: widget.items.length,
-                  itemExtent: theme.itemHeight,
+                  itemExtent: widget.itemExtent,
                   itemBuilder: (context, index) {
-                    final item = widget.items[index];
-                    final isSelected = widget.selection.contains(item);
                     return _ListItem(
                       widgetTheme: theme,
+                      extent: widget.itemExtent,
                       state: widget.state,
-                      item: item,
-                      isSelected: isSelected,
+                      item: widget.items[index],
+                      index: index,
+                      isSelected: widget.selection.contains(index),
                       enabled: widget.enabled,
-                      onTap: () => _handleItemTap(item),
-                      onDoubleTap: () => widget.onItemDoubleClick(item),
+                      onTap: () => _handleItemTap(index),
+                      onDoubleTap: widget.onItemDoubleClick,
                     );
                   },
                 ),
@@ -176,12 +231,11 @@ class _StyledListState extends State<_StyledList> {
     );
   }
 
-  void _handleItemTap(String item) {
+  void _handleItemTap(int tappedIndex) {
     if (!widget.enabled) return;
 
     final items = widget.items;
-    final tappedIndex = items.indexOf(item);
-    if (tappedIndex < 0) return;
+    if (tappedIndex < 0 || tappedIndex >= items.length) return;
 
     // Native SWT semantics: a plain click selects only the clicked item (deselecting the
     // rest) even in a MULTI list; Ctrl/Cmd toggles it; Shift extends a range from the anchor.
@@ -198,8 +252,7 @@ class _StyledListState extends State<_StyledList> {
       // Shift+click keeps the existing anchor so a further shift re-extends from it.
     } else if (toggle) {
       newIndices = widget.selection
-          .map((s) => items.indexOf(s))
-          .where((i) => i >= 0)
+          .where((i) => i >= 0 && i < items.length)
           .toList();
       if (!newIndices.remove(tappedIndex)) {
         newIndices.add(tappedIndex);
@@ -210,15 +263,16 @@ class _StyledListState extends State<_StyledList> {
       _anchorIndex = tappedIndex;
     }
 
-    final newSelection = newIndices.map((i) => items[i]).toList();
-    widget.onSelectionChanged(newSelection);
+    widget.onSelectionChanged(newIndices);
   }
 }
 
 class _ListItem extends StatefulWidget {
   final ListThemeExtension widgetTheme;
+  final double extent;
   final VList state;
   final String item;
+  final int index;
   final bool isSelected;
   final bool enabled;
   final VoidCallback onTap;
@@ -226,8 +280,10 @@ class _ListItem extends StatefulWidget {
 
   const _ListItem({
     required this.widgetTheme,
+    required this.extent,
     required this.state,
     required this.item,
+    required this.index,
     required this.isSelected,
     required this.enabled,
     required this.onTap,
@@ -301,11 +357,11 @@ class _ListItemState extends State<_ListItem> {
             _selectedByPress = false;
             widget.onDoubleTap();
           },
-          identity: widget.item,
+          identity: widget.index,
           child: Stack(
             children: [
               Container(
-                height: theme.itemHeight,
+                height: widget.extent,
                 color: baseBackgroundColor,
                 padding: theme.itemPadding,
                 alignment: Alignment.centerLeft,
@@ -321,7 +377,7 @@ class _ListItemState extends State<_ListItem> {
                   curve: Curves.easeInOut,
                   opacity: 0.3,
                   child: Container(
-                    height: theme.itemHeight,
+                    height: widget.extent,
                     color: selectedOverlayColor,
                   ),
                 ),
@@ -331,7 +387,7 @@ class _ListItemState extends State<_ListItem> {
                   curve: Curves.easeInOut,
                   opacity: _isHovered ? 0.1 : 0.0,
                   child: Container(
-                    height: theme.itemHeight,
+                    height: widget.extent,
                     color: hoverOverlayColor,
                   ),
                 ),
