@@ -25,6 +25,7 @@ import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.ole.win32.*;
 import org.eclipse.swt.widgets.*;
 import dev.equo.swt.Config;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class provide a bridge between application
@@ -75,6 +76,7 @@ public class Accessible {
      * @deprecated
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     protected Accessible() {
         this((IIAccessible) null);
         setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(this) : new SwtAccessible(this));
@@ -955,7 +957,7 @@ public class Accessible {
     //		return COM.S_OK;
     //	}
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     // END DEBUG CODE

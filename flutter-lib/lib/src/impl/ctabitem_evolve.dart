@@ -14,6 +14,7 @@ import '../theme/theme_extensions/ctabitem_theme_extension.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import 'utils/widget_utils.dart';
 import 'ctabfolder_evolve.dart';
+import 'ctab_tab_compression.dart';
 
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
@@ -26,7 +27,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     bool enabled,
   ) {
     if (image == null) return null;
-    final iconSize = folderTheme.tabIconSize;
+    final iconSize = ctabIconSize(image, folderTheme.tabIconSize);
     final imageKey = ImageUtils.stableImageKey(image);
     final futureKey =
         '${imageKey}_${iconSize}_${iconColor?.value ?? 'null'}_$enabled';
@@ -68,6 +69,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final isEnabled = tabItemContext?.isEnabled ?? true;
     final isActive = tabItemContext?.isActive ?? false;
     final isDimmed = tabItemContext?.isDimmed ?? false;
+    final compressTo = tabItemContext?.compressMinimumCharacters;
     final themeTextColor = getCTabItemTextColor(
       itemTheme,
       selected: isSelected,
@@ -123,10 +125,18 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
               ),
               child: imageWidget,
             ),
-          Padding(
-            padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
-            child: MnemonicText(state.text, style: textStyle),
-          ),
+          if (compressTo == null)
+            Padding(
+              padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
+              child: MnemonicText(state.text, style: textStyle),
+            )
+          else
+            Flexible(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
+                child: ShrinkableTabLabel(state.text ?? '', style: textStyle, minimumCharacters: compressTo),
+              ),
+            ),
         ],
       ),
     );

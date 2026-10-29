@@ -231,9 +231,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     }
 
     int getBandHeight() {
-        if (font == null)
-            return DartExpandItem.CHEVRON_SIZE;
-        return 0;
+        return Sizes.getBandHeight(this, font);
     }
 
     @Override
@@ -413,6 +411,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     @Override
     public void setFont(Font font) {
         super.setFont(font);
+        ExpandBarHelper.headersChanged(this);
         this.font = font;
         layoutItems(0, true);
     }
@@ -460,7 +459,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        if (!java.util.Objects.equals(this.spacing, spacing)) {
+        if (this.spacing != spacing) {
             getValue().markDirty(VExpandBar.SPACING);
         }
         if (spacing < 0)
@@ -549,6 +548,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
                     break;
                 }
         }
+        ExpandBarHelper.openedByKey(event, focusItem);
     }
 
     void onMouseDown(Event event) {

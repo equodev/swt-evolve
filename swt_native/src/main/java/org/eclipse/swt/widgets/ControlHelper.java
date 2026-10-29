@@ -30,7 +30,44 @@ public class ControlHelper {
         return paintDamage;
     }
 
+    /**
+     * Takes the keys the client sends while a widget runs an event loop of its own that owns the keyboard,
+     * as a Tracker does: they go to it instead of the focus control.
+     */
+    public interface KeyCapture {
+        /** Handles a KeyDown or KeyUp; false when the capture is over and the key goes where it would have. */
+        boolean key(int type, Event event);
+    }
+
+    private static final String KEY_CAPTURE = "dev.equo.swt.keyCapture";
+
+    /** Makes {@code capture} take the keys of {@code display}, or stops capturing them with null; answers the one it replaces. */
+    public static KeyCapture captureKeys(Display display, KeyCapture capture) {
+        if (display.isDisposed())
+            return null;
+        KeyCapture before = (KeyCapture) display.getData(KEY_CAPTURE);
+        display.setData(KEY_CAPTURE, capture);
+        return before;
+    }
+
+    /** Hands a key from the client to the capture of {@code display}; false when there is none to take it. */
+    public static boolean capturedKey(Display display, int type, Event event) {
+        if (display == null || display.isDisposed())
+            return false;
+        Object data = display.getData(KEY_CAPTURE);
+        if (!(data instanceof KeyCapture))
+            return false;
+        KeyCapture capture = (KeyCapture) data;
+        if (capture.key(type, event))
+            return true;
+        if (!display.isDisposed() && display.getData(KEY_CAPTURE) == capture)
+            display.setData(KEY_CAPTURE, null);
+        return false;
+    }
+
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
+        if (capturedKey(widget.display, SWT.KeyDown, event))
+            return;
         if (widget instanceof DartControl && AcceleratorHelper.translate(((DartControl) widget).getApi(), event))
             return;
         widget.sendEvent(SWT.KeyDown, event);
@@ -38,37 +75,13 @@ public class ControlHelper {
     }
 
     /**
-     * Dart controls have no OS window proc, so nothing turns an incoming KeyDown into an
-     * {@link SWT#Traverse} event the way {@code SwtControl.translateTraversal} does natively.
-     * Popups and dialogs (e.g. the Command Palette) close on Escape via a Traverse listener on
-     * their Shell, which never fires without this translation. Mirror the native ancestor walk by
-     * delegating to {@code Control.traverse(int, Event)}, which sends SWT.Traverse up the parent
-     * chain to the Shell.
+     * Dart controls have no OS window proc to turn a KeyDown into {@link SWT#Traverse}, so a widget's
+     * own Escape runs the same traversal as a Display-routed one, up to the Shell.
      */
     private static void translateTraversal(DartWidget widget, Event keyEvent) {
-        if (!(widget instanceof DartControl))
+        if (keyEvent.keyCode != SWT.ESC || !(widget instanceof DartControl) || widget.isDisposed())
             return;
-        DartControl origin = (DartControl) widget;
-        if (origin.isDisposed())
-            return;
-        int detail;
-        switch (keyEvent.keyCode) {
-            case SWT.ESC:
-                detail = SWT.TRAVERSE_ESCAPE;
-                break;
-            default:
-                return;
-        }
-        Control start = resolveTraverseStart(origin);
-        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
-            return;
-        Event event = new Event();
-        event.character = keyEvent.character;
-        event.keyCode = keyEvent.keyCode;
-        event.keyLocation = keyEvent.keyLocation;
-        event.stateMask = keyEvent.stateMask;
-        event.doit = true;
-        ((DartControl) start.getImpl()).traverse(detail, event);
+        wholeTraversal((DartControl) widget, keyEvent, SWT.TRAVERSE_ESCAPE);
     }
 
     /**
@@ -106,6 +119,16 @@ public class ControlHelper {
             key.character = (char) (c - '@');
     }
 
+    /**
+     * Presents a Cmd chord from a Mac client as the {@link SWT#MOD1} chord this platform binds: the
+     * web platform's MOD1 is Ctrl, so Cmd+S must arrive as Ctrl+S for the shortcut to run.
+     */
+    public static void applyClientModifier(Event key) {
+        if ((key.stateMask & SWT.COMMAND) == 0)
+            return;
+        key.stateMask = (key.stateMask & ~SWT.COMMAND) | SWT.MOD1;
+    }
+
     /** What {@link #routeKeyDown} did with a key. */
     public static final class RoutedKey {
         /** Whether the KeyDown was delivered, and its doit after the listeners ran. */
@@ -127,6 +150,7 @@ public class ControlHelper {
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        MenuHelper.noteKeyDown(control.getApi(), key);
         if (AcceleratorHelper.translate(control.getApi(), key))
             return new RoutedKey(false, false, false);
         int detail = traverseDetail(key.keyCode, key.stateMask);
@@ -136,9 +160,9 @@ public class ControlHelper {
         boolean traversed = false;
         boolean traverseDoit = false;
         if (key.keyCode == SWT.ESC) {
-            traversed = escapeTraversal(control, key);
+            traversed = wholeTraversal(control, key, SWT.TRAVERSE_ESCAPE);
         } else if (detail == SWT.TRAVERSE_RETURN) {
-            traversed = returnTraversal(control, key);
+            traversed = wholeTraversal(control, key, SWT.TRAVERSE_RETURN);
         } else if (detail != SWT.TRAVERSE_NONE) {
             Event e = new Event();
             e.character = key.character;
@@ -173,9 +197,21 @@ public class ControlHelper {
             return new RoutedKey(false, false, traverseDoit);
         control.sendEvent(SWT.KeyDown, key);
         rememberTypingKey(control, key);
-        if (key.doit && !control.isDisposed())
+        if (key.doit && !control.isDisposed()) {
             applyPlatformKey(control, key);
+            // The key's own action (a Spinner step's Verify, say) may have disposed the control.
+            if (!control.isDisposed())
+                MenuHelper.keyDownDelivered(control.getApi(), key);
+        }
         return new RoutedKey(true, key.doit, traverseDoit);
+    }
+
+    /** Delivers a KeyUp to the focused control; the release of a lone Alt then activates the menu bar. */
+    public static void routeKeyUp(DartControl control, Event key) {
+        key.doit = true;
+        control.sendEvent(SWT.KeyUp, key);
+        if (!control.isDisposed())
+            MenuHelper.keyUpDelivered(control.getApi(), key);
     }
 
     /**
@@ -183,7 +219,9 @@ public class ControlHelper {
      * spinner or scale steps its value.
      */
     private static void applyPlatformKey(DartControl control, Event key) {
-        if (control instanceof DartTable)
+        if (isMenuKey(key))
+            showMenuFromKeyboard(control);
+        else if (control instanceof DartTable)
             TableHelper.moveSelectionByKey((DartTable) control, key);
         else if (control instanceof DartList)
             ListHelper.moveSelectionByKey((DartList) control, key);
@@ -191,6 +229,57 @@ public class ControlHelper {
             SpinnerHelper.stepByKey((DartSpinner) control, key);
         else if (control instanceof DartScale)
             ScaleHelper.stepByKey((DartScale) control, key);
+    }
+
+    /** Shift+F10, which Win32 and GTK turn into a context-menu request (Cocoa has no such key). */
+    private static boolean isMenuKey(Event key) {
+        return key.keyCode == SWT.F10 && (key.stateMask & SWT.MODIFIER_MASK) == SWT.SHIFT;
+    }
+
+    /**
+     * A context-menu request from the keyboard (Shift+F10 or the Menu key), as Win32's showMenu
+     * handles it: MenuDetect with {@link SWT#MENU_KEYBOARD}, located under the selected item of an
+     * item view, then the control's menu unless a listener vetoed it. With no item to anchor to the
+     * menu opens at the pointer, where Menu.setVisible puts a menu without a location.
+     */
+    public static void showMenuFromKeyboard(DartControl control) {
+        Control api = control.getApi();
+        Point anchor = keyboardMenuAnchor(api);
+        Event event = new Event();
+        Point start = anchor != null ? anchor : api.getDisplay().getCursorLocation();
+        event.x = start.x;
+        event.y = start.y;
+        event.detail = SWT.MENU_KEYBOARD;
+        control.sendEvent(SWT.MenuDetect, event);
+        if (control.isDisposed() || !event.doit)
+            return;
+        Menu menu = api.getMenu();
+        if (menu == null || menu.isDisposed())
+            return;
+        Point requested = new Point(event.x, event.y);
+        if (anchor != null || !requested.equals(start))
+            menu.setLocation(requested);
+        menu.setVisible(true);
+    }
+
+    /** Below the middle of the selected item, kept inside the client area, in display coordinates. */
+    private static Point keyboardMenuAnchor(Control api) {
+        Rectangle bounds = null;
+        if (api instanceof Tree) {
+            TreeItem[] selection = ((Tree) api).getSelection();
+            if (selection.length > 0)
+                bounds = selection[0].getBounds();
+        } else if (api instanceof Table) {
+            TableItem[] selection = ((Table) api).getSelection();
+            if (selection.length > 0)
+                bounds = selection[0].getBounds();
+        }
+        if (bounds == null)
+            return null;
+        Rectangle client = ((Scrollable) api).getClientArea();
+        int x = Math.min(Math.max(client.x, bounds.x + bounds.width / 2), client.x + client.width);
+        int y = Math.min(Math.max(client.y, bounds.y + bounds.height), client.y + client.height);
+        return api.toDisplay(x, y);
     }
 
     /** Keeps the last KeyDown a control let through, for the edit it types; see {@link #takeTypingKey}. */
@@ -222,13 +311,13 @@ public class ControlHelper {
     }
 
     /**
-     * Mirrors the natives' {@code traversalCode}: arrows stay in the control, a key-listening Canvas
-     * keeps every key, and an editable multi-line Text keeps Enter, unless a Traverse listener lets
-     * it go.
+     * Mirrors the natives' {@code traversalCode}: arrows stay in the control except in a radio
+     * button, a key-listening Canvas keeps every key, and an editable multi-line Text keeps Enter,
+     * unless a Traverse listener lets it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
-            return false;
+            return control.getApi() instanceof Button && (control.getApi().getStyle() & SWT.RADIO) != 0;
         if (detail == SWT.TRAVERSE_RETURN && control.getApi() instanceof Text) {
             int style = control.getApi().getStyle();
             if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)
@@ -280,7 +369,7 @@ public class ControlHelper {
 
     /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
     static boolean holdsLink(String text) {
-        String lower = text.toLowerCase();
+        String lower = text.toLowerCase(java.util.Locale.ROOT);
         for (int i = lower.indexOf("<a"); i >= 0; i = lower.indexOf("<a", i + 1)) {
             if (i + 2 < lower.length() && (lower.charAt(i + 2) == '>' || Character.isWhitespace(lower.charAt(i + 2))))
                 return true;
@@ -292,28 +381,18 @@ public class ControlHelper {
         return keyCode == SWT.SHIFT || keyCode == SWT.CTRL || keyCode == SWT.ALT || keyCode == SWT.COMMAND;
     }
 
-    /** Escape runs the whole traversal, so a dialog closes on it. */
-    private static boolean escapeTraversal(DartControl origin, Event keyEvent) {
-        Control start = resolveTraverseStart(origin);
-        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
-            return false;
-        Event event = traverseEventOf(keyEvent);
-        event.doit = true;
-        return ((DartControl) start.getImpl()).traverse(SWT.TRAVERSE_ESCAPE, event);
-    }
-
     /**
-     * Enter runs the whole traversal, so the shell presses its default button, unless the control
-     * keeps Enter, as a multi-line Text does.
+     * Escape and Enter run the whole traversal (a dialog closes or presses its default button), offered
+     * with the doit the start control's native gives, so a control that keeps the key holds it.
      */
-    private static boolean returnTraversal(DartControl origin, Event keyEvent) {
+    private static boolean wholeTraversal(DartControl origin, Event keyEvent, int detail) {
         Control start = resolveTraverseStart(origin);
         if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
             return false;
         DartControl impl = (DartControl) start.getImpl();
         Event event = traverseEventOf(keyEvent);
-        event.doit = traversesByDefault(impl, SWT.TRAVERSE_RETURN);
-        return impl.traverse(SWT.TRAVERSE_RETURN, event);
+        event.doit = traversesByDefault(impl, detail);
+        return impl.traverse(detail, event);
     }
 
     private static Event traverseEventOf(Event keyEvent) {
@@ -381,7 +460,7 @@ public class ControlHelper {
     }
 
     /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */
-    private static boolean isMnemonicTrigger(Event ev) {
+    static boolean isMnemonicTrigger(Event ev) {
         if ((ev.stateMask & SWT.ALT) == 0)
             return false;
         if ((ev.stateMask & (SWT.CTRL | SWT.COMMAND)) != 0)
@@ -393,7 +472,7 @@ public class ControlHelper {
 
     private static int traverseDetail(int keyCode, int stateMask) {
         switch (keyCode) {
-            // Escape is not here: it runs the whole traversal straight away; see escapeTraversal.
+            // Escape is not here: it runs the whole traversal straight away; see wholeTraversal.
             case SWT.CR:
                 return SWT.TRAVERSE_RETURN;
             case SWT.ARROW_DOWN:
@@ -460,18 +539,17 @@ public class ControlHelper {
                 return null;
             }
             Composite parent = current.getParent();
-            // Only a Group, and only the vertical trim. Sizes.getClientArea(DartGroup) reports the
-            // client origin as (GROUP_BORDER, 0) whenever the Group has a title, so the layout
-            // already gave the child the horizontal inset in its bounds, while the title height the
-            // Group draws above its content is reported by nobody -- without it every popup a JFace
-            // viewer opens inside a Group came up a title-height too high.
+            // Only a Dart-backed titled Group, and only the title row: getClientArea puts the client
+            // origin at (GROUP_BORDER, 0), so the row drawn above the content is in nobody's bounds.
+            // A native-backed Group in a mixed display lays its children out inside the client area
+            // the platform gives it, so their bounds already carry the row.
             //
             // Every other container lays its children out in its own coordinates, so their bounds
             // already carry whatever the container draws above them: a CTabFolder's page sits at
             // y = the tab strip's height, and computeTrim reports that same height again. Applying
             // this there adds the strip a second time, once per folder in the chain, and everything
             // mapped through it lands that much too low.
-            if (parent instanceof Group) {
+            if (parent.getImpl() instanceof DartGroup && !((Group) parent).getText().isEmpty()) {
                 y -= parent.computeTrim(0, 0, 0, 0).y;
             }
             // A Decorations' own menu strip sits outside its client area, as a native menu bar does,
@@ -797,11 +875,9 @@ public class ControlHelper {
             return;
         Control control = null;
         boolean fixFocus = false;
-        if (!enabled) {
-//            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
-//                control = c.display.getFocusControl();
-//                fixFocus = c.isFocusAncestor(control);
-//            }
+        if (!enabled && c.mayFixFocus()) {
+            control = c.display.getFocusControl();
+            fixFocus = c.isFocusAncestor(control);
         }
         if (enabled) {
             c.getApi().state &= ~DartWidget.DISABLED;
@@ -822,6 +898,7 @@ public class ControlHelper {
      * a microtask after the press, behind the MouseDown it caused.
      */
     public static void pressed(DartControl control, Event event) {
+        MenuHelper.forgetLoneAlt(control.getDisplay());
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;
@@ -837,10 +914,10 @@ public class ControlHelper {
     /**
      * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
      * <p>
-     * Button 1 focuses the controls Win32 and GTK agree on. A Canvas is left to its own press
-     * handling, since natively it takes the focus only while it hooks key events. A TabFolder takes
-     * it only from a click that switches tabs (its client sends it), not from one on its strip or on
-     * the selected tab, as on GTK.
+     * Button 1 focuses the controls Win32 and GTK agree on, StyledText included. Any other Canvas is
+     * left to its own press handling, since natively it takes the focus only while it hooks key
+     * events. A TabFolder takes it only from a click that switches tabs (its client sends it), not
+     * from one on its strip or on the selected tab, as on GTK.
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
@@ -857,7 +934,8 @@ public class ControlHelper {
         if (button == 3)
             return fieldOrItemView;
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
-                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale);
+                || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
+                || api instanceof org.eclipse.swt.custom.StyledText);
     }
 
     /**
@@ -901,6 +979,11 @@ public class ControlHelper {
      */
     public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
+            return;
+        // A bridge whose focus changes reach the Shell's own setActiveControl announces the activation
+        // there, once, the way SWT does; walking the chain here as well would announce it twice.
+        FlutterBridge bridge = control.getBridge();
+        if (bridge != null && bridge.activate(control, detail))
             return;
         Control now = control.getApi();
         Shell shell = now.getShell();

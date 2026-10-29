@@ -49,6 +49,7 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   theme_tailor_annotation: ^4.0.0
   web: ^1.1.1
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:

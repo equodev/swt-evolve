@@ -11,6 +11,7 @@ import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/treecolumn_evolve.dart' show TreeColumnImpl;
 
 import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
@@ -70,6 +71,12 @@ const String defaultSizeOutputDir =
 /// below. Only the numbers need a real window, real fonts and a GPU — so committing them is what
 /// lets a machine without one re-emit the Java and check it (`tool/emit_sizes.dart`).
 const String sizesModelPath = 'tool/sizes-model.json';
+
+/// Hand-written answers the emitted Java asks instead of deciding itself. What they compute is
+/// application state or the column order, which no measurement sees.
+const String _tableUsesApplicationFont =
+    'org.eclipse.swt.widgets.TableHelper.usesApplicationFont';
+const String _treeColumnLeft = 'org.eclipse.swt.widgets.Sizes.treeColumnLeft';
 
 /// Bumped when the shape below changes, so a stale model fails loudly instead of emitting
 /// half-populated Java.
@@ -1341,6 +1348,20 @@ class WidgetMeasurer {
       }
     }
 
+    // The headers of a bar sized from them, found through the widget that lays one out. The chevron
+    // is the last icon in a header: an image, when there is one, comes before the label.
+    final headerWidget = expectedComponents['headersOf'];
+    if (headerWidget is String) {
+      final headers = <RenderBoxInfo>[];
+      _collectOutermostCreatedBy(root, headerWidget, headers);
+      if (headers.isNotEmpty) {
+        discovered['header'] = headers.map(_probeJson).toList();
+        final icons = <RenderBoxInfo>[];
+        _collectOutermostCreatedBy(headers.first, 'Icon', icons);
+        if (icons.isNotEmpty) discovered['chevron'] = _probeJson(icons.last);
+      }
+    }
+
     return discovered;
   }
 
@@ -2124,6 +2145,12 @@ class WidgetMeasurer {
       return;
     }
 
+    // A bar sized from its item headers: what Java needs is what a header adds to its label.
+    if (_hasHeaderGeometry(analyses)) {
+      _generateJavaHeaderBarSizes(fqn, analyses);
+      return;
+    }
+
     // A container measured for its chrome reports where it put its page, not how big it wants to
     // be. What Java needs from it are the insets it has to reserve, not a computeSize.
     if (_hasClientAreaGeometry(analyses)) {
@@ -2807,12 +2834,16 @@ class WidgetMeasurer {
         '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
       );
 
-      // A widget with no font of its own letters in its parent's.
+      // A table row is measured in the application's font when its table was given one too, which
+      // only the table knows; every other widget answers from its own font, or from its parent's when
+      // it has none of its own.
       final fontOwner = fontFromParentFqns.contains(fqn)
           ? '((DartControl) widget.getParent().getImpl())'
           : 'widget';
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts || $fontOwner.getExplicitFont() == null) {',
+        widgetType == 'TableItem'
+            ? '            if (!$_tableUsesApplicationFont(widget)) {'
+            : '            if (!Config.getConfigFlags().use_swt_fonts || $fontOwner.getExplicitFont() == null) {',
       );
       buffer.writeln(
         '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom($fontOwner.getFont());',
@@ -2983,6 +3014,181 @@ class WidgetMeasurer {
   bool _hasClientAreaGeometry(List<WidgetAnalysis> analyses) => analyses.any(
     (a) => a.measurements.any((m) => m.discoveredComponents['page'] is Map),
   );
+
+  bool _hasHeaderGeometry(List<WidgetAnalysis> analyses) => analyses.any(
+    (a) => a.measurements.any((m) => m.discoveredComponents['header'] is List),
+  );
+
+  /// Emits how a bar of item headers sizes itself: SWT's sum of headers and open bodies, with each
+  /// header as wide as its label plus what the render side draws around it.
+  ///
+  /// The sum and the band rule are SWT's own and written here as SWT's. What is measured is what a
+  /// header adds to its label: every style has to agree on it, and the image case has to differ
+  /// from the plain one by the image and a gap, or this refuses to write rather than pick a number.
+  void _generateJavaHeaderBarSizes(String fqn, List<WidgetAnalysis> analyses) {
+    final widgetType = widgetName(fqn);
+    final surround = <String, double>{};
+    final chevron = <String, double>{};
+    double? withImage;
+    double? imageWidth;
+    for (final m in analyses.expand((a) => a.measurements)) {
+      final headers = m.discoveredComponents['header'];
+      final text = m.discoveredComponents['text'];
+      if (headers is! List || headers.isEmpty || text is! Map) continue;
+      // The label fills what the header leaves it, so the rest of the header is what surrounds it.
+      final around = ((headers.first as Map)['width'] as num).toDouble() -
+          (text['width'] as num).toDouble();
+      final icon = m.discoveredComponents['chevron'];
+      if (icon is Map) {
+        chevron['${m.style} width'] = (icon['width'] as num).toDouble();
+        chevron['${m.style} height'] = (icon['height'] as num).toDouble();
+      }
+      final image = m.discoveredComponents['image'];
+      if (!m.style.startsWith('header:')) {
+        surround[m.style] = around;
+      } else if (image is Map) {
+        withImage = around;
+        imageWidth = (image['width'] as num).toDouble();
+      }
+    }
+
+    final agreed =
+        _agreedMeasurement(surround, widgetType, 'what a header draws around its label');
+    final chevronSize =
+        _agreedMeasurement(chevron, widgetType, 'the chevron, on either axis');
+    if (agreed == null || chevronSize == null) return;
+    if (withImage == null || imageWidth == null) {
+      print('SKIPPED ${widgetType}Sizes.java: no header with an image measured one.');
+      return;
+    }
+    final imageGap = withImage - agreed - imageWidth;
+    if (imageGap < 0) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: the header with an image is only '
+        '${withImage - agreed}px wider than the plain one, for an image $imageWidth wide.',
+      );
+      return;
+    }
+
+    final labelStyle = _labelStyle(widgetType, analyses);
+    if (labelStyle == null) return;
+
+    final javaSource = '''
+package dev.equo.swt.size;
+
+import dev.equo.swt.Config;
+import dev.equo.swt.FontMetricsUtil;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCHelper;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.DartExpandItem;
+import org.eclipse.swt.widgets.$widgetType;
+import org.eclipse.swt.widgets.ExpandItem;
+
+/**
+ * How an $widgetType sizes itself: SWT's sum of its items' headers and open bodies, each header as
+ * wide as its label plus what the render side draws around it.
+ *
+ * DO NOT EDIT MANUALLY - regenerate from measure_${widgetType.toLowerCase()}.dart
+ */
+public class ${widgetType}Sizes {
+
+    /** SWT's size on an axis with nothing to measure. */
+    public static final int DEFAULT_SIZE = 64;
+
+    /** What a header draws around its label: the insets on both sides and the chevron. */
+    public static final int HEADER_LABEL_SURROUND = ${agreed.round()};
+
+    /** The gap between a header's image and its label. */
+    public static final int HEADER_IMAGE_GAP = ${imageGap.round()};
+
+    /** The chevron's size, which is also the least a header's band is tall. */
+    public static final int CHEVRON_SIZE = ${chevronSize.round()};
+
+    /** The style a header's label is drawn in, which is the font to measure it in. */
+    public static TextStyle headerLabelStyle() {
+        return $labelStyle;
+    }
+
+    /** SWT's band: the chevron, or a line of the bar's font when that is taller. */
+    public static int bandHeight($widgetType bar) {
+        GC gc = new GC(bar);
+        try {
+            return Math.max(CHEVRON_SIZE, gc.getFontMetrics().getHeight());
+        } finally {
+            gc.dispose();
+        }
+    }
+
+    /**
+     * SWT's computeSize: the headers, the spacing and the open bodies add up, the hints replace the
+     * sums, and the trim comes last.
+     */
+    public static Point computeSize($widgetType bar, int wHint, int hHint) {
+        int width = 0;
+        int height = 0;
+        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+            ExpandItem[] items = bar.getItems();
+            if (items.length > 0) {
+                int spacing = bar.getSpacing();
+                height += spacing;
+                for (ExpandItem item : items) {
+                    height += item.getHeaderHeight();
+                    if (item.getExpanded()) {
+                        height += item.getHeight();
+                    }
+                    height += spacing;
+                    width = Math.max(width, headerWidth(bar, item));
+                }
+            }
+        }
+        if (width == 0) {
+            width = DEFAULT_SIZE;
+        }
+        if (height == 0) {
+            height = DEFAULT_SIZE;
+        }
+        if (wHint != SWT.DEFAULT) {
+            width = wHint;
+        }
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        }
+        Rectangle trim = bar.computeTrim(0, 0, width, height);
+        return new Point(trim.width, trim.height);
+    }
+
+    /**
+     * A header's width: its label and what surrounds it, plus the image and its gap. The image is
+     * as wide as it was when it was set, as in SWT, so disposing it later changes nothing.
+     */
+    public static int headerWidth($widgetType bar, ExpandItem item) {
+        int width = HEADER_LABEL_SURROUND;
+        if (item.getImage() != null) {
+            width += ((DartExpandItem) item.getImpl())._imageWidth() + HEADER_IMAGE_GAP;
+        }
+        String text = item.getText();
+        if (text.length() > 0) {
+            width += labelWidth(bar, text);
+        }
+        return width;
+    }
+
+    private static int labelWidth($widgetType bar, String text) {
+        Font font = bar.getFont();
+        if (Config.getConfigFlags().use_swt_fonts) {
+            return GCHelper.textExtent(text, 0, font).x;
+        }
+        PointD size = FontMetricsUtil.getFontSize(text, headerLabelStyle().withStyleFrom(font));
+        return (int) Math.ceil(size.x());
+    }
+}
+''';
+    _writeSizesFile(widgetType, StringBuffer(javaSource));
+  }
 
   /// Emits the chrome a container reserves around its page: the strip on one edge and the frame on
   /// the other three, as `Sizes.getClientArea` has to subtract them.
@@ -3542,18 +3748,20 @@ public class CoolBarSizes {
       buffer.writeln(
         '    public static int getCellContentWidth($itemType item) {',
       );
-      buffer.writeln('        TextStyle ts = getTextStyle(item);');
-      buffer.writeln('        int cellWidth = 0;');
-      buffer.writeln('        String text = item.getText();');
-      buffer.writeln('        if (text != null && !text.isEmpty()) {');
-      buffer.writeln(
-        '            cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
-      buffer.writeln('        }');
+      buffer.writeln('        int cellWidth = getTextWidth(item);');
       buffer.writeln('        if (item.getImage() != null) {');
       buffer.writeln('            cellWidth += getIconSpace(item);');
       buffer.writeln('        }');
       buffer.writeln('        return cellWidth;');
+      buffer.writeln('    }');
+      buffer.writeln();
+      buffer.writeln('    /** The width the first cell\'s text takes. */');
+      buffer.writeln('    public static int getTextWidth($itemType item) {');
+      buffer.writeln('        String text = item.getText();');
+      buffer.writeln('        if (text.isEmpty()) return 0;');
+      buffer.writeln(
+        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, cellTextStyle(item)).x());',
+      );
       buffer.writeln('    }');
       buffer.writeln();
       // The icon is drawn in a square of the cell's font size whatever the image's own size, and
@@ -3564,7 +3772,7 @@ public class CoolBarSizes {
       buffer.writeln(
         '    public static int getIconSize($itemType item) {',
       );
-      buffer.writeln('        return getTextStyle(item).size();');
+      buffer.writeln('        return cellTextStyle(item).size();');
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
@@ -3583,11 +3791,9 @@ public class CoolBarSizes {
       buffer.writeln('        return CELL_PADDING_LEFT;');
       buffer.writeln('    }');
       buffer.writeln();
+      buffer.writeln('    private static TextStyle cellTextStyle($itemType item) {');
       buffer.writeln(
-        '    private static TextStyle getTextStyle($itemType item) {',
-      );
-      buffer.writeln(
-        '        if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+        '        if (!$_tableUsesApplicationFont((Dart$itemType) item.getImpl())) {',
       );
       buffer.writeln(
         '            return $themeClass.get().textStyle().withStyleFrom(item.getFont());',
@@ -3855,6 +4061,9 @@ public class CoolBarSizes {
       // reserves ahead of column 0 — both mirror what the row impl draws.
       buffer.writeln('    private static final int CELL_MARGIN = 2;');
       buffer.writeln('    private static final int CHECKBOX_WIDTH = 20;');
+      buffer.writeln();
+      buffer.writeln('    private ${widgetType}Sizes() {');
+      buffer.writeln('    }');
     }
     if (plain.hasExpander) {
       // Horizontal row geometry: the left edge gap is a fraction of the widget width, then a
@@ -3887,7 +4096,7 @@ public class CoolBarSizes {
       final row = sizingTheme.extension<TreeThemeExtension>();
       if (row != null) {
         buffer.writeln(
-          '    private static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
+          '    public static final double EXPAND_ICON_SPACING = ${_d(row.expandIconSpacing)};',
         );
         buffer.writeln(
           '    private static final double CHECKBOX_SPACE = ${_d(row.checkboxSize)} + ${_d(row.checkboxSpacing)};',
@@ -3899,16 +4108,27 @@ public class CoolBarSizes {
           '    private static final int ICON_SPACE = ICON_SIZE + ${row.itemIconSpacing.round()};',
         );
         buffer.writeln(
-          '    private static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
+          '    public static final int TEXT_PADDING = ${row.itemPadding.left.round()};',
         );
-        // A multi-column cell and header add their insets, the alignment inset the row and header
-        // builders apply to left-aligned text, and the gap before the next column.
+        // The alignment inset the row builder applies to left-aligned text.
         const alignmentInset = 4.0;
         buffer.writeln(
-          '    private static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
+          '    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment\'s. */',
         );
         buffer.writeln(
-          '    private static final int HEADER_PADDING = ${(row.columnPadding.horizontal + alignmentInset + row.columnDividerGap).round()};',
+          '    public static final int CELL_PADDING = ${(row.cellMultiColumnPadding.horizontal + alignmentInset).round()};',
+        );
+        buffer.writeln(
+          '    /** The gap before the divider that every column but the last draws at its right. */',
+        );
+        buffer.writeln(
+          '    public static final int DIVIDER_GAP = ${row.columnDividerGap.round()};',
+        );
+        buffer.writeln(
+          '    /** The room a header image takes before the text. */',
+        );
+        buffer.writeln(
+          '    public static final int HEADER_IMAGE_GAP = ${TreeColumnImpl.headerImageGap.round()};',
         );
         buffer.writeln(
           '    private static final int CELL_INSET = ${row.cellMultiColumnPadding.left.round()};',
@@ -3971,7 +4191,11 @@ public class CoolBarSizes {
     buffer.writeln('        return (bounds != null ? bounds.width : 0) * gapFraction;');
     buffer.writeln('    }');
     // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
+    // It sits inside the first column shown, which is not at 0 once the columns are reordered.
     buffer.writeln();
+    buffer.writeln(
+      '    /** Where an item\'s expander starts: inside the $param column, wherever the column order shows it. */',
+    );
     buffer.writeln(
       '    public static double getExpanderLeft(Dart$widgetType $param, int level) {',
     );
@@ -3983,7 +4207,7 @@ public class CoolBarSizes {
       '        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
     );
     buffer.writeln(
-      '        return getRowLeft($param) + paddingLeft + indent * level;',
+      '        return $_treeColumnLeft($param, 0) + getRowLeft($param) + paddingLeft + indent * level;',
     );
     buffer.writeln('    }');
     // Where an item's own content begins, and what its parts are reported to take. These answer
@@ -4049,46 +4273,6 @@ public class CoolBarSizes {
         '        int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
       );
       buffer.writeln('        return width + TEXT_PADDING;');
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    /** The width a multi-column cell needs to show its text whole. */',
-      );
-      buffer.writeln(
-        '    public static int getPackedCellWidth($itemType item, int index) {',
-      );
-      buffer.writeln(
-        '        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;',
-      );
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    /** The width a column\'s header needs to show its title whole: a multi-column header shows it in capitals. */',
-      );
-      buffer.writeln(
-        '    public static int getPackedHeaderWidth(${widgetType}Column column) {',
-      );
-      buffer.writeln('        String text = column.getText();');
-      buffer.writeln(
-        '        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);',
-      );
-      buffer.writeln(
-        '        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;',
-      );
-      buffer.writeln('    }');
-      buffer.writeln();
-      buffer.writeln(
-        '    private static int measure(String text, org.eclipse.swt.graphics.Font font) {',
-      );
-      buffer.writeln(
-        '        if (text == null || text.isEmpty()) return 0;',
-      );
-      buffer.writeln(
-        '        TextStyle ts = ${widgetType}ItemTheme.get().textStyle().withStyleFrom(font);',
-      );
-      buffer.writeln(
-        '        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
-      );
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln('    static int levelOf($itemType item) {');

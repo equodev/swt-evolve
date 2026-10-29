@@ -227,7 +227,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
         int deltaX = destX - x, deltaY = destY - y;
         if (deltaX == 0 && deltaY == 0)
             return;
-        if (!isDrawing())
+        if (!getApi().isVisible())
             return;
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
         if (isFocus)
@@ -322,15 +322,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
         super.setFont(font);
     }
 
-    @Override
-    void setOpenGLContext(Object value) {
-        Shell shell = getShell();
-        {
-            ((DartShell) shell.getImpl()).glContextCount--;
-        }
-        shell.getImpl().updateOpaque();
-    }
-
     /**
      * Sets the receiver's IME.
      *
@@ -363,7 +354,8 @@ public class DartCanvas extends DartComposite implements ICanvas {
 
     @Override
     Color defaultBackground() {
-        return ((DartDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
+        int id = Config.getConfigFlags().use_swt_colors ? SWT.COLOR_WIDGET_BACKGROUND : SWT.COLOR_LIST_BACKGROUND;
+        return ((DartDisplay) display.getImpl()).getWidgetColor(id);
     }
 
     protected void _hookEvents() {

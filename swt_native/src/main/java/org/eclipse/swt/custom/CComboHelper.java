@@ -34,13 +34,14 @@ public class CComboHelper {
     }
 
     /**
-     * Gives the field's Escape the meaning it has on the open list, where a native CCombo's focus is:
-     * the Traverse stops at the CCombo with doit=false, and the key closes the list, in Flutter too.
+     * Gives the field's Escape and Enter the meaning they have on the open list, where a native
+     * CCombo's focus is: the Traverse stops at the CCombo with doit=false, and the key closes the
+     * list, in Flutter too; Enter also fires DefaultSelection.
      */
     public static boolean routeToOpenList(DartCCombo combo, Event event) {
         if (!combo.isDropped())
             return false;
-        if (event.type == SWT.Traverse && event.detail == SWT.TRAVERSE_ESCAPE) {
+        if (event.type == SWT.Traverse && (event.detail == SWT.TRAVERSE_ESCAPE || event.detail == SWT.TRAVERSE_RETURN)) {
             Event e = new Event();
             e.time = event.time;
             e.detail = event.detail;
@@ -53,8 +54,14 @@ public class CComboHelper {
             event.detail = e.detail;
             return true;
         }
-        if (event.type == SWT.KeyDown && event.character == SWT.ESC) {
+        if (event.type == SWT.KeyDown && (event.character == SWT.ESC || event.character == SWT.CR)) {
             combo.dropDown(false);
+            if (event.character == SWT.CR) {
+                Event e = new Event();
+                e.time = event.time;
+                e.stateMask = event.stateMask;
+                combo.notifyListeners(SWT.DefaultSelection, e);
+            }
             if (combo.isDisposed())
                 return true;
             Event e = new Event();
@@ -96,6 +103,33 @@ public class CComboHelper {
             return false;
         event.type = SWT.MouseWheel;
         ((DartCCombo) control.getImpl()).textEvent(event);
+        return true;
+    }
+
+    /**
+     * Enter in the field fires DefaultSelection with the list closed, as a native Text does after its
+     * KeyDown listeners: the field is not drawn here, so no platform widget does it. Runs after
+     * {@link #routeToOpenList}, which has handled an open list's Enter. Returns whether the event was
+     * handled, KeyDown included.
+     */
+    public static boolean keyDefaultAction(DartCCombo combo, Event event) {
+        if (event.type != SWT.KeyDown || event.character != SWT.CR)
+            return false;
+        Event keyEvent = new Event();
+        keyEvent.time = event.time;
+        keyEvent.character = event.character;
+        keyEvent.keyCode = event.keyCode;
+        keyEvent.keyLocation = event.keyLocation;
+        keyEvent.stateMask = event.stateMask;
+        combo.notifyListeners(SWT.KeyDown, keyEvent);
+        event.doit = keyEvent.doit;
+        if (combo.isDisposed() || !event.doit)
+            return true;
+        Event action = new Event();
+        action.type = SWT.DefaultSelection;
+        action.time = event.time;
+        action.stateMask = event.stateMask;
+        combo.textEvent(action);
         return true;
     }
 

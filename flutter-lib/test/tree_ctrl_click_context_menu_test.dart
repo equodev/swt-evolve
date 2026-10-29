@@ -109,8 +109,6 @@ void main() {
 
   testWidgets('macOS Cmd+Click still toggles multi-selection and does not '
       'open the context menu', (tester) async {
-    // Non-adjacent items: selecting neighbours trips an unrelated
-    // hairline-border debug assertion in the selected-row painting.
     final value = _tree(
         items: [_item(10, 'Node 0'), _item(11, 'Node 1'), _item(12, 'Node 2')]);
     await tester.pumpWidget(_wrap(value));

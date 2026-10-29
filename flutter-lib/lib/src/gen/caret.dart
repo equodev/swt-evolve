@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../gen/widget.dart';
 import '../impl/caret_evolve.dart';
@@ -21,23 +22,42 @@ class VCaret extends VWidget {
     swt = "Caret";
   }
 
+  VImage? image;
+  bool? visible;
+
   VRectangle? bounds;
+  bool? focused;
+  int? blinkRate;
 
   @override
   void copyFrom(VWidget other) {
     super.copyFrom(other);
     if (other is VCaret) {
+      image = other.image;
+      visible = other.visible;
       bounds = other.bounds;
+      focused = other.focused;
+      blinkRate = other.blinkRate;
     }
   }
 
   @override
   void readProperty(String key, Map<String, dynamic> json) {
     switch (key) {
+      case 'image':
+        image = json['image'] == null
+            ? null
+            : VImage.fromJson(json['image'] as Map<String, dynamic>);
+      case 'visible':
+        visible = json['visible'] as bool?;
       case 'bounds':
         bounds = json['bounds'] == null
             ? null
             : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>);
+      case 'focused':
+        focused = json['focused'] as bool?;
+      case 'blinkRate':
+        blinkRate = (json['blinkRate'] as num?)?.toInt();
       default:
         super.readProperty(key, json);
     }

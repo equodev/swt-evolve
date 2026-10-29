@@ -384,6 +384,19 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
+    @DisplayName("a detached shell without text gets a window without a title")
+    void untitledShellGetsAnUntitledWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell detached = new Shell(display, SWT.SHELL_TRIM);
+        detached.setVisible(true);
+
+        assertThat(desk.titles.get(handleOf(desk, detached)))
+                .as("the window is created under the client's widget name; the shell's empty text replaces it")
+                .isEmpty();
+    }
+
+    @Test
     @DisplayName("maximizing a detached shell maximizes its window, not the application's")
     void maximizeIsScopedToItsOwnWindow() {
         TestDeskBridge desk = install();
@@ -947,6 +960,11 @@ class DeskMultiWindowFlutterTest {
         @Override
         protected Point shellWindowOrigin(long context) {
             return null; // a stood-in window sits nowhere; only a real one has a screen position
+        }
+
+        @Override
+        protected int workAreaTop(Rectangle window) {
+            return 0;
         }
 
         @Override

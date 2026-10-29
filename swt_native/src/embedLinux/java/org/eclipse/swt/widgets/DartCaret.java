@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -112,7 +113,9 @@ public class DartCaret extends DartWidget implements ICaret {
     void createWidget(int index) {
         super.createWidget(index);
         blinkRate = ((SwtDisplay) display.getImpl()).getCaretBlinkTime();
+        getValue().markDirty(VCaret.BLINK_RATE);
         isVisible = true;
+        getValue().markDirty(VCaret.VISIBLE);
         if (parent.getCaret() == null) {
             parent.setCaret(this.getApi());
         }
@@ -411,8 +414,8 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
+        font = GraphicsUtils.copyFont(font);
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -435,8 +438,11 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setImage(Image image) {
-        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
+        image = GraphicsUtils.copyImage(getDisplay(), image);
+        if (!java.util.Objects.equals(this.image, image)) {
+            getValue().markDirty(VCaret.IMAGE);
+        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -540,6 +546,9 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
+        if (this.isVisible != visible) {
+            getValue().markDirty(VCaret.VISIBLE);
+        }
         Canvas canvas = getParent();
         if (canvas.getImpl() instanceof DartCanvas) {
             ((DartCanvas) canvas.getImpl()).blink = true;

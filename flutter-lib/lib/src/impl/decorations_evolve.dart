@@ -87,6 +87,8 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
   final MenuMnemonicItems _items = MenuMnemonicItems();
   // The menu bar titles this button opens on Alt+letter, by channel, while it is the one drawing the bar.
   final Map<String, ({VMenuItem item, VoidCallback open})> _openers = {};
+  // The menu bar this button answers F10 and a lone Alt for, while it is the one drawing the bar.
+  int? _activatedBarId;
 
   @override
   void initState() {
@@ -98,6 +100,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
   void dispose() {
     OpenMenus.remove(_controller);
     _syncOpeners(const []);
+    _syncActivator(null);
     _itemsFocusNode.dispose();
     super.dispose();
   }
@@ -120,9 +123,31 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
     }
   }
 
+  void _syncActivator(int? barId) {
+    if (barId == _activatedBarId) return;
+    final previous = _activatedBarId;
+    if (previous != null) MenuBarActivators.remove(previous, _activate);
+    _activatedBarId = barId;
+    if (barId != null) MenuBarActivators.add(barId, _activate);
+  }
+
+  // F10 or a lone Alt, resolved by Java: the collapsed bar opens with its first title current.
+  void _activate() {
+    if (!mounted || _controller.isOpen) return;
+    _items.activeBar = true;
+    _controller.open();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_controller.isOpen) return;
+      final titles = _itemsFocusNode.traversalDescendants;
+      if (titles.isNotEmpty) titles.first.requestFocus();
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
   // Alt+letter on a menu bar title, resolved by Java: the collapsed bar opens, and that title's menu in it.
   void _openFromMnemonic(int id) {
     if (!mounted) return;
+    _items.activeBar = true;
     if (!_controller.isOpen) _controller.open();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.isOpen) return;
@@ -131,6 +156,11 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       if (item != null) _items.activate(item.text ?? '');
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _onClose() {
+    _items.activeBar = false;
+    _flushChanges();
   }
 
   void _flushChanges() {
@@ -148,9 +178,11 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
         data.isAtStart != widget.atStart ||
         !data.hasItems) {
       _syncOpeners(const []);
+      _syncActivator(null);
       return const SizedBox.shrink();
     }
     _syncOpeners(data.items);
+    _syncActivator(data.menuBar?.id);
     final menuTheme = Theme.of(context).extension<MenuThemeExtension>()!;
     return MenuAnchor(
       controller: _controller,
@@ -167,7 +199,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       ),
       alignmentOffset: Offset.zero,
       anchorTapClosesMenu: false,
-      onClose: _flushChanges,
+      onClose: _onClose,
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
           registerPendingChange: (cb) => _pendingChanges.add(cb),

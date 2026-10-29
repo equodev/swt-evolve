@@ -360,19 +360,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        Point size = getSize();
-        int range = maximum - minimum;
-        if (range <= 0)
-            range = 1;
-        if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            int thumbWidth = Math.max(1, (thumb * size.x) / range);
-            int thumbPos = ((selection - minimum) * (size.x - thumbWidth)) / Math.max(1, range - thumb);
-            return new Rectangle(thumbPos, 0, thumbWidth, size.y);
-        } else {
-            int thumbHeight = Math.max(1, (thumb * size.y) / range);
-            int thumbPos = ((selection - minimum) * (size.y - thumbHeight)) / Math.max(1, range - thumb);
-            return new Rectangle(0, thumbPos, size.x, thumbHeight);
-        }
+        return ScrollBarHelper.thumbBounds(this);
     }
 
     Rectangle getThumbBoundsInPixels() {
@@ -399,12 +387,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbTrackBounds() {
         checkWidget();
-        Point size = getSize();
-        if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            return new Rectangle(0, 0, size.x, size.y);
-        } else {
-            return new Rectangle(0, 0, size.x, size.y);
-        }
+        return ScrollBarHelper.trackBounds(this);
     }
 
     Rectangle getThumbTrackBoundsInPixels() {
@@ -542,7 +525,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
+        if (this.enabled != newValue) {
             getValue().markDirty(VScrollBar.ENABLED);
         }
         this.enabled = newValue;
@@ -568,7 +551,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, value)) {
+        if (this.increment != value) {
             getValue().markDirty(VScrollBar.INCREMENT);
         }
         if (value < 1)
@@ -592,7 +575,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMaximum(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.maximum, newValue)) {
+        if (this.maximum != newValue) {
             getValue().markDirty(VScrollBar.MAXIMUM);
         }
         if (value < 0)
@@ -616,7 +599,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMinimum(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.minimum, newValue)) {
+        if (this.minimum != newValue) {
             getValue().markDirty(VScrollBar.MINIMUM);
         }
         if (value < 0)
@@ -684,7 +667,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setThumb(int value) {
         int newValue = value;
         checkWidget();
-        if (!java.util.Objects.equals(this.thumb, newValue)) {
+        if (this.thumb != newValue) {
             getValue().markDirty(VScrollBar.THUMB);
         }
         if (value < 1)
@@ -715,7 +698,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
-        if (!java.util.Objects.equals(this.increment, increment)) {
+        if (this.increment != increment) {
             getValue().markDirty(VScrollBar.INCREMENT);
         }
         if (minimum < 0)
@@ -751,7 +734,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (!java.util.Objects.equals(this.visible, newValue)) {
+        if (this.visible != newValue) {
             getValue().markDirty(VScrollBar.VISIBLE);
         }
         if (visible == getApi().getVisible())

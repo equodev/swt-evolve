@@ -16,21 +16,19 @@ public class VMessageBox extends VDialog {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
-    public Map<Integer, String> getButtonLabels() {
-        return ((DartMessageBox) impl).labels;
-    }
-
-    public void setButtonLabels(Map<Integer, String> value) {
-        ((DartMessageBox) impl).labels = value;
-    }
-
     public String getMessage() {
         return ((DartMessageBox) impl).getMessage();
     }
 
     public void setMessage(String value) {
         ((DartMessageBox) impl).message = value;
+    }
+
+    public String[] getButtonLabels() {
+        return ((DartMessageBox) impl).wireButtonLabels();
+    }
+
+    public void setButtonLabels(String[] value) {
     }
 
     @JsonConverter(target = MessageBox.class)

@@ -9,8 +9,9 @@ import 'text_utils.dart';
 /// Letters typed in one open menu, answered the way the platform's menu loop answers them.
 ///
 /// Win32 and GTK: an item's mnemonic letter activates it (a cascade opens and takes the keyboard),
-/// and a letter several items share only moves the current item between them. macOS: Cocoa strips
-/// mnemonics, and the menu selects the first item whose title starts with what was typed.
+/// and a letter several items share only moves the current item between them. Win32 also takes the
+/// first letter of an item without a `&` mnemonic when no explicit mnemonic has the letter. macOS:
+/// Cocoa strips mnemonics and type-selects by title (see [_typeSelect]).
 ///
 /// Wraps the column holding one menu's items, and each item row inside it registers through
 /// [MenuMnemonicItem]. The nearest scope wins, so a cascade's submenu answers for its own items and
@@ -41,6 +42,10 @@ class MenuMnemonics extends StatefulWidget {
   static MenuMnemonicItems? of(BuildContext context) =>
       context.getInheritedWidgetOfExactType<_MenuMnemonicsScope>()?.items;
 
+  /// Closes the menu [context] is in, and only that one, as Escape there does.
+  static void closeMenuOf(BuildContext context) =>
+      context.findAncestorStateOfType<_MenuMnemonicsState>()?.widget.close();
+
   @override
   State<MenuMnemonics> createState() => _MenuMnemonicsState();
 }
@@ -48,6 +53,10 @@ class MenuMnemonics extends StatefulWidget {
 /// The item rows of one menu, by the focus node each row is built with.
 class MenuMnemonicItems {
   final Map<FocusNode, ({String label, VoidCallback? activate})> _items = {};
+
+  /// The items are the titles of a menu bar that has the keyboard: Down, Up, Enter or Space opens
+  /// the current one, as on the strip.
+  bool activeBar = false;
 
   /// Makes [node] reachable by letter. [label] is the item's SWT text, `&` marker included;
   /// [activate] is null while the item is disabled.
@@ -76,26 +85,43 @@ class MenuMnemonicItems {
 /// Opens a menu bar's menu when Java resolves Alt+letter to its title (`MnemonicHelper`), wherever the
 /// bar is drawn: as a strip, or collapsed into the menu button. The latest opener of an item wins.
 class MenuBarOpeners {
-  static final Map<String, List<VoidCallback>> _openers = {};
+  static void add(VMenuItem item, VoidCallback open) => _latest.add(_channel(item), open);
 
-  static void add(VMenuItem item, VoidCallback open) {
-    final channel = _channel(item);
-    final openers = _openers.putIfAbsent(channel, () => []);
-    if (openers.isEmpty) {
-      EquoCommService.onRaw(channel, (_) => _openers[channel]?.lastOrNull?.call());
-    }
-    openers.add(open);
-  }
-
-  static void remove(VMenuItem item, VoidCallback open) {
-    final channel = _channel(item);
-    final openers = _openers[channel];
-    if (openers == null || !openers.remove(open) || openers.isNotEmpty) return;
-    _openers.remove(channel);
-    EquoCommService.remove(channel);
-  }
+  static void remove(VMenuItem item, VoidCallback open) => _latest.remove(_channel(item), open);
 
   static String _channel(VMenuItem item) => '${item.swt}/${item.id}/openMenu';
+}
+
+/// Makes a menu bar active when Java resolves F10 or a lone Alt to it, wherever the bar is drawn.
+/// The latest activator of a bar wins.
+class MenuBarActivators {
+  static void add(int barId, VoidCallback activate) => _latest.add(_channel(barId), activate);
+
+  static void remove(int barId, VoidCallback activate) => _latest.remove(_channel(barId), activate);
+
+  static String _channel(int barId) => 'Menu/$barId/activate';
+}
+
+final _latest = _LatestHandlers();
+
+/// One raw channel per key, answered by the handler added last.
+class _LatestHandlers {
+  final Map<String, List<VoidCallback>> _handlers = {};
+
+  void add(String channel, VoidCallback handler) {
+    final handlers = _handlers.putIfAbsent(channel, () => []);
+    if (handlers.isEmpty) {
+      EquoCommService.onRaw(channel, (_) => _handlers[channel]?.lastOrNull?.call());
+    }
+    handlers.add(handler);
+  }
+
+  void remove(String channel, VoidCallback handler) {
+    final handlers = _handlers[channel];
+    if (handlers == null || !handlers.remove(handler) || handlers.isNotEmpty) return;
+    _handlers.remove(channel);
+    EquoCommService.remove(channel);
+  }
 }
 
 class _MenuMnemonicsState extends State<MenuMnemonics> {
@@ -103,6 +129,22 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
   Map<FocusNode, ({String label, VoidCallback? activate})> get _items => _registry._items;
   String _typed = '';
   Duration? _lastTyped;
+
+  /// The item the menu focused on opening, until the focus moves on. A native menu opens with no
+  /// current item, so a shared letter starts from the top rather than past that one.
+  FocusNode? _openingFocus;
+  bool _focusMoved = false;
+
+  void _trackOpeningFocus() {
+    final focused = FocusManager.instance.primaryFocus;
+    if (focused == null || !_items.containsKey(focused)) return;
+    if (_openingFocus == null) {
+      _openingFocus = focused;
+    } else if (focused != _openingFocus) {
+      _focusMoved = true;
+      FocusManager.instance.removeListener(_trackOpeningFocus);
+    }
+  }
 
   // NSMenu starts a new search once the user pauses.
   static const _typeSelectPause = Duration(seconds: 1);
@@ -136,10 +178,12 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
     super.initState();
     if (_open.isEmpty) HardwareKeyboard.instance.addHandler(_onKeyOutsideMenus);
     _open.add(this);
+    FocusManager.instance.addListener(_trackOpeningFocus);
   }
 
   @override
   void dispose() {
+    FocusManager.instance.removeListener(_trackOpeningFocus);
     _open.remove(this);
     if (_open.isEmpty) HardwareKeyboard.instance.removeHandler(_onKeyOutsideMenus);
     super.dispose();
@@ -147,6 +191,10 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+      widget.close();
+      return KeyEventResult.handled;
+    }
     final character = event.character;
     if (character == null ||
         character.trim().isEmpty ||
@@ -173,17 +221,26 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
 
   void _mnemonic(String character, List<FocusNode> items) {
     final letter = character.toLowerCase();
-    final matches = [
+    var matches = [
       for (final item in items)
         if (_mnemonicOf(_items[item]!.label) == letter) item,
     ];
+    if (matches.isEmpty && defaultTargetPlatform == TargetPlatform.windows) {
+      matches = [
+        for (final item in items)
+          if (_mnemonicOf(_items[item]!.label) == null && _firstLetterOf(_items[item]!.label) == letter)
+            item,
+      ];
+    }
     if (matches.isEmpty) return;
     if (matches.length == 1) {
       _registry._activate(matches.single);
       return;
     }
     final focused = FocusManager.instance.primaryFocus;
-    final current = focused == null ? -1 : items.indexOf(focused);
+    final current = focused == null || (!_focusMoved && focused == _openingFocus)
+        ? -1
+        : items.indexOf(focused);
     matches
         .firstWhere((item) => items.indexOf(item) > current, orElse: () => matches.first)
         .requestFocus();
@@ -194,12 +251,39 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
     if (last == null || timeStamp - last > _typeSelectPause) _typed = '';
     _lastTyped = timeStamp;
     _typed += character.toLowerCase();
+    // NSMenu goes to the title that sorts first among those starting with the typed letters, and
+    // with none, to the title sorting last before them.
+    FocusNode? match;
+    String? matchTitle;
     for (final item in items) {
-      if (parseMnemonic(_items[item]!.label).text.toLowerCase().startsWith(_typed)) {
-        item.requestFocus();
-        return;
+      final title = _titleOf(_items[item]!.label);
+      if (title.compareTo(_typed) < 0) continue;
+      if (matchTitle == null || title.compareTo(matchTitle) < 0) {
+        match = item;
+        matchTitle = title;
       }
     }
+    if (matchTitle == null || !matchTitle.startsWith(_typed)) {
+      match = null;
+      matchTitle = null;
+      for (final item in items) {
+        final title = _titleOf(_items[item]!.label);
+        if (title.compareTo(_typed) >= 0) continue;
+        if (matchTitle == null || title.compareTo(matchTitle) > 0) {
+          match = item;
+          matchTitle = title;
+        }
+      }
+    }
+    match?.requestFocus();
+  }
+
+  /// The title Cocoa shows and type-selects on: no `&` marker, no accelerator, lower case.
+  static String _titleOf(String label) => parseMnemonic(label.split('\t').first).text.toLowerCase();
+
+  static String? _firstLetterOf(String label) {
+    final title = _titleOf(label).trimLeft();
+    return title.isEmpty ? null : String.fromCharCode(title.runes.first);
   }
 
   static String? _mnemonicOf(String label) {

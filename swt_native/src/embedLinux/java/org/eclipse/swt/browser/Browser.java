@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
 import dev.equo.swt.Config;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class implement the browser user interface
@@ -615,6 +616,7 @@ public class Browser extends Composite {
      * @deprecated SWT.MOZILLA is deprecated and XULRunner as a browser renderer is no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public Object getWebBrowser() {
         return getImpl().getWebBrowser();
     }
@@ -1006,7 +1008,7 @@ public class Browser extends Composite {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Browser(IBrowser impl) {

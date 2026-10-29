@@ -4,6 +4,7 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.junit.jupiter.api.Test;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -80,5 +81,54 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
                 .doesNotContainKey("foregrounds")
                 .doesNotContainKey("backgrounds")
                 .doesNotContainKey("fonts");
+    }
+
+    /** A viewer reusing a row clears it ({@code Table.clear(int)}), then sets only what differs from the cleared defaults. */
+    @Test
+    void clearing_a_tableItem_names_the_cell_fonts_it_resets() {
+        Table table = table();
+        TableItem item = new TableItem(table, SWT.NONE);
+        item.setText("old");
+        item.setFont(0, new Font(device(), "Arial", 10, SWT.BOLD));
+        VTableItem value = ((DartTableItem) item.getImpl()).getValue();
+        value.clearDirty();
+
+        ((DartTableItem) item.getImpl()).clear();
+        item.setText("new");
+        item.setFont(0, null);
+
+        assertThat(value.changedKeys()).contains("fonts");
+    }
+
+    /** Without {@code images}, a row draws {@code image}: a cleared row that had one names it, or keeps the old icon. */
+    @Test
+    void clearing_a_tableItem_names_the_image_and_text_it_inherits() {
+        Table table = table();
+        TableItem item = new TableItem(table, SWT.NONE);
+        item.setText("old");
+        item.setImage(new Image(device(), 4, 4));
+        VTableItem value = ((DartTableItem) item.getImpl()).getValue();
+        value.clearDirty();
+
+        ((DartTableItem) item.getImpl()).clear();
+        item.setFont(0, null);
+
+        assertThat(value.changedKeys()).contains("image", "text");
+    }
+
+    @Test
+    void clearing_a_treeItem_names_what_it_resets() {
+        Tree tree = tree();
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+        item.setText("old");
+        item.setImage(new Image(device(), 4, 4));
+        item.setFont(0, new Font(device(), "Arial", 10, SWT.BOLD));
+        VTreeItem value = ((DartTreeItem) item.getImpl()).getValue();
+        value.clearDirty();
+
+        ((DartTreeItem) item.getImpl()).clear();
+        item.setFont(0, null);
+
+        assertThat(value.changedKeys()).contains("image", "text", "fonts");
     }
 }

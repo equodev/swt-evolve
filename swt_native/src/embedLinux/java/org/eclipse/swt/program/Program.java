@@ -25,6 +25,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class represent programs and
@@ -213,7 +214,7 @@ public final class Program {
      * @return a string representation of the program
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected IProgram impl;

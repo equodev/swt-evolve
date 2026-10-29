@@ -63,7 +63,7 @@ public class TableItemSizes {
     private static PointD computeText(DartTableItem widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = Drawn.text(widget);
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
+            if (!org.eclipse.swt.widgets.TableHelper.usesApplicationFont(widget)) {
                 m.textStyle = TableItemTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());

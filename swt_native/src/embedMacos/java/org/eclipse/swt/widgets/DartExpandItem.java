@@ -256,17 +256,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         return parent;
     }
 
-    int getPreferredWidth(GC gc) {
-        int width = DartExpandItem.TEXT_INSET * 2 + DartExpandItem.CHEVRON_SIZE;
-        if (image != null) {
-            width += DartExpandItem.TEXT_INSET + imageWidth;
-        }
-        if (text.length() > 0) {
-            width += gc.stringExtent(text).x;
-        }
-        return width;
-    }
-
     void redraw() {
         int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         if (imageHeight > headerHeight) {
@@ -344,7 +333,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setExpanded(boolean expanded) {
         checkWidget();
-        if (!java.util.Objects.equals(this.expanded, expanded)) {
+        if (this.expanded != expanded) {
             getValue().markDirty(VExpandItem.EXPANDED);
         }
         this.expanded = expanded;
@@ -354,6 +343,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     @Override
     public void setImage(Image image) {
         super.setImage(image);
+        getValue().markDirty("headerHeight");
         int oldImageHeight = imageHeight;
         if (image != null) {
             Rectangle bounds = image.getBounds();
@@ -382,7 +372,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
-        if (!java.util.Objects.equals(this.height, height)) {
+        if (this.height != height) {
             getValue().markDirty(VExpandItem.HEIGHT);
         }
         if (height < 0)
@@ -432,6 +422,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     public int _imageWidth() {
         return imageWidth;
+    }
+
+    int wireHeaderHeight() {
+        return getHeaderHeight();
     }
 
     public FlutterBridge getBridge() {

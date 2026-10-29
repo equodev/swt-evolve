@@ -82,6 +82,27 @@ public class GallerySnippet {
         statusData.horizontalSpan = 2;
         status.setLayoutData(statusData);
 
+        // Menu bar: its drop-downs report Show, Hide and selection on the status Label. Its title
+        // mnemonics must not collide with the gallery's control mnemonics (P, O, M).
+        Menu menuBar = new Menu(shell, SWT.BAR);
+        shell.setMenuBar(menuBar);
+        String[][] barMenus = { { "&File", "New File", "Save File" }, { "&Edit", "Cut Text", "Copy Text" } };
+        for (String[] barMenu : barMenus) {
+            String title = barMenu[0].substring(1);
+            MenuItem titleItem = new MenuItem(menuBar, SWT.CASCADE);
+            titleItem.setText(barMenu[0]);
+            Menu dropDown = new Menu(shell, SWT.DROP_DOWN);
+            titleItem.setMenu(dropDown);
+            dropDown.addListener(SWT.Show, e -> status.setText(title + " menu shown"));
+            dropDown.addListener(SWT.Hide, e -> status.setText(title + " menu hidden"));
+            for (int i = 1; i < barMenu.length; i++) {
+                String entry = barMenu[i];
+                MenuItem item = new MenuItem(dropDown, SWT.PUSH);
+                item.setText(entry);
+                item.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
+            }
+        }
+
         // Keyboard shortcut. Eclipse RCP apps dispatch command shortcuts through a global Display key
         // filter (org.eclipse.ui's WorkbenchKeyboard adds Display.addFilter(SWT.KeyDown/Traverse, ...)),
         // NOT MenuItem.setAccelerator. A Flutter-originated KeyDown already flows through the SWT event
@@ -360,6 +381,9 @@ public class GallerySnippet {
             ToolItem item = new ToolItem(toolBar, SWT.PUSH);
             item.setText("Tool " + i);
             int toolIndex = i;
+            if (i == 3) {
+                item.setToolTipText("Runs tool 3");
+            }
             item.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Tool " + toolIndex + " clicked")));
         }
         // Style variants: the loop above only ever created SWT.PUSH items.
@@ -489,6 +513,8 @@ public class GallerySnippet {
         DateTime date = new DateTime(progressGroup, SWT.DATE | SWT.BORDER);
         date.setDate(2026, 6, 15); // months are 0-based: July 15, 2026
         date.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Date changed")));
+        DateTime dropDownDate = new DateTime(progressGroup, SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN | SWT.BORDER);
+        dropDownDate.setDate(2026, 6, 15);
 
         // Menu / CLabel / Canvas — the CLabel carries the popup menu (each item posts to the
         // status Label) and the Canvas reports its mouse events the same way. The Canvas gets
@@ -751,6 +777,7 @@ public class GallerySnippet {
             spinner.setSelection(25);
             progressBar.setSelection(30);
             date.setDate(2026, 6, 15);
+            dropDownDate.setDate(2026, 6, 15);
             popup.setVisible(false); // a failed scenario may leave the context menu up
             tip.setVisible(false);
             if (browserReloaded[0]) { // restore silently (the TitleListener ignores the original title)

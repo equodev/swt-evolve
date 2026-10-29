@@ -1963,7 +1963,7 @@ public class DartTable extends DartComposite implements ITable {
     public void select(int[] indices) {
         int[] newValue = indices;
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(this.selection, newValue)) {
             getValue().markDirty(VTable.SELECTION);
         }
         if (indices == null)
@@ -2054,6 +2054,9 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
+        if (!java.util.Arrays.equals(this.columnOrder, newValue)) {
+            getValue().markDirty(VTable.COLUMN_ORDER);
+        }
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -2108,8 +2111,8 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerBackground, color)) {
             getValue().markDirty(VTable.HEADER_BACKGROUND);
         }
@@ -2162,8 +2165,8 @@ public class DartTable extends DartComposite implements ITable {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        color = GraphicsUtils.copyColor(color);
         checkWidget();
+        color = GraphicsUtils.copyColor(color);
         if (!java.util.Objects.equals(this.headerForeground, color)) {
             getValue().markDirty(VTable.HEADER_FOREGROUND);
         }
@@ -2195,7 +2198,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.headerVisible, show)) {
+        if (this.headerVisible != show) {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
         this.headerHeight = this.getHeaderHeight();
@@ -2262,7 +2265,7 @@ public class DartTable extends DartComposite implements ITable {
     public void setLinesVisible(boolean show) {
         boolean newValue = show;
         checkWidget();
-        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+        if (this.linesVisible != newValue) {
             getValue().markDirty(VTable.LINES_VISIBLE);
         }
         this.linesVisible = newValue;
@@ -2569,6 +2572,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setTopIndex(int index) {
         checkWidget();
+        if (this.topIndex != index) {
+            getValue().markDirty(VTable.TOP_INDEX);
+        }
         if (!(0 <= index && index < itemCount))
             return;
         topIndex = index;
@@ -2870,11 +2876,25 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
-    int scrollOffsetY;
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
+    int scrollOffset;
+
+    int columnlessWidth;
 
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
+
+    String typedText = "";
+
+    long typedAt;
+
+    int focusRow = -1;
 
     boolean checkData(TableItem item, int index) {
         return checkData(item);
@@ -2899,7 +2919,7 @@ public class DartTable extends DartComposite implements ITable {
     @Override
     public void removeControl(Control control) {
         super.removeControl(control);
-        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+        if (ControlEditorHelper.holdsEditorControl(editors, control)) {
             getValue().markDirty(VTable.EDITORS);
         }
     }
@@ -2918,7 +2938,7 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                scrollOffsetY = Math.max(0, e.y);
+                TableHelper.recordScrollOffset(this, e);
             });
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {

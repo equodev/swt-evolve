@@ -30,13 +30,17 @@ public class TreeSizes {
     private static final double ITEM_INDENT = 16.0;
     private static final double ITEM_INDENT_WITH_COLS = 16.0;
     private static final double EXPAND_ICON_SIZE = 12.0;
-    private static final double EXPAND_ICON_SPACING = 8.0;
+    public static final double EXPAND_ICON_SPACING = 8.0;
     private static final double CHECKBOX_SPACE = 18.0 + 4.0;
     private static final int ICON_SIZE = 16;
     private static final int ICON_SPACE = ICON_SIZE + 8;
-    private static final int TEXT_PADDING = 8;
-    private static final int CELL_PADDING = 20;
-    private static final int HEADER_PADDING = 20;
+    public static final int TEXT_PADDING = 8;
+    /** Horizontal room a multi-column cell or header takes around its text: its insets and the alignment's. */
+    public static final int CELL_PADDING = 12;
+    /** The gap before the divider that every column but the last draws at its right. */
+    public static final int DIVIDER_GAP = 8;
+    /** The room a header image takes before the text. */
+    public static final int HEADER_IMAGE_GAP = 4;
     private static final int CELL_INSET = 4;
     private static final int ALIGNMENT_INSET = 4;
 
@@ -109,11 +113,12 @@ public class TreeSizes {
         return (bounds != null ? bounds.width : 0) * gapFraction;
     }
 
+    /** Where an item's expander starts: inside the tree column, wherever the column order shows it. */
     public static double getExpanderLeft(DartTree tree, int level) {
         boolean withCols = tree.getColumnCount() > 1;
         double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;
         double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
-        return getRowLeft(tree) + paddingLeft + indent * level;
+        return org.eclipse.swt.widgets.Sizes.treeColumnLeft(tree, 0) + getRowLeft(tree) + paddingLeft + indent * level;
     }
 
     /** Where the first column starts in a row: the expander's left edge at level 0, after the edge gap and the row's padding. */
@@ -149,24 +154,6 @@ public class TreeSizes {
         TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(item.getFont(index));
         int width = text == null || text.isEmpty() ? 0 : (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
         return width + TEXT_PADDING;
-    }
-
-    /** The width a multi-column cell needs to show its text whole. */
-    public static int getPackedCellWidth(TreeItem item, int index) {
-        return measure(item.getText(index), item.getFont(index)) + CELL_PADDING;
-    }
-
-    /** The width a column's header needs to show its title whole: a multi-column header shows it in capitals. */
-    public static int getPackedHeaderWidth(TreeColumn column) {
-        String text = column.getText();
-        String shown = text == null ? null : text.toUpperCase(java.util.Locale.ROOT);
-        return measure(shown, column.getParent().getFont()) + HEADER_PADDING;
-    }
-
-    private static int measure(String text, org.eclipse.swt.graphics.Font font) {
-        if (text == null || text.isEmpty()) return 0;
-        TextStyle ts = TreeItemTheme.get().textStyle().withStyleFrom(font);
-        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
     }
 
     static int levelOf(TreeItem item) {

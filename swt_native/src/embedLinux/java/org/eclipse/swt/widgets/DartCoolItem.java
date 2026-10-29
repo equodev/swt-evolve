@@ -487,9 +487,12 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         this.control = control;
         if (control != null) {
             Point __cs = control.computeSize(SWT.DEFAULT, SWT.DEFAULT);
-            preferredWidth = __cs.x + MINIMUM_WIDTH;
-            preferredHeight = __cs.y;
-            minimumHeight = __cs.y;
+            if (!ideal) {
+                preferredWidth = __cs.x + MINIMUM_WIDTH;
+                preferredHeight = __cs.y;
+            }
+            if (_minimumSize == null)
+                minimumHeight = __cs.y;
             if (itemBounds.width < preferredWidth) {
                 itemBounds.width = requestedWidth = preferredWidth;
             }

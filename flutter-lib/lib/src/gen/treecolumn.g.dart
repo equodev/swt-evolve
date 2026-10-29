@@ -17,6 +17,7 @@ VTreeColumn _$VTreeColumnFromJson(Map<String, dynamic> json) => VTreeColumn()
   ..text = json['text'] as String?
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..moveable = json['moveable'] as bool?
+  ..resizable = json['resizable'] as bool?
   ..width = (json['width'] as num?)?.toInt();
 
 Map<String, dynamic> _$VTreeColumnToJson(VTreeColumn instance) =>
@@ -28,5 +29,6 @@ Map<String, dynamic> _$VTreeColumnToJson(VTreeColumn instance) =>
       'text': ?instance.text,
       'alignment': ?instance.alignment,
       'moveable': ?instance.moveable,
+      'resizable': ?instance.resizable,
       'width': ?instance.width,
     };

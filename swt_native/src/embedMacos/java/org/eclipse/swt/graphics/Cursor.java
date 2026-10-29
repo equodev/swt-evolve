@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import dev.equo.swt.Config;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class manage operating system resources that
@@ -281,7 +282,7 @@ public final class Cursor extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Cursor(ICursor impl) {

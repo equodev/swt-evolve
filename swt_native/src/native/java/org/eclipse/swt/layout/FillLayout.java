@@ -19,6 +19,7 @@ package org.eclipse.swt.layout;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * <code>FillLayout</code> is the simplest layout class. It lays out
@@ -133,7 +134,7 @@ public final class FillLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected FillLayout(IFillLayout impl) {

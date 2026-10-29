@@ -24,6 +24,7 @@ import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.image.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -255,6 +256,7 @@ public final class Image extends Resource implements Drawable {
      * @deprecated use {@link #Image(Device, ImageGcDrawer, int, int)} or {@link #Image(Device, int, int)} instead
      */
     @Deprecated(since = "2025-06", forRemoval = true)
+    @SuppressWarnings("removal")
     public Image(Device device, Rectangle bounds) {
         this((IImage) null);
         setImpl(new DartImage(device, bounds, this));
@@ -577,6 +579,7 @@ public final class Image extends Resource implements Drawable {
      *             multiple monitors with different DPIs, hence deprecated.
      */
     @Deprecated(since = "2025-09", forRemoval = true)
+    @SuppressWarnings("removal")
     public Rectangle getBoundsInPixels() {
         return getImpl().getBoundsInPixels();
     }
@@ -620,6 +623,7 @@ public final class Image extends Resource implements Drawable {
      *             {@link #getImageData(int)} instead.
      */
     @Deprecated(since = "2025-09", forRemoval = true)
+    @SuppressWarnings("removal")
     public ImageData getImageDataAtCurrentZoom() {
         return getImpl().getImageDataAtCurrentZoom();
     }
@@ -768,7 +772,7 @@ public final class Image extends Resource implements Drawable {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     /**

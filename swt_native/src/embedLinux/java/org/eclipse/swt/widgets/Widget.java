@@ -24,6 +24,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * This class is the abstract superclass of all user interface objects.
@@ -548,6 +549,7 @@ public abstract class Widget {
      * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
     @Deprecated(forRemoval = true, since = "2025-03")
+    @SuppressWarnings("removal")
     protected void removeListener(int eventType, @SuppressWarnings("removal") SWTEventListener listener) {
         getImpl().removeListener(eventType, listener);
     }
@@ -728,7 +730,7 @@ public abstract class Widget {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected IWidget impl;

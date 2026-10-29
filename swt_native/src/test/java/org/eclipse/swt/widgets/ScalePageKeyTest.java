@@ -38,6 +38,21 @@ class ScalePageKeyTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("a page key pressed with a modifier, or Home at the minimum, moves nothing and sends no Selection")
+    void aKeyThatMovesNothingSendsNoSelection() {
+        Scale scale = scale();
+        List<Integer> selections = new ArrayList<>();
+        scale.addListener(SWT.Selection, e -> selections.add(scale.getSelection()));
+
+        press(scale, SWT.PAGE_DOWN, SWT.MOD1);
+        scale.setSelection(0);
+        press(scale, SWT.HOME);
+
+        assertThat(selections).isEmpty();
+        assertThat(scale.getSelection()).isEqualTo(0);
+    }
+
+    @Test
     @DisplayName("a KeyDown listener that vetoes the key keeps the value")
     void vetoedKeyMovesNothing() {
         Scale scale = scale();

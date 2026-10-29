@@ -45,6 +45,8 @@ public interface ICTabItem extends IItem, ImplCTabItem {
      *
      * @deprecated the disabled image is not used
      */
+    @Deprecated
+    @SuppressWarnings("removal")
     Image getDisabledImage();
 
     /**
@@ -190,6 +192,7 @@ public interface ICTabItem extends IItem, ImplCTabItem {
      *
      * @deprecated This image is not used
      */
+    @Deprecated
     void setDisabledImage(Image image);
 
     /**

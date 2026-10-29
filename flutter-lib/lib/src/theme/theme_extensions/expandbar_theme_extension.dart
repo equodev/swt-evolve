@@ -38,9 +38,6 @@ class ExpandBarThemeExtension extends ThemeExtension<ExpandBarThemeExtension> wi
   final EdgeInsets contentPadding;
   final EdgeInsets containerPadding;
 
-  // Spacing
-  final double itemSpacing;
-
   // Typography
   final TextStyle? headerTextStyle;
 
@@ -70,7 +67,6 @@ class ExpandBarThemeExtension extends ThemeExtension<ExpandBarThemeExtension> wi
     required this.headerPadding,
     required this.contentPadding,
     required this.containerPadding,
-    required this.itemSpacing,
     this.headerTextStyle,
     required this.animationDuration,
     required this.animationCurve,

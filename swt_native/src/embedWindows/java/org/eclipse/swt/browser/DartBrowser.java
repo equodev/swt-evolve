@@ -893,6 +893,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
      * @deprecated SWT.MOZILLA is deprecated and XULRunner as a browser renderer is no longer supported.
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public Object getWebBrowser() {
         checkWidget();
         return webBrowser.getWebBrowser();
@@ -1174,7 +1175,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public void setJavascriptEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (!java.util.Objects.equals(this.javascriptEnabled, newValue)) {
+        if (this.javascriptEnabled != newValue) {
             getValue().markDirty(VBrowser.JAVASCRIPT_ENABLED);
         }
         this.javascriptEnabled = newValue;

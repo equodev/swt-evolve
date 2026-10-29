@@ -646,6 +646,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
+        noteBoundsSet(control);
         if (!isChromiumWindow(control) || bounds == null)
             return;
         // The main shell is slaved to the Chromium viewport: applyClientViewport()/setVisible() resize

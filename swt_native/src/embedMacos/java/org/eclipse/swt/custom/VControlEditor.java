@@ -23,6 +23,8 @@ public class VControlEditor {
         Control val = ((DartControlEditor) impl).editor;
         if (val != null && !(val.getImpl() instanceof DartControl))
             return null;
+        if (val != null && val.isDisposed())
+            return null;
         return val;
     }
 

@@ -32,7 +32,6 @@ import com.dslplatform.json.JsonAttribute;
 @CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class BorderData {
 
-    @JsonAttribute(ignore = true)
     private final Map<Control, Point> cachedSize = new IdentityHashMap<>(1);
 
     public int hHint = SWT.DEFAULT;

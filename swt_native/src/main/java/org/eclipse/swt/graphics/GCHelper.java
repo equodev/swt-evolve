@@ -8,6 +8,9 @@ import org.eclipse.swt.widgets.Display;
 
 public class GCHelper {
 
+    private GCHelper() {
+    }
+
     public static Drawable drawableOf(DartGC gc) {
         return gc == null ? null : gc.drawable;
     }
@@ -75,6 +78,62 @@ public class GCHelper {
         }
         int x0 = Math.round(minX), y0 = Math.round(minY);
         return new Rectangle(x0, y0, Math.round(maxX) - x0, Math.round(maxY) - y0);
+    }
+
+    /**
+     * Rectangles laid end to end ({@code x, y, width, height, ...}) carried through the transform, or back through its
+     * inverse: each becomes the rectangle that bounds it, which is exact for a scale and a translation.
+     */
+    public static int[] transformRects(Transform t, int[] rects, boolean inverse) {
+        int[] result = new int[rects.length];
+        for (int i = 0; i < rects.length; i += 4) {
+            Rectangle r = transformBounds(t, rectAt(rects, i), inverse);
+            result[i] = r.x;
+            result[i + 1] = r.y;
+            result[i + 2] = r.width;
+            result[i + 3] = r.height;
+        }
+        return result;
+    }
+
+    /** The rectangle that rectangles laid end to end hold at {@code i}: x, y, width, height in that order. */
+    public static Rectangle rectAt(int[] rects, int i) {
+        return new Rectangle(rects[i], rects[i + 1], rects[i + 2], rects[i + 3]);
+    }
+
+    /** The rectangle that bounds rectangles laid end to end, or an empty one at the origin when there are none. */
+    public static Rectangle boundsOfRects(int[] rects) {
+        if (rects.length < 4) return new Rectangle(0, 0, 0, 0);
+        Rectangle bounds = rectAt(rects, 0);
+        for (int i = 4; i + 3 < rects.length; i += 4) bounds.add(rectAt(rects, i));
+        return bounds;
+    }
+
+    /** A copy of the path's segments with every point carried through the transform. */
+    public static PathData transformPathData(Transform t, PathData data) {
+        PathData result = new PathData();
+        result.types = data.types.clone();
+        result.points = data.points.clone();
+        t.transform(result.points);
+        return result;
+    }
+
+    /**
+     * What an Image does with the GC drawing on it when the image is disposed: every platform disposes that GC.
+     * Its pending render is dropped rather than read back into an image that is going away.
+     */
+    public static void disposeImageGC(GC gc) {
+        if (gc == null || gc.isDisposed()) return;
+        if (gc.getImpl() instanceof DartGC) ((DartGC) gc.getImpl()).skipRenderOnDispose = true;
+        gc.dispose();
+    }
+
+    /** How much the transform magnifies a length, whatever it rotates: 1 without one. */
+    public static float transformationScale(Transform t) {
+        if (t == null || t.isDisposed()) return 1f;
+        float[] m = new float[6];
+        t.getElements(m);
+        return (float) Math.max(Math.hypot(m[0], m[2]), Math.hypot(m[1], m[3]));
     }
 
     /** GCData keeps dashes as floats; the value sent to Flutter carries whole pixels. */
@@ -185,7 +244,7 @@ public class GCHelper {
             return java.util.Objects.equals(resolvedDrawable, other.resolvedDrawable)
                 && java.util.Objects.equals(swtSource, other.swtSource)
                 && java.util.Objects.equals(dartImage, other.dartImage)
-                && java.util.Objects.equals(renderFuture, other.renderFuture);
+                && renderFuture == other.renderFuture;
         }
 
         @Override

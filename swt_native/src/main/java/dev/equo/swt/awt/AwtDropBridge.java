@@ -481,6 +481,9 @@ final class AwtDropBridge {
             });
             @SuppressWarnings("unchecked") T t = (T) result[0];
             return t;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;

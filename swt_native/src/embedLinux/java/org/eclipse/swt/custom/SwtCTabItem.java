@@ -202,6 +202,7 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
      * @deprecated the disabled image is not used
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public Image getDisabledImage() {
         checkWidget();
         return disabledImage;

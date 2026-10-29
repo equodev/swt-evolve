@@ -25,6 +25,7 @@ import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigDyn;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class are controls which are capable
@@ -134,6 +135,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     @Deprecated(forRemoval = true, since = "2026-09")
+    @SuppressWarnings("removal")
     public void changed(Control[] changed) {
         getImpl().changed(changed);
     }
@@ -598,7 +600,7 @@ public class Composite extends Scrollable {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected Composite(IComposite impl) {

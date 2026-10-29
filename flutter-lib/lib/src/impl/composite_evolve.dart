@@ -94,6 +94,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
       impl.sendThrottledMouseMove(state, event, e.buttons);
+      impl.restartHover(state, event, e.position);
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
@@ -104,7 +105,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
         // composite, not with an ancestor further up.
         if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
-        if (!impl.forwardsControlMouseDown) return;
+        if (!impl.forwardsMouseDownOf(e)) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.
@@ -124,7 +125,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           // own area -- the gap a container with a lazily-built context menu falls into.
           // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
           if (ControlImpl.isMenuDetectTrigger(impl.swtButton)) {
-            impl.handleMenuDetect(e.pointer, e.localPosition);
+            impl.handleMenuDetect(e);
           }
         }
       },
@@ -133,23 +134,35 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
         final takenBelow = ControlImpl.pointerTakenBelow(e);
+        final pos = impl.heldLocal(e);
+        impl.releasePointer(e);
         if (!impl.capturedPointerDowns.remove(e.pointer) || takenBelow) return;
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
+          ..x = pos.dx.round()
+          ..y = pos.dy.round()
           ..button = impl.swtButton
           ..count = impl.swtClickCount
           ..stateMask =
               impl.swtStateMask(released: true, flutterButtons: e.buttons);
         impl.widget.sendMouseMouseUp(state, event);
+        // A mouse rests where the release left it, as on a childless control; over a child, the
+        // child counts its own hover.
+        if (e.kind == PointerDeviceKind.mouse && impl.isOverSelf(e) && !_hitsAnyChild(state, pos)) {
+          impl.restartHover(state, VEvent()
+            ..x = event.x
+            ..y = event.y, e.position);
+        }
       },
       onPointerCancel: (e) {
         if (!forwardsPointer) return;
         impl.forgetDragDetect(e.pointer);
+        impl.releasePointer(e);
         impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
         if (!forwardsPointer) return;
+        // No hover while a button is held: the pointer is moving, not resting.
+        impl.cancelHover();
         impl.maybeSendDragDetect(e);
         // Same exclusivity as onPointerDown above, which already refuses a press that landed
         // on a child. Without it every composite between the Shell and the control under the
@@ -162,14 +175,14 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // onPointerUp: SWT sends moves to the control holding the capture, not to whatever
         // the pointer has since wandered over.
         if (ControlImpl.pointerTakenBelow(e)) return;
-        if (!impl.capturedPointerDowns.contains(e.pointer) &&
-            _hitsAnyChild(state, e.localPosition)) {
+        final pos = impl.heldLocal(e);
+        if (!impl.capturedPointerDowns.contains(e.pointer) && _hitsAnyChild(state, pos)) {
           return;
         }
         final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
-        impl.sendThrottledDragMove(state, event, e.buttons);
+          ..x = pos.dx.round()
+          ..y = pos.dy.round();
+        impl.sendThrottledDragMove(state, event, e);
       },
       onPointerPanZoomUpdate: (e) {
         if (!forwardsPointer || !impl.forwardsWheelFromWrap || ControlImpl.wheelKeptBelow(e)) return;

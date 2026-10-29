@@ -390,13 +390,20 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
-        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
-            return;
         Point oldSelection = getSelection();
-        if (oldSelection.x == oldSelection.y)
+        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0' || oldSelection.x == oldSelection.y) {
+            clearSegments(true);
+            applySegments();
             return;
+        }
+        String newText = "";
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            newText = verifyText(newText, oldSelection.x, oldSelection.y);
+            if (newText == null)
+                return;
+        }
         copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
-        insertEditText("");
+        insertEditText(newText);
         if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
     }
@@ -998,10 +1005,6 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void insertEditText(String string) {
-        _insertEditText(string, false);
-    }
-
-    void _insertEditText(String string, boolean enableUndo) {
         int length = string.length();
         Point selection = getSelection();
         if (selection.x > getCharCount() || selection.y > getCharCount()) {
@@ -1026,6 +1029,10 @@ public class DartText extends DartScrollable implements IText {
         if (!newText.equals(oldText))
             sendEvent(SWT.Modify);
         applySegments();
+    }
+
+    void _insertEditText(String string, boolean enableUndo) {
+        insertEditText(string);
     }
 
     @Override
@@ -1072,6 +1079,12 @@ public class DartText extends DartScrollable implements IText {
         String newText = getClipboardText();
         if (newText == null)
             return;
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            Point selection = getSelection();
+            newText = verifyText(newText, selection.x, selection.y);
+            if (newText == null)
+                return;
+        }
         if (textLimit != Text.LIMIT) {
             Point sel = getSelection();
             int charCount = getCharCount();
@@ -1294,7 +1307,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         checkWidget();
-        if (!java.util.Objects.equals(this.echoCharacter, echo)) {
+        if (this.echoCharacter != echo) {
             getValue().markDirty(VText.ECHO_CHARACTER);
         }
         if ((getApi().style & SWT.MULTI) != 0)
@@ -1322,7 +1335,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
-        if (!java.util.Objects.equals(this.editable, newValue)) {
+        if (this.editable != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
         if (editable) {
@@ -1643,7 +1656,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, limit)) {
+        if (this.textLimit != limit) {
             getValue().markDirty(VText.TEXT_LIMIT);
         }
         if (limit == 0)
@@ -1724,6 +1737,23 @@ public class DartText extends DartScrollable implements IText {
         // Only multi-line controls are affected
         if ((getApi().style & SWT.MULTI) == 0)
             return;
+    }
+
+    String verifyText(String string, int start, int end) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        /*
+	 * It is possible (but unlikely), that application
+	 * code could have disposed the widget in the verify
+	 * event.  If this happens, answer null to cancel
+	 * the operation.
+	 */
+        sendEvent(SWT.Verify, event);
+        if (!event.doit || isDisposed())
+            return null;
+        return event.text;
     }
 
     int caretPosition;
@@ -1825,23 +1855,6 @@ public class DartText extends DartScrollable implements IText {
 
     void applySegments() {
         TextHelper.sendSegments(this);
-    }
-
-    String verifyText(String string, int start, int end) {
-        Event event = new Event();
-        event.text = string;
-        event.start = start;
-        event.end = end;
-        /*
-                     * It is possible (but unlikely), that application
-                     * code could have disposed the widget in the verify
-                     * event. If this happens, answer null to cancel
-                     * the operation.
-                     */
-        sendEvent(SWT.Verify, event);
-        if (!event.doit || isDisposed())
-            return null;
-        return event.text;
     }
 
     protected void _hookEvents() {
