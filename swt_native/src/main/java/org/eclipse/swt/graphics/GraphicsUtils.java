@@ -325,6 +325,11 @@ public class GraphicsUtils {
         return ((DartColor) color.getImpl())._copy();
     }
 
+    /** The color's alpha, 255 on a release whose Color has no alpha. */
+    public static int getAlpha(Color color) {
+        return color.getImpl().getAlpha();
+    }
+
     private static java.util.Map<String, java.io.File> assetFilesCache = null;
 
     private static void initAssetsCache() {

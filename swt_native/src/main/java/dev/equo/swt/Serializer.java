@@ -854,7 +854,7 @@ public class Serializer {
     private static final ThreadLocal<boolean[]> packColors = ThreadLocal.withInitial(() -> new boolean[1]);
 
     private static void writeArgb(JsonWriter writer, Color color) {
-        long argb = ((long) color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+        long argb = ((long) GraphicsUtils.getAlpha(color) << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
         NumberConverter.serialize(argb, writer);
     }
 
