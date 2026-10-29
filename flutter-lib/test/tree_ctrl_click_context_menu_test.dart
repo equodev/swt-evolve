@@ -124,13 +124,14 @@ void main() {
     expect(_selectedIds(value), equals([10, 12]));
     expect(find.text('Menu Action'), findsNothing);
 
-    // Space the second click out in real time so it doesn't register as a
-    // double-click (DoubleTapDetector compares DateTime.now(), not the fake
-    // test clock).
-    await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 400)));
-    await _modifierClick(
-        tester, find.text('Node 2'), LogicalKeyboardKey.metaLeft);
+    // A second click a second after the first, by the presses' own timestamps, which is what a
+    // row counts its clicks by: not a double click.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    final gesture = await tester.createGesture();
+    await gesture.down(tester.getCenter(find.text('Node 2')), timeStamp: const Duration(seconds: 1));
+    await gesture.up(timeStamp: const Duration(seconds: 1, milliseconds: 50));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await tester.pump();
     await tester.pump();
 
     expect(_selectedIds(value), equals([10]));

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
-import 'package:flutter/gestures.dart' show kTouchSlop;
+import 'dart:async';
+
+import 'package:flutter/gestures.dart' show PointerDeviceKind, kPrimaryButton, kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/impl/tree_evolve.dart';
@@ -18,7 +20,6 @@ import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
 import 'utils/column_order.dart';
-import 'utils/double_tap_detector.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
 import 'owner_draw_overlay.dart';
@@ -36,7 +37,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   Offset? _lastTapGlobalPosition;
   int? _secondaryPressPointer;
   Offset? _secondaryPressAt;
-  final DoubleTapDetector _rowTap = DoubleTapDetector();
+  /// Whether the tap under way came through the semantics tree, with no pointer press before it.
+  bool _semanticsTap = false;
+
+  /// Whether the press under way landed on the row's check box.
+  bool _pressOnCheckbox = false;
+
+  /// Whether the press under way left a multiple selection to collapse on the release.
+  bool _selectOnRelease = false;
 
   @override
   void setValue(V value) {
@@ -182,13 +190,24 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   VEvent _withSelection(VEvent e) => _context?.treeImpl?.withSelection(e) ?? e;
 
+  /// Selects this row as a press does, reporting it with the button and the modifiers held.
+  void _selectRow(TreeImpl treeImpl, {required bool toggle, required bool isShiftPressed}) {
+    treeImpl.handleTreeItemSelection(
+      state.id,
+      toggle: toggle,
+      isShiftPressed: isShiftPressed,
+      notifyJava: false,
+    );
+    final e = _createEvent(stateMask: treeImpl.swtStateMask(released: false) | SWT.BUTTON1);
+    _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, _withSelection(e));
+  }
+
   void _selectForContextMenu({required int button}) {
     if (!(_context?.parentTreeValue.enabled ?? true)) return;
     if (_context?.treeImpl?.isItemSelected(state.id) ?? false) return;
     _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
-    final e = _createEvent();
-    e.count = 1;
-    e.button = button;
+    // The button the press holds, as the native's Selection carries it.
+    final e = _createEvent(stateMask: button == 3 ? SWT.BUTTON3 : SWT.BUTTON2);
     _context?.parentTree.sendSelectionSelection(
       _context!.parentTreeValue,
       _withSelection(e),
@@ -865,23 +884,28 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {},
-      child: Container(
-        margin: EdgeInsets.only(right: theme.checkboxSpacing),
-        child: _CheckboxButtonWrapper(
-          key: ValueKey('checkbox_${state.id}'),
-          ownerId: state.id,
-          checked: checked,
-          grayed: grayed,
-          enabled: enabled,
-          onChanged: () {
-            if (!enabled) return;
-            _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
-            final e = _createEvent(detail: SWT.CHECK);
-            _context?.parentTree.sendSelectionSelection(
-              _context!.parentTreeValue,
-              _withSelection(e),
-            );
-          },
+      child: Listener(
+        // Reached before the row's own press listener: the box toggles on its tap, and the row
+        // does not select on the press.
+        onPointerDown: (_) => _pressOnCheckbox = true,
+        child: Container(
+          margin: EdgeInsets.only(right: theme.checkboxSpacing),
+          child: _CheckboxButtonWrapper(
+            key: ValueKey('checkbox_${state.id}'),
+            ownerId: state.id,
+            checked: checked,
+            grayed: grayed,
+            enabled: enabled,
+            onChanged: () {
+              if (!enabled) return;
+              _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+              final e = _createEvent(detail: SWT.CHECK);
+              _context?.parentTree.sendSelectionSelection(
+                _context!.parentTreeValue,
+                _withSelection(e),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1032,169 +1056,164 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       }
     }
 
+    // A press in the expander column toggles this item; the arrow itself carries no gesture, so
+    // this band is the single source of truth for what counts as an expand/collapse click -- see
+    // _buildExpander. Anywhere else the press selects the row, between the tree's MouseDown and
+    // MouseUp, as Win32 and GTK do, and a second one in time is its DefaultSelection. Both carry
+    // the button the press holds, as the native's do.
+    void primaryPress(Offset tap, [Duration? at]) {
+      if (!enabled) return;
+      if (hasChildren && tap.dx >= expanderHitLeft && tap.dx < expanderHitRight) {
+        _toggleExpand(expanded);
+        return;
+      }
+
+      // HardwareKeyboard, not the deprecated RawKeyboard: on the web a modifier
+      // released while the page has no focus (Cmd+Tab, any browser shortcut) leaves
+      // no keyup for the page, and only HardwareKeyboard is repaired for it — the
+      // engine's PointerBinding re-reads the modifier flags off every mouse event
+      // and synthesizes the missing key-ups. RawKeyboard's snapshot rides on the
+      // legacy key channel, which pointer events never touch, so it stays stuck
+      // until the next keystroke and turns every plain click into a toggle click.
+      final keyboard = HardwareKeyboard.instance;
+      final isControlPressed = keyboard.isControlPressed;
+      // macOS's Ctrl+Click is a secondary click, opened as a menu once the tap completes.
+      if (defaultTargetPlatform == TargetPlatform.macOS && isControlPressed) return;
+
+      final treeImpl = _context?.treeImpl;
+      if (treeImpl == null) return;
+      if (treeImpl.registerRowTap(state.id, at) == 2) {
+        _sendStartEditing();
+        final de = _createEvent(stateMask: SWT.BUTTON1);
+        _context?.parentTree.sendSelectionDefaultSelection(
+          _context!.parentTreeValue,
+          _withSelection(de),
+        );
+        return;
+      }
+
+      // Control or Command adds the row to the selection or takes it out, on every OS, as in a List.
+      final toggle = isControlPressed || keyboard.isMetaPressed;
+      final isShiftPressed = keyboard.isShiftPressed;
+      // A plain press on a row of a multiple selection keeps the selection until the release, so
+      // a drag carries every selected row; Win32 and GTK collapse it only when no drag starts.
+      if (!toggle && !isShiftPressed && selected && treeImpl.selectedRowCount > 1) {
+        _selectOnRelease = true;
+        return;
+      }
+      _selectRow(treeImpl, toggle: toggle, isShiftPressed: isShiftPressed);
+      if (selected) {
+        _sendStartEditing();
+      }
+    }
+
     return SizedBox(
       width: totalTreeWidth ?? double.infinity,
+      // The tree reports the pointer entering and leaving it; a row's hover is its own paint only.
       child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        onEnter: (_) {
-          setState(() {
-            _isHovered = true;
-          });
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            _context?.parentTree.sendMouseTrackMouseEnter(
-              _context!.parentTreeValue,
-              null,
-            );
-          });
-        },
-        onExit: (_) {
-          setState(() {
-            _isHovered = false;
-          });
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            _context?.parentTree.sendMouseTrackMouseExit(
-              _context!.parentTreeValue,
-              null,
-            );
-          });
-        },
-        child: _notingContextMenuPress(GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (TapDownDetails details) {
-            _lastTapPosition = details.localPosition;
-            _lastTapGlobalPosition = details.globalPosition;
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: _notingContextMenuPress(Listener(
+          // The tree sends its MouseDown from the same press after this listener, so the row's
+          // events go out once that press has been handled.
+          onPointerDown: (PointerDownEvent e) {
+            final onCheckbox = _pressOnCheckbox;
+            _pressOnCheckbox = false;
+            if (e.buttons != kPrimaryButton || onCheckbox) return;
+            final at = e.localPosition;
+            final stamp = e.timeStamp;
+            scheduleMicrotask(() {
+              if (mounted) primaryPress(at, stamp);
+            });
           },
-          // Claims the secondary tap so the tree's own menu detector does not open it twice.
-          onSecondaryTapDown: (TapDownDetails details) {
-            _lastTapPosition = details.localPosition;
-            _lastTapGlobalPosition = details.globalPosition;
-          },
-          onTap: () {
-            if (!enabled) return;
-
-            // A tap in the expander column toggles this item; the arrow itself carries
-            // no gesture, so this band is the single source of truth for what counts as
-            // an expand/collapse click — see _buildExpander.
-            final Offset? tap = _lastTapPosition;
-            if (hasChildren &&
-                tap != null &&
-                tap.dx >= expanderHitLeft &&
-                tap.dx < expanderHitRight) {
-              _toggleExpand(expanded);
-              return;
-            }
-
-            // HardwareKeyboard, not the deprecated RawKeyboard: on the web a modifier
-            // released while the page has no focus (Cmd+Tab, any browser shortcut) leaves
-            // no keyup for the page, and only HardwareKeyboard is repaired for it — the
-            // engine's PointerBinding re-reads the modifier flags off every mouse event
-            // and synthesizes the missing key-ups. RawKeyboard's snapshot rides on the
-            // legacy key channel, which pointer events never touch, so it stays stuck
-            // until the next keystroke and turns every plain click into a toggle click.
-            final keyboard = HardwareKeyboard.instance;
-            final isControlPressed = keyboard.isControlPressed;
-
-            if (defaultTargetPlatform == TargetPlatform.macOS &&
-                isControlPressed) {
-              // macOS treats Ctrl+Click as a secondary click (it neither
-              // toggles multi-selection — that's Cmd — nor counts toward a
-              // double-click): the press already selected the item, so only
-              // open the context menu.
-              _openContextMenu();
-              return;
-            }
-
-            if (_rowTap.registerTap() == 2) {
-              _sendStartEditing();
-              final de = _createEvent();
-              de.count = 2;
-              de.button = 1;
-              _context?.parentTree.sendSelectionDefaultSelection(
-                _context!.parentTreeValue,
-                _withSelection(de),
-              );
-              return;
-            }
-
-            // Control or Command adds the row to the selection or takes it out, on every OS,
-            // as in a List.
-            final isShiftPressed = keyboard.isShiftPressed;
-            _context?.treeImpl?.handleTreeItemSelection(
-              state.id,
-              toggle: isControlPressed || keyboard.isMetaPressed,
-              isShiftPressed: isShiftPressed,
-              notifyJava: false,
-            );
-
-            int stateMask = 0;
-            if (isControlPressed) stateMask |= SWT.CTRL;
-            if (keyboard.isMetaPressed) stateMask |= SWT.COMMAND;
-            if (isShiftPressed) stateMask |= SWT.SHIFT;
-            if (keyboard.isAltPressed) stateMask |= SWT.ALT;
-            final e = _createEvent(stateMask: stateMask);
-            e.count = 1;
-            e.button = 1;
-
-            _context?.parentTree.sendSelectionSelection(
-              _context!.parentTreeValue,
-              _withSelection(e),
-            );
-
-            if (selected) {
-              _sendStartEditing();
-            }
-          },
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(minHeight: effectiveItemHeight),
-            margin: selected
-                ? EdgeInsets.only(
-                    left: -widgetTheme.itemSelectedBorderWidth,
-                    right: -widgetTheme.itemSelectedBorderWidth,
-                    top: -widgetTheme.itemSelectedBorderWidth,
-                    bottom: nextItemSelected
-                        ? 0.0
-                        : -widgetTheme.itemSelectedBorderWidth,
-                  )
-                : null,
-            foregroundDecoration: getTreeItemFocusRingDecoration(
-              widgetTheme,
-              selected: selected,
-              treeFocused: _context?.treeFocused ?? false,
-            ),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: hasMultiColumn
-                  ? null
-                  : BorderRadius.circular(widgetTheme.borderRadius),
-              border: _buildItemRowBorder(
-                widgetTheme: widgetTheme,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (TapDownDetails details) {
+              _lastTapPosition = details.localPosition;
+              _lastTapGlobalPosition = details.globalPosition;
+              _semanticsTap = details.kind == null || details.kind == PointerDeviceKind.unknown;
+            },
+            // Claims the secondary tap so the tree's own menu detector does not open it twice.
+            onSecondaryTapDown: (TapDownDetails details) {
+              _lastTapPosition = details.localPosition;
+              _lastTapGlobalPosition = details.globalPosition;
+            },
+            onTap: () {
+              if (!enabled) return;
+              // A pointer's press was handled as it went down; a tap through the semantics tree
+              // arrives here with no press before it.
+              if (_semanticsTap) {
+                _semanticsTap = false;
+                final tap = _lastTapPosition;
+                if (tap != null) primaryPress(tap);
+                return;
+              }
+              if (_selectOnRelease) {
+                _selectOnRelease = false;
+                final treeImpl = _context?.treeImpl;
+                if (treeImpl != null) _selectRow(treeImpl, toggle: false, isShiftPressed: false);
+                return;
+              }
+              if (defaultTargetPlatform == TargetPlatform.macOS &&
+                  HardwareKeyboard.instance.isControlPressed) {
+                // macOS treats Ctrl+Click as a secondary click (it neither
+                // toggles multi-selection — that's Cmd — nor counts toward a
+                // double-click): the press already selected the item, so only
+                // open the context menu.
+                _openContextMenu();
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              constraints: BoxConstraints(minHeight: effectiveItemHeight),
+              margin: selected
+                  ? EdgeInsets.only(
+                      left: -widgetTheme.itemSelectedBorderWidth,
+                      right: -widgetTheme.itemSelectedBorderWidth,
+                      top: -widgetTheme.itemSelectedBorderWidth,
+                      bottom: nextItemSelected
+                          ? 0.0
+                          : -widgetTheme.itemSelectedBorderWidth,
+                    )
+                  : null,
+              foregroundDecoration: getTreeItemFocusRingDecoration(
+                widgetTheme,
                 selected: selected,
-                nextItemSelected: nextItemSelected,
-                hasMultiColumn: hasMultiColumn,
+                treeFocused: _context?.treeFocused ?? false,
               ),
-            ),
-            padding: hasMultiColumn
-                ? widgetTheme.itemPaddingWithCols
-                : widgetTheme.itemPadding,
-            child: _buildRowWithColumns(
-              context,
-              texts,
-              text,
-              textColor,
-              widgetTheme,
-              level,
-              hasChildren,
-              expanded,
-              isCheckMode,
-              checked,
-              grayed,
-              enabled,
-              selected,
-              image,
-              hasMultiColumn,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: hasMultiColumn
+                    ? null
+                    : BorderRadius.circular(widgetTheme.borderRadius),
+                border: _buildItemRowBorder(
+                  widgetTheme: widgetTheme,
+                  selected: selected,
+                  nextItemSelected: nextItemSelected,
+                  hasMultiColumn: hasMultiColumn,
+                ),
+              ),
+              padding: hasMultiColumn
+                  ? widgetTheme.itemPaddingWithCols
+                  : widgetTheme.itemPadding,
+              child: _buildRowWithColumns(
+                context,
+                texts,
+                text,
+                textColor,
+                widgetTheme,
+                level,
+                hasChildren,
+                expanded,
+                isCheckMode,
+                checked,
+                grayed,
+                enabled,
+                selected,
+                image,
+                hasMultiColumn,
+              ),
             ),
           )),
         ),

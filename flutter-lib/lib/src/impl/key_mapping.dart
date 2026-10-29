@@ -63,36 +63,37 @@ import '../gen/swt.dart';
     return (keyCode: SWT.F11, character: 0);
   } else if (key == LogicalKeyboardKey.f12) {
     return (keyCode: SWT.F12, character: 0);
+  // A keypad key types its character, which every native's KeyDown carries.
   } else if (key == LogicalKeyboardKey.numpad0) {
-    return (keyCode: SWT.KEYPAD_0, character: 0);
+    return (keyCode: SWT.KEYPAD_0, character: 0x30);
   } else if (key == LogicalKeyboardKey.numpad1) {
-    return (keyCode: SWT.KEYPAD_1, character: 0);
+    return (keyCode: SWT.KEYPAD_1, character: 0x31);
   } else if (key == LogicalKeyboardKey.numpad2) {
-    return (keyCode: SWT.KEYPAD_2, character: 0);
+    return (keyCode: SWT.KEYPAD_2, character: 0x32);
   } else if (key == LogicalKeyboardKey.numpad3) {
-    return (keyCode: SWT.KEYPAD_3, character: 0);
+    return (keyCode: SWT.KEYPAD_3, character: 0x33);
   } else if (key == LogicalKeyboardKey.numpad4) {
-    return (keyCode: SWT.KEYPAD_4, character: 0);
+    return (keyCode: SWT.KEYPAD_4, character: 0x34);
   } else if (key == LogicalKeyboardKey.numpad5) {
-    return (keyCode: SWT.KEYPAD_5, character: 0);
+    return (keyCode: SWT.KEYPAD_5, character: 0x35);
   } else if (key == LogicalKeyboardKey.numpad6) {
-    return (keyCode: SWT.KEYPAD_6, character: 0);
+    return (keyCode: SWT.KEYPAD_6, character: 0x36);
   } else if (key == LogicalKeyboardKey.numpad7) {
-    return (keyCode: SWT.KEYPAD_7, character: 0);
+    return (keyCode: SWT.KEYPAD_7, character: 0x37);
   } else if (key == LogicalKeyboardKey.numpad8) {
-    return (keyCode: SWT.KEYPAD_8, character: 0);
+    return (keyCode: SWT.KEYPAD_8, character: 0x38);
   } else if (key == LogicalKeyboardKey.numpad9) {
-    return (keyCode: SWT.KEYPAD_9, character: 0);
+    return (keyCode: SWT.KEYPAD_9, character: 0x39);
   } else if (key == LogicalKeyboardKey.numpadMultiply) {
-    return (keyCode: SWT.KEYPAD_MULTIPLY, character: 0);
+    return (keyCode: SWT.KEYPAD_MULTIPLY, character: 0x2a); // '*'
   } else if (key == LogicalKeyboardKey.numpadAdd) {
-    return (keyCode: SWT.KEYPAD_ADD, character: 0);
+    return (keyCode: SWT.KEYPAD_ADD, character: 0x2b); // '+'
   } else if (key == LogicalKeyboardKey.numpadSubtract) {
-    return (keyCode: SWT.KEYPAD_SUBTRACT, character: 0);
+    return (keyCode: SWT.KEYPAD_SUBTRACT, character: 0x2d); // '-'
   } else if (key == LogicalKeyboardKey.numpadDecimal) {
-    return (keyCode: SWT.KEYPAD_DECIMAL, character: 0);
+    return (keyCode: SWT.KEYPAD_DECIMAL, character: 0x2e); // '.'
   } else if (key == LogicalKeyboardKey.numpadDivide) {
-    return (keyCode: SWT.KEYPAD_DIVIDE, character: 0);
+    return (keyCode: SWT.KEYPAD_DIVIDE, character: 0x2f); // '/'
   } else {
     final label = key.keyLabel;
     if (label.length == 1) {

@@ -205,6 +205,7 @@ public class TreeHelper {
         TreeItem[] selection = selectionOf(tree, event, item);
         event.segments = null;
         event.item = item;
+        clearRowLocator(event);
         if (event.detail == SWT.CHECK) {
             item.setChecked(!item.getChecked());
         }
@@ -248,6 +249,7 @@ public class TreeHelper {
             return;
         }
         event.item = item;
+        clearRowLocator(event);
 
         if (item.getExpanded() != expand) {
             // Like a native tree, notify before the item opens: opening fills a virtual item's
@@ -258,6 +260,17 @@ public class TreeHelper {
             item.setExpanded(expand);
             dartTree.getBridge().dirty(dartTree);
         }
+    }
+
+    /**
+     * The client names the row by its visible index and says which button and click made the event;
+     * once the item is resolved, the event carries the item alone, as a native tree's Selection,
+     * DefaultSelection, Expand and Collapse do.
+     */
+    private static void clearRowLocator(Event event) {
+        event.index = 0;
+        event.button = 0;
+        event.count = 0;
     }
 
     /** Whether {@code item} is being described for the client while one of its ancestors is collapsed. */

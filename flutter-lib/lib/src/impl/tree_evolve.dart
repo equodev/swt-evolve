@@ -26,6 +26,7 @@ import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/font_utils.dart';
 import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
@@ -1351,9 +1352,21 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       }
     });
     if (notifyJava) {
-      widget.sendSelectionSelection(state, withSelection(_createDefaultEvent(itemId)));
+      // The modifiers held, as every native's keyboard Selection carries them.
+      widget.sendSelectionSelection(
+          state, withSelection(_createDefaultEvent(itemId)..stateMask = swtStateMask(released: false)));
     }
   }
+
+  /// Counts a row's clicks across the tree: a click on another row in between starts a new count,
+  /// as natively, so a third click on a row is not the double click of the first.
+  final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
+
+  /// [at] is the press's own timestamp, so a frame that runs long between two presses does not
+  /// split their double click.
+  int registerRowTap(Object itemId, [Duration? at]) => _rowTapDetector.registerTap(key: itemId, at: at);
+
+  int get selectedRowCount => state.selection?.length ?? 0;
 
   /// [event], carrying the ids of the items this tree shows selected. A modifier click or a
   /// Shift+arrow builds the selection out of more than the row the event names, so Java takes the
@@ -1834,9 +1847,98 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         _navigateToLast(isCtrlPressed, isShiftPressed);
         return KeyEventResult.handled;
 
+      case LogicalKeyboardKey.enter:
+      case LogicalKeyboardKey.numpadEnter:
+        _sendDefaultSelectionOfSelected();
+        return KeyEventResult.handled;
+
+      case LogicalKeyboardKey.numpadAdd:
+        _setSelectedExpanded(true);
+        return KeyEventResult.handled;
+
+      case LogicalKeyboardKey.numpadSubtract:
+        _setSelectedExpanded(false);
+        return KeyEventResult.handled;
+
+      case LogicalKeyboardKey.numpadMultiply:
+        final selected = state.selection ?? [];
+        if (selected.isNotEmpty) _expandSubtree(selected.last);
+        return KeyEventResult.handled;
+
       default:
+        final keyboard = HardwareKeyboard.instance;
+        if (!isCtrlPressed && !keyboard.isAltPressed && !keyboard.isMetaPressed &&
+            _selectByTyping(event.character)) {
+          return KeyEventResult.handled;
+        }
         return KeyEventResult.ignored;
     }
+  }
+
+  /// Enter is the selected row's DefaultSelection, as a double click is.
+  void _sendDefaultSelectionOfSelected() {
+    final selected = state.selection ?? [];
+    if (selected.isEmpty) return;
+    widget.sendSelectionDefaultSelection(state, _createDefaultEvent(selected.last.id));
+  }
+
+  /// The numpad's + and - expand and collapse the selected row, as Win32's tree does.
+  void _setSelectedExpanded(bool expand) {
+    final selected = state.selection ?? [];
+    if (selected.isEmpty) return;
+    final item = selected.last;
+    if (!item.hasChildItems || (item.expanded == true) == expand) return;
+    setState(() => item.expanded = expand);
+    _sendExpandCollapseEvent(item, expand);
+  }
+
+  /// The numpad's * expands the row and every row under it, each parent before its children.
+  void _expandSubtree(VTreeItem item) {
+    if (!item.hasChildItems) return;
+    if (item.expanded != true) {
+      setState(() => item.expanded = true);
+      _sendExpandCollapseEvent(item, true);
+    }
+    for (final child in item.items ?? const <VWidget>[]) {
+      if (child is VTreeItem) _expandSubtree(child);
+    }
+  }
+
+  /// How long a pause ends the text typed so far, so the next key starts a search of its own.
+  static const Duration _typingTimeout = Duration(seconds: 1);
+  String _typedText = '';
+  DateTime _typedAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Selects the next shown row whose text starts with what was typed, as Win32's tree does. A
+  /// first letter searches from the row after the selected one, so typing it again steps through
+  /// the rows it starts; more letters typed without a pause extend the text, searched from the
+  /// selected row on. The search wraps past the last row. A NO_SEARCH tree has none, as on GTK.
+  bool _selectByTyping(String? character) {
+    if (StyleBits(state.style).has(SWT.NO_SEARCH)) return false;
+    if (character == null || character.length != 1 || !RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(character)) {
+      return false;
+    }
+    final now = DateTime.now();
+    if (now.difference(_typedAt) > _typingTimeout) _typedText = '';
+    _typedAt = now;
+    final typed = _typedText + character.toLowerCase();
+    _typedText = typed;
+    final repeated = typed.split('').every((c) => c == typed[0]);
+    final prefix = repeated ? typed.substring(0, 1) : typed;
+    final rows = _getAllVisibleItemIds();
+    if (rows.isEmpty) return true;
+    final selected = state.selection ?? [];
+    final current = selected.isEmpty ? -1 : rows.indexOf(selected.last.id);
+    final start = repeated ? current + 1 : (current < 0 ? 0 : current);
+    for (var n = 0; n < rows.length; n++) {
+      final id = rows[(start + n) % rows.length];
+      final item = _findTreeItemById(id);
+      if (item != null && treeItemText(item).toLowerCase().startsWith(prefix)) {
+        if (id != (current < 0 ? null : rows[current])) handleTreeItemSelection(id);
+        return true;
+      }
+    }
+    return true;
   }
 
   void _navigateUp(bool isCtrlPressed, bool isShiftPressed) {
@@ -1934,6 +2036,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     final selectedItem = selectedItems.last;
     if (getTreeViewSelectionMode()) {
+      // Win32 reports the row the key acts on, then toggles its box.
+      widget.sendSelectionSelection(state, withSelection(_createDefaultEvent(selectedItem.id)));
       setState(() {
         selectedItem.checked = !(selectedItem.checked ?? false);
       });

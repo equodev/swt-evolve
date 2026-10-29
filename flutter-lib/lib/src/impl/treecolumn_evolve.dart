@@ -7,12 +7,17 @@ import '../impl/item_evolve.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'tree_evolve.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     extends ItemImpl<T, V> {
+  /// The second click of a double click on the header is the column's DefaultSelection, as on
+  /// Win32 and GTK; the first is its Selection.
+  final DoubleTapDetector _headerTapDetector = DoubleTapDetector();
+
   bool _isDragging = false;
   Offset? _dragPosition;
 
@@ -203,7 +208,11 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       child: GestureDetector(
         onTap: () {
           final e = _createEvent(theme: widgetTheme, width: width);
-          widget.sendSelectionSelection(state, e);
+          if (_headerTapDetector.registerTap() == 2) {
+            widget.sendSelectionDefaultSelection(state, e);
+          } else {
+            widget.sendSelectionSelection(state, e);
+          }
         },
         onHorizontalDragStart: moveable ? _handleDragStart : null,
         onHorizontalDragUpdate: moveable ? _handleDragUpdate : null,

@@ -2,7 +2,7 @@
 // the clicked row or takes it out and moves the anchor, Shift selects the rows from the anchor, and
 // a plain click selects one. On macOS, Control+click is a secondary click instead.
 // Every Selection event names the clicked row and carries the ids of the rows the tree now shows
-// selected, which is what Java selects.
+// selected, which is what Java selects, and the button the press holds.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -91,7 +91,7 @@ void main() {
     final event = tree.selections.last;
     expect(event.itemId, 13, reason: 'the event is about the row clicked');
     expect(event.segments, [10, 13]);
-    expect(event.stateMask, toggleMask(),
+    expect(event.stateMask, toggleMask() | SWT.BUTTON1,
         reason: 'the event reports the modifier the user held, by its SWT name');
   }, variant: everyPlatform);
 
@@ -121,7 +121,7 @@ void main() {
         reason: 'the toggle click on Node 2 made it the anchor, as natively');
     expect(tree.selections.last.itemId, 14);
     expect(tree.selections.last.segments, [12, 13, 14]);
-    expect(tree.selections.last.stateMask, SWT.SHIFT);
+    expect(tree.selections.last.stateMask, SWT.SHIFT | SWT.BUTTON1);
   }, variant: everyPlatform);
 
   testWidgets('a plain click after a multi-selection selects only the clicked row', (tester) async {
@@ -134,7 +134,7 @@ void main() {
 
     expect(_selectedIds(value), [14]);
     expect(tree.selections.last.segments, [14]);
-    expect(tree.selections.last.stateMask, 0);
+    expect(tree.selections.last.stateMask, SWT.BUTTON1);
   }, variant: everyPlatform);
 
   testWidgets('Command toggles on Windows and GTK too, as Control does', (tester) async {
@@ -146,7 +146,7 @@ void main() {
 
     expect(_selectedIds(value), [10, 13]);
     expect(tree.selections.last.segments, [10, 13]);
-    expect(tree.selections.last.stateMask, SWT.COMMAND);
+    expect(tree.selections.last.stateMask, SWT.COMMAND | SWT.BUTTON1);
   }, variant: windowsAndLinux);
 
   testWidgets('on macOS Control does not toggle: Control+click is a secondary click', (tester) async {
