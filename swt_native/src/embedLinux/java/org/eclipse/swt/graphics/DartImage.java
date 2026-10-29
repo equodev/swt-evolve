@@ -776,6 +776,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         memGC = null;
         _releaseRemoteRefOnDart(remoteRef);
         _releaseRemoteRefOnDart(previousRemoteRef);
+        _forgetOnDart();
         cachedImageAtSize.destroy();
     }
 
@@ -1486,11 +1487,27 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     }
 
     private void _releaseRemoteRefOnDart(Long ref) {
-        if (ref != null && device instanceof Display) {
+        if (ref != null)
+            _sendAfterQueuedDraws("Image/releaseRemoteRef", ref);
+    }
+
+    boolean describedToClient;
+
+    public void _describedToClient() {
+        describedToClient = true;
+    }
+
+    private void _forgetOnDart() {
+        if (describedToClient)
+            _sendAfterQueuedDraws("Image/forget", dev.equo.swt.FlutterBridge.id(this));
+    }
+
+    private void _sendAfterQueuedDraws(String event, long id) {
+        if (device instanceof Display) {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array())));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send(event, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
             }
         }
     }

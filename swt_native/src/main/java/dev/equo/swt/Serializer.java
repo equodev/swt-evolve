@@ -914,7 +914,12 @@ public class Serializer {
         }
         // Record only what the client keeps: an empty image (pixels coming later under a render
         // ref) is not kept, and naming it would hand the client a blank.
-        if (worthNaming(value)) writtenResources.get().add(value);
+        if (worthNaming(value)) {
+            writtenResources.get().add(value);
+            if (impl instanceof org.eclipse.swt.graphics.DartImage) {
+                ((org.eclipse.swt.graphics.DartImage) impl)._describedToClient();
+            }
+        }
         writeResourceWithId(json, writer, impl);
     }
 

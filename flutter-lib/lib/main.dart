@@ -47,6 +47,7 @@ import 'test_harness.dart' as test_harness;
 import 'semantics_ghost_guard_stub.dart'
     if (dart.library.js_interop) 'semantics_ghost_guard_web.dart';
 import 'src/gen/gc.dart';
+import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
@@ -262,6 +263,9 @@ void _registerImageReleaseListener() {
   // whose offscreen render was cached here (see GCImageDrawer.java / DartImage#destroy()).
   EquoCommService.onBytes("Image/releaseRemoteRef", (bytes) {
     ImageUtils.releaseRemoteImage(_readInt64BE(ByteData.sublistView(bytes), 0));
+  });
+  EquoCommService.onBytes("Image/forget", (bytes) {
+    forgetImage(_readInt64BE(ByteData.sublistView(bytes), 0));
   });
 }
 

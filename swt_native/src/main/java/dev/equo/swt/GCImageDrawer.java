@@ -54,6 +54,8 @@ public class GCImageDrawer extends EmbeddedBridge {
     /** Ops buffered until Flutter's GCDrawer listeners are registered. */
     private final List<Runnable> pendingOps = new ArrayList<>();
     private boolean opsReady = false;
+    /** Nothing on the Flutter side will ever take this drawer's ops. */
+    private boolean gaveUp = false;
     /** Run once this drawer's queued ops have been sent, or dropped. */
     private final List<Runnable> afterOps = new ArrayList<>();
     /** Drawers whose queued ops have not been sent yet. */
@@ -117,6 +119,8 @@ public class GCImageDrawer extends EmbeddedBridge {
      * otherwise it is appended to the pending list and flushed by flushOps().
      */
     public synchronized void queueOp(Runnable op) {
+        // Held, it would keep this drawer among those every Image release waits for, forever.
+        if (gaveUp) return;
         if (opsReady) {
             op.run();
         } else {
@@ -150,6 +154,16 @@ public class GCImageDrawer extends EmbeddedBridge {
     private synchronized void whenOpsGone(Runnable r) {
         if (opsReady || pendingOps.isEmpty()) r.run();
         else afterOps.add(r);
+    }
+
+    /** Gives up on rendering: the Image's waiters are woken, and ops queued from now on are dropped. */
+    private void giveUp(Image dartImage) {
+        synchronized (this) {
+            gaveUp = true;
+            pendingOps.clear();
+        }
+        cancelAndWake(dartImage);
+        opsGone();
     }
 
     private void opsGone() {
@@ -207,8 +221,7 @@ public class GCImageDrawer extends EmbeddedBridge {
         Image dartImage = this.dartImage;
         CommService comm = resolvedComm;
         if (comm == null && (!nativeWindowAvailable || !loadNativeLibrary())) {
-            cancelAndWake(dartImage);
-            opsGone();
+            giveUp(dartImage);
             return;
         }
         // Serialized synchronously, before endDrawCycle mints this cycle's ref, so it captures the
@@ -236,8 +249,7 @@ public class GCImageDrawer extends EmbeddedBridge {
                     if (err != null) {
                         System.err.println("[GCImageDrawer] Engine did not answer ClientReady within "
                                 + CLIENT_READY_TIMEOUT_SECONDS + "s — off-screen GC will be a no-op: " + err);
-                        cancelAndWake(dartImage);
-                        opsGone();
+                        giveUp(dartImage);
                         return;
                     }
                     try {
@@ -254,8 +266,7 @@ public class GCImageDrawer extends EmbeddedBridge {
         } catch (Error e) {
             nativeWindowAvailable = false;
             System.err.println("[GCImageDrawer] Native Flutter window unavailable — off-screen GC will be a no-op: " + e.getMessage());
-            cancelAndWake(dartImage);
-            opsGone();
+            giveUp(dartImage);
         }
     }
 

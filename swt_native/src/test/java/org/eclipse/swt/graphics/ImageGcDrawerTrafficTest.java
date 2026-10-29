@@ -131,6 +131,62 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     }
 
     @Test
+    void an_image_the_client_was_given_is_released_after_the_draw_that_names_it() throws InterruptedException {
+        // A frame image made and disposed per paint would otherwise stay on the client forever.
+        Image frame = new Image(device(), 16, 16);
+        Image canvas = new Image(device(), 64, 64);
+        GC gc = new GC(canvas);
+        gc.drawImage(frame, 0, 0);
+        long id = FlutterBridge.id(frame.getImpl());
+        frame.dispose();
+        gc.dispose();
+
+        // Sent once every send already deferred has gone, which may be on another thread.
+        int released = comm.awaitSent("Image/forget", 5000);
+        assertThat(released).as("the disposed image was never released on the client").isNotNegative();
+        synchronized (comm) {
+            assertThat(ByteBuffer.wrap(comm.raw.get(released)).getLong()).isEqualTo(id);
+            assertThat(comm.sent.subList(0, released))
+                    .as("the release overtook the draw that names the image")
+                    .anyMatch(e -> e.endsWith("/drawImageImageintint"));
+        }
+        canvas.dispose();
+    }
+
+    @Test
+    void a_drawer_with_nowhere_to_render_does_not_hold_back_later_releases() throws Exception {
+        // Releases wait for every drawer still holding ops; one that gave up must not hold any.
+        FlutterBridge.setDisplayGcCommResolver(null);
+        java.lang.reflect.Field available = dev.equo.swt.GCImageDrawer.class.getDeclaredField("nativeWindowAvailable");
+        available.setAccessible(true);
+        Object wasAvailable = available.get(null);
+        String loadLibrary = System.setProperty("dev.equo.swt.loadLibrary", "false");
+        try {
+            Image image = new Image(device(), 16, 16);
+            GC gc = new GC(image);
+            gc.fillRectangle(0, 0, 4, 4);
+            gc.dispose();
+            image.dispose();
+        } finally {
+            if (loadLibrary == null) System.clearProperty("dev.equo.swt.loadLibrary");
+            else System.setProperty("dev.equo.swt.loadLibrary", loadLibrary);
+            available.set(null, wasAvailable);
+        }
+
+        boolean[] released = { false };
+        dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> released[0] = true);
+        assertThat(released[0]).as("a release is held behind a drawer that will never send its ops").isTrue();
+    }
+
+    @Test
+    void an_image_the_client_never_saw_is_not_released_there() throws InterruptedException {
+        Image scratch = new Image(device(), 16, 16);
+        scratch.dispose();
+
+        assertThat(comm.awaitSent("Image/forget", 500)).isNegative();
+    }
+
+    @Test
     void an_image_drawn_by_its_own_gc_is_blitted_as_its_render_not_its_blank_buffer() {
         // Whatever the client was given while the image was still blank must not be what a later
         // blit names: the blank buffer paints as an opaque black square.
@@ -221,6 +277,8 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         final List<String> sent = new ArrayList<>();
         /** Every payload put on the wire, so a test can ask what a frame actually carried. */
         final List<String> payloads = new ArrayList<>();
+        /** The payload of each entry in {@link #sent} that travelled on its own, by the same index. */
+        final List<byte[]> raw = new ArrayList<>();
         int messages;
         final Map<String, Consumer<?>> handlers = new LinkedHashMap<>();
 
@@ -229,16 +287,30 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
             send(eventName, new byte[0]);
         }
 
+        /** The index of the first {@code eventName} sent, waiting up to {@code timeoutMs} for it; -1 if none. */
+        int awaitSent(String eventName, long timeoutMs) throws InterruptedException {
+            long deadline = System.currentTimeMillis() + timeoutMs;
+            while (true) {
+                synchronized (this) {
+                    int at = sent.indexOf(eventName);
+                    if (at >= 0 || System.currentTimeMillis() >= deadline) return at;
+                }
+                Thread.sleep(10);
+            }
+        }
+
         @Override
-        public void send(String eventName, byte[] payload) {
+        public synchronized void send(String eventName, byte[] payload) {
             messages++;
             payloads.add(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
             if (MessageBatch.EVENT.equals(eventName)) {
                 for (String framed : framesIn(payload)) {
+                    raw.add(null);
                     record(framed);
                 }
                 return;
             }
+            raw.add(payload);
             record(eventName);
         }
 
