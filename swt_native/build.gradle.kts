@@ -832,6 +832,9 @@ tasks.test {
     // suite reflects the supported feature set; override with
     // -Ddev.equo.swt.web.proxy=<all|host,host> or = (empty) to disable.
     systemProperty("dev.equo.swt.web.proxy", System.getProperty("dev.equo.swt.web.proxy") ?: "all")
+    // A test that builds a real web Display by mistake would open the developer's own browser on a
+    // localhost page that dies with the run; any such Display gets headless Chrome instead.
+    systemProperty("dev.equo.swt.web.headless", "true")
     // Needed on macOS for the desktop Flutter engine (-Dharness.client=native) and for chromium
     // mode; harmless (unused) for the default headless-browser web client.
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
