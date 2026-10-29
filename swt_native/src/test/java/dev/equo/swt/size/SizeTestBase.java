@@ -37,8 +37,12 @@ public abstract class SizeTestBase extends SizeAssert {
             "An item", "Another item", "A longer sample item", "The widest sample item here", "Short"
     };
 
+    /** ConfigFlags.use_swt_fonts replaces the JVM-wide flags; restored so later classes in the fork get the real ones. */
+    private static ConfigFlags savedFlags;
+
     @BeforeAll
     static void config() {
+        savedFlags = Config.getConfigFlags();
         Config.defaultToEquo();
         Config.useEquo(Font.class);
         Config.useEquo(FontData.class);
@@ -49,6 +53,7 @@ public abstract class SizeTestBase extends SizeAssert {
         Config.clear(Font.class);
         Config.clear(FontData.class);
         Config.defaultToEclipse();
+        Config.setConfigFlags(savedFlags);
     }
 
     protected static IntStream getSizes(int limit) {

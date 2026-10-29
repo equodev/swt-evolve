@@ -353,9 +353,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     final bool hasMultiColumn =
         (_context?.treeImpl?.getTreeColumns().length ?? 0) > 1;
-    final double effectiveItemHeight = hasMultiColumn
-        ? widgetTheme.itemHeightWithCols
-        : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical);
+    // Rows share one height; the parent's cached value already honours an owner-draw row that asked
+    // for more than the theme row (VTree.ownerDrawItemHeight), so the row matches the slot.
+    final double effectiveItemHeight = _context?.treeImpl?.cachedItemHeight ??
+        (hasMultiColumn
+            ? widgetTheme.itemHeightWithCols
+            : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical));
 
     return SizedBox(
       width: totalTreeWidth ?? double.infinity,

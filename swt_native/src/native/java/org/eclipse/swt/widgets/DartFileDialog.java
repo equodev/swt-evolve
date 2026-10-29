@@ -68,7 +68,7 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
 
     private String selectedExtension;
 
-    boolean overwrite = true;
+    boolean overwrite = false;
 
     /**
      * Constructs a new instance of this class given only its parent.
@@ -117,7 +117,7 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
      */
     public DartFileDialog(Shell parent, int style, FileDialog api) {
         super(parent, checkStyle(parent, style), api);
-        if (DartDisplay.getSheetEnabled()) {
+        if (sheetsEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
@@ -273,63 +273,7 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
      * @since 3.126
      */
     public Optional<String> openDialog() {
-        fullPath = null;
-        String configuredPath = System.getProperty("dev.equo.swt.test.fileDialog.path");
-        String configuredUri = System.getProperty("dev.equo.swt.test.fileDialog.path.uri");
-        if (configuredPath == null && configuredUri != null) {
-            configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
-        }
-        if (configuredPath != null) {
-            if (configuredPath.trim().isEmpty()) {
-                return Optional.empty();
-            }
-            java.io.File file = new java.io.File(configuredPath);
-            fullPath = file.getAbsolutePath();
-            fileName = file.getName();
-            fileNames = new String[] { fileName };
-            String parentPath = file.getParent();
-            if (parentPath != null) {
-                filterPath = parentPath;
-            }
-            return Optional.of(fullPath);
-        }
-        if ((style & SWT.SAVE) != 0) {
-            if (!overwrite) {
-                if (method_overwriteExistingFileCheck != 0) {
-                }
-            }
-        } else {
-        }
-        if (method_performKeyEquivalent != 0) {
-        }
-        if (filterPath != null && filterPath.length() > 0) {
-        }
-        if (fileName != null && fileName.length() > 0) {
-        }
-        /*
-	 * This line is intentionally commented. Don't show hidden files forcefully,
-	 * instead allow File dialog to use the system preference.
-	 */
-        //	OS.objc_msgSend(panel.id, OS.sel_setShowsHiddenFiles_, true);
-        jniRef = 0;
-        if (filterExtensions != null && filterExtensions.length != 0) {
-            if (jniRef == 0)
-                error(SWT.ERROR_NO_HANDLES);
-            for (int i = 0; i < filterExtensions.length; i++) {
-                String str = filterExtensions[i];
-                if (filterNames != null && filterNames.length > i) {
-                    str = filterNames[i];
-                }
-            }
-            if ((style & SWT.SAVE) != 0) {
-            } else {
-            }
-        } else {
-        }
-        if (parent != null && (style & SWT.SHEET) != 0) {
-        } else {
-        }
-        return Optional.ofNullable(fullPath);
+        return Optional.ofNullable(choosePath(System.getProperty("dev.equo.swt.test.fileDialog.path"), System.getProperty("dev.equo.swt.test.fileDialog.path.uri")));
     }
 
     void releaseHandles() {
@@ -457,11 +401,7 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
      * @since 3.4
      */
     public void setOverwrite(boolean overwrite) {
-        /**
-         * The overwriteExistingFileCheck private method is not available since macOS 10.15.
-         * Hence, there is no way to suppress the overwrite prompt and overwrite is always true.
-         */
-        this.overwrite = true;
+        this.overwrite = overwrite;
     }
 
     /**
@@ -508,6 +448,27 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
 
     public boolean _overwrite() {
         return overwrite;
+    }
+
+    String choosePath(String configuredPath, String configuredUri) {
+        if (parent.isDisposed())
+            error(SWT.ERROR_WIDGET_DISPOSED);
+        fullPath = null;
+        if (configuredPath == null && configuredUri != null) {
+            configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
+        }
+        if (configuredPath == null || configuredPath.trim().isEmpty()) {
+            return fullPath;
+        }
+        java.io.File file = new java.io.File(configuredPath);
+        fullPath = file.getAbsolutePath();
+        fileName = file.getName();
+        fileNames = new String[] { fileName };
+        String parentPath = file.getParent();
+        if (parentPath != null) {
+            filterPath = parentPath;
+        }
+        return fullPath;
     }
 
     public FileDialog getApi() {

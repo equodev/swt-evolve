@@ -26,7 +26,9 @@ class CaretSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Caret")
+               .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
     @Test

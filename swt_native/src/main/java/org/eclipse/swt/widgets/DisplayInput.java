@@ -86,7 +86,7 @@ public final class DisplayInput {
             if (event.type == SWT.KeyDown)
                 ControlHelper.routeKeyDown(target, event);
             else
-                target.sendEvent(SWT.KeyUp, event);
+                ControlHelper.routeKeyUp(target, event);
             return;
         }
         if (event.type == SWT.MouseMove)

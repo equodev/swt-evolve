@@ -58,6 +58,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
   final ScrollController _verticalScrollController = ScrollController();
 
   final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
+
+  /// The second click of a double click on a header is the column's DefaultSelection, as on Win32
+  /// and GTK; the first is its Selection.
+  final DoubleTapDetector _headerTapDetector = DoubleTapDetector();
   int _lastRowTapCount = 1;
 
   int _requestedRowEnd = 0;
@@ -89,6 +93,18 @@ class TableImpl<T extends TableSwt, V extends VTable>
   // avoid a second event with different coordinates.
   @override
   bool get forwardsControlMouseDown => false;
+
+  /// The press a row's cell or the header took, which [wrap] leaves to them.
+  PointerEvent? _partPress;
+
+  /// Called by a cell or the header as a press reaches it, ahead of [wrap]'s listener.
+  void takePress(PointerDownEvent event) => _partPress = event.original ?? event;
+
+  /// A press on the table's own area, past the last column or below the last row, is the Table's
+  /// MouseDown, sent as any control's is.
+  @override
+  bool forwardsMouseDownOf(PointerDownEvent event) =>
+      !identical(_partPress, event.original ?? event);
 
   @override
   bool get wrapsWholeWidgetForDnd => false;
@@ -220,12 +236,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final items = state.items;
     final columns = state.columns;
     final editors = state.editors;
+    final ownerDrawItemHeight = state.ownerDrawItemHeight;
     super.didUpdateWidget(oldWidget);
     // Use new data from Java if present; fall back to preserved ones only when
     // the serializer omitted the field (null) due to an unrelated dirty() flush.
     state.items = state.items ?? items;
     state.columns = state.columns ?? columns;
     state.editors = state.editors ?? editors;
+    // The owner-draw row height (VTable.ownerDrawItemHeight) is a dirty-gated computed property, so
+    // a later full push omits it; keep the last value or the rows snap back to one font line.
+    state.ownerDrawItemHeight = state.ownerDrawItemHeight ?? ownerDrawItemHeight;
   }
 
   @override
@@ -306,7 +326,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
       ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
-    _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
+    // An owner-drawing Table (CDT's project-template chooser) paints a bold title + description —
+    // two lines — into each row and asks for that height in SWT.MeasureItem; it travels as
+    // ownerDrawItemHeight. A row sized to the font alone clips it, so take the taller of the two.
+    _cachedRowHeight = math.max(
+        calculateRowHeight(rowTextStyle, widgetTheme),
+        (state.ownerDrawItemHeight ?? 0).toDouble());
     double headerOff = frameBorderWidth(widgetTheme);
     if (showHeader) {
       final headerTextStyle = getTextStyle(
@@ -397,15 +422,18 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerHeight = calculateHeaderHeight(textStyle, theme);
     return Semantics(
       identifier: 'sizeprobe:header',
-      child: Container(
-        color: backgroundColor,
-        height: headerHeight,
-        child: Stack(
-          children: [
-            _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
-            ..._buildColumnResizeHandles(
-                columns, columnWidths, headerHeight, theme),
-          ],
+      child: Listener(
+        onPointerDown: takePress,
+        child: Container(
+          color: backgroundColor,
+          height: headerHeight,
+          child: Stack(
+            children: [
+              _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+              ..._buildColumnResizeHandles(
+                  columns, columnWidths, headerHeight, theme),
+            ],
+          ),
         ),
       ),
     );
@@ -561,10 +589,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return tagItemSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        TableColumnSwt<VTableColumn>(value: column).sendSelectionSelection(
-          column,
-          null,
-        );
+        final header = TableColumnSwt<VTableColumn>(value: column);
+        if (_headerTapDetector.registerTap(key: column.id) == 2) {
+          header.sendSelectionDefaultSelection(column, null);
+        } else {
+          header.sendSelectionSelection(column, null);
+        }
       },
       // A native header drag reorders the columns where it is dropped; Java applies the order and
       // sends SWT.Move to the columns whose place changed.

@@ -386,6 +386,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     @Override
     public void setImage(Image image) {
         super.setImage(image);
+        imageWidth = image == null ? 0 : image.getBounds().width;
         if (image != null) {
             if (image.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -453,6 +454,16 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     public boolean _expanded() {
         return expanded;
+    }
+
+    int wireHeaderHeight() {
+        return 0;
+    }
+
+    int imageWidth;
+
+    public int _imageWidth() {
+        return imageWidth;
     }
 
     public FlutterBridge getBridge() {

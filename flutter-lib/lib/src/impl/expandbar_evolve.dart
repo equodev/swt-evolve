@@ -10,6 +10,7 @@ import '../styles.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/expandbar_theme_extension.dart';
 import '../theme/theme_extensions/expanditem_theme_extension.dart';
+import 'expanditem_header.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
 
@@ -49,44 +50,43 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     );
     final borderColor = widgetTheme.borderColor;
 
+    // Java lays the items out `spacing` from every edge and from each other.
+    final spacing = _spacing();
+    final padding = widgetTheme.containerPadding.add(EdgeInsets.all(spacing));
+
     Widget expandBar;
-    if (style.has(SWT.V_SCROLL)) {
-      expandBar = ListView.builder(
+    // A bar with no bounds has nothing to scroll, and a ListView cannot be asked how wide it is.
+    if (style.has(SWT.V_SCROLL) && hasValidBounds) {
+      expandBar = ListView.separated(
         itemCount: expandItems.length,
-        padding: widgetTheme.containerPadding,
-        shrinkWrap: !hasValidBounds,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: index < expandItems.length - 1
-                  ? widgetTheme.itemSpacing
-                  : 0,
-            ),
-            child: expandItems[index],
-          );
-        },
+        padding: padding,
+        separatorBuilder: (context, index) => SizedBox(height: spacing),
+        itemBuilder: (context, index) => expandItems[index],
       );
     } else {
       expandBar = SingleChildScrollView(
-        padding: widgetTheme.containerPadding,
+        padding: padding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (int i = 0; i < expandItems.length; i++) ...[
               expandItems[i],
-              if (i < expandItems.length - 1)
-                SizedBox(height: widgetTheme.itemSpacing),
+              if (i < expandItems.length - 1) SizedBox(height: spacing),
             ],
           ],
         ),
       );
     }
 
+    // Drawn over the bar rather than around it: a border that took room would move every item off Java's coordinates.
     Widget result = Container(
       constraints: constraints,
       decoration: BoxDecoration(
         color: backgroundColor,
+        borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+      ),
+      foregroundDecoration: BoxDecoration(
         border: Border.all(color: borderColor, width: widgetTheme.borderWidth),
         borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
       ),
@@ -100,8 +100,9 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       ),
     );
 
+    // With no bounds from Java the bar packs as SWT's computeSize does: as wide as its widest header.
     if (!hasValidBounds) {
-      result = IntrinsicHeight(child: result);
+      result = IntrinsicWidth(child: IntrinsicHeight(child: result));
     }
 
     return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result)));
@@ -116,22 +117,14 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       return [];
     }
 
-    final spacing = state.spacing ?? widgetTheme.itemSpacing.toInt();
-
-    List<Widget> result = [];
-    for (int i = 0; i < state.items!.length; i++) {
-      var expandItem = state.items![i];
-      result.add(
+    return [
+      for (final expandItem in state.items!)
         getWidgetForExpandItem(context, expandItem, widgetTheme, itemTheme),
-      );
-
-      if (i < state.items!.length - 1 && spacing > 0) {
-        result.add(SizedBox(height: spacing.toDouble()));
-      }
-    }
-
-    return result;
+    ];
   }
+
+  /// The space Java keeps around and between the items. Java does not send its default, 0.
+  double _spacing() => (state.spacing ?? 0).toDouble();
 
   Widget getWidgetForExpandItem(
     BuildContext context,
@@ -139,27 +132,30 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     ExpandBarThemeExtension widgetTheme,
     ExpandItemThemeExtension itemTheme,
   ) {
-    return tagItemSemantics(expandItem, _ExpandItemWidget(
-      expandItem: expandItem,
-      widgetTheme: widgetTheme,
-      itemTheme: itemTheme,
-      mapWidgetFromValue: mapWidgetFromValue,
-      onExpansionChanged: (expanded) {
-        expandItem.expanded = expanded;
-        // The index lets Java resolve WHICH item changed (ExpandBarHelper.sendExpand
-        // updates the item's expanded state before firing the SWT event).
-        final event = VEvent()
-          ..index = state.items?.indexOf(expandItem) ?? -1;
-        if (expanded) {
-          widget.sendExpandExpand(state, event);
-        } else {
-          widget.sendExpandCollapse(state, event);
-        }
-      },
-      parentBackground: state.background,
-      parentForeground: state.foreground,
-      parentFont: state.font,
-    ));
+    return tagItemSemantics(
+      expandItem,
+      _ExpandItemWidget(
+        expandItem: expandItem,
+        widgetTheme: widgetTheme,
+        itemTheme: itemTheme,
+        mapWidgetFromValue: mapWidgetFromValue,
+        onExpansionChanged: (expanded) {
+          expandItem.expanded = expanded;
+          // The index lets Java resolve WHICH item changed (ExpandBarHelper.sendExpand
+          // updates the item's expanded state before firing the SWT event).
+          final event = VEvent()
+            ..index = state.items?.indexOf(expandItem) ?? -1;
+          if (expanded) {
+            widget.sendExpandExpand(state, event);
+          } else {
+            widget.sendExpandCollapse(state, event);
+          }
+        },
+        parentBackground: state.background,
+        parentForeground: state.foreground,
+        parentFont: state.font,
+      ),
+    );
   }
 }
 
@@ -313,37 +309,31 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
       }
     }
 
-    // Build header with optional image
-    Widget headerContent = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (expandItem.image != null &&
-            expandItem.image?.imageData != null) ...[
-          _buildImage(expandItem, itemTheme),
-          SizedBox(width: itemTheme.imageTextSpacing),
-        ],
-        Expanded(
-          child: Text(
-            expandItem.text ?? '',
-            style: textStyle,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        RotationTransition(
-          turns: _iconRotationAnimation,
-          child: Icon(
-            Icons.expand_more,
-            size: itemTheme.iconSize,
-            color: iconColor,
-          ),
-        ),
-      ],
-    );
+    // The header is exactly as tall as Java's getHeaderHeight, which sizes the bar and places the body and the items
+    // below. 0 is a platform that measures no band: the header then takes the height its content gives it.
+    final javaHeaderHeight = (expandItem.headerHeight ?? 0) > 0
+        ? expandItem.headerHeight!.toDouble()
+        : null;
+    // The body is as tall as the height Java sizes it to, inset by the item's border where Java places the
+    // control. With no height from Java the control is as tall as it is, inside the theme's content padding.
+    final javaHeight = (expandItem.height ?? 0) > 0 ? expandItem.height!.toDouble() : null;
+    final contentInsets = javaHeight == null
+        ? itemTheme.contentPadding
+        : EdgeInsets.fromLTRB(
+            itemTheme.borderWidth,
+            0,
+            itemTheme.borderWidth,
+            itemTheme.borderWidth,
+          );
 
     return Semantics(
       identifier: '${expandItem.swt}/${expandItem.id}',
       child: Container(
+        // The border is drawn over the item for the same reason as the bar's.
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(itemTheme.borderRadius),
+        ),
+        foregroundDecoration: BoxDecoration(
           border: Border.all(color: borderColor, width: itemTheme.borderWidth),
           borderRadius: BorderRadius.circular(itemTheme.borderRadius),
         ),
@@ -365,70 +355,43 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
                 onExit: (_) => setState(() => _isHovering = false),
                 child: GestureDetector(
                   onTap: _handleTap,
-                  child: AnimatedContainer(
-                    duration: itemTheme.animationDuration,
-                    curve: itemTheme.animationCurve,
+                  child: ExpandItemHeader(
+                    item: expandItem,
+                    theme: itemTheme,
+                    textStyle: textStyle,
+                    height: javaHeaderHeight,
                     color: headerBackgroundColor,
-                    padding: itemTheme.headerPadding,
-                    child: headerContent,
+                    chevron: RotationTransition(
+                      turns: _iconRotationAnimation,
+                      child: Icon(
+                        Icons.expand_more,
+                        size: itemTheme.iconSize,
+                        color: iconColor,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-            // Content
+            // The body starts where the header ends.
             SizeTransition(
               sizeFactor: _expandAnimation,
               axisAlignment: -1.0,
-              child: contentWidget != null
-                  ? Container(
+              child: javaHeight == null && contentWidget == null
+                  ? const SizedBox.shrink()
+                  : Container(
                       color: contentBackgroundColor,
-                      padding: itemTheme.contentPadding,
-                      constraints:
-                          (expandItem.height != null && expandItem.height! > 0)
-                          ? BoxConstraints(
-                              minHeight: expandItem.height!.toDouble(),
-                              maxHeight: expandItem.height!.toDouble(),
-                            )
-                          : null,
+                      padding: contentInsets,
+                      constraints: javaHeight == null
+                          ? null
+                          : BoxConstraints.tightFor(height: javaHeight),
+                      alignment: javaHeight == null ? null : Alignment.topLeft,
                       child: contentWidget,
-                    )
-                  : const SizedBox.shrink(),
+                    ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildImage(
-    VExpandItem expandItem,
-    ExpandItemThemeExtension itemTheme,
-  ) {
-    final imageData = expandItem.image?.imageData;
-    if (imageData == null) return const SizedBox.shrink();
-
-    final double imageWidth = imageData.width?.toDouble() ?? itemTheme.iconSize;
-    final double imageHeight =
-        imageData.height?.toDouble() ?? itemTheme.iconSize;
-
-    final builtImage = ImageUtils.buildVImage(
-      expandItem.image,
-      width: imageWidth,
-      height: imageHeight,
-      enabled: true,
-      constraints: null,
-      useBinaryImage: true,
-      renderAsIcon: true,
-    );
-
-    if (builtImage != null) {
-      return SizedBox(
-        width: imageWidth,
-        height: imageHeight,
-        child: builtImage,
-      );
-    }
-
-    return const SizedBox.shrink();
   }
 }

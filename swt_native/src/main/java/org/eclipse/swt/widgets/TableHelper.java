@@ -271,15 +271,31 @@ public class TableHelper {
     }
 
     /**
+     * What the platform's table does with a key no listener vetoed. Enter is the selected row's
+     * DefaultSelection, Space toggles the selected rows' check boxes in a CHECK table, and a typed
+     * letter or digit selects the next row whose text starts with what was typed (see
+     * {@link #selectByTyping}).
+     * <p>
      * Up and Down move a single selection to the row above or below, Home and End to the first and
      * last row, and Page Down and Page Up to the last or first row in view, or a page on when already
-     * there, as the platform's table does for a key no listener vetoed, and report it as a Selection
-     * naming the item. The page keys read the top index, which the client does not report when it
-     * scrolls. A MULTI table moves from its first selected row, not a focus row of its own, and ends
-     * with that one row selected; Shift and Ctrl with a key are not handled.
+     * there, and report it as a Selection naming the item. The page keys read the top index, which
+     * the client does not report when it scrolls. A MULTI table moves from its first selected row,
+     * not a focus row of its own, and ends with that one row selected; Shift and Ctrl with a key are
+     * not handled.
      */
     public static void moveSelectionByKey(DartTable table, Event key) {
-        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+        int modifiers = key.stateMask & SWT.MODIFIER_MASK;
+        if (modifiers == 0 && (key.keyCode == SWT.CR || key.keyCode == SWT.KEYPAD_CR)) {
+            sendDefaultSelection(table);
+            return;
+        }
+        if (modifiers == 0 && key.keyCode == ' ' && (table.getApi().style & SWT.CHECK) != 0) {
+            toggleSelectedChecks(table);
+            return;
+        }
+        if ((modifiers & ~SWT.SHIFT) == 0 && selectByTyping(table, key))
+            return;
+        if (modifiers != 0)
             return;
         int count = table.getItemCount();
         if (count == 0)
@@ -321,6 +337,76 @@ public class TableHelper {
         sendSelection(table, selection, SWT.Selection);
     }
 
+    /** Names the focus row, as Win32's focused item and GTK's cursor row; the first selected row until input set one. */
+    private static void sendDefaultSelection(DartTable table) {
+        int index = table.focusRow >= 0 && table.focusRow < table.getItemCount() ? table.focusRow : table.getSelectionIndex();
+        if (index < 0)
+            return;
+        Event event = new Event();
+        event.item = table.getApi().getItem(index);
+        table.sendSelectionEvent(SWT.DefaultSelection, event, true);
+    }
+
+    /** Win32 and Cocoa toggle every selected row's box, in row order, each with its own CHECK Selection. */
+    private static void toggleSelectedChecks(DartTable table) {
+        for (int index : table.getSelectionIndices()) {
+            if (table.isDisposed())
+                return;
+            TableItem item = table.getApi().getItem(index);
+            item.setChecked(!item.getChecked());
+            Event event = new Event();
+            event.item = item;
+            event.detail = SWT.CHECK;
+            table.sendSelectionEvent(SWT.Selection, event, true);
+        }
+    }
+
+    /** SWT.NO_SEARCH, which the oldest SWT versions this builds against do not declare. */
+    static final int NO_SEARCH = 1 << 10;
+
+    /** How long a pause ends the text typed so far, so the next key starts a search of its own. */
+    static final int TYPING_TIMEOUT_MS = 1000;
+
+    /**
+     * Selects the row whose text starts with what was typed, as Win32's list view does. A first
+     * letter searches from the row after the selected one, so typing it again steps through the rows
+     * it starts; more letters typed without a pause extend the text, searched from the selected row
+     * on. The search wraps past the last row.
+     */
+    static boolean selectByTyping(DartTable table, Event key) {
+        // GTK has no search in a NO_SEARCH or VIRTUAL tree view, and a VIRTUAL table would ask for every row's data.
+        if ((table.getApi().style & (NO_SEARCH | SWT.VIRTUAL)) != 0)
+            return false;
+        char c = key.character != 0 ? key.character : (key.keyCode & SWT.KEYCODE_BIT) == 0 ? (char) key.keyCode : 0;
+        if (!Character.isLetterOrDigit(c))
+            return false;
+        long now = key.time & 0xFFFFFFFFL;
+        // A key's time is a wrapping 32-bit count: a pause either way of the last key ends the text.
+        if (Math.abs(now - table.typedAt) > TYPING_TIMEOUT_MS)
+            table.typedText = "";
+        table.typedAt = now;
+        String typed = table.typedText + Character.toLowerCase(c);
+        table.typedText = typed;
+        boolean repeated = typed.chars().allMatch(ch -> ch == typed.charAt(0));
+        String prefix = repeated ? typed.substring(0, 1) : typed;
+        int count = table.getItemCount();
+        int current = table.getSelectionIndex();
+        int start = repeated ? current + 1 : Math.max(0, current);
+        for (int n = 0; n < count; n++) {
+            int index = Math.floorMod(start + n, count);
+            String text = table.getApi().getItem(index).getText();
+            if (text.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)) {
+                if (index != current) {
+                    Event selection = new Event();
+                    selection.segments = new int[] { index };
+                    sendSelection(table, selection, SWT.Selection);
+                }
+                return true;
+            }
+        }
+        return true;
+    }
+
     /** How many whole rows the table shows below its header. */
     static int visibleRows(DartTable table) {
         Table api = table.getApi();
@@ -343,6 +429,8 @@ public class TableHelper {
         } else {
             if (event.segments != null) {
                 table.setSelection(event.segments);
+                if (event.segments.length > 0)
+                    table.focusRow = event.segments[0];
             }
             if (event.segments != null && event.segments.length > 0) {
                 int index = event.segments[0];
@@ -614,7 +702,8 @@ public class TableHelper {
         int j = 0;
         for (int i = 0; i < selection.length; ++i) {
             if (selection[i] >= 0 && selection[i] < itemCount) {
-                result[j++] = table.items[selection[i]];
+                // A VIRTUAL table creates the item of a row it has not shown yet, as natively.
+                result[j++] = table._getItem(selection[i]);
             }
         }
         return result;
@@ -895,9 +984,19 @@ public class TableHelper {
         // This GC only ever draws through textCapture/imageCapture below — Flutter never
         // learns it exists, so its dispose must not tell Flutter otherwise.
         dartGc.silentDispose = true;
-        int itemHeight = ((DartTable) item.parent.getImpl()).getItemHeight();
+        DartTable table = (DartTable) item.parent.getImpl();
+        int itemHeight = table.getItemHeight();
         try {
-            measureCells(item, parent, count, gc, itemHeight);
+            int measured = measureCells(item, parent, count, gc, itemHeight);
+            // An owner-drawing Table shares one row height: the tallest any cell asks for in
+            // SWT.MeasureItem above the font line. It only ever grows — SWT fixes a Table's row
+            // height at the tallest it has measured — so raise and re-send it only when it actually
+            // rises; the client keeps the last value across pushes that omit this dirty-gated
+            // property, so a plain re-send on every capture would be churn with no effect.
+            if (measured > itemHeight && measured > table.ownerDrawItemHeight) {
+                table.ownerDrawItemHeight = measured;
+                table.getValue().markDirty(VTable.OWNER_DRAW_ITEM_HEIGHT);
+            }
             suppressed = suppressedForegrounds(item, parent, count, gc);
             for (int i = 0; i < count; i++) {
                 if (!suppressed[i] && own[i] != null) {
@@ -938,13 +1037,16 @@ public class TableHelper {
      * compute its cell layout in {@code measure()} and read it back in {@code paint()}. A capture
      * that only paints leaves that layout uninitialised and the app's own paint code fails on it.
      *
-     * <p>What the listener writes back is discarded: a Dart widget's size comes from Sizes, not
-     * from the row metrics native SWT would derive here.
+     * <p>Returns the tallest height any cell asked for — an owner-drawing app raises it to fit a
+     * multi-line row (CDT's project-template chooser draws a bold title above a description). A
+     * Dart row is otherwise one font line tall, so this travels as {@code VTable.ownerDrawItemHeight}
+     * or the drawing overruns the next row. Returns 0 when no listener runs.
      */
-    private static void measureCells(DartTableItem item, DartWidget parent, int count, GC gc, int itemHeight) {
+    private static int measureCells(DartTableItem item, DartWidget parent, int count, GC gc, int itemHeight) {
         if (!parent.hooks(SWT.MeasureItem)) {
-            return;
+            return 0;
         }
+        int measured = itemHeight;
         for (int i = 0; i < count; i++) {
             Event event = new Event();
             event.item = item.getApi();
@@ -952,7 +1054,9 @@ public class TableHelper {
             event.gc = gc;
             event.height = itemHeight;
             parent.sendEvent(SWT.MeasureItem, event);
+            measured = Math.max(measured, event.height);
         }
+        return measured;
     }
 
     /**

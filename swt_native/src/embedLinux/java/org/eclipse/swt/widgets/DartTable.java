@@ -2876,6 +2876,12 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
+    int ownerDrawItemHeight;
+
+    int wireOwnerDrawItemHeight() {
+        return ownerDrawItemHeight;
+    }
+
     int scrollOffset;
 
     int columnlessWidth;
@@ -2883,6 +2889,12 @@ public class DartTable extends DartComposite implements ITable {
     boolean loadingVirtualData = false;
 
     int virtualWindowEnd;
+
+    String typedText = "";
+
+    long typedAt;
+
+    int focusRow = -1;
 
     boolean checkData(TableItem item, int index) {
         return checkData(item);

@@ -121,7 +121,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         _hoverTimer?.cancel();
         widget.sendMouseTrackMouseExit(state, event);
       }
-    });
+    }, onLeftWhileHeld: () => _hoverTimer?.cancel());
     FocusRequests.instance.addListener(_applyFocusRequest);
     _applyFocusRequest();
     FocusRequests.instance.register(state.id, context);
@@ -335,17 +335,17 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// parent is only reached when nothing below handled the request. Flutter delivers a
   /// pointer to every control under it, innermost first, so the walk itself comes for free
   /// and this only has to stop it.
-  void handleMenuDetect(int pointer, Offset localPosition) {
-    if (_menuDetectHandledPointer == pointer) return;
-    if (state.menu != null) _menuDetectHandledPointer = pointer;
-    // Table drives MenuDetect from its own per-cell and per-header detectors, which carry
-    // the coordinates of the cell that was hit; this would add a second event.
-    if (!forwardsControlMouseDown) return;
+  void handleMenuDetect(PointerDownEvent press) {
+    if (_menuDetectHandledPointer == press.pointer) return;
+    if (state.menu != null) _menuDetectHandledPointer = press.pointer;
+    // The press a control's own parts report (a Table's cells and header, which carry the
+    // coordinates of the part that was hit) gets its MenuDetect from them too.
+    if (!forwardsMouseDownOf(press)) return;
     widget.sendMenuDetectMenuDetect(
       state,
       VEvent()
-        ..x = localPosition.dx.round()
-        ..y = localPosition.dy.round(),
+        ..x = press.localPosition.dx.round()
+        ..y = press.localPosition.dy.round(),
     );
   }
 
@@ -514,6 +514,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ..stateMask = swtStateMask(released: false);
   }
 
+  void cancelHover() => _hoverTimer?.cancel();
+
+  /// The pointer rests on this control's own area at [position]: its hover counts from there.
+  void restartHover(V state, VEvent event, Offset position) {
+    _lastHoverPosition = position;
+    _resetHoverTimer(state, event);
+  }
+
   void forgetDragDetect(int pointer) {
     if (pointer != _dragDetectPointer) return;
     _dragDetectPointer = null;
@@ -626,6 +634,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// GestureDetector that already sends MouseDown with cell-center coordinates;
   /// the chrome Listener would fire a second event with different coordinates.
   bool get forwardsControlMouseDown => true;
+
+  /// Whether [wrap] sends the MouseDown of this press: [forwardsControlMouseDown], unless the
+  /// control tells its own parts' presses apart from the rest of its area.
+  bool forwardsMouseDownOf(PointerDownEvent event) => forwardsControlMouseDown;
 
   /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
   /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
@@ -846,14 +858,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   /// The pointer events a native control reports on its own: MouseDown and MouseUp, MouseEnter and
   /// MouseExit settled by [HoverExclusivityArbiter], MouseMove while the pointer is over it,
-  /// MouseHover once it rests -- none while it is disabled, and none for a child's pointer. [wrap]
-  /// applies it; a control that builds its own tree instead has to call this, or it reports none of
-  /// them.
+  /// MouseHover once it rests -- none while it is disabled, and none for a child's pointer -- and
+  /// the right-click that opens its Menu. [wrap] applies it; a control that builds its own tree
+  /// instead has to call this, or it reports none of them.
   Widget trackPointer(Widget child) {
     final hoverDepth = ControlNestingScope.depthOf(context);
     return ControlNestingScope(
       depth: hoverDepth + 1,
-      child: blockWhenDisabled(_pointerListener(_pointerRegion(hoverDepth, child))),
+      child: blockWhenDisabled(_pointerListener(_pointerRegion(hoverDepth, applyMenu(child)))),
     );
   }
 
@@ -870,7 +882,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       onPointerDown: (e) {
         if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
         registerPointerDown(e);
-        if (forwardsControlMouseDown) {
+        if (forwardsMouseDownOf(e)) {
           final event = VEvent()
             ..button = swtButton
             ..x = e.localPosition.dx.round()
@@ -891,7 +903,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         // item under the cursor there, and a menu built ahead of it describes the previous
         // selection. Still ahead of the menu opening, which applyMenu does on the release.
         if (isMenuDetectTrigger(swtButton)) {
-          handleMenuDetect(e.pointer, e.localPosition);
+          handleMenuDetect(e);
         }
       },
       onPointerUp: (e) {
@@ -910,10 +922,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         // A mouse rests where the release left it; the hover starts counting from there. A touch
         // leaves nothing under the pointer.
         if (e.kind == PointerDeviceKind.mouse && isOverSelf(e)) {
-          _lastHoverPosition = e.position;
-          _resetHoverTimer(state, VEvent()
+          restartHover(state, VEvent()
             ..x = event.x
-            ..y = event.y);
+            ..y = event.y, e.position);
         }
       },
       onPointerCancel: (e) {
@@ -952,10 +963,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        _lastHoverPosition = e.position;
         _removeTooltip();
         sendThrottledMouseMove(state, event, e.buttons);
-        _resetHoverTimer(state, event);
+        restartHover(state, event, e.position);
       },
       child: child,
     );

@@ -26,6 +26,7 @@ import java.util.stream.IntStream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * {@link BorderLayout} places controls in five regions
@@ -135,7 +136,7 @@ public class BorderLayout extends Layout {
     }
 
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     public BorderLayout() {

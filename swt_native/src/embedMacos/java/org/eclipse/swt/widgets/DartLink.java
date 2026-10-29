@@ -545,6 +545,7 @@ public class DartLink extends DartControl implements ILink {
         if (string.equals(text))
             return;
         text = string;
+        parse(text);
         focusIndex = offsets.length > 0 ? 0 : -1;
         for (int i = 0; i < offsets.length; i++) {
         }

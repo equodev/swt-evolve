@@ -21,6 +21,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class represent programs and
@@ -209,7 +210,7 @@ public final class Program {
      * @return a string representation of the program
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected IProgram impl;

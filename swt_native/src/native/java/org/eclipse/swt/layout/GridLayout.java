@@ -18,6 +18,7 @@ package org.eclipse.swt.layout;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.ApiObjects;
 
 /**
  * Instances of this class lay out the control children of a
@@ -187,7 +188,7 @@ public final class GridLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getImpl().toString();
+        return ApiObjects.describe(this, impl);
     }
 
     protected GridLayout(IGridLayout impl) {
