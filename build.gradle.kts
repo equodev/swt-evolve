@@ -37,6 +37,10 @@ allprojects {
     }
 }
 
+allprojects {
+    apply(from = rootProject.file("gradle/eclipse-p2.gradle.kts"))
+}
+
 dependencies {
 }
 
