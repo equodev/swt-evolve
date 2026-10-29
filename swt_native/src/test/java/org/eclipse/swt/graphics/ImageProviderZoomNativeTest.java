@@ -39,8 +39,10 @@ class ImageProviderZoomNativeTest {
 
     @Test
     void the_provider_is_asked_for_any_zoom() {
-        assertThat(GraphicsUtils.imageDataAtZoom(PROVIDER, null, 150).width).isEqualTo(3);
-        assertThat(GraphicsUtils.imageDataAtZoom(PROVIDER, null, 200).width).isEqualTo(4);
+        Image image = new Image(display, PROVIDER);
+        assertThat(image.getImageData(150).width).isEqualTo(3);
+        assertThat(image.getImageData(200).width).isEqualTo(4);
+        image.dispose();
     }
 
     @Test
@@ -52,15 +54,18 @@ class ImageProviderZoomNativeTest {
 
     @Test
     void a_provider_with_nothing_for_the_zoom_leaves_it_to_scaling() {
-        assertThat(GraphicsUtils.imageDataAtZoom(zoom -> null, null, 200)).isNull();
-        assertThat(GraphicsUtils.imageDataAtZoom(null, zoom -> null, 200)).isNull();
-        assertThat(GraphicsUtils.imageDataAtZoom(null, null, 200)).isNull();
+        java.util.List<Integer> asked = new java.util.ArrayList<>();
+        Image image = new Image(display, (ImageDataProvider) zoom -> { asked.add(zoom); return zoom == 100 ? direct(2) : null; });
+        assertThat(image.getImageData(200)).as("the 100% pixels scaled").isNotNull();
+        assertThat(asked).contains(200);
+        image.dispose();
     }
 
     @Test
     void the_provider_data_is_copied() {
         ImageData held = direct(4);
-        ImageData answered = GraphicsUtils.imageDataAtZoom(zoom -> held, null, 200);
-        assertThat(answered).isNotSameAs(held);
+        Image image = new Image(display, (ImageDataProvider) zoom -> zoom == 100 ? direct(2) : held);
+        assertThat(image.getImageData(200)).isNotSameAs(held);
+        image.dispose();
     }
 }
