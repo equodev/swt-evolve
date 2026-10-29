@@ -212,21 +212,29 @@ public final class TextLayoutHelper {
         return offset;
     }
 
+    /** The value of {@code SWT.AUTO_TEXT_DIRECTION}, which releases before 3.105 do not declare. */
+    private static final int AUTO_TEXT_DIRECTION = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
+
     /**
      * What {@code setTextDirection(requested)} leaves the text direction at, given the {@code current} one: only
      * the direction bits count, nothing changes for none, and left to right wins over right to left. The text
      * direction is its own setting, as the javadoc describes it and Win32 implements it (GTK and Cocoa ignore it).
      */
     public static int textDirection(int current, int requested) {
+        return textDirection(current, requested, true);
+    }
+
+    /** As {@link #textDirection(int, int)}; without {@code auto} both direction bits mean left to right. */
+    public static int textDirection(int current, int requested, boolean auto) {
         requested &= SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
         if (requested == 0) return current;
-        if (requested != SWT.AUTO_TEXT_DIRECTION && (requested & SWT.LEFT_TO_RIGHT) != 0) return SWT.LEFT_TO_RIGHT;
+        if (!(auto && requested == AUTO_TEXT_DIRECTION) && (requested & SWT.LEFT_TO_RIGHT) != 0) return SWT.LEFT_TO_RIGHT;
         return requested;
     }
 
     /** What {@code getTextDirection()} answers: the direction set, the automatic one resolved from the text. */
     public static int resolvedTextDirection(int textDirection, String text) {
-        if (textDirection != SWT.AUTO_TEXT_DIRECTION) return textDirection;
+        if (textDirection != AUTO_TEXT_DIRECTION) return textDirection;
         return new java.text.Bidi(text, java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).baseIsLeftToRight()
                 ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
     }
