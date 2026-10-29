@@ -71,9 +71,8 @@ class GCImplementationNativeTest {
             public void internal_dispose_GC(long handle, GCData data) {
             }
 
-            // Abstract on the oldest supported SWT and default on the newest, so only an explicit
-            // override compiles against both.
-            @Override
+            // Absent before 3.104, abstract on 3.105 and default on the newest: an implementation
+            // without @Override compiles against all of them.
             public boolean isAutoScalable() {
                 return true;
             }

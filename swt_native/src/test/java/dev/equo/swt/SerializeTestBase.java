@@ -458,7 +458,7 @@ public class SerializeTestBase {
                             .containsEntry("r", value.getRed())
                             .containsEntry("g", value.getGreen())
                             .containsEntry("b", value.getBlue())
-                            .containsEntry("a", value.getAlpha());
+                            .containsEntry("a", GraphicsUtils.getAlpha(value));
             };
         }
 

@@ -5,6 +5,7 @@ import dev.equo.swt.SerializeTestBase;
 import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class CTabFolderColorSerializeTest extends SerializeTestBase {
                     .containsEntry("r", color.getRed())
                     .containsEntry("g", color.getGreen())
                     .containsEntry("b", color.getBlue())
-                    .containsEntry("a", color.getAlpha());
+                    .containsEntry("a", GraphicsUtils.getAlpha(color));
     }
 
 }

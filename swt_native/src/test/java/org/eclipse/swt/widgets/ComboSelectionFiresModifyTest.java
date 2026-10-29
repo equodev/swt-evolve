@@ -75,7 +75,7 @@ class ComboSelectionFiresModifyTest {
         }).when(display).asyncExec(any(Runnable.class));
 
         Combo combo = new Combo(shell, SWT.READ_ONLY);
-        combo.setItems("B", "KB", "MB", "GB");
+        combo.setItems(new String[] {"B", "KB", "MB", "GB"});
         combo.select(2);
         return combo;
     }

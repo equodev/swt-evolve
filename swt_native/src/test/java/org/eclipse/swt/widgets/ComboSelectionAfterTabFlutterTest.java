@@ -33,7 +33,7 @@ class ComboSelectionAfterTabFlutterTest {
         start = new Text(shell, SWT.BORDER);
         start.setText("start");
         combo = new Combo(shell, SWT.DROP_DOWN | SWT.BORDER);
-        combo.setItems("Initial", "Other");
+        combo.setItems(new String[] {"Initial", "Other"});
         combo.setText("Initial");
         shell.setSize(300, 200);
         shell.open();
