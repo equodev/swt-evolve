@@ -1044,7 +1044,28 @@ public class Config {
     public static int uiZoom() {
         boolean browserTab = !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode();
         if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom;
-        return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+        return deviceZoom();
+    }
+
+    private static final java.lang.invoke.MethodHandle DEVICE_ZOOM = deviceZoomHandle();
+
+    private static java.lang.invoke.MethodHandle deviceZoomHandle() {
+        try {
+            return java.lang.invoke.MethodHandles.publicLookup().findStatic(Class.forName("org.eclipse.swt.internal.DPIUtil"),
+                    "getDeviceZoom", java.lang.invoke.MethodType.methodType(int.class));
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    /** SWT's device zoom; 100 on a release from before HiDPI support, which has no DPIUtil. */
+    private static int deviceZoom() {
+        if (DEVICE_ZOOM == null) return 100;
+        try {
+            return (int) DEVICE_ZOOM.invokeExact();
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static double uiScaleFor(int uiZoom, int monitorZoom) {

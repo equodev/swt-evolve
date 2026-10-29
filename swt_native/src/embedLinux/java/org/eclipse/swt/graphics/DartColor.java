@@ -528,6 +528,12 @@ public final class DartColor extends DartResource implements IColor {
         return red;
     }
 
+    public Color _copy() {
+        DartColor copy = new DartColor(device, red, green, blue, null);
+        copy.alpha = alpha;
+        return copy.getApi();
+    }
+
     public Color getApi() {
         if (api == null)
             api = Color.createApi(this);

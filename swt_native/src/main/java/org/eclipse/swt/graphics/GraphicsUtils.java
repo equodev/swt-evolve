@@ -322,8 +322,7 @@ public class GraphicsUtils {
         if (color.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        DartColor copy = new DartColor(color.getDevice(), color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), null);
-        return copy.getApi();
+        return ((DartColor) color.getImpl())._copy();
     }
 
     private static java.util.Map<String, java.io.File> assetFilesCache = null;
