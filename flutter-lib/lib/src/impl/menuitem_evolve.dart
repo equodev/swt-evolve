@@ -416,22 +416,27 @@ class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
   }
 }
 
-final _cascadeOpenKeys = {
-  LogicalKeyboardKey.arrowRight,
-  LogicalKeyboardKey.arrowLeft,
+final _cascadeActivateKeys = {
   LogicalKeyboardKey.enter,
   LogicalKeyboardKey.numpadEnter,
   LogicalKeyboardKey.space,
 };
 
+final _cascadeOpenKeys = {
+  LogicalKeyboardKey.arrowRight,
+  LogicalKeyboardKey.arrowLeft,
+  ..._cascadeActivateKeys,
+};
+
 /// Natively a cascade opens on hover, a click, Right, Enter or Space, never because Up or Down made it
 /// the current item; Flutter opens one whenever it gets the focus. A click only opens it, where
-/// Flutter's toggle would close the submenu the pointer's hover has just opened.
+/// Flutter's toggle would close the submenu the pointer's hover has just opened. Enter and Space,
+/// which reach the same toggle, never close it either.
 class _CascadeMenuController extends MenuController {
-  _CascadeMenuController(this._mayOpen, this._isPressed);
+  _CascadeMenuController(this._mayOpen, this._keepOpen);
 
   final bool Function() _mayOpen;
-  final bool Function() _isPressed;
+  final bool Function() _keepOpen;
 
   /// [force] opens it whatever [_mayOpen] says, for an opening the user asked for by key.
   @override
@@ -441,7 +446,7 @@ class _CascadeMenuController extends MenuController {
 
   @override
   void close() {
-    if (!_isPressed()) super.close();
+    if (!_keepOpen()) super.close();
   }
 }
 
@@ -472,16 +477,17 @@ class _CascadeMenuItemRow extends StatefulWidget {
 
 class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemonicItem {
   late final _CascadeMenuController _menuController = _CascadeMenuController(
-      () =>
-          _isHovered ||
-          _isPressed ||
-          (_keyDownHere != null &&
-              _cascadeOpenKeys.contains(_keyDownHere) &&
-              HardwareKeyboard.instance.isLogicalKeyPressed(_keyDownHere!)),
-      () => _isPressed);
+      () => _isHovered || _isPressed || _isKeyDownHere(_cascadeOpenKeys),
+      () => _isPressed || _isKeyDownHere(_cascadeActivateKeys));
   // The last key pressed while this row was current. An opening key still held from before (the
   // Enter that opened the menu this row is first in) does not open its submenu.
   LogicalKeyboardKey? _keyDownHere;
+
+  bool _isKeyDownHere(Set<LogicalKeyboardKey> keys) =>
+      _keyDownHere != null &&
+      keys.contains(_keyDownHere) &&
+      HardwareKeyboard.instance.isLogicalKeyPressed(_keyDownHere!);
+
   late final FocusNode _buttonFocusNode =
       FocusNode(debugLabel: 'Cascade', onKeyEvent: _enterOpenSubmenu);
   final FocusNode _submenuFocusNode = FocusNode(debugLabel: 'Cascade.menu');
