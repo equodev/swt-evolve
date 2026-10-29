@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -110,28 +111,6 @@ class DeskLauncherSplashFlutterTest {
         dd.setBridge(bridge);
         bridge.start(dd);
         return bridge;
-    }
-
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 
     /** The desktop bridge with its own window stood in, and what it is told to show recorded. */
