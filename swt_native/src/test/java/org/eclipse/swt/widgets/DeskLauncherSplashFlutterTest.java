@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.NoopBridge;
@@ -20,7 +22,8 @@ import org.junit.jupiter.api.Test;
 /**
  * The launcher's splash on the desktop: a shell made around the launcher's own window, which keeps
  * drawing it. The Display's window stays off screen while the splash is all there is, and never
- * draws the splash itself, so the user sees one splash, as made, and then the application.
+ * draws the splash itself, so the user sees one splash, as made, and then the application. Outside
+ * the desktop the launcher's window is not on the user's screen, so the splash is drawn as any shell.
  */
 @Tag("flutter-it")
 class DeskLauncherSplashFlutterTest {
@@ -34,8 +37,8 @@ class DeskLauncherSplashFlutterTest {
     void tearDown() {
         if (display != null && !display.isDisposed()) display.dispose();
         FlutterBridge.set(null);
-        if (savedMode == null) System.clearProperty("dev.equo.swt.mode");
-        else System.setProperty("dev.equo.swt.mode", savedMode);
+        if (savedMode == null) System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        else System.setProperty(ConfigFlags.MODE_PROPERTY, savedMode);
     }
 
     @Test
@@ -73,7 +76,7 @@ class DeskLauncherSplashFlutterTest {
         Shell splash = Shell.internal_new(display, LAUNCHER_WINDOW);
         splash.setVisible(true);
 
-        assertThat(windowedShellIdsSent(desk)).isEqualTo(String.valueOf(splash.hashCode()));
+        assertThat(windowedShellIdsSent(desk.comm)).isEqualTo(String.valueOf(splash.hashCode()));
         assertThat(desk.hostsAsMainShell(splash)).isFalse();
     }
 
@@ -86,14 +89,24 @@ class DeskLauncherSplashFlutterTest {
         wrapsNothing.setVisible(true);
 
         assertThat(desk.mainWindowVisibility).isEmpty();
-        assertThat(windowedShellIdsSent(desk)).isEmpty();
+        assertThat(windowedShellIdsSent(desk.comm)).isEmpty();
+    }
+
+    @Test
+    void outsideTheDesktopTheSplashIsTheMainShellAndDrawnInTheDisplaysWindow() {
+        TestWebBridge web = install(ConfigFlags.MODE_CHROMIUM, TestWebBridge::new);
+        Shell splash = Shell.internal_new(display, LAUNCHER_WINDOW);
+        splash.setVisible(true);
+
+        assertThat(web.hostsAsMainShell(splash)).isTrue();
+        assertThat(windowedShellIdsSent(web.comm)).isEmpty();
     }
 
     /** The ids the last Display frame told the client to leave out of the Display's window. */
-    private String windowedShellIdsSent(TestDeskBridge desk) {
+    private String windowedShellIdsSent(RecordingComm comm) {
         String channel = "Display/" + display.hashCode();
         List<RecordingComm.Frame> frames =
-                desk.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
+                comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
         assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
         Matcher ids = Pattern.compile("\"windowedShellIds\":\\[([^\\]]*)\\]")
                 .matcher(frames.get(frames.size() - 1).json);
@@ -101,13 +114,17 @@ class DeskLauncherSplashFlutterTest {
     }
 
     private TestDeskBridge install() {
-        savedMode = System.getProperty("dev.equo.swt.mode");
-        System.setProperty("dev.equo.swt.mode", "desktop");
+        return install(ConfigFlags.MODE_DESKTOP, TestDeskBridge::new);
+    }
+
+    private <B extends DisplayBridge> B install(String mode, Function<DartDisplay, B> factory) {
+        savedMode = System.getProperty(ConfigFlags.MODE_PROPERTY);
+        System.setProperty(ConfigFlags.MODE_PROPERTY, mode);
         FlutterBridge.set(new NoopBridge());
         display = new Display();
         FlutterBridge.set(null);
         DartDisplay dd = (DartDisplay) display.getImpl();
-        TestDeskBridge bridge = new TestDeskBridge(dd);
+        B bridge = factory.apply(dd);
         dd.setBridge(bridge);
         bridge.start(dd);
         return bridge;
