@@ -983,6 +983,7 @@ class _CTabBarState extends State<_CTabBar> {
                 selectedIndex: effectiveSelected,
                 onOverflowChanged: _setOverflow,
                 onTabsMoved: () => _rowState.currentState?.scheduleStripReport(),
+                overflowReserve: _overflowChevronWidth(widgetTheme),
                 children: children,
               ),
       onReorder: (from, to) {
@@ -1020,7 +1021,8 @@ class _CTabBarState extends State<_CTabBar> {
     // controls on top.
     // While overflowing, lay the controls out as a Row sibling so the chevron reserves space
     // and stays clickable, instead of floating over the tab row where clicks get swallowed.
-    final Widget header = (_reserveTopRightSpace || _hasOverflow)
+    // Compressed tabs always leave the controls their width, as CTabFolder.getRightItemEdge does.
+    final Widget header = (_reserveTopRightSpace || _hasOverflow || !ctabTabScroll())
         ? Row(children: [scrollableTabs, topRightControls])
         : Stack(
             children: [
@@ -1602,6 +1604,7 @@ class _CTabBarState extends State<_CTabBar> {
       child: Builder(builder: (buttonContext) => GestureDetector(
         onTap: () => _handleChevronTap(buttonContext, widgetTheme),
         child: Container(
+          width: _chevronWidth(widgetTheme),
           height: double.infinity,
           padding: EdgeInsets.symmetric(
             horizontal: widgetTheme.controlButtonHorizontalPadding,
@@ -1622,6 +1625,18 @@ class _CTabBarState extends State<_CTabBar> {
       )),
     ));
   }
+
+  /// Native SWT's showChevron: chevronVisible (default true) and either forced on or overflowing.
+  bool get _showsChevron =>
+      (widget.state.chevronVisible ?? true) &&
+      ((widget.state.showChevron ?? false) || _hasOverflow);
+
+  double _chevronWidth(CTabFolderThemeExtension widgetTheme) =>
+      widgetTheme.controlButtonSize + 2 * widgetTheme.controlButtonHorizontalPadding;
+
+  /// The chevron's width while it shows only because the tabs overflow, else 0.
+  double _overflowChevronWidth(CTabFolderThemeExtension widgetTheme) =>
+      _showsChevron && !(widget.state.showChevron ?? false) ? _chevronWidth(widgetTheme) : 0;
 
   void _handleChevronTap(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
     widget.onChevronShowList?.call(buttonContext, widgetTheme);
@@ -1644,13 +1659,14 @@ class _CTabBarState extends State<_CTabBar> {
   Widget _buildControlButton({
     required BuildContext context,
     required CTabFolderThemeExtension widgetTheme,
+    required String semanticsId,
     required IconData icon,
     required VoidCallback onTap,
     required bool isHovered,
     required ValueChanged<bool> onHoverChanged,
     bool enabled = true,
   }) {
-    return MouseRegion(
+    return Semantics(identifier: semanticsId, button: true, child: MouseRegion(
       onEnter: (_) {
         onHoverChanged(true);
       },
@@ -1687,7 +1703,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    );
+    ));
   }
 
 
@@ -1932,11 +1948,7 @@ class _CTabBarState extends State<_CTabBar> {
     required bool isMaximized,
     required int alignment,
   }) {
-    // Show the chevron on overflow, but honour the folder's chevronVisible permission flag
-    // (default true) -- matching native SWT's showChevron = chevronVisible && overflow.
-    final chevronAllowed = widget.state.chevronVisible ?? true;
-    final showChevron =
-        chevronAllowed && ((widget.state.showChevron ?? false) || _hasOverflow);
+    final showChevron = _showsChevron;
     final hasControls =
         topRightComposite != null || showMinimizeButton || showMaximizeButton ||
         showChevron;
@@ -1973,6 +1985,7 @@ class _CTabBarState extends State<_CTabBar> {
                       return _buildControlButton(
                         context: context,
                         widgetTheme: widgetTheme,
+                        semanticsId: 'minimize:${widget.state.swt}/${widget.state.id}',
                         icon: isMinimized ? Icons.maximize : Icons.minimize,
                         onTap: isVisible ? widget.onMinimize : () {},
                         isHovered: _minimizeHovered.value,
@@ -1990,6 +2003,7 @@ class _CTabBarState extends State<_CTabBar> {
                       return _buildControlButton(
                         context: context,
                         widgetTheme: widgetTheme,
+                        semanticsId: 'maximize:${widget.state.swt}/${widget.state.id}',
                         icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
                         onTap: isVisible ? widget.onMaximize : () {},
                         isHovered: _maximizeHovered.value,

@@ -21,8 +21,10 @@ import 'package:swtflutter/src/impl/widget_config.dart';
 
 const _labels = ['Search', 'Server Templates', 'Task Tracker', 'Template Preview Settings'];
 
-VCTabFolder _folder() => VCTabFolder()
+VCTabFolder _folder({bool minMax = false}) => VCTabFolder()
   ..id = 1000
+  ..minimizeVisible = minMax
+  ..maximizeVisible = minMax
   ..style = SWT.NONE
   ..selection = 0
   ..minimumCharacters = 1
@@ -47,12 +49,12 @@ class _ReportingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
 
 final _strips = <String>[];
 
-Widget _host(double width) => EvolveApp(
+Widget _host(double width, {bool minMax = false}) => EvolveApp(
       theme: ThemeMode.light,
       contentWidget: SizedBox(
         width: width,
         height: 200,
-        child: _ReportingCTabFolderSwt(value: _folder(), onStrip: _strips.add),
+        child: _ReportingCTabFolderSwt(value: _folder(minMax: minMax), onStrip: _strips.add),
       ),
     );
 
@@ -72,12 +74,12 @@ Future<void> _loadInter() async {
 
 void _useTabScroll(bool? value) => setConfigFlags(ConfigFlags()..ctabfolder_tab_scroll = value);
 
-Future<void> _pump(WidgetTester tester, double width) async {
+Future<void> _pump(WidgetTester tester, double width, {bool minMax = false}) async {
   tester.view
     ..physicalSize = const Size(1400, 600)
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(_host(width));
+  await tester.pumpWidget(_host(width, minMax: minMax));
   for (var i = 0; i < 3; i++) {
     await tester.pump();
   }
@@ -94,6 +96,13 @@ double _horizontalScrollExtent(WidgetTester tester) {
   }
   return extent;
 }
+
+/// The text each tab label draws, in strip order.
+List<String> _drawnLabels(WidgetTester tester) => [
+      for (final text in tester.widgetList<Text>(
+          find.descendant(of: find.byType(ShrinkableTabLabel), matching: find.byType(Text))))
+        text.data ?? text.textSpan!.toPlainText(),
+    ];
 
 /// Each painted tab's background, in strip order.
 List<Color?> _tabBackgrounds(WidgetTester tester) => [
@@ -216,5 +225,48 @@ void main() {
     }
     expect([for (final (_, width) in _reportedTabs()) width], drawn,
         reason: 'Java hit-tests the tabs where they are drawn now');
+  });
+
+  testWidgets(
+      'ctabfolder_tab_scroll=false, minimize/maximize shown: the first width that shows every tab '
+      'shows each at its minimum label', (tester) async {
+    _useTabScroll(false);
+    // Widen as a resized view stack does until no tab is left behind the chevron.
+    var width = 40.0;
+    for (;; width++) {
+      await _pump(tester, width, minMax: true);
+      if (find.byIcon(Icons.expand_more).evaluate().isEmpty) break;
+      expect(width, lessThan(1200), reason: 'some width shows every tab');
+    }
+
+    // CTabFolder.setItemSize decides overflow before it reserves the chevron, and the minimize and
+    // maximize buttons always take their width, so every tab shows at its minimum before any grows.
+    expect(_drawnLabels(tester), [for (final label in _labels) label[0]],
+        reason: 'at width $width all tabs fit only at their minimum');
+  });
+
+  testWidgets(
+      'ctabfolder_tab_scroll=false: in the frame the tabs stop overflowing, no tab paints past the row',
+      (tester) async {
+    _useTabScroll(false);
+    var width = 40.0;
+    for (;; width++) {
+      await _pump(tester, width, minMax: true);
+      if (find.byIcon(Icons.expand_more).evaluate().isEmpty) break;
+      expect(width, lessThan(1200), reason: 'some width shows every tab');
+    }
+    await _pump(tester, width - 1, minMax: true);
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+
+    // One frame only: the chevron goes on the rebuild that follows it.
+    await tester.pumpWidget(_host(width, minMax: true));
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+    final row = tester.renderObject<RenderCompressedTabRow>(find.byType(CompressedTabRow));
+    var end = 0.0;
+    for (RenderBox? tab = row.firstChild; tab != null; tab = row.childAfter(tab)) {
+      end = (tab.parentData! as BoxParentData).offset.dx + tab.size.width;
+    }
+    expect(end, greaterThan(row.size.width), reason: 'the tabs are laid out for the chevron-free width');
+    expect(row, paints..clipRect(rect: Offset.zero & row.size));
   });
 }
