@@ -202,6 +202,11 @@ public class ControlHelper {
                     case SWT.TRAVERSE_MNEMONIC:
                         traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
                         break;
+                    // A lone radio has no sibling to move to and keeps the key, as natively.
+                    case SWT.TRAVERSE_ARROW_NEXT:
+                    case SWT.TRAVERSE_ARROW_PREVIOUS:
+                        traversed = control.traverseItem(e.detail == SWT.TRAVERSE_ARROW_NEXT);
+                        break;
                     default:
                         break;
                 }
@@ -326,8 +331,8 @@ public class ControlHelper {
 
     /**
      * Mirrors the natives' {@code traversalCode}: arrows stay in the control except in a radio
-     * button, a key-listening Canvas keeps every key, and an editable multi-line Text keeps Enter,
-     * unless a Traverse listener lets it go.
+     * button, a key-listening canvas Composite keeps every key, and an editable multi-line Text
+     * keeps Enter, unless a Traverse listener lets it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
@@ -337,13 +342,22 @@ public class ControlHelper {
             if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)
                 return false;
         }
-        if (control.getApi() instanceof Canvas) {
-            if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0)
-                return false;
-            if (control.hooks(SWT.KeyDown) || control.hooks(SWT.KeyUp))
-                return false;
-        }
+        // Composite.traversalCode on GTK and Cocoa: a canvas that is NO_FOCUS or hooks a key keeps it.
+        if (isCanvasComposite(control.getApi()) && ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0
+                || control.hooks(SWT.KeyDown) || control.hooks(SWT.KeyUp)))
+            return false;
         return true;
+    }
+
+    /**
+     * Whether the natives create {@code control} as a plain canvas (their CANVAS state): every
+     * Composite but the subclasses that wrap a native control of their own.
+     */
+    private static boolean isCanvasComposite(Control control) {
+        return control instanceof Composite && !(control instanceof Combo || control instanceof CoolBar
+                || control instanceof DateTime || control instanceof ExpandBar || control instanceof Group
+                || control instanceof Spinner || control instanceof TabFolder || control instanceof Table
+                || control instanceof ToolBar || control instanceof Tree);
     }
 
     /** Whether {@code control} or a control inside it takes the focus from Tab, as natively. */
@@ -471,6 +485,14 @@ public class ControlHelper {
      */
     public static boolean isGatedTraversal(Event keyEvent) {
         return keyEvent.keyCode == SWT.TAB;
+    }
+
+    /**
+     * Whether Java's Tab verdict for the focused {@code control} can be false, so the client waits
+     * for it: a Traverse listener may veto the Tab, or the control keeps Tab by default.
+     */
+    static boolean mayKeepTab(DartControl control) {
+        return control.hooks(SWT.Traverse) || !traversesByDefault(control, SWT.TRAVERSE_TAB_NEXT);
     }
 
     /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */

@@ -1657,7 +1657,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // Display-scoped, so it never hears the focus change: publish on every one, false included.
         if (forDisplay != null) {
             sendDisplayGate(forDisplay, dev.equo.swt.WireTable.CHANNEL_TRAVERSE_VETOABLE, "value",
-                    live && api.isListening(org.eclipse.swt.SWT.Traverse));
+                    live && ControlHelper.mayKeepTab(widget));
         }
         long previousActiveShellId = publishedActiveShell;
         boolean activeShellChanged = publishActiveShell();
