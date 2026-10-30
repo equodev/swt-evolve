@@ -50,7 +50,7 @@ public class VButton extends VControl {
             return true;
         }
         Shell shell = (Shell) parent;
-        Button defaultButton = ((DartDecorations) shell.getImpl()).defaultButton;
+        Button defaultButton = ((DartDecorations) shell.getImpl()).saveDefault;
         return defaultButton != null && defaultButton == button;
     }
 

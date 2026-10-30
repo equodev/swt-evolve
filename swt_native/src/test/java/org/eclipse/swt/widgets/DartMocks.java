@@ -77,6 +77,7 @@ public class DartMocks {
         ((DartControl) c.getImpl()).updateBackgroundMode();
         if (c instanceof Button b && c.getShell().getImpl() instanceof DartDecorations shell) {
             shell.defaultButton = b;
+            shell.saveDefault = b;
         }
         // A key listener makes a canvas Composite a Tab stop, and a link makes a Link one.
         c.addListener(org.eclipse.swt.SWT.KeyDown, e -> { });

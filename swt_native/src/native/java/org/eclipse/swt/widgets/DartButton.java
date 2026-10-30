@@ -666,6 +666,13 @@ public class DartButton extends DartControl implements IButton {
         return selection;
     }
 
+    @Override
+    public void sendFocusEvent(int type) {
+        super.sendFocusEvent(type);
+        if (!isDisposed())
+            ((DartDecorations) menuShell().getImpl()).defaultFollowsFocus(getApi(), type);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }
