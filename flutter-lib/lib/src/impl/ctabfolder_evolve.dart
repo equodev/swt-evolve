@@ -61,6 +61,9 @@ const double _defaultTabStripHeight = 32;
 
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
+  /// The widget holding the tabs, one keyed subtree per tab: where measure_ctabfolder reads a tab.
+  static const tabRow = 'TabDragRow';
+
   /// A click on a tab or on the folder focuses no CTabFolder, on any native.
   @override
   void takeFocusOnPress() {}

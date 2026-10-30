@@ -387,6 +387,10 @@ public class Sizes {
                 height = Math.max(height, size.y);
             }
         }
+        if (width == 0)
+            width = DartWidget.DEFAULT_WIDTH;
+        if (height == 0)
+            height = DartWidget.DEFAULT_HEIGHT;
         if (wHint != SWT.DEFAULT)
             width = wHint;
         if (hHint != SWT.DEFAULT)
@@ -1006,23 +1010,20 @@ public class Sizes {
                 width + border * 2, height + top + bottom);
     }
 
-    /**
-     * Height of the tab strip a TabFolder renders above its content: the tallest tab (label text
-     * plus its bottom padding, plus the tab's own bottom border) plus the strip's bottom border.
-     * Measured against the render side, which pins the same number from a rendering test so the two
-     * cannot silently drift apart.
-     */
-    public static final int TAB_FOLDER_TAB_STRIP_HEIGHT = 18;
-
+    /** The page gets the folder less the tab strip on one edge and the body's frame on the other three. */
     public static Rectangle getClientArea(DartTabFolder widget) {
         Rectangle b = widget.getBounds();
-        return new Rectangle(0, TAB_FOLDER_TAB_STRIP_HEIGHT, b.width,
-                Math.max(0, b.height - TAB_FOLDER_TAB_STRIP_HEIGHT));
+        int border = TabFolderTheme.get().bodyBorder();
+        int strip = TabFolderHelper.stripHeight(widget.getApi());
+        return new Rectangle(border, TabFolderHelper.pageTop(widget),
+                Math.max(0, b.width - 2 * border), Math.max(0, b.height - strip - border));
     }
 
     public static Rectangle computeTrim(DartTabFolder widget, int x, int y, int width, int height) {
-        return new Rectangle(x, y - TAB_FOLDER_TAB_STRIP_HEIGHT, width,
-                height + TAB_FOLDER_TAB_STRIP_HEIGHT);
+        int border = TabFolderTheme.get().bodyBorder();
+        int strip = TabFolderHelper.stripHeight(widget.getApi());
+        return new Rectangle(x - border, y - TabFolderHelper.pageTop(widget),
+                width + 2 * border, height + strip + border);
     }
 
     public static Rectangle getClientArea(DartGroup widget) {

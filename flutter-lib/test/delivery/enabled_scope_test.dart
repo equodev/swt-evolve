@@ -92,22 +92,25 @@ Future<void> _mount(WidgetTester tester, VComposite root) async {
   await tester.pumpAndSettle();
 }
 
-VTabFolder _tabFolder(int id, {required bool enabled, required VControl page}) => VTabFolder()
-  ..id = id
-  ..style = SWT.NONE
-  ..enabled = enabled
-  ..items = [
-    VTabItem()
-      ..id = id + 1
-      ..style = SWT.NONE
-      ..text = 'Tab'
-      ..control = page,
-  ]
-  ..bounds = (VRectangle()
-    ..x = 0
-    ..y = 0
-    ..width = 400
-    ..height = 300);
+/// Java selects a folder's first tab as it is added, so the state carries it as the selection.
+VTabFolder _tabFolder(int id, {required bool enabled, required VControl page}) {
+  final tab = VTabItem()
+    ..id = id + 1
+    ..style = SWT.NONE
+    ..text = 'Tab'
+    ..control = page;
+  return VTabFolder()
+    ..id = id
+    ..style = SWT.NONE
+    ..enabled = enabled
+    ..items = [tab]
+    ..selection = [tab]
+    ..bounds = (VRectangle()
+      ..x = 0
+      ..y = 0
+      ..width = 400
+      ..height = 300);
+}
 
 VCTabFolder _cTabFolder(int id, {required bool enabled, required VControl page}) => VCTabFolder()
   ..id = id

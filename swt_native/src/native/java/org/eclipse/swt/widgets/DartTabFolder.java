@@ -172,7 +172,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         }
         items[index] = item;
         itemCount++;
-        if (selection == null || selection.length == 0) {
+        if (itemCount == 1) {
             setSelection(index, false, false);
         }
         ((DartWidget) item.getImpl()).createJNIRef();
@@ -204,6 +204,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             items = new TabItem[4];
         }
         itemCount = count;
+        if (TabFolderHelper.deselectDestroyed(this, item) && count > 0)
+            setSelection(Math.max(0, index - 1), true, true);
         getValue().markDirty(VTabFolder.ITEMS);
     }
 
@@ -257,9 +259,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        for (int i = 0; i < itemCount; i++) {
-        }
-        return null;
+        return TabFolderHelper.itemAt(this, point);
     }
 
     /**
@@ -522,9 +522,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         }
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        this.selection = newValue;
         if (items.length == 0) {
-            setSelection(-1, false, false);
+            TabFolderHelper.clearSelection(this);
         } else {
             for (int i = items.length - 1; i >= 0; --i) {
                 int index = indexOf(items[i]);
@@ -663,9 +662,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             boolean changed = (getApi().state & LAYOUT_CHANGED) != 0;
             getApi().state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
             ((DartDisplay) display.getImpl()).runSkin();
-            if (layout != null) {
-                layout.layout(this.getApi(), changed);
-            }
+            layout.layout(this.getApi(), changed);
         }
         if (all) {
             getApi().state &= ~LAYOUT_CHILD;

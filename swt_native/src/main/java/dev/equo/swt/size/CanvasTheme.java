@@ -34,22 +34,6 @@ public final class CanvasTheme {
     public int green() { return green; }
     public int blue() { return blue; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CanvasTheme)) return false;
-        CanvasTheme other = (CanvasTheme) o;
-        return red == other.red
-            && green == other.green
-            && blue == other.blue;
-    }
-
-    @Override
-    public int hashCode() { return java.util.Objects.hash(red, green, blue); }
-
-    @Override
-    public String toString() { return "CanvasTheme[red=" + red + ", green=" + green + ", blue=" + blue + "]"; }
-
     public static CanvasTheme getDarkSurface() {
         return new CanvasTheme(31, 41, 55);
     }

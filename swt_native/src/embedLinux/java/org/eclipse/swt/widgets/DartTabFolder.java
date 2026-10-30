@@ -212,6 +212,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             ((DartTabItem) item.getImpl()).setFontDescription(fontDesc);
         }
         if (itemCount == 1) {
+            setSelection(0, false);
             Event event = new Event();
             event.item = items[0];
             sendSelectionEvent(SWT.Selection, event, false);
@@ -311,14 +312,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int itemCount = getItemCount();
-        for (int i = 0; i < itemCount; i++) {
-            TabItem item = items[i];
-            Rectangle rect = item.getBounds();
-            if (rect.contains(point))
-                return item;
-        }
-        return null;
+        return TabFolderHelper.itemAt(this, point);
     }
 
     /**

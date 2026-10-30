@@ -153,8 +153,7 @@ public class DartTabItem extends DartItem implements ITabItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        Rectangle result = new Rectangle(0, 0, 0, 0);
-        return result;
+        return TabFolderHelper.getBounds(this);
     }
 
     /**
@@ -278,6 +277,7 @@ public class DartTabItem extends DartItem implements ITabItem {
             }
         } else {
             if (newControl != null) {
+                newControl.setBounds(parent.getClientArea());
                 newControl.setVisible(true);
             }
             if (oldControl != null && newControl != null && oldControl != newControl)

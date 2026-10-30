@@ -22,6 +22,10 @@ import 'widget_config.dart';
 
 class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     extends CompositeImpl<T, V> {
+  /// The widget holding the tabs, one keyed subtree per tab: where measure_tabfolder reads a tab.
+  static const tabRow = '_TabRow';
+
+  /// The tab Java holds selected, or -1 when it holds none: no tab is highlighted and no page shown.
   late int _selectedIndex;
   int? _focusedTab;
   final DoubleTapDetector _tabTap = DoubleTapDetector();
@@ -64,8 +68,10 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     _selectedIndex = _getSelectedIndexFromState();
 
     // Send initial selection event
-    var e = VEvent()..index = _selectedIndex;
-    widget.sendSelectionSelection(state, e);
+    if (_selectedIndex >= 0) {
+      var e = VEvent()..index = _selectedIndex;
+      widget.sendSelectionSelection(state, e);
+    }
   }
 
   @override
@@ -79,16 +85,16 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     }
   }
 
+  /// Java selects the first tab a folder gets, so a folder with tabs and no selection is one whose
+  /// selection was cleared.
   int _getSelectedIndexFromState() {
     if (state.selection == null || state.selection!.isEmpty) {
-      return 0;
+      return -1;
     }
 
     final selectedItem = state.selection!.first;
     final items = state.items ?? [];
-    final index = items.indexWhere((item) => item.id == selectedItem.id);
-
-    return index >= 0 ? index : 0;
+    return items.indexWhere((item) => item.id == selectedItem.id);
   }
 
   @override
@@ -111,12 +117,11 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
     final tabContent = _buildTabContent(tabBodies);
 
+    final bar = buildTabBar(context, widgetTheme, tabItems);
+    final body = hasValidBounds ? Expanded(child: tabContent) : tabContent;
     Widget content = Column(
       mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
-      children: [
-        buildTabBar(context, widgetTheme, tabItems),
-        if (hasValidBounds) Expanded(child: tabContent) else tabContent,
-      ],
+      children: _tabsAtBottom ? [body, bar] : [bar, body],
     );
 
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
@@ -142,9 +147,13 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
         )))));
   }
 
+  /// SWT.BOTTOM: the strip sits below the page, with its line and the selected tab's accent on its
+  /// top edge, next to the page, as a TOP folder has them on its bottom edge.
+  bool get _tabsAtBottom => hasStyle(state.style, SWT.BOTTOM);
+
   Widget _buildTabContent(List<Widget> tabBodies) {
     return IndexedStack(
-      index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
+      index: _selectedIndex >= 0 && _selectedIndex < tabBodies.length ? _selectedIndex : null,
       children: tabBodies,
     );
   }
@@ -166,32 +175,36 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
               context: context,
             ) ??
             widgetTheme.tabBarBackgroundColor,
-        border: Border(
-          bottom: BorderSide(
-            color: widgetTheme.tabBarBorderColor,
-            width: widgetTheme.tabBorderWidth,
-          ),
-        ),
+        border: _edgeBorder(BorderSide(
+          color: widgetTheme.tabBarBorderColor,
+          width: widgetTheme.tabBorderWidth,
+        )),
       ),
-      child: Row(
-        mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          ...tabItems.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final TabItem tab = entry.value;
+      child: _TabRow(
+        child: Row(
+          mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            ...tabItems.asMap().entries.map((entry) {
+              final int index = entry.key;
+              final TabItem tab = entry.value;
+              final vItem = state.items![index];
 
-            return _buildTab(
-              context: context,
-              widgetTheme: widgetTheme,
-              isSelected: index == _selectedIndex,
-              tab: tab,
-              vItem: state.items![index],
-              onTap: () => _handleTabSelection(index),
-              index: index,
-            );
-          }).toList(),
-        ],
+              return KeyedSubtree(
+                key: ValueKey(vItem.id),
+                child: _buildTab(
+                  context: context,
+                  widgetTheme: widgetTheme,
+                  isSelected: index == _selectedIndex,
+                  tab: tab,
+                  vItem: vItem,
+                  onTap: () => _handleTabSelection(index),
+                  index: index,
+                ),
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -240,19 +253,16 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
           onTap: enabled ? () => _handleTabTap(index, onTap) : null,
           onFocusChange: (focused) => _onTabFocusChange(index, focused),
           child: _Overhang(
-            bottom: isSelected && enabled ? widgetTheme.tabSelectedBorderWidth : 0,
+            amount: isSelected && enabled ? widgetTheme.tabSelectedBorderWidth : 0,
+            upward: _tabsAtBottom,
             child: Container(
             padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
             constraints: const BoxConstraints(minHeight: 0),
             foregroundDecoration: getTabFocusRingDecoration(widgetTheme, focused: _focusedTab == index, enabled: enabled),
             decoration: BoxDecoration(
               color: backgroundColor,
-              border: Border(
-                right: BorderSide(
-                  color: borderColor,
-                  width: widgetTheme.tabBorderWidth,
-                ),
-                bottom: isSelected && enabled
+              border: _edgeBorder(
+                isSelected && enabled
                     ? BorderSide(
                         color: bottomBorderColor,
                         width: widgetTheme.tabSelectedBorderWidth,
@@ -261,6 +271,10 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
                         color: borderColor,
                         width: widgetTheme.tabBorderWidth,
                       ),
+                right: BorderSide(
+                  color: borderColor,
+                  width: widgetTheme.tabBorderWidth,
+                ),
               ),
             ),
             child: Center(
@@ -287,6 +301,12 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
       ),
     ));
   }
+
+  /// [edge] on the side the page is on: the bottom of the strip, or the top when the tabs are at the bottom.
+  Border _edgeBorder(BorderSide edge, {BorderSide right = BorderSide.none}) =>
+      _tabsAtBottom
+          ? Border(top: edge, right: right)
+          : Border(bottom: edge, right: right);
 
   /// The folder holds the focus while any of its tabs does: Tab moving onto a tab focuses it, and
   /// only the focus leaving every tab is a FocusOut -- moving between tabs is neither.
@@ -379,6 +399,16 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   }
 }
 
+/// Marks the row of tabs for the measurement; lays out as its child.
+class _TabRow extends StatelessWidget {
+  const _TabRow({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
+}
+
 class TabItem {
   final String label;
   final Widget? customContent;
@@ -387,31 +417,42 @@ class TabItem {
   TabItem({required this.label, this.customContent, this.toolTipText});
 }
 
-/// Lays its child out at full height and reports [bottom] less, so the child hangs over whatever
-/// is laid out below it: the selected tab's bottom border covering the bar's border line. A
-/// negative margin does the same and is refused in debug.
+/// Lays its child out at full height and reports [amount] less, so the child hangs over the strip's
+/// line next to the page: below it, or above it when [upward]. A negative margin does the same and
+/// is refused in debug.
 class _Overhang extends SingleChildRenderObjectWidget {
-  final double bottom;
+  final double amount;
+  final bool upward;
 
-  const _Overhang({required this.bottom, required super.child});
+  const _Overhang({required this.amount, required this.upward, required super.child});
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderOverhang(bottom);
+  RenderObject createRenderObject(BuildContext context) => _RenderOverhang(amount, upward);
 
   @override
   void updateRenderObject(BuildContext context, _RenderOverhang renderObject) {
-    renderObject.bottom = bottom;
+    renderObject
+      ..amount = amount
+      ..upward = upward;
   }
 }
 
 class _RenderOverhang extends RenderShiftedBox {
-  _RenderOverhang(this._bottom) : super(null);
+  _RenderOverhang(this._amount, this._upward) : super(null);
 
-  double _bottom;
-  double get bottom => _bottom;
-  set bottom(double value) {
-    if (value == _bottom) return;
-    _bottom = value;
+  double _amount;
+  double get amount => _amount;
+  set amount(double value) {
+    if (value == _amount) return;
+    _amount = value;
+    markNeedsLayout();
+  }
+
+  bool _upward;
+  bool get upward => _upward;
+  set upward(bool value) {
+    if (value == _upward) return;
+    _upward = value;
     markNeedsLayout();
   }
 
@@ -424,10 +465,10 @@ class _RenderOverhang extends RenderShiftedBox {
     }
     final inner = constraints.copyWith(
       minHeight: 0,
-      maxHeight: constraints.maxHeight.isFinite ? constraints.maxHeight + _bottom : null,
+      maxHeight: constraints.maxHeight.isFinite ? constraints.maxHeight + _amount : null,
     );
     child.layout(inner, parentUsesSize: true);
-    (child.parentData as BoxParentData).offset = Offset.zero;
-    size = constraints.constrain(Size(child.size.width, child.size.height - _bottom));
+    (child.parentData as BoxParentData).offset = Offset(0, _upward ? -_amount : 0);
+    size = constraints.constrain(Size(child.size.width, child.size.height - _amount));
   }
 }

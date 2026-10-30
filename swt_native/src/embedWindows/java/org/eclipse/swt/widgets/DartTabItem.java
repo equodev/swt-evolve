@@ -188,7 +188,7 @@ public class DartTabItem extends DartItem implements ITabItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return null;
+        return TabFolderHelper.getBounds(this);
     }
 
     Rectangle getBoundsInPixels() {

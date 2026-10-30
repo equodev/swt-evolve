@@ -4,6 +4,7 @@ import dev.equo.swt.size.TextStyle;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.widgets.Display;
 
 public final class FontMetricsUtil {
@@ -319,6 +320,20 @@ public final class FontMetricsUtil {
         PointD size = getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.weight()), textStyle.size(), textStyle.height());
         double textScale = 1 / Config.uiScale();
         return textScale == 1.0 ? size : new PointD(size.x() * textScale, size.y() * textScale);
+    }
+
+    /**
+     * A label's size as the render side draws it: in {@code style} with {@code font} applied over it, or as
+     * GC measures it with {@code flags} under {@code use_swt_fonts}. A disposed font counts as none: a
+     * resize can reach this from an async runnable after the widget's font was disposed.
+     */
+    public static org.eclipse.swt.graphics.Point labelSize(String text, int flags, TextStyle style, Font font) {
+        if (font != null && font.isDisposed())
+            font = null;
+        if (Config.getConfigFlags().use_swt_fonts)
+            return GCHelper.textExtent(text, flags, font);
+        PointD size = getFontSize(text, style.withStyleFrom(font));
+        return new org.eclipse.swt.graphics.Point((int) Math.ceil(size.x()), (int) Math.ceil(size.y()));
     }
 
     public static PointD getFontSize(String text, String fontId, int fontSize){

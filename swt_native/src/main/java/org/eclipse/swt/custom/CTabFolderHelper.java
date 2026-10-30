@@ -5,16 +5,13 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.size.CTabFolderSizes;
-import dev.equo.swt.size.TextStyle;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
@@ -463,16 +460,7 @@ public class CTabFolderHelper {
      * than written down here: a font copied from the render side's theme drifts from it silently.
      */
     static Point computeTextSize(GC gc, CTabItem item, String text, int FLAGS) {
-        // A resize reaches this from an async runnable, which can run after the item's font was
-        // disposed; a disposed font answers nothing, so measure in the label's own style instead.
-        Font font = item.getFont();
-        if (font != null && font.isDisposed())
-            font = null;
-        if (Config.getConfigFlags().use_swt_fonts)
-            return GCHelper.textExtent(text, FLAGS, font);
-        TextStyle style = CTabFolderSizes.tabLabelStyle().withStyleFrom(font);
-        dev.equo.swt.size.PointD size = FontMetricsUtil.getFontSize(text, style);
-        return new Point((int) Math.ceil(size.x()), (int) Math.ceil(size.y()));
+        return FontMetricsUtil.labelSize(text, FLAGS, CTabFolderSizes.tabLabelStyle(), item.getFont());
     }
 
     private static int getLargeTextPadding(CTabItem item) {

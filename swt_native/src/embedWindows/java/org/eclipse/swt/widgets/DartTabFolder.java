@@ -162,6 +162,9 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             items = newItems;
         }
         items[index] = item;
+        if (getItemCount() == 1) {
+            setSelection(index, false);
+        }
         getValue().markDirty(VTabFolder.ITEMS);
     }
 
@@ -233,7 +236,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return null;
+        return TabFolderHelper.itemAt(this, point);
     }
 
     /**
@@ -498,7 +501,6 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         }
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        this.selection = newValue;
         if (items.length == 0) {
             setSelection(-1, false);
         } else {
