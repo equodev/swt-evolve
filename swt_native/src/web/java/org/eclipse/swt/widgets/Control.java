@@ -1204,7 +1204,8 @@ public abstract class Control extends Widget implements Drawable {
      * @see #computeSize(int, int, boolean)
      */
     public void pack() {
-        getImpl().pack();
+        checkWidget();
+        pack(true);
     }
 
     /**
@@ -1229,7 +1230,8 @@ public abstract class Control extends Widget implements Drawable {
      * @see #computeSize(int, int, boolean)
      */
     public void pack(boolean changed) {
-        getImpl().pack(changed);
+        checkWidget();
+        setSize(computeSize(SWT.DEFAULT, SWT.DEFAULT, changed));
     }
 
     /**

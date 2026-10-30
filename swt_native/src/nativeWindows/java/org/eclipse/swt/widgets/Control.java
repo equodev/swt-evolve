@@ -1205,7 +1205,8 @@ public abstract class Control extends Widget implements Drawable {
      * @see #computeSize(int, int, boolean)
      */
     public void pack() {
-        getImpl().pack();
+        checkWidget();
+        pack(true);
     }
 
     /**
@@ -1230,7 +1231,12 @@ public abstract class Control extends Widget implements Drawable {
      * @see #computeSize(int, int, boolean)
      */
     public void pack(boolean changed) {
-        getImpl().pack(changed);
+        checkWidget();
+        /*
+	 * Since computeSize is overridden by Custom classes like CCombo
+	 * etc... hence we cannot call computeSizeInPixels directly.
+	 */
+        setSize(computeSize(SWT.DEFAULT, SWT.DEFAULT, changed));
     }
 
     /**
