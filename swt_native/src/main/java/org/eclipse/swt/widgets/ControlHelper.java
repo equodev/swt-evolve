@@ -977,6 +977,7 @@ public class ControlHelper {
         if (control.isDisposed())
             return;
         MenuHelper.forgetLoneAlt(control.getDisplay());
+        DragDetectHelper.forgetAnswer(control.getDisplay());
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;

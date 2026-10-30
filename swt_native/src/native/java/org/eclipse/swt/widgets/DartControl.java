@@ -796,8 +796,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
-        boolean dragging = false;
-        return dragging;
+        return DragDetectHelper.dragDetect(this, x, y);
     }
 
     boolean drawGripper(GC gc, int x, int y, int width, int height, boolean vertical) {
@@ -4220,7 +4219,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                             return;
                         if (!hooks(SWT.DragDetect) || !getDragDetect())
                             return;
-                        sendEvent(SWT.DragDetect, e);
+                        DragDetectHelper.clientDragDetect(this, e);
                     });
                     return;
                 }
@@ -4341,9 +4340,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                             return;
                         if (!isActive())
                             return;
-                        sendEvent(SWT.MouseUp, e);
-                        if (!isDisposed())
-                            ControlHelper.released(this);
+                        DragDetectHelper.mouse(this, SWT.MouseUp, e);
                     });
                     return;
                 }
@@ -4353,7 +4350,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                         if (isDisposed())
                             return;
                         ((DartDisplay) display.getImpl()).cursorLocation = toDisplay(e.x, e.y);
-                        sendEvent(SWT.MouseMove, e);
+                        DragDetectHelper.mouse(this, SWT.MouseMove, e);
                     });
                     return;
                 }
