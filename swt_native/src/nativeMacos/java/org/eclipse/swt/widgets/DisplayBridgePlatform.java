@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ConfigFlags;
+import org.eclipse.swt.internal.Callback;
 import org.eclipse.swt.internal.cocoa.NSApplication;
 import org.eclipse.swt.internal.cocoa.NSEvent;
 import org.eclipse.swt.internal.cocoa.NSThread;
@@ -22,6 +23,12 @@ final class DisplayBridgePlatform {
 
     private static boolean launched;
 
+    private static boolean pump;
+
+    private static final String APPLICATION_CLASS = "EvolveApplication";
+
+    private static Callback isRunningCallback;
+
     private DisplayBridgePlatform() {
     }
 
@@ -32,8 +39,10 @@ final class DisplayBridgePlatform {
             return;
         MacApplicationMenu.install();
         // The desktop window and a Chromium window bring their own native application loop.
-        if (appleEventPumpRequested() && !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode())
+        if (!ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode()) {
             launch();
+            pump = launched && appleEventPumpRequested();
+        }
     }
 
     /** The application menu as SWT widgets, for the menu bar Evolve draws inside the window. */
@@ -103,7 +112,7 @@ final class DisplayBridgePlatform {
     }
 
     /**
-     * Whether this run asks for the NSApp launch and the Cocoa pump that goes with it
+     * Whether this run asks for the Cocoa pump that delivers NSApp's events
      * ({@code -Ddev.equo.swt.mac.appleEventPump=true}). Off by default: only an application that
      * blocks its startup on the open-application Apple Event needs them, and the pump costs every
      * other one its Display thread — {@link #pumpEvents()} blocks indefinitely on an NSApp that was
@@ -120,6 +129,9 @@ final class DisplayBridgePlatform {
      * application may block its startup until its handler for that event runs. Must precede any
      * handler the application installs: {@code -finishLaunching} replaces the registered handlers
      * with AppKit's own.
+     *
+     * <p>AWT needs it too: loading AWT on the main thread with no NSApp running makes AWT run its own
+     * event loop there, so the Display thread never returns.
      */
     private static void launch() {
         // NSApp may only be driven from the main thread (-XstartOnFirstThread).
@@ -128,16 +140,38 @@ final class DisplayBridgePlatform {
         launched = true;
         NSApplication application = NSApplication.sharedApplication();
         // -finishLaunching is a one-time call; a running NSApp has already made it.
-        if (!application.isRunning())
+        if (!application.isRunning()) {
             application.finishLaunching();
+            markRunning(application);
+        }
+    }
+
+    /**
+     * Makes {@code [NSApp isRunning]} answer YES, as native SWT's Display does. AWT decides from it
+     * whether to embed in the host's application or to run its own event loop on the main thread,
+     * and this NSApp is never {@code -run}.
+     */
+    private static void markRunning(NSApplication application) {
+        long cls = OS.objc_lookUpClass(APPLICATION_CLASS);
+        if (cls == 0) {
+            isRunningCallback = new Callback(DisplayBridgePlatform.class, "isRunningProc", 2);
+            cls = OS.objc_allocateClassPair(OS.object_getClass(application.id), APPLICATION_CLASS, 0);
+            OS.class_addMethod(cls, OS.sel_isRunning, isRunningCallback.getAddress(), "c@:");
+            OS.objc_registerClassPair(cls);
+        }
+        OS.object_setClass(application.id, cls);
+    }
+
+    static long isRunningProc(long id, long sel) {
+        return 1;
     }
 
     /** NSEventMaskAny: matches every event type. Not declared by every release's OS. */
     private static final long NS_ANY_EVENT_MASK = -1L;
 
-    /** Drains the Cocoa event queue of an NSApp {@link #launch()} started; nothing else would. */
+    /** Drains the Cocoa event queue of an NSApp {@link #launch()} started, when the run asks for it. */
     private static void pumpEvents() {
-        if (!launched)
+        if (!pump)
             return;
         NSApplication application = NSApplication.sharedApplication();
         NSEvent event;
