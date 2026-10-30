@@ -1394,6 +1394,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void destroy(DartWidget control) {
+        // Read before the references below forget the control.
+        boolean releasesTheFocus = control == focused;
         super.destroy(control);
         if (focusRequested == control) focusRequested = null;
         unansweredFocusRequests.remove(control);
@@ -1409,7 +1411,35 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             closeShellWindow(shell);
             if (shell == displayWindowTaker) displayWindowTaker = null;
             sendDisplayUpdate(forDisplay);
+        } else if (releasesTheFocus && forDisplay != null) {
+            focusParentOfReleased((DartControl) control);
         }
+    }
+
+    /**
+     * Gives the focus of a released control to its nearest ancestor that is not being disposed, which
+     * receives FocusIn, as on Win32: the parent Composite itself, or the shell for a control directly in
+     * it. GTK hands it to a focusable sibling and Cocoa to no control, so Win32 decides (ADR-019).
+     * The client never reports this move: the control is gone before its FocusOut would reach Java.
+     * The control is not disposed yet, so the focus bookkeeping forgets it first; otherwise checkFocus
+     * would still find it focused and the new focus's activation would send it Deactivate.
+     */
+    private void focusParentOfReleased(DartControl control) {
+        Control api = control.getApi();
+        Shell shell = api.getShell();
+        Composite parent = api.getParent();
+        while (parent != null && parent != shell && (parent.state & DartWidget.DISPOSE_SENT) != 0)
+            parent = parent.getParent();
+        if (parent == null || (parent.state & DartWidget.DISPOSE_SENT) != 0)
+            return;
+        if (forDisplay.currentFocusControl == api)
+            forDisplay.currentFocusControl = null;
+        if (forDisplay.focusControl == api)
+            forDisplay.focusControl = null;
+        DartShell shellImpl = (DartShell) shell.getImpl();
+        if (shellImpl.lastActive == api)
+            shellImpl.lastActive = null;
+        setFocus((DartControl) parent.getImpl());
     }
 
     /** Tears down the Display's surface and comm. Subclasses override to add surface-specific cleanup. */
