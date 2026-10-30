@@ -349,6 +349,16 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       );
     }
 
+    // Tab stops on the folder itself (VControl.tabStop: it hooks KeyDown, as natively), before its
+    // pages; Java's FocusIn selects the first tab when none is.
+    final tabStop = state.tabStop ?? false;
+    column = Focus(
+      focusNode: surfaceFocusNode,
+      canRequestFocus: tabStop,
+      skipTraversal: !tabStop,
+      child: column,
+    );
+
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
     // through `wrap()`, so it owes them that answer itself, and the folder's own pointer events:
@@ -1651,6 +1661,8 @@ class _CTabBarState extends State<_CTabBar> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          // The min/max and chevron buttons are no Tab stops of their own: Tab stops on the folder.
+          canRequestFocus: false,
           onTap: enabled ? onTap : null,
           splashColor: widgetTheme.controlButtonHoverColor.withOpacity(0.3),
           highlightColor: widgetTheme.controlButtonHoverColor.withOpacity(0.2),

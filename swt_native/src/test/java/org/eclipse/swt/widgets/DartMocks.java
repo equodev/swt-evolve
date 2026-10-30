@@ -59,7 +59,7 @@ public class DartMocks {
     /**
      * Gives {@code c} a value for each of the properties a fill through setters cannot reach: the
      * ones set by another object (cursor, menu, drag source, drop target), by the parent's
-     * background mode, or by the shell's default button.
+     * background mode, by the shell's default button, or by what makes a control a Tab stop.
      */
     public static void fillUnsettable(Control c) {
         c.setCursor(new Cursor(c.getDisplay(), org.eclipse.swt.SWT.CURSOR_HAND));
@@ -78,6 +78,10 @@ public class DartMocks {
         if (c instanceof Button b && c.getShell().getImpl() instanceof DartDecorations shell) {
             shell.defaultButton = b;
         }
+        // A key listener makes a canvas Composite a Tab stop, and a link makes a Link one.
+        c.addListener(org.eclipse.swt.SWT.KeyDown, e -> { });
+        if (c instanceof Link link)
+            link.setText("<a>link</a>");
     }
 
     /**

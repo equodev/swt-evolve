@@ -254,24 +254,24 @@ public final class RGB implements Serializable, dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(416);
+        w.key(417);
         w.write((int) red);
-        w.key(415);
+        w.key(416);
         w.write((int) green);
-        w.key(414);
+        w.key(415);
         w.write((int) blue);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 416:
+            case 417:
                 red = r.int32();
                 return true;
-            case 415:
+            case 416:
                 green = r.int32();
                 return true;
-            case 414:
+            case 415:
                 blue = r.int32();
                 return true;
         }

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../focus_requests.dart';
+import 'tab_only_focus_node.dart';
 import 'veto_gate.dart';
 
 /// Withholds Flutter's own focus traversal inside [child] while a `TraverseListener` could veto it.
@@ -45,11 +46,14 @@ class _GatedTraversal<T extends Intent> extends Action<T> {
     // The traversal policy moves on from its scope's focused child, not from the node it is
     // called on, so the start has to be that child first.
     if (node != null && node != primary) node.requestFocus();
-    if (forward) {
-      node?.nextFocus();
-    } else {
-      node?.previousFocus();
-    }
+    // Java may answer after the Tab key is up; the Tab-only stops (tool items) still count as stops.
+    TabOnlyFocusNode.keyMove(() {
+      if (forward) {
+        node?.nextFocus();
+      } else {
+        node?.previousFocus();
+      }
+    });
   }
 
   /// The node Tab moves on from. SWT traverses from its focus control, and Java does not move the

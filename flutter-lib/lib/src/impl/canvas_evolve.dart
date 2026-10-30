@@ -120,6 +120,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // it on pointer-down and forward keystrokes to SWT below.
   final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
 
+  @override
+  bool get surfaceTakesTab => false;
+
   /// Whether a press gives this Canvas the keyboard focus; false for a Canvas that only paints, which
   /// no native focuses on a click.
   bool get focusesOnPress => true;
@@ -223,9 +226,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChildren = children != null && children.isNotEmpty;
-    // A Canvas hosting children -- a Shell is one -- is no Tab stop of its own: Tab moves between its
-    // children, and stays on the last one when there is nowhere else to go.
-    _keyboardFocus.skipTraversal = hasActiveChildren;
+    // Java decides whether Tab stops here (VControl.tabStop, absent when false): a Canvas that hooks a
+    // key event, children or not.
+    _keyboardFocus.skipTraversal = !(state.tabStop ?? false);
 
     final content = Listener(
       behavior: HitTestBehavior.translucent,
@@ -244,8 +247,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return inOwnLayer(Focus(
       focusNode: _keyboardFocus,
       onKeyEvent: (node, event) {
-        final kids = state.children;
-        if (!node.hasPrimaryFocus || (kids != null && kids.isNotEmpty)) {
+        if (!node.hasPrimaryFocus) {
           return KeyEventResult.ignored;
         }
         final vEvent = mapNewKeyEventToSwt(event);

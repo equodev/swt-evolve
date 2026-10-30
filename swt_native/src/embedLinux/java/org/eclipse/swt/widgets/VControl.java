@@ -177,6 +177,13 @@ public class VControl extends VWidget {
         ((DartControl) impl).region = value;
     }
 
+    public boolean getTabStop() {
+        return false;
+    }
+
+    public void setTabStop(boolean value) {
+    }
+
     public int getTextDirection() {
         return ((DartControl) impl).getTextDirection();
     }
@@ -237,9 +244,11 @@ public class VControl extends VWidget {
 
     public static final int MENU = 141;
 
-    public static final int TOOL_TIP_TEXT = 143;
+    public static final int TAB_STOP = 143;
 
-    public static final int VISIBLE = 144;
+    public static final int TOOL_TIP_TEXT = 144;
+
+    public static final int VISIBLE = 145;
 
     @Override
     public String wireName(int key) {
@@ -272,6 +281,8 @@ public class VControl extends VWidget {
                 return "inheritsBackground";
             case MENU:
                 return "menu";
+            case TAB_STOP:
+                return "tabStop";
             case TOOL_TIP_TEXT:
                 return "toolTipText";
             case VISIBLE:
@@ -326,9 +337,12 @@ public class VControl extends VWidget {
                 w.ref(getMenu());
                 return true;
             case 143:
-                w.write(getToolTipText());
+                w.write(getTabStop());
                 return true;
             case 144:
+                w.write(getToolTipText());
+                return true;
+            case 145:
                 w.write(getVisible());
                 return true;
         }
@@ -466,19 +480,28 @@ public class VControl extends VWidget {
                 }
             case 143:
                 {
-                    String v_ = getToolTipText();
-                    if (v_ == null)
+                    boolean v_ = getTabStop();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.isEmpty())
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(143);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 144:
                 {
-                    Boolean v_ = getVisible();
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(144);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 145:
+                {
+                    Boolean v_ = getVisible();
+                    w.key(145);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -486,7 +509,7 @@ public class VControl extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 143, 144 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 143, 144, 145 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -501,7 +524,7 @@ public class VControl extends VWidget {
     public boolean wireAlways(int key) {
         switch(key) {
             case 136:
-            case 144:
+            case 145:
                 return true;
         }
         return super.wireAlways(key);

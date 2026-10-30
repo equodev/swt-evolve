@@ -40,11 +40,11 @@ public class VSashForm extends VComposite {
         ((DartSashForm) impl).weights = value;
     }
 
-    public static final int MAXIMIZED_CONTROL = 425;
+    public static final int MAXIMIZED_CONTROL = 426;
 
-    public static final int SASH_WIDTH = 426;
+    public static final int SASH_WIDTH = 427;
 
-    public static final int WEIGHTS = 427;
+    public static final int WEIGHTS = 428;
 
     @Override
     public String wireName(int key) {
@@ -62,13 +62,13 @@ public class VSashForm extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 425:
+            case 426:
                 w.ref(getMaximizedControl());
                 return true;
-            case 426:
+            case 427:
                 w.write((int) getSashWidth());
                 return true;
-            case 427:
+            case 428:
                 w.write(getWeights());
                 return true;
         }
@@ -78,32 +78,32 @@ public class VSashForm extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 425:
+            case 426:
                 {
                     Control v_ = getMaximizedControl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(425);
+                    w.key(426);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 426:
+            case 427:
                 {
                     int v_ = getSashWidth();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(426);
+                    w.key(427);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 427:
+            case 428:
                 {
                     int[] v_ = getWeights();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(427);
+                    w.key(428);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -111,7 +111,7 @@ public class VSashForm extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 425, 426, 427 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 426, 427, 428 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

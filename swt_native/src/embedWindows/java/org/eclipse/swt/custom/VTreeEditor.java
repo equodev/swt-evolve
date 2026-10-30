@@ -49,13 +49,13 @@ public class VTreeEditor extends VControlEditor {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 637:
+            case 638:
                 w.write((int) getColumn());
                 return true;
-            case 638:
+            case 639:
                 w.ref(getEditor());
                 return true;
-            case 639:
+            case 640:
                 w.ref(getItem());
                 return true;
         }
@@ -65,30 +65,30 @@ public class VTreeEditor extends VControlEditor {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 637:
+            case 638:
                 {
                     int v_ = getColumn();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(637);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 638:
-                {
-                    Control v_ = getEditor();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(638);
-                    w.ref(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 639:
                 {
-                    TreeItem v_ = getItem();
+                    Control v_ = getEditor();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(639);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 640:
+                {
+                    TreeItem v_ = getItem();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(640);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -96,7 +96,7 @@ public class VTreeEditor extends VControlEditor {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControlEditor.allWireKeys_(), new int[] { 637, 638, 639 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControlEditor.allWireKeys_(), new int[] { 638, 639, 640 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

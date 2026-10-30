@@ -47,10 +47,10 @@ class VCoolItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 150: // control
+      case 151: // control
         control = r.ref<VControl>();
         return true;
-      case 151: // preferredSize
+      case 152: // preferredSize
         preferredSize = r.point();
         return true;
       default:
@@ -64,13 +64,13 @@ class VCoolItem extends VItem {
     {
       final v_ = control;
       if (v_ != null) {
-        w.keyRef(150, v_.id);
+        w.keyRef(151, v_.id);
       }
     }
     {
       final v_ = preferredSize;
       if (v_ != null) {
-        w.key(151);
+        w.key(152);
         w.pointValue(v_);
       }
     }
@@ -79,8 +79,8 @@ class VCoolItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(150, control);
-    visit(151, preferredSize);
+    visit(151, control);
+    visit(152, preferredSize);
   }
 
   @override

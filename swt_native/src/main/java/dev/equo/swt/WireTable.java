@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 76628781;
+    public static final int FINGERPRINT = -2143690368;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -792,6 +792,7 @@ public final class WireTable {
             "tabHeight",
             "tabLength",
             "tabPosition",
+            "tabStop",
             "tabStops",
             "tabWidth",
             "tabs",
@@ -1006,6 +1007,7 @@ public final class WireTable {
             "Control.inheritsBackground",
             "Control.menu",
             "Control.region",
+            "Control.tabStop",
             "Control.toolTipText",
             "Control.visible",
             "ControlEditor.editor",
@@ -1665,6 +1667,7 @@ public final class WireTable {
             "bool",
             "ref",
             "object:VRegion",
+            "bool",
             "string",
             "bool?",
             "ref",
@@ -3278,31 +3281,31 @@ public final class WireTable {
     public static final int TYPE_WIDGET_SIZE_BRIDGE = 133;
 
     /** The display's `activeShellId`. */
-    public static final int DISPLAY_ACTIVE_SHELL_ID = 175;
+    public static final int DISPLAY_ACTIVE_SHELL_ID = 176;
 
     /** The display's `config`. */
-    public static final int DISPLAY_CONFIG = 176;
+    public static final int DISPLAY_CONFIG = 177;
 
     /** The display's `focusHolderId`. */
-    public static final int DISPLAY_FOCUS_HOLDER_ID = 177;
+    public static final int DISPLAY_FOCUS_HOLDER_ID = 178;
 
     /** The display's `mainShellId`. */
-    public static final int DISPLAY_MAIN_SHELL_ID = 178;
+    public static final int DISPLAY_MAIN_SHELL_ID = 179;
 
     /** The display's `popups`. */
-    public static final int DISPLAY_POPUPS = 179;
+    public static final int DISPLAY_POPUPS = 180;
 
     /** The display's `shells`. */
-    public static final int DISPLAY_SHELLS = 180;
+    public static final int DISPLAY_SHELLS = 181;
 
     /** The display's `systemMenu`. */
-    public static final int DISPLAY_SYSTEM_MENU = 181;
+    public static final int DISPLAY_SYSTEM_MENU = 182;
 
     /** The display's `tooltips`. */
-    public static final int DISPLAY_TOOLTIPS = 182;
+    public static final int DISPLAY_TOOLTIPS = 183;
 
     /** The display's `windowedShellIds`. */
-    public static final int DISPLAY_WINDOWED_SHELL_IDS = 183;
+    public static final int DISPLAY_WINDOWED_SHELL_IDS = 184;
 
     /** The flag `assets_path`. */
     public static final int CONFIG_FLAGS_ASSETS_PATH = 87;

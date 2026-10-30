@@ -23,22 +23,22 @@ class VImage implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 333: // filename
+      case 334: // filename
         filename = r.string();
         return true;
-      case 334: // height
+      case 335: // height
         height = r.int32();
         return true;
-      case 335: // imageData
+      case 336: // imageData
         imageData = r.object(VImageData.new);
         return true;
-      case 336: // remoteRef
+      case 337: // remoteRef
         remoteRef = r.longBoxed();
         return true;
-      case 337: // svgContent
+      case 338: // svgContent
         svgContent = r.string();
         return true;
-      case 338: // width
+      case 339: // width
         width = r.int32();
         return true;
       default:
@@ -51,53 +51,53 @@ class VImage implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = filename;
       if (v_ != null) {
-        w.key(333);
+        w.key(334);
         w.string(v_);
       }
     }
     {
       final v_ = height;
       if (v_ != null) {
-        w.keyInt32(334, v_);
+        w.keyInt32(335, v_);
       }
     }
     {
       final v_ = imageData;
       if (v_ != null) {
-        w.key(335);
+        w.key(336);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = remoteRef;
       if (v_ != null) {
-        w.key(336);
+        w.key(337);
         w.longBoxed(v_);
       }
     }
     {
       final v_ = svgContent;
       if (v_ != null) {
-        w.key(337);
+        w.key(338);
         w.string(v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(338, v_);
+        w.keyInt32(339, v_);
       }
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(333, filename);
-    visit(334, height);
-    visit(335, imageData);
-    visit(336, remoteRef);
-    visit(337, svgContent);
-    visit(338, width);
+    visit(334, filename);
+    visit(335, height);
+    visit(336, imageData);
+    visit(337, remoteRef);
+    visit(338, svgContent);
+    visit(339, width);
   }
 }
 

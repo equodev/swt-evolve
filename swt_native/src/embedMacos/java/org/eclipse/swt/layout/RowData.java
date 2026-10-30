@@ -142,24 +142,24 @@ public final class RowData implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(424);
+        w.key(425);
         w.write((int) width);
-        w.key(423);
+        w.key(424);
         w.write((int) height);
-        w.key(422);
+        w.key(423);
         w.write(exclude);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 424:
+            case 425:
                 width = r.int32();
                 return true;
-            case 423:
+            case 424:
                 height = r.int32();
                 return true;
-            case 422:
+            case 423:
                 exclude = r.bool();
                 return true;
         }

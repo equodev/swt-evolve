@@ -47,7 +47,7 @@ class ExpandBarSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable("horizontalBar", "checkStyle drops H_SCROLL, so the widget never has a horizontal bar"), SWT.NONE, SWT.V_SCROLL, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("horizontalBar", "checkStyle drops H_SCROLL, so the widget never has a horizontal bar", "tabStop", "ControlHelper.isTabStop never makes this widget a Tab stop"), SWT.NONE, SWT.V_SCROLL, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

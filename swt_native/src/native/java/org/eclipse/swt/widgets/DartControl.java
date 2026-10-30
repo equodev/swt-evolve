@@ -4156,6 +4156,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return (getApi().state & PARENT_BACKGROUND) != 0;
     }
 
+    public boolean getTabStop() {
+        return ControlHelper.isTabStop(getApi());
+    }
+
     public Font getExplicitFont() {
         return font;
     }

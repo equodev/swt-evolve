@@ -18,25 +18,25 @@ class VPattern implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 394: // color1
+      case 395: // color1
         color1 = r.color();
         return true;
-      case 395: // color2
+      case 396: // color2
         color2 = r.color();
         return true;
-      case 396: // endX
+      case 397: // endX
         endX = r.float32();
         return true;
-      case 397: // endY
+      case 398: // endY
         endY = r.float32();
         return true;
-      case 398: // image
+      case 399: // image
         image = r.image();
         return true;
-      case 399: // startX
+      case 400: // startX
         startX = r.float32();
         return true;
-      case 400: // startY
+      case 401: // startY
         startY = r.float32();
         return true;
       default:
@@ -49,48 +49,48 @@ class VPattern implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = color1;
       if (v_ != null) {
-        w.key(394);
+        w.key(395);
         w.colorValue(v_);
       }
     }
     {
       final v_ = color2;
       if (v_ != null) {
-        w.key(395);
+        w.key(396);
         w.colorValue(v_);
       }
     }
     {
       final v_ = endX;
       if (v_ != null) {
-        w.key(396);
+        w.key(397);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = endY;
       if (v_ != null) {
-        w.key(397);
+        w.key(398);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(398, v_.id);
+        w.keyRef(399, v_.id);
       }
     }
     {
       final v_ = startX;
       if (v_ != null) {
-        w.key(399);
+        w.key(400);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = startY;
       if (v_ != null) {
-        w.key(400);
+        w.key(401);
         w.float32(v_.toDouble());
       }
     }
@@ -98,12 +98,12 @@ class VPattern implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(394, color1);
-    visit(395, color2);
-    visit(396, endX);
-    visit(397, endY);
-    visit(398, image);
-    visit(399, startX);
-    visit(400, startY);
+    visit(395, color1);
+    visit(396, color2);
+    visit(397, endX);
+    visit(398, endY);
+    visit(399, image);
+    visit(400, startX);
+    visit(401, startY);
   }
 }

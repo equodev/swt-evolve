@@ -243,10 +243,23 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
   final FocusNode _surfaceFocus = FocusNode(debugLabel: 'CompositeSurface');
 
+  /// Stands in for [_surfaceFocus] around the children of a Composite that is no Tab stop, so the
+  /// tree keeps its shape and the surface node stays unmounted: a request for it waits until the
+  /// children are gone.
+  final FocusNode _childrenFocus =
+      FocusNode(debugLabel: 'CompositeChildren', canRequestFocus: false, skipTraversal: true);
+
   bool get _isSurface => state.children?.isEmpty ?? true;
 
-  /// Only a childless Composite mounts this node. One focused while it still has children takes the
-  /// focus once they are gone: an unmounted node keeps the request until it is mounted.
+  /// Whether this Composite's own node is its Tab stop; a Canvas holds the stop in a node of its own.
+  bool get surfaceTakesTab => true;
+
+  /// The node that takes this Composite's own focus, for a subclass that builds its own tree.
+  @protected
+  FocusNode get surfaceFocusNode => _surfaceFocus;
+
+  /// Mounted when the Composite is childless, or has children and is a Tab stop (VControl.tabStop).
+  /// A request while it is unmounted waits until it is mounted.
   @override
   FocusNode? get swtFocusNode => _surfaceFocus;
 
@@ -264,7 +277,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   }
 
   void _handleSurfaceFocusChange() {
-    if (_surfaceFocus.hasFocus) {
+    if (_surfaceFocus.hasPrimaryFocus) {
       _reportSurfaceFocusIn();
     } else if (_surfaceFocusReported) {
       _surfaceFocusReported = false;
@@ -282,6 +295,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   void dispose() {
     _surfaceFocus.removeListener(_handleSurfaceFocusChange);
     _surfaceFocus.dispose();
+    _childrenFocus.dispose();
     super.dispose();
   }
 
@@ -371,9 +385,13 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       );
     }
 
+    // Java decides whether Tab stops here (VControl.tabStop): a Composite that hooks a key event,
+    // children or not.
+    final tabStop = state.tabStop ?? false;
     if (children == null || children.isEmpty) {
       final content = Focus(
         focusNode: _surfaceFocus,
+        skipTraversal: !(tabStop && surfaceTakesTab),
         child: wrap(paintBackground(const SizedBox.expand()), ownLayer: false),
       );
       // Hidden Composite: the chrome Listener sits outside wrap()'s Visibility gate, so it would keep
@@ -409,6 +427,11 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
     final gcWrapped = stackGCUnderChildren(paintBackground, inner);
     final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
-    return inOwnLayer(blockWhenDisabled(wrapCompositeInteractionChrome(this, dndWrapped)));
+    // A Composite that is a Tab stop is reached before its children.
+    final focusable = Focus(
+      focusNode: tabStop && surfaceTakesTab ? _surfaceFocus : _childrenFocus,
+      child: dndWrapped,
+    );
+    return inOwnLayer(blockWhenDisabled(wrapCompositeInteractionChrome(this, focusable)));
   }
 }

@@ -364,6 +364,9 @@ public class ControlHelper {
     static boolean hasTabStop(Control control) {
         if (control == null || control.isDisposed() || !control.getVisible() || !control.getEnabled())
             return false;
+        // A ToolBar with no enabled item has nowhere for Tab to stop, on every native.
+        if (control instanceof ToolBar)
+            return hasEnabledItem((ToolBar) control);
         if (isTabStop(control))
             return true;
         if (control instanceof Composite) {
@@ -375,8 +378,11 @@ public class ControlHelper {
         return false;
     }
 
-    /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
-    private static boolean isTabStop(Control control) {
+    /**
+     * The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. The one
+     * rule: the client reads it as {@code VControl.tabStop}.
+     */
+    static boolean isTabStop(Control control) {
         if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control))
             return true;
         if ((control.getStyle() & SWT.NO_FOCUS) != 0)
@@ -388,11 +394,31 @@ public class ControlHelper {
             return true;
         if (control instanceof Link)
             return holdsLink(((Link) control).getText());
-        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
+        // A ToolBar is one stop, entered on its first enabled item, which the client picks: GTK's bar is
+        // one tab group and Cocoa focuses its first item. Win32 alone makes one that is not FLAT NO_FOCUS.
+        if (control instanceof ToolBar)
+            return true;
+        // Composite.setTabGroupFocus: a Canvas or plain Composite takes Tab when it hooks a key event,
+        // children or not.
+        if (isCanvasComposite(control) && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
             DartWidget impl = (DartWidget) control.getImpl();
             return impl.hooks(SWT.KeyDown) || impl.hooks(SWT.KeyUp);
         }
         return false;
+    }
+
+    private static boolean hasEnabledItem(ToolBar bar) {
+        for (ToolItem item : bar.getItems()) {
+            if ((item.getStyle() & SWT.SEPARATOR) == 0 && item.getEnabled())
+                return true;
+        }
+        return false;
+    }
+
+    /** A key listener added or removed can change whether the control is a Tab stop. */
+    static void keyHooksChanged(DartWidget widget, int eventType) {
+        if ((eventType == SWT.KeyDown || eventType == SWT.KeyUp) && widget instanceof DartControl)
+            ((DartControl) widget).getValue().markDirty(VControl.TAB_STOP);
     }
 
     /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */

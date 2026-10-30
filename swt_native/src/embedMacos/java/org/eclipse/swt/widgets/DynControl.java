@@ -3027,6 +3027,10 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     boolean sizeSet;
 
+    boolean tabStop;
+
+    boolean tabStopSet;
+
     int textDirection;
 
     boolean textDirectionSet;
@@ -3105,6 +3109,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
             newImpl.setRegion(getRegion());
         if (sizeSet)
             newImpl.setSize(getSize());
+        //newImpl.tabStop = tabStop;
+        ;
         if (textDirectionSet)
             newImpl.setTextDirection(getTextDirection());
         if (toolTipTextSet)

@@ -33,7 +33,7 @@ public class VToolBar extends VComposite {
         ((DartToolBar) impl).items = value;
     }
 
-    public static final int ITEMS = 596;
+    public static final int ITEMS = 597;
 
     @Override
     public String wireName(int key) {
@@ -47,7 +47,7 @@ public class VToolBar extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 596:
+            case 597:
                 w.refs(getItems());
                 return true;
         }
@@ -57,14 +57,14 @@ public class VToolBar extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 596:
+            case 597:
                 {
                     ToolItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(596);
+                    w.key(597);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -72,7 +72,7 @@ public class VToolBar extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 596 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 597 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

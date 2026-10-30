@@ -97,15 +97,43 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   final FocusReport _focusReport = FocusReport();
   final FocusNode _barNode = FocusNode(debugLabel: 'ToolBar', canRequestFocus: false, skipTraversal: true);
 
+  /// The bar's stop is its entry item, not the Composite surface.
+  @override
+  bool get surfaceTakesTab => false;
+
   bool _ownsItem(FocusNode? node) =>
       node is ToolItemFocusNode && node.context?.findAncestorStateOfType<ToolBarImpl>() == this;
 
   /// The ToolBar holds the focus while one of its own items does; a control hosted in a separator
   /// item reports its own focus.
   void _onFocusChange() {
-    _focusReport.update(_ownsItem(FocusManager.instance.primaryFocus),
+    final primary = FocusManager.instance.primaryFocus;
+    if (_ownsItem(primary) && !(primary as ToolItemFocusNode).arrow) {
+      if (_hotItem != primary) {
+        _hotItem = primary;
+        _updateTabStops();
+      }
+    }
+    _focusReport.update(_ownsItem(primary),
         focusIn: () => widget.sendFocusFocusIn(state, null),
         focusOut: () => widget.sendFocusFocusOut(state, null));
+  }
+
+  /// The item Tab enters the bar on: the one last focused, as Win32's hot item.
+  ToolItemFocusNode? _hotItem;
+
+  /// One Tab stop per bar, when Java names the bar one (VControl.tabStop): Tab enters on the hot
+  /// item, or the first enabled one, and the next Tab leaves the bar; Left/Right move between items.
+  void _updateTabStops() {
+    if (!mounted) return;
+    final stops = _barNode.descendants.where(_ownsItem).cast<ToolItemFocusNode>().toList();
+    final items = stops.where((s) => !s.arrow && s.focusableStop).toList();
+    final entry = state.tabStop ?? false
+        ? (items.contains(_hotItem) ? _hotItem : (items.isEmpty ? null : items.first))
+        : null;
+    for (final stop in stops) {
+      stop.skipTraversal = stop != entry;
+    }
   }
 
   /// With an item focused, Left/Right move to the previous/next enabled item, wrapping around as on
@@ -158,6 +186,8 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   Widget build(BuildContext context) {
     _itemWidgets = _builtItemWidgets;
     _builtItemWidgets = Map<VToolItem, Widget>.identity();
+    // The items' nodes are attached once this frame is laid out.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTabStops());
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
     final style = StyleBits(state.style);
     final isVertical = style.has(SWT.VERTICAL);

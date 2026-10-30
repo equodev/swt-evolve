@@ -1079,49 +1079,49 @@ public class VGC extends VResource {
         return ((DartGC) impl).wireSelectionFills();
     }
 
-    public static final int XORMODE = 265;
+    public static final int XORMODE = 266;
 
-    public static final int ALPHA = 266;
+    public static final int ALPHA = 267;
 
-    public static final int ANTIALIAS = 267;
+    public static final int ANTIALIAS = 268;
 
-    public static final int BACKGROUND = 268;
+    public static final int BACKGROUND = 269;
 
-    public static final int BUFFER_SCALE = 270;
+    public static final int BUFFER_SCALE = 271;
 
-    public static final int CLIPPING = 271;
+    public static final int CLIPPING = 272;
 
-    public static final int CLIPPING_PATH = 272;
+    public static final int CLIPPING_PATH = 273;
 
-    public static final int CLIPPING_RECTS = 273;
+    public static final int CLIPPING_RECTS = 274;
 
-    public static final int FILL_RULE = 275;
+    public static final int FILL_RULE = 276;
 
-    public static final int FONT = 276;
+    public static final int FONT = 277;
 
-    public static final int FOREGROUND = 277;
+    public static final int FOREGROUND = 278;
 
-    public static final int HOVER_FILLS = 279;
+    public static final int HOVER_FILLS = 280;
 
-    public static final int INTERPOLATION = 280;
+    public static final int INTERPOLATION = 281;
 
-    public static final int LINE_CAP = 281;
+    public static final int LINE_CAP = 282;
 
-    public static final int LINE_DASH = 282;
+    public static final int LINE_DASH = 283;
 
-    public static final int LINE_DASH_OFFSET = 283;
+    public static final int LINE_DASH_OFFSET = 284;
 
-    public static final int LINE_JOIN = 284;
+    public static final int LINE_JOIN = 285;
 
-    public static final int LINE_STYLE = 285;
+    public static final int LINE_STYLE = 286;
 
-    public static final int LINE_WIDTH = 286;
+    public static final int LINE_WIDTH = 287;
 
-    public static final int SELECTION_FILLS = 287;
+    public static final int SELECTION_FILLS = 288;
 
-    public static final int STYLE = 288;
+    public static final int STYLE = 289;
 
-    public static final int THEMED_CANVAS = 289;
+    public static final int THEMED_CANVAS = 290;
 
     @Override
     public String wireName(int key) {
@@ -1177,67 +1177,67 @@ public class VGC extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 265:
+            case 266:
                 w.write(getXORMode());
                 return true;
-            case 266:
+            case 267:
                 w.write(getAlpha());
                 return true;
-            case 267:
+            case 268:
                 w.write((int) getAntialias());
                 return true;
-            case 268:
+            case 269:
                 w.write(getBackground());
                 return true;
-            case 271:
+            case 272:
                 w.write(getClipping());
                 return true;
-            case 272:
+            case 273:
                 w.object(getClippingPath());
                 return true;
-            case 273:
+            case 274:
                 w.write(getClippingRects());
                 return true;
-            case 275:
+            case 276:
                 w.write(getFillRule());
                 return true;
-            case 276:
+            case 277:
                 w.object((getFont() == null || getFont().isDisposed() ? null : getFont().getImpl() instanceof DartFont ? ((DartFont) getFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getFont()).getImpl()).getValue()));
                 return true;
-            case 277:
+            case 278:
                 w.write(getForeground());
                 return true;
-            case 280:
+            case 281:
                 w.write((int) getInterpolation());
                 return true;
-            case 281:
+            case 282:
                 w.write(getLineCap());
                 return true;
-            case 282:
+            case 283:
                 w.write(getLineDash());
                 return true;
-            case 284:
+            case 285:
                 w.write(getLineJoin());
                 return true;
-            case 285:
+            case 286:
                 w.write(getLineStyle());
                 return true;
-            case 286:
+            case 287:
                 w.write((int) getLineWidth());
                 return true;
-            case 288:
+            case 289:
                 w.write((int) getStyle());
                 return true;
-            case 283:
+            case 284:
                 w.write(getLineDashOffset());
                 return true;
-            case 270:
+            case 271:
                 w.write(getBufferScale());
                 return true;
-            case 289:
+            case 290:
                 w.write(getThemedCanvas());
                 return true;
-            case 279:
+            case 280:
                 {
                     RGB[] a_ = getHoverFills();
                     if (a_ == null)
@@ -1248,7 +1248,7 @@ public class VGC extends VResource {
                     }
                 }
                 return true;
-            case 287:
+            case 288:
                 {
                     RGB[] a_ = getSelectionFills();
                     if (a_ == null)
@@ -1266,19 +1266,10 @@ public class VGC extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 265:
+            case 266:
                 {
                     boolean v_ = getXORMode();
                     if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(265);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 266:
-                {
-                    Integer v_ = getAlpha();
-                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(266);
                     w.write(v_);
@@ -1286,121 +1277,121 @@ public class VGC extends VResource {
                 }
             case 267:
                 {
-                    int v_ = getAntialias();
-                    if (v_ == 0)
+                    Integer v_ = getAlpha();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(267);
-                    w.write((int) v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 268:
                 {
+                    int v_ = getAntialias();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(268);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 269:
+                {
                     Color v_ = getBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(268);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 271:
-                {
-                    Rectangle v_ = getClipping();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(271);
+                    w.key(269);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 272:
                 {
+                    Rectangle v_ = getClipping();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(272);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 273:
+                {
                     PathData v_ = getClippingPath();
                     dev.equo.swt.WireObject o_ = v_;
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(272);
+                    w.key(273);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 273:
+            case 274:
                 {
                     int[] v_ = getClippingRects();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(273);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 275:
-                {
-                    Integer v_ = getFillRule();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(275);
+                    w.key(274);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 276:
                 {
-                    Font v_ = getFont();
-                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
-                    if (o_ == null)
+                    Integer v_ = getFillRule();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(276);
-                    w.object(o_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 277:
                 {
+                    Font v_ = getFont();
+                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(277);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 278:
+                {
                     Color v_ = getForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(277);
+                    w.key(278);
                     w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 280:
-                {
-                    int v_ = getInterpolation();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(280);
-                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 281:
                 {
-                    Integer v_ = getLineCap();
-                    if (v_ == null)
+                    int v_ = getInterpolation();
+                    if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(281);
-                    w.write(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 282:
+                {
+                    Integer v_ = getLineCap();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(282);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 283:
                 {
                     int[] v_ = getLineDash();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(282);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 284:
-                {
-                    Integer v_ = getLineJoin();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(284);
+                    w.key(283);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 285:
                 {
-                    Integer v_ = getLineStyle();
+                    Integer v_ = getLineJoin();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(285);
@@ -1409,51 +1400,60 @@ public class VGC extends VResource {
                 }
             case 286:
                 {
+                    Integer v_ = getLineStyle();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(286);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 287:
+                {
                     int v_ = getLineWidth();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(286);
+                    w.key(287);
                     w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 288:
-                {
-                    int v_ = getStyle();
-                    w.key(288);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 283:
-                {
-                    float v_ = getLineDashOffset();
-                    w.key(283);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 270:
-                {
-                    float v_ = getBufferScale();
-                    w.key(270);
-                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 289:
                 {
-                    Boolean v_ = getThemedCanvas();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    int v_ = getStyle();
                     w.key(289);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 284:
+                {
+                    float v_ = getLineDashOffset();
+                    w.key(284);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 279:
+            case 271:
+                {
+                    float v_ = getBufferScale();
+                    w.key(271);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 290:
+                {
+                    Boolean v_ = getThemedCanvas();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(290);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 280:
                 {
                     RGB[] v_ = getHoverFills();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(279);
+                    w.key(280);
                     {
                         RGB[] a_ = v_;
                         if (a_ == null)
@@ -1465,14 +1465,14 @@ public class VGC extends VResource {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 287:
+            case 288:
                 {
                     RGB[] v_ = getSelectionFills();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(287);
+                    w.key(288);
                     {
                         RGB[] a_ = v_;
                         if (a_ == null)
@@ -1488,7 +1488,7 @@ public class VGC extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 265, 266, 267, 268, 271, 272, 273, 275, 276, 277, 280, 281, 282, 284, 285, 286, 288, 283, 270, 289, 279, 287 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 266, 267, 268, 269, 272, 273, 274, 276, 277, 278, 281, 282, 283, 285, 286, 287, 289, 284, 271, 290, 280, 288 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -1502,7 +1502,7 @@ public class VGC extends VResource {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 288:
+            case 289:
                 return true;
         }
         return super.wireAlways(key);

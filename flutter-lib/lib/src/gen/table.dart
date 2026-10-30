@@ -85,40 +85,40 @@ class VTable extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 546: // columnOrder
+      case 547: // columnOrder
         columnOrder = r.ints();
         return true;
-      case 547: // columns
+      case 548: // columns
         columns = r.refs<VTableColumn>();
         return true;
-      case 548: // editors
+      case 549: // editors
         editors = r.refs<VTableEditor>();
         return true;
-      case 549: // headerBackground
+      case 550: // headerBackground
         headerBackground = r.color();
         return true;
-      case 550: // headerForeground
+      case 551: // headerForeground
         headerForeground = r.color();
         return true;
-      case 551: // headerVisible
+      case 552: // headerVisible
         headerVisible = r.boolean();
         return true;
-      case 553: // items
+      case 554: // items
         items = r.refs<VTableItem>();
         return true;
-      case 554: // linesVisible
+      case 555: // linesVisible
         linesVisible = r.boolean();
         return true;
-      case 556: // selection
+      case 557: // selection
         selection = r.ints();
         return true;
-      case 557: // topIndex
+      case 558: // topIndex
         topIndex = r.int32();
         return true;
-      case 552: // itemCount
+      case 553: // itemCount
         itemCount = r.int32();
         return true;
-      case 555: // ownerDrawItemHeight
+      case 556: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
         return true;
       default:
@@ -132,80 +132,80 @@ class VTable extends VComposite {
     {
       final v_ = columnOrder;
       if (v_ != null) {
-        w.key(546);
+        w.key(547);
         w.ints(v_);
       }
     }
     {
       final v_ = columns;
       if (v_ != null) {
-        w.key(547);
+        w.key(548);
         w.refs(v_);
       }
     }
     {
       final v_ = editors;
       if (v_ != null) {
-        w.key(548);
+        w.key(549);
         w.refs(v_);
       }
     }
     {
       final v_ = headerBackground;
       if (v_ != null) {
-        w.key(549);
+        w.key(550);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerForeground;
       if (v_ != null) {
-        w.key(550);
+        w.key(551);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerVisible;
       if (v_ != null) {
-        w.keyBoolean(551, v_);
+        w.keyBoolean(552, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(553);
+        w.key(554);
         w.refs(v_);
       }
     }
     {
       final v_ = linesVisible;
       if (v_ != null) {
-        w.keyBoolean(554, v_);
+        w.keyBoolean(555, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(556);
+        w.key(557);
         w.ints(v_);
       }
     }
     {
       final v_ = topIndex;
       if (v_ != null) {
-        w.keyInt32(557, v_);
+        w.keyInt32(558, v_);
       }
     }
     {
       final v_ = itemCount;
       if (v_ != null) {
-        w.keyInt32(552, v_);
+        w.keyInt32(553, v_);
       }
     }
     {
       final v_ = ownerDrawItemHeight;
       if (v_ != null) {
-        w.keyInt32(555, v_);
+        w.keyInt32(556, v_);
       }
     }
   }
@@ -213,18 +213,18 @@ class VTable extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(546, columnOrder);
-    visit(547, columns);
-    visit(548, editors);
-    visit(549, headerBackground);
-    visit(550, headerForeground);
-    visit(551, headerVisible);
-    visit(553, items);
-    visit(554, linesVisible);
-    visit(556, selection);
-    visit(557, topIndex);
-    visit(552, itemCount);
-    visit(555, ownerDrawItemHeight);
+    visit(547, columnOrder);
+    visit(548, columns);
+    visit(549, editors);
+    visit(550, headerBackground);
+    visit(551, headerForeground);
+    visit(552, headerVisible);
+    visit(554, items);
+    visit(555, linesVisible);
+    visit(557, selection);
+    visit(558, topIndex);
+    visit(553, itemCount);
+    visit(556, ownerDrawItemHeight);
   }
 
   @override

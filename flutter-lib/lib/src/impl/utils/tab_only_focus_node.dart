@@ -21,6 +21,10 @@ class TabOnlyFocusNode extends FocusNode {
     }
   }
 
+  /// Whether the stop could take the focus when Tab or a key move reaches it: its own flag, enabled
+  /// or not, without the key check.
+  bool get focusableStop => super.canRequestFocus;
+
   @override
   bool get canRequestFocus =>
       super.canRequestFocus &&

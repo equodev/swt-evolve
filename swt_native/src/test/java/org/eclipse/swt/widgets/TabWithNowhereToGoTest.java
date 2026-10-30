@@ -42,6 +42,19 @@ class TabWithNowhereToGoTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("a ToolBar is a tab stop only once it holds an enabled item that is not a separator")
+    void toolBarNeedsAnEnabledItem() {
+        Composite parent = new Composite(shell(), SWT.NONE);
+        ToolBar bar = new ToolBar(parent, SWT.FLAT);
+        new ToolItem(bar, SWT.SEPARATOR);
+        new ToolItem(bar, SWT.PUSH).setEnabled(false);
+        assertThat(ControlHelper.hasTabStop(bar)).isFalse();
+
+        new ToolItem(bar, SWT.PUSH).setText("Run");
+        assertThat(ControlHelper.hasTabStop(bar)).isTrue();
+    }
+
+    @Test
     @DisplayName("a Link holds a link only for <a followed by > or a space, as Link.parse reads one")
     void linkTextIsReadAsLinkParseDoes() {
         assertThat(ControlHelper.holdsLink("see <a>the docs</a>")).isTrue();

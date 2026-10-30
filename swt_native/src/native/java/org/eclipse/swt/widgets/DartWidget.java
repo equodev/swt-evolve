@@ -301,6 +301,7 @@ public abstract class DartWidget implements IWidget {
         if (eventTable == null)
             eventTable = new EventTable();
         eventTable.hook(eventType, listener);
+        ControlHelper.keyHooksChanged(this, eventType);
     }
 
     /**
@@ -918,6 +919,7 @@ public abstract class DartWidget implements IWidget {
         if (eventTable == null)
             return;
         eventTable.unhook(eventType, listener);
+        ControlHelper.keyHooksChanged(this, eventType);
     }
 
     /**
@@ -1019,6 +1021,7 @@ public abstract class DartWidget implements IWidget {
         if (eventTable == null)
             return;
         eventTable.unhook(eventType, listener);
+        ControlHelper.keyHooksChanged(this, eventType);
     }
 
     /**

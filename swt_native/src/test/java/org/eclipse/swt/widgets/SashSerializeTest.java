@@ -45,7 +45,7 @@ class SashSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SMOOTH, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("tabStop", "ControlHelper.isTabStop never makes this widget a Tab stop"), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SMOOTH, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

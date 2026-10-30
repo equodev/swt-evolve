@@ -54,13 +54,13 @@ class VList extends VScrollable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 361: // items
+      case 362: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 362: // selection
+      case 363: // selection
         selection = r.ints();
         return true;
-      case 363: // topIndex
+      case 364: // topIndex
         topIndex = r.int32();
         return true;
       default:
@@ -74,21 +74,21 @@ class VList extends VScrollable {
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(361);
+        w.key(362);
         w.strings(v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(362);
+        w.key(363);
         w.ints(v_);
       }
     }
     {
       final v_ = topIndex;
       if (v_ != null) {
-        w.keyInt32(363, v_);
+        w.keyInt32(364, v_);
       }
     }
   }
@@ -96,8 +96,8 @@ class VList extends VScrollable {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(361, items);
-    visit(362, selection);
-    visit(363, topIndex);
+    visit(362, items);
+    visit(363, selection);
+    visit(364, topIndex);
   }
 }

@@ -121,6 +121,7 @@ class VControl extends VWidget {
   bool? inheritsBackground;
   VMenu? menu;
   VRegion? region;
+  bool? tabStop;
   String? toolTipText;
   bool? visible;
 
@@ -143,6 +144,7 @@ class VControl extends VWidget {
       inheritsBackground = other.inheritsBackground;
       menu = other.menu;
       region = other.region;
+      tabStop = other.tabStop;
       toolTipText = other.toolTipText;
       visible = other.visible;
     }
@@ -196,10 +198,13 @@ class VControl extends VWidget {
       case 142: // region
         region = r.object(VRegion.new);
         return true;
-      case 143: // toolTipText
+      case 143: // tabStop
+        tabStop = r.boolean();
+        return true;
+      case 144: // toolTipText
         toolTipText = r.string();
         return true;
-      case 144: // visible
+      case 145: // visible
         visible = r.boolBoxed();
         return true;
       default:
@@ -310,16 +315,22 @@ class VControl extends VWidget {
       }
     }
     {
+      final v_ = tabStop;
+      if (v_ != null) {
+        w.keyBoolean(143, v_);
+      }
+    }
+    {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(143);
+        w.key(144);
         w.string(v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.key(144);
+        w.key(145);
         w.boolBoxed(v_);
       }
     }
@@ -343,8 +354,9 @@ class VControl extends VWidget {
     visit(140, inheritsBackground);
     visit(141, menu);
     visit(142, region);
-    visit(143, toolTipText);
-    visit(144, visible);
+    visit(143, tabStop);
+    visit(144, toolTipText);
+    visit(145, visible);
   }
 
   @override

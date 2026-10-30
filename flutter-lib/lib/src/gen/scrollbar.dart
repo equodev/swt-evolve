@@ -53,25 +53,25 @@ class VScrollBar extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 431: // enabled
+      case 432: // enabled
         enabled = r.boolean();
         return true;
-      case 432: // increment
+      case 433: // increment
         increment = r.int32();
         return true;
-      case 433: // maximum
+      case 434: // maximum
         maximum = r.int32();
         return true;
-      case 434: // minimum
+      case 435: // minimum
         minimum = r.int32();
         return true;
-      case 435: // selection
+      case 436: // selection
         selection = r.int32();
         return true;
-      case 436: // thumb
+      case 437: // thumb
         thumb = r.int32();
         return true;
-      case 437: // visible
+      case 438: // visible
         visible = r.boolean();
         return true;
       default:
@@ -85,43 +85,43 @@ class VScrollBar extends VWidget {
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.keyBoolean(431, v_);
+        w.keyBoolean(432, v_);
       }
     }
     {
       final v_ = increment;
       if (v_ != null) {
-        w.keyInt32(432, v_);
+        w.keyInt32(433, v_);
       }
     }
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(433, v_);
+        w.keyInt32(434, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(434, v_);
+        w.keyInt32(435, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(435, v_);
+        w.keyInt32(436, v_);
       }
     }
     {
       final v_ = thumb;
       if (v_ != null) {
-        w.keyInt32(436, v_);
+        w.keyInt32(437, v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(437, v_);
+        w.keyBoolean(438, v_);
       }
     }
   }
@@ -129,13 +129,13 @@ class VScrollBar extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(431, enabled);
-    visit(432, increment);
-    visit(433, maximum);
-    visit(434, minimum);
-    visit(435, selection);
-    visit(436, thumb);
-    visit(437, visible);
+    visit(432, enabled);
+    visit(433, increment);
+    visit(434, maximum);
+    visit(435, minimum);
+    visit(436, selection);
+    visit(437, thumb);
+    visit(438, visible);
   }
 
   @override
