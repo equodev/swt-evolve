@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.FlutterNative;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.win32.OS;
 
 /**
@@ -50,6 +52,31 @@ final class DisplayBridgePlatform {
         if (hwnd == 0 || nativeLibraryOff() || OS.GetWindowThreadProcessId(hwnd, new int[1]) != OS.GetCurrentThreadId())
             return false;
         return OS.DestroyWindow(hwnd);
+    }
+
+    /**
+     * Where the OS pointer is, read by the runner in the per-monitor logical pixels it places windows
+     * in; null without the native library.
+     */
+    static Point cursorLocation() {
+        if (nativeLibraryOff())
+            return null;
+        long packed = FlutterNative.getCursorLocation();
+        if (packed == FlutterNative.CURSOR_UNKNOWN)
+            return null;
+        return new Point(FlutterNative.originX(packed), FlutterNative.originY(packed));
+    }
+
+    /** Moves the OS pointer to a point in {@link #cursorLocation}'s units; whether it moved. */
+    static boolean moveCursor(int x, int y) {
+        return !nativeLibraryOff() && FlutterNative.setCursorLocation(x, y);
+    }
+
+    /** Whether a mouse button is held; false without the native library. */
+    static boolean pointerButtonDown() {
+        if (nativeLibraryOff())
+            return false;
+        return OS.GetKeyState(OS.VK_LBUTTON) < 0 || OS.GetKeyState(OS.VK_RBUTTON) < 0 || OS.GetKeyState(OS.VK_MBUTTON) < 0;
     }
 
     /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */

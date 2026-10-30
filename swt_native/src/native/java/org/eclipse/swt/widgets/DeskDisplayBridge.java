@@ -379,6 +379,22 @@ public class DeskDisplayBridge extends DisplayBridge {
         return FlutterNative.getOrigin(context);
     }
 
+    @Override
+    public Point cursorLocation() {
+        Point logical = DisplayBridgePlatform.cursorLocation();
+        return logical == null ? null : new Point(Config.logicalToSwt(logical.x), Config.logicalToSwt(logical.y));
+    }
+
+    @Override
+    protected boolean moveCursor(int x, int y) {
+        return DisplayBridgePlatform.moveCursor(Config.swtToLogical(x), Config.swtToLogical(y));
+    }
+
+    @Override
+    public boolean pointerButtonDown() {
+        return DisplayBridgePlatform.pointerButtonDown();
+    }
+
 
 
     /** How many unplaced windows have been cascaded so far; see {@link #cascade}. */

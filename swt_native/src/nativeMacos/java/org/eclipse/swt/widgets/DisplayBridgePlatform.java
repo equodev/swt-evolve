@@ -1,8 +1,13 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ConfigFlags;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.internal.cocoa.CGPoint;
 import org.eclipse.swt.internal.cocoa.NSApplication;
 import org.eclipse.swt.internal.cocoa.NSEvent;
+import org.eclipse.swt.internal.cocoa.NSPoint;
+import org.eclipse.swt.internal.cocoa.NSRect;
+import org.eclipse.swt.internal.cocoa.NSScreen;
 import org.eclipse.swt.internal.cocoa.NSThread;
 import org.eclipse.swt.internal.cocoa.NSWindow;
 import org.eclipse.swt.internal.cocoa.OS;
@@ -95,6 +100,44 @@ final class DisplayBridgePlatform {
         new NSWindow(window).orderOut(null);
         OS.objc_msgSend(OS.objc_getClass("CATransaction"), OS.sel_registerName("flush"));
         return true;
+    }
+
+    /** Where the OS pointer is, in screen points from the primary screen's top left; null without the native library. */
+    static Point cursorLocation() {
+        if (nativeLibraryOff())
+            return null;
+        NSPoint location = NSEvent.mouseLocation();
+        NSRect primaryFrame = new NSScreen(NSScreen.screens().objectAtIndex(0)).frame();
+        return new Point((int) location.x, (int) (primaryFrame.height - location.y));
+    }
+
+    /** Whether a mouse button is held; false without the native library. */
+    static boolean pointerButtonDown() {
+        if (nativeLibraryOff())
+            return false;
+        return OS.objc_msgSend(OS.objc_getClass("NSEvent"), OS.sel_registerName("pressedMouseButtons")) != 0;
+    }
+
+    /**
+     * Moves the OS pointer to a point from the primary screen's top left, by posting a mouse move as
+     * SWT does; whether it was posted.
+     */
+    static boolean moveCursor(int x, int y) {
+        if (nativeLibraryOff())
+            return false;
+        long source = OS.CGEventSourceCreate(OS.kCGEventSourceStateHIDSystemState);
+        if (source == 0)
+            return false;
+        CGPoint position = new CGPoint();
+        position.x = x;
+        position.y = y;
+        long event = OS.CGEventCreateMouseEvent(source, OS.kCGEventMouseMoved, position, 0);
+        if (event != 0) {
+            OS.CGEventPost(OS.kCGHIDEventTap, event);
+            OS.CFRelease(event);
+        }
+        OS.CFRelease(source);
+        return event != 0;
     }
 
     /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */

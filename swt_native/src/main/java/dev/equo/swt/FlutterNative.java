@@ -197,6 +197,22 @@ public final class FlutterNative {
         return GetWorkAreaTop(context, x, y, w, h);
     }
 
+    public static final long CURSOR_UNKNOWN = Long.MIN_VALUE;
+
+    /**
+     * Where the OS pointer is, packed as {@link #getOrigin} packs a point, or {@link
+     * #CURSOR_UNKNOWN}. In the logical pixels of the monitor under it, the units windows on that
+     * monitor are placed in. Windows runner only.
+     */
+    public static long getCursorLocation() {
+        return GetCursorLocation();
+    }
+
+    /** Moves the OS pointer to a point in {@link #getCursorLocation}'s units. Windows runner only. */
+    public static boolean setCursorLocation(int x, int y) {
+        return SetCursorLocation(x, y);
+    }
+
     /**
      * Points the native bridge at an external app-bundle directory (the EWT-owned combined
      * bundle: {@code <dir>/lib/libapp.so} + {@code <dir>/data/flutter_assets}). Must be
@@ -214,6 +230,10 @@ public final class FlutterNative {
     private static native long GetOrigin(long context);
 
     private static native int GetWorkAreaTop(long context, int x, int y, int w, int h);
+
+    private static native long GetCursorLocation();
+
+    private static native boolean SetCursorLocation(int x, int y);
 
     private static native boolean IsActive(long context);
 

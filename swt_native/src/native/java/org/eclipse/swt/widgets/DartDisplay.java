@@ -1128,7 +1128,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Point getCursorLocation() {
         checkDevice();
-        return this.cursorLocation;
+        return DisplayBridge.cursorLocation(this);
     }
 
     /**
@@ -3128,14 +3128,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 2.1
      */
     public void setCursorLocation(int x, int y) {
-        Point newValue = new Point(x, y);
         checkDevice();
-        Event e = new Event();
-        e.type = SWT.MouseMove;
-        e.x = x;
-        e.y = y;
-        this.cursorLocation = newValue;
-        post(e);
+        DisplayBridge.setCursorLocation(this, x, y);
     }
 
     /**

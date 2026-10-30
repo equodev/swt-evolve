@@ -175,6 +175,56 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return !display.isDisposed() ? db.comm() : null;
     }
 
+    /**
+     * {@link Display#getCursorLocation()}: where the OS pointer is when the surface can read it,
+     * otherwise the last position the client reported.
+     */
+    static Point cursorLocation(DartDisplay display) {
+        Point os = display.displayBridge == null ? null : display.displayBridge.cursorLocation();
+        Point location = os != null ? os : display.cursorLocation;
+        return new Point(location.x, location.y);
+    }
+
+    /**
+     * {@link Display#setCursorLocation(int, int)}: moves the OS pointer when the surface can, whose
+     * move then reaches the control under it as natively. Otherwise posts the MouseMove itself.
+     */
+    static void setCursorLocation(DartDisplay display, int x, int y) {
+        display.cursorLocation = new Point(x, y);
+        if (display.displayBridge != null && display.displayBridge.moveCursor(x, y)) {
+            DisplayInput.pointerMoved(display.getApi(), x, y);
+            return;
+        }
+        Event move = new Event();
+        move.type = SWT.MouseMove;
+        move.x = x;
+        move.y = y;
+        display.post(move);
+    }
+
+    /**
+     * Where the OS pointer is, in SWT coordinates, or null when this surface cannot read it. A browser
+     * client's pointer is not the server's, so only the desktop-native surface answers.
+     */
+    public Point cursorLocation() {
+        return null;
+    }
+
+    /** Moves the OS pointer to an SWT screen coordinate; whether it moved. A browser client's pointer cannot be moved. */
+    protected boolean moveCursor(int x, int y) {
+        return false;
+    }
+
+    /** Whether a mouse button is held: a Tracker opened by a drag leaves the pointer where it is. */
+    static boolean pointerButtonDown(DartDisplay display) {
+        return display.displayBridge != null && display.displayBridge.pointerButtonDown();
+    }
+
+    /** Whether the OS reports a mouse button held; false when this surface cannot read it. */
+    public boolean pointerButtonDown() {
+        return false;
+    }
+
     /** Starts the surface for the Display (web server + browser, or native window). */
     protected abstract void start(DartDisplay display);
 

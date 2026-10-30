@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.graphics.Point;
+
 /**
  * Per-OS native init hook for the Display surfaces ({@link WebDisplayBridge} / {@link DeskDisplayBridge}).
  * The pure-web build has no native platform to bind to (no GTK/Cocoa/Win32), so this is a no-op; the
@@ -28,6 +30,21 @@ final class DisplayBridgePlatform {
 
     /** Nothing to bind: a Shell here is drawn by Flutter and has no native view of its own. */
     static void bindWindowView(Control control, long view) {
+    }
+
+    /** The pure-web build has no native library to read the OS pointer with. */
+    static Point cursorLocation() {
+        return null;
+    }
+
+    /** The pure-web build has no native library to move the OS pointer with. */
+    static boolean moveCursor(int x, int y) {
+        return false;
+    }
+
+    /** The pure-web build has no native library to read the mouse buttons with. */
+    static boolean pointerButtonDown() {
+        return false;
     }
 
     /**

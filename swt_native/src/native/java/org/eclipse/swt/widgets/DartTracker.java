@@ -428,7 +428,7 @@ public class DartTracker extends DartWidget implements ITracker {
             cursorOrientation |= hStyle;
         }
         Point cursorPos;
-        boolean down = false;
+        boolean down = DisplayBridge.pointerButtonDown((DartDisplay) display.getImpl());
         if (down) {
             cursorPos = display.getCursorLocation();
         } else {

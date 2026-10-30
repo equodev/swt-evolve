@@ -1,6 +1,7 @@
 #include "flutter_bridge.h"
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
+#include <flutter_windows.h>
 #include <windows.h>
 #include <climits>
 #include <cmath>
@@ -387,6 +388,48 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_GetWorkAreaTop(JNIEnv* en
     MONITORINFO monitor = {sizeof(monitor)};
     if (!::GetMonitorInfo(::MonitorFromRect(&rect, MONITOR_DEFAULTTONEAREST), &monitor)) return INT_MIN;
     return static_cast<jint>(std::lround(monitor.rcWork.top / scale));
+}
+
+// The scale the runner gives a window on this monitor (Win32Window::Create, WM_DPICHANGED).
+static double MonitorScale(HMONITOR monitor) {
+    return FlutterDesktopGetDpiForMonitor(monitor) / 96.0;
+}
+
+// Where the OS pointer is, packed as GetOrigin packs a point, or LLONG_MIN. In the logical pixels
+// of the monitor under it, the units a window on that monitor is placed and read back in.
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetCursorLocation(JNIEnv* env, jclass cls) {
+    POINT pointer;
+    if (!::GetCursorPos(&pointer)) return LLONG_MIN;
+    const double scale = MonitorScale(::MonitorFromPoint(pointer, MONITOR_DEFAULTTONEAREST));
+    const LONG x = static_cast<LONG>(std::lround(pointer.x / scale));
+    const LONG y = static_cast<LONG>(std::lround(pointer.y / scale));
+    return (static_cast<jlong>(x) << 32)
+            | (static_cast<jlong>(static_cast<uint32_t>(y)));
+}
+
+// Moves the OS pointer to a point in GetCursorLocation's units: onto the first monitor that holds
+// the point at its own scale, else at the primary monitor's scale.
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_SetCursorLocation(JNIEnv* env, jclass cls, jint x, jint y) {
+    struct Target {
+        jint x, y;
+        POINT physical;
+        bool found;
+    } target = {x, y, {0, 0}, false};
+    ::EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR monitor, HDC, LPRECT bounds, LPARAM data) -> BOOL {
+        Target* t = reinterpret_cast<Target*>(data);
+        const double scale = MonitorScale(monitor);
+        const POINT physical = {static_cast<LONG>(std::lround(t->x * scale)),
+                                static_cast<LONG>(std::lround(t->y * scale))};
+        if (!::PtInRect(bounds, physical)) return TRUE;
+        t->physical = physical;
+        t->found = true;
+        return FALSE;
+    }, reinterpret_cast<LPARAM>(&target));
+    if (!target.found) {
+        const double scale = MonitorScale(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
+        target.physical = {static_cast<LONG>(std::lround(x * scale)), static_cast<LONG>(std::lround(y * scale))};
+    }
+    return ::SetCursorPos(target.physical.x, target.physical.y) ? JNI_TRUE : JNI_FALSE;
 }
 
 // Whether this window is the one the OS gives keyboard input to. The foreground window is the

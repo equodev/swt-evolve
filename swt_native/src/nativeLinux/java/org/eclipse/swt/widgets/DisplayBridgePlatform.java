@@ -1,6 +1,8 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.internal.gtk.OS;
 
 /**
  * Per-OS native init shared by the two Display surfaces on Linux — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
@@ -55,6 +57,46 @@ final class DisplayBridgePlatform {
      */
     static boolean dismissLauncherSplash() {
         return false;
+    }
+
+    /**
+     * Where the OS pointer is, in root-window coordinates. Null without the native library, and on
+     * GTK 4 or Wayland, which expose no global pointer position.
+     */
+    static Point cursorLocation() {
+        if (!globalPointer())
+            return null;
+        int[] x = new int[1], y = new int[1];
+        GTKWrapper.gdk_window_get_device_position(GTKWrapper.gdk_get_default_root_window(), pointer(), x, y, null);
+        return new Point(x[0], y[0]);
+    }
+
+    /** Moves the OS pointer to a root-window coordinate; whether it moved (GTK 4 and Wayland cannot warp it). */
+    static boolean moveCursor(int x, int y) {
+        if (!globalPointer())
+            return false;
+        GTKWrapper.gdk_device_warp(pointer(), GTKWrapper.gdk_screen_get_default(), x, y);
+        return true;
+    }
+
+    /** Whether a mouse button is held; false where {@link #cursorLocation} answers null. */
+    static boolean pointerButtonDown() {
+        if (!globalPointer())
+            return false;
+        int[] x = new int[1], y = new int[1], mask = new int[1];
+        GTKWrapper.gdk_window_get_device_position(GTKWrapper.gdk_get_default_root_window(), pointer(), x, y, mask);
+        return (mask[0] & BUTTON_MASKS) != 0;
+    }
+
+    /** GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK, which move from OS to GDK across SWT releases. */
+    private static final int BUTTON_MASKS = 0x100 | 0x200 | 0x400;
+
+    private static long pointer() {
+        return GTKWrapper.gdk_get_pointer(GTKWrapper.gdk_display_get_default());
+    }
+
+    private static boolean globalPointer() {
+        return !nativeLibraryOff() && !GTKWrapper.IS_GTK4 && OS.isX11();
     }
 
     /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
