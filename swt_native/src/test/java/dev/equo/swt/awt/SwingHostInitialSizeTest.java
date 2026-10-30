@@ -38,6 +38,8 @@ class SwingHostInitialSizeTest {
     private static final int VIEWPORT_HEIGHT = 100;
     private static final int INNER_DIVIDER = 200;
     private static final int OUTER_DIVIDER = 600;
+    private static final int APP_DIVIDER = 180;
+    private static final int TOP_MINIMUM_HEIGHT = 62;
 
     @Test
     void anIslandFrameKeepsAnEmptyTablesPreferredHeightAboveTheDivider() {
@@ -92,6 +94,62 @@ class SwingHostInitialSizeTest {
         assertTrue(units >= expected, "middle pane " + units + " px high, expected at least " + expected);
     }
 
+    @Test
+    void contentPlacedAtTheFirstRealSizeKeepsTheDividerTheAppSet() {
+        Embedding e = new Embedding();
+
+        EvolveSwingHost.sizeBlitFrame(e.frame, e.root, new Rectangle(0, 0, 0, 0));
+        e.frame.validate();
+        e.root.host(e.applet);
+        EvolveSwingHost.sizeBlitFrame(e.frame, e.root, new Rectangle(0, 0, 568, 729));
+        e.frame.validateFromRootPaneAndPaint();
+        layOutAndPaint(e.frame);
+
+        assertDividerKept(e.split);
+    }
+
+    @Test
+    void contentLaidOutInThePlaceholderFrameBeforeItWasRelocatedKeepsTheDividerTheAppSet() {
+        Embedding e = new Embedding();
+
+        EvolveSwingHost.sizeBlitFrame(e.frame, e.root, new Rectangle(0, 0, 0, 0));
+        e.frame.validate();
+        // The application added the applet to the frame itself, which laid it out before the host
+        // moved it into the content root.
+        e.applet.setBounds(0, 0, 0, 1);
+        layOut(e.applet);
+        e.root.host(e.applet);
+        EvolveSwingHost.sizeBlitFrame(e.frame, e.root, new Rectangle(0, 0, 590, 1493));
+        e.frame.validateFromRootPaneAndPaint();
+        layOutAndPaint(e.frame);
+        EvolveSwingHost.sizeBlitFrame(e.frame, e.root, new Rectangle(0, 0, 568, 729));
+        layOutAndPaint(e.frame);
+
+        assertDividerKept(e.split);
+    }
+
+    @Test
+    void placedContentKeepsTheDividerTheAppSetWhileTheCanvasIsEmpty() {
+        Embedding e = new Embedding();
+
+        resizeCanvas(e.frame, e.root, 0, 0);
+        e.frame.validate();
+        e.root.host(e.applet);
+        resizeCanvas(e.frame, e.root, 568, 729);
+        resizeCanvas(e.frame, e.root, 0, 0);
+        resizeCanvas(e.frame, e.root, 568, 729);
+
+        assertDividerKept(e.split);
+    }
+
+    /** What the canvas's Resize listener runs, then what Swing does with what it revalidates. */
+    private static void resizeCanvas(LightweightFrame frame, EvolveSwingHost.ContentRoot root, int width, int height) {
+        Rectangle area = new Rectangle(0, 0, width, height);
+        EvolveSwingHost.sizeBlitFrame(frame, root, area);
+        EvolveSwingHost.layOutBlitContent(frame.rootPane, root, area);
+        frame.validateFromRootPaneAndPaint();
+    }
+
     /**
      * An applet is its own repaint root: Swing paints it at its own bounds, with nothing above it
      * consulted, as soon as it is part of a displayable tree. Here that tree is the frame's.
@@ -107,6 +165,69 @@ class SwingHostInitialSizeTest {
         JTable table = new JTable(new DefaultTableModel(new String[] {"Name", "Type", "Age", "Update Date"}, 0));
         table.setPreferredScrollableViewportSize(new Dimension(400, VIEWPORT_HEIGHT));
         return new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), new JLabel("Details"));
+    }
+
+    /**
+     * A selection table whose panel can't go below a header and one row, above a tall details area,
+     * in a split with no border, so that its children fill it.
+     */
+    private static JSplitPane splitWithMinimumTop() {
+        JPanel top = new JPanel(new BorderLayout());
+        top.add(new JScrollPane(new JTable(new DefaultTableModel(new String[] {"Name", "Type"}, 0))));
+        top.setMinimumSize(new Dimension(266, TOP_MINIMUM_HEIGHT));
+        JPanel details = new JPanel();
+        details.setPreferredSize(new Dimension(400, 600));
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, top, details);
+        split.setBorder(null);
+        split.setDividerLocation(APP_DIVIDER);
+        return split;
+    }
+
+    private static void assertDividerKept(JSplitPane split) {
+        int top = split.getTopComponent().getHeight();
+        assertTrue(top >= APP_DIVIDER, "top component " + top + " px high (divider at " + split.getDividerLocation()
+                + "), expected the " + APP_DIVIDER + " px the divider was set to");
+    }
+
+    /** An applet holding {@link #splitWithMinimumTop}, not yet placed, and the frame it goes into. */
+    private static final class Embedding {
+        final JSplitPane split = splitWithMinimumTop();
+        final JPanel applet = new JPanel(new BorderLayout());
+        final EvolveSwingHost.ContentRoot root = new EvolveSwingHost.ContentRoot(() -> {});
+        final LightweightFrame frame = new LightweightFrame(root);
+
+        Embedding() {
+            applet.add(split);
+        }
+    }
+
+    /**
+     * Stands for {@code JLightweightFrame}: its root pane fills it, and it has a peer, so {@link
+     * #validate} lays its tree out.
+     */
+    private static final class LightweightFrame extends JPanel {
+        private final JPanel rootPane = new JPanel(new BorderLayout());
+
+        LightweightFrame(EvolveSwingHost.ContentRoot root) {
+            super(new BorderLayout());
+            rootPane.add(root);
+            add(rootPane);
+        }
+
+        @Override
+        public void validate() {
+            layOut(this);
+        }
+
+        /**
+         * What {@code RepaintManager} does with content that revalidates and repaints itself: lay
+         * out from the root pane, its validate root, at the bounds the frame last gave it, then
+         * paint.
+         */
+        void validateFromRootPaneAndPaint() {
+            layOut(rootPane);
+            paintInto(this);
+        }
     }
 
     private static void assertTableAreaKept(JSplitPane split) {
