@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -134,9 +135,12 @@ class ShellStateNativeTest {
         assertThat(shell.toString()).startsWith("Shell {Title}");
     }
 
+    // Shell.setRegion sizes a shell without trim to the region from SWT 3.105 (build 4629) on; earlier
+    // versions keep the size, natively too.
     @Test
     @DisplayName("a shell without trim is as big as its region reaches, and one with trim ignores the region")
     void regionSizesTheShell() {
+        assumeTrue(SWT.getVersion() >= 4629);
         Shell bare = shell(SWT.NO_TRIM);
         Region region = new Region(bare.getDisplay());
         region.add(10, 20, 100, 50);
