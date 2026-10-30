@@ -14,19 +14,19 @@ class TrackerSwt<V extends VTracker> extends WidgetSwt<V> {
   State createState() => TrackerImpl<TrackerSwt<VTracker>, VTracker>();
 
   void sendControlMove(V val, VEvent? payload) {
-    sendEvent(val, "Control/Move", payload);
+    sendEvent(val, 20, payload); // Control/Move
   }
 
   void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
+    sendEvent(val, 21, payload); // Control/Resize
   }
 
   void sendKeyKeyDown(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyDown", payload);
+    sendEvent(val, 54, payload); // Key/KeyDown
   }
 
   void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyUp", payload);
+    sendEvent(val, 55, payload); // Key/KeyUp
   }
 }
 

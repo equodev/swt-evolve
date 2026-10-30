@@ -4,7 +4,6 @@ import java.net.HttpCookie;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.swt.widgets.DartWidget;
@@ -29,7 +28,7 @@ public final class BrowserCookies {
     public static String get(DartWidget browser, Display display, String name, String url) {
         ProxyCookieJar web = ProxyCookieJar.forDisplay(display);
         if (web != null) return web.get(name, url);
-        return request(browser, display, "getCookie", Java8.map("name", name, "url", url));
+        return request(browser, display, dev.equo.swt.WireTable.CHANNEL_GET_COOKIE, Java8.map("name", name, "url", url));
     }
 
     /**
@@ -62,16 +61,47 @@ public final class BrowserCookies {
         if (cookie.getMaxAge() != -1) {
             args.put("expires", System.currentTimeMillis() / 1000.0 + cookie.getMaxAge());
         }
-        return "true".equals(request(browser, display, "setCookie", args));
+        return "true".equals(request(browser, display, dev.equo.swt.WireTable.CHANNEL_SET_COOKIE, args));
     }
 
-    private static String request(DartWidget browser, Display display, String op, Map<String, Object> args) {
-        String reqId = UUID.randomUUID().toString();
+    private static String request(DartWidget browser, Display display, int op, Map<String, Object> args) {
+        int reqId = NEXT_REQUEST.incrementAndGet();
         CompletableFuture<String> reply = new CompletableFuture<>();
-        FlutterBridge.onPayload(browser, "cookie/" + reqId, Event.class,
-                e -> reply.complete(e != null ? e.text : null));
+        PENDING.put(reqId, new Pending(browser, reply));
+        // One channel for every reply; each names the request it answers in its detail.
+        FlutterBridge.onPayload(browser, dev.equo.swt.WireTable.CHANNEL_COOKIE, Event.class, e -> complete(browser, e));
         args.put("reqId", reqId);
-        FlutterBridge.send(browser, op, args);
-        return BrowserScripting.awaitReply(display, reply) ? reply.getNow(null) : null;
+        try {
+            FlutterBridge.send(browser, op, args);
+            return BrowserScripting.awaitReply(display, reply) ? reply.getNow(null) : null;
+        } finally {
+            PENDING.remove(reqId);
+        }
+    }
+
+    private static final java.util.concurrent.atomic.AtomicInteger NEXT_REQUEST = new java.util.concurrent.atomic.AtomicInteger();
+
+    /**
+     * The cookie requests waiting for their reply, by request number. Request numbers are shared by
+     * every session in the JVM, so a reply only completes a request made through the Browser it
+     * arrived on.
+     */
+    private static final Map<Integer, Pending> PENDING = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static final class Pending {
+        final DartWidget browser;
+        final CompletableFuture<String> reply;
+
+        Pending(DartWidget browser, CompletableFuture<String> reply) {
+            this.browser = browser;
+            this.reply = reply;
+        }
+    }
+
+    private static void complete(DartWidget browser, Event reply) {
+        if (reply == null) return;
+        Pending waiting = PENDING.get(reply.detail);
+        if (waiting == null || waiting.browser != browser) return;
+        if (PENDING.remove(reply.detail, waiting)) waiting.reply.complete(reply.text);
     }
 }

@@ -73,17 +73,17 @@ public class VButton extends VControl {
         ((DartButton) impl).text = value;
     }
 
-    public static final int ALIGNMENT = 527;
+    public static final int ALIGNMENT = 12;
 
-    public static final int GRAYED = 528;
+    public static final int GRAYED = 13;
 
-    public static final int IMAGE = 529;
+    public static final int IMAGE = 14;
 
-    public static final int PRIMARY = 530;
+    public static final int PRIMARY = 15;
 
-    public static final int SELECTION = 531;
+    public static final int SELECTION = 16;
 
-    public static final int TEXT = 532;
+    public static final int TEXT = 17;
 
     @Override
     public String wireName(int key) {
@@ -107,22 +107,22 @@ public class VButton extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 527:
+            case 12:
                 w.write((int) getAlignment());
                 return true;
-            case 528:
+            case 13:
                 w.write(getGrayed());
                 return true;
-            case 529:
+            case 14:
                 w.image(getImage());
                 return true;
-            case 530:
+            case 15:
                 w.write(getPrimary());
                 return true;
-            case 531:
+            case 16:
                 w.write(getSelection());
                 return true;
-            case 532:
+            case 17:
                 w.write(getText());
                 return true;
         }
@@ -132,59 +132,59 @@ public class VButton extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 527:
+            case 12:
                 {
                     int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(527);
+                    w.key(12);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 528:
+            case 13:
                 {
                     boolean v_ = getGrayed();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(528);
+                    w.key(13);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 529:
+            case 14:
                 {
                     Image v_ = getImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(529);
+                    w.key(14);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 530:
+            case 15:
                 {
                     boolean v_ = getPrimary();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(530);
+                    w.key(15);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 531:
+            case 16:
                 {
                     boolean v_ = getSelection();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(531);
+                    w.key(16);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 532:
+            case 17:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(532);
+                    w.key(17);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -192,7 +192,7 @@ public class VButton extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 527, 528, 529, 530, 531, 532 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 12, 13, 14, 15, 16, 17 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

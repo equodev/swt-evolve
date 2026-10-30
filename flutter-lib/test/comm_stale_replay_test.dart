@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
 
 /// A payload that arrives before anything is listening for it is held and replayed, in arrival
 /// order, once something listens: a dialog's content can arrive right after the embed that mounts
@@ -21,7 +23,7 @@ class _TestComm extends EquoCommBase {
 
   /// Feeds an incoming message of tagged values as the transport would.
   void receiveTagged(String channel, Object payload) =>
-      receiveBinary(ChannelHeader.frame(channel, TaggedValues.encode(payload)));
+      receiveBinary(channels.frame(channel, TaggedValues.encode(payload)));
 }
 
 Future<void> _drainMicrotasks() => Future<void>.delayed(Duration.zero);
@@ -36,7 +38,7 @@ void main() {
     await _drainMicrotasks();
 
     final received = <dynamic>[];
-    comm.on('Table/123/GetItemBoundsResponse', received.add);
+    comm.onNamed('Table/123/GetItemBoundsResponse', received.add);
     await _drainMicrotasks();
 
     expect(received, [
@@ -54,8 +56,8 @@ void main() {
 
     final ping = <dynamic>[];
     final close = <dynamic>[];
-    comm.on('swt.evolve.timing.ping', ping.add);
-    comm.on('Display/7/close', close.add);
+    comm.onNamed('swt.evolve.timing.ping', ping.add);
+    comm.onNamed('Display/7/close', close.add);
     await _drainMicrotasks();
 
     expect(ping, [
@@ -70,7 +72,7 @@ void main() {
   test('no buffer means no replay', () async {
     final comm = _TestComm();
     final received = <dynamic>[];
-    comm.on('Shell/9/close', received.add);
+    comm.onNamed('Shell/9/close', received.add);
     await _drainMicrotasks();
 
     expect(received, isEmpty);
@@ -86,7 +88,7 @@ void main() {
     await _drainMicrotasks();
 
     final received = <dynamic>[];
-    comm.on('Shell/42/close', received.add);
+    comm.onNamed('Shell/42/close', received.add);
     await _drainMicrotasks();
 
     expect(received, [

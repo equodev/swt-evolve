@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../comm/comm.dart';
+import '../../gen/widgets.dart' show WireChannel, WireType;
 import '../../gen/menuitem.dart';
 import 'text_utils.dart';
 
@@ -85,42 +86,46 @@ class MenuMnemonicItems {
 /// Opens a menu bar's menu when Java resolves Alt+letter to its title (`MnemonicHelper`), wherever the
 /// bar is drawn: as a strip, or collapsed into the menu button. The latest opener of an item wins.
 class MenuBarOpeners {
-  static void add(VMenuItem item, VoidCallback open) => _latest.add(_channel(item), open);
+  static final _latest = _LatestHandlers(WireType.menuItem, WireChannel.openMenu);
 
-  static void remove(VMenuItem item, VoidCallback open) => _latest.remove(_channel(item), open);
+  static void add(VMenuItem item, VoidCallback open) => _latest.add(item.id, open);
 
-  static String _channel(VMenuItem item) => '${item.swt}/${item.id}/openMenu';
+  static void remove(VMenuItem item, VoidCallback open) => _latest.remove(item.id, open);
 }
 
 /// Makes a menu bar active when Java resolves F10 or a lone Alt to it, wherever the bar is drawn.
 /// The latest activator of a bar wins.
 class MenuBarActivators {
-  static void add(int barId, VoidCallback activate) => _latest.add(_channel(barId), activate);
+  static final _latest = _LatestHandlers(WireType.menu, WireChannel.activate);
 
-  static void remove(int barId, VoidCallback activate) => _latest.remove(_channel(barId), activate);
+  static void add(int barId, VoidCallback activate) => _latest.add(barId, activate);
 
-  static String _channel(int barId) => 'Menu/$barId/activate';
+  static void remove(int barId, VoidCallback activate) => _latest.remove(barId, activate);
 }
 
-final _latest = _LatestHandlers();
-
-/// One raw channel per key, answered by the handler added last.
+/// One channel per widget of [type], answered by the handler added last.
 class _LatestHandlers {
-  final Map<String, List<VoidCallback>> _handlers = {};
+  _LatestHandlers(this.type, this.channel);
 
-  void add(String channel, VoidCallback handler) {
-    final handlers = _handlers.putIfAbsent(channel, () => []);
+  final int type;
+  final int channel;
+
+  /// By the widget's id.
+  final Map<int, List<VoidCallback>> _handlers = {};
+
+  void add(int id, VoidCallback handler) {
+    final handlers = _handlers.putIfAbsent(id, () => []);
     if (handlers.isEmpty) {
-      EquoCommService.onRaw(channel, (_) => _handlers[channel]?.lastOrNull?.call());
+      EquoCommService.on(type, id, channel, (_) => _handlers[id]?.lastOrNull?.call());
     }
     handlers.add(handler);
   }
 
-  void remove(String channel, VoidCallback handler) {
-    final handlers = _handlers[channel];
+  void remove(int id, VoidCallback handler) {
+    final handlers = _handlers[id];
     if (handlers == null || !handlers.remove(handler) || handlers.isNotEmpty) return;
-    _handlers.remove(channel);
-    EquoCommService.remove(channel);
+    _handlers.remove(id);
+    EquoCommService.remove(type, id, channel);
   }
 }
 

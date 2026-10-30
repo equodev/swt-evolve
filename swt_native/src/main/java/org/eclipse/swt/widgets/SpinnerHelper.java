@@ -304,7 +304,7 @@ public class SpinnerHelper {
             boolean accepted = typed.equals(verified);
             // The client shows what was typed until told otherwise: a veto, or text a listener changed, sends it
             // back to the value Java holds.
-            dev.equo.swt.FlutterBridge.send(c, "modify/verdict", dev.equo.swt.Java8.map("doit", accepted));
+            dev.equo.swt.FlutterBridge.send(c, dev.equo.swt.WireTable.CHANNEL_MODIFY_VERDICT, dev.equo.swt.Java8.map("doit", accepted));
             if (verified == null) {
                 return;
             }

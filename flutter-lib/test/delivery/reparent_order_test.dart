@@ -10,6 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -19,11 +20,14 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/swt.dart';
-import 'package:swtflutter/src/comm/widget_wire.dart' show widgetWireChannel;
-import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/gen/widgets.dart' show WireChannel, WireKey;
 
 import '../support/batch.dart';
+import '../support/channels.dart';
 import 'support/deliver.dart';
+
+/// The channel frames of widget records arrive on.
+const String _widgetWire = 'swt.evolve.wire';
 
 const int _moverId = 42;
 const int _underMoverId = 43;
@@ -200,19 +204,18 @@ void main() {
     settle();
     final sent = refreshesAsked();
     final release = Completer<void>();
-    const awaiting = 'Test/awaits';
-    EquoCommService.onRaw(awaiting, (_) => release.future);
+    // A channel no test listens on, standing for any handler that awaits.
+    const awaiting = 'swt.evolve.timing.bare';
+    final comm = EquoCommService.commForTesting;
+    comm.onNamed(awaiting, (_) => release.future);
+    addTearDown(() => comm.removeNamed(awaiting));
     // What the app's entry point registers: the widget wire applies to the client's registry.
-    EquoCommService.onBytes(widgetWireChannel, VRegistry.instance.applyWire);
-    addTearDown(() {
-      EquoCommService.remove(awaiting);
-      EquoCommService.remove(widgetWireChannel);
-    });
+    EquoCommService.onBytesAt(WireChannel.swtEvolveWire, VRegistry.instance.applyWire);
 
     receiveRawBatch([
-      (widgetWireChannel, wireFrameBody([mover(21), oldParentLettingGo(22)])),
+      (_widgetWire, wireFrameBody([mover(21), oldParentLettingGo(22)])),
       (awaiting, TaggedValues.encode(<String, dynamic>{})),
-      (widgetWireChannel, wireFrameBody([newParentNamingIt(23)])),
+      (_widgetWire, wireFrameBody([newParentNamingIt(23)])),
     ]);
     await Future<void>.delayed(Duration.zero);
     release.complete();

@@ -35,12 +35,20 @@ public final class CompositeHelper {
     }
 
     private static int bar(ScrollBar bar, boolean shownOnly) {
-        return bar != null && (!shownOnly || bar.getVisible()) ? Sizes.SCROLL_BAR_SIZE : 0;
+        return bar != null && (!shownOnly || bar.getVisible() && hasRange(bar)) ? Sizes.SCROLL_BAR_SIZE : 0;
+    }
+
+    /**
+     * The client draws a visible bar only while it has a range to scroll; the content takes the place of one it
+     * does not. A Dart composite's bars are Dart bars on every backend (DartScrollable.createScrollBar).
+     */
+    private static boolean hasRange(ScrollBar bar) {
+        return ((DartScrollBar) bar.getImpl()).hasRange;
     }
 
     /**
      * The bounds less the border and the bars that are shown, at the origin. A bar counts while it is set
-     * visible, whether or not its window is on screen yet.
+     * visible, whether or not its window is on screen yet, and has a range to scroll.
      */
     static Rectangle getClientArea(DartComposite composite) {
         Rectangle bounds = composite.getBounds();

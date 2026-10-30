@@ -96,19 +96,19 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).toolTipText = value;
     }
 
-    public static final int CONTROL = 413;
+    public static final int CONTROL = 61;
 
-    public static final int FONT = 414;
+    public static final int FONT = 62;
 
-    public static final int FOREGROUND = 415;
+    public static final int FOREGROUND = 63;
 
-    public static final int SELECTION_FOREGROUND = 416;
+    public static final int SELECTION_FOREGROUND = 64;
 
-    public static final int SHOW_CLOSE = 417;
+    public static final int SHOW_CLOSE = 65;
 
-    public static final int SHOWING = 418;
+    public static final int SHOWING = 66;
 
-    public static final int TOOL_TIP_TEXT = 419;
+    public static final int TOOL_TIP_TEXT = 67;
 
     @Override
     public String wireName(int key) {
@@ -134,25 +134,25 @@ public class VCTabItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 413:
+            case 61:
                 w.ref(getControl());
                 return true;
-            case 414:
+            case 62:
                 w.object((getFont() == null || getFont().isDisposed() ? null : getFont().getImpl() instanceof DartFont ? ((DartFont) getFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getFont()).getImpl()).getValue()));
                 return true;
-            case 415:
+            case 63:
                 w.write(getForeground());
                 return true;
-            case 416:
+            case 64:
                 w.write(getSelectionForeground());
                 return true;
-            case 417:
+            case 65:
                 w.write(getShowClose());
                 return true;
-            case 418:
+            case 66:
                 w.write(getShowing());
                 return true;
-            case 419:
+            case 67:
                 w.write(getToolTipText());
                 return true;
         }
@@ -162,69 +162,69 @@ public class VCTabItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 413:
+            case 61:
                 {
                     Control v_ = getControl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(413);
+                    w.key(61);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 414:
+            case 62:
                 {
                     Font v_ = getFont();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(414);
+                    w.key(62);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 415:
+            case 63:
                 {
                     Color v_ = getForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(415);
+                    w.key(63);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 416:
+            case 64:
                 {
                     Color v_ = getSelectionForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(416);
+                    w.key(64);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 417:
+            case 65:
                 {
                     boolean v_ = getShowClose();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(417);
+                    w.key(65);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 418:
+            case 66:
                 {
                     boolean v_ = getShowing();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(418);
+                    w.key(66);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 419:
+            case 67:
                 {
                     String v_ = getToolTipText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(419);
+                    w.key(67);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -232,7 +232,7 @@ public class VCTabItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 413, 414, 415, 416, 417, 418, 419 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 61, 62, 63, 64, 65, 66, 67 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -24,8 +25,8 @@ class _CapturingSpinnerSwt extends SpinnerSwt<VSpinner> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VSpinner val, String ev, VEvent? payload) =>
-      onEvent(ev, payload);
+  void sendEvent(VSpinner val, int channel, VEvent? payload) =>
+      onEvent(wireChannelNames[channel]!, payload);
 }
 
 VSpinner _spinner({int selection = 123}) => VSpinner()

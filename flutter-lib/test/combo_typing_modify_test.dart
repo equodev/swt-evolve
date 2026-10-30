@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 /// The generated ComboSwt with sendEvent captured instead of handed to EquoCommService
 /// (a widget test has no live transport). The State and its real editing path are untouched.
@@ -22,7 +23,7 @@ class _CapturingComboSwt extends ComboSwt<VCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCombo _editableCombo(String text) => VCombo()

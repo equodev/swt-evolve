@@ -46,10 +46,10 @@ class SwingIslandTransportTest {
     }
 
     private static final class NoComm implements CommService {
-        @Override public void send(String eventName) {}
-        @Override public void send(String eventName, byte[] payload) {}
-        @Override public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {}
-        @Override public void remove(String eventName) {}
+        @Override public void send(int type, long id, int channel, byte[] payload) {}
+        @Override public void sendFrame(byte[] frame, int offset, int length) {}
+        @Override public <T> void on(int type, long id, int channel, Class<T> cls, Consumer<T> callback) {}
+        @Override public void remove(int type, long id, int channel) {}
         @Override public int getPort() { return 0; }
         @Override public void stop() {}
     }

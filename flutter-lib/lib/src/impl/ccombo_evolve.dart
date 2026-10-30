@@ -10,7 +10,7 @@ import '../gen/event.dart';
 import '../gen/point.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireKey, WireChannel;
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/ccombo_theme_extension.dart';
@@ -226,7 +226,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     if (open == (_lastJavaListVisible ?? false)) return;
     _lastJavaListVisible = open;
     state.listVisible = open;
-    widget.sendEvent(state, "List/Visible", VEvent()..detail = open ? 1 : 0);
+    widget.sendEvent(state, WireChannel.listVisible, VEvent()..detail = open ? 1 : 0);
   }
 
   @override

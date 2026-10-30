@@ -15,27 +15,27 @@ class DropTargetSwt<V extends VDropTarget> extends WidgetSwt<V> {
       DropTargetImpl<DropTargetSwt<VDropTarget>, VDropTarget>();
 
   void sendDropdragEnter(V val, VEvent? payload) {
-    sendEvent(val, "Drop/dragEnter", payload);
+    sendEvent(val, 28, payload); // Drop/dragEnter
   }
 
   void sendDropdragLeave(V val, VEvent? payload) {
-    sendEvent(val, "Drop/dragLeave", payload);
+    sendEvent(val, 29, payload); // Drop/dragLeave
   }
 
   void sendDropdragOperationChanged(V val, VEvent? payload) {
-    sendEvent(val, "Drop/dragOperationChanged", payload);
+    sendEvent(val, 30, payload); // Drop/dragOperationChanged
   }
 
   void sendDropdragOver(V val, VEvent? payload) {
-    sendEvent(val, "Drop/dragOver", payload);
+    sendEvent(val, 31, payload); // Drop/dragOver
   }
 
   void sendDropdrop(V val, VEvent? payload) {
-    sendEvent(val, "Drop/drop", payload);
+    sendEvent(val, 32, payload); // Drop/drop
   }
 
   void sendDropdropAccept(V val, VEvent? payload) {
-    sendEvent(val, "Drop/dropAccept", payload);
+    sendEvent(val, 33, payload); // Drop/dropAccept
   }
 }
 

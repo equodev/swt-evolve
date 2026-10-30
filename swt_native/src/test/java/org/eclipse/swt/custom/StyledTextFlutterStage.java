@@ -146,11 +146,10 @@ final class StyledTextFlutterStage {
 
     /**
      * When the client chains two presses into a multi-click: on the same control, within
-     * kDoubleTapSlop of each other and the double-click time apart (control_evolve.dart
-     * registerPointerDown), which the client takes from Java.
+     * doubleClickSlop of each other and the Display's double-click time apart (control_evolve.dart
+     * registerPointerDown).
      */
-    private static final double CLICK_SLOP = 100;
-    private static final long CLICK_CHAIN_MS = dev.equo.swt.Config.doubleClickTime();
+    private static final double CLICK_SLOP = 5;
 
     private long lastClickAt;
     private StyledText lastClicked;
@@ -159,7 +158,7 @@ final class StyledTextFlutterStage {
     /** Waits until a press on the subject can no longer chain with the last one. */
     void separateFromLastClick() {
         if (lastClicked != subject) return;
-        long wait = lastClickAt + CLICK_CHAIN_MS + 50 - System.currentTimeMillis();
+        long wait = lastClickAt + subject.getDisplay().getDoubleClickTime() + 50 - System.currentTimeMillis();
         if (wait <= 0) return;
         try {
             Thread.sleep(wait);

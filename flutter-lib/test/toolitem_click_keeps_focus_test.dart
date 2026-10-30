@@ -20,7 +20,7 @@ class _SilentToolItemSwt extends ToolItemSwt<VToolItem> {
   const _SilentToolItemSwt({required super.value});
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) {}
+  void sendEvent(VToolItem val, int channel, VEvent? payload) {}
 }
 
 class _SilentToolBarSwt extends ToolBarSwt<VToolBar> {

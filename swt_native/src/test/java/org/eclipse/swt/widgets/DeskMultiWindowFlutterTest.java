@@ -840,6 +840,7 @@ class DeskMultiWindowFlutterTest {
     /** The Display's window reports its viewport, as its client does once it has drawn. */
     private void clientReportsViewport(TestDeskBridge desk, int width, int height) {
         ClientReadyPayload report = new ClientReadyPayload();
+        report.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         report.width = width;
         report.height = height;
         @SuppressWarnings("unchecked")
@@ -1039,13 +1040,14 @@ class DeskMultiWindowFlutterTest {
                 // which happens while the engine is still being created here.
                 Shell opening = null;
                 for (Shell s : forDisplay._shells()) if (s != null && s.hashCode() == widgetId) opening = s;
-                String channel = shellClientReadyChannel(opening);
+                String channel = "Shell/" + opening.hashCode() + "/ClientReady";
                 @SuppressWarnings("unchecked")
                 Consumer<ClientReadyPayload> handler = (Consumer<ClientReadyPayload>) comm.handlers.get(channel);
                 if (handler == null) {
                     unansweredReports.add(channel);
                 } else {
                     ClientReadyPayload report = new ClientReadyPayload();
+                    report.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
                     report.width = width;
                     report.height = height;
                     report.isFirst = true;

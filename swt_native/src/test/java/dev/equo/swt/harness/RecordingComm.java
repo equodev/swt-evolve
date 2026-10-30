@@ -60,12 +60,30 @@ public class RecordingComm implements CommService {
     private int wireFramesSent;
 
     @Override
+    public void send(int type, long id, int channel, byte[] payload) {
+        send(Channels.name(type, id, channel), payload);
+    }
+
+    @Override
+    public void sendFrame(byte[] frame, int offset, int length) {
+        dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, offset, offset + length);
+        send(header.channel(), java.util.Arrays.copyOfRange(frame, header.payloadStart(), offset + length));
+    }
+
+    /** Records a message with no payload on {@code eventName}. */
     public void send(String eventName) {
         sent.add(new Frame(eventName, null, 0, null, 0, List.of()));
     }
 
-    @Override
+    /**
+     * Records a message on {@code eventName}, by the frames it stands for: every send and frame comes
+     * through here by its channel's name, for a test that watches the traffic to override.
+     */
     public void send(String eventName, byte[] payload) {
+        if (payload == null) {
+            send(eventName);
+            return;
+        }
         // A binary frame of widget records: each record recorded as the frame it replaced.
         if (dev.equo.swt.WidgetWire.CHANNEL.equals(eventName)) {
             int wire = ++wireFramesSent;
@@ -82,17 +100,18 @@ public class RecordingComm implements CommService {
     }
 
     @Override
-    public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
-        handlers.put(eventName, callback);
+    public <T> void on(int type, long id, int channel, Class<T> cls, Consumer<T> callback) {
+        handlers.put(Channels.name(type, id, channel), callback);
     }
 
     @Override
-    public void remove(String eventName) {
-        handlers.remove(eventName);
+    public void remove(int type, long id, int channel) {
+        handlers.remove(Channels.name(type, id, channel));
     }
 
     @Override
-    public void removeOwner(String owner) {
+    public void removeOwner(int type, long id) {
+        String owner = dev.equo.swt.comm.ChannelHeader.typeName(type) + "/" + id;
         handlers.keySet().removeIf(name -> name.equals(owner) || name.startsWith(owner + "/"));
     }
 

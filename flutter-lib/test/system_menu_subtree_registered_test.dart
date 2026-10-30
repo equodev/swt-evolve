@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -23,6 +24,7 @@ import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'support/menu_shown_ack.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
 
 /// A display of its own per test: DisplaySwt seeds a fresh State from a module-level cache keyed
 /// by display id, so sharing one would hand the next test the payload the previous one ended on.
@@ -38,13 +40,8 @@ const int _popupId = 7799;
 /// Delivers an inbound frame exactly as the transport would (2-byte name length, name,
 /// tagged-values body), which is the only way a Display update reaches a mounted DisplaySwt.
 void _deliver(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
   final body = TaggedValues.encode(payload);
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
+  final frame = channels.frame(actionId, body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 

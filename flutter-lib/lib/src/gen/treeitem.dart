@@ -62,46 +62,46 @@ class VTreeItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 95: // background
+      case 640: // background
         background = r.color();
         return true;
-      case 96: // backgrounds
-        backgrounds = r.list(() => r.color());
+      case 641: // backgrounds
+        backgrounds = r.list((r) => r.color());
         return true;
-      case 97: // checked
+      case 642: // checked
         checked = r.boolean();
         return true;
-      case 98: // expanded
+      case 643: // expanded
         expanded = r.boolean();
         return true;
-      case 99: // font
+      case 644: // font
         font = r.object(VFont.new);
         return true;
-      case 100: // fonts
-        fonts = r.list(() => r.object(VFont.new));
+      case 645: // fonts
+        fonts = r.list((r) => r.object(VFont.new));
         return true;
-      case 101: // foreground
+      case 646: // foreground
         foreground = r.color();
         return true;
-      case 102: // foregrounds
-        foregrounds = r.list(() => r.color());
+      case 647: // foregrounds
+        foregrounds = r.list((r) => r.color());
         return true;
-      case 103: // grayed
+      case 648: // grayed
         grayed = r.boolean();
         return true;
-      case 104: // images
-        images = r.list(() => r.image());
+      case 649: // images
+        images = r.list((r) => r.image());
         return true;
-      case 106: // items
+      case 651: // items
         items = r.refs<VTreeItem>();
         return true;
-      case 107: // paintedTexts
+      case 652: // paintedTexts
         paintedTexts = r.ints();
         return true;
-      case 108: // texts
+      case 653: // texts
         texts = r.strings();
         return true;
-      case 105: // itemCount
+      case 650: // itemCount
         itemCount = r.int32();
         return true;
       default:
@@ -114,100 +114,96 @@ class VTreeItem extends VItem {
     super.writeWire(w);
     {
       final v_ = background;
-      if (v_ != null && w.wants(95)) {
-        w.key(95);
+      if (v_ != null) {
+        w.key(640);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgrounds;
-      if (v_ != null && w.wants(96)) {
-        w.key(96);
+      if (v_ != null) {
+        w.key(641);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = checked;
-      if (v_ != null && w.wants(97)) {
-        w.key(97);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(642, v_);
       }
     }
     {
       final v_ = expanded;
-      if (v_ != null && w.wants(98)) {
-        w.key(98);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(643, v_);
       }
     }
     {
       final v_ = font;
-      if (v_ != null && w.wants(99)) {
-        w.key(99);
+      if (v_ != null) {
+        w.key(644);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = fonts;
-      if (v_ != null && w.wants(100)) {
-        w.key(100);
+      if (v_ != null) {
+        w.key(645);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = foreground;
-      if (v_ != null && w.wants(101)) {
-        w.key(101);
+      if (v_ != null) {
+        w.key(646);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregrounds;
-      if (v_ != null && w.wants(102)) {
-        w.key(102);
+      if (v_ != null) {
+        w.key(647);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = grayed;
-      if (v_ != null && w.wants(103)) {
-        w.key(103);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(648, v_);
       }
     }
     {
       final v_ = images;
-      if (v_ != null && w.wants(104)) {
-        w.key(104);
+      if (v_ != null) {
+        w.key(649);
         w.list(v_, (e) => w.ref(e?.id));
       }
     }
     {
       final v_ = items;
-      if (v_ != null && w.wants(106)) {
-        w.key(106);
+      if (v_ != null) {
+        w.key(651);
         w.refs(v_);
       }
     }
     {
       final v_ = paintedTexts;
-      if (v_ != null && w.wants(107)) {
-        w.key(107);
+      if (v_ != null) {
+        w.key(652);
         w.ints(v_);
       }
     }
     {
       final v_ = texts;
-      if (v_ != null && w.wants(108)) {
-        w.key(108);
+      if (v_ != null) {
+        w.key(653);
         w.strings(v_);
       }
     }
     {
       final v_ = itemCount;
-      if (v_ != null && w.wants(105)) {
-        w.key(105);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(650, v_);
       }
     }
   }
@@ -215,20 +211,20 @@ class VTreeItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(95, background);
-    visit(96, backgrounds);
-    visit(97, checked);
-    visit(98, expanded);
-    visit(99, font);
-    visit(100, fonts);
-    visit(101, foreground);
-    visit(102, foregrounds);
-    visit(103, grayed);
-    visit(104, images);
-    visit(106, items);
-    visit(107, paintedTexts);
-    visit(108, texts);
-    visit(105, itemCount);
+    visit(640, background);
+    visit(641, backgrounds);
+    visit(642, checked);
+    visit(643, expanded);
+    visit(644, font);
+    visit(645, fonts);
+    visit(646, foreground);
+    visit(647, foregrounds);
+    visit(648, grayed);
+    visit(649, images);
+    visit(651, items);
+    visit(652, paintedTexts);
+    visit(653, texts);
+    visit(650, itemCount);
   }
 
   @override

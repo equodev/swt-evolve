@@ -81,11 +81,17 @@ public class DeskDisplayBridge extends DisplayBridge {
     private Shell windowShell;
 
     /**
-     * Set while a posted wake is still in the OS event queue. One queued wake is enough to end the
-     * idle wait, and every extra one is an OS event the next pump dispatches, each closing an AppKit
-     * transaction the window server has to process.
+     * Whether the UI thread is running a turn, armed for its idle wait, or woken from it. Only an
+     * armed wait needs a wake posted, and one is enough: a running turn sees new work when it next
+     * arms ({@code DartDisplay.sleep} arms before it checks for pending work), and every extra wake
+     * is an OS event the next pump dispatches, each closing an AppKit transaction the window server
+     * has to process.
      */
-    private final java.util.concurrent.atomic.AtomicBoolean wakeQueued = new java.util.concurrent.atomic.AtomicBoolean();
+    private final java.util.concurrent.atomic.AtomicInteger waitState = new java.util.concurrent.atomic.AtomicInteger(RUNNING);
+
+    private static final int RUNNING = 0;
+    private static final int ARMED = 1;
+    private static final int WOKEN = 2;
 
     DeskDisplayBridge(DartDisplay display) {
         super(display);
@@ -115,7 +121,7 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     @Override
     protected CommService createComm() {
-        return newLocalComm();
+        return newComm();
     }
 
     /** Opens one native top-level window hosting a Flutter client rooted at {@code widgetName/id}.
@@ -158,8 +164,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         fitShellTakingOverWindow(main);
         applyWindowOrigin(main, mainWindowOrigin());
 
-        // The pump drains the queued wake, so a wake after this point has to be posted again.
-        wakeQueued.set(false);
+        // A turn that found work instead of waiting left the wait armed.
+        waitState.set(RUNNING);
         int status = pumpWindow();
         if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
             onWindowCloseRequested();
@@ -547,10 +553,10 @@ public class DeskDisplayBridge extends DisplayBridge {
         return hasNativeWindow() ? 1000 : super.parkCapMillis();
     }
 
-    /** A wake the last pump drained has left the flag set; clear it so the next one is posted. */
+    /** The UI thread is about to wait: from here a wake has to reach the OS loop. */
     @Override
     public void armWake() {
-        wakeQueued.set(false);
+        waitState.set(ARMED);
     }
 
     /**
@@ -563,7 +569,11 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void sleep(int millis) throws InterruptedException {
         if (hasNativeWindow()) {
-            FlutterNative.waitEvents(windowContext, millis);
+            try {
+                waitNativeWindow(millis);
+            } finally {
+                waitState.set(RUNNING);
+            }
         } else {
             Thread.sleep(millis);
         }
@@ -577,9 +587,14 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public void wake() {
-        if (hasNativeWindow() && wakeQueued.compareAndSet(false, true)) {
+        if (hasNativeWindow() && waitState.compareAndSet(ARMED, WOKEN)) {
             wakeNativeWindow();
         }
+    }
+
+    /** Waits in the OS event loop for up to {@code millis}. Seam: tests stand a window in without JNI. */
+    protected void waitNativeWindow(int millis) {
+        FlutterNative.waitEvents(windowContext, millis);
     }
 
     /** Posts the wake into the OS event loop. Seam: tests stand a window in without JNI. */

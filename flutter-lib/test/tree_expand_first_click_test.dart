@@ -147,7 +147,8 @@ void main() {
     await tester.pumpWidget(_wrap(tree));
     await tester.pump();
 
-    tester.semantics.tap(find.semantics.byLabel('Expand'));
+    tester.semantics.tap(
+        find.semantics.byPredicate((node) => node.identifier == 'TreeItemExpander/10'));
     await tester.pump();
 
     expect(tree.expands, hasLength(1));

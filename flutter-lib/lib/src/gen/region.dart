@@ -11,11 +11,29 @@ class VRegion implements WireReadable, WireWritable, WireVisitable {
   List<int>? rects;
 
   @override
-  bool readWire(int key, WidgetWireReader r) => false;
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case 421: // rects
+        rects = r.ints();
+        return true;
+      default:
+        return false;
+    }
+  }
 
   @override
-  void writeWire(WidgetWireWriter w) {}
+  void writeWire(WidgetWireWriter w) {
+    {
+      final v_ = rects;
+      if (v_ != null) {
+        w.key(421);
+        w.ints(v_);
+      }
+    }
+  }
 
   @override
-  void visitWire(void Function(int key, Object? value) visit) {}
+  void visitWire(void Function(int key, Object? value) visit) {
+    visit(421, rects);
+  }
 }

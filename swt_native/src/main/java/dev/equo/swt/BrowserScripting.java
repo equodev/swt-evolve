@@ -48,8 +48,8 @@ public final class BrowserScripting {
         CompletableFuture<Object> future = new CompletableFuture<>();
         PENDING.put(reqId, future);
         // One channel for every reply; each names the request it answers.
-        FlutterBridge.onPayload(widget, "evaluate/result", Object.class, BrowserScripting::completeEvaluate);
-        FlutterBridge.send(widget, "evaluate",
+        FlutterBridge.onPayload(widget, dev.equo.swt.WireTable.CHANNEL_EVALUATE_RESULT, Object.class, BrowserScripting::completeEvaluate);
+        FlutterBridge.send(widget, dev.equo.swt.WireTable.CHANNEL_EVALUATE,
                 Java8.map("script", asFunctionBody(script), "reqId", reqId));
         boolean answered = awaitReply(display, future);
         PENDING.remove(reqId);
@@ -144,7 +144,7 @@ public final class BrowserScripting {
      */
     public static void listenForFunctionCalls(DartWidget widget, Display display) {
         long id = FlutterBridge.id(widget);
-        FlutterBridge.onPayload(widget, "browserFunctionCall", Object.class, call -> {
+        FlutterBridge.onPayload(widget, dev.equo.swt.WireTable.CHANNEL_BROWSER_FUNCTION_CALL, Object.class, call -> {
             if (!(call instanceof Map)) return;
             Map<?, ?> m = (Map<?, ?>) EvalJson.toSwt(call);
             Object nameObj = m.get("name");

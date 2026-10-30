@@ -31,13 +31,13 @@ public class VPath extends VResource {
         return ((DartPath) impl).wireTextFonts();
     }
 
-    public static final int PATH_DATA = 565;
+    public static final int PATH_DATA = 388;
 
-    public static final int TEXT_FONTS = 568;
+    public static final int TEXT_FONTS = 389;
 
-    public static final int TEXT_ORIGINS = 567;
+    public static final int TEXT_ORIGINS = 390;
 
-    public static final int TEXT_STRINGS = 566;
+    public static final int TEXT_STRINGS = 391;
 
     @Override
     public String wireName(int key) {
@@ -57,16 +57,16 @@ public class VPath extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 565:
+            case 388:
                 w.object(getPathData());
                 return true;
-            case 566:
+            case 391:
                 w.write(getTextStrings());
                 return true;
-            case 567:
+            case 390:
                 w.write(getTextOrigins());
                 return true;
-            case 568:
+            case 389:
                 {
                     Font[] a_ = getTextFonts();
                     if (a_ == null)
@@ -84,46 +84,46 @@ public class VPath extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 565:
+            case 388:
                 {
                     PathData v_ = getPathData();
                     dev.equo.swt.WireObject o_ = v_;
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(565);
+                    w.key(388);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 566:
+            case 391:
                 {
                     String[] v_ = getTextStrings();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(566);
+                    w.key(391);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 567:
+            case 390:
                 {
                     float[] v_ = getTextOrigins();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(567);
+                    w.key(390);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 568:
+            case 389:
                 {
                     Font[] v_ = getTextFonts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(568);
+                    w.key(389);
                     {
                         Font[] a_ = v_;
                         if (a_ == null)
@@ -139,7 +139,7 @@ public class VPath extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 565, 566, 567, 568 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 388, 391, 390, 389 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -162,19 +162,19 @@ public class VPath extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 633;
+        return 72;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(565);
+        w.key(388);
         w.object(getPathData());
-        w.key(566);
+        w.key(391);
         w.write(getTextStrings());
-        w.key(567);
+        w.key(390);
         w.write(getTextOrigins());
-        w.key(568);
+        w.key(389);
         {
             Font[] a_ = getTextFonts();
             if (a_ == null)

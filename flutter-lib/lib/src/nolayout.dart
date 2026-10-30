@@ -36,8 +36,7 @@ class NoLayout extends StatelessWidget {
       enabled: (composite?.enabled ?? true) && EnabledScope.of(context),
       child: CustomMultiChildLayout(
         delegate: _AbsoluteLayoutDelegate(children, composite,
-            relayout: VRegistry.instance
-                .boundsChangesOn(children.map(VRegistry.channelOf))),
+            relayout: VRegistry.instance.boundsChangesAt(children.map(VRegistry.keyOf))),
         children: [
           for (var child in children.reversed)
             LayoutId(

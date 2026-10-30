@@ -15,11 +15,11 @@ class ToolTipSwt<V extends VToolTip> extends WidgetSwt<V> {
   State createState() => ToolTipImpl<ToolTipSwt<VToolTip>, VToolTip>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -48,16 +48,16 @@ class VToolTip extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 164: // location
+      case 606: // location
         location = r.point();
         return true;
-      case 165: // message
+      case 607: // message
         message = r.string();
         return true;
-      case 166: // text
+      case 608: // text
         text = r.string();
         return true;
-      case 167: // visible
+      case 609: // visible
         visible = r.boolean();
         return true;
       default:
@@ -70,30 +70,29 @@ class VToolTip extends VWidget {
     super.writeWire(w);
     {
       final v_ = location;
-      if (v_ != null && w.wants(164)) {
-        w.key(164);
+      if (v_ != null) {
+        w.key(606);
         w.pointValue(v_);
       }
     }
     {
       final v_ = message;
-      if (v_ != null && w.wants(165)) {
-        w.key(165);
+      if (v_ != null) {
+        w.key(607);
         w.string(v_);
       }
     }
     {
       final v_ = text;
-      if (v_ != null && w.wants(166)) {
-        w.key(166);
+      if (v_ != null) {
+        w.key(608);
         w.string(v_);
       }
     }
     {
       final v_ = visible;
-      if (v_ != null && w.wants(167)) {
-        w.key(167);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(609, v_);
       }
     }
   }
@@ -101,10 +100,10 @@ class VToolTip extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(164, location);
-    visit(165, message);
-    visit(166, text);
-    visit(167, visible);
+    visit(606, location);
+    visit(607, message);
+    visit(608, text);
+    visit(609, visible);
   }
 
   @override

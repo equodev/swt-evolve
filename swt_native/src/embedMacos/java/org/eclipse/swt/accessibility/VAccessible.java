@@ -38,14 +38,14 @@ public class VAccessible implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 170;
+        return 1;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(168);
+        w.key(1);
         w.ref(getControl());
-        w.key(169);
+        w.key(2);
         w.write((int) getFocus());
     }
 }

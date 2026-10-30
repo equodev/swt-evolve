@@ -2551,14 +2551,14 @@ public class DartTable extends DartComposite implements ITable {
     protected void _hookEvents() {
         super._hookEvents();
         getApi().addListener(SWT.MouseDown, event -> TableHelper.handleMouseDownSelection(this, event));
-        FlutterBridge.on(this, "PaintItem", "PaintItem", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_PAINT_ITEM_PAINT_ITEM, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
             });
         });
-        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SCROLL_SCROLL, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;

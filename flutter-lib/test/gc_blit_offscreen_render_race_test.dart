@@ -17,6 +17,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/image.dart';
@@ -24,21 +25,18 @@ import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 
 import 'support/gc_frames.dart';
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
 
 Uint8List _frame(String actionId, List<int> body) {
-  final action = utf8.encode(actionId);
-  final out = Uint8List(2 + action.length + body.length);
-  out[0] = (action.length >> 8) & 0xFF;
-  out[1] = action.length & 0xFF;
-  out.setRange(2, 2 + action.length, action);
-  out.setRange(2 + action.length, out.length, body);
+  final out = channels.frame(actionId, Uint8List.fromList(body));
   return out;
 }
 
 
 /// The gcDispose body GCImageDrawer.endDrawCycle puts on the wire.
 List<int> _gcDisposeBody(int ref, {bool wantPixels = false, bool retain = false}) =>
-    tagged({'ref': ref, 'pixels': wantPixels, 'retain': retain});
+    gcDisposeOf({'ref': ref, 'pixels': wantPixels, 'retain': retain});
 
 List<int> _refBody(int ref) =>
     (ByteData(8)..setInt64(0, ref, Endian.big)).buffer.asUint8List();
@@ -79,7 +77,7 @@ void main() {
   setUp(() {
     // What main.dart's _registerImageReleaseListener registers in production: the release takes its
     // turn in the apply queue like any other frame.
-    EquoCommService.onBytes('Image/releaseRemoteRef', (bytes) {
+    EquoCommService.commForTesting.onBytesNamed('Image/releaseRemoteRef', (bytes) {
       ImageUtils.releaseRemoteImage(
           _readInt64BE(ByteData.sublistView(bytes), 0));
     });
@@ -128,7 +126,7 @@ void main() {
 
     // 4. controlGC.dispose() — opened outside any Paint, so this composites instead of replacing.
     comm.receiveBinary(
-        _frame('GC/$controlGcId/gcDispose', tagged({'fullRepaint': false})));
+        _frame('GC/$controlGcId/gcDispose', gcDisposeOf({'fullRepaint': false})));
 
     await _settle();
 

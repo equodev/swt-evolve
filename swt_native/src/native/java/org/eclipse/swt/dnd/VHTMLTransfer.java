@@ -11,7 +11,7 @@ public class VHTMLTransfer extends VByteArrayTransfer {
 
     @Override
     public int wireTypeId() {
-        return 644;
+        return 54;
     }
 
     @Override

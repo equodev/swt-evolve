@@ -30,15 +30,15 @@ public class VPDFDocument extends VDevice {
 
     @Override
     public int wireTypeId() {
-        return 620;
+        return 71;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(618);
+        w.key(386);
         w.write(getHeight());
-        w.key(619);
+        w.key(387);
         w.write(getWidth());
     }
 }

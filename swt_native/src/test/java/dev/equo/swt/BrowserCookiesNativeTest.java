@@ -10,6 +10,7 @@ import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
@@ -135,11 +136,30 @@ class BrowserCookiesNativeTest {
         assertThat(comm.requests).isZero();
     }
 
+    @Test
+    @DisplayName("a reply on another Browser's channel does not answer this Browser's request")
+    void getCookie_ignoresAReplyOnAnotherBrowser() {
+        Browser other = new Browser(shell, SWT.NONE);
+        Browser asked = new Browser(shell, SWT.NONE);
+        comm.reply = "theirs";
+        BrowserCookies.get((DartWidget) other.getImpl(), display, "session", "https://example.com/");
+        comm.forgeOn = comm.lastRequester;
+        comm.reply = "ours";
+
+        String value = BrowserCookies.get((DartWidget) asked.getImpl(), display, "session", "https://example.com/");
+
+        assertThat(value).isEqualTo("ours");
+    }
+
     /** Answers each cookie request with {@link #reply}, as the Flutter side would. */
     private static final class AnsweringComm extends RecordingComm {
 
         volatile String reply;
         int requests;
+        /** The widget whose request came last, as the channel prefix its replies arrive on. */
+        String lastRequester;
+        /** When set, each request is first answered with a forged value on this widget's channel. */
+        String forgeOn;
         private final java.util.Map<String, Map<String, Object>> lastByOp = new java.util.HashMap<>();
 
         @Override
@@ -153,7 +173,15 @@ class BrowserCookiesNativeTest {
             lastByOp.put(op, args);
             Event event = new Event();
             event.text = reply;
-            answer("/cookie/" + args.get("reqId"), event);
+            event.detail = ((Number) args.get("reqId")).intValue();
+            lastRequester = eventName.substring(0, eventName.lastIndexOf('/'));
+            if (forgeOn != null) {
+                Event forged = new Event();
+                forged.text = "forged";
+                forged.detail = event.detail;
+                answer(forgeOn + "/cookie", forged);
+            }
+            answer(lastRequester + "/cookie", event);
         }
 
         @SuppressWarnings("unchecked")

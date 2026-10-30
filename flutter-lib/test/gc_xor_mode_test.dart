@@ -13,6 +13,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/gc.dart';

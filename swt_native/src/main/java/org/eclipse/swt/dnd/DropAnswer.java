@@ -43,7 +43,7 @@ public final class DropAnswer implements WireObject {
         this.detail = detail;
         this.feedback = feedback;
         this.dataType = dataType;
-        FlutterBridge.sendFields(target, "Drop/negotiationResult", this);
+        FlutterBridge.sendFields(target, dev.equo.swt.WireTable.CHANNEL_DROP_NEGOTIATION_RESULT, this);
     }
 
     @Override

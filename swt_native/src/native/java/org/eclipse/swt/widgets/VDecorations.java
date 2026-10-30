@@ -2,7 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VDecorations extends VCanvas {
 
@@ -39,10 +38,16 @@ public class VDecorations extends VCanvas {
         Image[] values = ((DartDecorations) impl).images;
         if (values == null)
             return null;
-        ArrayList<Image> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Image v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Image[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Image[] result = new Image[kept];
+        kept = 0;
+        for (Image v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setImages(Image[] value) {
@@ -92,13 +97,13 @@ public class VDecorations extends VCanvas {
         return ((DartDecorations) impl).wireOwnMenuStrip();
     }
 
-    public static final int MENU_BAR = 558;
+    public static final int MENU_BAR = 162;
 
-    public static final int MENU_STRIP_HEIGHT = 1366;
+    public static final int MENU_STRIP_HEIGHT = 163;
 
-    public static final int OWN_MENU_STRIP = 1367;
+    public static final int OWN_MENU_STRIP = 164;
 
-    public static final int TEXT = 559;
+    public static final int TEXT = 165;
 
     @Override
     public String wireName(int key) {
@@ -118,16 +123,16 @@ public class VDecorations extends VCanvas {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 558:
+            case 162:
                 w.ref(getMenuBar());
                 return true;
-            case 559:
+            case 165:
                 w.write(getText());
                 return true;
-            case 1366:
+            case 163:
                 w.write((int) getMenuStripHeight());
                 return true;
-            case 1367:
+            case 164:
                 w.write(getOwnMenuStrip());
                 return true;
         }
@@ -137,41 +142,41 @@ public class VDecorations extends VCanvas {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 558:
+            case 162:
                 {
                     Menu v_ = getMenuBar();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(558);
+                    w.key(162);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 559:
+            case 165:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(559);
+                    w.key(165);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1366:
+            case 163:
                 {
                     int v_ = getMenuStripHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1366);
+                    w.key(163);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1367:
+            case 164:
                 {
                     boolean v_ = getOwnMenuStrip();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1367);
+                    w.key(164);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -179,7 +184,7 @@ public class VDecorations extends VCanvas {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 558, 559, 1366, 1367 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 162, 165, 163, 164 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

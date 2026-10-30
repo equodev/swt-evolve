@@ -583,6 +583,7 @@ class DisplayResizeFlutterTest {
 
     private static void clientReady(RecordingComm comm, int width, int height, int zoom, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;
@@ -608,6 +609,7 @@ class DisplayResizeFlutterTest {
 
     private static void clientReady(RecordingComm comm, int width, int height, int monitorW, int monitorH, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;

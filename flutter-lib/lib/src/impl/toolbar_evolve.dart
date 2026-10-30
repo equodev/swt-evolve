@@ -655,27 +655,27 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
   /// change of what only this control shows redraws it alone, and anything else rebuilds the bar.
   static const _drawnHere = {WireKey.k_ToolItem_selection, WireKey.k_ToolItem_enabled};
   static const _selectionOnly = {WireKey.k_ToolItem_selection};
-  List<String> _watched = const [];
+  List<int> _watched = const [];
 
   /// Ticks on a change of selection alone: only the parts that show it rebuild.
   final _selectionChanges = ValueNotifier<int>(0);
 
   void _watch() {
-    final channels = [
-      VRegistry.channelOf(widget.keywordItem),
-      VRegistry.channelOf(widget.debugItem),
+    final keys = [
+      VRegistry.keyOf(widget.keywordItem),
+      VRegistry.keyOf(widget.debugItem),
     ];
-    if (listEquals(channels, _watched)) return;
+    if (listEquals(keys, _watched)) return;
     _unwatch();
-    for (final channel in channels) {
-      VRegistry.instance.watch(channel, _itemChanged);
+    for (final key in keys) {
+      VRegistry.instance.watchAt(key, _itemChanged);
     }
-    _watched = channels;
+    _watched = keys;
   }
 
   void _unwatch() {
-    for (final channel in _watched) {
-      VRegistry.instance.unwatch(channel, _itemChanged);
+    for (final key in _watched) {
+      VRegistry.instance.unwatchAt(key, _itemChanged);
     }
     _watched = const [];
   }

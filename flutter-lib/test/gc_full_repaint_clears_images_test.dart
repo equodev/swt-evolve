@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
@@ -23,7 +24,8 @@ void main() {
 
   /// Deliver one framed message, exactly as the wire transport would:
   /// [2-byte actionId length BE][actionId][body].
-  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
+  void deliver(String actionId, Map<String, dynamic> payload) =>
+      receive(actionId, actionId.endsWith('/gcDispose') ? gcDisposeOf(payload) : tagged(payload));
 
   /// Handlers dispatch on a microtask and a gcDispose cycle awaits its pending image decodes.
   Future<void> settle() async {

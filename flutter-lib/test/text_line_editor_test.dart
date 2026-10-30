@@ -2,9 +2,6 @@
 // What Text does around the TextField it does around the LineEditor too: Java's pushes, the
 // VerifyListener's veto, the text limit, read-only, alignment, and the mouse.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,20 +17,22 @@ import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/utils/line_editor.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'delivery/support/deliver.dart';
+import 'support/channels.dart' as channels;
 
 class _RecordingTextSwt extends TextSwt<VText> {
   final List<String> events;
   const _RecordingTextSwt({required super.value, required this.events});
 
   @override
-  void sendEvent(VText val, String ev, VEvent? payload) {
-    events.add(ev);
-    super.sendEvent(val, ev, payload);
+  void sendEvent(VText val, int channel, VEvent? payload) {
+    events.add(wireChannelNames[channel]!);
+    super.sendEvent(val, channel, payload);
   }
 }
 
@@ -76,16 +75,9 @@ void _type(WidgetTester tester, String text) => tester.testTextInput.updateEditi
       TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length)),
     );
 
-/// Delivers an inbound frame as the transport would: 2-byte name length, name, tagged-values body.
+/// Delivers an inbound frame as the transport would: its numbered header, then a tagged-values body.
 void _deliver(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = TaggedValues.encode(payload);
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
+  EquoCommService.commForTesting.receiveBinary(channels.frame(actionId, TaggedValues.encode(payload)));
 }
 
 void main() {

@@ -53,11 +53,11 @@ public class VScale extends VControl {
         ((DartScale) impl).selection = value;
     }
 
-    public static final int MAXIMUM = 442;
+    public static final int MAXIMUM = 428;
 
-    public static final int MINIMUM = 443;
+    public static final int MINIMUM = 429;
 
-    public static final int SELECTION = 444;
+    public static final int SELECTION = 430;
 
     @Override
     public String wireName(int key) {
@@ -75,13 +75,13 @@ public class VScale extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 442:
+            case 428:
                 w.write((int) getMaximum());
                 return true;
-            case 443:
+            case 429:
                 w.write((int) getMinimum());
                 return true;
-            case 444:
+            case 430:
                 w.write((int) getSelection());
                 return true;
         }
@@ -91,30 +91,30 @@ public class VScale extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 442:
+            case 428:
                 {
                     int v_ = getMaximum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(442);
+                    w.key(428);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 443:
+            case 429:
                 {
                     int v_ = getMinimum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(443);
+                    w.key(429);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 444:
+            case 430:
                 {
                     int v_ = getSelection();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(444);
+                    w.key(430);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -122,7 +122,7 @@ public class VScale extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 442, 443, 444 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 428, 429, 430 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

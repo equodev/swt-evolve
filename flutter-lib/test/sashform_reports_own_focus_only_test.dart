@@ -10,6 +10,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sashform.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -24,7 +25,7 @@ class _RecordingSashFormSwt extends SashFormSwt<VSashForm> {
   final List<String> sent;
 
   @override
-  void sendEvent(VSashForm val, String ev, VEvent? payload) => sent.add(ev);
+  void sendEvent(VSashForm val, int channel, VEvent? payload) => sent.add(wireChannelNames[channel]!);
 }
 
 VText _text(int id, int x) => VText()

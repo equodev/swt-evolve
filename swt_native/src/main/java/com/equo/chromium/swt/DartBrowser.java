@@ -1296,7 +1296,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Authentication", "authenticate", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_AUTHENTICATION_AUTHENTICATE, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1305,7 +1305,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (AuthenticationListener l : webBrowser.authenticationListeners) l.authenticate(event);
             });
         });
-        FlutterBridge.on(this, "CloseWindow", "close", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_CLOSE_WINDOW_CLOSE, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1313,7 +1313,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (CloseWindowListener l : webBrowser.closeWindowListeners) l.close(event);
             });
         });
-        FlutterBridge.on(this, "Location", "changed", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_LOCATION_CHANGED, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1322,7 +1322,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (LocationListener l : webBrowser.locationListeners) l.changed(event);
             });
         });
-        FlutterBridge.on(this, "Location", "changing", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_LOCATION_CHANGING, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1330,10 +1330,10 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 event.location = e != null ? e.text : "";
                 event.doit = true;
                 for (LocationListener l : webBrowser.locationListeners) l.changing(event);
-                FlutterBridge.send(this, "locationchanging/result", dev.equo.swt.Java8.map("doit", event.doit));
+                FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_LOCATIONCHANGING_RESULT, dev.equo.swt.Java8.map("doit", event.doit));
             });
         });
-        FlutterBridge.on(this, "OpenWindow", "open", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_OPEN_WINDOW_OPEN, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1341,7 +1341,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (OpenWindowListener l : webBrowser.openWindowListeners) l.open(event);
             });
         });
-        FlutterBridge.on(this, "Progress", "changed", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_PROGRESS_CHANGED, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1351,7 +1351,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (ProgressListener l : webBrowser.progressListeners) l.changed(event);
             });
         });
-        FlutterBridge.on(this, "Progress", "completed", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_PROGRESS_COMPLETED, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1360,7 +1360,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (ProgressListener l : webBrowser.progressListeners) l.completed(event);
             });
         });
-        FlutterBridge.on(this, "StatusText", "changed", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_STATUS_TEXT_CHANGED, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1369,7 +1369,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (StatusTextListener l : webBrowser.statusTextListeners) l.changed(event);
             });
         });
-        FlutterBridge.on(this, "Title", "changed", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_TITLE_CHANGED, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1378,7 +1378,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (TitleListener l : webBrowser.titleListeners) l.changed(event);
             });
         });
-        FlutterBridge.on(this, "VisibilityWindow", "hide", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_VISIBILITY_WINDOW_HIDE, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
@@ -1386,7 +1386,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                 for (VisibilityWindowListener l : webBrowser.visibilityWindowListeners) l.hide(event);
             });
         });
-        FlutterBridge.on(this, "VisibilityWindow", "show", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_VISIBILITY_WINDOW_SHOW, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;

@@ -22,7 +22,7 @@ public class VPrinter extends VDevice {
 
     @Override
     public int wireTypeId() {
-        return 665;
+        return 78;
     }
 
     @Override

@@ -13,8 +13,8 @@ import java.util.Map;
  *
  * <p>The frame is a run of records, each opened by a varint tag:
  * <ul>
- * <li>{@link #OP_NUMBERED}: an op by the number both sides know it by (wire-channels.txt), then its
- * arguments. It takes the next op number in the frame.</li>
+ * <li>{@link #OP_NUMBERED}: an op's number ({@link WireTable}), then its arguments. It takes the next
+ * op number in the frame.</li>
  * <li>{@link #OP_FIRST} and up: an op number given earlier in the frame, then only the arguments.</li>
  * <li>{@link #STATE}: a change to the GC's state, and {@link #WHOLE}: the whole of it, replacing what
  * the client holds. Either is a length and then properties as the widget wire writes them (each a
@@ -24,10 +24,9 @@ import java.util.Map;
  * </ul>
  *
  * <p>Arguments by signature letter: {@code i} zigzag varint, {@code I} an {@code int[]} (varint length
- * plus one, 0 for null, then zigzag varints), {@code b} a byte, {@code s} a string as the widget wire
- * writes one (Latin-1 or UTF-16, so neither end transcodes it), {@code f} a float and {@code d} a
- * double (little endian), {@code w} any other value as the widget wire encodes its type (varint byte
- * length plus one, 0 for null, then the bytes). An image a
+ * plus one, 0 for null, then zigzag varints), {@code b} a byte, {@code s} a string (varint byte
+ * length plus one, 0 for null, then UTF-8), {@code f} a float and {@code d} a double (little endian),
+ * {@code w} any other value as the widget wire encodes its type (length as for a string). An image a
  * value names goes by id; what the client lacks of it is sent ahead of the frame
  * ({@link #images(WidgetWire.Names)}).
  */
@@ -35,10 +34,12 @@ public final class GcWire {
 
     /** An op's arguments in the order its signature names them. */
     public interface Op {
-        /** The number both sides know this op by: its channel's in wire-channels.txt. */
-        int wireNumber();
-
         String signature();
+
+        /** The number both sides know this op's name by (see ChannelHeader), or 0 when it has none. */
+        default int number() {
+            return 0;
+        }
 
         void writeBinary(GcWire w);
 
@@ -54,16 +55,11 @@ public final class GcWire {
     public static final int WHOLE = 4;
     public static final int OP_FIRST = 5;
 
-    /** Above any channel's number. */
-    private static final int MAX_OPS = 4096;
+    /** Each op's signature by name, as written: what {@link #describe} reads a numbered op with. */
+    private static final Map<String, String> SIGNATURES = new java.util.concurrent.ConcurrentHashMap<>();
 
-    /** Each op's signature by number, as written: what {@link #entries} reads a numbered op with. */
-    private static final java.util.concurrent.atomic.AtomicReferenceArray<String> SIGNATURES =
-            new java.util.concurrent.atomic.AtomicReferenceArray<>(MAX_OPS);
-
-    /** Each op's {@link Op#wireKinds()} by number, for {@link #entries}. */
-    private static final java.util.concurrent.atomic.AtomicReferenceArray<String[]> KINDS =
-            new java.util.concurrent.atomic.AtomicReferenceArray<>(MAX_OPS);
+    /** Each op's {@link Op#wireKinds()} by name, for {@link #describe}. */
+    private static final Map<String, String[]> KINDS = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** What a GC's binary frame is called, given the channel its other frames are on. */
     public static String frameEvent(String channel) {
@@ -97,25 +93,42 @@ public final class GcWire {
     private byte[] buf = new byte[4096];
     private int size;
     private int records;
-    private String channel;
-    /** Per op number, its number in this frame; valid where {@link #opFrame} holds {@link #frame}. */
-    private final int[] opInFrame = new int[MAX_OPS];
-    private final int[] opFrame = new int[MAX_OPS];
-    private int frame;
-    private int opsInFrame;
+    /** The type and number of what the GC draws as: the frame's channel, and every escaped message's. */
+    private int type;
+    private long id;
+    /** How many ops the frame has numbered. */
+    private int opCount;
+    /** Each numbered op's number in the frame plus one, by its name's number; 0 for one not seen yet. */
+    private int[] opIndex = new int[0];
+    /** The names' numbers {@link #opIndex} holds an entry for, to clear at the next frame. */
+    private int[] opsSeen = new int[16];
+    private int opsSeenCount;
+    /** The ops whose signature is recorded for {@link #describe}, by number. */
+    private static volatile boolean[] described = new boolean[0];
     private final WidgetWire scratch = new WidgetWire();
     private WidgetWire.Names images;
 
-    /** Starts an empty frame for the GC on {@code channel}. */
-    public void begin(String channel) {
-        this.channel = channel;
-        byte[] header = CommService.frameHeader(frameEvent(channel));
+    /** The header of the frames {@link #begin} last began: a GC paints as the same widget frame after frame. */
+    private byte[] header;
+    private int headerType;
+    private long headerId;
+
+    /** Starts an empty frame for the GC drawing as the widget of type {@code type} numbered {@code id}. */
+    public void begin(int type, long id) {
+        this.type = type;
+        this.id = id;
+        if (header == null || type != headerType || id != headerId) {
+            header = dev.equo.swt.comm.ChannelHeader.encode(type, id, WireTable.CHANNEL_B);
+            headerType = type;
+            headerId = id;
+        }
         ensure(header.length);
         System.arraycopy(header, 0, buf, 0, header.length);
         size = header.length;
         records = 0;
-        frame++;
-        opsInFrame = 0;
+        opCount = 0;
+        for (int i = 0; i < opsSeenCount; i++) opIndex[opsSeen[i]] = 0;
+        opsSeenCount = 0;
     }
 
     /** Where the images that values name are reported, so what the client lacks is sent first. */
@@ -123,8 +136,9 @@ public final class GcWire {
         this.images = names;
     }
 
+    /** The channel the GC draws on, by name: for logs and tests. */
     public String channel() {
-        return channel;
+        return dev.equo.swt.comm.ChannelHeader.typeName(type) + "/" + id;
     }
 
     public boolean isEmpty() {
@@ -147,26 +161,43 @@ public final class GcWire {
     /** This frame's records as {@link #entries(String, byte[], int, int)} reads them, past its channel header. */
     public List<Entry> entries() {
         int start = dev.equo.swt.comm.ChannelHeader.decode(buf, 0, size).payloadStart();
-        return entries(channel, buf, start, size - start);
+        return entries(channel(), buf, start, size - start);
     }
 
-    /** Writes {@code op}'s record: its number, then its arguments. */
+    /** Opens the record for {@code name}; its arguments follow. */
+    /** Appends {@code op}, by the number both sides know it by, and its arguments. */
     public void op(Op op) {
         records++;
-        int number = op.wireNumber();
-        if (opFrame[number] == frame) {
-            varint(OP_FIRST + opInFrame[number]);
-        } else {
-            opFrame[number] = frame;
-            opInFrame[number] = opsInFrame++;
-            if (SIGNATURES.get(number) == null) {
-                SIGNATURES.set(number, op.signature());
-                KINDS.set(number, op.wireKinds());
-            }
-            varint(OP_NUMBERED);
-            varint(number);
-        }
+        int known = op.number();
+        if (known <= 0) throw new IllegalArgumentException("the op " + op.signature() + " has no wire number");
+        numbered(op, known);
         op.writeBinary(this);
+    }
+
+    /** Opens the record of an op numbered {@code known}. */
+    private void numbered(Op op, int known) {
+        if (known >= opIndex.length) opIndex = java.util.Arrays.copyOf(opIndex, Math.max(known + 1, opIndex.length * 2));
+        int index = opIndex[known];
+        if (index != 0) {
+            varint(OP_FIRST + index - 1);
+            return;
+        }
+        opIndex[known] = ++opCount;
+        if (opsSeenCount == opsSeen.length) opsSeen = java.util.Arrays.copyOf(opsSeen, opsSeenCount * 2);
+        opsSeen[opsSeenCount++] = known;
+        boolean[] d = described;
+        if (known >= d.length || !d[known]) describedOnce(dev.equo.swt.comm.ChannelHeader.name(known), op, known);
+        varint(OP_NUMBERED);
+        varint(known);
+    }
+
+    private static synchronized void describedOnce(String name, Op op, int known) {
+        SIGNATURES.putIfAbsent(name, op.signature());
+        String[] kinds = op.wireKinds();
+        if (kinds != null) KINDS.putIfAbsent(name, kinds);
+        boolean[] d = java.util.Arrays.copyOf(described, Math.max(described.length, known + 1));
+        d[known] = true;
+        described = d;
     }
 
     /**
@@ -187,14 +218,122 @@ public final class GcWire {
         bytes(props.buffer(), 0, props.size());
     }
 
-    /** A channel and its payload, as it would have travelled on its own. */
-    public void escape(String channel, byte[] payload, int offset, int length) {
+    /**
+     * What ends a GC's paint ({@code gcDispose}), positionally: a flags byte (bit 0, the paint replaces
+     * what was drawn; bit 1, a damage rectangle follows; bit 2, the client sends the render's pixels
+     * back; bit 3, the drawer keeps drawing on the render), the image's render ref, then the damage as
+     * zigzag x, y, width and height.
+     */
+    public static final class Dispose {
+        /** At most: the flags, a ref and four rectangle values. */
+        static final int MAX_BYTES = 1 + 10 + 4 * 5;
+
+        final boolean fullRepaint;
+        final org.eclipse.swt.graphics.Rectangle damage;
+        final long ref;
+        final boolean pixels;
+        final boolean retain;
+
+        private Dispose(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref, boolean pixels, boolean retain) {
+            this.fullRepaint = fullRepaint;
+            this.damage = damage;
+            this.ref = ref;
+            this.pixels = pixels;
+            this.retain = retain;
+        }
+
+        /** A control's paint, replacing what it drew when {@code fullRepaint}, scoped to {@code damage} when not null. */
+        public static Dispose ofPaint(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage) {
+            return new Dispose(fullRepaint, damage, 0, false, false);
+        }
+
+        /** An image's paint, rendered into the client's image {@code ref} (0: render nothing). */
+        public static Dispose ofImage(long ref, boolean pixels, boolean retain) {
+            return new Dispose(true, null, ref, pixels, retain);
+        }
+
+        /** Writes the fields into {@code out} at {@code at}; returns where they end. */
+        int write(byte[] out, int at) {
+            return write(out, at, fullRepaint, damage, ref, pixels, retain);
+        }
+
+        static int write(byte[] out, int at, boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref,
+                boolean pixels, boolean retain) {
+            boolean scoped = damage != null;
+            out[at++] = (byte) ((fullRepaint ? 1 : 0) | (scoped ? 2 : 0) | (pixels ? 4 : 0) | (retain ? 8 : 0));
+            at = varint(out, at, ref);
+            if (scoped) {
+                at = varint(out, at, zigzag(damage.x));
+                at = varint(out, at, zigzag(damage.y));
+                at = varint(out, at, zigzag(damage.width));
+                at = varint(out, at, zigzag(damage.height));
+            }
+            return at;
+        }
+
+        /** The fields on their own, for a {@code gcDispose} sent outside a frame. */
+        public byte[] encode() {
+            byte[] out = new byte[MAX_BYTES];
+            return Arrays.copyOf(out, write(out, 0));
+        }
+
+        /** {@code payload}'s fields by name, for a test or a log: what {@link #write} wrote. */
+        public static Map<String, Object> fields(byte[] payload) {
+            Reader r = new Reader(payload, 0, payload.length);
+            int flags = payload[r.pos++] & 0xFF;
+            Map<String, Object> out = new java.util.LinkedHashMap<>();
+            out.put("fullRepaint", (flags & 1) != 0);
+            out.put("pixels", (flags & 4) != 0);
+            out.put("retain", (flags & 8) != 0);
+            out.put("ref", r.varlong());
+            if ((flags & 2) != 0) {
+                Map<String, Object> damage = new java.util.LinkedHashMap<>();
+                for (String key : new String[] {"x", "y", "width", "height"}) {
+                    long z = r.varlong();
+                    damage.put(key, (int) ((z >>> 1) ^ -(z & 1)));
+                }
+                out.put("damage", damage);
+            }
+            return out;
+        }
+
+        private static long zigzag(int v) {
+            return ((long) v << 1) ^ (v >> 31);
+        }
+
+        private static int varint(byte[] out, int at, long v) {
+            while ((v & ~0x7FL) != 0) {
+                out[at++] = (byte) ((v & 0x7F) | 0x80);
+                v >>>= 7;
+            }
+            out[at++] = (byte) v;
+            return at;
+        }
+    }
+
+    /** Ends the GC's paint on this frame: a {@code gcDispose} of {@code d}, written straight into it. */
+    public void dispose(Dispose d) {
+        dispose(d.fullRepaint, d.damage, d.ref, d.pixels, d.retain);
+    }
+
+    /** {@link #dispose(Dispose)} from the fields themselves. */
+    public void dispose(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref, boolean pixels, boolean retain) {
         records++;
         varint(ESCAPE);
-        byte[] header = dev.equo.swt.comm.ChannelHeader.encode(channel);
-        ensure(size + header.length);
-        System.arraycopy(header, 0, buf, size, header.length);
-        size += header.length;
+        ensure(size + dev.equo.swt.comm.ChannelHeader.MAX_NUMBERED + 1 + Dispose.MAX_BYTES);
+        size = dev.equo.swt.comm.ChannelHeader.write(buf, size, type, id, WireTable.CHANNEL_GC_DISPOSE);
+        // The fields take fewer than 127 bytes, so their length (plus one) fits the one byte kept for it.
+        int lengthAt = size++;
+        size = Dispose.write(buf, size, fullRepaint, damage, ref, pixels, retain);
+        buf[lengthAt] = (byte) (size - lengthAt);
+    }
+
+    /** A message on the GC's channel numbered {@code channel} and its payload, as it would have travelled on its own. */
+    public void escape(int channel, byte[] payload, int offset, int length) {
+        records++;
+        varint(ESCAPE);
+        ensure(size + dev.equo.swt.comm.ChannelHeader.MAX_NUMBERED);
+        size = dev.equo.swt.comm.ChannelHeader.write(buf, size, type, id, channel);
         bytes(payload, offset, length);
     }
 
@@ -316,12 +455,19 @@ public final class GcWire {
     public static List<Entry> entries(String channel, byte[] frame, int offset, int length) {
         Reader r = new Reader(frame, offset, offset + length);
         List<Entry> out = new ArrayList<>();
-        List<Integer> opNumbers = new ArrayList<>();
+        List<String> opNames = new ArrayList<>();
+        List<String> signatures = new ArrayList<>();
         while (r.pos < r.end) {
             int tag = r.varint();
             if (tag == ESCAPE) {
                 dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(r.b, r.pos, r.end);
                 r.pos = header.payloadStart();
+                if (header.channel().endsWith("/gcDispose")) {
+                    int fields = r.varint() - 1;
+                    out.add(new Entry(header.channel(), Dispose.fields(Arrays.copyOfRange(r.b, r.pos, r.pos + fields))));
+                    r.pos += fields;
+                    continue;
+                }
                 out.add(new Entry(header.channel(), r.payload()));
                 continue;
             }
@@ -336,17 +482,18 @@ public final class GcWire {
             }
             int number;
             if (tag == OP_NUMBERED) {
-                int wire = r.varint();
-                opNumbers.add(wire);
-                number = opNumbers.size() - 1;
-            } else {
+                String name = dev.equo.swt.comm.ChannelHeader.name(r.varint());
+                opNames.add(name);
+                signatures.add(SIGNATURES.getOrDefault(name, ""));
+                number = opNames.size() - 1;
+            } else if (tag >= OP_FIRST) {
                 number = tag - OP_FIRST;
+            } else {
+                throw new IllegalStateException("GC frame tag " + tag + " is not one");
             }
-            int wire = opNumbers.get(number);
-            String known = dev.equo.swt.comm.ChannelHeader.name(wire);
-            String name = known != null ? known : "op" + wire;
-            String signature = SIGNATURES.get(wire) == null ? "" : SIGNATURES.get(wire);
-            String[] kinds = KINDS.get(wire);
+            String name = opNames.get(number);
+            String signature = signatures.get(number);
+            String[] kinds = KINDS.get(name);
             List<Object> arguments = new ArrayList<>();
             int w = 0;
             for (int k = 0; k < signature.length(); k++) {
@@ -381,6 +528,15 @@ public final class GcWire {
         int zigzag() {
             int v = varint();
             return (v >>> 1) ^ -(v & 1);
+        }
+
+        long varlong() {
+            long v = 0;
+            for (int shift = 0; ; shift += 7) {
+                int x = b[pos++] & 0xFF;
+                v |= (long) (x & 0x7F) << shift;
+                if ((x & 0x80) == 0) return v;
+            }
         }
 
         /** A payload: tagged values decoded, anything else as its UTF-8 text; null for none. */

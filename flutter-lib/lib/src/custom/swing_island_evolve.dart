@@ -17,11 +17,16 @@
 ///  * where the mirror goes: the builder only builds it, inside the region's [Focus].
 library;
 
+import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../comm/comm.dart';
+import '../comm/channel_header.dart';
+import '../comm/tagged_values.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 import '../gen/composite.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/focus_requests.dart';
@@ -86,11 +91,15 @@ class SwingIslandRegion extends StatefulWidget {
   /// `SwingIsland/<id>`: the channel Java answers [ask] on.
   final String channel;
 
-  /// Sends an event of this island to Java, named relative to [channel].
-  final void Function(String event) send;
+  /// Sends an event of this island to Java on the channel numbered as [WireChannel] names it.
+  final void Function(int channel) send;
 
   /// The request for the frame's windowId and the engine's port, answered under the same name.
-  static const String ask = 'swingIsland';
+  static const int ask = WireChannel.swingIsland;
+
+  /// Registers what every Swing island answers (see `registerWidgetOps`).
+  static void registerOps() => EquoCommService.onWidgetOp(
+      WireType.swingIsland, WireChannel.swingIsland, _SwingIslandRegionState._islandOp);
 
   @override
   State<SwingIslandRegion> createState() => _SwingIslandRegionState();
@@ -102,9 +111,16 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
   int? _windowId;
   int? _port;
   bool _surface = false;
-  Object? _token;
 
-  String get _askChannel => '${widget.channel}/${SwingIslandRegion.ask}';
+  /// The mounted islands by id, where [_islandOp] finds the one Java answers.
+  static final Map<int, _SwingIslandRegionState> _live = {};
+
+  static FutureOr<bool> _islandOp(int id, Uint8List frame, int start, int end) {
+    final island = _live[id];
+    if (island == null) return false;
+    island._onIsland(TaggedValues.decodeAt(frame, start));
+    return true;
+  }
 
   @override
   void initState() {
@@ -112,7 +128,8 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     _node.addListener(_onNodeFocus);
     FocusRequests.instance.watch(_watchedId = widget.id, _applyFocusRequest);
     _applyFocusRequest();
-    _token = EquoCommService.onRaw(_askChannel, _onIsland);
+    _live[widget.id] = this;
+    EquoCommService.replayWidgetOps(widget.id);
     // Java's push may have gone out before this listener existed.
     widget.send(SwingIslandRegion.ask);
   }
@@ -143,7 +160,10 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     super.didUpdateWidget(oldWidget);
     if (widget.id == _watchedId) return;
     FocusRequests.instance.unwatch(_watchedId, _applyFocusRequest);
+    if (identical(_live[_watchedId], this)) _live.remove(_watchedId);
     FocusRequests.instance.watch(_watchedId = widget.id, _applyFocusRequest);
+    _live[widget.id] = this;
+    EquoCommService.replayWidgetOps(widget.id);
   }
 
   /// Java focused the island (Control.setFocus, Tab traversal into it): take the node.
@@ -163,7 +183,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     if (_focused.value == has) return;
     _focused.value = has;
     claimKeyboard(this, has);
-    widget.send('Focus/${has ? 'FocusIn' : 'FocusOut'}');
+    widget.send(has ? WireChannel.focusFocusIn : WireChannel.focusFocusOut);
   }
 
   @override
@@ -173,7 +193,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     _node.removeListener(_onNodeFocus);
     _node.dispose();
     _focused.dispose();
-    EquoCommService.remove(_askChannel, _token);
+    if (identical(_live[_watchedId], this)) _live.remove(_watchedId);
     super.dispose();
   }
 

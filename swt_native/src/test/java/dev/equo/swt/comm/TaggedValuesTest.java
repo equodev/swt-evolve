@@ -63,12 +63,11 @@ class TaggedValuesTest {
     }
 
     @Test
-    @DisplayName("text reads back as String.getBytes would carry it, past the two-byte range too")
-    void textIsUtf8() {
-        for (String text : new String[] {"a\uD83D\uDE00\u00E9\u20AC", "\uD800x", "x\uDC00"}) {
+    @DisplayName("text reads back exactly as written, Latin-1 or past it, a lone surrogate included")
+    void textReadsBackExactly() {
+        for (String text : new String[] {"", "plain", "\u00E9t\u00E9", "a\uD83D\uDE00\u00E9\u20AC", "\uD800x", "x\uDC00"}) {
             byte[] encoded = TaggedValues.encode(text, null);
-            String expected = new String(text.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
-            assertThat(TaggedValues.decode(encoded, 0, encoded.length)).isEqualTo(expected);
+            assertThat(TaggedValues.decode(encoded, 0, encoded.length)).isEqualTo(text);
         }
     }
 

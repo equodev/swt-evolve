@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
 import 'support/menu_shown_ack.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingMenuSwt extends MenuSwt<VMenu> {
   const _CapturingMenuSwt({required super.value, required this.onEvent});
@@ -21,7 +22,7 @@ class _CapturingMenuSwt extends MenuSwt<VMenu> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VMenu val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VMenu val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VMenuItem _item(int id, String text) => VMenuItem()

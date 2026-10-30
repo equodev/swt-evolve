@@ -148,12 +148,12 @@ public class StyledTextHelper {
         change.put("text", text);
         change.put("charCount", styledText.content.getCharCount() - event.replaceCharCount + text.length());
         carriedAcross(styledText, event.start, event.replaceCharCount, text.length());
-        FlutterBridge.sendNow(styledText, "TextChange", change);
+        FlutterBridge.sendNow(styledText, dev.equo.swt.WireTable.CHANNEL_TEXT_CHANGE, change);
     }
 
     /** Answers a client whose text replica drifted: the whole document, once. */
     public static void registerResendTextHandler(DartStyledText styledText) {
-        FlutterBridge.onPayload(styledText, "ResendText", payload ->
+        FlutterBridge.onPayload(styledText, dev.equo.swt.WireTable.CHANNEL_RESEND_TEXT, payload ->
                 styledText.getDisplay().asyncExec(() -> {
                     if (!styledText.isDisposed()) styledText.getValue().markDirty(VStyledText.TEXT);
                 }));
@@ -343,7 +343,7 @@ public class StyledTextHelper {
     /** Asks the client for the whole table: what it holds here cannot be changed into the new one. */
     private static void requestWholeGeometry(DartStyledText styledText) {
         textGeometries.remove(styledText);
-        FlutterBridge.sendNow(styledText, "ResendGeometry", java.util.Collections.emptyMap());
+        FlutterBridge.sendNow(styledText, dev.equo.swt.WireTable.CHANNEL_RESEND_GEOMETRY, java.util.Collections.emptyMap());
     }
 
     private static final Map<DartStyledText, TextGeometry> textGeometries =
@@ -351,7 +351,7 @@ public class StyledTextHelper {
 
     /** Registers the TextGeometry handler; mirrors {@link #registerStateUpdateHandler}. */
     public static void registerTextGeometryHandler(DartStyledText styledText) {
-        FlutterBridge.onPayload(styledText, "TextGeometry", payload -> {
+        FlutterBridge.onPayload(styledText, dev.equo.swt.WireTable.CHANNEL_TEXT_GEOMETRY, payload -> {
             if (payload == null) return;
             GeometryPush push = readPush(payload);
             styledText.getDisplay().asyncExec(() -> applyTextGeometry(styledText, push));
@@ -536,6 +536,33 @@ public class StyledTextHelper {
         }
         if (y < 0) return null;
         return (int) Math.round(y) - styledText.getVerticalScrollOffset() + styledText.topMargin;
+    }
+
+    /**
+     * The top index as the native widget computes it: the first line shown whole, or the one shown
+     * in part when none fits whole. Scrolled to the middle of a line, the line at the top edge is
+     * the one before it. JFace's rulers count from the top index.
+     */
+    public static Integer geometryTopIndex(DartStyledText styledText) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        double top = styledText.getVerticalScrollOffset();
+        double viewHeight = styledText.clientAreaHeight - styledText.topMargin - styledText.bottomMargin;
+        for (int i = 0; i < g.lines.length; i++) {
+            VisualLine v = g.lines[i];
+            boolean firstRow = i == 0 || g.lines[i - 1].logicalLine != v.logicalLine;
+            if (!firstRow || Math.round(v.y) < top) continue;
+            double bottom = g.contentHeight;
+            for (int k = i + 1; k < g.lines.length; k++) {
+                if (g.lines[k].logicalLine != v.logicalLine) {
+                    bottom = g.lines[k].y;
+                    break;
+                }
+            }
+            if (bottom - top <= viewHeight) return v.logicalLine;
+            break;
+        }
+        return geometryLineIndex(styledText, 0);
     }
 
     /** Logical line at a widget-space y, clamped to the content like the estimate path. */

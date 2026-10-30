@@ -15,15 +15,15 @@ class DragSourceSwt<V extends VDragSource> extends WidgetSwt<V> {
       DragSourceImpl<DragSourceSwt<VDragSource>, VDragSource>();
 
   void sendDragdragFinished(V val, VEvent? payload) {
-    sendEvent(val, "Drag/dragFinished", payload);
+    sendEvent(val, 23, payload); // Drag/dragFinished
   }
 
   void sendDragdragSetData(V val, VEvent? payload) {
-    sendEvent(val, "Drag/dragSetData", payload);
+    sendEvent(val, 24, payload); // Drag/dragSetData
   }
 
   void sendDragdragStart(V val, VEvent? payload) {
-    sendEvent(val, "Drag/dragStart", payload);
+    sendEvent(val, 25, payload); // Drag/dragStart
   }
 }
 

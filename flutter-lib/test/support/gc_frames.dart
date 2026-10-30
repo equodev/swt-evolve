@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/gc_wire.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/comm/widget_wire.dart';
@@ -15,9 +16,12 @@ import 'package:swtflutter/src/gen/gcdrawer.dart' show gcOpSignatures;
 import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'fields_only.dart';
+import 'channels.dart' as channels;
+import 'channels.dart' show NamedChannels;
 
 /// A frame as it arrives: [channel]'s header, then [body].
-Uint8List frame(String channel, List<int> body) => ChannelHeader.frame(channel, Uint8List.fromList(body));
+Uint8List frame(String channel, List<int> body) => channels.frame(channel, Uint8List.fromList(body));
 
 /// Delivers [body] on [channel], as Java sends it.
 void receive(String channel, List<int> body) =>
@@ -25,6 +29,24 @@ void receive(String channel, List<int> body) =>
 
 /// A payload of maps, lists and scalars, as tagged values.
 Uint8List tagged(Object? value) => TaggedValues.encode(value);
+
+/// A gcDispose body as Java writes it (`GcWire.Dispose`), from the fields a test names:
+/// `fullRepaint` (default true), `damage` (`x`, `y`, `width`, `height`), `ref`, `pixels`, `retain`.
+Uint8List gcDisposeOf(Map<String, dynamic> fields) {
+  final damage = fields['damage'] as Map?;
+  return Uint8List.fromList(WidgetWireWriter.encodeWith((out) {
+    out.u8((fields['fullRepaint'] == false ? 0 : 1) |
+        (damage != null ? 2 : 0) |
+        (fields['pixels'] == true ? 4 : 0) |
+        (fields['retain'] == true ? 8 : 0));
+    out.varint((fields['ref'] as int?) ?? 0);
+    if (damage != null) {
+      for (final key in const ['x', 'y', 'width', 'height']) {
+        out.int32((damage[key] as num).toInt());
+      }
+    }
+  }));
+}
 
 /// [image], described the way Java describes an image ahead of the GC frame that names it: an image
 /// record of a widget frame. [image] must carry an id.
@@ -84,6 +106,23 @@ class GcFrame {
   /// A change to the state held: only the properties of [state] numbered [keys].
   GcFrame change(VGC state, Set<int> keys) => _state(GcWireReader.state, state, keys);
 
+  /// An op both sides number, as Java writes it: by that number the first time the frame uses it,
+  /// by its place in the frame after; then its arguments as [args] writes them.
+  GcFrame numbered(String name, void Function(GcFrame) args) {
+    final local = _local[name];
+    if (local != null) {
+      _varint(GcWireReader.opFirst + local);
+    } else {
+      _local[name] = _local.length;
+      _varint(GcWireReader.opNumbered);
+      _varint(wireChannelNames.entries.firstWhere((e) => e.value == name).key);
+    }
+    args(this);
+    return this;
+  }
+
+  final Map<String, int> _local = {};
+
   /// The op both sides number [name] by, its arguments [args] in the order its signature lists them:
   /// an int (`i`), a list of ints (`I`), a bool (`b`), a string (`s`), a float (`f`), a double
   /// (`d`), or a value as the widget wire writes it (`w`): an image by id, an object by its fields.
@@ -129,11 +168,11 @@ class GcFrame {
     return this;
   }
 
-  /// A channel and its payload, as tagged values.
+  /// A channel and its payload, as tagged values; a gcDispose's as Java writes one ([gcDisposeOf]).
   GcFrame escape(String channel, Object? payload) {
     _varint(GcWireReader.escape);
-    _out.add(ChannelHeader.frame(channel, Uint8List(0)));
-    _lengthPrefixed(tagged(payload));
+    _out.add(channels.frame(channel, Uint8List(0)));
+    _lengthPrefixed(channel.endsWith('/gcDispose') ? gcDisposeOf(payload as Map<String, dynamic>) : tagged(payload));
     return this;
   }
 
@@ -156,10 +195,7 @@ class GcFrame {
 
   GcFrame _state(int tag, VGC state, Set<int>? keys) {
     _varint(tag);
-    _lengthPrefixed(Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
-      state.writeWire(w);
-      w.u8(0);
-    }, only: keys)));
+    _lengthPrefixed(Uint8List.fromList([...fieldsOnly(state, keys), 0]));
     return this;
   }
 

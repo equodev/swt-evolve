@@ -17,19 +17,19 @@ class TableColumnSwt<V extends VTableColumn> extends ItemSwt<V> {
       TableColumnImpl<TableColumnSwt<VTableColumn>, VTableColumn>();
 
   void sendControlMove(V val, VEvent? payload) {
-    sendEvent(val, "Control/Move", payload);
+    sendEvent(val, 20, payload); // Control/Move
   }
 
   void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
+    sendEvent(val, 21, payload); // Control/Resize
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -58,16 +58,16 @@ class VTableColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 212: // alignment
+      case 558: // alignment
         alignment = r.int32();
         return true;
-      case 1380: // moveable
+      case 559: // moveable
         moveable = r.boolean();
         return true;
-      case 213: // resizable
+      case 560: // resizable
         resizable = r.boolean();
         return true;
-      case 214: // width
+      case 561: // width
         width = r.int32();
         return true;
       default:
@@ -80,30 +80,26 @@ class VTableColumn extends VItem {
     super.writeWire(w);
     {
       final v_ = alignment;
-      if (v_ != null && w.wants(212)) {
-        w.key(212);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(558, v_);
       }
     }
     {
       final v_ = moveable;
-      if (v_ != null && w.wants(1380)) {
-        w.key(1380);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(559, v_);
       }
     }
     {
       final v_ = resizable;
-      if (v_ != null && w.wants(213)) {
-        w.key(213);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(560, v_);
       }
     }
     {
       final v_ = width;
-      if (v_ != null && w.wants(214)) {
-        w.key(214);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(561, v_);
       }
     }
   }
@@ -111,9 +107,9 @@ class VTableColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(212, alignment);
-    visit(1380, moveable);
-    visit(213, resizable);
-    visit(214, width);
+    visit(558, alignment);
+    visit(559, moveable);
+    visit(560, resizable);
+    visit(561, width);
   }
 }

@@ -669,7 +669,8 @@ public class Sizes {
     }
 
     /** {@code ownMenuStrip}'s number; only the desktop and web Decorations have it, so it is looked up. */
-    private static final int OWN_MENU_STRIP = dev.equo.swt.WireDump.number("Decorations.ownMenuStrip");
+    private static final int OWN_MENU_STRIP =
+            java.util.Arrays.asList(dev.equo.swt.WireTable.PROPERTIES).indexOf("Decorations.ownMenuStrip");
 
     /** Marks {@code ownMenuStrip} changed on a value that has it: only the desktop and web Decorations draw their own strip. */
     private static void markOwnMenuStrip(VWidget value) {
@@ -1045,10 +1046,20 @@ public class Sizes {
         if (widget instanceof DartCoolBar) return getClientArea((DartCoolBar) widget);
         if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.getClientArea((DartComposite) widget);
         Rectangle b = widget.getBounds();
-        int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
-        int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
+        int vBarWidth = takesRoom(widget.verticalBar) ? SCROLL_BAR_SIZE : 0;
+        int hBarHeight = takesRoom(widget.horizontalBar) ? SCROLL_BAR_SIZE : 0;
         int menuBar = menuStripOutsideClientArea(widget);
         return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
+    }
+
+    /**
+     * Whether a scroll bar takes room from its parent's client area. The client draws a visible bar
+     * only while it has a range to scroll, and the content fills the place of one it does not draw.
+     */
+    static boolean takesRoom(ScrollBar bar) {
+        if (bar == null || !bar.isVisible()) return false;
+        Object impl = bar.getImpl();
+        return !(impl instanceof DartScrollBar) || ((DartScrollBar) impl).hasRange;
     }
 
     public static Point getSize(DartScrollBar scrollBar) {

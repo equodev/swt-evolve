@@ -317,7 +317,7 @@ public class TextHelper {
             return;
         boolean applied = proposed.equals(text.getText());
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
-            dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
+            dev.equo.swt.FlutterBridge.send(text, dev.equo.swt.WireTable.CHANNEL_MODIFY_VERDICT,
                     dev.equo.swt.Java8.map("doit", applied));
         }
     }

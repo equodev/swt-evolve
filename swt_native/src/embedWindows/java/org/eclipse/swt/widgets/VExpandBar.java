@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VExpandBar extends VComposite {
 
@@ -18,10 +17,16 @@ public class VExpandBar extends VComposite {
         ExpandItem[] values = ((DartExpandBar) impl).items;
         if (values == null)
             return null;
-        ArrayList<ExpandItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (ExpandItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new ExpandItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        ExpandItem[] result = new ExpandItem[kept];
+        kept = 0;
+        for (ExpandItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(ExpandItem[] value) {
@@ -36,9 +41,9 @@ public class VExpandBar extends VComposite {
         ((DartExpandBar) impl).spacing = value;
     }
 
-    public static final int ITEMS = 76;
+    public static final int ITEMS = 217;
 
-    public static final int SPACING = 77;
+    public static final int SPACING = 218;
 
     @Override
     public String wireName(int key) {
@@ -54,10 +59,10 @@ public class VExpandBar extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 76:
+            case 217:
                 w.refs(getItems());
                 return true;
-            case 77:
+            case 218:
                 w.write((int) getSpacing());
                 return true;
         }
@@ -67,23 +72,23 @@ public class VExpandBar extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 76:
+            case 217:
                 {
                     ExpandItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(76);
+                    w.key(217);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 77:
+            case 218:
                 {
                     int v_ = getSpacing();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(77);
+                    w.key(218);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -91,7 +96,7 @@ public class VExpandBar extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 76, 77 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 217, 218 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

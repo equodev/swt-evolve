@@ -24,10 +24,16 @@ public class VFileDialog extends VDialog {
         String[] values = ((DartFileDialog) impl).fileNames;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFileNames(String[] value) {
@@ -38,10 +44,16 @@ public class VFileDialog extends VDialog {
         String[] values = ((DartFileDialog) impl).filterExtensions;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFilterExtensions(String[] value) {
@@ -60,10 +72,16 @@ public class VFileDialog extends VDialog {
         String[] values = ((DartFileDialog) impl).filterNames;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFilterNames(String[] value) {
@@ -88,25 +106,25 @@ public class VFileDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 613;
+        return 38;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(606);
+        w.key(223);
         w.write(getFileName());
-        w.key(607);
+        w.key(224);
         w.write(getFileNames());
-        w.key(608);
+        w.key(225);
         w.write(getFilterExtensions());
-        w.key(609);
+        w.key(226);
         w.write((int) getFilterIndex());
-        w.key(610);
+        w.key(227);
         w.write(getFilterNames());
-        w.key(611);
+        w.key(228);
         w.write(getFilterPath());
-        w.key(612);
+        w.key(229);
         w.write(getOverwrite());
     }
 }

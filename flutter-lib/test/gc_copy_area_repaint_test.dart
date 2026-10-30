@@ -50,7 +50,7 @@ void main() {
     receive('GC/$id/b', gcOp('drawLineintintintint', [10, 10, 110, 90]));
     receive('GC/$id/b', gcOp('drawOvalintintintint', [20, 20, 80, 60]));
     receive('GC/$id/b', gcOp('copyAreaintintintintintintboolean', [10, 10, 100, 80, 130, 10, false]));
-    receive('GC/$id/gcDispose', tagged({'fullRepaint': inPaint, if (damage != null) 'damage': damage}));
+    receive('GC/$id/gcDispose', gcDisposeOf({'fullRepaint': inPaint, if (damage != null) 'damage': damage}));
     for (var i = 0; i < 20; i++) {
       await tester.pump();
     }

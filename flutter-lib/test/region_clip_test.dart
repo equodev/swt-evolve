@@ -60,6 +60,18 @@ void main() {
     expect(path.contains(const Offset(50, 50)), isFalse);
   });
 
+  testWidgets('a region whose empty rectangles the wire left out still hides the control',
+      (tester) async {
+    // Eclipse sets an empty region on its drag feedback while the pointer is over no drop target;
+    // left unclipped, that window-sized shell covers the application.
+    await _pump(tester, RegionClip.maybe(VRegion(), const SizedBox()));
+
+    final clipper = tester.widget<ClipPath>(find.byType(ClipPath)).clipper!;
+    final path = clipper.getClip(const Size(100, 100));
+
+    expect(path.contains(const Offset(50, 50)), isFalse);
+  });
+
   testWidgets('a trailing partial rectangle is ignored rather than throwing', (tester) async {
     await _pump(tester, RegionClip(rects: const [0, 0, 10, 10, 20, 20], child: const SizedBox()));
 

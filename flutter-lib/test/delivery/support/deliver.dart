@@ -14,6 +14,7 @@ import 'package:flutter/rendering.dart' show RenderBox;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
@@ -23,6 +24,8 @@ import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireTypeNames;
 import 'package:swtflutter/src/impl/utils/dnd_utils.dart';
+import '../../support/fields_only.dart';
+import '../../support/channels.dart' as channels;
 
 /// [applyWhole] into the client's registry, awaited as a delivery through the transport is.
 Future<void> deliverWhole(VWidget value) async {
@@ -107,13 +110,13 @@ void applyRecords(List<WireRecord> records, {VRegistry? registry}) =>
 /// Delivers [body] on [channel] as tagged values, framed the way the transport frames it: a
 /// message with no class of its own, such as an answer Java builds as a map.
 Future<void> deliverFrame(String channel, Map<String, dynamic> body) async {
-  EquoCommService.commForTesting.receiveBinary(ChannelHeader.frame(channel, TaggedValues.encode(body)));
+  EquoCommService.commForTesting.receiveBinary(channels.frame(channel, TaggedValues.encode(body)));
   await Future<void>.microtask(() {});
 }
 
 /// [event]'s fields arriving on [channel], as Java sends an answer that is an event.
 Future<void> deliverEvent(String channel, VEvent event) async {
-  EquoCommService.commForTesting.receiveBinary(ChannelHeader.frame(channel, WidgetWireWriter.encode(event)));
+  EquoCommService.commForTesting.receiveBinary(channels.frame(channel, WidgetWireWriter.encode(event)));
   await Future<void>.microtask(() {});
 }
 
@@ -197,15 +200,14 @@ Uint8List _frameBody(List<_Record> records, {bool describeImages = true}) {
         ..int64(r.value.id)
         ..varint(delta);
       if (r.kind == wireChange) w.varint(r.stamp - r.base);
-      r.value.writeWire(w);
-    }, only: r.keys));
+    }, fields: fieldsOnly(r.value, r.keys)));
   }
   return out.toBytes();
 }
 
-/// A record: its kind, its length, then what [write] writes.
-Uint8List _record(int kind, void Function(WidgetWireWriter w) write, {Set<int>? only}) {
-  final rest = Uint8List.fromList(WidgetWireWriter.encodeWith(write, only: only));
+/// A record: its kind, its length, then what [write] writes and [fields].
+Uint8List _record(int kind, void Function(WidgetWireWriter w) write, {Uint8List? fields}) {
+  final rest = Uint8List.fromList([...WidgetWireWriter.encodeWith(write), ...?fields]);
   final head = Uint8List.fromList(WidgetWireWriter.encodeWith((w) => w
     ..u8(kind)
     ..varint(rest.length)));

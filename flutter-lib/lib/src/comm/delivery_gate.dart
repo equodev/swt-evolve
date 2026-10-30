@@ -16,6 +16,8 @@
 /// — the point is to hear about it, not to survive it quietly.
 library;
 
+import 'widget_key.dart';
+
 /// What to do with a frame.
 enum FrameAction {
   /// Complete state: take it as the widget's new value.
@@ -40,8 +42,8 @@ const String widgetRefreshChannel = 'swt.evolve.widget.refresh';
 final DeliveryGate deliveryGate = DeliveryGate();
 
 class DeliveryGate {
-  /// Write stamp of the state currently held, per channel.
-  final Map<String, int> _held = <String, int>{};
+  /// Write stamp of the state currently held, per widget (see [WidgetKey]).
+  final Map<int, int> _held = <int, int>{};
 
   /// Mismatches that had to be repaired by re-sending a widget. Expected to stay at zero.
   int recoveries = 0;
@@ -51,8 +53,12 @@ class DeliveryGate {
 
   /// What should be done with a whole description of [channel] stamped [seq]: Java stamps every
   /// write from one counter, so one written no later than the state held describes the past.
-  FrameAction decideWhole(String channel, int seq) {
-    final int? held = _held[channel];
+  FrameAction decideWhole(String channel, int seq) =>
+      decideWholeAt(WidgetKey.ofChannel(channel), seq);
+
+  /// [decideWhole] for the widget [key].
+  FrameAction decideWholeAt(int key, int seq) {
+    final int? held = _held[key];
     if (held != null && seq <= held) {
       duplicates++;
       return FrameAction.ignore;
@@ -62,8 +68,12 @@ class DeliveryGate {
 
   /// What should be done with a change to [channel] stamped [seq] and computed from [base]: merged
   /// only into exactly the state it was computed from.
-  FrameAction decideChange(String channel, int seq, int base) {
-    final int? held = _held[channel];
+  FrameAction decideChange(String channel, int seq, int base) =>
+      decideChangeAt(WidgetKey.ofChannel(channel), seq, base);
+
+  /// [decideChange] for the widget [key].
+  FrameAction decideChangeAt(int key, int seq, int base) {
+    final int? held = _held[key];
     if (held == null) {
       recoveries++;
       return FrameAction.recover;
@@ -78,17 +88,23 @@ class DeliveryGate {
   }
 
   /// Records that [channel] now holds the state stamped [seq]. Call only after applying.
-  void applied(String channel, int seq) {
-    _held[channel] = seq;
+  void applied(String channel, int seq) => appliedAt(WidgetKey.ofChannel(channel), seq);
+
+  /// [applied] for the widget [key].
+  void appliedAt(int key, int seq) {
+    _held[key] = seq;
   }
 
   /// Forgets [channel] — the widget is gone, or its state must be re-established from a full frame.
-  void forget(String channel) {
-    _held.remove(channel);
+  void forget(String channel) => forgetAt(WidgetKey.ofChannel(channel));
+
+  /// [forget] for the widget [key].
+  void forgetAt(int key) {
+    _held.remove(key);
   }
 
   /// The write stamp of the state [channel] holds, or null if it holds none.
-  int? heldSeq(String channel) => _held[channel];
+  int? heldSeq(String channel) => _held[WidgetKey.ofChannel(channel)];
 
   void reset() {
     _held.clear();

@@ -62,10 +62,10 @@ public final class WebDisplayHarness {
         display = new Display();
         comm = FlutterBridge.resolveDisplayGcComm(display);
         if (comm == null) throw new IllegalStateException("the Display did not start a web bridge");
-        comm.on(Q_RESPONSE, byte[].class, bytes -> complete(bytes, "queryId"));
-        comm.on(FRAME_SYNCED, byte[].class, bytes -> complete(bytes, "syncId"));
-        comm.on(FRAME_COST_RESPONSE, byte[].class, bytes -> complete(bytes, "costId"));
-        comm.on(STYLEDTEXT_PERF_RESPONSE, byte[].class, bytes -> complete(bytes, "perfId"));
+        dev.equo.swt.harness.Channels.on(comm, Q_RESPONSE, byte[].class, bytes -> complete(bytes, "queryId"));
+        dev.equo.swt.harness.Channels.on(comm, FRAME_SYNCED, byte[].class, bytes -> complete(bytes, "syncId"));
+        dev.equo.swt.harness.Channels.on(comm, FRAME_COST_RESPONSE, byte[].class, bytes -> complete(bytes, "costId"));
+        dev.equo.swt.harness.Channels.on(comm, STYLEDTEXT_PERF_RESPONSE, byte[].class, bytes -> complete(bytes, "perfId"));
         String url = FlutterBridgeSpi.getWebServerUrl(display);
         String binary = HeadlessChrome.resolveBinary(configured);
         if (binary == null) throw new IllegalStateException("Chrome/Chromium not found; set -Dequo.swt.browser=<path>");
@@ -184,7 +184,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", id), null));
+        dev.equo.swt.harness.Channels.send(comm, FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", id), null));
         return await(f, timeoutMs) != null;
     }
 
@@ -193,7 +193,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", id, "targetId", w.hashCode()), null));
+        dev.equo.swt.harness.Channels.send(comm, Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", id, "targetId", w.hashCode()), null));
         Map<String, Object> response = await(f, TIMEOUT_MS);
         if (response == null) throw new IllegalStateException("no answer to the state query for " + w + lastStall);
         Map<String, Object> named = new java.util.HashMap<>(response);
@@ -207,7 +207,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(FRAME_COST, dev.equo.swt.comm.TaggedValues.encode(Map.of("costId", id), null));
+        dev.equo.swt.harness.Channels.send(comm, FRAME_COST, dev.equo.swt.comm.TaggedValues.encode(Map.of("costId", id), null));
         Map<String, Object> response = await(f, TIMEOUT_MS);
         Object frames = response == null ? null : response.get("frames");
         return frames instanceof List ? (List<Map<String, Object>>) frames : List.of();
@@ -219,7 +219,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(STYLEDTEXT_PERF, dev.equo.swt.comm.TaggedValues.encode(Map.of("perfId", id), null));
+        dev.equo.swt.harness.Channels.send(comm, STYLEDTEXT_PERF, dev.equo.swt.comm.TaggedValues.encode(Map.of("perfId", id), null));
         Map<String, Object> response = await(f, TIMEOUT_MS);
         Object perf = response == null ? null : response.get("perf");
         return perf instanceof Map ? (Map<String, Object>) perf : Map.of();

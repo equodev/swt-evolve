@@ -2,9 +2,6 @@
 // bar active with its first title current, Left/Right move between titles and Down opens one. Every
 // drop-down that opens sends its SWT.Show and every one that closes its SWT.Hide, however it opened.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +23,7 @@ import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'delivery/support/deliver.dart';
 import 'support/menu_bar_fixtures.dart';
+import 'support/channels.dart' as channels;
 import 'support/menu_shown_ack.dart';
 
 const _displayId = 5;
@@ -81,14 +79,8 @@ List<String> _sent(String suffix) => EquoCommService.commForTesting.sentFrames
     .toList();
 
 Future<void> _fromJava(WidgetTester tester, String channel) async {
-  final action = utf8.encode(channel);
   final body = TaggedValues.encode(<String, Object?>{});
-  final frame = Uint8List(2 + action.length + body.length);
-  frame[0] = (action.length >> 8) & 0xFF;
-  frame[1] = action.length & 0xFF;
-  frame.setRange(2, 2 + action.length, action);
-  frame.setRange(2 + action.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
+  EquoCommService.commForTesting.receiveBinary(channels.frame(channel, body));
   await tester.pump();
   await tester.pumpAndSettle();
 }

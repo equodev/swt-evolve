@@ -50,7 +50,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean back() {
-        FlutterBridge.send(getDartWidget(), "back", dev.equo.swt.Java8.map());
+        FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_BACK, dev.equo.swt.Java8.map());
         return true;
     }
 
@@ -63,7 +63,7 @@ public class EvolveBrowser extends WebBrowser {
         // Flutter pushes the webview history state (x = canGoBack, y =
         // canGoForward as 0/1) after each navigation; cache it for
         // isBackEnabled()/isForwardEnabled()
-        FlutterBridge.onPayload(browser.getImpl(), "navigationState", Event.class, e -> {
+        FlutterBridge.onPayload(browser.getImpl(), dev.equo.swt.WireTable.CHANNEL_NAVIGATION_STATE, Event.class, e -> {
             if (e == null) return;
             canGoBack = e.x == 1;
             canGoForward = e.y == 1;
@@ -78,9 +78,9 @@ public class EvolveBrowser extends WebBrowser {
         // of reloading: a reload throws away everything the page did after `completed` (an editor's
         // injected content, say), and requests overlap freely — a widget rebuild puts the new State
         // in the tree before the old one is disposed, and both ask.
-        FlutterBridge.onPayload(browser.getImpl(), "navigateRequest", Event.class, e -> {
+        FlutterBridge.onPayload(browser.getImpl(), dev.equo.swt.WireTable.CHANNEL_NAVIGATE_REQUEST, Event.class, e -> {
             if (lastNavArgs == null) return;
-            FlutterBridge.send(getDartWidget(), "navigate", lastNavArgs);
+            FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_NAVIGATE, lastNavArgs);
         });
 
         String frameName = "equo-browser-" + FlutterBridge.id(getDartWidget());
@@ -213,7 +213,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean execute(String script) {
-        FlutterBridge.send(getDartWidget(), "execute", dev.equo.swt.Java8.map("script", script));
+        FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_EXECUTE, dev.equo.swt.Java8.map("script", script));
         return true;
     }
 
@@ -239,7 +239,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean forward() {
-        FlutterBridge.send(getDartWidget(), "forward", dev.equo.swt.Java8.map());
+        FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_FORWARD, dev.equo.swt.Java8.map());
         return true;
     }
 
@@ -270,7 +270,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public void refresh() {
-        FlutterBridge.send(getDartWidget(), "reload", dev.equo.swt.Java8.map());
+        FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_RELOAD, dev.equo.swt.Java8.map());
     }
 
     @Override
@@ -295,7 +295,7 @@ public class EvolveBrowser extends WebBrowser {
     /** Sends a navigation op and remembers it, so {@code navigateRequest} can replay it. */
     private void sendNavigate(java.util.Map<String, Object> args) {
         lastNavArgs = args;
-        FlutterBridge.send(getDartWidget(), "navigate", args);
+        FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_NAVIGATE, args);
     }
 
     @Override

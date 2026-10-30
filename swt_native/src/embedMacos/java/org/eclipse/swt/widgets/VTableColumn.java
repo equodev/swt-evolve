@@ -53,13 +53,13 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).width = value;
     }
 
-    public static final int ALIGNMENT = 212;
+    public static final int ALIGNMENT = 558;
 
-    public static final int MOVEABLE = 1380;
+    public static final int MOVEABLE = 559;
 
-    public static final int RESIZABLE = 213;
+    public static final int RESIZABLE = 560;
 
-    public static final int WIDTH = 214;
+    public static final int WIDTH = 561;
 
     @Override
     public String wireName(int key) {
@@ -79,16 +79,16 @@ public class VTableColumn extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 212:
+            case 558:
                 w.write((int) getAlignment());
                 return true;
-            case 1380:
+            case 559:
                 w.write(getMoveable());
                 return true;
-            case 213:
+            case 560:
                 w.write(getResizable());
                 return true;
-            case 214:
+            case 561:
                 w.write((int) getWidth());
                 return true;
         }
@@ -98,39 +98,39 @@ public class VTableColumn extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 212:
+            case 558:
                 {
                     int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(212);
+                    w.key(558);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1380:
+            case 559:
                 {
                     boolean v_ = getMoveable();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1380);
+                    w.key(559);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 213:
+            case 560:
                 {
                     boolean v_ = getResizable();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(213);
+                    w.key(560);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 214:
+            case 561:
                 {
                     int v_ = getWidth();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(214);
+                    w.key(561);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -138,7 +138,7 @@ public class VTableColumn extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 212, 1380, 213, 214 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 558, 559, 560, 561 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

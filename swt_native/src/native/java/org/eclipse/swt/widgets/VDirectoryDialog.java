@@ -30,15 +30,15 @@ public class VDirectoryDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 661;
+        return 30;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(659);
+        w.key(173);
         w.write(getFilterPath());
-        w.key(660);
+        w.key(174);
         w.write(getMessage());
     }
 }

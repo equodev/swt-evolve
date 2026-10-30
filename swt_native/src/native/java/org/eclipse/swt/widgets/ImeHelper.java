@@ -14,7 +14,7 @@ public final class ImeHelper {
     }
 
     public static void hookComposition(DartCanvas canvas) {
-        FlutterBridge.onPayload(canvas, "ImeComposition", payload -> {
+        FlutterBridge.onPayload(canvas, dev.equo.swt.WireTable.CHANNEL_IME_COMPOSITION, payload -> {
             if (payload == null)
                 return;
             canvas.getDisplay().asyncExec(() -> apply(canvas, payload));

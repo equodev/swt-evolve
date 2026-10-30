@@ -78,6 +78,15 @@ class DisplayConfigFlagsFlutterTest {
     }
 
     @Test
+    void theClientPairsClicksWithinTheDisplaysDoubleClickTime() {
+        install(TestWebBridge::new);
+
+        assertThat(savedFlags.double_click_timeout_ms)
+                .as("a double-click the application counts is one the client pairs")
+                .isEqualTo(display.getDoubleClickTime());
+    }
+
+    @Test
     void propertiesChannel_isStillPushedAsTheFallback() {
         TestWebBridge web = install(TestWebBridge::new);
         newMainShell();
@@ -123,6 +132,7 @@ class DisplayConfigFlagsFlutterTest {
 
     private static void clientReady(RecordingComm comm, int width, int height, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;

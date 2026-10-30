@@ -829,15 +829,15 @@ public class DartTracker extends DartWidget implements ITracker {
             // A Tracker makes no handle, so it is never registered and _hookEvents() never
             // runs for it: what the loop hears from the client is hooked here, where the
             // bridge is known.
-            FlutterBridge.on(this, "Control", "Move", e -> getDisplay().asyncExec(() -> {
+            FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_CONTROL_MOVE, e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
                     mouse(e);
             }));
-            FlutterBridge.on(this, "Tracker", "close", e -> getDisplay().asyncExec(() -> {
+            FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_TRACKER_CLOSE, e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed())
                     close();
             }));
-            FlutterBridge.on(this, "Tracker", "cancel", e -> getDisplay().asyncExec(() -> {
+            FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_TRACKER_CANCEL, e -> getDisplay().asyncExec(() -> {
                 if (!isDisposed()) {
                     cancelled = true;
                     close();
@@ -854,7 +854,7 @@ public class DartTracker extends DartWidget implements ITracker {
             e.put("width", bounds.width);
             e.put("height", bounds.height);
         }
-        FlutterBridge.sendNow(host, "Tracker/open", e);
+        FlutterBridge.sendNow(host, dev.equo.swt.WireTable.CHANNEL_TRACKER_OPEN, e);
     }
 
     void closeOnFlutter() {
@@ -866,7 +866,7 @@ public class DartTracker extends DartWidget implements ITracker {
         announcedOn = null;
         if (host == null || host.isDisposed())
             return;
-        FlutterBridge.sendNow(host, "Tracker/close", java.util.Collections.singletonMap("itemId", FlutterBridge.id(this)));
+        FlutterBridge.sendNow(host, dev.equo.swt.WireTable.CHANNEL_TRACKER_CLOSE, java.util.Collections.singletonMap("itemId", FlutterBridge.id(this)));
     }
 
     void mouse(Event e) {

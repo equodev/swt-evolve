@@ -32,6 +32,14 @@ public final class ChangedKeys extends AbstractSet<Integer> {
         return indexOf(key) >= 0;
     }
 
+    /** Whether {@code key} is one of {@code keys}: a value checking a property number is its own. */
+    public static boolean among(int[] keys, int key) {
+        for (int k : keys) {
+            if (k == key) return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean contains(Object key) {
         return key instanceof Integer && indexOf((Integer) key) >= 0;

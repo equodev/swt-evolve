@@ -11,7 +11,7 @@ import '../gen/combo.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireChannel, WireKey;
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/combo_theme_extension.dart';
@@ -534,7 +534,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       state.listVisible = open;
       _showList(open);
     });
-    widget.sendEvent(state, "List/Visible", VEvent()..detail = open ? 1 : 0);
+    widget.sendEvent(state, WireChannel.listVisible, VEvent()..detail = open ? 1 : 0);
   }
 
   void _onItemSelected(String? value) {

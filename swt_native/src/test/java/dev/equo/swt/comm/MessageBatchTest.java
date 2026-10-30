@@ -57,9 +57,9 @@ class MessageBatchTest {
     @DisplayName("each entry reads back on its own channel, in order")
     void entriesReadBackInOrder() {
         MessageBatch batch = new MessageBatch();
-        batch.add("GC/7/gcDispose", text("a"));
-        batch.add("Label/9/Paint/Paint", text(""));
-        batch.add("evolve.test.query", text("b"));
+        dev.equo.swt.harness.Channels.add(batch, "GC/7/gcDispose", text("a"));
+        dev.equo.swt.harness.Channels.add(batch, "Label/9/Paint/Paint", text(""));
+        dev.equo.swt.harness.Channels.add(batch, "evolve.test.query", text("b"));
 
         assertThat(entries(sent(batch)))
                 .containsExactly("GC/7/gcDispose a", "Label/9/Paint/Paint ", "evolve.test.query b");
@@ -69,8 +69,8 @@ class MessageBatchTest {
     @DisplayName("a channel both sides number spells out no name")
     void numberedChannelsSpellNothing() {
         MessageBatch batch = new MessageBatch();
-        batch.add("GC/7/gcDispose", text("a"));
-        batch.add("Label/9/Paint/Paint", text("b"));
+        dev.equo.swt.harness.Channels.add(batch, "GC/7/gcDispose", text("a"));
+        dev.equo.swt.harness.Channels.add(batch, "Label/9/Paint/Paint", text("b"));
 
         String wire = new String(sent(batch), StandardCharsets.ISO_8859_1);
         assertThat(wire).doesNotContain("gcDispose").doesNotContain("Paint").doesNotContain("swt.evolve.batch");
@@ -80,7 +80,7 @@ class MessageBatchTest {
     @DisplayName("a lone frame is sent unwrapped, on its own channel")
     void aSingleEntryIsNotBatched() {
         MessageBatch batch = new MessageBatch();
-        batch.add("GC/7/gcDispose", text("payload"));
+        dev.equo.swt.harness.Channels.add(batch, "GC/7/gcDispose", text("payload"));
 
         byte[] frame = sent(batch);
         ChannelHeader.Decoded header = ChannelHeader.decode(frame, 0, frame.length);
@@ -93,11 +93,11 @@ class MessageBatchTest {
     @DisplayName("clearing starts the next run empty")
     void clearStartsOver() {
         MessageBatch batch = new MessageBatch();
-        batch.add("GC/7/gcDispose", text("old"));
-        batch.add("GC/7/gcDispose", text("old"));
+        dev.equo.swt.harness.Channels.add(batch, "GC/7/gcDispose", text("old"));
+        dev.equo.swt.harness.Channels.add(batch, "GC/7/gcDispose", text("old"));
         batch.clear();
-        batch.add("GC/7/gcDispose", text("x"));
-        batch.add("Label/9/Paint/Paint", text("y"));
+        dev.equo.swt.harness.Channels.add(batch, "GC/7/gcDispose", text("x"));
+        dev.equo.swt.harness.Channels.add(batch, "Label/9/Paint/Paint", text("y"));
 
         assertThat(entries(sent(batch))).containsExactly("GC/7/gcDispose x", "Label/9/Paint/Paint y");
     }

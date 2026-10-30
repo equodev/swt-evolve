@@ -1,5 +1,6 @@
 package dev.equo.swt.comm;
 
+import dev.equo.swt.WireTable;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.junit.jupiter.api.AfterEach;
@@ -103,8 +104,8 @@ class TransportStressTest {
         List<String> readBackErrors = new ArrayList<>();
         int back = THREADS * frames / 4;
         CountDownLatch allReadBack = new CountDownLatch(back);
-        comm.on("Label/0/b", byte[].class, data -> {
-            String error = check(data, 0, data.length, 0, readBack.get());
+        comm.onBytes(WireTable.TYPE_LABEL, 0, WireTable.CHANNEL_B, (data, offset, length) -> {
+            String error = check(data, offset, offset + length, 0, readBack.get());
             if (error != null) synchronized (readBackErrors) { readBackErrors.add(error); }
             readBack.incrementAndGet();
             allReadBack.countDown();
@@ -116,10 +117,10 @@ class TransportStressTest {
                 long deadline = System.nanoTime() + 30_000_000_000L;
                 while (readBack.get() <= seq - IN_FLIGHT && System.nanoTime() < deadline) Thread.onSpinWait();
                 byte[] payload = payload(0, seq);
-                byte[] header = CommService.frameHeader("Label/0/b");
-                byte[] frame = java.util.Arrays.copyOf(header, header.length + payload.length);
-                System.arraycopy(payload, 0, frame, header.length, payload.length);
-                client.send(ByteBuffer.wrap(frame));
+                byte[] frame = new byte[ChannelHeader.MAX_NUMBERED + payload.length];
+                int start = ChannelHeader.write(frame, 0, WireTable.TYPE_LABEL, 0, WireTable.CHANNEL_B);
+                System.arraycopy(payload, 0, frame, start, payload.length);
+                client.send(ByteBuffer.wrap(frame, 0, start + payload.length));
             }
         });
 
@@ -131,21 +132,19 @@ class TransportStressTest {
             int thread = t;
             senders.add(new Thread(() -> {
                 // One thread lends the transport its own buffer, and spoils it the moment the send returns.
-                String channel = "Label/" + thread + "/c";
-                byte[] header = CommService.frameHeader(channel);
-                byte[] lent = new byte[header.length + 80_000];
+                byte[] lent = new byte[ChannelHeader.MAX_NUMBERED + 80_000];
                 long allocated = 0, sent = 0;
                 for (int seq = 0; seq < frames && heap.breach == null; seq++) {
                     if (inFlight > 0) client.awaitCaughtUp(thread, seq - inFlight);
                     byte[] payload = payload(thread, seq);
                     long before = THREAD_BEAN.getCurrentThreadAllocatedBytes();
                     if (thread == 1) {
-                        System.arraycopy(header, 0, lent, 0, header.length);
-                        System.arraycopy(payload, 0, lent, header.length, payload.length);
-                        comm.sendFrame(lent, 0, header.length + payload.length);
+                        int start = ChannelHeader.write(lent, 0, WireTable.TYPE_LABEL, thread, WireTable.CHANNEL_C);
+                        System.arraycopy(payload, 0, lent, start, payload.length);
+                        comm.sendFrame(lent, 0, start + payload.length);
                         java.util.Arrays.fill(lent, (byte) 0xEE);
                     } else {
-                        comm.send(channel, payload);
+                        comm.send(WireTable.TYPE_LABEL, thread, WireTable.CHANNEL_C, payload);
                     }
                     allocated += THREAD_BEAN.getCurrentThreadAllocatedBytes() - before;
                     sent += payload.length;

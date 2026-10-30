@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:meta/meta.dart';
 
 import '../../comm/comm.dart';
+import '../../comm/channel_header.dart';
+import '../../comm/tagged_values.dart';
+import '../../gen/widgets.dart' show WireChannel, WireType;
 import '../../gen/event.dart';
 import '../../gen/tracker.dart';
 
@@ -21,7 +25,6 @@ import '../../gen/tracker.dart';
 class TrackerSession {
   TrackerSession._();
 
-  static final Set<String> _hosts = {};
   static int? _activeId;
   static bool _routeInstalled = false;
 
@@ -67,41 +70,72 @@ class TrackerSession {
   /// this so two mechanisms don't both act on one drag.
   static bool get isTracking => _activeId != null;
 
-  /// Turns a pointer position into the coordinate space the rest of the tree is expressed in.
-  /// Registered per Shell, because only the Shell knows where its content sits inside the window.
-  static final Map<String, Offset Function(Offset)> _toDisplay = {};
+  /// The Shells a Tracker can be opened on, by id, each with what turns a pointer position into the
+  /// coordinate space the rest of the tree is expressed in: only the Shell knows where its content
+  /// sits inside the window. A Shell is in it from mount to dispose.
+  static final Map<int, Offset Function(Offset)?> _hosts = {};
 
   /// The host whose Tracker is open, so a position is converted by the Shell it belongs to.
-  static String? _activeHost;
+  static int? _activeHost;
+
+  static final int _itemIdKey = TaggedValues.keyNumber('itemId');
+
+  /// Registers what every Shell answers for its Trackers (see `registerWidgetOps`).
+  static void registerOps() {
+    final type = WireType.shell;
+    EquoCommService.onWidgetOp(type, WireChannel.trackerOpen, _openOp);
+    EquoCommService.onWidgetOp(type, WireChannel.trackerClose, _closeOp);
+  }
+
+  static FutureOr<bool> _openOp(int id, Uint8List frame, int start, int end) {
+    if (!_hosts.containsKey(id)) return false;
+    _activeHost = id;
+    _begin(TaggedValues.intField(frame, start, _itemIdKey));
+    return true;
+  }
+
+  static FutureOr<bool> _closeOp(int id, Uint8List frame, int start, int end) {
+    if (!_hosts.containsKey(id)) return false;
+    _release();
+    return true;
+  }
 
   /// Converts on the way out, not when a position is recorded: which Shell a gesture belongs to is
   /// only known once its Tracker opens, and the gesture starts before that. Converting earlier makes
   /// [_begin]'s replay report window coordinates, off by the Shell's own header.
   static Offset _convert(Offset viewPosition) {
-    final convert = _toDisplay[_activeHost];
+    final convert = _hosts[_activeHost];
     return convert == null ? viewPosition : convert(viewPosition);
   }
 
-  /// Subscribes to the Tracker channel of the Shell a Tracker is opened on. A Tracker is not a
-  /// Control and never appears in the widget tree, so it has no State of its own to listen from.
+  /// Listens for the Trackers opened on the Shell [id]. A Tracker is not a Control and never
+  /// appears in the widget tree, so it has no State of its own to listen from. [swt] is the Shell's
+  /// type, which the channels' numbers do not need.
   static void attachHost(String swt, int id, {Offset Function(Offset)? toDisplay}) {
-    final key = '$swt/$id';
-    // The converter is re-registered even for a host already subscribed: it closes over the Shell's
+    final known = _hosts.containsKey(id);
+    // The converter is re-registered even for a host already attached: it closes over the Shell's
     // current layout, so a stale one would answer with the geometry of a previous frame.
-    if (toDisplay != null) _toDisplay[key] = toDisplay;
-    if (!_hosts.add(key)) return;
+    if (toDisplay != null || !known) _hosts[id] = toDisplay ?? _hosts[id];
+    if (known) return;
     // Watching starts here, not when a Tracker opens: the button goes down well before Java has
     // answered DragDetect, so a route installed at open time would already have missed it.
     if (!_routeInstalled) {
       _routeInstalled = true;
       GestureBinding.instance.pointerRouter.addGlobalRoute(_onPointer);
     }
-    EquoCommService.onRaw('$key/Tracker/open', (payload) {
-      _activeHost = key;
-      // The Tracker's opening, as the map Java builds it.
-      _begin(((payload as Map)['itemId'] as num?)?.toInt());
-    });
-    EquoCommService.onRaw('$key/Tracker/close', (_) => _release());
+    EquoCommService.replayWidgetOps(id);
+  }
+
+  @visibleForTesting
+  static int get hosts => _hosts.length;
+
+  /// Stops listening for the Shell [id]'s Trackers, when it goes away.
+  static void detachHost(int id) {
+    _hosts.remove(id);
+    if (_activeHost == id) {
+      _activeHost = null;
+      _release();
+    }
   }
 
   static void _begin(int? trackerId) {
@@ -113,11 +147,11 @@ class TrackerSession {
     // the meantime, so the loop sees a drag it can resolve rather than one jump to the end -- the
     // workbench decides where a view lands from the path, not from the final point alone.
     for (final point in _path) {
-      _send(trackerId, 'Control/Move', point);
+      _send(trackerId, WireChannel.controlMove, point);
     }
     final position = _lastPosition;
     if (position != null && (_path.isEmpty || _path.last != position)) {
-      _send(trackerId, 'Control/Move', position);
+      _send(trackerId, WireChannel.controlMove, position);
     }
     // Released before the Tracker even opened: nothing more is coming, so end it on the position it
     // ended at. Waiting instead means the loop sits idle until Java's silence timeout and gives up,
@@ -125,7 +159,7 @@ class TrackerSession {
     // Only on a press this route actually saw: ending a gesture that is still live would be worse
     // than waiting for it.
     if (_sawPointerDown && !_pointerDown) {
-      _finish(trackerId, 'Tracker/close');
+      _finish(trackerId, WireChannel.trackerClose);
       return;
     }
   }
@@ -180,13 +214,13 @@ class TrackerSession {
     final id = _activeId;
     if (id == null) return;
     if (event is PointerMoveEvent || event is PointerHoverEvent) {
-      _send(id, 'Control/Move', position);
+      _send(id, WireChannel.controlMove, position);
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
-      _send(id, 'Control/Move', position);
+      _send(id, WireChannel.controlMove, position);
       // The workbench only enters a target on the first move there and accepts the drop on the
       // next; a release where nothing was reported yet would otherwise be resolved as "no drop".
-      if (unreported && event is PointerUpEvent) _send(id, 'Control/Move', position);
-      _finish(id, event is PointerCancelEvent ? 'Tracker/cancel' : 'Tracker/close');
+      if (unreported && event is PointerUpEvent) _send(id, WireChannel.controlMove, position);
+      _finish(id, event is PointerCancelEvent ? WireChannel.trackerCancel : WireChannel.trackerClose);
     }
   }
 
@@ -200,17 +234,17 @@ class TrackerSession {
       final position = _lastPosition;
       if (id == null || position == null || !_pointerDown || position == _lastReported) return;
       _lastReported = position;
-      _send(id, 'Control/Move', position);
-      _send(id, 'Control/Move', position);
+      _send(id, WireChannel.controlMove, position);
+      _send(id, WireChannel.controlMove, position);
     });
   }
 
-  static void _finish(int id, String action) {
+  static void _finish(int id, int action) {
     _release();
     _sendEvent(id, action, VEvent());
   }
 
-  static void _send(int id, String action, Offset position) {
+  static void _send(int id, int action, Offset position) {
     final converted = _convert(position);
     _sendEvent(
       id,
@@ -224,9 +258,9 @@ class TrackerSession {
   /// Stands in for the transport in a widget test, which has no live one. A Tracker is not a
   /// Control, so unlike every other widget there is no `*Swt` instance a test could subclass.
   @visibleForTesting
-  static void Function(int id, String action, VEvent event)? sendForTesting;
+  static void Function(int id, int action, VEvent event)? sendForTesting;
 
-  static void _sendEvent(int id, String action, VEvent event) {
+  static void _sendEvent(int id, int action, VEvent event) {
     final override = sendForTesting;
     if (override != null) {
       override(id, action, event);

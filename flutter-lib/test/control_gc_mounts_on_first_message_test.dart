@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 
 import 'delivery/support/deliver.dart';
 import 'support/gc_frames.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const int _id = 7;
 
@@ -23,7 +24,7 @@ class _CapturingButtonSwt extends ButtonSwt<VButton> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VButton val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VButton val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VButton _button() => VButton()

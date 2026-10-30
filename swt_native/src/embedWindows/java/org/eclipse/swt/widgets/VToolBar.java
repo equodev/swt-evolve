@@ -17,17 +17,23 @@ public class VToolBar extends VComposite {
         ToolItem[] values = ((DartToolBar) impl).items;
         if (values == null)
             return null;
-        ArrayList<ToolItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (ToolItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new ToolItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        ToolItem[] result = new ToolItem[kept];
+        kept = 0;
+        for (ToolItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(ToolItem[] value) {
         ((DartToolBar) impl).items = value;
     }
 
-    public static final int ITEMS = 522;
+    public static final int ITEMS = 596;
 
     @Override
     public String wireName(int key) {
@@ -41,7 +47,7 @@ public class VToolBar extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 522:
+            case 596:
                 w.refs(getItems());
                 return true;
         }
@@ -51,14 +57,14 @@ public class VToolBar extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 522:
+            case 596:
                 {
                     ToolItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(522);
+                    w.key(596);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -66,7 +72,7 @@ public class VToolBar extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 522 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 596 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

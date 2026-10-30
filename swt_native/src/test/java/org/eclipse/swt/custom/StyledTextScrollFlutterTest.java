@@ -4,6 +4,7 @@ import dev.equo.swt.harness.UserInput.Key;
 import dev.equo.swt.harness.WireFrames;
 import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Canvas;
@@ -252,6 +253,24 @@ class StyledTextScrollFlutterTest {
     }
 
     @Test
+    @DisplayName("the bar follows a scroll made before it had its range")
+    void theBarFollowsAScrollMadeBeforeItHadItsRange() {
+        // An editor restoring its position as it opens scrolls before its bar has a range, and the bar
+        // clamps the selection it is given to 0. The first wheel step starts from the bar, so it went to
+        // the top of the document. Once the bar has its range again it is where the text is.
+        fresh(SWT.MULTI | SWT.V_SCROLL, lines(400));
+        text.setTopPixel(2000);
+        ScrollBar bar = text.getVerticalBar();
+        bar.setSelection(0);
+
+        text.setBounds(0, 0, StyledTextFlutterStage.WIDTH, StyledTextFlutterStage.HEIGHT - 1);
+        stage.settle();
+
+        assertThat(text.getTopPixel()).as("still scrolled").isEqualTo(2000);
+        assertThat(bar.getSelection()).as("the bar where the text is").isEqualTo(2000);
+    }
+
+    @Test
     @DisplayName("the top line a ruler is told about is the line at the top of the text")
     void theTopLineIsTheLineAtTheTop() {
         fresh(SWT.MULTI | SWT.V_SCROLL, lines(400));
@@ -343,10 +362,14 @@ class StyledTextScrollFlutterTest {
 
     /** What a line-number ruler asks: which line is at the top, and where does each line sit. */
     private void assertTopLineIsConsistent(String when) {
+        // The top index is the first line shown whole (StyledText#getTopIndex), which is what
+        // JFace's rulers count from; the line at the top edge may be the one before it, in part.
         int top = text.getTopIndex();
-        assertThat(text.getLineIndex(0)).as("line at the top of the client area, %s", when).isEqualTo(top);
-        assertThat(text.getLinePixel(top)).as("where the top line sits, %s", when)
-                .isBetween(-text.getLineHeight(text.getOffsetAtLine(top)), 0);
+        assertThat(text.getLinePixel(top)).as("the top line is shown whole, %s", when).isGreaterThanOrEqualTo(0);
+        if (top > 0) {
+            assertThat(text.getLinePixel(top - 1)).as("the line before it is not, %s", when).isLessThan(0);
+        }
+        assertThat(text.getLineIndex(0)).as("line at the top of the client area, %s", when).isBetween(top - 1, top);
         Map<Integer, Double> painted = stage.paintedRowY(text);
         assertThat(painted).as("painted lines %s", when).containsKey(top);
         assertThat(painted.get(top)).as("the client painted the top line where the widget says, %s", when)

@@ -174,7 +174,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final offset = _verticalScrollController.offset.round();
     if (offset == _reportedScrollOffset) return;
     _reportedScrollOffset = offset;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
+    widget.sendEvent(state, WireChannel.scrollScroll, VEvent()..y = offset);
   }
 
   /// Brings the row Java asked for to the top, once the rows are laid out. Flutter clamps the distance
@@ -302,6 +302,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   void dispose() {
+    MenuDetectGate.forget(state.id);
     _verticalScrollController.dispose();
     super.dispose();
   }
@@ -518,7 +519,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       onHorizontalDragCancel: moveable ? () => _columnDragPosition = null : null,
       onSecondaryTapDown: (details) {
         MenuDetectGate.withhold(
-          state.swt,
+          state.wireType,
           state.id,
           () => openContextMenu(details.globalPosition),
         );

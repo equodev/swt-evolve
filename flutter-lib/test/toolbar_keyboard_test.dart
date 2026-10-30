@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/event.dart';
@@ -22,14 +23,14 @@ class _RecordingToolItemSwt extends ToolItemSwt<VToolItem> {
   const _RecordingToolItemSwt({required super.value});
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) => _sent.add('${val.id} $ev');
+  void sendEvent(VToolItem val, int channel, VEvent? payload) => _sent.add('${val.id} ${wireChannelNames[channel]}');
 }
 
 class _RecordingToolBarSwt extends ToolBarSwt<VToolBar> {
   const _RecordingToolBarSwt({required super.value});
 
   @override
-  void sendEvent(VToolBar val, String ev, VEvent? payload) => _sent.add('${val.id} $ev');
+  void sendEvent(VToolBar val, int channel, VEvent? payload) => _sent.add('${val.id} ${wireChannelNames[channel]}');
 
   @override
   State createState() => _RecordingToolBarImpl();

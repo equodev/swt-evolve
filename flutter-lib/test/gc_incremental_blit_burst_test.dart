@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
@@ -26,7 +27,8 @@ void main() {
       '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8">'
       '<rect width="8" height="8" fill="$color"/></svg>';
 
-  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
+  void deliver(String actionId, Map<String, dynamic> payload) =>
+      receive(actionId, actionId.endsWith('/gcDispose') ? gcDisposeOf(payload) : tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 40; i++) {

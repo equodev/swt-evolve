@@ -18,6 +18,7 @@ import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const int gridId = 30, lookForId = 31, editorId = 32;
 
@@ -33,7 +34,7 @@ class _RecordingCanvasSwt extends CanvasSwt<VCanvas> {
   final List<String> sent;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) => sent.add(ev);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) => sent.add(wireChannelNames[channel]!);
 }
 
 VCanvas _grid(List<VText> children, int seq) => VCanvas()

@@ -13,7 +13,7 @@ final class DebugTap extends BridgeTap {
     void wired(CommService comm) {
         // A reflective "run this on the UI thread" primitive (open a dialog by id, and so on) for
         // surfaces the Flutter action layer cannot drive. See TestUiRunner.
-        comm.on(TestUiRunner.CHANNEL, Object.class, m -> TestUiRunner.handle(comm, m));
+        comm.on(0, 0, WireTable.CHANNEL_SWT_EVOLVE_TEST_RUN_UI, Object.class, m -> TestUiRunner.handle(comm, m));
     }
 
     @Override
@@ -22,8 +22,8 @@ final class DebugTap extends BridgeTap {
     }
 
     @Override
-    void sent(String eventName, byte[] buffer, int payloadStart, int length) {
-        DebugLog.logSend(eventName, buffer, payloadStart, length - payloadStart);
+    void sent(byte[] buffer, int payloadStart, int length) {
+        DebugLog.logSend(FlutterBridge.channelOf(buffer, payloadStart), buffer, payloadStart, length - payloadStart);
     }
 
     @Override

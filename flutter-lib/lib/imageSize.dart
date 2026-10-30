@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'src/comm/comm.dart';
+import 'src/gen/widgets.dart' show WireChannel;
+import 'src/comm/widget_key.dart' show WidgetKey;
 
 Future<ui.Image> decodeImage(Uint8List bytes) async {
   final codec = await ui.instantiateImageCodec(bytes);
@@ -12,7 +14,7 @@ Future<ui.Image> decodeImage(Uint8List bytes) async {
 
 void measureRequest(String bridge, int id) {
   print("Listen on $bridge/$id/imageSizeRequest");
-  EquoCommService.onRaw("$bridge/$id/imageSizeRequest", (payload) async {
+  EquoCommService.on(WidgetKey.typeOf(bridge), id, WireChannel.imageSizeRequest, (payload) async {
     print("on $bridge/$id/imageSizeRequest");
     var imageRequest = payload as Map<String, dynamic>;
     var base64Data = imageRequest["imageData"] as String;
@@ -28,7 +30,7 @@ void measureRequest(String bridge, int id) {
 
     final result = [width, height];
     print("send $bridge/$id/imageSizeResponse $result");
-    EquoCommService.sendPayload("$bridge/$id/imageSizeResponse", result);
+    EquoCommService.sendTo(WidgetKey.typeOf(bridge), id, WireChannel.imageSizeResponse, result);
 
     image.dispose();
   });

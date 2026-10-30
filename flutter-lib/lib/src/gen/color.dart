@@ -20,16 +20,16 @@ class VColor implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 45: // a
+      case 75: // a
         alpha = r.int32();
         return true;
-      case 46: // b
+      case 76: // b
         blue = r.int32();
         return true;
-      case 47: // g
+      case 77: // g
         green = r.int32();
         return true;
-      case 48: // r
+      case 78: // r
         red = r.int32();
         return true;
       default:
@@ -39,33 +39,29 @@ class VColor implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void writeWire(WidgetWireWriter w) {
-    if (w.wants(45)) {
+    {
       final v_ = alpha;
-      w.key(45);
-      w.int32(v_);
+      w.keyInt32(75, v_);
     }
-    if (w.wants(46)) {
+    {
       final v_ = blue;
-      w.key(46);
-      w.int32(v_);
+      w.keyInt32(76, v_);
     }
-    if (w.wants(47)) {
+    {
       final v_ = green;
-      w.key(47);
-      w.int32(v_);
+      w.keyInt32(77, v_);
     }
-    if (w.wants(48)) {
+    {
       final v_ = red;
-      w.key(48);
-      w.int32(v_);
+      w.keyInt32(78, v_);
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(45, alpha);
-    visit(46, blue);
-    visit(47, green);
-    visit(48, red);
+    visit(75, alpha);
+    visit(76, blue);
+    visit(77, green);
+    visit(78, red);
   }
 }

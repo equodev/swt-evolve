@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'support/deliver.dart';
+import 'package:swtflutter/src/comm/widget_key.dart';
 
 const _rows = [10, 11, 12, 13, 14];
 
@@ -31,11 +32,10 @@ Uint8List _textChanges(Map<int, String> texts) {
   var stamp = 1;
   for (final MapEntry(key: id, value: text) in texts.entries) {
     stamp++;
-    // Type spelled out, id, stamp as the step from the previous record's (the frame starts at 0),
-    // and the base it builds on (the rows' first write) as the distance back from it.
+    // Type number, id, stamp as the step from the previous record's (the frame starts at 0), and
+    // the base it builds on (the rows' first write) as the distance back from it.
     final record = Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
-      w.varint(0);
-      w.string('TableItem');
+      w.varint(WidgetKey.typeOf('TableItem') * 2 + 1);
       w.varint(id * 2);
       w.varint(stamp == 2 ? 2 : 1);
       w.varint(stamp - 1);

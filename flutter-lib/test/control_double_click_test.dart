@@ -12,6 +12,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingButtonSwt extends ButtonSwt<VButton> {
   final List<String> calls;
@@ -19,8 +20,8 @@ class _RecordingButtonSwt extends ButtonSwt<VButton> {
       : super(value: value);
 
   @override
-  void sendEvent(VButton val, String ev, VEvent? payload) {
-    if (ev.startsWith('Mouse/') || ev.startsWith('MouseMove/')) calls.add('$ev:${payload?.count}@${payload?.x},${payload?.y}');
+  void sendEvent(VButton val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]!.startsWith('Mouse/') || wireChannelNames[channel]!.startsWith('MouseMove/')) calls.add('${wireChannelNames[channel]!}:${payload?.count}@${payload?.x},${payload?.y}');
   }
 }
 

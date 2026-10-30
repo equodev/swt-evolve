@@ -51,6 +51,7 @@ class SecondaryShellShrinkFlutterTest {
 
     private static void clientReady(RecordingComm comm, int width, int height, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;

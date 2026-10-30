@@ -20,16 +20,16 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
   bool _isFocused = false;
 
   // A KeyDown listener may veto the keystroke, so an edit is held un-rendered until Java answers.
-  final VetoGate _keyGate = VetoGate('key');
+  final VetoGate _keyGate = VetoGate.key();
 
   // Java answers an edit it was asked to Verify; a veto sends the field back to the value Java holds.
-  final VetoGate _modifyGate = VetoGate('modify');
+  final VetoGate _modifyGate = VetoGate.modify();
 
   @override
   void initState() {
     super.initState();
-    _keyGate.attach(state.swt, state.id);
-    _modifyGate.attach(state.swt, state.id);
+    _keyGate.attach(state.wireType, state.id);
+    _modifyGate.attach(state.wireType, state.id);
   }
 
   @override

@@ -61,17 +61,17 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).year = value;
     }
 
-    public static final int DAY = 281;
+    public static final int DAY = 156;
 
-    public static final int HOURS = 282;
+    public static final int HOURS = 157;
 
-    public static final int MINUTES = 283;
+    public static final int MINUTES = 158;
 
-    public static final int MONTH = 284;
+    public static final int MONTH = 159;
 
-    public static final int SECONDS = 285;
+    public static final int SECONDS = 160;
 
-    public static final int YEAR = 286;
+    public static final int YEAR = 161;
 
     @Override
     public String wireName(int key) {
@@ -95,22 +95,22 @@ public class VDateTime extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 281:
+            case 156:
                 w.write((int) getDay());
                 return true;
-            case 282:
+            case 157:
                 w.write((int) getHours());
                 return true;
-            case 283:
+            case 158:
                 w.write((int) getMinutes());
                 return true;
-            case 284:
+            case 159:
                 w.write((int) getMonth());
                 return true;
-            case 285:
+            case 160:
                 w.write((int) getSeconds());
                 return true;
-            case 286:
+            case 161:
                 w.write((int) getYear());
                 return true;
         }
@@ -120,49 +120,49 @@ public class VDateTime extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 281:
+            case 156:
                 {
                     int v_ = getDay();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(281);
+                    w.key(156);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 282:
+            case 157:
                 {
                     int v_ = getHours();
-                    w.key(282);
+                    w.key(157);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 283:
+            case 158:
                 {
                     int v_ = getMinutes();
-                    w.key(283);
+                    w.key(158);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 284:
+            case 159:
                 {
                     int v_ = getMonth();
-                    w.key(284);
+                    w.key(159);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 285:
+            case 160:
                 {
                     int v_ = getSeconds();
-                    w.key(285);
+                    w.key(160);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 286:
+            case 161:
                 {
                     int v_ = getYear();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(286);
+                    w.key(161);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -170,7 +170,7 @@ public class VDateTime extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 281, 282, 283, 284, 285, 286 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 156, 157, 158, 159, 160, 161 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -184,10 +184,10 @@ public class VDateTime extends VComposite {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 282:
-            case 283:
-            case 284:
-            case 285:
+            case 157:
+            case 158:
+            case 159:
+            case 160:
                 return true;
         }
         return super.wireAlways(key);

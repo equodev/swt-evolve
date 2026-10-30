@@ -31,7 +31,7 @@ import 'utils/font_utils.dart';
 import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireKey, WireChannel;
 import '../testing/tree_test_registry.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
@@ -1615,11 +1615,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return ((adjustedY + _verticalController.scrolledBy) / itemHeight).floor();
   }
 
-  Object? findItemIdAtPosition(double x, double y) {
-    final index = _flatIndexAt(y);
-    return index == null ? null : _getItemAtFlatIndex(index)?.id;
-  }
-
   /// The flat row a drag is over and the feedback the drop target's listener answered for it.
   final DropRowFeedback dropRow = DropRowFeedback();
 
@@ -2202,7 +2197,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (offset == _reportedScrollOffset && across == _reportedHorizontalOffset) return;
     _reportedScrollOffset = offset;
     _reportedHorizontalOffset = across;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()..x = across..y = offset);
+    widget.sendEvent(state, WireChannel.scrollScroll, VEvent()..x = across..y = offset);
   }
 
   @override

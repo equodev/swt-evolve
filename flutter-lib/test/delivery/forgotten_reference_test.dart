@@ -11,6 +11,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';

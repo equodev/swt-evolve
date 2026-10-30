@@ -25,9 +25,9 @@ final class ObservedSends {
         }
 
         @Override
-        void sent(String eventName, byte[] buffer, int payloadStart, int length) {
+        void sent(byte[] buffer, int payloadStart, int length) {
             FlutterBridge.SendObserver o = observer;
-            if (o != null) o.onSend(eventName, java.util.Arrays.copyOfRange(buffer, payloadStart, length));
+            if (o != null) o.onSend(FlutterBridge.channelOf(buffer, payloadStart), java.util.Arrays.copyOfRange(buffer, payloadStart, length));
         }
     };
 }

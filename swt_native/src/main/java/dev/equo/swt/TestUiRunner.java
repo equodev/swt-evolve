@@ -32,13 +32,11 @@ import java.util.Map;
  *   { "action":"openProject",    "project":"&lt;path&gt;", "eventClass":"&lt;fqcn&gt;", "topicField":"&lt;staticField&gt;" }
  *   { "action":"openFile",       "path":"&lt;absolute file path&gt;" }
  * </pre>
- * A {@code listPrefPages} result is returned on {@link #RESPONSE_CHANNEL}
- * ({@code swt.evolve.test.runUiResponse}) and also logged as a {@code chk:} line for the run log.
+ * A {@code listPrefPages} result is returned on {@code swt.evolve.test.runUiResponse} and also logged as a {@code chk:} line for the run log.
  */
 final class TestUiRunner {
 
     static final String CHANNEL = "swt.evolve.test.runUi";
-    static final String RESPONSE_CHANNEL = "swt.evolve.test.runUiResponse";
 
     private TestUiRunner() {
     }
@@ -257,7 +255,7 @@ final class TestUiRunner {
         response.put("action", "listPrefPages");
         response.put("pages", pages);
         DebugLog.checkpoint(CHANNEL, "listPrefPages", nodes.size(), "pages:", pages);
-        comm.send(RESPONSE_CHANNEL, dev.equo.swt.comm.TaggedValues.encode(response, null));
+        comm.send(0, 0, WireTable.CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE, dev.equo.swt.comm.TaggedValues.encode(response, null));
     }
 
     // ---- helpers ------------------------------------------------------------

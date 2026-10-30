@@ -16,17 +16,17 @@ class VPath implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 565: // pathData
+      case 388: // pathData
         pathData = r.object(VPathData.new);
         return true;
-      case 566: // textStrings
+      case 391: // textStrings
         textStrings = r.strings();
         return true;
-      case 567: // textOrigins
+      case 390: // textOrigins
         textOrigins = r.floats();
         return true;
-      case 568: // textFonts
-        textFonts = r.list(() => r.object(VFont.new));
+      case 389: // textFonts
+        textFonts = r.list((r) => r.object(VFont.new));
         return true;
       default:
         return false;
@@ -37,29 +37,29 @@ class VPath implements WireReadable, WireWritable, WireVisitable {
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = pathData;
-      if (v_ != null && w.wants(565)) {
-        w.key(565);
+      if (v_ != null) {
+        w.key(388);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = textStrings;
-      if (v_ != null && w.wants(566)) {
-        w.key(566);
+      if (v_ != null) {
+        w.key(391);
         w.strings(v_);
       }
     }
     {
       final v_ = textOrigins;
-      if (v_ != null && w.wants(567)) {
-        w.key(567);
+      if (v_ != null) {
+        w.key(390);
         w.floats(v_);
       }
     }
     {
       final v_ = textFonts;
-      if (v_ != null && w.wants(568)) {
-        w.key(568);
+      if (v_ != null) {
+        w.key(389);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
@@ -67,9 +67,9 @@ class VPath implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(565, pathData);
-    visit(566, textStrings);
-    visit(567, textOrigins);
-    visit(568, textFonts);
+    visit(388, pathData);
+    visit(391, textStrings);
+    visit(390, textOrigins);
+    visit(389, textFonts);
   }
 }

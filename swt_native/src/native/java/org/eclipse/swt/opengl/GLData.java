@@ -148,86 +148,86 @@ public class GLData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 141;
+        return 50;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(134);
+        w.key(298);
         w.write(doubleBuffer);
-        w.key(140);
+        w.key(305);
         w.write(stereo);
-        w.key(136);
+        w.key(300);
         w.write((int) redSize);
-        w.key(135);
+        w.key(299);
         w.write((int) greenSize);
-        w.key(132);
+        w.key(296);
         w.write((int) blueSize);
-        w.key(131);
+        w.key(295);
         w.write((int) alphaSize);
-        w.key(133);
+        w.key(297);
         w.write((int) depthSize);
-        w.key(139);
+        w.key(304);
         w.write((int) stencilSize);
-        w.key(130);
+        w.key(294);
         w.write((int) accumRedSize);
-        w.key(129);
+        w.key(293);
         w.write((int) accumGreenSize);
-        w.key(128);
+        w.key(292);
         w.write((int) accumBlueSize);
-        w.key(127);
+        w.key(291);
         w.write((int) accumAlphaSize);
-        w.key(137);
+        w.key(301);
         w.write((int) sampleBuffers);
-        w.key(138);
+        w.key(302);
         w.write((int) samples);
-        w.key(622);
+        w.key(303);
         w.ref(shareContext);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 134:
+            case 298:
                 doubleBuffer = r.bool();
                 return true;
-            case 140:
+            case 305:
                 stereo = r.bool();
                 return true;
-            case 136:
+            case 300:
                 redSize = r.int32();
                 return true;
-            case 135:
+            case 299:
                 greenSize = r.int32();
                 return true;
-            case 132:
+            case 296:
                 blueSize = r.int32();
                 return true;
-            case 131:
+            case 295:
                 alphaSize = r.int32();
                 return true;
-            case 133:
+            case 297:
                 depthSize = r.int32();
                 return true;
-            case 139:
+            case 304:
                 stencilSize = r.int32();
                 return true;
-            case 130:
+            case 294:
                 accumRedSize = r.int32();
                 return true;
-            case 129:
+            case 293:
                 accumGreenSize = r.int32();
                 return true;
-            case 128:
+            case 292:
                 accumBlueSize = r.int32();
                 return true;
-            case 127:
+            case 291:
                 accumAlphaSize = r.int32();
                 return true;
-            case 137:
+            case 301:
                 sampleBuffers = r.int32();
                 return true;
-            case 138:
+            case 302:
                 samples = r.int32();
                 return true;
         }

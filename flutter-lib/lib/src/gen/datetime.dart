@@ -24,11 +24,11 @@ class DateTimeSwt<V extends VDateTime> extends CompositeSwt<V> {
   State createState() => DateTimeImpl<DateTimeSwt<VDateTime>, VDateTime>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -61,22 +61,22 @@ class VDateTime extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 281: // day
+      case 156: // day
         day = r.int32();
         return true;
-      case 282: // hours
+      case 157: // hours
         hours = r.int32();
         return true;
-      case 283: // minutes
+      case 158: // minutes
         minutes = r.int32();
         return true;
-      case 284: // month
+      case 159: // month
         month = r.int32();
         return true;
-      case 285: // seconds
+      case 160: // seconds
         seconds = r.int32();
         return true;
-      case 286: // year
+      case 161: // year
         year = r.int32();
         return true;
       default:
@@ -89,44 +89,38 @@ class VDateTime extends VComposite {
     super.writeWire(w);
     {
       final v_ = day;
-      if (v_ != null && w.wants(281)) {
-        w.key(281);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(156, v_);
       }
     }
     {
       final v_ = hours;
-      if (v_ != null && w.wants(282)) {
-        w.key(282);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(157, v_);
       }
     }
     {
       final v_ = minutes;
-      if (v_ != null && w.wants(283)) {
-        w.key(283);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(158, v_);
       }
     }
     {
       final v_ = month;
-      if (v_ != null && w.wants(284)) {
-        w.key(284);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(159, v_);
       }
     }
     {
       final v_ = seconds;
-      if (v_ != null && w.wants(285)) {
-        w.key(285);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(160, v_);
       }
     }
     {
       final v_ = year;
-      if (v_ != null && w.wants(286)) {
-        w.key(286);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(161, v_);
       }
     }
   }
@@ -134,11 +128,11 @@ class VDateTime extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(281, day);
-    visit(282, hours);
-    visit(283, minutes);
-    visit(284, month);
-    visit(285, seconds);
-    visit(286, year);
+    visit(156, day);
+    visit(157, hours);
+    visit(158, minutes);
+    visit(159, month);
+    visit(160, seconds);
+    visit(161, year);
   }
 }

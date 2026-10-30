@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/event.dart';
@@ -22,6 +23,7 @@ import 'package:swtflutter/src/theme/theme_extensions/toolbar_theme_extension.da
 
 import 'delivery/support/deliver.dart';
 import 'support/menu_shown_ack.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   const _CapturingToolItemSwt({required super.value, required this.onOpenMenu});
@@ -29,8 +31,8 @@ class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   final VoidCallback onOpenMenu;
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) {
-    if (ev == "Selection/OpenMenu") onOpenMenu();
+  void sendEvent(VToolItem val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]! == "Selection/OpenMenu") onOpenMenu();
   }
 }
 

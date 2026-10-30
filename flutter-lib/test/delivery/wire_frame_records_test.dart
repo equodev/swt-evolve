@@ -17,7 +17,7 @@ import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/widgets.dart';
 
-const int _labelType = 703;
+const int _labelType = WireType.label;
 const int _labelId = 900;
 
 /// A record: its kind, its length, then what [write] writes, header and properties.
@@ -64,7 +64,7 @@ List<String> _refreshesAsked() => [
 
 String _payloadText(Uint8List frame) {
   final body = frame.sublist(ChannelHeader.read(frame)!.$2);
-  return TaggedValues.isTagged(body) ? '${TaggedValues.decode(body)}' : utf8.decode(body);
+  return TaggedValues.isTagged(body) ? '${TaggedValues.decode(body)}' : WidgetWireReader(body).string()!;
 }
 
 void main() {
@@ -94,27 +94,6 @@ void main() {
 
     expect(held()?.text, 'first');
     expect(held()?.seq, 10);
-  });
-
-  test('a type spelled out once is named by its place after that', () {
-    registry.applyWire(_frame([
-      _record(wireWhole, (w) => w
-        ..varint(0)
-        ..string('Label')
-        ..int32(_labelId)
-        ..varint(4)
-        ..key(WireKey.k_Label_text)
-        ..string('spelled')),
-      _record(wireWhole, (w) => w
-        ..varint(2)
-        ..int32(_labelId + 1)
-        ..varint(1)
-        ..key(WireKey.k_Label_text)
-        ..string('by place')),
-    ]));
-
-    expect(held()?.text, 'spelled');
-    expect((registry.valueOn('Label/${_labelId + 1}') as VLabel?)?.text, 'by place');
   });
 
   test('a change on the held stamp applies its properties and tells the widget', () {
@@ -161,9 +140,9 @@ void main() {
         ..ref(4242)),
       _record(wireImage, (w) => w
         ..int32(4242)
-        ..key(74)
+        ..key(WireKey.k_Image_width)
         ..int32(16)
-        ..key(70)
+        ..key(WireKey.k_Image_height)
         ..int32(8)),
     ]));
 
@@ -179,7 +158,7 @@ void main() {
     addTearDown(stop);
     Uint8List display(int stamp, int active) => _frame([
           _record(wireHolder, (w) => w
-            ..varint(741 * 2 + 1)
+            ..varint(WireType.display * 2 + 1)
             ..int32(1)
             ..varint(stamp)
             ..key(WireKey.k_Display_activeShellId)

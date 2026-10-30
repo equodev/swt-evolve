@@ -18,25 +18,25 @@ class VPattern implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 570: // color1
+      case 394: // color1
         color1 = r.color();
         return true;
-      case 571: // color2
+      case 395: // color2
         color2 = r.color();
         return true;
-      case 572: // endX
+      case 396: // endX
         endX = r.float32();
         return true;
-      case 573: // endY
+      case 397: // endY
         endY = r.float32();
         return true;
-      case 574: // image
+      case 398: // image
         image = r.image();
         return true;
-      case 575: // startX
+      case 399: // startX
         startX = r.float32();
         return true;
-      case 576: // startY
+      case 400: // startY
         startY = r.float32();
         return true;
       default:
@@ -48,50 +48,49 @@ class VPattern implements WireReadable, WireWritable, WireVisitable {
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = color1;
-      if (v_ != null && w.wants(570)) {
-        w.key(570);
+      if (v_ != null) {
+        w.key(394);
         w.colorValue(v_);
       }
     }
     {
       final v_ = color2;
-      if (v_ != null && w.wants(571)) {
-        w.key(571);
+      if (v_ != null) {
+        w.key(395);
         w.colorValue(v_);
       }
     }
     {
       final v_ = endX;
-      if (v_ != null && w.wants(572)) {
-        w.key(572);
+      if (v_ != null) {
+        w.key(396);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = endY;
-      if (v_ != null && w.wants(573)) {
-        w.key(573);
+      if (v_ != null) {
+        w.key(397);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = image;
-      if (v_ != null && w.wants(574)) {
-        w.key(574);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(398, v_.id);
       }
     }
     {
       final v_ = startX;
-      if (v_ != null && w.wants(575)) {
-        w.key(575);
+      if (v_ != null) {
+        w.key(399);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = startY;
-      if (v_ != null && w.wants(576)) {
-        w.key(576);
+      if (v_ != null) {
+        w.key(400);
         w.float32(v_.toDouble());
       }
     }
@@ -99,12 +98,12 @@ class VPattern implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(570, color1);
-    visit(571, color2);
-    visit(572, endX);
-    visit(573, endY);
-    visit(574, image);
-    visit(575, startX);
-    visit(576, startY);
+    visit(394, color1);
+    visit(395, color2);
+    visit(396, endX);
+    visit(397, endY);
+    visit(398, image);
+    visit(399, startX);
+    visit(400, startY);
   }
 }

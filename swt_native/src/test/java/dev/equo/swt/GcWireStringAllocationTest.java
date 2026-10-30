@@ -20,7 +20,7 @@ class GcWireStringAllocationTest {
     private static GcWire.Op drawText(String text) {
         return new GcWire.Op() {
             @Override
-            public int wireNumber() {
+            public int number() {
                 return DRAW_TEXT;
             }
 
@@ -47,10 +47,10 @@ class GcWireStringAllocationTest {
             GcWire.Op op = drawText(text);
             // Grown once to the size the measured run needs, and the op named.
             for (int round = 0; round < 3; round++) {
-                w.begin("GC/7");
+                w.begin(WireTable.TYPE_GC, 7);
                 for (int i = 0; i < OPS; i++) w.op(op);
             }
-            w.begin("GC/7");
+            w.begin(WireTable.TYPE_GC, 7);
             long before = THREADS.getCurrentThreadAllocatedBytes();
             for (int i = 0; i < OPS; i++) w.op(op);
             long perOp = (THREADS.getCurrentThreadAllocatedBytes() - before) / OPS;

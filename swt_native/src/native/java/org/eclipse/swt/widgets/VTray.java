@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import java.util.ArrayList;
 
 public class VTray extends VWidget {
 
@@ -16,10 +15,16 @@ public class VTray extends VWidget {
         TrayItem[] values = ((DartTray) impl).items;
         if (values == null)
             return null;
-        ArrayList<TrayItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TrayItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TrayItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TrayItem[] result = new TrayItem[kept];
+        kept = 0;
+        for (TrayItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(TrayItem[] value) {

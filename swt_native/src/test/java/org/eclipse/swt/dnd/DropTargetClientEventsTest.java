@@ -72,7 +72,7 @@ class DropTargetClientEventsTest {
     /** The real dispatcher, fed frames directly instead of over a socket. */
     private static final class Feeder extends AbstractBinaryCommService {
         void deliver(String channel) {
-            byte[] header = CommService.frameHeader(channel);
+            byte[] header = dev.equo.swt.harness.Channels.header(channel);
             byte[] frame = Arrays.copyOf(header, header.length);
             onBinaryMessage(frame, 0, frame.length);
         }

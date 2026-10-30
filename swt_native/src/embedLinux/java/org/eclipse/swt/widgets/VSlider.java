@@ -61,17 +61,17 @@ public class VSlider extends VControl {
         ((DartSlider) impl).thumb = value;
     }
 
-    public static final int INCREMENT = 50;
+    public static final int INCREMENT = 454;
 
-    public static final int MAXIMUM = 51;
+    public static final int MAXIMUM = 455;
 
-    public static final int MINIMUM = 52;
+    public static final int MINIMUM = 456;
 
-    public static final int PAGE_INCREMENT = 53;
+    public static final int PAGE_INCREMENT = 457;
 
-    public static final int SELECTION = 54;
+    public static final int SELECTION = 458;
 
-    public static final int THUMB = 55;
+    public static final int THUMB = 459;
 
     @Override
     public String wireName(int key) {
@@ -95,22 +95,22 @@ public class VSlider extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 50:
+            case 454:
                 w.write((int) getIncrement());
                 return true;
-            case 51:
+            case 455:
                 w.write((int) getMaximum());
                 return true;
-            case 52:
+            case 456:
                 w.write((int) getMinimum());
                 return true;
-            case 53:
+            case 457:
                 w.write((int) getPageIncrement());
                 return true;
-            case 54:
+            case 458:
                 w.write((int) getSelection());
                 return true;
-            case 55:
+            case 459:
                 w.write((int) getThumb());
                 return true;
         }
@@ -120,57 +120,57 @@ public class VSlider extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 50:
+            case 454:
                 {
                     int v_ = getIncrement();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(50);
+                    w.key(454);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 51:
+            case 455:
                 {
                     int v_ = getMaximum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(51);
+                    w.key(455);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 52:
+            case 456:
                 {
                     int v_ = getMinimum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(52);
+                    w.key(456);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 53:
+            case 457:
                 {
                     int v_ = getPageIncrement();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(53);
+                    w.key(457);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 54:
+            case 458:
                 {
                     int v_ = getSelection();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(54);
+                    w.key(458);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 55:
+            case 459:
                 {
                     int v_ = getThumb();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(55);
+                    w.key(459);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -178,7 +178,7 @@ public class VSlider extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 50, 51, 52, 53, 54, 55 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 454, 455, 456, 457, 458, 459 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import '../gen/color.dart';
@@ -9,21 +8,17 @@ import '../gen/rgb.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart' show wireTypeNames;
 import 'comm.dart';
+import 'tagged_values.dart';
+import 'widget_key.dart';
 
-/// Sends [value] to Java in the wire's encoding.
-void sendWire(String channel, WireWritable value) =>
-    EquoCommService.sendBytes(channel, WidgetWireWriter.encode(value));
+/// Sends what [write] writes on the channel numbered [channel] of the widget of type [type] numbered
+/// [id], for a message Java reads field by field in that order.
+void sendWireWith(int type, int id, int channel, void Function(WidgetWireWriter w) write) {
+  final w = WidgetWireWriter.startTo(type, id, channel);
+  write(w);
+  EquoCommService.sendWritten(w);
+}
 
-/// Sends what [write] writes, for a message Java reads field by field in that order.
-void sendWireWith(String channel, void Function(WidgetWireWriter w) write) =>
-    EquoCommService.sendBytes(channel, WidgetWireWriter.encodeWith(write));
-
-/// Sends [text] as its UTF-8 bytes, what Java reads a string message as.
-void sendString(String channel, String text) =>
-    EquoCommService.sendBytes(channel, utf8.encode(text));
-
-/// The channel a flush's binary frame of widget records arrives on.
-const String widgetWireChannel = 'swt.evolve.wire';
 
 /// Record kinds; see Java's `WidgetWire`.
 const int wireWhole = 1;
@@ -31,7 +26,7 @@ const int wireChange = 2;
 const int wireImage = 3;
 const int wireHolder = 4;
 
-/// A value read from a binary frame property by property, each by its number (wire-ids.txt).
+/// A value read from a binary frame property by property, each by its number (the generated WireKey).
 abstract interface class WireReadable {
   /// Reads the value of the property numbered [key] into this object; false, with nothing read, when
   /// this class has no such property.
@@ -88,27 +83,130 @@ class WidgetWireWriter {
   }
 
   /// What [write] writes, as [encode] returns it: for a message Java reads field by field in order.
-  /// With [only], a value's writer writes just the properties it names, as a change carries them.
-  static Uint8List encodeWith(void Function(WidgetWireWriter w) write, {Set<int>? only}) {
+  static Uint8List encodeWith(void Function(WidgetWireWriter w) write) {
     final w = _shared
       .._size = 0
-      .._lastKey = 0
-      .._only = only;
-    try {
-      write(w);
-    } finally {
-      w._only = null;
-    }
+      .._lastKey = 0;
+    write(w);
     return Uint8List.sublistView(w._buf, 0, w._size);
   }
 
-  /// The properties [encodeWith] was asked for, or null for all of them.
-  Set<int>? _only;
+  /// The frame of the channel numbered [channel] of the widget of type [type] numbered [id]: its
+  /// header, written from those numbers, and [payload] after it, in a buffer of its own.
+  static Uint8List frameTo(int type, int id, int channel, Object? payload) {
+    final w = _shared
+      .._size = 0
+      .._lastKey = 0
+      .._header(type, id, channel);
+    return w._close(payload);
+  }
 
-  /// Whether a value's writer is to write the property numbered [key].
-  bool wants(int key) => _only?.contains(key) ?? true;
+  /// The frame of the global channel numbered [channel], [payload] after its header.
+  static Uint8List frameOn(int channel, Object? payload) {
+    final w = _shared
+      .._size = 0
+      .._lastKey = 0;
+    w._varint(channel * 2);
+    return w._close(payload);
+  }
+
+  /// [frameTo], left in the shared writer: valid until its next use.
+  static WidgetWireWriter writeTo(int type, int id, int channel, Object? payload) {
+    final w = _shared
+      .._size = 0
+      .._lastKey = 0
+      .._header(type, id, channel);
+    w._payload(payload);
+    return w;
+  }
+
+  /// [frameOn], left in the shared writer: valid until its next use.
+  static WidgetWireWriter writeOn(int channel, Object? payload) {
+    final w = _shared
+      .._size = 0
+      .._lastKey = 0;
+    w._varint(channel * 2);
+    w._payload(payload);
+    return w;
+  }
+
+  /// What has been written lies in its first [size] bytes; the next write may move it.
+  Uint8List get buffer => _buf;
+
+  /// The shared writer, started on the frame of the channel numbered [channel] of the widget of
+  /// type [type] numbered [id]: the caller writes the body, then [finish]es it.
+  static WidgetWireWriter startTo(int type, int id, int channel) => _shared
+    .._size = 0
+    .._lastKey = 0
+    .._header(type, id, channel);
+
+  /// The header of a widget's channel.
+  void _header(int type, int id, int channel) {
+    _varint(channel * 2 + 1);
+    _varint(type);
+    _zigzag(id);
+  }
+
+  /// [startTo] for the global channel numbered [channel].
+  static WidgetWireWriter startOn(int channel) {
+    final w = _shared
+      .._size = 0
+      .._lastKey = 0;
+    w._varint(channel * 2);
+    return w;
+  }
+
+  /// The frame [startTo] or [startOn] began, in a buffer of its own.
+  Uint8List finish() => _frame();
+
+  /// The frame with [payload] after the header written: bytes are copied once, into the frame.
+  Uint8List _close(Object? payload) {
+    if (payload is Uint8List) {
+      final header = _size;
+      return Uint8List(header + payload.length)
+        ..setRange(0, header, _buf)
+        ..setRange(header, header + payload.length, payload);
+    }
+    _payload(payload);
+    return _frame();
+  }
+
+  /// A message's body as Java reads it: a value's fields closed by a 0, bytes as they are, a string
+  /// as the widget wire writes a string, anything else as tagged values.
+  void _payload(Object? payload) {
+    switch (payload) {
+      case null:
+        return;
+      case WireWritable():
+        payload.writeWire(this);
+        _u8(0);
+      case Uint8List():
+        _raw(payload);
+      case String():
+        string(payload);
+      default:
+        final length = TaggedValues.encodeShared(payload);
+        _ensure(length);
+        _buf.setRange(_size, _size + length, TaggedValues.sharedBytes);
+        _size += length;
+    }
+  }
+
+  Uint8List _frame() => Uint8List(_size)..setRange(0, _size, _buf);
+
+  void _raw(Uint8List bytes) {
+    _ensure(bytes.length);
+    _buf.setRange(_size, _size + bytes.length, bytes);
+    _size += bytes.length;
+  }
 
   void u8(int b) => _u8(b);
+
+  /// How many bytes have been written.
+  int get size => _size;
+
+  /// What has been written, as a view the next write may change.
+  Uint8List get written => Uint8List.sublistView(_buf, 0, _size);
 
   /// An unsigned varint: a count or a length.
   void varint(int v) => _varint(v);
@@ -128,22 +226,89 @@ class WidgetWireWriter {
     _buf[_size++] = b;
   }
 
-  /// An unsigned varint, by arithmetic so a value past 2^32 writes the same on the web.
+  /// Whether this runs as JavaScript, where bit operators truncate to 32 bits: a varint is written by
+  /// arithmetic there, so a value past 2^32 writes the same as on the VM.
+  static const bool _web = identical(0, 0.0);
+
+  /// The longest varint: an int64's zigzag.
+  static const int _maxVarint = 10;
+
   void _varint(int v) {
-    _ensure(10);
-    while (v >= 0x80) {
-      _buf[_size++] = (v % 0x80) + 0x80;
-      v = v ~/ 0x80;
-    }
-    _buf[_size++] = v;
+    _ensure(_maxVarint);
+    _size = _put(_buf, _size, v);
   }
 
-  void _zigzag(int v) => _varint(v >= 0 ? v * 2 : -v * 2 - 1);
+  /// Writes the unsigned varint [v] into [buf] at [at], which has room for it; returns its end.
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:prefer-inline')
+  static int _put(Uint8List buf, int at, int v) {
+    if (_web) {
+      while (v >= 0x80) {
+        buf[at++] = (v % 0x80) + 0x80;
+        v = v ~/ 0x80;
+      }
+    } else {
+      while (v >= 0x80) {
+        buf[at++] = (v & 0x7F) | 0x80;
+        v >>= 7;
+      }
+    }
+    buf[at] = v;
+    return at + 1;
+  }
+
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:prefer-inline')
+  static int _zz(int v) => _web ? (v >= 0 ? v * 2 : -v * 2 - 1) : (v << 1) ^ (v >> 63);
+
+  void _zigzag(int v) => _varint(_zz(v));
 
   /// A field's number, as the delta from the previous one's.
   void key(int key) {
     _zigzag(key - _lastKey);
     _lastKey = key;
+  }
+
+  /// Room for a key and a value of up to [value] bytes after it, and where the key goes: what a
+  /// field writer below starts with, so it checks the buffer once.
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:prefer-inline')
+  int _keyAt(int key, int value) {
+    _ensure(_maxVarint + value);
+    final at = _put(_buf, _size, _zz(key - _lastKey));
+    _lastKey = key;
+    return at;
+  }
+
+  /// [key] and then [int32] of [v].
+  void keyInt32(int key, int v) {
+    final at = _keyAt(key, _maxVarint);
+    _size = _put(_buf, at, _zz(v));
+  }
+
+  /// [key] and then [int64] of [v].
+  void keyInt64(int key, int v) {
+    final at = _keyAt(key, _maxVarint);
+    _size = _put(_buf, at, _zz(v));
+  }
+
+  /// [key] and then [char16] of [v].
+  void keyChar16(int key, int v) {
+    final at = _keyAt(key, _maxVarint);
+    _size = _put(_buf, at, v);
+  }
+
+  /// [key] and then [boolean] of [v].
+  void keyBoolean(int key, bool v) {
+    final at = _keyAt(key, 1);
+    _buf[at] = v ? 1 : 0;
+    _size = at + 1;
+  }
+
+  /// [key] and then [ref] of [id].
+  void keyRef(int key, int? id) {
+    final at = _keyAt(key, _maxVarint);
+    _size = _put(_buf, at, id == null ? 0 : _zz(id) + 1);
   }
 
   /// Whether a value follows, as a presence byte; returns [present] so a writer can go on to it.
@@ -245,6 +410,31 @@ class WidgetWireWriter {
     v.forEach(write);
   }
 
+  /// Objects that each name their class by number ([typeName] gives it by name), length first; null
+  /// for none.
+  void polys<T extends WireWritable>(List<T?>? v, String Function(T e) typeName) {
+    if (v == null) {
+      _varint(0);
+      return;
+    }
+    _varint(v.length + 1);
+    for (final e in v) {
+      if (!present(e != null)) continue;
+      final type = _typeNumbers[typeName(e!)];
+      if (type == null) throw StateError('no type number for ${typeName(e)}');
+      _varint(type);
+      final outer = _lastKey;
+      _lastKey = 0;
+      e.writeWire(this);
+      _u8(0);
+      _lastKey = outer;
+    }
+  }
+
+  static final Map<String, int> _typeNumbers = {
+    for (final e in wireTypeNames.entries) e.value: e.key,
+  };
+
   /// Bytes as they are, length first; null for none.
   void bytes(List<int>? v) {
     if (v == null) {
@@ -258,20 +448,16 @@ class WidgetWireWriter {
   }
 
   /// An image or a widget by id; null for none.
-  void ref(int? id) => _varint(id == null ? 0 : (id >= 0 ? id * 2 : -id * 2 - 1) + 1);
+  void ref(int? id) => _varint(id == null ? 0 : _zz(id) + 1);
 
   /// An object: a presence byte, the fields [fields] writes, a 0.
   void object(void Function(WidgetWireWriter w)? fields) {
     if (!present(fields != null)) return;
     final outer = _lastKey;
-    final only = _only;
     _lastKey = 0;
-    // A property named is written whole: its object's own fields are not filtered.
-    _only = null;
     fields!(this);
     _u8(0);
     _lastKey = outer;
-    _only = only;
   }
 
   void boolean(bool v) => _u8(v ? 1 : 0);
@@ -366,6 +552,31 @@ class WidgetWireWriter {
   }
 }
 
+/// The property numbers a read named, in order: kept and refilled, so collecting them allocates
+/// nothing once it has grown to the largest change.
+class WireKeys {
+  List<int> _keys = List.filled(8, 0);
+  int length = 0;
+
+  int operator [](int i) => _keys[i];
+
+  void add(int key) {
+    if (length == _keys.length) _keys = List.filled(length * 2, 0)..setRange(0, length, _keys);
+    _keys[length++] = key;
+  }
+
+  void clear() => length = 0;
+
+  bool any(bool Function(int key) test) {
+    for (var i = 0; i < length; i++) {
+      if (test(_keys[i])) return true;
+    }
+    return false;
+  }
+
+  List<int> toList() => List.generate(length, (i) => _keys[i], growable: false);
+}
+
 /// Resolves a widget id named in a frame to the value held for it, or null.
 /// [accepts] says whether a value is what the reference is read as: two values can share an id.
 typedef WireRefResolver = VWidget? Function(int id, bool Function(VWidget value) accepts);
@@ -373,11 +584,12 @@ typedef WireRefResolver = VWidget? Function(int id, bool Function(VWidget value)
 /// Reads Java's `WidgetWire` frame. Values carry no types: each read knows from the property what it
 /// is reading.
 class WidgetWireReader {
-  final Uint8List _bytes;
-  final ByteData _data;
+  Uint8List _bytes;
+  ByteData? _view;
   int pos = 0;
 
-  final List<String> _types = [];
+  /// The frame as ByteData, made the first time a float is read from it.
+  ByteData get _data => _view ??= ByteData.sublistView(_bytes);
 
   /// Resolves widget references.
   WireRefResolver resolve = (_, __) => null;
@@ -395,9 +607,25 @@ class WidgetWireReader {
   /// still a stand-in once the frame is read never reached this client.
   final Map<int, int> imagesNamedUnheld = {};
 
-  WidgetWireReader(this._bytes) : _data = ByteData.sublistView(_bytes);
+  /// A reader over [_bytes] from [start] up to [end], its end when not given.
+  WidgetWireReader(this._bytes, [int start = 0, int? end])
+      : pos = start,
+        _end = end ?? _bytes.length;
 
-  bool get hasMore => pos < _bytes.length;
+  int _end;
+
+  /// Reads [bytes] from [start] to [end] next, as a new reader would: for one kept and reused.
+  void reset(Uint8List bytes, int start, int end) {
+    _bytes = bytes;
+    _view = null;
+    pos = start;
+    _end = end;
+    unresolved.clear();
+    images.clear();
+    imagesNamedUnheld.clear();
+  }
+
+  bool get hasMore => pos < _end;
 
   /// A copy of what was read from [from] up to here.
   Uint8List bytesSince(int from) => Uint8List.fromList(Uint8List.sublistView(_bytes, from, pos));
@@ -405,9 +633,11 @@ class WidgetWireReader {
   int u8() => _bytes[pos++];
 
   int u32() {
-    final v = _data.getUint32(pos, Endian.little);
+    final b = _bytes;
+    final at = pos;
     pos += 4;
-    return v;
+    // By arithmetic: a shift into bit 31 is negative on the web.
+    return b[at] + (b[at + 1] << 8) + (b[at + 2] << 16) + b[at + 3] * 0x1000000;
   }
 
   /// An unsigned varint, by arithmetic so a value past 2^32 reads the same on the web.
@@ -433,18 +663,18 @@ class WidgetWireReader {
 
   /// A record's type: odd, its number; 0, its name spelled out; otherwise a name spelled out earlier
   /// in the frame, by its place.
-  String type() {
+  String type() => WidgetKey.typeName(typeNumber());
+
+  /// A widget's type as its number (see [WidgetKey]): written odd, as every type has one.
+  int typeNumber() {
     final ref = varint();
-    if (ref & 1 == 1) return wireTypeNames[ref >> 1] ?? '';
-    if (ref != 0) return _types[(ref >> 1) - 1];
-    final name = string()!;
-    _types.add(name);
-    return name;
+    if (ref & 1 == 0) throw FormatException('a widget type without a number at $pos');
+    return ref >> 1;
   }
 
   /// Reads properties into [target] until [end]: each a key and a value. A key is the property's
   /// number less the previous one's, as a zigzag varint.
-  void readProperties(WireReadable target, int end, [List<int>? read]) {
+  void readProperties(WireReadable target, int end, [WireKeys? read]) {
     var key = 0;
     while (pos < end) {
       key += zigzag();
@@ -565,8 +795,7 @@ class WidgetWireReader {
 
   VColor? color() {
     if (!_present()) return null;
-    final argb = _data.getInt32(pos, Endian.little);
-    pos += 4;
+    final argb = u32();
     return VColor()
       ..alpha = (argb >> 24) & 0xFF
       ..red = (argb >> 16) & 0xFF
@@ -618,16 +847,33 @@ class WidgetWireReader {
   List<T>? refs<T extends VWidget>() {
     final count = varint();
     if (count == 0) return null;
-    final list = <T>[];
+    // Resolved into a list kept for it, then copied once at the size it came to: a list grown one
+    // child at a time is reallocated as it doubles. One type test for the whole list.
+    final accepts = _acceptsOf<T>();
+    if (_refsScratch.length < count) _refsScratch = List<VWidget?>.filled(count * 2, null);
+    final resolved = _refsScratch;
+    var n = 0;
     for (var i = 0; i < count - 1; i++) {
       final id = _id();
       if (id == null) continue;
-      final held = resolve(id, (v) => v is T);
+      final held = resolve(id, accepts);
       if (held == null) unresolved.add(id);
-      if (held is T) list.add(held);
+      if (held is T) resolved[n++] = held;
     }
+    final list = List<T>.generate(n, (i) => resolved[i] as T, growable: true);
+    resolved.fillRange(0, n, null);
     return list;
   }
+
+  /// What [refs] resolves into before copying, grown and never shrunk: a growable list truncated to
+  /// empty gives its storage back, and growing it again reallocates at every doubling.
+  List<VWidget?> _refsScratch = const [];
+
+  /// The type test [refs] resolves its ids with, made once per element type.
+  static bool Function(VWidget value) _acceptsOf<T extends VWidget>() =>
+      (_accepts[T] ??= (VWidget v) => v is T);
+
+  static final Map<Type, bool Function(VWidget value)> _accepts = {};
 
   /// An image named by id: the one held, or a stand-in its record further down the frame fills.
   VImage? image() {
@@ -670,10 +916,17 @@ class WidgetWireReader {
   }
 
   /// A list, each element read by [read].
-  List<T?>? list<T>(T? Function() read) {
+  /// A list, each element read by [read] from this reader. [read] is handed the reader rather than
+  /// closing over it: a closure over `readWire`'s own reader would make every call of it allocate,
+  /// whichever property it reads.
+  List<T?>? list<T>(T? Function(WidgetWireReader r) read) {
     final count = varint();
     if (count == 0) return null;
-    return List<T?>.generate(count - 1, (_) => read());
+    final list = List<T?>.filled(count - 1, null);
+    for (var i = 0; i < list.length; i++) {
+      list[i] = read(this);
+    }
+    return list;
   }
 
   /// Objects whose class each one names by number, made by [create] from that class's name.

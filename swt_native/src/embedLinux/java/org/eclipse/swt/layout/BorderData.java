@@ -128,29 +128,29 @@ public final class BorderData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 511;
+        return 4;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(508);
+        w.key(3);
         w.write((int) hHint);
-        w.key(510);
+        w.key(5);
         w.write((int) wHint);
-        w.key(509);
+        w.key(4);
         w.write((int) region);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 508:
+            case 3:
                 hHint = r.int32();
                 return true;
-            case 510:
+            case 5:
                 wHint = r.int32();
                 return true;
-            case 509:
+            case 4:
                 region = r.int32();
                 return true;
         }

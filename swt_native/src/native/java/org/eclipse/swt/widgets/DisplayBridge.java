@@ -29,9 +29,6 @@ import org.eclipse.swt.graphics.Rectangle;
  */
 public abstract class DisplayBridge extends FlutterBridge implements WindowBridge {
 
-    /** Display-wide: a focus request can name a control the client has not built yet. */
-    private static final String FOCUS_CHANNEL = "swt.evolve.focus";
-
     static {
         FlutterBridge.setEventClock(DisplayBridge::stampEventTime);
     }
@@ -61,17 +58,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             impl.lastEventTime = now - last > 0 ? now : last + 1;
         }
     }
-    /** The client's answer to a focus request, sent as it receives the request: {@code {seq}}. */
-    private static final String FOCUS_SEEN_CHANNEL = "swt.evolve.focus.seen";
-    /** Display-wide: which control Java holds as its focus control, without moving the client's. */
-    private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
 
     protected DartDisplay forDisplay;
     private DartControl focused = null;
     /** Last control the client was asked to focus, so one focus move is not sent twice: a single
      *  {@code Control.forceFocus()} reaches {@link #setFocus} again through the shell's restoreFocus. */
     private DartControl focusRequested = null;
-    /** Last control the client was told holds the focus, on {@link #FOCUS_HOLDER_CHANNEL} or in the Display state. */
+    /** Last control the client was told holds the focus, on its own channel or in the Display state. */
     private DartControl focusHolderSent = null;
 
     /**
@@ -270,16 +263,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * Register a raw string-channel handler on this Display's comm. Used by widget-less surfaces
-     * (Dialog/MessageBox) that have no bridge of their own but belong to a Display.
+     * Registers a text handler on this Display's comm for the channel numbered {@code channel} of the
+     * widget of type {@code type} numbered {@code id}. Used by widget-less surfaces (Dialog/MessageBox)
+     * that have no bridge of their own but belong to a Display.
      */
-    public void onChannel(String channel, java.util.function.Consumer<String> cb) {
-        comm().on(channel, String.class, cb);
+    public void onChannel(int type, long id, int channel, java.util.function.Consumer<String> cb) {
+        comm().on(type, id, channel, String.class, cb);
     }
 
-    /** Remove a handler registered via {@link #onChannel}. */
-    public void offChannel(String channel) {
-        comm().remove(channel);
+    /** Removes a handler registered via {@link #onChannel}. */
+    public void offChannel(int type, long id, int channel) {
+        comm().remove(type, id, channel);
     }
 
     /**
@@ -303,7 +297,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * newer. Queued on the Display thread like those reports, so it lands between the same two.
      */
     private void registerFocusRequestSeen(DartDisplay display) {
-        comm().on(FOCUS_SEEN_CHANNEL, java.util.Map.class, seen -> {
+        comm().on(0, 0, dev.equo.swt.WireTable.CHANNEL_SWT_EVOLVE_FOCUS_SEEN, java.util.Map.class, seen -> {
             Display api = display.getApi();
             Object seq = seen == null ? null : seen.get("seq");
             if (api == null || api.isDisposed() || !(seq instanceof Number))
@@ -353,7 +347,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // Completing clientReady + pushing swt.evolve.properties on the first ClientReady is handled
         // by the shared FlutterBridge.onClientReady template; here we only do the Display-specific
         // work: sync Display bounds to the reported viewport and push the (first/next) update.
-        onClientReady("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, (p, first) -> {
+        onClientReady(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
             display.clientPlatform = p.targetPlatform;
             DisplayHelper.clientReady(display.getApi(), p.targetPlatform);
@@ -439,13 +433,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     protected void registerDisplayKeyEvents(DartDisplay display) {
         long displayId = display.getApi().hashCode();
-        comm().on("Display/" + displayId + "/Key/KeyDown", Event.class,
+        comm().on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_KEY_KEY_DOWN, Event.class,
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyDown, ev));
-        comm().on("Display/" + displayId + "/Key/KeyUp", Event.class,
+        comm().on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_KEY_KEY_UP, Event.class,
                 ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyUp, ev));
         // The Menu key has no SWT key code: natively it reaches the control as a context-menu
         // request, never as a KeyDown.
-        comm().on("Display/" + displayId + "/MenuKey", Event.class, ev -> {
+        comm().on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_MENU_KEY, Event.class, ev -> {
             Display api = display.getApi();
             if (api == null || api.isDisposed())
                 return;
@@ -481,7 +475,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // The focus control's client holds the keystroke for a verdict it would otherwise get below.
                 if (dartFocus && type == org.eclipse.swt.SWT.KeyDown && focus.isListening(org.eclipse.swt.SWT.KeyDown)
                         && !ControlHelper.isModifierKey(ev.keyCode))
-                    dev.equo.swt.FlutterBridge.send((DartControl) focus.getImpl(), "key/verdict", dev.equo.swt.Java8.map("doit", false));
+                    dev.equo.swt.FlutterBridge.send((DartControl) focus.getImpl(), dev.equo.swt.WireTable.CHANNEL_KEY_VERDICT,
+                            dev.equo.swt.Java8.map("doit", false));
                 return;
             }
             if (!dartFocus)
@@ -492,12 +487,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 ControlHelper.RoutedKey routed = closedPopup ? null : ControlHelper.routeKeyDown(dc, ev);
                 // A modifier press edits nothing, so the client holds no proposal for it to answer.
                 if (vetoable && !ControlHelper.isModifierKey(ev.keyCode)) {
-                    dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
+                    dev.equo.swt.FlutterBridge.send(dc, dev.equo.swt.WireTable.CHANNEL_KEY_VERDICT,
                             dev.equo.swt.Java8.map("doit", routed != null && routed.delivered && routed.keyDoit));
                 }
                 // The client traverses at Display level, so the verdict goes there, not to the control.
                 if (ControlHelper.isGatedTraversal(ev)) {
-                    sendDisplayGate(display, "traverse/verdict", "doit", routed != null && routed.traverseDoit);
+                    sendDisplayGate(display, dev.equo.swt.WireTable.CHANNEL_TRAVERSE_VERDICT, "doit", routed != null && routed.traverseDoit);
                 }
             } else {
                 ControlHelper.routeKeyUp(dc, ev);
@@ -1036,7 +1031,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             try {
                 window = createShellWindow(shell);
             } finally {
-                if (window == null) offChannel(shellClientReadyChannel(shell));
+                if (window == null) offChannel(dev.equo.swt.WireTable.TYPE_SHELL, shell.hashCode(), dev.equo.swt.WireTable.CHANNEL_CLIENT_READY);
             }
             if (window == null) continue;
             shellWindows.put(shell, window);
@@ -1188,7 +1183,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     private void closeShellWindow(Shell shell, ShellWindow window) {
-        if (!shell.isDisposed()) offChannel(shellClientReadyChannel(shell));
+        if (!shell.isDisposed()) offChannel(dev.equo.swt.WireTable.TYPE_SHELL, shell.hashCode(), dev.equo.swt.WireTable.CHANNEL_CLIENT_READY);
         window.close();
     }
 
@@ -1199,10 +1194,6 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         lostWindows.remove(shell);
     }
 
-    static String shellClientReadyChannel(Shell shell) {
-        return "Shell/" + shell.hashCode() + "/ClientReady";
-    }
-
     /**
      * Wires the handshake for a shell rendered in its own window: that window reports its viewport,
      * and the shell is slaved to it exactly as the main shell is slaved to the Display's window.
@@ -1210,8 +1201,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     private void registerShellClientReady(Shell shell) {
         Display api = forDisplay.getApi();
-        comm().on(shellClientReadyChannel(shell), ClientReadyPayload.class, p -> {
+        comm().on(dev.equo.swt.WireTable.TYPE_SHELL, shell.hashCode(), dev.equo.swt.WireTable.CHANNEL_CLIENT_READY, ClientReadyPayload.class, p -> {
             if (p == null) return;
+            p.requireSameWireTable();
             Runnable apply = () -> {
                 if (shell.isDisposed()) return;
                 // A window of its own is a client of its own, and it has been sent nothing: it needs
@@ -1357,6 +1349,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         unansweredFocusRequests.remove(control);
         if (clientActivated == control) clientActivated = null;
         if (focused == control) focused = null;
+        if (focusHolderSent == control) focusHolderSent = null;
         if (control instanceof DartShell && forDisplay != null) {
             Shell shell = (Shell) ((DartShell) control).getApi();
             forDisplay.removeShell(shell);
@@ -1438,11 +1431,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * hashCode: a DartDisplay is a DartDevice, so {@code FlutterBridge.id} falls through to the impl
      * object's hashCode and would address a channel the client never listens on.
      */
-    private void sendDisplayGate(DartDisplay display, String gate, String key, boolean value) {
+    private void sendDisplayGate(DartDisplay display, int gate, String key, boolean value) {
         if (display == null || display.getApi() == null)
             return;
         try {
-            serializeAndSend("Display/" + display.getApi().hashCode() + "/" + gate,
+            serializeAndSend(dev.equo.swt.WireTable.TYPE_DISPLAY, display.getApi().hashCode(), gate,
                     dev.equo.swt.Java8.map(key, value));
         } catch (java.io.IOException e) {
             e.printStackTrace();
@@ -1451,17 +1444,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Gates armed per focus. Arming keeps the round trip off the path where no veto is possible. */
     private static final class FocusGate {
-        private final String channel;
+        /** The channel arming the gate: {@code key/vetoable}, {@code modify/vetoable}. */
+        private final int vetoable;
         private final int eventType;
         private final Class<? extends DartControl> impl;
 
-        FocusGate(String channel, int eventType, Class<? extends DartControl> impl) {
-            this.channel = channel;
+        FocusGate(int vetoable, int eventType, Class<? extends DartControl> impl) {
+            this.vetoable = vetoable;
             this.eventType = eventType;
             this.impl = impl;
         }
 
-        String channel() { return channel; }
+        int vetoable() { return vetoable; }
 
         int eventType() { return eventType; }
 
@@ -1469,8 +1463,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     private static final java.util.List<FocusGate> FOCUS_GATES = dev.equo.swt.Java8.list(
-            new FocusGate("key", org.eclipse.swt.SWT.KeyDown, DartControl.class),
-            new FocusGate("modify", org.eclipse.swt.SWT.Verify, DartText.class));
+            new FocusGate(dev.equo.swt.WireTable.CHANNEL_KEY_VETOABLE, org.eclipse.swt.SWT.KeyDown, DartControl.class),
+            new FocusGate(dev.equo.swt.WireTable.CHANNEL_MODIFY_VETOABLE, org.eclipse.swt.SWT.Verify, DartText.class));
 
     @Override
     public void clientFocused(DartControl widget) {
@@ -1486,6 +1480,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         focusRequested = widget;
         setFocus(widget);
+        // The shell gives its focus back to its saved focus when the client clears it, so a focus
+        // the user moved there must be the one saved, or the clear hands the keys to an older one.
+        if (api != null && !api.isDisposed())
+            ((DartDecorations) api.getShell().getImpl()).setSavedFocus(api);
     }
 
     @Override
@@ -1601,14 +1599,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (live) {
             for (FocusGate gate : FOCUS_GATES) {
                 if (gate.impl().isInstance(widget) && api.isListening(gate.eventType())) {
-                    dev.equo.swt.FlutterBridge.send(widget, gate.channel() + "/vetoable",
+                    dev.equo.swt.FlutterBridge.send(widget, gate.vetoable(),
                             dev.equo.swt.Java8.map("value", true));
                 }
             }
         }
         // Display-scoped, so it never hears the focus change: publish on every one, false included.
         if (forDisplay != null) {
-            sendDisplayGate(forDisplay, "traverse/vetoable", "value",
+            sendDisplayGate(forDisplay, dev.equo.swt.WireTable.CHANNEL_TRAVERSE_VETOABLE, "value",
                     live && api.isListening(org.eclipse.swt.SWT.Traverse));
         }
         long previousActiveShellId = publishedActiveShell;
@@ -1646,7 +1644,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         long id = FlutterBridge.id(widget);
         FlutterBridge.update().whenComplete((result, error) -> {
             try {
-                serializeAndSend(FOCUS_HOLDER_CHANNEL, dev.equo.swt.Java8.map("id", id));
+                serializeAndSend(0, 0, dev.equo.swt.WireTable.CHANNEL_SWT_EVOLVE_FOCUS_HOLDER, dev.equo.swt.Java8.map("id", id));
             } catch (java.io.IOException e) {
                 e.printStackTrace();
             }
@@ -1739,7 +1737,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         long seq = ++focusRequestSeq;
         FlutterBridge.update().whenComplete((result, error) -> {
             try {
-                serializeAndSend(FOCUS_CHANNEL, dev.equo.swt.Java8.map("id", id, "seq", seq));
+                // Display-wide: a focus request can name a control the client has not built yet.
+                serializeAndSend(0, 0, dev.equo.swt.WireTable.CHANNEL_SWT_EVOLVE_FOCUS, dev.equo.swt.Java8.map("id", id, "seq", seq));
             } catch (java.io.IOException e) {
                 e.printStackTrace();
             }

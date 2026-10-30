@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/control_evolve.dart' show ControlImpl;
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
@@ -33,7 +34,7 @@ class _RecordingScaleSwt extends ScaleSwt<VScale> {
   const _RecordingScaleSwt({required VScale value, required this.calls}) : super(value: value);
 
   @override
-  void sendEvent(VScale val, String ev, VEvent? payload) => calls.add(ev);
+  void sendEvent(VScale val, int channel, VEvent? payload) => calls.add(wireChannelNames[channel]!);
 }
 
 class _RecordingTableSwt extends TableSwt<VTable> {
@@ -41,8 +42,8 @@ class _RecordingTableSwt extends TableSwt<VTable> {
   const _RecordingTableSwt({required VTable value, required this.calls}) : super(value: value);
 
   @override
-  void sendEvent(VTable val, String ev, VEvent? payload) =>
-      calls.add('$ev:${payload?.button}@${payload?.x},${payload?.y}');
+  void sendEvent(VTable val, int channel, VEvent? payload) =>
+      calls.add('${wireChannelNames[channel]!}:${payload?.button}@${payload?.x},${payload?.y}');
 }
 
 /// Past the hover timer a release starts, so no timer is left pending when a test ends.

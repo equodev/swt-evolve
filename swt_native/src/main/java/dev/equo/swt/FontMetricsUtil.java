@@ -144,14 +144,21 @@ public final class FontMetricsUtil {
      * platform is the browser's, not the one the application is laid out for.
      */
     public static org.eclipse.swt.graphics.Point hostScreenDPI() {
-        return hostScreenDPI(System.getProperty("os.name"));
+        return new org.eclipse.swt.graphics.Point(HOST_DPI, HOST_DPI);
     }
 
     public static org.eclipse.swt.graphics.Point hostScreenDPI(String osName) {
-        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
-        int dpi = (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
+        int dpi = hostDpi(osName);
         return new org.eclipse.swt.graphics.Point(dpi, dpi);
     }
+
+    private static int hostDpi(String osName) {
+        String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
+        return (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
+    }
+
+    /** {@link #hostScreenDPI()}'s figure: the host does not change while the process runs. */
+    private static final int HOST_DPI = hostDpi(System.getProperty("os.name"));
 
     /**
      * Logical pixels per SWT font point — {@code dpi / 72} by SWT's own definition.
@@ -174,10 +181,28 @@ public final class FontMetricsUtil {
      */
     public static double rawDpiScale() {
         Display display = Display.getCurrent();
-        double dpi = (display != null && display.getDPI().x > 0)
-                ? display.getDPI().x
-                : hostScreenDPI().x;
-        return dpi / POINTS_PER_INCH;
+        int x = display == null ? 0 : dpiOf(display);
+        return (x > 0 ? x : HOST_DPI) / POINTS_PER_INCH;
+    }
+
+    /** A display and its DPI, which is fixed: read on every flags read, so worked out once. */
+    private static final class DisplayDpi extends java.lang.ref.WeakReference<Display> {
+        final int x;
+
+        DisplayDpi(Display display, int x) {
+            super(display);
+            this.x = x;
+        }
+    }
+
+    private static volatile DisplayDpi lastDpi = new DisplayDpi(null, 0);
+
+    private static int dpiOf(Display display) {
+        DisplayDpi held = lastDpi;
+        if (held.get() == display) return held.x;
+        int x = display.getDPI().x;
+        lastDpi = new DisplayDpi(display, x);
+        return x;
     }
 
     /**

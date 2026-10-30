@@ -433,6 +433,7 @@ class MultiWindowNativeTest {
         window.bounds = null;
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 500;
         p.height = 400;
         p.isFirst = true;
@@ -457,6 +458,7 @@ class MultiWindowNativeTest {
         bridge.comm.sent.clear();
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 400;
         p.height = 300;
         p.isFirst = true;
@@ -483,6 +485,7 @@ class MultiWindowNativeTest {
         TestBridge bridge = install();
         Shell main = openShell();
         ClientReadyPayload mainReady = new ClientReadyPayload();
+        mainReady.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         mainReady.width = 1280;
         mainReady.height = 800;
         mainReady.isFirst = true;
@@ -504,6 +507,7 @@ class MultiWindowNativeTest {
         bridge.comm.sent.clear();
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 500;
         p.height = 260;
         p.isFirst = true;
@@ -528,6 +532,7 @@ class MultiWindowNativeTest {
         bridge.comm.sent.clear();
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 400;
         p.height = 300;
         p.isFirst = true;

@@ -190,7 +190,7 @@ public final class WireFrames {
     /**
      * The names of every property a record describing {@code subject} can hold: its value class's
      * {@code wireKeys()} by the names {@code wireName} gives them, or, for a value written by hand,
-     * the numbers wire-kinds.txt gives its class and the classes it extends.
+     * the properties the generated wire table gives its class and the classes it extends.
      */
     public static java.util.Set<String> propertiesOf(Object subject) throws ReflectiveOperationException {
         Object value = valueOf(subject);
@@ -209,36 +209,31 @@ public final class WireFrames {
             String n = c.getSimpleName();
             classes.add(n.length() > 1 && n.charAt(0) == 'V' && Character.isUpperCase(n.charAt(1)) ? n.substring(1) : n);
         }
-        try (java.io.InputStream s = WireDump.class.getResourceAsStream("wire-kinds.txt")) {
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(s, java.nio.charset.StandardCharsets.UTF_8));
-            for (String line; (line = reader.readLine()) != null; ) {
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                String qualified = line.split(" ")[2];
-                int dot = qualified.lastIndexOf('.');
-                if (classes.contains(qualified.substring(0, dot))) names.add(qualified.substring(dot + 1));
-            }
-        } catch (java.io.IOException e) {
-            throw new java.io.UncheckedIOException(e);
+        for (int i = 1; i < dev.equo.swt.WireTable.PROPERTIES.length; i++) {
+            if (dev.equo.swt.WireTable.KINDS[i] == null) continue;
+            String qualified = dev.equo.swt.WireTable.PROPERTIES[i];
+            int dot = qualified.lastIndexOf('.');
+            if (classes.contains(qualified.substring(0, dot))) names.add(qualified.substring(dot + 1));
         }
         return names;
     }
 
-    /** Property names by number, from wire-kinds.txt. */
+    /** Property names by number. */
     private static final Map<String, String> NAMES = new java.util.HashMap<>();
 
     static {
-        try (java.io.InputStream s = WireDump.class.getResourceAsStream("wire-kinds.txt")) {
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(s, java.nio.charset.StandardCharsets.UTF_8));
-            for (String line; (line = reader.readLine()) != null; ) {
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                String[] parts = line.split(" ");
-                NAMES.put(parts[0], parts[2].substring(parts[2].lastIndexOf('.') + 1));
-            }
-        } catch (java.io.IOException e) {
-            throw new java.io.UncheckedIOException(e);
+        for (int i = 1; i < dev.equo.swt.WireTable.PROPERTIES.length; i++) {
+            String qualified = dev.equo.swt.WireTable.PROPERTIES[i];
+            NAMES.put(String.valueOf(i), qualified.substring(qualified.lastIndexOf('.') + 1));
         }
+    }
+
+    /** The number of the property {@code qualified} ({@code Class.name}). */
+    public static int property(String qualified) {
+        for (int i = 1; i < dev.equo.swt.WireTable.PROPERTIES.length; i++) {
+            if (dev.equo.swt.WireTable.PROPERTIES[i].equals(qualified)) return i;
+        }
+        throw new IllegalArgumentException("no property " + qualified);
     }
 
     /**

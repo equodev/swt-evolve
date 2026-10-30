@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ctabfolder.dart';
@@ -39,8 +40,8 @@ class _ReportingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String report) onStrip;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) {
-    if (ev == 'CTabFolder/stripLaidOut' && payload?.text != null) onStrip(payload!.text!);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel] == 'CTabFolder/stripLaidOut' && payload?.text != null) onStrip(payload!.text!);
   }
 }
 

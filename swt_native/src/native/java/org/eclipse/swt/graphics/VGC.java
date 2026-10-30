@@ -221,14 +221,23 @@ public class VGC extends VResource {
 
         public int y;
 
-        @Override
-        public int wireNumber() {
-            return 865;
+        private static final ThreadLocal<VGCCopyAreaImageintint> REUSED = ThreadLocal.withInitial(VGCCopyAreaImageintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCCopyAreaImageintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "wii";
+        }
+
+        @Override
+        public int number() {
+            return 136;
         }
 
         @Override
@@ -264,14 +273,23 @@ public class VGC extends VResource {
 
         public boolean paint;
 
-        @Override
-        public int wireNumber() {
-            return 866;
+        private static final ThreadLocal<VGCCopyAreaintintintintintintboolean> REUSED = ThreadLocal.withInitial(VGCCopyAreaintintintintintintboolean::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCCopyAreaintintintintintintboolean reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiiiiib";
+        }
+
+        @Override
+        public int number() {
+            return 138;
         }
 
         @Override
@@ -300,14 +318,23 @@ public class VGC extends VResource {
 
         public int arcAngle;
 
-        @Override
-        public int wireNumber() {
-            return 867;
+        private static final ThreadLocal<VGCDrawArcintintintintintint> REUSED = ThreadLocal.withInitial(VGCDrawArcintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawArcintintintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 139;
         }
 
         @Override
@@ -331,14 +358,23 @@ public class VGC extends VResource {
 
         public int height;
 
-        @Override
-        public int wireNumber() {
-            return 868;
+        private static final ThreadLocal<VGCDrawFocusintintintint> REUSED = ThreadLocal.withInitial(VGCDrawFocusintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawFocusintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 140;
         }
 
         @Override
@@ -358,14 +394,23 @@ public class VGC extends VResource {
 
         public int y;
 
-        @Override
-        public int wireNumber() {
-            return 869;
+        private static final ThreadLocal<VGCDrawImageImageintint> REUSED = ThreadLocal.withInitial(VGCDrawImageImageintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawImageImageintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "wii";
+        }
+
+        @Override
+        public int number() {
+            return 141;
         }
 
         @Override
@@ -397,14 +442,23 @@ public class VGC extends VResource {
 
         public int destHeight;
 
-        @Override
-        public int wireNumber() {
-            return 870;
+        private static final ThreadLocal<VGCDrawImageImageintintintint> REUSED = ThreadLocal.withInitial(VGCDrawImageImageintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawImageImageintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "wiiii";
+        }
+
+        @Override
+        public int number() {
+            return 142;
         }
 
         @Override
@@ -446,14 +500,23 @@ public class VGC extends VResource {
 
         public int destHeight;
 
-        @Override
-        public int wireNumber() {
-            return 871;
+        private static final ThreadLocal<VGCDrawImageImageintintintintintintintint> REUSED = ThreadLocal.withInitial(VGCDrawImageImageintintintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawImageImageintintintintintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "wiiiiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 143;
         }
 
         @Override
@@ -489,14 +552,23 @@ public class VGC extends VResource {
 
         public int y2;
 
-        @Override
-        public int wireNumber() {
-            return 872;
+        private static final ThreadLocal<VGCDrawLineintintintint> REUSED = ThreadLocal.withInitial(VGCDrawLineintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawLineintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 144;
         }
 
         @Override
@@ -518,14 +590,23 @@ public class VGC extends VResource {
 
         public int height;
 
-        @Override
-        public int wireNumber() {
-            return 873;
+        private static final ThreadLocal<VGCDrawOvalintintintint> REUSED = ThreadLocal.withInitial(VGCDrawOvalintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawOvalintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 145;
         }
 
         @Override
@@ -541,14 +622,23 @@ public class VGC extends VResource {
 
         public Path path;
 
-        @Override
-        public int wireNumber() {
-            return 874;
+        private static final ThreadLocal<VGCDrawPathPath> REUSED = ThreadLocal.withInitial(VGCDrawPathPath::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPathPath reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "w";
+        }
+
+        @Override
+        public int number() {
+            return 146;
         }
 
         @Override
@@ -572,14 +662,23 @@ public class VGC extends VResource {
 
         public int y;
 
-        @Override
-        public int wireNumber() {
-            return 875;
+        private static final ThreadLocal<VGCDrawPointintint> REUSED = ThreadLocal.withInitial(VGCDrawPointintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPointintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "ii";
+        }
+
+        @Override
+        public int number() {
+            return 147;
         }
 
         @Override
@@ -593,14 +692,23 @@ public class VGC extends VResource {
 
         public int[] pointArray;
 
-        @Override
-        public int wireNumber() {
-            return 876;
+        private static final ThreadLocal<VGCDrawPolygonint> REUSED = ThreadLocal.withInitial(VGCDrawPolygonint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPolygonint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "I";
+        }
+
+        @Override
+        public int number() {
+            return 148;
         }
 
         @Override
@@ -613,14 +721,23 @@ public class VGC extends VResource {
 
         public int[] pointArray;
 
-        @Override
-        public int wireNumber() {
-            return 877;
+        private static final ThreadLocal<VGCDrawPolylineint> REUSED = ThreadLocal.withInitial(VGCDrawPolylineint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPolylineint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "I";
+        }
+
+        @Override
+        public int number() {
+            return 149;
         }
 
         @Override
@@ -639,14 +756,23 @@ public class VGC extends VResource {
 
         public int height;
 
-        @Override
-        public int wireNumber() {
-            return 878;
+        private static final ThreadLocal<VGCDrawRectangleintintintint> REUSED = ThreadLocal.withInitial(VGCDrawRectangleintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawRectangleintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 150;
         }
 
         @Override
@@ -672,14 +798,23 @@ public class VGC extends VResource {
 
         public int arcHeight;
 
-        @Override
-        public int wireNumber() {
-            return 879;
+        private static final ThreadLocal<VGCDrawRoundRectangleintintintintintint> REUSED = ThreadLocal.withInitial(VGCDrawRoundRectangleintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawRoundRectangleintintintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 151;
         }
 
         @Override
@@ -703,14 +838,23 @@ public class VGC extends VResource {
 
         public int flags;
 
-        @Override
-        public int wireNumber() {
-            return 880;
+        private static final ThreadLocal<VGCDrawTextStringintintint> REUSED = ThreadLocal.withInitial(VGCDrawTextStringintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawTextStringintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "siii";
+        }
+
+        @Override
+        public int number() {
+            return 152;
         }
 
         @Override
@@ -736,14 +880,23 @@ public class VGC extends VResource {
 
         public int arcAngle;
 
-        @Override
-        public int wireNumber() {
-            return 881;
+        private static final ThreadLocal<VGCFillArcintintintintintint> REUSED = ThreadLocal.withInitial(VGCFillArcintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillArcintintintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 171;
         }
 
         @Override
@@ -769,14 +922,23 @@ public class VGC extends VResource {
 
         public boolean vertical;
 
-        @Override
-        public int wireNumber() {
-            return 882;
+        private static final ThreadLocal<VGCFillGradientRectangleintintintintboolean> REUSED = ThreadLocal.withInitial(VGCFillGradientRectangleintintintintboolean::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillGradientRectangleintintintintboolean reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiiib";
+        }
+
+        @Override
+        public int number() {
+            return 172;
         }
 
         @Override
@@ -799,14 +961,23 @@ public class VGC extends VResource {
 
         public int height;
 
-        @Override
-        public int wireNumber() {
-            return 883;
+        private static final ThreadLocal<VGCFillOvalintintintint> REUSED = ThreadLocal.withInitial(VGCFillOvalintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillOvalintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 173;
         }
 
         @Override
@@ -822,14 +993,23 @@ public class VGC extends VResource {
 
         public Path path;
 
-        @Override
-        public int wireNumber() {
-            return 884;
+        private static final ThreadLocal<VGCFillPathPath> REUSED = ThreadLocal.withInitial(VGCFillPathPath::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillPathPath reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "w";
+        }
+
+        @Override
+        public int number() {
+            return 174;
         }
 
         @Override
@@ -851,14 +1031,23 @@ public class VGC extends VResource {
 
         public int[] pointArray;
 
-        @Override
-        public int wireNumber() {
-            return 885;
+        private static final ThreadLocal<VGCFillPolygonint> REUSED = ThreadLocal.withInitial(VGCFillPolygonint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillPolygonint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "I";
+        }
+
+        @Override
+        public int number() {
+            return 175;
         }
 
         @Override
@@ -877,14 +1066,23 @@ public class VGC extends VResource {
 
         public int height;
 
-        @Override
-        public int wireNumber() {
-            return 886;
+        private static final ThreadLocal<VGCFillRectangleintintintint> REUSED = ThreadLocal.withInitial(VGCFillRectangleintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillRectangleintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 176;
         }
 
         @Override
@@ -910,14 +1108,23 @@ public class VGC extends VResource {
 
         public int arcHeight;
 
-        @Override
-        public int wireNumber() {
-            return 887;
+        private static final ThreadLocal<VGCFillRoundRectangleintintintintintint> REUSED = ThreadLocal.withInitial(VGCFillRoundRectangleintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillRoundRectangleintintintintintint reused() {
+            return REUSED.get();
         }
 
         @Override
         public String signature() {
             return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 177;
         }
 
         @Override
@@ -955,57 +1162,57 @@ public class VGC extends VResource {
         return ((DartGC) impl).wireSelectionFills();
     }
 
-    public static final int XORMODE = 145;
+    public static final int XORMODE = 265;
 
-    public static final int ALPHA = 146;
+    public static final int ALPHA = 266;
 
-    public static final int ANTIALIAS = 147;
+    public static final int ANTIALIAS = 267;
 
-    public static final int BACKGROUND = 148;
+    public static final int BACKGROUND = 268;
 
-    public static final int BACKGROUND_PATTERN = 560;
+    public static final int BACKGROUND_PATTERN = 269;
 
-    public static final int BUFFER_SCALE = 149;
+    public static final int BUFFER_SCALE = 270;
 
-    public static final int CLIPPING = 150;
+    public static final int CLIPPING = 271;
 
-    public static final int CLIPPING_PATH = 151;
+    public static final int CLIPPING_PATH = 272;
 
-    public static final int CLIPPING_RECTS = 152;
+    public static final int CLIPPING_RECTS = 273;
 
-    public static final int CLIPPING_TEXT = 44;
+    public static final int CLIPPING_TEXT = 274;
 
-    public static final int FILL_RULE = 153;
+    public static final int FILL_RULE = 275;
 
-    public static final int FONT = 154;
+    public static final int FONT = 276;
 
-    public static final int FOREGROUND = 155;
+    public static final int FOREGROUND = 277;
 
-    public static final int FOREGROUND_PATTERN = 561;
+    public static final int FOREGROUND_PATTERN = 278;
 
-    public static final int HOVER_FILLS = 1372;
+    public static final int HOVER_FILLS = 279;
 
-    public static final int INTERPOLATION = 156;
+    public static final int INTERPOLATION = 280;
 
-    public static final int LINE_CAP = 157;
+    public static final int LINE_CAP = 281;
 
-    public static final int LINE_DASH = 158;
+    public static final int LINE_DASH = 282;
 
-    public static final int LINE_DASH_OFFSET = 159;
+    public static final int LINE_DASH_OFFSET = 283;
 
-    public static final int LINE_JOIN = 160;
+    public static final int LINE_JOIN = 284;
 
-    public static final int LINE_STYLE = 161;
+    public static final int LINE_STYLE = 285;
 
-    public static final int LINE_WIDTH = 162;
+    public static final int LINE_WIDTH = 286;
 
-    public static final int SELECTION_FILLS = 1373;
+    public static final int SELECTION_FILLS = 287;
 
-    public static final int STYLE = 163;
+    public static final int STYLE = 288;
 
-    public static final int THEMED_CANVAS = 1356;
+    public static final int THEMED_CANVAS = 289;
 
-    public static final int TRANSFORM = 562;
+    public static final int TRANSFORM = 290;
 
     @Override
     public String wireName(int key) {
@@ -1069,79 +1276,79 @@ public class VGC extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 145:
+            case 265:
                 w.write(getXORMode());
                 return true;
-            case 146:
+            case 266:
                 w.write(getAlpha());
                 return true;
-            case 147:
+            case 267:
                 w.write((int) getAntialias());
                 return true;
-            case 148:
+            case 268:
                 w.write(getBackground());
                 return true;
-            case 560:
+            case 269:
                 w.object((getBackgroundPattern() == null || getBackgroundPattern().isDisposed() ? null : ((DartPattern) getBackgroundPattern().getImpl()).getValue()));
                 return true;
-            case 150:
+            case 271:
                 w.write(getClipping());
                 return true;
-            case 151:
+            case 272:
                 w.object(getClippingPath());
                 return true;
-            case 152:
+            case 273:
                 w.write(getClippingRects());
                 return true;
-            case 153:
+            case 275:
                 w.write(getFillRule());
                 return true;
-            case 154:
+            case 276:
                 w.object((getFont() == null || getFont().isDisposed() ? null : ((DartFont) getFont().getImpl()).getValue()));
                 return true;
-            case 155:
+            case 277:
                 w.write(getForeground());
                 return true;
-            case 561:
+            case 278:
                 w.object((getForegroundPattern() == null || getForegroundPattern().isDisposed() ? null : ((DartPattern) getForegroundPattern().getImpl()).getValue()));
                 return true;
-            case 156:
+            case 280:
                 w.write((int) getInterpolation());
                 return true;
-            case 157:
+            case 281:
                 w.write(getLineCap());
                 return true;
-            case 158:
+            case 282:
                 w.write(getLineDash());
                 return true;
-            case 160:
+            case 284:
                 w.write(getLineJoin());
                 return true;
-            case 161:
+            case 285:
                 w.write(getLineStyle());
                 return true;
-            case 162:
+            case 286:
                 w.write((int) getLineWidth());
                 return true;
-            case 163:
+            case 288:
                 w.write((int) getStyle());
                 return true;
-            case 562:
+            case 290:
                 w.object((getTransform() == null || getTransform().isDisposed() ? null : ((DartTransform) getTransform().getImpl()).getValue()));
                 return true;
-            case 44:
+            case 274:
                 w.object((getClippingText() == null || getClippingText().isDisposed() ? null : ((DartPath) getClippingText().getImpl()).getValue()));
                 return true;
-            case 159:
+            case 283:
                 w.write(getLineDashOffset());
                 return true;
-            case 149:
+            case 270:
                 w.write(getBufferScale());
                 return true;
-            case 1356:
+            case 289:
                 w.write(getThemedCanvas());
                 return true;
-            case 1372:
+            case 279:
                 {
                     RGB[] a_ = getHoverFills();
                     if (a_ == null)
@@ -1152,7 +1359,7 @@ public class VGC extends VResource {
                     }
                 }
                 return true;
-            case 1373:
+            case 287:
                 {
                     RGB[] a_ = getSelectionFills();
                     if (a_ == null)
@@ -1170,234 +1377,234 @@ public class VGC extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 145:
+            case 265:
                 {
                     boolean v_ = getXORMode();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(145);
+                    w.key(265);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 146:
+            case 266:
                 {
                     Integer v_ = getAlpha();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(146);
+                    w.key(266);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 147:
+            case 267:
                 {
                     int v_ = getAntialias();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(147);
+                    w.key(267);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 148:
+            case 268:
                 {
                     Color v_ = getBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(148);
+                    w.key(268);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 560:
+            case 269:
                 {
                     Pattern v_ = getBackgroundPattern();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartPattern) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(560);
+                    w.key(269);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 150:
+            case 271:
                 {
                     Rectangle v_ = getClipping();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(150);
+                    w.key(271);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 151:
+            case 272:
                 {
                     PathData v_ = getClippingPath();
                     dev.equo.swt.WireObject o_ = v_;
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(151);
+                    w.key(272);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 152:
+            case 273:
                 {
                     int[] v_ = getClippingRects();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(152);
+                    w.key(273);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 153:
+            case 275:
                 {
                     Integer v_ = getFillRule();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(153);
+                    w.key(275);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 154:
+            case 276:
                 {
                     Font v_ = getFont();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartFont) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(154);
+                    w.key(276);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 155:
+            case 277:
                 {
                     Color v_ = getForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(155);
+                    w.key(277);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 561:
+            case 278:
                 {
                     Pattern v_ = getForegroundPattern();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartPattern) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(561);
+                    w.key(278);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 156:
+            case 280:
                 {
                     int v_ = getInterpolation();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(156);
+                    w.key(280);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 157:
+            case 281:
                 {
                     Integer v_ = getLineCap();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(157);
+                    w.key(281);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 158:
+            case 282:
                 {
                     int[] v_ = getLineDash();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(158);
+                    w.key(282);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 160:
+            case 284:
                 {
                     Integer v_ = getLineJoin();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(160);
+                    w.key(284);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 161:
+            case 285:
                 {
                     Integer v_ = getLineStyle();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(161);
+                    w.key(285);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 162:
+            case 286:
                 {
                     int v_ = getLineWidth();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(162);
+                    w.key(286);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 163:
+            case 288:
                 {
                     int v_ = getStyle();
-                    w.key(163);
+                    w.key(288);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 562:
+            case 290:
                 {
                     Transform v_ = getTransform();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartTransform) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(562);
+                    w.key(290);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 44:
+            case 274:
                 {
                     Path v_ = getClippingText();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartPath) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(44);
+                    w.key(274);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 159:
+            case 283:
                 {
                     float v_ = getLineDashOffset();
-                    w.key(159);
+                    w.key(283);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 149:
+            case 270:
                 {
                     float v_ = getBufferScale();
-                    w.key(149);
+                    w.key(270);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1356:
+            case 289:
                 {
                     Boolean v_ = getThemedCanvas();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1356);
+                    w.key(289);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1372:
+            case 279:
                 {
                     RGB[] v_ = getHoverFills();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(1372);
+                    w.key(279);
                     {
                         RGB[] a_ = v_;
                         if (a_ == null)
@@ -1409,14 +1616,14 @@ public class VGC extends VResource {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1373:
+            case 287:
                 {
                     RGB[] v_ = getSelectionFills();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(1373);
+                    w.key(287);
                     {
                         RGB[] a_ = v_;
                         if (a_ == null)
@@ -1432,7 +1639,7 @@ public class VGC extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 145, 146, 147, 148, 560, 150, 151, 152, 153, 154, 155, 561, 156, 157, 158, 160, 161, 162, 163, 562, 44, 159, 149, 1356, 1372, 1373 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 265, 266, 267, 268, 269, 271, 272, 273, 275, 276, 277, 278, 280, 281, 282, 284, 285, 286, 288, 290, 274, 283, 270, 289, 279, 287 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -1446,7 +1653,7 @@ public class VGC extends VResource {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 163:
+            case 288:
                 return true;
         }
         return super.wireAlways(key);

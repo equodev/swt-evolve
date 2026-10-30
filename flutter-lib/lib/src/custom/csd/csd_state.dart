@@ -4,6 +4,7 @@ import '../../comm/comm.dart';
 import '../../gen/rectangle.dart';
 import '../../impl/widget_config.dart';
 import 'equo_window.dart';
+import '../../gen/widgets.dart' show WireChannel, WireType;
 
 /// Shared maximize/restore state for the frameless window, so the window controls, the
 /// title-bar double-click, and the resize layer all agree on whether the window is
@@ -65,7 +66,7 @@ void csdSetMaximized(bool maximize) {
       ..y = EquoWindow.screenAvailTop.round()
       ..width = EquoWindow.screenAvailWidth.round()
       ..height = EquoWindow.screenAvailHeight.round();
-    EquoCommService.sendPayload("Display/$id/WinMaximize", target);
+    EquoCommService.sendTo(WireType.display, id, WireChannel.winMaximize, target);
   } else {
     final restore =
         _preMaximizeBounds ??
@@ -74,7 +75,7 @@ void csdSetMaximized(bool maximize) {
           ..y = 100
           ..width = 1100
           ..height = 800);
-    EquoCommService.sendPayload("Display/$id/WinRestore", restore);
+    EquoCommService.sendTo(WireType.display, id, WireChannel.winRestore, restore);
   }
 }
 
@@ -94,7 +95,7 @@ void csdClose() {
   }
   final id = csdMainWindowId;
   if (id != null) {
-    EquoCommService.send("Display/$id/WinClose");
+    EquoCommService.sendTo(WireType.display, id, WireChannel.winClose);
   } else {
     EquoWindow.close();
   }

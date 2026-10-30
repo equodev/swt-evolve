@@ -2,6 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+/// A control that can hold a move back: it keeps the move itself and sends it when asked.
+abstract interface class HeldMove {
+  void sendHeldMove();
+}
+
 /// The pointer move a control held back to keep its moves to one per throttle window.
 ///
 /// Dropping it would leave Java a step behind the pointer whenever the pointer stops inside a
@@ -12,25 +17,23 @@ import 'package:flutter/foundation.dart';
 class PendingMove {
   PendingMove._();
 
-  static Object? _owner;
-  static VoidCallback? _send;
+  static HeldMove? _owner;
   static Timer? _timer;
 
-  /// Holds [owner]'s [send], to run once [after] has passed. It replaces a move [owner] held before; a
-  /// move another control held is that control's last one, so it is sent first.
-  static void hold(Object owner, VoidCallback send, Duration after) {
-    if (_send != null && !identical(_owner, owner)) flush();
+  /// Holds [owner]'s move, to be sent once [afterMs] milliseconds have passed. It replaces a move
+  /// [owner] held before; a move another control held is that control's last one, so it is sent first.
+  static void hold(HeldMove owner, int afterMs) {
+    if (_owner != null && !identical(_owner, owner)) flush();
     _owner = owner;
-    _send = send;
-    _timer ??= Timer(after, flush);
+    _timer ??= Timer(Duration(milliseconds: afterMs), flush);
   }
 
   /// Sends the held move now, if there is one.
   static void flush() {
-    final send = _send;
-    if (send == null) return;
+    final owner = _owner;
+    if (owner == null) return;
     reset();
-    send();
+    owner.sendHeldMove();
   }
 
   /// Forgets the move [owner] holds: a control on its way out sends nothing.
@@ -41,7 +44,6 @@ class PendingMove {
   @visibleForTesting
   static void reset() {
     _owner = null;
-    _send = null;
     _timer?.cancel();
     _timer = null;
   }

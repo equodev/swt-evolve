@@ -38,7 +38,7 @@ public class VWidget {
      * Records that {@code key} changed and schedules the widget for the next flush. Both, always: a flag without a flush never ships, and a flush without a flag ships an update that claims nothing changed.
      */
     public void markDirty(int key) {
-        assert java.util.Arrays.stream(wireKeys()).anyMatch(k -> k == key) : "key " + key + " is not a property of " + getClass().getSimpleName();
+        assert dev.equo.swt.ChangedKeys.among(wireKeys(), key) : "key " + key + " is not a property of " + getClass().getSimpleName();
         changed.add(key);
         if (impl instanceof DartWidget)
             ((DartWidget) impl).dirty();
@@ -106,7 +106,7 @@ public class VWidget {
         changed.removeAll(written);
     }
 
-    public static final int STYLE = 68;
+    public static final int STYLE = 654;
 
     /**
      * A property's name, by its number: for logs and tests.
@@ -124,7 +124,7 @@ public class VWidget {
      */
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 68:
+            case 654:
                 w.write((int) getStyle());
                 return true;
         }
@@ -136,10 +136,10 @@ public class VWidget {
      */
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 68:
+            case 654:
                 {
                     int v_ = getStyle();
-                    w.key(68);
+                    w.key(654);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -147,7 +147,7 @@ public class VWidget {
         return dev.equo.swt.WidgetWire.UNHANDLED;
     }
 
-    private static final int[] wireKeys_ = new int[] { 68 };
+    private static final int[] wireKeys_ = new int[] { 654 };
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -165,7 +165,7 @@ public class VWidget {
      */
     public boolean wireAlways(int key) {
         switch(key) {
-            case 68:
+            case 654:
                 return true;
         }
         return false;

@@ -26,11 +26,11 @@ class TreeCursorSwt<V extends VTreeCursor> extends CanvasSwt<V> {
       TreeCursorImpl<TreeCursorSwt<VTreeCursor>, VTreeCursor>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 

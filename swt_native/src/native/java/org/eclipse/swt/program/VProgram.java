@@ -19,7 +19,7 @@ public class VProgram implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 628;
+        return 79;
     }
 
     @Override

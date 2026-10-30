@@ -25,19 +25,19 @@ class CComboSwt<V extends VCCombo> extends CompositeSwt<V> {
   State createState() => CComboImpl<CComboSwt<VCCombo>, VCCombo>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, "Modify/Modify", payload);
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, "Verify/Verify", payload);
+    sendEvent(val, 107, payload); // Verify/Verify
   }
 }
 
@@ -72,25 +72,25 @@ class VCCombo extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 501: // alignment
+      case 18: // alignment
         alignment = r.int32();
         return true;
-      case 502: // itemTooltips
+      case 19: // itemTooltips
         itemTooltips = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 503: // items
+      case 20: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 504: // listVisible
+      case 21: // listVisible
         listVisible = r.boolean();
         return true;
-      case 505: // selection
+      case 22: // selection
         selection = r.point();
         return true;
-      case 506: // text
+      case 23: // text
         text = r.string();
         return true;
-      case 507: // textLimit
+      case 24: // textLimit
         textLimit = r.int32();
         return true;
       default:
@@ -103,51 +103,48 @@ class VCCombo extends VComposite {
     super.writeWire(w);
     {
       final v_ = alignment;
-      if (v_ != null && w.wants(501)) {
-        w.key(501);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(18, v_);
       }
     }
     {
       final v_ = itemTooltips;
-      if (v_ != null && w.wants(502)) {
-        w.key(502);
+      if (v_ != null) {
+        w.key(19);
         w.strings(v_);
       }
     }
     {
       final v_ = items;
-      if (v_ != null && w.wants(503)) {
-        w.key(503);
+      if (v_ != null) {
+        w.key(20);
         w.strings(v_);
       }
     }
     {
       final v_ = listVisible;
-      if (v_ != null && w.wants(504)) {
-        w.key(504);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(21, v_);
       }
     }
     {
       final v_ = selection;
-      if (v_ != null && w.wants(505)) {
-        w.key(505);
+      if (v_ != null) {
+        w.key(22);
         w.pointValue(v_);
       }
     }
     {
       final v_ = text;
-      if (v_ != null && w.wants(506)) {
-        w.key(506);
+      if (v_ != null) {
+        w.key(23);
         w.string(v_);
       }
     }
     {
       final v_ = textLimit;
-      if (v_ != null && w.wants(507)) {
-        w.key(507);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(24, v_);
       }
     }
   }
@@ -155,13 +152,13 @@ class VCCombo extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(501, alignment);
-    visit(502, itemTooltips);
-    visit(503, items);
-    visit(504, listVisible);
-    visit(505, selection);
-    visit(506, text);
-    visit(507, textLimit);
+    visit(18, alignment);
+    visit(19, itemTooltips);
+    visit(20, items);
+    visit(21, listVisible);
+    visit(22, selection);
+    visit(23, text);
+    visit(24, textLimit);
   }
 
   @override

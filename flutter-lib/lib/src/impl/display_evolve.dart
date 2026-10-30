@@ -1,5 +1,7 @@
 import 'utils/composed_text_input.dart';
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
@@ -11,6 +13,8 @@ import '../gen/swt.dart';
 import '../gen/tooltip.dart';
 import '../gen/widgets.dart' as gen;
 import '../comm/comm.dart';
+import '../comm/channel_header.dart';
+import '../comm/tagged_values.dart';
 import 'utils/window_origin.dart';
 import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
@@ -25,7 +29,8 @@ import 'utils/traversal_veto_scope.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
 import '../comm/v_registry.dart';
-import '../comm/widget_wire.dart' show sendWireWith;
+import '../comm/widget_key.dart';
+import '../comm/widget_wire.dart' show WidgetWireWriter;
 import 'utils/layered_layout_builder.dart';
 
 class DisplaySwt extends StatefulWidget {
@@ -37,11 +42,18 @@ class DisplaySwt extends StatefulWidget {
   State<DisplaySwt> createState() => _DisplaySwtState();
 }
 
+/// Registers what every Display answers (see `registerWidgetOps`).
+void registerDisplayOps() {
+  final type = gen.WireType.display;
+  EquoCommService.onWidgetOp(type, gen.WireChannel.clipboardWrite, _DisplaySwtState._clipboardWriteOp);
+  EquoCommService.onWidgetOp(type, gen.WireChannel.clipboardRead, _DisplaySwtState._clipboardReadOp);
+}
+
 class _DisplaySwtState extends State<DisplaySwt> {
   late VDisplay _display;
 
   // The client owns traversal, so the Traverse gate is Display-scoped, not per-control.
-  final VetoGate _traverseGate = VetoGate('traverse');
+  final VetoGate _traverseGate = VetoGate.traverse();
 
   @override
   void initState() {
@@ -56,36 +68,50 @@ class _DisplaySwtState extends State<DisplaySwt> {
     // how Eclipse command shortcuts dispatch). This replaces the per-control forwarders while a
     // Display is mounted — see [displayLevelKeyForwardingActive].
     startDisplayKeyForwarding();
-    _traverseGate.attach('Display', widget.value.id ?? 0);
+    _traverseGate.attach(gen.WireType.display, widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
     OpenMenus.forwardHeld = _forwardUnheldKey;
     _listenToClipboardRequests();
   }
 
+  /// The mounted displays by id, where the clipboard handlers find the display a frame addresses.
+  static final Map<int, _DisplaySwtState> _live = {};
+
+  int? _liveId;
+
   /// The browser's clipboard is the user's: Java writes it on a copy and reads it on a paste.
   void _listenToClipboardRequests() {
-    final id = widget.value.id;
-    EquoCommService.onRaw('Display/$id/Clipboard/write', (args) {
-      final text = _decode(args)?['text'];
-      if (text is String) Clipboard.setData(ClipboardData(text: text));
-    });
-    EquoCommService.onRaw('Display/$id/Clipboard/read', (args) async {
-      final reqId = _decode(args)?['reqId'];
-      String? text;
-      try {
-        text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
-      } catch (_) {
-        text = null;
-      }
-      sendWireWith('Display/$id/Clipboard/contents', (w) {
-        w.string('$reqId');
-        if (text == null) {
-          w.u8(0);
-        } else {
-          w.string(text);
-        }
-      });
-    });
+    final id = widget.value.id ?? 0;
+    _liveId = id;
+    _live[id] = this;
+    EquoCommService.replayWidgetOps(id);
+  }
+
+  static FutureOr<bool> _clipboardWriteOp(int id, Uint8List frame, int start, int end) {
+    if (!_live.containsKey(id)) return false;
+    final text = _decode(TaggedValues.decodeAt(frame, start))?['text'];
+    if (text is String) Clipboard.setData(ClipboardData(text: text));
+    return true;
+  }
+
+  static FutureOr<bool> _clipboardReadOp(int id, Uint8List frame, int start, int end) async {
+    if (!_live.containsKey(id)) return false;
+    final reqId = _decode(TaggedValues.decodeAt(frame, start))?['reqId'];
+    String? text;
+    try {
+      text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+    } catch (_) {
+      text = null;
+    }
+    final w = WidgetWireWriter.startTo(gen.WireType.display, id, gen.WireChannel.clipboardContents)
+      ..string('$reqId');
+    if (text == null) {
+      w.u8(0);
+    } else {
+      w.string(text);
+    }
+    EquoCommService.sendWritten(w);
+    return true;
   }
 
   static Map<String, dynamic>? _decode(dynamic args) => args is Map<String, dynamic> ? args : null;
@@ -98,6 +124,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
     if (OpenMenus.forwardHeld == _forwardUnheldKey) OpenMenus.forwardHeld = null;
     _traverseGate.detach();
+    final id = _liveId;
+    if (id != null && identical(_live[id], this)) _live.remove(id);
     stopDisplayKeyForwarding();
     super.dispose();
   }
@@ -157,7 +185,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     // A move held back by the throttle happened before this key, so it goes first.
     PendingMove.flush();
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.contextMenu) {
-      EquoCommService.sendPayload('Display/$id/MenuKey', VEvent());
+      EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.menuKey, VEvent());
       return;
     }
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
@@ -167,7 +195,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
           typed: _typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
-          send: () => EquoCommService.sendPayload('Display/$id/Key/KeyDown', v),
+          send: () => EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.keyKeyDown, v),
         );
       }
     } else if (event is KeyUpEvent) {
@@ -175,7 +203,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
           typed: false,
-          send: () => EquoCommService.sendPayload('Display/$id/Key/KeyUp', v),
+          send: () => EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.keyKeyUp, v),
         );
       }
     }
@@ -234,7 +262,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     for (final value in held) {
       VRegistry.instance.register(value);
     }
-    VRegistry.instance.holds('Display/${widget.value.id}', held);
+    VRegistry.instance.holdsAt(WidgetKey.of(gen.WireType.display, widget.value.id ?? 0), held);
   }
 
   /// The registry's application menu: the object whose items are the widgets themselves rather
@@ -243,7 +271,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   VMenu? _heldSystemMenu() {
     final menu = _display.systemMenu;
     if (menu == null) return null;
-    return VRegistry.instance.valueOn(VRegistry.channelOf(menu)) as VMenu? ?? menu;
+    return VRegistry.instance.valueAt(VRegistry.keyOf(menu)) as VMenu? ?? menu;
   }
 
   final Map<int, bool> _shellIsMainCache = {};

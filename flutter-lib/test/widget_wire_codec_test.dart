@@ -9,9 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/widget_key.dart';
 import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/widget.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireChannel, WireType;
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
 
 /// Reads the bytes [write] wrote.
 WidgetWireReader _readBack(void Function(WidgetWireWriter w) write) =>
@@ -235,7 +239,7 @@ void main() {
     expect(r.boolMap(), {'a': true, 'b': false});
     expect(r.stringMap(), isNull);
     expect(r.boolMap(), isNull);
-    expect(r.list(r.boolBoxed), [true, null]);
+    expect(r.list((r) => r.boolBoxed()), [true, null]);
   });
 
   test('an image named by id is the same stand-in wherever the frame names it', () {
@@ -252,7 +256,7 @@ void main() {
     expect(r.image(), isNull);
   });
 
-  test('sendWire and sendString frame their message on its channel', () {
+  test('sendTo and sendOn frame their message on its channel, from its numbers', () {
     EquoCommBase.recordSentFrames = true;
     addTearDown(() {
       EquoCommBase.recordSentFrames = false;
@@ -260,16 +264,27 @@ void main() {
     });
     EquoCommService.commForTesting.clearSentFrames();
 
-    sendWire('evolve.test.wire', _Probe()..count = 5);
-    sendString('evolve.test.text', 'añ');
+    EquoCommService.sendTo(WireType.shell, 42, WireChannel.selectionSelection, _Probe()..count = 5);
+    EquoCommService.sendOn(WireChannel.swtEvolveUrlOpen, 'añ');
 
     final sent = EquoCommService.commForTesting.sentFrames;
     expect(sent, hasLength(2));
     final (wireChannel, wireStart) = ChannelHeader.read(sent[0])!;
-    expect(wireChannel, 'evolve.test.wire');
+    expect(wireChannel, 'Shell/42/Selection/Selection');
     expect(WidgetWireReader(Uint8List.sublistView(sent[0], wireStart)).fields(_Probe()).count, 5);
     final (textChannel, textStart) = ChannelHeader.read(sent[1])!;
-    expect(textChannel, 'evolve.test.text');
-    expect(sent[1].sublist(textStart), [0x61, 0xC3, 0xB1], reason: 'UTF-8, as Java reads a string message');
+    expect(textChannel, 'swt.evolve.url.open');
+    expect(sent[1].sublist(textStart), [5, 0x61, 0xF1],
+        reason: 'a string as the widget wire writes one: two Latin-1 chars, copied, not encoded');
+  });
+
+  test('a type or channel without a wire number is refused where it is named, never sent spelled out', () {
+    expect(() => WidgetKey.typeOf('NoSuchType'), throwsArgumentError);
+    expect(() => channels.frame('NoSuchType/7/Selection/Selection', Uint8List(0)), throwsArgumentError);
+    expect(() => channels.frame('Shell/7/no.such.channel', Uint8List(0)), throwsArgumentError);
+    expect(() => channels.frame('no.such.channel', Uint8List(0)), throwsArgumentError);
+    expect(() => EquoCommService.commForTesting.onNamed('no.such.channel', (_) {}), throwsArgumentError);
+    expect(ChannelHeader.read(Uint8List.fromList([0, 1, 0x61])), isNull,
+        reason: 'a header with no channel number is not one');
   });
 }

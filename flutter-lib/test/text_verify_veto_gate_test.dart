@@ -14,6 +14,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
 // The io transport directly: `flutter test` runs on the VM, where comm.dart resolves to it —
@@ -24,6 +25,7 @@ import 'package:swtflutter/src/gen/text.dart';
 
 import 'delivery/support/deliver.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
@@ -55,13 +57,8 @@ Widget _appWith(VText v) => _app(SizedBox(
 /// Delivers an inbound frame exactly as the transport would (2-byte name length,
 /// name, tagged-values body) so the widget's channel subscriptions receive it.
 void _deliver(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
   final body = TaggedValues.encode(payload);
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
+  final frame = channels.frame(actionId, body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 

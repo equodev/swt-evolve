@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import 'package:swtflutter/src/impl/widget_config.dart' show doubleClickTimeout;
+import 'package:swtflutter/src/impl/widget_config.dart' show doubleClickSlop, doubleClickTimeout;
 
 /// Arena-free multi-click detection (single / double / triple).
 ///
@@ -15,14 +15,13 @@ import 'package:swtflutter/src/impl/widget_config.dart' show doubleClickTimeout;
 /// `Listener` (treeitem, tabfolder, tableitem, canvas, composite). For stateless
 /// leaf widgets, prefer the [InstantDoubleTapDetector] wrapper below.
 ///
-/// Follows the shared [doubleClickTimeout] -- Flutter's `kDoubleTapTimeout`
-/// (300ms) unless `swt.evolve.double_click_timeout_ms` configures another one
-/// (an E2E harness widens it; production leaves it unset). Widget call sites
+/// Follows the shared [doubleClickTimeout] -- the Display's double-click time,
+/// sent by Java -- and [doubleClickSlop]. Widget call sites
 /// that need their own window pass [timeout] explicitly (see
 /// `styledtext_evolve.dart`); per-widget double-click timing is a deliberate,
 /// already-tuned product decision, so do not fold one into the shared default.
 class DoubleTapDetector {
-  DoubleTapDetector({Duration? timeout, this.slop = 5.0}) : _explicitTimeout = timeout;
+  DoubleTapDetector({Duration? timeout, this.slop = doubleClickSlop}) : _explicitTimeout = timeout;
 
   final Duration? _explicitTimeout;
 
@@ -55,8 +54,10 @@ class DoubleTapDetector {
   ///
   /// [at] is the pointer event's own timestamp. When both taps carry one, they
   /// are aged by it rather than by when each was handled: a frame that runs
-  /// long between the two presses must not split a double-click.
+  /// long between the two presses must not split a double-click. A zero one is
+  /// none: it is what an event nothing stamped carries.
   int registerTap({Object? key, Offset? position, Duration? at}) {
+    if (at == Duration.zero) at = null;
     final now = clock();
     final prevTime = _lastTime;
     final prevStamp = _lastStamp;

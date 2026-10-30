@@ -207,29 +207,6 @@ public final class FlutterNative {
         SetBundleDir(bundleDir);
     }
 
-    /**
-     * Readies the in-process channel ({@link dev.equo.swt.comm.InProcessCommService}): the native
-     * bridge keeps {@code receiver}, whose static {@code fromClient(int, byte[])} and
-     * {@code clientsChanged(int, int)} it calls with what a client sends. False where the native
-     * bridge does not carry the channel, or no native bridge is loaded.
-     */
-    public static boolean openInProcessChannel(Class<?> receiver) {
-        try {
-            return InProcessOpen(receiver);
-        } catch (LinkageError e) {
-            return false;
-        }
-    }
-
-    /** Hands {@code frame[offset, offset + length)} to every client attached to channel {@code id}. */
-    public static void postInProcess(int id, byte[] frame, int offset, int length) {
-        InProcessPost(id, frame, offset, length);
-    }
-
-    private static native boolean InProcessOpen(Class<?> receiver);
-
-    private static native void InProcessPost(int id, byte[] frame, int offset, int length);
-
     private static native void SetVisible(long context, boolean visible);
 
     private static native void SetOwner(long context, long owner);

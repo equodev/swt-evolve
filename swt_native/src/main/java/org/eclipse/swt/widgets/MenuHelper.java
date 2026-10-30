@@ -9,17 +9,17 @@ public class MenuHelper {
     private static final String ALT_ALONE = "org.eclipse.swt.internal.menuBarAltAlone";
 
     static void hookEvents(DartMenu menu) {
-        FlutterBridge.on(menu, "Help", "Help", e -> {
+        FlutterBridge.on(menu, dev.equo.swt.WireTable.CHANNEL_HELP_HELP, e -> {
             menu.getDisplay().asyncExec(() -> {
                 if (menu.isDisposed())
                     return;
                 menu.sendEvent(SWT.Help, e);
             });
         });
-        FlutterBridge.on(menu, "Menu", "Hide", e -> {
+        FlutterBridge.on(menu, dev.equo.swt.WireTable.CHANNEL_MENU_HIDE, e -> {
             menu.getDisplay().asyncExec(() -> onClientHid(menu, e));
         });
-        FlutterBridge.on(menu, "Menu", "Show", e -> {
+        FlutterBridge.on(menu, dev.equo.swt.WireTable.CHANNEL_MENU_SHOW, e -> {
             menu.getDisplay().asyncExec(() -> {
                 if (menu.isDisposed())
                     return;
@@ -28,7 +28,7 @@ public class MenuHelper {
                 } catch (RuntimeException ex) {
                 }
                 menu.dirty();
-                FlutterBridge.update().whenComplete((r, ex) -> FlutterBridge.sendEvent(menu, "shown"));
+                FlutterBridge.update().whenComplete((r, ex) -> FlutterBridge.sendEvent(menu, dev.equo.swt.WireTable.CHANNEL_SHOWN));
             });
         });
     }
@@ -102,7 +102,7 @@ public class MenuHelper {
     private static void activateMenuBar(Control control) {
         Menu bar = usableMenuBar(control);
         if (bar != null)
-            FlutterBridge.sendEvent(bar.getImpl(), "activate");
+            FlutterBridge.sendEvent(bar.getImpl(), dev.equo.swt.WireTable.CHANNEL_ACTIVATE);
     }
 
     /** The menu bar of the control's shell when the keyboard can enter it: enabled, with a title. */

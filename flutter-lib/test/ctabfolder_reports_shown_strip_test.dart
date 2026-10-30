@@ -11,7 +11,7 @@ import 'package:swtflutter/src/gen/ctabfolder.dart';
 import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
-import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey, wireChannelNames;
 
 import 'delivery/support/deliver.dart';
 
@@ -21,7 +21,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCTabFolder _folder(int count) => VCTabFolder()

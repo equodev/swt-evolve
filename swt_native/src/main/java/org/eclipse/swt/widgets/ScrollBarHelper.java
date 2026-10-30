@@ -42,6 +42,20 @@ public final class ScrollBarHelper {
         return new Rectangle(track.x, track.y + start, track.width, extent);
     }
 
+    /**
+     * Records whether {@code bar}'s new range is larger than its thumb. The client draws a bar, and the bar
+     * takes room from its parent's client area ({@link Sizes}), only while it is, so a change resizes the
+     * parent as showing or hiding the bar does.
+     */
+    static void updateRange(DartScrollBar bar, int minimum, int maximum, int thumb) {
+        boolean scrolls = maximum - minimum > thumb;
+        if (scrolls == bar.hasRange)
+            return;
+        bar.hasRange = scrolls;
+        if (bar.getApi().getVisible())
+            ((DartScrollable) bar.parent.getImpl()).sendEvent(SWT.Resize);
+    }
+
     /** {@code value} held between {@code lo} and {@code hi}; a track shorter than {@code lo} is filled. */
     static double confine(double value, double lo, double hi) {
         if (hi <= 0)

@@ -24,47 +24,47 @@ class BrowserSwt<V extends VBrowser> extends CompositeSwt<V> {
   State createState() => BrowserImpl<BrowserSwt<VBrowser>, VBrowser>();
 
   void sendAuthenticationauthenticate(V val, VEvent? payload) {
-    sendEvent(val, "Authentication/authenticate", payload);
+    sendEvent(val, 3, payload); // Authentication/authenticate
   }
 
   void sendCloseWindowclose(V val, VEvent? payload) {
-    sendEvent(val, "CloseWindow/close", payload);
+    sendEvent(val, 19, payload); // CloseWindow/close
   }
 
   void sendLocationchanged(V val, VEvent? payload) {
-    sendEvent(val, "Location/changed", payload);
+    sendEvent(val, 59, payload); // Location/changed
   }
 
   void sendLocationchanging(V val, VEvent? payload) {
-    sendEvent(val, "Location/changing", payload);
+    sendEvent(val, 60, payload); // Location/changing
   }
 
   void sendOpenWindowopen(V val, VEvent? payload) {
-    sendEvent(val, "OpenWindow/open", payload);
+    sendEvent(val, 75, payload); // OpenWindow/open
   }
 
   void sendProgresschanged(V val, VEvent? payload) {
-    sendEvent(val, "Progress/changed", payload);
+    sendEvent(val, 80, payload); // Progress/changed
   }
 
   void sendProgresscompleted(V val, VEvent? payload) {
-    sendEvent(val, "Progress/completed", payload);
+    sendEvent(val, 81, payload); // Progress/completed
   }
 
   void sendStatusTextchanged(V val, VEvent? payload) {
-    sendEvent(val, "StatusText/changed", payload);
+    sendEvent(val, 96, payload); // StatusText/changed
   }
 
   void sendTitlechanged(V val, VEvent? payload) {
-    sendEvent(val, "Title/changed", payload);
+    sendEvent(val, 99, payload); // Title/changed
   }
 
   void sendVisibilityWindowhide(V val, VEvent? payload) {
-    sendEvent(val, "VisibilityWindow/hide", payload);
+    sendEvent(val, 109, payload); // VisibilityWindow/hide
   }
 
   void sendVisibilityWindowshow(V val, VEvent? payload) {
-    sendEvent(val, "VisibilityWindow/show", payload);
+    sendEvent(val, 110, payload); // VisibilityWindow/show
   }
 }
 
@@ -93,16 +93,16 @@ class VBrowser extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 421: // javascriptEnabled
+      case 7: // javascriptEnabled
         javascriptEnabled = r.boolean();
         return true;
-      case 422: // text
+      case 8: // text
         text = r.string();
         return true;
-      case 423: // url
+      case 9: // url
         url = r.string();
         return true;
-      case 420: // functionNames
+      case 6: // functionNames
         functionNames = r.strings()?.map((e) => e ?? '').toList();
         return true;
       default:
@@ -115,29 +115,28 @@ class VBrowser extends VComposite {
     super.writeWire(w);
     {
       final v_ = javascriptEnabled;
-      if (v_ != null && w.wants(421)) {
-        w.key(421);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(7, v_);
       }
     }
     {
       final v_ = text;
-      if (v_ != null && w.wants(422)) {
-        w.key(422);
+      if (v_ != null) {
+        w.key(8);
         w.string(v_);
       }
     }
     {
       final v_ = url;
-      if (v_ != null && w.wants(423)) {
-        w.key(423);
+      if (v_ != null) {
+        w.key(9);
         w.string(v_);
       }
     }
     {
       final v_ = functionNames;
-      if (v_ != null && w.wants(420)) {
-        w.key(420);
+      if (v_ != null) {
+        w.key(6);
         w.strings(v_);
       }
     }
@@ -146,10 +145,10 @@ class VBrowser extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(421, javascriptEnabled);
-    visit(422, text);
-    visit(423, url);
-    visit(420, functionNames);
+    visit(7, javascriptEnabled);
+    visit(8, text);
+    visit(9, url);
+    visit(6, functionNames);
   }
 
   @override

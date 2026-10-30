@@ -1442,7 +1442,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                         event.location = e != null ? e.text : "";
                         event.doit = true;
                         for (LocationListener l : webBrowser.locationListeners) l.changing(event);
-                        FlutterBridge.send(this, "locationchanging/result", java.util.Collections.singletonMap("doit", event.doit));
+                        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_LOCATIONCHANGING_RESULT, java.util.Collections.singletonMap("doit", event.doit));
                     });
                     return;
                 }

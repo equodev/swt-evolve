@@ -36,10 +36,10 @@ public class VTableEditor extends VControlEditor {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 173:
+            case 562:
                 w.write((int) getColumn());
                 return true;
-            case 174:
+            case 563:
                 w.ref(getItem());
                 return true;
         }
@@ -49,21 +49,21 @@ public class VTableEditor extends VControlEditor {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 173:
+            case 562:
                 {
                     int v_ = getColumn();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(173);
+                    w.key(562);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 174:
+            case 563:
                 {
                     TableItem v_ = getItem();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(174);
+                    w.key(563);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -71,7 +71,7 @@ public class VTableEditor extends VControlEditor {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControlEditor.allWireKeys_(), new int[] { 173, 174 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControlEditor.allWireKeys_(), new int[] { 562, 563 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -11,13 +11,14 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tabfolder.dart';
 import 'package:swtflutter/src/gen/tabitem.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingTabFolderSwt extends TabFolderSwt<VTabFolder> {
   final List<String> calls;
   const _RecordingTabFolderSwt({required VTabFolder value, required this.calls}) : super(value: value);
 
   @override
-  void sendEvent(VTabFolder val, String ev, VEvent? payload) => calls.add(ev);
+  void sendEvent(VTabFolder val, int channel, VEvent? payload) => calls.add(wireChannelNames[channel]!);
 }
 
 VTabFolder _folder() {

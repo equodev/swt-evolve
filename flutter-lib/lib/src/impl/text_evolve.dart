@@ -111,7 +111,7 @@ class TextImpl<T extends TextSwt, V extends VText>
 
 
   // A VerifyListener runs before the character is displayed, so edits are held un-rendered.
-  final VetoGate _modifyGate = VetoGate('modify');
+  final VetoGate _modifyGate = VetoGate.modify();
 
   @override
   void initState() {
@@ -123,7 +123,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _focusNode.addListener(_handleFocusChange);
     _restFocus.addListener(_handleRestFocus);
     KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping);
-    _modifyGate.attach(state.swt, state.id);
+    _modifyGate.attach(state.wireType, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
     WidgetsBinding.instance.addPostFrameCallback((_) => fromJava(_updateCaretPosition));

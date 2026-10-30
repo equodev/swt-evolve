@@ -2,7 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VFontDialog extends VDialog {
 
@@ -45,10 +44,16 @@ public class VFontDialog extends VDialog {
         FontData[] values = ((DartFontDialog) impl).fontList;
         if (values == null)
             return null;
-        ArrayList<FontData> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (FontData v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new FontData[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        FontData[] result = new FontData[kept];
+        kept = 0;
+        for (FontData v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFontList(FontData[] value) {
@@ -57,19 +62,19 @@ public class VFontDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 672;
+        return 42;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(668);
+        w.key(234);
         w.write(getRGB());
-        w.key(669);
+        w.key(235);
         w.write(getEffectsVisible());
-        w.key(670);
+        w.key(236);
         w.object((getFontData() == null ? null : ((DartFontData) getFontData().getImpl()).getValue()));
-        w.key(671);
+        w.key(237);
         {
             FontData[] a_ = getFontList();
             if (a_ == null)

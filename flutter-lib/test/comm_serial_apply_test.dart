@@ -6,18 +6,25 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
+
+/// Global channels with numbers of their own, nothing else listening on them here.
+const _channels = [
+  'evolve.test.query',
+  'evolve.test.queryResponse',
+  'evolve.test.frameSync',
+  'evolve.test.wireStats',
+  'evolve.test.wireStatsResponse',
+];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   void deliver(String actionId, List<int> body) {
-    final action = utf8.encode(actionId);
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
+    final out = channels.frame(actionId, Uint8List.fromList(body));
     EquoCommService.commForTesting.receiveBinary(out);
   }
 
@@ -31,17 +38,17 @@ void main() {
     final applied = <String>[];
     final slow = Completer<void>();
 
-    EquoCommService.onBytes('test/slow', (_) async {
+    EquoCommService.commForTesting.onBytesNamed('evolve.test.drag', (_) async {
       applied.add('slow:start');
       await slow.future;
       applied.add('slow:done');
     });
-    EquoCommService.onBytes('test/fast', (_) {
+    EquoCommService.commForTesting.onBytesNamed('evolve.test.dragDone', (_) {
       applied.add('fast');
     });
 
-    deliver('test/slow', const [1]);
-    deliver('test/fast', const [2]);
+    deliver('evolve.test.drag', const [1]);
+    deliver('evolve.test.dragDone', const [2]);
     await settle();
 
     expect(applied, ['slow:start'],
@@ -61,15 +68,15 @@ void main() {
   test('a frame registering the next frame handler still receives it in order', () async {
     final applied = <String>[];
 
-    EquoCommService.onBytes('test/create', (_) async {
+    EquoCommService.commForTesting.onBytesNamed('evolve.test.frameCost', (_) async {
       // Yield first: the frame behind this one has already arrived by now.
       await Future<void>.delayed(Duration.zero);
       applied.add('create');
-      EquoCommService.onBytes('test/op', (_) => applied.add('op'));
+      EquoCommService.commForTesting.onBytesNamed('evolve.test.frameStats', (_) => applied.add('op'));
     });
 
-    deliver('test/create', const [1]);
-    deliver('test/op', const [2]);
+    deliver('evolve.test.frameCost', const [1]);
+    deliver('evolve.test.frameStats', const [2]);
     await settle();
 
     expect(applied, ['create', 'op'],
@@ -79,7 +86,7 @@ void main() {
   test('arrival order survives handlers of differing speed', () async {
     final applied = <int>[];
     for (var i = 0; i < 5; i++) {
-      EquoCommService.onBytes('test/op$i', (_) async {
+      EquoCommService.commForTesting.onBytesNamed(_channels[i], (_) async {
         // The odd ones yield; in arrival order they must still land in order.
         if (i.isOdd) await Future<void>.delayed(Duration.zero);
         applied.add(i);
@@ -87,7 +94,7 @@ void main() {
     }
 
     for (var i = 0; i < 5; i++) {
-      deliver('test/op$i', [i]);
+      deliver(_channels[i], [i]);
     }
     await settle();
 

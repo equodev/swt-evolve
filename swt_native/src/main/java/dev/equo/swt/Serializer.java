@@ -98,6 +98,23 @@ public class Serializer {
     }
 
     /**
+     * {@link #targeting} for a caller that cannot hand over a block without allocating one: addresses
+     * what is written to {@code connection} and returns who was addressed before, for {@link
+     * #leaveTarget}.
+     */
+    public static int enterTarget(int connection) {
+        Local l = local();
+        int outer = l.target;
+        l.target = connection;
+        return outer;
+    }
+
+    /** Ends {@link #enterTarget}: addresses {@code outer} again. */
+    public static void leaveTarget(int outer) {
+        local().target = outer;
+    }
+
+    /**
      * Addresses everything written from here on to {@code connection}, until {@link
      * #exitConnection()}. For a caller whose scope is not a block - a test's setup and teardown.
      */
@@ -175,10 +192,18 @@ public class Serializer {
         return taken;
     }
 
+    /** {@link #takeWrittenResources()} into {@code into}, for a caller that keeps a list of its own. */
+    public static void takeWrittenResources(java.util.List<Object> into) {
+        java.util.ArrayList<Object> pending = local().writtenResources;
+        if (pending.isEmpty()) return;
+        into.addAll(pending);
+        pending.clear();
+    }
+
     /** Credits resources taken by {@link #takeWrittenResources()} once their buffer has been sent. */
     public static void creditResources(java.util.List<Object> values, int connection) {
         if (connection == 0) return;
-        for (Object value : values) resourceDelivery.put(value, connection);
+        for (int i = 0; i < values.size(); i++) resourceDelivery.put(values.get(i), connection);
     }
 
     /** Discards what the last walk recorded — for a serialize done only to look at the state. */
@@ -310,10 +335,6 @@ public class Serializer {
         return value != null && value.sentSeq(connection) != 0 && value.anyDirty();
     }
 
-    /** Per resource value, the client and hash of each property last sent: one re-derived identical is not sent again. */
-    private static final java.util.Map<VResource, java.util.Map<Integer, long[]>> lastSentResource =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
     /**
      * The id a client holds {@code api} under: a widget's own, an editor's impl's (it is named by
      * its impl), an image's own.
@@ -337,10 +358,10 @@ public class Serializer {
      */
     public static final class Tape implements WidgetWire.Names {
 
-        private final WidgetWire frame = WidgetWire.borrow();
-        private final int connection;
+        private final WidgetWire frame = new WidgetWire();
+        private int connection;
         /** False when the comm has several clients: then nothing is known delivered, and everything goes whole. */
-        private final boolean named;
+        private boolean named;
         private final java.util.ArrayDeque<Object> owed = new java.util.ArrayDeque<>();
         /**
          * Widgets owed because they sit under one the client does not hold. The client lets go of a
@@ -355,18 +376,43 @@ public class Serializer {
         private final java.util.Set<Object> described =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         /** This tape, as the widgets it describes are marked with: {@link SentHashes#describedOn}. */
-        private final long serial = tapeSerial.incrementAndGet();
+        private long serial;
 
         public Tape(int connection) {
+            start(connection);
+        }
+
+        private void start(int connection) {
             this.connection = connection;
             this.named = mayReference();
+            serial = tapeSerial.incrementAndGet();
+            frame.reset();
             frame.begin();
             frame.names(this);
         }
 
-        /** Hands the frame's buffer back for the next tape; the tape is not used after this. */
+        /** Tapes released on this thread, for the next flush: a tape keeps its frame's buffer. */
+        private static final ThreadLocal<java.util.ArrayDeque<Tape>> SPARE =
+                ThreadLocal.withInitial(java.util.ArrayDeque::new);
+
+        /** A tape for {@code connection}, reused when one was released on this thread. */
+        public static Tape borrow(int connection) {
+            Tape tape = SPARE.get().pollFirst();
+            if (tape == null) return new Tape(connection);
+            tape.start(connection);
+            return tape;
+        }
+
+        /** Hands the tape back for the next {@link #borrow}; it is not used after this. */
         public void release() {
-            WidgetWire.giveBack(frame);
+            owed.clear();
+            described.clear();
+            underUnheld.clear();
+            insideUnheld = 0;
+            frame.names(null);
+            java.util.ArrayDeque<Tape> spare = SPARE.get();
+            // A flush that described a whole window grew its buffer large; that one is not kept.
+            if (frame.keepable() && spare.size() < 4) spare.addFirst(this);
         }
 
         public WidgetWire frame() {
@@ -727,6 +773,12 @@ public class Serializer {
             sent = new long[Math.max(1, properties)];
             hashes = new long[sent.length];
         }
+
+        /** Forgets every property, keeping the arrays, for a value that starts over. */
+        void clear() {
+            size = 0;
+            inOrder = true;
+        }
         /** The {@link Tape} that last described the widget, so a tape writes it once. */
         long describedOn;
         /** Whether a refresh request can find the widget: {@link FlutterBridge#registerDelivered}. */
@@ -777,6 +829,7 @@ public class Serializer {
                 System.arraycopy(sent, i + 1, sent, i, size - i - 1);
                 System.arraycopy(hashes, i + 1, hashes, i, size - i - 1);
                 size--;
+                inOrder = false;
                 return;
             }
         }
@@ -816,12 +869,14 @@ public class Serializer {
      * record. The client starts from the value class's defaults, so a property at its default is
      * left out.
      */
-    public WidgetWire wholeState(DartResource impl, GcWire w) {
+    public WidgetWire wholeState(DartResource impl, GcWire w, SentHashes seen) {
         VResource value = impl.getValue();
         WidgetWire props = w.scratch();
         int connection = local().target;
-        java.util.Map<Integer, long[]> seen = new java.util.HashMap<>();
-        for (int key : value.wireKeys()) {
+        seen.clear();
+        int[] keys = value.wireKeys();
+        for (int i = 0; i < keys.length; i++) {
+            int key = keys[i];
             int at = props.size();
             int previous = props.lastKey();
             props.key(key);
@@ -831,10 +886,9 @@ public class Serializer {
                 continue;
             }
             int to = props.size();
-            seen.put(key, new long[] { connection, props.hash(from, to) });
+            seen.put(i, key, connection, props.hash(from, to));
             if (isDefault(value, key, props, from, to)) props.rewind(at, previous);
         }
-        lastSentResource.put(value, seen);
         return props;
     }
 
@@ -842,11 +896,10 @@ public class Serializer {
      * The properties of {@code impl} that changed since {@code base} as a {@link GcWire#STATE} record
      * of {@code w}, and the new stamp, or {@code base} when none differs from what the client holds.
      */
-    public long toDiffBinary(DartResource impl, long base, GcWire w) {
+    public long toDiffBinary(DartResource impl, long base, GcWire w, SentHashes seen) {
         VResource value = impl.getValue();
         WidgetWire props = w.scratch();
         int connection = local().target;
-        java.util.Map<Integer, long[]> seen = lastSentResource.computeIfAbsent(value, v -> new java.util.HashMap<>());
         ChangedKeys changed = value.changedKeys();
         boolean any = false;
         for (int i = 0; i < changed.size(); i++) {
@@ -860,12 +913,11 @@ public class Serializer {
                 continue;
             }
             long hash = props.hash(from, props.size());
-            long[] last = seen.get(key);
-            if (last != null && last[0] == connection && last[1] == hash) {
+            if (seen.same(key, connection, hash)) {
                 props.rewind(at, previous);
                 continue;
             }
-            seen.put(key, new long[] { connection, hash });
+            seen.put(key, connection, hash);
             any = true;
         }
         if (!any) return base;
@@ -990,7 +1042,8 @@ public class Serializer {
             });
             // Only the image properties: no other getter is read, the widget's state is left as it was.
             for (int key : value.wireKeys()) {
-                if (!WireDump.isImage(key)) continue;
+                String kind = key < WireTable.KINDS.length ? WireTable.KINDS[key] : null;
+                if (!"image".equals(kind) && !"image[]".equals(kind)) continue;
                 int at = w.size();
                 int previous = w.lastKey();
                 w.key(key);

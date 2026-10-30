@@ -85,7 +85,7 @@ public class CTabFolderHelper {
         if (folder.getBridge() instanceof org.eclipse.swt.widgets.EmbeddedBridge)
             folder.redraw();
         else
-            FlutterBridge.send(folder, "activation", dev.equo.swt.Java8.map("active", folder._highlight()));
+            FlutterBridge.send(folder, dev.equo.swt.WireTable.CHANNEL_ACTIVATION, dev.equo.swt.Java8.map("active", folder._highlight()));
     }
 
     /**

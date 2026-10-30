@@ -28,27 +28,27 @@ class ShellSwt<V extends VShell> extends DecorationsSwt<V> {
   State createState() => ShellImpl<ShellSwt<VShell>, VShell>();
 
   void sendShellActivate(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Activate", payload);
+    sendEvent(val, 90, payload); // Shell/Activate
   }
 
   void sendShellClose(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Close", payload);
+    sendEvent(val, 91, payload); // Shell/Close
   }
 
   void sendShellDeactivate(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Deactivate", payload);
+    sendEvent(val, 92, payload); // Shell/Deactivate
   }
 
   void sendShellDeiconify(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Deiconify", payload);
+    sendEvent(val, 93, payload); // Shell/Deiconify
   }
 
   void sendShellIconify(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Iconify", payload);
+    sendEvent(val, 94, payload); // Shell/Iconify
   }
 
   void sendShellSetBounds(V val, VEvent? payload) {
-    sendEvent(val, "Shell/SetBounds", payload);
+    sendEvent(val, 95, payload); // Shell/SetBounds
   }
 }
 
@@ -81,22 +81,22 @@ class VShell extends VDecorations {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 577: // alpha
+      case 448: // alpha
         alpha = r.int32();
         return true;
-      case 578: // fullScreen
+      case 450: // fullScreen
         fullScreen = r.boolean();
         return true;
-      case 579: // maximumSize
+      case 451: // maximumSize
         maximumSize = r.point();
         return true;
-      case 580: // minimumSize
+      case 452: // minimumSize
         minimumSize = r.point();
         return true;
-      case 581: // modified
+      case 453: // modified
         modified = r.boolean();
         return true;
-      case 582: // dialogs
+      case 449: // dialogs
         dialogs = r.polys<VDialog>(newDialogValue);
         return true;
       default:
@@ -109,37 +109,41 @@ class VShell extends VDecorations {
     super.writeWire(w);
     {
       final v_ = alpha;
-      if (v_ != null && w.wants(577)) {
-        w.key(577);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(448, v_);
       }
     }
     {
       final v_ = fullScreen;
-      if (v_ != null && w.wants(578)) {
-        w.key(578);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(450, v_);
       }
     }
     {
       final v_ = maximumSize;
-      if (v_ != null && w.wants(579)) {
-        w.key(579);
+      if (v_ != null) {
+        w.key(451);
         w.pointValue(v_);
       }
     }
     {
       final v_ = minimumSize;
-      if (v_ != null && w.wants(580)) {
-        w.key(580);
+      if (v_ != null) {
+        w.key(452);
         w.pointValue(v_);
       }
     }
     {
       final v_ = modified;
-      if (v_ != null && w.wants(581)) {
-        w.key(581);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(453, v_);
+      }
+    }
+    {
+      final v_ = dialogs;
+      if (v_ != null) {
+        w.key(449);
+        w.polys(v_, (e) => e.swt);
       }
     }
   }
@@ -147,11 +151,11 @@ class VShell extends VDecorations {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(577, alpha);
-    visit(578, fullScreen);
-    visit(579, maximumSize);
-    visit(580, minimumSize);
-    visit(581, modified);
-    visit(582, dialogs);
+    visit(448, alpha);
+    visit(450, fullScreen);
+    visit(451, maximumSize);
+    visit(452, minimumSize);
+    visit(453, modified);
+    visit(449, dialogs);
   }
 }

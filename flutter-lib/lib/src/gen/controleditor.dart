@@ -41,7 +41,7 @@ class VControlEditor extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 272: // editor
+      case 145: // editor
         editor = r.ref<VControl>();
         return true;
       default:
@@ -54,9 +54,8 @@ class VControlEditor extends VWidget {
     super.writeWire(w);
     {
       final v_ = editor;
-      if (v_ != null && w.wants(272)) {
-        w.key(272);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(145, v_.id);
       }
     }
   }
@@ -64,7 +63,7 @@ class VControlEditor extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(272, editor);
+    visit(145, editor);
   }
 
   @override

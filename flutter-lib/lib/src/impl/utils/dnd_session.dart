@@ -1,9 +1,15 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/gestures.dart';
+import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../comm/comm.dart';
+import '../../comm/channel_header.dart';
 import '../../comm/widget_wire.dart' show WidgetWireReader;
 import '../../gen/event.dart';
+import '../../gen/widgets.dart' show WireChannel, WireType;
 import 'hover_arbiter.dart';
 import 'veto_gate.dart';
 
@@ -61,36 +67,52 @@ class DndSession {
   DndSession._();
 
   static final Map<int, DndNegotiationState> _state = {};
-  static final Map<int, bool> _subscribed = {};
+
+  /// Who listens for each drop target's answers, by its id: a drop target is in it while something
+  /// shows it, and leaves with the last of them.
   static final Map<int, List<void Function(DndNegotiationState)>> _listeners = {};
+
+  /// Registers what every DropTarget answers (see `registerWidgetOps`).
+  static void registerOps() => EquoCommService.onWidgetOp(
+      WireType.dropTarget, WireChannel.dropNegotiationResult, _negotiationOp);
 
   static DndNegotiationState stateFor(int dropTargetId) =>
       _state[dropTargetId] ?? DndNegotiationState.none;
 
+  /// Java's answer to a drag over a drop target: an event's fields, sent only when it changes.
+  static FutureOr<bool> _negotiationOp(int id, Uint8List frame, int start, int end) {
+    final listeners = _listeners[id];
+    if (listeners == null) return false;
+    final event = (WidgetWireReader(frame)..pos = start).fields(VEvent());
+    final state = DndNegotiationState(
+      detail: event.detail ?? 0,
+      feedback: event.feedback ?? 0,
+      currentDataTypeId: event.currentDataTypeId ?? 0,
+    );
+    _state[id] = state;
+    for (final listener in List.of(listeners)) {
+      listener(state);
+    }
+    return true;
+  }
+
   static void listen(int dropTargetId, void Function(DndNegotiationState) onUpdate) {
-    (_listeners[dropTargetId] ??= []).add(onUpdate);
-    if (_subscribed[dropTargetId] == true) return;
-    _subscribed[dropTargetId] = true;
-    // Java answers with an event's fields, only when the answer changes.
-    EquoCommService.onBytes("DropTarget/$dropTargetId/Drop/negotiationResult", (bytes) {
-      final event = WidgetWireReader(bytes).fields(VEvent());
-      final state = DndNegotiationState(
-        detail: event.detail ?? 0,
-        feedback: event.feedback ?? 0,
-        currentDataTypeId: event.currentDataTypeId ?? 0,
-      );
-      _state[dropTargetId] = state;
-      for (final listener in List.of(_listeners[dropTargetId] ?? const [])) {
-        listener(state);
-      }
-    });
+    final listeners = _listeners[dropTargetId] ??= [];
+    listeners.add(onUpdate);
+    if (listeners.length == 1) EquoCommService.replayWidgetOps(dropTargetId);
   }
 
   static void clear(int dropTargetId) => _state.remove(dropTargetId);
 
   static void unlisten(int dropTargetId, void Function(DndNegotiationState) onUpdate) {
-    _listeners[dropTargetId]?.remove(onUpdate);
+    final listeners = _listeners[dropTargetId];
+    if (listeners == null || !listeners.remove(onUpdate) || listeners.isNotEmpty) return;
+    _listeners.remove(dropTargetId);
+    _state.remove(dropTargetId);
   }
+
+  @visibleForTesting
+  static int get listenedDropTargets => _listeners.length;
 }
 
 /// Whether the drag in flight was vetoed by Java's `dragStart` listener.
@@ -100,7 +122,8 @@ class DndSession {
 class DragStartVeto {
   DragStartVeto._();
 
-  static final Map<String, VetoGate> _gates = {};
+  /// One gate per control that starts drags, by id, from its first drag until it goes away.
+  static final Map<int, VetoGate> _gates = {};
   static VetoGate? _inFlight;
   static bool _vetoed = false;
 
@@ -114,11 +137,11 @@ class DragStartVeto {
     _inFlight = null;
   }
 
-  static void begin(String controlSwt, int controlId) {
+  static void begin(int controlType, int controlId) {
     _vetoed = false;
-    final gate = _gates.putIfAbsent('$controlSwt/$controlId', () {
-      final created = VetoGate.optimistic('DragDetect/dragStartResult');
-      created.attach(controlSwt, controlId);
+    final gate = _gates.putIfAbsent(controlId, () {
+      final created = VetoGate.optimistic(WireChannel.dragDetectDragStartResult);
+      created.attach(controlType, controlId);
       return created;
     });
     _inFlight = gate;
@@ -127,4 +150,15 @@ class DragStartVeto {
       if (!doit && identical(_inFlight, gate)) _vetoed = true;
     });
   }
+
+  /// Drops the gate of the control [controlId], when it goes away.
+  static void forget(int controlId) {
+    final gate = _gates.remove(controlId);
+    if (gate == null) return;
+    if (identical(_inFlight, gate)) _inFlight = null;
+    gate.detach();
+  }
+
+  @visibleForTesting
+  static int get gates => _gates.length;
 }

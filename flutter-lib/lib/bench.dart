@@ -6,7 +6,9 @@ import 'src/comm/comm.dart';
 import 'src/comm/tagged_values.dart';
 import 'src/comm/v_registry.dart';
 import 'src/comm/widget_wire.dart';
+import 'src/gen/widgets.dart' show WireChannel;
 import 'src/gen/event.dart';
+import 'src/comm/widget_key.dart';
 
 /// Bench handler — wired in from main.dart when widgetName == "BenchBridge".
 ///
@@ -17,32 +19,32 @@ import 'src/gen/event.dart';
 /// D→J shapes are real VEvent variants only (production Dart only sends VEvent).
 void measureRequest(String bridge, int id) {
   final stopwatch = Stopwatch()..start();
-  final prefix = "$bridge/$id";
+  final type = WidgetKey.typeOf(bridge);
   final catalog = _D2jCatalog.build();
 
   // ===== J→D codec — Dart receives a widget frame, applies it as production does, acks =====
-  EquoCommService.onBytes("$prefix/bench/j2d/echo", (frame) {
+  EquoCommService.onBytes(type, id, WireChannel.benchJ2dEcho, (frame) {
     _apply(frame);
-    EquoCommService.sendBytes("$prefix/bench/j2d/echoResponse", _ackBytes);
+    EquoCommService.sendTo(type, id, WireChannel.benchJ2dEchoResponse, _ackBytes);
   });
 
   // ===== D→J — Dart writes a real VEvent each iteration, Java reads it field by field =====
   // Response handler is registered ONCE; the per-call completer is held in closure scope. Avoids
   // register/remove races where a fast probeResponse could land between iterations and be lost.
   Completer<int>? d2jCompleter;
-  EquoCommService.onBytes("$prefix/bench/d2j/probeResponse", (resp) {
+  EquoCommService.onBytes(type, id, WireChannel.benchD2jProbeResponse, (resp) {
     final c = d2jCompleter;
     if (c != null && !c.isCompleted) c.complete(stopwatch.elapsedMicroseconds);
   });
-  EquoCommService.onBytes("$prefix/bench/d2j/run", (runBytes) async {
+  EquoCommService.onBytes(type, id, WireChannel.benchD2jRun, (runBytes) async {
     final (seq, shape) = _decodeRun(runBytes);
     final payload = catalog.forShape(shape).payload;
     d2jCompleter = Completer<int>();
     final t1 = stopwatch.elapsedMicroseconds;
-    EquoCommService.sendPayload("$prefix/bench/d2j/probe", payload);
+    EquoCommService.sendTo(type, id, WireChannel.benchD2jProbe, payload);
     final t2 = await d2jCompleter!.future;
     d2jCompleter = null;
-    _sendResult("$prefix/bench/d2j/result", seq, t2 - t1);
+    _sendResult(type, id, seq, t2 - t1);
   });
 }
 
@@ -65,12 +67,12 @@ void _apply(Uint8List frame) {
 
 final Uint8List _ackBytes = Uint8List.fromList(const [0, 0, 0, 0]);
 
-void _sendResult(String channel, int seq, int rttMicros) {
+void _sendResult(int type, int id, int seq, int rttMicros) {
   final out = Uint8List(4 + 8);
   final v = ByteData.sublistView(out);
   v.setInt32(0, seq, Endian.big);
   _setInt64BE(v, 4, rttMicros);
-  EquoCommService.sendBytes(channel, out);
+  EquoCommService.sendTo(type, id, WireChannel.benchD2jResult, out);
 }
 
 /// Write a non-negative 64-bit value big-endian as two 32-bit halves. ByteData.setInt64 throws

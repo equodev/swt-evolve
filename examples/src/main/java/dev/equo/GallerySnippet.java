@@ -327,6 +327,8 @@ public class GallerySnippet {
         tree.getItem(0).setExpanded(true);
         tree.addSelectionListener(widgetSelectedAdapter(e ->
                 status.setText("Tree item selected: " + tree.getSelection()[0].getText())));
+        tree.addSelectionListener(widgetDefaultSelectedAdapter(e ->
+                status.setText("Tree item default-selected: " + ((TreeItem) e.item).getText())));
 
         // CTabFolder
         Group ctabGroup = section(root, "CTabFolder");

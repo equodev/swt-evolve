@@ -21,6 +21,7 @@ import 'src/testing/frame_stats.dart';
 import 'src/testing/wire_stats.dart';
 import 'src/testing/render_facts.dart';
 import 'src/testing/tree_test_registry.dart';
+import 'src/gen/widgets.dart' show WireChannel;
 import 'test_harness_iframe_stub.dart'
     if (dart.library.js_interop) 'test_harness_iframe_web.dart';
 import 'test_harness_jsapi_stub.dart'
@@ -55,14 +56,13 @@ Map<String, int>? _dropAnswer(int id) {
 
 void registerTestQueryChannel() {
   // StyledText counters, reset on read so two calls bracket an action.
-  EquoCommService.onRaw("evolve.test.styledTextPerf", (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestStyledTextPerf, (dynamic req) {
     final perfId = req is Map ? req['perfId'] : null;
-    _reply("evolve.test.styledTextPerfResponse",
-        {'perfId': perfId, 'perf': styledTextPerfSnapshot()});
+    _reply(WireChannel.evolveTestStyledTextPerfResponse, {'perfId': perfId, 'perf': styledTextPerfSnapshot()});
   });
   // Engine frame timings: `evolve.test.frameCost` {} (clears them) answers on
   // `evolve.test.frameCostResponse` { "frames": [{ "build": ms, "raster": ms }] }.
-  EquoCommService.onRaw("evolve.test.frameCost", (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestFrameCost, (dynamic req) {
     final costId = req is Map ? req['costId'] : null;
     // Registered on first use: this runs from main() before the binding exists.
     _recordFrameTimings();
@@ -74,24 +74,23 @@ void registerTestQueryChannel() {
         },
     ];
     _frameTimings.clear();
-    _reply(
-        "evolve.test.frameCostResponse", {'costId': costId, 'frames': frames});
+    _reply(WireChannel.evolveTestFrameCostResponse, {'costId': costId, 'frames': frames});
   });
   // A drag the client makes as a user's pointer would: `evolve.test.drag` {dragId, from, to, steps,
   // intervalMs} answers on `evolve.test.dragDone` {dragId, moves, elapsedMicros} once released.
-  EquoCommService.onRaw("evolve.test.drag", (dynamic req) async {
+  EquoCommService.on(0, 0, WireChannel.evolveTestDrag, (dynamic req) async {
     final map = (req as Map).cast<String, dynamic>();
     final dragId = map['dragId'];
     final result = await dragByIds(map['from'] as String, map['to'] as String,
         (map['steps'] as num).toInt(), (map['intervalMs'] as num).toInt());
-    _reply("evolve.test.dragDone", {'dragId': dragId, ...result});
+    _reply(WireChannel.evolveTestDragDone, {'dragId': dragId, ...result});
   });
-  EquoCommService.onRaw("evolve.test.query", (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestQuery, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int queryId = (map['queryId'] as num).toInt();
     final int targetId = (map['targetId'] as num).toInt();
     final Map<String, dynamic>? vstate = _findStateById(targetId);
-    _reply("evolve.test.queryResponse", {
+    _reply(WireChannel.evolveTestQueryResponse, {
       'queryId': queryId,
       'found': vstate != null,
       'state': vstate,
@@ -104,7 +103,7 @@ void registerTestQueryChannel() {
   // work already queued has run: with a frame to come, the ack is sent from its post-frame callback,
   // which runs after build/layout/paint; with none, nothing pushed changed what is painted, and the
   // ack goes at once rather than after a frame that would only draw the same picture again.
-  EquoCommService.onRaw("evolve.test.frameSync", (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestFrameSync, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int syncId = (map['syncId'] as num).toInt();
     // Where the wait went, on one clock: queued behind the frames that came before this request,
@@ -115,7 +114,7 @@ void registerTestQueryChannel() {
     var began = arrived;
     void ack() {
       final painted = clock.elapsedMicroseconds;
-      _reply("evolve.test.frameSynced", {
+      _reply(WireChannel.evolveTestFrameSynced, {
         'syncId': syncId,
         'queuedMicros': arrived - received,
         'toVsyncMicros': began - arrived,
@@ -137,7 +136,7 @@ void registerTestQueryChannel() {
 
   // Frame statistics from the engine's own pipeline, the only rendering measurement comparable to a
   // native toolkit's: a Java-side timer sees serialization, not the frame reaching the screen.
-  EquoCommService.onRaw("evolve.test.frameStats", (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestFrameStats, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int statsId = (map['statsId'] as num).toInt();
     final String action = (map['action'] as String?) ?? 'snapshot';
@@ -155,7 +154,7 @@ void registerTestQueryChannel() {
       // caller waiting on a timeout with nothing to diagnose.
       stats = <String, dynamic>{'error': '$e'};
     }
-    _reply("evolve.test.frameStatsResponse", {
+    _reply(WireChannel.evolveTestFrameStatsResponse, {
       'statsId': statsId,
       'stats': stats,
     });
@@ -163,7 +162,7 @@ void registerTestQueryChannel() {
 
   // Receive-side cost of widget state: `evolve.test.wireStats` {statsId, action: start|stop} answers on
   // `evolve.test.wireStatsResponse` {statsId, stats}; see [WireStats].
-  EquoCommService.onRaw("evolve.test.wireStats", (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestWireStats, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int statsId = (map['statsId'] as num).toInt();
     final Map<String, dynamic> stats;
@@ -173,13 +172,13 @@ void registerTestQueryChannel() {
     } else {
       stats = WireStats.stop();
     }
-    _reply("evolve.test.wireStatsResponse", {'statsId': statsId, 'stats': stats});
+    _reply(WireChannel.evolveTestWireStatsResponse, {'statsId': statsId, 'stats': stats});
   });
 
   // Result channel for the debug UI-thread runner (see test_harness_actions.dart `openPref` /
   // `listPrefPages`). Java answers a `listPrefPages` request here; we cache the latest payload so a
   // follow-up `lastPrefPages()` eval can read it (a single eval can't span the async Java round-trip).
-  EquoCommService.onRaw("swt.evolve.test.runUiResponse", (dynamic resp) {
+  EquoCommService.on(0, 0, WireChannel.swtEvolveTestRunUiResponse, (dynamic resp) {
     if (resp is Map) _lastRunUiResponse = resp.cast<String, dynamic>();
   });
 
@@ -360,7 +359,7 @@ String queryPaintOpsJson() {
 }
 
 /// [value]'s state as the harness reports it: `swt` and `id`, then every property it holds keyed
-/// by the number the wire gives it, which the reader names from wire-kinds.txt. A value it holds is
+/// by the number the wire gives it, which the reader names from the generated wire table. A value it holds is
 /// described the same way, a widget met again inside its own description by identity only.
 Map<String, dynamic> describeState(Object value) =>
     value is WireVisitable ? _describe(value, {}) : <String, dynamic>{};
@@ -572,11 +571,11 @@ Map<String, dynamic>? _findStateById(int targetId) {
 
 /// A reply to the test harness. One that cannot be sent still answers, with what went wrong, under
 /// the ids the harness waits on.
-void _reply(String channel, Map<String, Object?> payload) {
+void _reply(int channel, Map<String, Object?> payload) {
   try {
-    EquoCommService.sendPayload(channel, payload);
+    EquoCommService.sendOn(channel, payload);
   } catch (e) {
-    EquoCommService.sendPayload(channel, {
+    EquoCommService.sendOn(channel, {
       for (final entry in payload.entries)
         if (entry.key.endsWith('Id')) entry.key: entry.value,
       'error': '$e',

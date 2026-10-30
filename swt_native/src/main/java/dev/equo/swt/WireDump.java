@@ -1,10 +1,5 @@
 package dev.equo.swt;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,28 +8,14 @@ import java.util.Map;
 
 /**
  * Reads a {@link WidgetWire} frame back into named values: for a test that asserts on what was sent,
- * and for a log. A property's number alone says how its value is encoded (wire-kinds.txt, written by
- * the generator; numbers are unique across classes), so nothing about the widget's class is needed.
+ * and for a log. A property's number alone says how its value is encoded ({@link WireTable}, generated;
+ * numbers are unique across classes), so nothing about the widget's class is needed.
  */
 public final class WireDump {
 
-    /** Record type names by number (wire-types.txt). */
-    private static final Map<Integer, String> TYPE_NAMES = loadTypeNames();
-
-    private static Map<Integer, String> loadTypeNames() {
-        Map<Integer, String> names = new java.util.HashMap<>();
-        try (InputStream s = WireDump.class.getResourceAsStream("wire-types.txt")) {
-            if (s == null) return names;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(s, StandardCharsets.UTF_8));
-            for (String line; (line = reader.readLine()) != null; ) {
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                int space = line.indexOf(' ');
-                names.put(Integer.parseInt(line.substring(0, space)), line.substring(space + 1));
-            }
-        } catch (IOException e) {
-            throw new java.io.UncheckedIOException(e);
-        }
-        return names;
+    /** Record type names by number. */
+    private static String typeName(int number) {
+        return number > 0 && number < WireTable.TYPES.length ? WireTable.TYPES[number] : null;
     }
 
     /** One record: its kind ({@link WidgetWire#WHOLE} and so on), what it names, and its properties by name. */
@@ -85,9 +66,6 @@ public final class WireDump {
         }
     }
 
-    /** Each generated property's number by its {@code Class.name}, filled by {@link #load()}. */
-    private static final Map<String, Integer> NUMBERS = new HashMap<>();
-
     private static final Map<Integer, String[]> KINDS = load();
 
     /** The type of every widget a frame described, so a later frame naming it can say what it is. */
@@ -112,7 +90,7 @@ public final class WireDump {
             if (kind != WidgetWire.IMAGE) {
                 int ref = in.varint();
                 if ((ref & 1) == 1) {
-                    type = TYPE_NAMES.get(ref >> 1);
+                    type = typeName(ref >> 1);
                 } else if (ref == 0) {
                     type = in.string();
                     types.add(type);
@@ -171,18 +149,6 @@ public final class WireDump {
     /** Bytes as text: a short run as its base64, a long one (pixels) as its length. */
     public static String describe(byte[] bytes) {
         return bytes.length <= 64 ? java.util.Base64.getEncoder().encodeToString(bytes) : bytes.length + " bytes";
-    }
-
-    /** The number of the generated property {@code classDotName} ({@code Decorations.ownMenuStrip}), or -1. */
-    public static int number(String classDotName) {
-        Integer n = NUMBERS.get(classDotName);
-        return n == null ? -1 : n;
-    }
-
-    /** Whether property {@code key} travels as an image or a list of them. */
-    static boolean isImage(int key) {
-        String[] k = KINDS.get(key);
-        return k != null && ("image".equals(k[0]) || "image[]".equals(k[0]));
     }
 
     private static String[] kindOf(int key, String type) {
@@ -290,27 +256,10 @@ public final class WireDump {
 
     private static Map<Integer, String[]> load() {
         Map<Integer, String[]> kinds = new HashMap<>();
-        // The hand-written holders: the Display and the flags it carries.
-        String[][] display = {
-                {"1", "ref[]", "shells"}, {"2", "ref[]", "popups"}, {"3", "ref", "systemMenu"},
-                {"4", "ref[]", "tooltips"}, {"5", "long", "activeShellId"}, {"6", "long", "mainShellId"},
-                {"7", "long[]", "windowedShellIds"}, {"8", "object:ConfigFlags", "config"},
-                {"1396", "long", "focusHolderId"},
-        };
-        for (String[] d : display) kinds.put(Integer.parseInt(d[0]), new String[] {d[1], d[2]});
-        for (Map.Entry<Integer, String[]> e : ConfigFlags.wireKinds().entrySet()) kinds.put(e.getKey(), e.getValue());
-        try (InputStream s = WireDump.class.getResourceAsStream("wire-kinds.txt")) {
-            if (s == null) return kinds;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(s, StandardCharsets.UTF_8));
-            for (String line; (line = reader.readLine()) != null; ) {
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                String[] parts = line.split(" ");
-                String name = parts[2].substring(parts[2].lastIndexOf('.') + 1);
-                kinds.put(Integer.parseInt(parts[0]), new String[] {parts[1], name});
-                NUMBERS.put(parts[2], Integer.parseInt(parts[0]));
-            }
-        } catch (IOException e) {
-            throw new java.io.UncheckedIOException(e);
+        for (int i = 1; i < WireTable.PROPERTIES.length; i++) {
+            if (WireTable.KINDS[i] == null) continue;
+            String name = WireTable.PROPERTIES[i];
+            kinds.put(i, new String[] {WireTable.KINDS[i], name.substring(name.lastIndexOf('.') + 1)});
         }
         return kinds;
     }

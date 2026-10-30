@@ -91,8 +91,8 @@ class MainSashCompositeAddressingTest {
         FlutterBridge.widgetName(new Object()); // loading FlutterBridge is what installs the alias
         FrameFeeder comm = new FrameFeeder();
         List<String> handled = new ArrayList<>();
-        comm.on("Composite/7/MouseTrack/MouseEnter", Object.class, v -> handled.add("enter"));
-        comm.on("MainComposite/8/Paint/Paint", Object.class, v -> handled.add("paint"));
+        dev.equo.swt.harness.Channels.on(comm, "Composite/7/MouseTrack/MouseEnter", Object.class, v -> handled.add("enter"));
+        dev.equo.swt.harness.Channels.on(comm, "MainComposite/8/Paint/Paint", Object.class, v -> handled.add("paint"));
 
         comm.deliver("MainComposite/7/MouseTrack/MouseEnter");
         comm.deliver("Composite/8/Paint/Paint");
@@ -144,7 +144,7 @@ class MainSashCompositeAddressingTest {
     /** The real dispatcher, fed frames directly instead of over a socket. */
     private static final class FrameFeeder extends AbstractBinaryCommService {
         void deliver(String eventName) {
-            byte[] header = CommService.frameHeader(eventName);
+            byte[] header = dev.equo.swt.harness.Channels.header(eventName);
             byte[] frame = Arrays.copyOf(header, header.length);
             onBinaryMessage(frame, 0, frame.length);
         }

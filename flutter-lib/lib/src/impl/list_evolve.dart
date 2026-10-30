@@ -7,7 +7,7 @@ import '../gen/event.dart';
 import '../gen/list.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireChannel, WireKey;
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/list_theme_extension.dart';
@@ -54,7 +54,7 @@ class ListImpl<T extends ListSwt, V extends VList>
     final offset = _scrollController.offset.round();
     if (offset == _reportedScrollOffset) return;
     _reportedScrollOffset = offset;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()
+    widget.sendEvent(state, WireChannel.scrollScroll, VEvent()
       ..y = offset
       ..height = extent.round());
   }

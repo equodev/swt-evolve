@@ -42,19 +42,19 @@ class VCaret extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 1419: // image
+      case 72: // image
         image = r.image();
         return true;
-      case 1420: // visible
+      case 73: // visible
         visible = r.boolean();
         return true;
-      case 365: // bounds
+      case 70: // bounds
         bounds = r.rect();
         return true;
-      case 1418: // focused
+      case 71: // focused
         focused = r.boolean();
         return true;
-      case 1417: // blinkRate
+      case 69: // blinkRate
         blinkRate = r.int32();
         return true;
       default:
@@ -67,37 +67,33 @@ class VCaret extends VWidget {
     super.writeWire(w);
     {
       final v_ = image;
-      if (v_ != null && w.wants(1419)) {
-        w.key(1419);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(72, v_.id);
       }
     }
     {
       final v_ = visible;
-      if (v_ != null && w.wants(1420)) {
-        w.key(1420);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(73, v_);
       }
     }
     {
       final v_ = bounds;
-      if (v_ != null && w.wants(365)) {
-        w.key(365);
+      if (v_ != null) {
+        w.key(70);
         w.rectValue(v_);
       }
     }
     {
       final v_ = focused;
-      if (v_ != null && w.wants(1418)) {
-        w.key(1418);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(71, v_);
       }
     }
     {
       final v_ = blinkRate;
-      if (v_ != null && w.wants(1417)) {
-        w.key(1417);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(69, v_);
       }
     }
   }
@@ -105,10 +101,10 @@ class VCaret extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(1419, image);
-    visit(1420, visible);
-    visit(365, bounds);
-    visit(1418, focused);
-    visit(1417, blinkRate);
+    visit(72, image);
+    visit(73, visible);
+    visit(70, bounds);
+    visit(71, focused);
+    visit(69, blinkRate);
   }
 }

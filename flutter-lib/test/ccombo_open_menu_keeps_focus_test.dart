@@ -12,6 +12,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 /// The generated CComboSwt with sendEvent captured instead of handed to EquoCommService.
@@ -21,7 +22,7 @@ class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 /// A JFace ComboBoxCellEditor combo as the reported application builds it: style 0, i.e. editable

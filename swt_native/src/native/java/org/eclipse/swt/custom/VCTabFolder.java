@@ -5,7 +5,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.ArrayList;
 
 public class VCTabFolder extends VComposite {
 
@@ -51,10 +50,16 @@ public class VCTabFolder extends VComposite {
         Color[] values = ((DartCTabFolder) impl).gradientColors;
         if (values == null)
             return null;
-        ArrayList<Color> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Color v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Color[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Color[] result = new Color[kept];
+        kept = 0;
+        for (Color v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setGradientColors(Color[] value) {
@@ -96,10 +101,16 @@ public class VCTabFolder extends VComposite {
         CTabItem[] values = ((DartCTabFolder) impl).getItems();
         if (values == null)
             return null;
-        ArrayList<CTabItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (CTabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new CTabItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        CTabItem[] result = new CTabItem[kept];
+        kept = 0;
+        for (CTabItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(CTabItem[] value) {
@@ -201,10 +212,16 @@ public class VCTabFolder extends VComposite {
         Color[] values = ((DartCTabFolder) impl).selectionGradientColors;
         if (values == null)
             return null;
-        ArrayList<Color> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Color v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Color[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Color[] result = new Color[kept];
+        kept = 0;
+        for (Color v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setSelectionGradientColors(Color[] value) {
@@ -310,55 +327,55 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).showUnselectedImage = value;
     }
 
-    public static final int BORDER_VISIBLE = 248;
+    public static final int BORDER_VISIBLE = 36;
 
-    public static final int CHEVRON_VISIBLE = 249;
+    public static final int CHEVRON_VISIBLE = 37;
 
-    public static final int HIGHLIGHT = 250;
+    public static final int HIGHLIGHT = 38;
 
-    public static final int HIGHLIGHT_ENABLED = 251;
+    public static final int HIGHLIGHT_ENABLED = 39;
 
-    public static final int ITEMS = 252;
+    public static final int ITEMS = 40;
 
-    public static final int MAXIMIZE_VISIBLE = 253;
+    public static final int MAXIMIZE_VISIBLE = 41;
 
-    public static final int MAXIMIZED = 254;
+    public static final int MAXIMIZED = 42;
 
-    public static final int MINIMIZE_VISIBLE = 255;
+    public static final int MINIMIZE_VISIBLE = 43;
 
-    public static final int MINIMIZED = 256;
+    public static final int MINIMIZED = 44;
 
-    public static final int MINIMUM_CHARACTERS = 257;
+    public static final int MINIMUM_CHARACTERS = 45;
 
-    public static final int SELECTED_IMAGE_VISIBLE = 258;
+    public static final int SELECTED_IMAGE_VISIBLE = 46;
 
-    public static final int SELECTION = 259;
+    public static final int SELECTION = 47;
 
-    public static final int SELECTION_BACKGROUND = 260;
+    public static final int SELECTION_BACKGROUND = 48;
 
-    public static final int SELECTION_BAR_THICKNESS = 261;
+    public static final int SELECTION_BAR_THICKNESS = 49;
 
-    public static final int SELECTION_BG_IMAGE = 262;
+    public static final int SELECTION_BG_IMAGE = 50;
 
-    public static final int SELECTION_FOREGROUND = 263;
+    public static final int SELECTION_FOREGROUND = 51;
 
-    public static final int SHOW_CHEVRON = 264;
+    public static final int SHOW_CHEVRON = 52;
 
-    public static final int SHOW_LIST_POPUP_SEQ = 265;
+    public static final int SHOW_LIST_POPUP_SEQ = 53;
 
-    public static final int SINGLE = 266;
+    public static final int SINGLE = 54;
 
-    public static final int TAB_HEIGHT = 1374;
+    public static final int TAB_HEIGHT = 55;
 
-    public static final int TAB_POSITION = 267;
+    public static final int TAB_POSITION = 56;
 
-    public static final int TOP_RIGHT = 268;
+    public static final int TOP_RIGHT = 57;
 
-    public static final int TOP_RIGHT_ALIGNMENT = 269;
+    public static final int TOP_RIGHT_ALIGNMENT = 58;
 
-    public static final int UNSELECTED_CLOSE_VISIBLE = 270;
+    public static final int UNSELECTED_CLOSE_VISIBLE = 59;
 
-    public static final int UNSELECTED_IMAGE_VISIBLE = 271;
+    public static final int UNSELECTED_IMAGE_VISIBLE = 60;
 
     @Override
     public String wireName(int key) {
@@ -420,79 +437,79 @@ public class VCTabFolder extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 248:
+            case 36:
                 w.write(getBorderVisible());
                 return true;
-            case 249:
+            case 37:
                 w.write(getChevronVisible());
                 return true;
-            case 250:
+            case 38:
                 w.write(getHighlight());
                 return true;
-            case 251:
+            case 39:
                 w.write(getHighlightEnabled());
                 return true;
-            case 252:
+            case 40:
                 w.refs(getItems());
                 return true;
-            case 253:
+            case 41:
                 w.write(getMaximizeVisible());
                 return true;
-            case 254:
+            case 42:
                 w.write(getMaximized());
                 return true;
-            case 255:
+            case 43:
                 w.write(getMinimizeVisible());
                 return true;
-            case 256:
+            case 44:
                 w.write(getMinimized());
                 return true;
-            case 257:
+            case 45:
                 w.write((int) getMinimumCharacters());
                 return true;
-            case 258:
+            case 46:
                 w.write(getSelectedImageVisible());
                 return true;
-            case 259:
+            case 47:
                 w.write((int) getSelection());
                 return true;
-            case 260:
+            case 48:
                 w.write(getSelectionBackground());
                 return true;
-            case 261:
+            case 49:
                 w.write((int) getSelectionBarThickness());
                 return true;
-            case 262:
+            case 50:
                 w.image(getSelectionBgImage());
                 return true;
-            case 263:
+            case 51:
                 w.write(getSelectionForeground());
                 return true;
-            case 264:
+            case 52:
                 w.write(getShowChevron());
                 return true;
-            case 265:
+            case 53:
                 w.write((int) getShowListPopupSeq());
                 return true;
-            case 266:
+            case 54:
                 w.write(getSingle());
                 return true;
-            case 1374:
+            case 55:
                 w.write(getTabHeight());
                 return true;
-            case 267:
+            case 56:
                 w.write((int) getTabPosition());
                 return true;
-            case 268:
+            case 57:
                 w.ref(getTopRight());
                 return true;
-            case 269:
+            case 58:
                 w.write((int) getTopRightAlignment());
                 return true;
-            case 270:
+            case 59:
                 w.write(getUnselectedCloseVisible());
                 return true;
-            case 271:
+            case 60:
                 w.write(getUnselectedImageVisible());
                 return true;
         }
@@ -502,228 +519,228 @@ public class VCTabFolder extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 248:
+            case 36:
                 {
                     boolean v_ = getBorderVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(248);
+                    w.key(36);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 249:
+            case 37:
                 {
                     boolean v_ = getChevronVisible();
-                    w.key(249);
+                    w.key(37);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 250:
+            case 38:
                 {
                     boolean v_ = getHighlight();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(250);
+                    w.key(38);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 251:
+            case 39:
                 {
                     boolean v_ = getHighlightEnabled();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(251);
+                    w.key(39);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 252:
+            case 40:
                 {
                     CTabItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(252);
+                    w.key(40);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 253:
+            case 41:
                 {
                     boolean v_ = getMaximizeVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(253);
+                    w.key(41);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 254:
+            case 42:
                 {
                     boolean v_ = getMaximized();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(254);
+                    w.key(42);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 255:
+            case 43:
                 {
                     boolean v_ = getMinimizeVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(255);
+                    w.key(43);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 256:
+            case 44:
                 {
                     boolean v_ = getMinimized();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(256);
+                    w.key(44);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 257:
+            case 45:
                 {
                     int v_ = getMinimumCharacters();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(257);
+                    w.key(45);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 258:
+            case 46:
                 {
                     boolean v_ = getSelectedImageVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(258);
+                    w.key(46);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 259:
+            case 47:
                 {
                     int v_ = getSelection();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(259);
+                    w.key(47);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 260:
+            case 48:
                 {
                     Color v_ = getSelectionBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(260);
+                    w.key(48);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 261:
+            case 49:
                 {
                     int v_ = getSelectionBarThickness();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(261);
+                    w.key(49);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 262:
+            case 50:
                 {
                     Image v_ = getSelectionBgImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(262);
+                    w.key(50);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 263:
+            case 51:
                 {
                     Color v_ = getSelectionForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(263);
+                    w.key(51);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 264:
+            case 52:
                 {
                     boolean v_ = getShowChevron();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(264);
+                    w.key(52);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 265:
+            case 53:
                 {
                     int v_ = getShowListPopupSeq();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(265);
+                    w.key(53);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 266:
+            case 54:
                 {
                     boolean v_ = getSingle();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(266);
+                    w.key(54);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1374:
+            case 55:
                 {
                     Integer v_ = getTabHeight();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1374);
+                    w.key(55);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 267:
+            case 56:
                 {
                     int v_ = getTabPosition();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(267);
+                    w.key(56);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 268:
+            case 57:
                 {
                     Control v_ = getTopRight();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(268);
+                    w.key(57);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 269:
+            case 58:
                 {
                     int v_ = getTopRightAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(269);
+                    w.key(58);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 270:
+            case 59:
                 {
                     boolean v_ = getUnselectedCloseVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(270);
+                    w.key(59);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 271:
+            case 60:
                 {
                     boolean v_ = getUnselectedImageVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(271);
+                    w.key(60);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -731,7 +748,7 @@ public class VCTabFolder extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 1374, 267, 268, 269, 270, 271 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -745,7 +762,7 @@ public class VCTabFolder extends VComposite {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 249:
+            case 37:
                 return true;
         }
         return super.wireAlways(key);

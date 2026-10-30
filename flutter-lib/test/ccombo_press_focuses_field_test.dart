@@ -10,6 +10,7 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   const _CapturingCComboSwt({required super.value, required this.onEvent});
@@ -17,7 +18,7 @@ class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VCCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 Future<List<String>> _pump(WidgetTester tester) async {

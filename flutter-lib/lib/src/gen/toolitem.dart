@@ -18,15 +18,15 @@ class ToolItemSwt<V extends VToolItem> extends ItemSwt<V> {
   State createState() => ToolItemImpl<ToolItemSwt<VToolItem>, VToolItem>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionOpenMenu(V val, VEvent? payload) {
-    sendEvent(val, "Selection/OpenMenu", payload);
+    sendEvent(val, 87, payload); // Selection/OpenMenu
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -65,31 +65,31 @@ class VToolItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 445: // background
+      case 597: // background
         background = r.color();
         return true;
-      case 446: // control
+      case 598: // control
         control = r.ref<VControl>();
         return true;
-      case 447: // disabledImage
+      case 599: // disabledImage
         disabledImage = r.image();
         return true;
-      case 448: // enabled
+      case 600: // enabled
         enabled = r.boolean();
         return true;
-      case 449: // foreground
+      case 601: // foreground
         foreground = r.color();
         return true;
-      case 450: // hotImage
+      case 602: // hotImage
         hotImage = r.image();
         return true;
-      case 451: // selection
+      case 603: // selection
         selection = r.boolean();
         return true;
-      case 452: // toolTipText
+      case 604: // toolTipText
         toolTipText = r.string();
         return true;
-      case 453: // width
+      case 605: // width
         width = r.int32();
         return true;
       default:
@@ -102,65 +102,59 @@ class VToolItem extends VItem {
     super.writeWire(w);
     {
       final v_ = background;
-      if (v_ != null && w.wants(445)) {
-        w.key(445);
+      if (v_ != null) {
+        w.key(597);
         w.colorValue(v_);
       }
     }
     {
       final v_ = control;
-      if (v_ != null && w.wants(446)) {
-        w.key(446);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(598, v_.id);
       }
     }
     {
       final v_ = disabledImage;
-      if (v_ != null && w.wants(447)) {
-        w.key(447);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(599, v_.id);
       }
     }
     {
       final v_ = enabled;
-      if (v_ != null && w.wants(448)) {
-        w.key(448);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(600, v_);
       }
     }
     {
       final v_ = foreground;
-      if (v_ != null && w.wants(449)) {
-        w.key(449);
+      if (v_ != null) {
+        w.key(601);
         w.colorValue(v_);
       }
     }
     {
       final v_ = hotImage;
-      if (v_ != null && w.wants(450)) {
-        w.key(450);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(602, v_.id);
       }
     }
     {
       final v_ = selection;
-      if (v_ != null && w.wants(451)) {
-        w.key(451);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(603, v_);
       }
     }
     {
       final v_ = toolTipText;
-      if (v_ != null && w.wants(452)) {
-        w.key(452);
+      if (v_ != null) {
+        w.key(604);
         w.string(v_);
       }
     }
     {
       final v_ = width;
-      if (v_ != null && w.wants(453)) {
-        w.key(453);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(605, v_);
       }
     }
   }
@@ -168,15 +162,15 @@ class VToolItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(445, background);
-    visit(446, control);
-    visit(447, disabledImage);
-    visit(448, enabled);
-    visit(449, foreground);
-    visit(450, hotImage);
-    visit(451, selection);
-    visit(452, toolTipText);
-    visit(453, width);
+    visit(597, background);
+    visit(598, control);
+    visit(599, disabledImage);
+    visit(600, enabled);
+    visit(601, foreground);
+    visit(602, hotImage);
+    visit(603, selection);
+    visit(604, toolTipText);
+    visit(605, width);
   }
 
   @override

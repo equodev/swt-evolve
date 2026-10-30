@@ -96,6 +96,22 @@ class PaintPacingTest {
     }
 
     @Test
+    @DisplayName("an answer with no paint waiting on it frees the slot without posting to the UI thread")
+    void anAnswerWithNothingHeldPostsNothing() throws InterruptedException {
+        Canvas canvas = inFlightFull();
+
+        client.inFrame(canvas);
+        // Nothing to wait for when nothing is posted: give the comm thread time to handle the answer.
+        Thread.sleep(300);
+        assertThat(asyncQueue).as("work posted to the UI thread for the answer").isEmpty();
+
+        canvas.redraw();
+        pumpAsync();
+        assertThat(paints).as("the next paint goes straight out").hasValue(PaintPacing.IN_FLIGHT + 1);
+        assertThat(timers).as("nothing held for it").isEmpty();
+    }
+
+    @Test
     @DisplayName("redraws made while waiting become one paint")
     void redrawsWhileWaitingMerge() {
         Canvas canvas = inFlightFull();
@@ -332,7 +348,7 @@ class PaintPacingTest {
 
         /** What the client says when the frame showing [control]'s oldest paint begins. */
         void inFrame(Control control) {
-            byte[] header = CommService.frameHeader(PaintPacing.IN_FRAME);
+            byte[] header = dev.equo.swt.harness.Channels.header(PaintPacing.IN_FRAME);
             long id = control.hashCode();
             long z = (id << 1) ^ (id >> 63);
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();

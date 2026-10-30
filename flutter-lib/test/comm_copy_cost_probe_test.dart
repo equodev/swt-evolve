@@ -21,6 +21,8 @@ import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireTypeNames;
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
 
 const List<int> _sizes = [64 << 10, 256 << 10, 1 << 20];
 const int _rounds = 5;
@@ -34,7 +36,7 @@ void main() {
     await _report('send tagged values (D->J)', (chars) async {
       final payload = {'text': 'x' * chars};
       return () async {
-        comm.send('Probe/1/response', payload);
+        comm.sendNamed('evolve.test.queryResponse', payload);
         return comm.lastSent!.length;
       };
     });
@@ -42,7 +44,7 @@ void main() {
     await _report('sendBytes (D->J)', (bytes) async {
       final png = _imageBytes(bytes);
       return () async {
-        comm.sendBytes('Image/1/pixelsResult', png);
+        comm.sendNamed('Image/1/pixelsResult', png);
         return comm.lastSent!.length;
       };
     });
@@ -177,7 +179,7 @@ Uint8List _tape(List<VLabel> labels) {
     }));
   }
   final count = ByteData(4)..setUint32(0, records.length, Endian.little);
-  return ChannelHeader.frame(widgetWireChannel,
+  return channels.frame('swt.evolve.wire',
       Uint8List.fromList([...count.buffer.asUint8List(), for (final r in records) ...r]));
 }
 
@@ -190,7 +192,7 @@ class _LocalComm extends EquoCommBase {
 
   _LocalComm() {
     markOpen();
-    onBytes(widgetWireChannel, (frame) {
+    onBytesNamed('swt.evolve.wire', (frame) {
       _registry.applyWire(frame);
       _registry.clear();
       _applied?.complete();

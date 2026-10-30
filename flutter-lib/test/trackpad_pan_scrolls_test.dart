@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/scrollbar.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _WheelCanvasSwt extends CanvasSwt<VCanvas> {
   const _WheelCanvasSwt({required super.value, required this.wheels});
@@ -21,8 +22,8 @@ class _WheelCanvasSwt extends CanvasSwt<VCanvas> {
   final List<VEvent> wheels;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) {
-    if (ev == 'MouseWheel/MouseWheel') wheels.add(payload!);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]! == 'MouseWheel/MouseWheel') wheels.add(payload!);
   }
 }
 
@@ -32,8 +33,8 @@ class _WheelCompositeSwt extends CompositeSwt<VComposite> {
   final List<VEvent> wheels;
 
   @override
-  void sendEvent(VComposite val, String ev, VEvent? payload) {
-    if (ev == 'MouseWheel/MouseWheel') wheels.add(payload!);
+  void sendEvent(VComposite val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]! == 'MouseWheel/MouseWheel') wheels.add(payload!);
   }
 }
 
@@ -43,8 +44,8 @@ class _WheelStyledTextSwt extends StyledTextSwt<VStyledText> {
   final List<VEvent> wheels;
 
   @override
-  void sendEvent(VStyledText val, String ev, VEvent? payload) {
-    if (ev == 'MouseWheel/MouseWheel') wheels.add(payload!);
+  void sendEvent(VStyledText val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]! == 'MouseWheel/MouseWheel') wheels.add(payload!);
   }
 }
 

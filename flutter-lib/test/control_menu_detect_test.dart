@@ -26,6 +26,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
 import 'support/menu_shown_ack.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 /// Same as the generated CanvasSwt, except sendEvent captures outgoing events
 /// instead of handing them to EquoCommService (which needs a live transport that
@@ -36,8 +37,8 @@ class _CapturingCanvasSwt extends CanvasSwt<VCanvas> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) =>
-      onEvent(ev, payload);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) =>
+      onEvent(wireChannelNames[channel]!, payload);
 }
 
 class _CapturingCompositeSwt extends CompositeSwt<VComposite> {
@@ -46,8 +47,8 @@ class _CapturingCompositeSwt extends CompositeSwt<VComposite> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VComposite val, String ev, VEvent? payload) =>
-      onEvent(ev, payload);
+  void sendEvent(VComposite val, int channel, VEvent? payload) =>
+      onEvent(wireChannelNames[channel]!, payload);
 }
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()

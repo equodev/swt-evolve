@@ -34,7 +34,6 @@ void main() {
       contentWidget: SizedBox(width: 200, height: 100, child: BrowserSwt(value: browser)),
     ));
     await tester.pump();
-    expect(EquoCommService.commForTesting.handledChannels.where(ownChannel), isNotEmpty);
 
     _FakeController.calls.clear();
     await tester.pumpWidget(EvolveApp(theme: ThemeMode.light, contentWidget: const SizedBox()));

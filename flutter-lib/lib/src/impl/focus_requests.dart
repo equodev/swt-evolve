@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/widgets.dart' show BuildContext, VoidCallback;
 
 import '../comm/comm.dart';
+import '../gen/widgets.dart' show WireChannel;
 
 /// Keyboard focus asked for by Java -- `Control.setFocus()`, a JFace cell editor activating, a
 /// part activation. The render side owns the real focus, so the request has to cross the bridge or
@@ -16,17 +17,6 @@ class FocusRequests {
 
   static final FocusRequests instance = FocusRequests._();
 
-  static const String channel = 'swt.evolve.focus';
-
-  /// Where each request's `seq` is echoed back as soon as it arrives. Java holds a request until
-  /// then and drops the focus reports that reach it first: they were sent before this client knew
-  /// of the request, so they name the focus it held before, and applying them would undo it.
-  static const String seenChannel = 'swt.evolve.focus.seen';
-
-  /// Which control Java holds as its focus control, when it changes without a Display push (which
-  /// carries it as `VDisplay.focusHolderId`). It never moves the client's keyboard focus; Tab
-  /// traverses from it (see `TraversalVetoScope`).
-  static const String holderChannel = 'swt.evolve.focusHolder';
 
   static bool _listening = false;
 
@@ -54,14 +44,19 @@ class FocusRequests {
   static void listen() {
     if (_listening) return;
     _listening = true;
-    EquoCommService.onRaw(channel, (dynamic decoded) {
+    EquoCommService.on(0, 0, WireChannel.swtEvolveFocus, (dynamic decoded) {
       if (decoded is! Map) return;
       final seq = decoded['seq'];
-      if (seq is num) EquoCommService.sendPayload(seenChannel, {'seq': seq});
+      // Echoed as it arrives: Java holds the request until then and drops the focus reports that reach
+      // it first, since they were sent before this client knew of the request.
+      if (seq is num) EquoCommService.sendOn(WireChannel.swtEvolveFocusSeen, {'seq': seq});
       final id = (decoded['id'] as num?)?.toInt();
       if (id != null) instance.request(id);
     });
-    EquoCommService.onRaw(holderChannel, (dynamic decoded) {
+    // Which control Java holds as its focus control, when it changes without a Display push (which
+    // carries it as `VDisplay.focusHolderId`). It never moves the client's keyboard focus; Tab
+    // traverses from it (see `TraversalVetoScope`).
+    EquoCommService.on(0, 0, WireChannel.swtEvolveFocusHolder, (dynamic decoded) {
       if (decoded is! Map) return;
       instance._holderId = (decoded['id'] as num?)?.toInt();
     });

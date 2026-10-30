@@ -25,7 +25,7 @@ class _SilentCComboSwt extends CComboSwt<VCCombo> {
   const _SilentCComboSwt({required super.value});
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) {}
+  void sendEvent(VCCombo val, int channel, VEvent? payload) {}
 }
 
 VColor _vColor(int r, int g, int b) => VColor()

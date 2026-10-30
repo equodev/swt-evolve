@@ -1,10 +1,5 @@
 package dev.equo.swt.comm;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -18,8 +13,8 @@ import java.util.function.Function;
 
 /**
  * Maps, lists and scalars in binary, what a payload the wire has no class encoding for travels as.
- * Every value carries a tag; a map's keys go by the number both sides know them by (wire-keys.txt,
- * generated), and only one nothing numbers is spelled out, once per payload. Text is the only
+ * Every value carries a tag; a map's keys go by the number both sides know them by
+ * ({@link dev.equo.swt.WireTable}, generated), and only one nothing numbers is spelled out, once per payload. Text is the only
  * string left.
  *
  * <p>A payload opens with {@link #MARK}, which UTF-8 text cannot start with.
@@ -39,26 +34,10 @@ public final class TaggedValues {
     static final int MAP = 8;
 
     private static final Map<String, Integer> KEYS = new HashMap<>();
-    private static String[] keyNames = new String[0];
+    private static final String[] keyNames = dev.equo.swt.WireTable.KEYS;
 
     static {
-        int max = 0;
-        try (InputStream s = TaggedValues.class.getResourceAsStream("/dev/equo/swt/wire-keys.txt")) {
-            if (s != null) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(s, StandardCharsets.UTF_8));
-                for (String line; (line = reader.readLine()) != null; ) {
-                    if (line.isEmpty() || line.startsWith("#")) continue;
-                    int space = line.indexOf(' ');
-                    int number = Integer.parseInt(line.substring(0, space));
-                    KEYS.put(line.substring(space + 1), number);
-                    max = Math.max(max, number);
-                }
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        keyNames = new String[max + 1];
-        KEYS.forEach((name, number) -> keyNames[number] = name);
+        for (int i = 1; i < keyNames.length; i++) KEYS.put(keyNames[i], i);
     }
 
     /** A buffer kept past this size is let go once lent, so one large payload is not held for good. */
@@ -127,24 +106,77 @@ public final class TaggedValues {
      * lends it to {@code sink}, so a caller that sends at once copies nothing.
      */
     public static void frame(byte[] header, Object value, Function<Object, Object> tree, Lent sink) {
+        TaggedValues w = lend(header, value, tree);
+        try {
+            sink.accept(w.buf, w.size);
+        } finally {
+            w.release();
+        }
+    }
+
+    /**
+     * This thread's writer, holding {@code header} and then {@code value} as tagged values in
+     * {@link #buffer()}{@code [0, }{@link #size()}{@code )} until {@link #release()}.
+     */
+    public static TaggedValues lend(byte[] header, Object value, Function<Object, Object> tree) {
+        TaggedValues w = borrow(tree, header.length);
+        System.arraycopy(header, 0, w.buf, 0, header.length);
+        return w.close(header.length, value);
+    }
+
+    /**
+     * {@link #lend(byte[], Object, Function)} behind the header of the channel numbered {@code channel}
+     * of the widget of type {@code type} numbered {@code id}, written from those numbers.
+     */
+    public static TaggedValues lend(int type, long id, int channel, Object value) {
+        TaggedValues w = borrow(null, ChannelHeader.MAX_NUMBERED);
+        return w.close(ChannelHeader.write(w.buf, 0, type, id, channel), value);
+    }
+
+    private static TaggedValues borrow(Function<Object, Object> tree, int header) {
         TaggedValues w = POOL.get();
         if (w.lent) w = new TaggedValues();
         w.lent = true;
         w.tree = tree;
         w.spelled.clear();
+        w.size = 0;
+        w.ensure(header + 1);
+        return w;
+    }
+
+    private TaggedValues close(int header, Object value) {
         try {
-            w.size = 0;
-            w.ensure(header.length + 1);
-            System.arraycopy(header, 0, w.buf, 0, header.length);
-            w.size = header.length;
-            w.u8(MARK);
-            w.value(value);
-            sink.accept(w.buf, w.size);
-        } finally {
-            w.lent = false;
-            w.tree = null;
-            if (w.buf.length > KEPT_BYTES) w.buf = new byte[64];
+            size = header;
+            payloadStart = header;
+            u8(MARK);
+            value(value);
+            return this;
+        } catch (RuntimeException | Error e) {
+            release();
+            throw e;
         }
+    }
+
+    private int payloadStart;
+
+    /** The lent frame: its header, then the payload from {@link #payloadStart()}. */
+    public byte[] buffer() {
+        return buf;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public int payloadStart() {
+        return payloadStart;
+    }
+
+    /** Ends the lend: the buffer is this thread's again. */
+    public void release() {
+        lent = false;
+        tree = null;
+        if (buf.length > KEPT_BYTES) buf = new byte[64];
     }
 
     private void value(Object v) {
@@ -215,49 +247,31 @@ public final class TaggedValues {
         text(name);
     }
 
-    /** Text as its UTF-8 length and bytes, encoded straight into the buffer. */
+    /**
+     * Text as the widget wire writes a string, so neither end transcodes it: {@code varint(n << 1 |
+     * wide) + 1}, then {@code n} Latin-1 bytes, or, when a char is past 0xFF, {@code n} UTF-16 code
+     * units little endian.
+     */
+    @SuppressWarnings("deprecation")
     private void text(String s) {
         int n = s.length();
-        int length = n;
+        int latin1 = 0;
+        while (latin1 < n && s.charAt(latin1) <= 0xFF) latin1++;
+        if (latin1 == n) {
+            varint((n << 1) + 1);
+            ensure(n);
+            // The low byte of each char: a plain copy of a Latin-1 string's bytes.
+            s.getBytes(0, n, buf, size);
+            size += n;
+            return;
+        }
+        varint(((n << 1) | 1) + 1);
+        ensure(2 * n);
         for (int i = 0; i < n; i++) {
             char c = s.charAt(i);
-            if (c < 0x80) continue;
-            if (c < 0x800) {
-                length += 1;
-            } else if (Character.isHighSurrogate(c) && i + 1 < n && Character.isLowSurrogate(s.charAt(i + 1))) {
-                length += 2;
-                i++;
-            } else if (!Character.isSurrogate(c)) {
-                length += 2;
-            }
+            buf[size++] = (byte) c;
+            buf[size++] = (byte) (c >> 8);
         }
-        varint(length);
-        ensure(length);
-        byte[] b = buf;
-        int p = size;
-        for (int i = 0; i < n; i++) {
-            char c = s.charAt(i);
-            if (c < 0x80) {
-                b[p++] = (byte) c;
-            } else if (c < 0x800) {
-                b[p++] = (byte) (0xC0 | c >> 6);
-                b[p++] = (byte) (0x80 | c & 0x3F);
-            } else if (Character.isHighSurrogate(c) && i + 1 < n && Character.isLowSurrogate(s.charAt(i + 1))) {
-                int cp = Character.toCodePoint(c, s.charAt(++i));
-                b[p++] = (byte) (0xF0 | cp >> 18);
-                b[p++] = (byte) (0x80 | cp >> 12 & 0x3F);
-                b[p++] = (byte) (0x80 | cp >> 6 & 0x3F);
-                b[p++] = (byte) (0x80 | cp & 0x3F);
-            } else if (Character.isSurrogate(c)) {
-                // An unpaired surrogate is written as '?', as String.getBytes does.
-                b[p++] = '?';
-            } else {
-                b[p++] = (byte) (0xE0 | c >> 12);
-                b[p++] = (byte) (0x80 | c >> 6 & 0x3F);
-                b[p++] = (byte) (0x80 | c & 0x3F);
-            }
-        }
-        size = p;
     }
 
     private void u8(int b) {
@@ -353,11 +367,19 @@ public final class TaggedValues {
             return name;
         }
 
+        @SuppressWarnings("deprecation")
         String text() {
-            int n = (int) varint();
-            String s = new String(b, pos, n, StandardCharsets.UTF_8);
-            pos += n;
-            return s;
+            int header = (int) varint();
+            int n = (header - 1) >>> 1;
+            if (((header - 1) & 1) == 0) {
+                // Each byte is a char's low byte, its high byte 0: a Latin-1 copy, nothing decoded.
+                String s = new String(b, 0, pos, n);
+                pos += n;
+                return s;
+            }
+            char[] chars = new char[n];
+            for (int i = 0; i < n; i++, pos += 2) chars[i] = (char) ((b[pos] & 0xFF) | (b[pos + 1] & 0xFF) << 8);
+            return new String(chars);
         }
 
         long varint() {

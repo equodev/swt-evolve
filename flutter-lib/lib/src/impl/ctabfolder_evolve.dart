@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -11,6 +12,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
+import '../comm/channel_header.dart';
+import '../comm/tagged_values.dart';
 import '../comm/v_registry.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -69,9 +72,31 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   late int _selectedIndex;
   int _lastShowListPopupSeq = 0;
   int? _pendingTabIndex;
-  Object? _activationToken;
+  /// The mounted folders by id, where [_activationOp] finds the one a frame addresses.
+  static final Map<int, CTabFolderImpl> _live = {};
 
-  String get _activationChannel => "${state.swt}/${state.id}/activation";
+  @override
+  Map<int, WidgetSwtState> get liveOfKind => _live;
+
+  static final int _activeKey = TaggedValues.keyNumber('active');
+
+  /// Registers what every CTabFolder answers (see `registerWidgetOps`).
+  static void registerOps() =>
+      EquoCommService.onWidgetOp(WireType.cTabFolder, WireChannel.activation, _activationOp);
+
+  /// Java's `{active}`: whether this folder holds the active part.
+  static FutureOr<bool> _activationOp(int id, Uint8List frame, int start, int end) {
+    final folder = _live[id];
+    if (folder == null) return false;
+    final active = TaggedValues.boolField(frame, start, _activeKey);
+    if (active != null && folder.mounted) {
+      // Kept on the state too, or a rebuild re-reads the last push's stale flag in extraSetState.
+      folder.state.highlight = active;
+      // The active tab's label and ring belong to the tab bar, so the folder rebuilds.
+      folder.setState(() {});
+    }
+    return true;
+  }
 
   @override
   void initState() {
@@ -82,20 +107,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // Java leaves a zero seq off the wire, so null is 0; a list requested before this mounted is
     // not reopened.
     _lastShowListPopupSeq = state.showListPopupSeq ?? 0;
-    _activationToken = EquoCommService.onRaw(_activationChannel, (decoded) {
-      if (mounted && decoded is Map && decoded['active'] is bool) {
-        // Kept on the state too, or a rebuild re-reads the last push's stale flag in extraSetState.
-        state.highlight = decoded['active'] as bool;
-        // The active tab's label and ring belong to the tab bar, so the folder rebuilds.
-        setState(() {});
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    EquoCommService.remove(_activationChannel, _activationToken);
-    super.dispose();
   }
 
   @override
@@ -439,7 +450,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     if (e.control != null) {
       final control = e.control!;
       return ListenableBuilder(
-        listenable: VRegistry.instance.boundsChangesOn([VRegistry.channelOf(control)]),
+        listenable: VRegistry.instance.boundsChangesAt([VRegistry.keyOf(control)]),
         builder: (context, page) {
           final bounds = control.bounds;
           if (!hasBounds(bounds)) return SizedBox.expand(child: page);
@@ -1611,7 +1622,7 @@ class _CTabBarState extends State<_CTabBar> {
   /// The width Java gave the control bounds it, and arrives on the control's own channel.
   Widget _buildTopRightComposite(VComposite composite, {Color? backgroundColor}) {
     return ListenableBuilder(
-      listenable: VRegistry.instance.boundsChangesOn([VRegistry.channelOf(composite)]),
+      listenable: VRegistry.instance.boundsChangesAt([VRegistry.keyOf(composite)]),
       builder: (context, toolbar) {
         final bounds = composite.bounds;
         return SizedBox(width: hasBounds(bounds) ? bounds!.width.toDouble() : 0, child: toolbar);

@@ -390,100 +390,100 @@ public final class FormData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 246;
+        return 46;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(245);
+        w.key(264);
         w.write((int) width);
-        w.key(239);
+        w.key(258);
         w.write((int) height);
-        w.key(241);
+        w.key(260);
         w.object(left);
-        w.key(243);
+        w.key(262);
         w.object(right);
-        w.key(244);
+        w.key(263);
         w.object(top);
-        w.key(224);
+        w.key(243);
         w.object(bottom);
-        w.key(230);
+        w.key(249);
         w.write((int) cacheWidth);
-        w.key(226);
+        w.key(245);
         w.write((int) cacheHeight);
-        w.key(237);
+        w.key(256);
         w.write((int) defaultWhint);
-        w.key(236);
+        w.key(255);
         w.write((int) defaultHhint);
-        w.key(238);
+        w.key(257);
         w.write((int) defaultWidth);
-        w.key(235);
+        w.key(254);
         w.write((int) defaultHeight);
-        w.key(233);
+        w.key(252);
         w.write((int) currentWhint);
-        w.key(232);
+        w.key(251);
         w.write((int) currentHhint);
-        w.key(234);
+        w.key(253);
         w.write((int) currentWidth);
-        w.key(231);
+        w.key(250);
         w.write((int) currentHeight);
-        w.key(227);
+        w.key(246);
         w.object(cacheLeft);
-        w.key(228);
+        w.key(247);
         w.object(cacheRight);
-        w.key(229);
+        w.key(248);
         w.object(cacheTop);
-        w.key(225);
+        w.key(244);
         w.object(cacheBottom);
-        w.key(240);
+        w.key(259);
         w.write(isVisited);
-        w.key(242);
+        w.key(261);
         w.write(needed);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 245:
+            case 264:
                 width = r.int32();
                 return true;
-            case 239:
+            case 258:
                 height = r.int32();
                 return true;
-            case 230:
+            case 249:
                 cacheWidth = r.int32();
                 return true;
-            case 226:
+            case 245:
                 cacheHeight = r.int32();
                 return true;
-            case 237:
+            case 256:
                 defaultWhint = r.int32();
                 return true;
-            case 236:
+            case 255:
                 defaultHhint = r.int32();
                 return true;
-            case 238:
+            case 257:
                 defaultWidth = r.int32();
                 return true;
-            case 235:
+            case 254:
                 defaultHeight = r.int32();
                 return true;
-            case 233:
+            case 252:
                 currentWhint = r.int32();
                 return true;
-            case 232:
+            case 251:
                 currentHhint = r.int32();
                 return true;
-            case 234:
+            case 253:
                 currentWidth = r.int32();
                 return true;
-            case 231:
+            case 250:
                 currentHeight = r.int32();
                 return true;
-            case 240:
+            case 259:
                 isVisited = r.bool();
                 return true;
-            case 242:
+            case 261:
                 needed = r.bool();
                 return true;
         }

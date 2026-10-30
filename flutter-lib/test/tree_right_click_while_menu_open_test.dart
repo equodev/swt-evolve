@@ -16,6 +16,7 @@ import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
 import 'support/menu_shown_ack.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingTreeSwt extends TreeSwt<VTree> {
   const _CapturingTreeSwt({required super.value, required this.onEvent});
@@ -23,7 +24,7 @@ class _CapturingTreeSwt extends TreeSwt<VTree> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VTree val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VTree val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 const _menuId = 100;

@@ -2,6 +2,7 @@ package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.GCImageDrawer;
+import dev.equo.swt.comm.MessageBatch;
 import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
@@ -114,7 +115,7 @@ class GCImageDrawerNativeTest {
 
         GCHelper.disposeImageGC(gc);
 
-        assertThat(comm.sent).as("one message").hasSize(1);
+        assertThat(comm.sent).extracting(f -> f.event).containsExactly(MessageBatch.EVENT);
         List<String> entries = BatchEntries.of(comm.sent).stream().map(GcFrames.Entry::channel).toList();
         assertThat(entries).anyMatch(c -> c.contains("/drawLine")).anyMatch(c -> c.endsWith("/gcDispose"));
     }

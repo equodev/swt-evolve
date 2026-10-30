@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingComboSwt extends ComboSwt<VCombo> {
   const _CapturingComboSwt({required super.value, required this.onEvent});
@@ -20,7 +21,7 @@ class _CapturingComboSwt extends ComboSwt<VCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCombo _combo(int style) => VCombo()

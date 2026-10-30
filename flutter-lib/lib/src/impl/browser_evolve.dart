@@ -7,10 +7,14 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/widgets.dart';
 import 'package:webview_all/webview_all.dart';
 
+import '../comm/channel_header.dart';
 import '../comm/comm.dart';
+import '../comm/comm_api.dart' show WidgetOpHandler;
+import '../comm/tagged_values.dart';
 import '../gen/browser.dart';
 import '../gen/event.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 import '../impl/composite_evolve.dart';
 import 'browser_app_base.dart';
 import 'browser_inline_documents.dart';
@@ -170,7 +174,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       ).catchError((e) {});
     }
 
-    _onOp("locationchanging/result", (args) {
+    _onOp(WireChannel.locationchangingResult, (args) {
       final doit = (args as Map)['doit'] as bool? ?? true;
       final c = _locationChangingCompleter;
       _locationChangingCompleter = null;
@@ -178,7 +182,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
     // Explicit navigation command (one per setUrl/setText, even same-URL).
     // Bypasses the state-driven dedup so re-navigation actually reloads.
-    _onOp("navigate", (args) {
+    _onOp(WireChannel.navigate, (args) {
       final m = args as Map;
       final seq = (m["seq"] as num?)?.toInt() ?? 0;
       if (seq <= _lastNavSeq) return;
@@ -235,16 +239,16 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         }
       }
     });
-    _onOp("back", (_) {
+    _onOp(WireChannel.back, (_) {
       _controller.goBack();
     });
-    _onOp("forward", (_) {
+    _onOp(WireChannel.forward, (_) {
       _controller.goForward();
     });
-    _onOp("reload", (_) {
+    _onOp(WireChannel.reload, (_) {
       _controller.reload();
     });
-    _onOp("execute", (args) {
+    _onOp(WireChannel.execute, (args) {
       final script = (args as Map)["script"] as String?;
       if (script == null) return;
       if (_params != null) {
@@ -258,7 +262,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         _controller.runJavaScript(script);
       }
     });
-    _onOp("evaluate", (args) async {
+    _onOp(WireChannel.evaluate, (args) async {
       final map = args as Map;
       final script = map["script"] as String?;
       final reqId = map["reqId"] as int?;
@@ -269,26 +273,24 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
             : await _controller.runJavaScriptReturningResult(script);
         // The value as it is, so Java can restore the SWT evaluate() type contract
         // (null/Boolean/Double/String/Object[]).
-        EquoCommService.sendPayload("${state.swt}/${state.id}/evaluate/result",
+        EquoCommService.sendTo(state.wireType, state.id, WireChannel.evaluateResult,
             {'reqId': reqId, 'value': _plainValue(result)});
       } catch (e) {
-        EquoCommService.sendPayload(
-            "${state.swt}/${state.id}/evaluate/result", {'reqId': reqId, 'error': '$e'});
+        EquoCommService.sendTo(
+            state.wireType, state.id, WireChannel.evaluateResult, {'reqId': reqId, 'error': '$e'});
       }
     });
 
     // The static Browser.getCookie/setCookie, routed through whichever Browser Java picked: cookies
     // belong to the webview profile, not to this Browser.
-    _onOp("getCookie", (args) async {
+    _onOp(WireChannel.getCookie, (args) async {
       final map = args as Map;
       final value =
           await browserGetCookie(map["name"] as String, map["url"] as String);
-      EquoCommService.sendPayload(
-        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
-        VEvent()..text = value,
-      );
+      EquoCommService.sendTo(state.wireType, state.id, WireChannel.cookie,
+          VEvent()..detail = map["reqId"] as int..text = value);
     });
-    _onOp("setCookie", (args) async {
+    _onOp(WireChannel.setCookie, (args) async {
       final map = args as Map;
       final set = await browserSetCookie(
         map["name"] as String,
@@ -299,10 +301,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         secure: map["secure"] as bool? ?? false,
         httpOnly: map["httpOnly"] as bool? ?? false,
       );
-      EquoCommService.sendPayload(
-        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
-        VEvent()..text = '$set',
-      );
+      EquoCommService.sendTo(state.wireType, state.id, WireChannel.cookie,
+          VEvent()..detail = map["reqId"] as int..text = '$set');
     });
 
     _applyContent();
@@ -319,8 +319,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_opNavigated) {
-        EquoCommService.sendPayload(
-            "${state.swt}/${state.id}/navigateRequest", VEvent());
+        EquoCommService.sendTo(state.wireType, state.id, WireChannel.navigateRequest, VEvent());
       }
     });
   }
@@ -377,7 +376,6 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     appScaleNotifier.removeListener(_applyContentZoom);
     _inlineDocuments.dispose();
     unawaited(browserReleaseWebView(_controller));
-    _opTokens.forEach(EquoCommService.remove);
     super.dispose();
   }
 
@@ -519,16 +517,43 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     return _unproxyUrl(rawUrl);
   }
 
-  /// Registers an op handler. The generated [onOp] assumes the comm payload is
-  /// a JSON string, but the current comm layer delivers already-decoded objects
-  /// for Map payloads (`FlutterBridge.send(..., Map.of(...))`). This variant
-  /// tolerates either form.
-  void _onOp(String op, void Function(dynamic) handler) {
-    final channel = "${state.swt}/${state.id}/$op";
-    _opTokens[channel] = EquoCommService.onRaw(channel, handler);
+  /// The mounted browsers by id, where an op's handler finds the browser a frame addresses.
+  static final Map<int, BrowserImpl> _live = {};
+
+  @override
+  Map<int, WidgetSwtState> get liveOfKind => _live;
+
+  /// The channels of the ops Java sends a browser, each answered by the handler at its index in [_ops].
+  static const List<int> _opChannels = [
+    WireChannel.locationchangingResult, WireChannel.navigate, WireChannel.back, WireChannel.forward,
+    WireChannel.reload, WireChannel.stop, WireChannel.execute, WireChannel.evaluate,
+    WireChannel.getCookie, WireChannel.setCookie,
+  ];
+
+  /// This browser's handler per op, by its index in [_opChannels].
+  final List<FutureOr<void> Function(dynamic)?> _ops = List.filled(_opChannels.length, null);
+
+  /// Registers what every browser answers (see `registerWidgetOps`).
+  static void registerOps() {
+    for (var slot = 0; slot < _opChannels.length; slot++) {
+      EquoCommService.onWidgetOp(WireType.browser, _opChannels[slot], _opHandler(slot));
+    }
   }
 
-  final Map<String, Object> _opTokens = {};
+  static WidgetOpHandler _opHandler(int slot) => (int id, Uint8List frame, int start, int end) {
+        final handler = _live[id]?._ops[slot];
+        if (handler == null) return false;
+        final applied = handler(TaggedValues.decodeAt(frame, start));
+        return applied is Future ? applied.then((_) => true) : true;
+      };
+
+  /// Sets this browser's handler for the op on [channel], one of [_opChannels]; its payload arrives
+  /// decoded.
+  void _onOp(int channel, FutureOr<void> Function(dynamic) handler) {
+    final slot = _opChannels.indexOf(channel);
+    assert(slot >= 0, 'channel $channel is not a browser op');
+    if (slot >= 0) _ops[slot] = handler;
+  }
 
   /// Parses SWT-style request headers (a list of "Name: value" strings, as
   /// passed to Browser.setUrl(url, postData, headers)) into a header map.
@@ -666,7 +691,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       final name = data['name'];
       if (name is! String) return;
       final args = data['args'] is List ? data['args'] as List : const [];
-      EquoCommService.sendPayload("${state.swt}/${state.id}/browserFunctionCall",
+      EquoCommService.sendTo(state.wireType, state.id, WireChannel.browserFunctionCall,
           {'name': name, 'args': _plainValue(args)});
     } catch (_) {}
   }
@@ -709,8 +734,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   Future<void> _pushNavState([String? url]) async {
     final back = await _controller.canGoBack();
     final forward = await _controller.canGoForward();
-    EquoCommService.sendPayload(
-      "${state.swt}/${state.id}/navigationState",
+    EquoCommService.sendTo(
+      state.wireType,
+      state.id,
+      WireChannel.navigationState,
       VEvent()..x = back ? 1 : 0..y = forward ? 1 : 0..text = url,
     );
   }

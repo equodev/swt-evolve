@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'dart:ui' show Offset, PathFillType, Rect;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/gc.dart';
@@ -16,6 +17,7 @@ import 'package:swtflutter/src/gen/pathdata.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,13 +25,8 @@ void main() {
   var nextId = 134101;
 
   void deliver(String actionId, Map<String, dynamic> payload) {
-    final action = utf8.encode(actionId);
     final body = TaggedValues.encode(payload);
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
+    final out = channels.frame(actionId, body);
     EquoCommService.commForTesting.receiveBinary(out);
   }
 

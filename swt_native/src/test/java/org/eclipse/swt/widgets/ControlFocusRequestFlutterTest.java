@@ -159,6 +159,30 @@ class ControlFocusRequestFlutterTest {
     }
 
     @Test
+    void aClearedFocusReturnsToTheControlTheUserLastFocused() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        org.eclipse.swt.custom.StyledText editor = new org.eclipse.swt.custom.StyledText(shell, SWT.MULTI);
+        Tree tree = new Tree(shell, SWT.NONE);
+        web.noteClientActivated((DartShell) shell.getImpl());
+        // A StyledText takes the focus from Java on its own mouse-down, and the client follows.
+        editor.forceFocus();
+        web.clientFocused((DartControl) editor.getImpl());
+        // The user then clicks the tree, and then something that holds no focus on the client.
+        web.clientFocused((DartControl) tree.getImpl());
+        web.comm.sent.clear();
+
+        web.clearFocus((DartControl) tree.getImpl());
+
+        assertThat(display.getFocusControl())
+                .as("the shell gives its focus back to the tree, not to the editor focused before it")
+                .isSameAs(tree);
+        assertThat(focusRequests(web))
+                .as("the client is not told to move its keys onto the editor")
+                .isEmpty();
+    }
+
+    @Test
     void theFieldAPopupDialogFocusesAsItOpensAsksTheClientToMoveKeyboardFocus() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell main = openShell();

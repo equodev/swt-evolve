@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VTabFolder extends VComposite {
 
@@ -18,10 +17,16 @@ public class VTabFolder extends VComposite {
         TabItem[] values = ((DartTabFolder) impl).items;
         if (values == null)
             return null;
-        ArrayList<TabItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TabItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TabItem[] result = new TabItem[kept];
+        kept = 0;
+        for (TabItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(TabItem[] value) {
@@ -32,19 +37,25 @@ public class VTabFolder extends VComposite {
         TabItem[] values = ((DartTabFolder) impl).selection;
         if (values == null)
             return null;
-        ArrayList<TabItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TabItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TabItem[] result = new TabItem[kept];
+        kept = 0;
+        for (TabItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setSelection(TabItem[] value) {
         ((DartTabFolder) impl).selection = value;
     }
 
-    public static final int ITEMS = 497;
+    public static final int ITEMS = 542;
 
-    public static final int SELECTION = 498;
+    public static final int SELECTION = 543;
 
     @Override
     public String wireName(int key) {
@@ -60,10 +71,10 @@ public class VTabFolder extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 497:
+            case 542:
                 w.refs(getItems());
                 return true;
-            case 498:
+            case 543:
                 w.refs(getSelection());
                 return true;
         }
@@ -73,25 +84,25 @@ public class VTabFolder extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 497:
+            case 542:
                 {
                     TabItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(497);
+                    w.key(542);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 498:
+            case 543:
                 {
                     TabItem[] v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(498);
+                    w.key(543);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -99,7 +110,7 @@ public class VTabFolder extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 497, 498 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 542, 543 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

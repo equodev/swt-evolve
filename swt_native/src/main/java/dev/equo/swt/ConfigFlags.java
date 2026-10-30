@@ -237,16 +237,7 @@ public class ConfigFlags implements WireObject {
         return 0;
     }
 
-    /** {@link #hover_delay_ms}'s number: wire-ids.txt is append-only, so it follows the generated ones. */
-    private static final int HOVER_DELAY_MS = 1370;
-    /** The numbers of the flags added after {@link #hover_delay_ms}, appended to wire-ids.txt in turn. */
-    private static final int CTABFOLDER_TAB_SCROLL = 1398;
-    private static final int DECIMAL_SEPARATOR = 1399;
-    private static final int LOCALE = 1400;
-    private static final int TRANSPARENT_MENU_CHECK_BOX = 1401;
-    private static final int USE_SWT_BORDER = 1408;
-
-    /** The fields {@link #writeWireFields} writes, in order: numbered from 9, then those numbered on their own. */
+    /** The fields {@link #writeWireFields} writes: the generator numbers them from this list (WireTable.CONFIG_FLAGS_*). */
     private static final String[] WIRE_FIELDS = {
             "ctabfolder_visible_controls", "ctabfolder_topright_auto_hide", "image_disable_icons_replacement",
             "assets_path", "disable_evolve_icons", "gc_icons_replacement", "use_swt_colors",
@@ -256,132 +247,105 @@ public class ConfigFlags implements WireObject {
             "theme_color", "theme_colors_by_widget", "show_theme_color_palette", "focus_indicators",
             "show_scaling_control", "ui_zoom", "decorations_align", "print_move", "csd_placement", "csd_os",
             "csd_maximize", "system_menu_bar", "double_click_timeout_ms", "csd_titlebar_color",
-            "font_point_scale", "push_button_margin",
+            "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
+            "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
     };
-
-    /** Each written field's number, encoding and name, for {@link WireDump}. */
-    static Map<Integer, String[]> wireKinds() {
-        Map<Integer, String[]> kinds = new java.util.HashMap<>();
-        for (int i = 0; i < WIRE_FIELDS.length; i++) {
-            String name = WIRE_FIELDS[i];
-            Class<?> type;
-            try {
-                type = ConfigFlags.class.getField(name).getType();
-            } catch (NoSuchFieldException e) {
-                throw new IllegalStateException(e);
-            }
-            String kind = type == boolean.class ? "bool" : type == Boolean.class ? "bool?"
-                    : type == int.class ? "int" : type == Integer.class ? "int?"
-                    : type == float.class ? "float" : type == Float.class ? "float?"
-                    : type == double.class ? "double" : type == Double.class ? "double?"
-                    : type == String.class || type.isEnum() ? "string"
-                    : name.equals("use_swt_font_colors_by_widget") ? "boolMap" : "stringMap";
-            kinds.put(9 + i, new String[] {kind, name});
-        }
-        kinds.put(HOVER_DELAY_MS, new String[] {"int", "hover_delay_ms"});
-        kinds.put(CTABFOLDER_TAB_SCROLL, new String[] {"bool", "ctabfolder_tab_scroll"});
-        kinds.put(DECIMAL_SEPARATOR, new String[] {"string", "decimal_separator"});
-        kinds.put(LOCALE, new String[] {"string", "locale"});
-        kinds.put(TRANSPARENT_MENU_CHECK_BOX, new String[] {"bool", "transparent_menu_check_box"});
-        kinds.put(USE_SWT_BORDER, new String[] {"bool", "use_swt_border"});
-        return kinds;
-    }
 
     /** The flags the client sets (a theme picked on its side). */
     @Override
     public boolean readWire(int key, WireReader r) {
         switch (key) {
-            case 26: force_theme = r.string(); return true;
-            case 27: theme_name = r.string(); return true;
-            case 28: theme_color = r.string(); return true;
+            case WireTable.CONFIG_FLAGS_FORCE_THEME: force_theme = r.string(); return true;
+            case WireTable.CONFIG_FLAGS_THEME_NAME: theme_name = r.string(); return true;
+            case WireTable.CONFIG_FLAGS_THEME_COLOR: theme_color = r.string(); return true;
         }
         return false;
     }
 
-    /** The flags as an object of the binary widget wire; the numbers are their entries in wire-ids.txt. */
+    /** The flags as an object of the binary widget wire. */
     @Override
     public void writeWireFields(WidgetWire w) {
-        w.key(9);
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS);
         w.write(ctabfolder_visible_controls);
-        w.key(10);
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE);
         w.write(ctabfolder_topright_auto_hide);
-        w.key(11);
+        w.key(WireTable.CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT);
         w.write(image_disable_icons_replacement);
-        w.key(12);
+        w.key(WireTable.CONFIG_FLAGS_ASSETS_PATH);
         w.write(assets_path);
-        w.key(13);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_EVOLVE_ICONS);
         w.write(disable_evolve_icons);
-        w.key(14);
+        w.key(WireTable.CONFIG_FLAGS_GC_ICONS_REPLACEMENT);
         w.write(gc_icons_replacement);
-        w.key(15);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_COLORS);
         w.write(use_swt_colors);
-        w.key(16);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS);
         w.write(disable_swt_canvas_colors);
-        w.key(17);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY);
         w.write(disable_control_gc_overlay);
-        w.key(18);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_FONTS);
         w.write(use_swt_fonts);
-        w.key(19);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_FONT_COLORS);
         w.write(use_swt_font_colors);
-        w.key(20);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET);
         w.writeBooleans(use_swt_font_colors_by_widget);
-        w.key(21);
+        w.key(WireTable.CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON);
         w.write(use_special_dropdown_button);
-        w.key(22);
+        w.key(WireTable.CONFIG_FLAGS_PRESERVE_ICON_COLORS);
         w.write(preserve_icon_colors);
-        w.key(23);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_HOVER_ZOOM);
         w.write(disable_hover_zoom);
-        w.key(24);
+        w.key(WireTable.CONFIG_FLAGS_CUSTOM_TOOLTIP);
         w.write(custom_tooltip);
-        w.key(25);
+        w.key(WireTable.CONFIG_FLAGS_NOTIFICATION_POPUP);
         w.write(notification_popup);
-        w.key(26);
+        w.key(WireTable.CONFIG_FLAGS_FORCE_THEME);
         w.write(force_theme);
-        w.key(27);
+        w.key(WireTable.CONFIG_FLAGS_THEME_NAME);
         w.write(theme_name);
-        w.key(28);
+        w.key(WireTable.CONFIG_FLAGS_THEME_COLOR);
         w.write(theme_color);
-        w.key(29);
+        w.key(WireTable.CONFIG_FLAGS_THEME_COLORS_BY_WIDGET);
         w.writeStrings(theme_colors_by_widget);
-        w.key(30);
+        w.key(WireTable.CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE);
         w.write(show_theme_color_palette);
-        w.key(31);
+        w.key(WireTable.CONFIG_FLAGS_FOCUS_INDICATORS);
         w.write(focus_indicators);
-        w.key(32);
+        w.key(WireTable.CONFIG_FLAGS_SHOW_SCALING_CONTROL);
         w.write(show_scaling_control);
-        w.key(33);
+        w.key(WireTable.CONFIG_FLAGS_UI_ZOOM);
         w.write(ui_zoom);
-        w.key(34);
+        w.key(WireTable.CONFIG_FLAGS_DECORATIONS_ALIGN);
         w.write(decorations_align == null ? null : decorations_align.name());
-        w.key(35);
+        w.key(WireTable.CONFIG_FLAGS_PRINT_MOVE);
         w.write(print_move);
-        w.key(36);
+        w.key(WireTable.CONFIG_FLAGS_CSD_PLACEMENT);
         w.write(csd_placement);
-        w.key(37);
+        w.key(WireTable.CONFIG_FLAGS_CSD_OS);
         w.write(csd_os);
-        w.key(38);
+        w.key(WireTable.CONFIG_FLAGS_CSD_MAXIMIZE);
         w.write(csd_maximize);
-        w.key(39);
+        w.key(WireTable.CONFIG_FLAGS_SYSTEM_MENU_BAR);
         w.write(system_menu_bar);
-        w.key(40);
+        w.key(WireTable.CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS);
         w.write(double_click_timeout_ms);
-        w.key(41);
+        w.key(WireTable.CONFIG_FLAGS_CSD_TITLEBAR_COLOR);
         w.write(csd_titlebar_color);
-        w.key(42);
+        w.key(WireTable.CONFIG_FLAGS_FONT_POINT_SCALE);
         w.write(font_point_scale);
-        w.key(43);
+        w.key(WireTable.CONFIG_FLAGS_PUSH_BUTTON_MARGIN);
         w.write(push_button_margin);
-        w.key(HOVER_DELAY_MS);
+        w.key(WireTable.CONFIG_FLAGS_HOVER_DELAY_MS);
         w.write(hover_delay_ms);
-        w.key(CTABFOLDER_TAB_SCROLL);
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL);
         w.write(ctabfolder_tab_scroll);
-        w.key(DECIMAL_SEPARATOR);
+        w.key(WireTable.CONFIG_FLAGS_DECIMAL_SEPARATOR);
         w.write(decimal_separator);
-        w.key(LOCALE);
+        w.key(WireTable.CONFIG_FLAGS_LOCALE);
         w.write(locale);
-        w.key(TRANSPARENT_MENU_CHECK_BOX);
+        w.key(WireTable.CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX);
         w.write(transparent_menu_check_box);
-        w.key(USE_SWT_BORDER);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_BORDER);
         w.write(use_swt_border);
     }
 
@@ -410,7 +374,6 @@ public class ConfigFlags implements WireObject {
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +
                 ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
-                ", use_swt_border=" + use_swt_border +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +
@@ -433,6 +396,7 @@ public class ConfigFlags implements WireObject {
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
+                ", use_swt_border=" + use_swt_border +
                 ", system_menu_bar=" + system_menu_bar +
                 ", decimal_separator='" + decimal_separator + '\'' +
                 ", locale='" + locale + '\'' +

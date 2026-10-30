@@ -16,7 +16,7 @@ class VColorDialog extends VDialog {
       case WireKey.k_ColorDialog_RGB:
         rgb = r.rgb();
       case WireKey.k_ColorDialog_RGBs:
-        rgbs = r.list(r.rgb)?.whereType<VRGB>().toList();
+        rgbs = r.list((r) => r.rgb())?.whereType<VRGB>().toList();
       default:
         return super.readWire(key, r);
     }

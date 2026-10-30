@@ -4,7 +4,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.ArrayList;
 
 public class VPopupList implements dev.equo.swt.WireObject {
 
@@ -32,10 +31,16 @@ public class VPopupList implements dev.equo.swt.WireObject {
         String[] values = ((DartPopupList) impl).items;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(String[] value) {
@@ -60,18 +65,18 @@ public class VPopupList implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 657;
+        return 76;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(653);
+        w.key(403);
         w.object((getFont() == null || getFont().isDisposed() ? null : ((DartFont) getFont().getImpl()).getValue()));
-        w.key(654);
+        w.key(404);
         w.write(getItems());
-        w.key(655);
+        w.key(405);
         w.write((int) getMinimumWidth());
-        w.key(656);
+        w.key(406);
         w.write(getSelection());
     }
 }

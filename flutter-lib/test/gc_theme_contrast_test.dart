@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/gen/color.dart';
@@ -14,6 +13,7 @@ import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/widget_utils.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/canvas_theme_extension.dart';
+import 'support/channels.dart' as channels;
 
 /// On a themed canvas a fill keeps its distance to the control's normal fill, and a declared hover
 /// or selection takes the theme's color for that role.
@@ -276,14 +276,8 @@ class _GroundState extends State<_Ground> implements GCGround {
 
 /// Ends the paint in flight, as Java's gcDispose does.
 void _endPaint() {
-  final action = utf8.encode('GC/$_gcId/gcDispose');
-  final body = TaggedValues.encode({'fullRepaint': true});
-  final frame = Uint8List(2 + action.length + body.length);
-  frame[0] = (action.length >> 8) & 0xFF;
-  frame[1] = action.length & 0xFF;
-  frame.setRange(2, 2 + action.length, action);
-  frame.setRange(2 + action.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
+  EquoCommService.commForTesting
+      .receiveBinary(channels.frame('GC/$_gcId/gcDispose', TaggedValues.encode({'fullRepaint': true})));
 }
 
 double _hueDistance(Color a, Color b) {

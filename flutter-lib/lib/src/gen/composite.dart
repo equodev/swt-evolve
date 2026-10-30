@@ -43,10 +43,10 @@ class VComposite extends VScrollable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 427: // backgroundMode
+      case 85: // backgroundMode
         backgroundMode = r.int32();
         return true;
-      case 428: // children
+      case 86: // children
         children = r.refs<VControl>();
         return true;
       default:
@@ -59,15 +59,14 @@ class VComposite extends VScrollable {
     super.writeWire(w);
     {
       final v_ = backgroundMode;
-      if (v_ != null && w.wants(427)) {
-        w.key(427);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(85, v_);
       }
     }
     {
       final v_ = children;
-      if (v_ != null && w.wants(428)) {
-        w.key(428);
+      if (v_ != null) {
+        w.key(86);
         w.refs(v_);
       }
     }
@@ -76,8 +75,8 @@ class VComposite extends VScrollable {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(427, backgroundMode);
-    visit(428, children);
+    visit(85, backgroundMode);
+    visit(86, children);
   }
 
   @override

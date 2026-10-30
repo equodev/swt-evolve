@@ -19,7 +19,7 @@ import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireKey, WireChannel;
 import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
@@ -133,7 +133,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       e.button = 1;
       _context!.parentTree.sendEvent(
         _context!.parentTreeValue,
-        "Mouse/MouseDoubleClick",
+        WireChannel.mouseMouseDoubleClick,
         e,
       );
     }
@@ -855,12 +855,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     if (!WidgetsBinding.instance.semanticsEnabled) return arrow;
     // The row is one tappable node, and the web hands a click on it to the row as a tap at its
     // centre, which is never on the arrow. A node of the arrow's own is what an assistive
-    // technology, or a test, can expand the item through.
+    // technology, or a test, can expand the item through. It carries no label: the web writes a
+    // label as text that overflows the 12px node over the row's own text, and takes clicks there.
     return Semantics(
       container: true,
       button: true,
       identifier: 'TreeItemExpander/${state.id}',
-      label: expanded ? 'Collapse' : 'Expand',
       expanded: expanded,
       onTap: enabled ? () => _toggleExpand(expanded) : null,
       child: arrow,

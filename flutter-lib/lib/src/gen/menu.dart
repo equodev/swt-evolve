@@ -16,15 +16,15 @@ class MenuSwt<V extends VMenu> extends WidgetSwt<V> {
   State createState() => MenuImpl<MenuSwt<VMenu>, VMenu>();
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, "Help/Help", payload);
+    sendEvent(val, 49, payload); // Help/Help
   }
 
   void sendMenuHide(V val, VEvent? payload) {
-    sendEvent(val, "Menu/Hide", payload);
+    sendEvent(val, 61, payload); // Menu/Hide
   }
 
   void sendMenuShow(V val, VEvent? payload) {
-    sendEvent(val, "Menu/Show", payload);
+    sendEvent(val, 62, payload); // Menu/Show
   }
 }
 
@@ -55,19 +55,19 @@ class VMenu extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 219: // enabled
+      case 364: // enabled
         enabled = r.boolean();
         return true;
-      case 220: // items
+      case 365: // items
         items = r.refs<VMenuItem>();
         return true;
-      case 221: // location
+      case 366: // location
         location = r.point();
         return true;
-      case 222: // orientation
+      case 367: // orientation
         orientation = r.int32();
         return true;
-      case 223: // visible
+      case 368: // visible
         visible = r.boolean();
         return true;
       default:
@@ -80,37 +80,34 @@ class VMenu extends VWidget {
     super.writeWire(w);
     {
       final v_ = enabled;
-      if (v_ != null && w.wants(219)) {
-        w.key(219);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(364, v_);
       }
     }
     {
       final v_ = items;
-      if (v_ != null && w.wants(220)) {
-        w.key(220);
+      if (v_ != null) {
+        w.key(365);
         w.refs(v_);
       }
     }
     {
       final v_ = location;
-      if (v_ != null && w.wants(221)) {
-        w.key(221);
+      if (v_ != null) {
+        w.key(366);
         w.pointValue(v_);
       }
     }
     {
       final v_ = orientation;
-      if (v_ != null && w.wants(222)) {
-        w.key(222);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(367, v_);
       }
     }
     {
       final v_ = visible;
-      if (v_ != null && w.wants(223)) {
-        w.key(223);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(368, v_);
       }
     }
   }
@@ -118,11 +115,11 @@ class VMenu extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(219, enabled);
-    visit(220, items);
-    visit(221, location);
-    visit(222, orientation);
-    visit(223, visible);
+    visit(364, enabled);
+    visit(365, items);
+    visit(366, location);
+    visit(367, orientation);
+    visit(368, visible);
   }
 
   @override

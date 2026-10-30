@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import 'src/comm/comm.dart';
+import 'src/gen/widgets.dart' show WireChannel;
 
 /// Test-only (web): relays an embedded page's on-load `postMessage` ping up to
 /// the Java side over the dormant `evolve.test.iframeLoaded` channel.
@@ -26,7 +27,7 @@ void registerIframeLoadProbe() {
       final raw = e.data;
       final data = raw?.dartify();
       if (data is String && data.startsWith(prefix)) {
-        EquoCommService.sendPayload('evolve.test.iframeLoaded', {
+        EquoCommService.sendOn(WireChannel.evolveTestIframeLoaded, {
           'page': data.substring(prefix.length),
         });
       }

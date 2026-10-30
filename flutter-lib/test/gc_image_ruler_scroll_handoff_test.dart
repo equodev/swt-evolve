@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/gc.dart';
@@ -14,18 +15,14 @@ import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 
 import 'support/gc_frames.dart';
+import 'support/channels.dart' as channels;
 
 const int _w = 29;
 const int _h = 120;
 const int _step = 18; // one line
 
 Uint8List _frame(String actionId, List<int> body) {
-  final action = utf8.encode(actionId);
-  final out = Uint8List(2 + action.length + body.length);
-  out[0] = (action.length >> 8) & 0xFF;
-  out[1] = action.length & 0xFF;
-  out.setRange(2, 2 + action.length, action);
-  out.setRange(2 + action.length, out.length, body);
+  final out = channels.frame(actionId, Uint8List.fromList(body));
   return out;
 }
 
@@ -56,7 +53,7 @@ void _openGc(dynamic comm, int gcId, int? baseRef, VColor background) {
 
 void _closeGc(dynamic comm, int gcId, int ref) {
   comm.receiveBinary(_frame('GC/$gcId/gcDispose',
-      tagged({'ref': ref, 'pixels': false, 'retain': false})));
+      gcDisposeOf({'ref': ref, 'pixels': false, 'retain': false})));
 }
 
 Future<ui.Color> _pixelAt(ui.Image image, int x, int y) async {

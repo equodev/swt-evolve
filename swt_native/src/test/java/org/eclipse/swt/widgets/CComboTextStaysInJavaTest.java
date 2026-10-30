@@ -113,7 +113,7 @@ class CComboTextStaysInJavaTest {
         text.setToolTipText("tip");
         FlutterBridge.update().join();
         // What DisplayBridge answers for a key while the field has Java focus.
-        FlutterBridge.send((DartWidget) text.getImpl(), "key/verdict", dev.equo.swt.Java8.map("doit", true));
+        FlutterBridge.send((DartWidget) text.getImpl(), dev.equo.swt.WireTable.CHANNEL_KEY_VERDICT, dev.equo.swt.Java8.map("doit", true));
 
         assertThat(sentEvents()).noneMatch(e -> e.startsWith("Text/"));
     }

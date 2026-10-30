@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import '../comm/comm.dart';
 import '../comm/v_registry.dart';
+import '../comm/widget_key.dart';
 import '../comm/widget_wire.dart';
 import '../gen/menu.dart';
 import '../gen/widgets.dart' as gen;
@@ -90,7 +91,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     _focusScopeNode.addListener(_handleFocusScopeChange);
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
-    TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
+    _attachTrackerHost();
     _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('ShellPopups', VShellPopups.new, (id, record) {
       if (id == state.id) _showPopups(record.popups ?? const []);
     });
@@ -104,10 +105,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   /// shell's widget tree and nothing else would carry it here.
   List<VMenu> _popups = const [];
 
-  String get _popupsChannel => 'Shell/${state.id}/Popups';
+  /// What holds this shell's popup menus: the shell's popups record, keyed apart from the shell.
+  int get _popupsKey => WidgetKey.of(gen.WireType.shellPopups, state.id);
 
   void _showPopups(List<VMenu> menus) {
-    VRegistry.instance.holds(_popupsChannel, menus);
+    VRegistry.instance.holdsAt(_popupsKey, menus);
     if (!mounted) return;
     setState(() => _popups = menus);
   }
@@ -135,14 +137,25 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // Again on every update, because the channel is keyed by id and this State outlives a change
     // of it: subscribing once at mount leaves the Shell listening on an id Java no longer sends
     // to, and a Tracker opened after that is never driven -- it just times out and its drop is
-    // discarded. attachHost is a no-op for an id already subscribed.
-    TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
+    // discarded.
+    _attachTrackerHost();
+  }
+
+  int? _trackerHostId;
+
+  void _attachTrackerHost() {
+    final id = state.id;
+    if (_trackerHostId != null && _trackerHostId != id) TrackerSession.detachHost(_trackerHostId!);
+    _trackerHostId = id;
+    TrackerSession.attachHost(state.swt, id, toDisplay: _toDisplay);
   }
 
   @override
   void dispose() {
+    final trackerHost = _trackerHostId;
+    if (trackerHost != null) TrackerSession.detachHost(trackerHost);
     _stopPopupRecords?.call();
-    VRegistry.instance.holds(_popupsChannel, const []);
+    VRegistry.instance.holdsAt(_popupsKey, const []);
     _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
     _focusScopeNode.dispose();

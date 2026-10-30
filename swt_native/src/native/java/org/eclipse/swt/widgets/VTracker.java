@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VTracker extends VWidget {
 
@@ -29,10 +28,16 @@ public class VTracker extends VWidget {
         Rectangle[] values = ((DartTracker) impl).rectangles;
         if (values == null)
             return null;
-        ArrayList<Rectangle> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Rectangle v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Rectangle[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Rectangle[] result = new Rectangle[kept];
+        kept = 0;
+        for (Rectangle v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setRectangles(Rectangle[] value) {

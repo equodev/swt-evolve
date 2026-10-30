@@ -365,7 +365,7 @@ Map<String, dynamic>? _lastRunUiResponse;
 /// PreferencesUtil). With no [id] it opens at the default page and the caller
 /// navigates the Flutter-rendered preference tree with `tapById`.
 String openPref(String opener, [String? id, String style = 'builder']) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openPreferences',
     'opener': opener,
     'style': style,
@@ -382,7 +382,7 @@ String openPref(String opener, [String? id, String style = 'builder']) {
 /// extension point. The Java hook builds a plain JFace `PreferenceDialog` on that
 /// manager, so nothing here names an application.
 String openPrefViaRegistry(String registry, String xpField, [String? id]) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openPreferences',
     'style': 'registry',
     'registry': registry,
@@ -398,7 +398,7 @@ String openPrefViaRegistry(String registry, String xpField, [String? id]) {
 /// project-open workbench event, whose topic is read at runtime from the
 /// app-supplied [eventClass] `#`[topicField] constant.
 String openProject(String project, String eventClass, String topicField) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openProject',
     'project': project,
     'eventClass': eventClass,
@@ -409,7 +409,7 @@ String openProject(String project, String eventClass, String topicField) {
 
 /// Open a file (by absolute [path]) in its default editor.
 String openFile(String path) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openFile',
     'path': path,
   });
@@ -421,7 +421,7 @@ String openFile(String path) {
 /// result arrives asynchronously on the response channel — read it with
 /// [lastPrefPages] a beat later.
 String listPrefPages(String registry, [String? xpField]) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'listPrefPages',
     'registry': registry,
     if (xpField != null && xpField.isNotEmpty) 'xpField': xpField,

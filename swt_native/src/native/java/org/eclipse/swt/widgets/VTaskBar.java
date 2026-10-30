@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import java.util.ArrayList;
 
 public class VTaskBar extends VWidget {
 
@@ -16,10 +15,16 @@ public class VTaskBar extends VWidget {
         TaskItem[] values = ((DartTaskBar) impl).items;
         if (values == null)
             return null;
-        ArrayList<TaskItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TaskItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TaskItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TaskItem[] result = new TaskItem[kept];
+        kept = 0;
+        for (TaskItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(TaskItem[] value) {

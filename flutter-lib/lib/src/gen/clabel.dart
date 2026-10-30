@@ -62,37 +62,37 @@ class VCLabel extends VCanvas {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 541: // alignment
+      case 25: // alignment
         alignment = r.int32();
         return true;
-      case 542: // backgroundImage
+      case 26: // backgroundImage
         backgroundImage = r.image();
         return true;
-      case 543: // bottomMargin
+      case 27: // bottomMargin
         bottomMargin = r.int32();
         return true;
-      case 1357: // gradientColors
-        gradientColors = r.list(() => r.color())?.whereType<VColor>().toList();
+      case 28: // gradientColors
+        gradientColors = r.list((r) => r.color())?.whereType<VColor>().toList();
         return true;
-      case 1358: // gradientPercents
+      case 29: // gradientPercents
         gradientPercents = r.ints();
         return true;
-      case 1359: // gradientVertical
+      case 30: // gradientVertical
         gradientVertical = r.boolean();
         return true;
-      case 544: // image
+      case 31: // image
         image = r.image();
         return true;
-      case 545: // leftMargin
+      case 32: // leftMargin
         leftMargin = r.int32();
         return true;
-      case 546: // rightMargin
+      case 33: // rightMargin
         rightMargin = r.int32();
         return true;
-      case 547: // text
+      case 34: // text
         text = r.string();
         return true;
-      case 548: // topMargin
+      case 35: // topMargin
         topMargin = r.int32();
         return true;
       default:
@@ -105,79 +105,71 @@ class VCLabel extends VCanvas {
     super.writeWire(w);
     {
       final v_ = alignment;
-      if (v_ != null && w.wants(541)) {
-        w.key(541);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(25, v_);
       }
     }
     {
       final v_ = backgroundImage;
-      if (v_ != null && w.wants(542)) {
-        w.key(542);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(26, v_.id);
       }
     }
     {
       final v_ = bottomMargin;
-      if (v_ != null && w.wants(543)) {
-        w.key(543);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(27, v_);
       }
     }
     {
       final v_ = gradientColors;
-      if (v_ != null && w.wants(1357)) {
-        w.key(1357);
+      if (v_ != null) {
+        w.key(28);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = gradientPercents;
-      if (v_ != null && w.wants(1358)) {
-        w.key(1358);
+      if (v_ != null) {
+        w.key(29);
         w.ints(v_);
       }
     }
     {
       final v_ = gradientVertical;
-      if (v_ != null && w.wants(1359)) {
-        w.key(1359);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(30, v_);
       }
     }
     {
       final v_ = image;
-      if (v_ != null && w.wants(544)) {
-        w.key(544);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(31, v_.id);
       }
     }
     {
       final v_ = leftMargin;
-      if (v_ != null && w.wants(545)) {
-        w.key(545);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(32, v_);
       }
     }
     {
       final v_ = rightMargin;
-      if (v_ != null && w.wants(546)) {
-        w.key(546);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(33, v_);
       }
     }
     {
       final v_ = text;
-      if (v_ != null && w.wants(547)) {
-        w.key(547);
+      if (v_ != null) {
+        w.key(34);
         w.string(v_);
       }
     }
     {
       final v_ = topMargin;
-      if (v_ != null && w.wants(548)) {
-        w.key(548);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(35, v_);
       }
     }
   }
@@ -185,17 +177,17 @@ class VCLabel extends VCanvas {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(541, alignment);
-    visit(542, backgroundImage);
-    visit(543, bottomMargin);
-    visit(1357, gradientColors);
-    visit(1358, gradientPercents);
-    visit(1359, gradientVertical);
-    visit(544, image);
-    visit(545, leftMargin);
-    visit(546, rightMargin);
-    visit(547, text);
-    visit(548, topMargin);
+    visit(25, alignment);
+    visit(26, backgroundImage);
+    visit(27, bottomMargin);
+    visit(28, gradientColors);
+    visit(29, gradientPercents);
+    visit(30, gradientVertical);
+    visit(31, image);
+    visit(32, leftMargin);
+    visit(33, rightMargin);
+    visit(34, text);
+    visit(35, topMargin);
   }
 
   @override

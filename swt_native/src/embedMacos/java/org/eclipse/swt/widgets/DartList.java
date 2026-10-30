@@ -1197,7 +1197,7 @@ public class DartList extends DartScrollable implements IList {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SCROLL_SCROLL, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;

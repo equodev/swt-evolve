@@ -9,6 +9,7 @@ import 'package:swtflutter/src/gen/datetime.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingDateTimeSwt extends DateTimeSwt<VDateTime> {
   const _CapturingDateTimeSwt({required super.value, required this.onEvent});
@@ -16,7 +17,7 @@ class _CapturingDateTimeSwt extends DateTimeSwt<VDateTime> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VDateTime val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VDateTime val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VDateTime _date(int id) => VDateTime()

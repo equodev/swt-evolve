@@ -7,6 +7,7 @@ import '../../gen/droptarget.dart';
 import '../../gen/event.dart';
 import '../../gen/widget.dart';
 import 'dnd_session.dart';
+import '../../gen/widgets.dart' show WireChannel;
 import 'widget_utils.dart';
 
 class DndDragPayload {
@@ -375,7 +376,7 @@ Widget wrapDraggable<T extends Object>({
 
   void fireDragDetect() {
     if (hasDragSource) {
-      DragStartVeto.begin(state.swt, state.id);
+      DragStartVeto.begin(state.wireType, state.id);
     } else {
       DragStartVeto.reset();
     }
@@ -631,7 +632,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     return box is RenderBox ? box.globalToLocal(details.offset) : Offset.zero;
   }
 
-  void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
+  void _sendNegotiation(int channel, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;
     // Nothing to tell Java, and the resolvers have side effects, so run them only for a widget
     // that asked to draw its own feedback without a DropTarget of its own.
@@ -651,7 +652,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     if (id == null) return;
     final dropTargetValue = VDropTarget()..id = id;
     DropTargetSwt<VDropTarget>(value: dropTargetValue)
-        .sendEvent(dropTargetValue, "Drop/$ev", event);
+        .sendEvent(dropTargetValue, channel, event);
   }
 
   @override
@@ -667,15 +668,15 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
         // A previous drag's answer would otherwise show until Java answers this one.
         DndSession.clear(id);
         DndDropAnswer.enter(this, Dnd.dropDefault);
-        _sendNegotiation("dragEnter", details);
+        _sendNegotiation(WireChannel.dropDragEnter, details);
         return true;
       },
-      onMove: (details) => _sendNegotiation("dragOver", details),
+      onMove: (details) => _sendNegotiation(WireChannel.dropDragOver, details),
       onLeave: (_) {
         DndDropAnswer.leave(this);
         widget.onLeave?.call();
         if (widget.dropTargetId == null) return;
-        _sendNegotiation("dragLeave", null);
+        _sendNegotiation(WireChannel.dropDragLeave, null);
       },
       onAcceptWithDetails: (details) {
         DndDropAnswer.leave(this);

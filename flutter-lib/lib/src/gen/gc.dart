@@ -95,82 +95,82 @@ class VGC extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 145: // XORMode
+      case 265: // XORMode
         XORMode = r.boolean();
         return true;
-      case 146: // alpha
+      case 266: // alpha
         alpha = r.intBoxed();
         return true;
-      case 147: // antialias
+      case 267: // antialias
         antialias = r.int32();
         return true;
-      case 148: // background
+      case 268: // background
         background = r.color();
         return true;
-      case 560: // backgroundPattern
+      case 269: // backgroundPattern
         backgroundPattern = r.object(VPattern.new);
         return true;
-      case 150: // clipping
+      case 271: // clipping
         clipping = r.rect();
         return true;
-      case 151: // clippingPath
+      case 272: // clippingPath
         clippingPath = r.object(VPathData.new);
         return true;
-      case 152: // clippingRects
+      case 273: // clippingRects
         clippingRects = r.ints();
         return true;
-      case 153: // fillRule
+      case 275: // fillRule
         fillRule = r.intBoxed();
         return true;
-      case 154: // font
+      case 276: // font
         font = r.object(VFont.new);
         return true;
-      case 155: // foreground
+      case 277: // foreground
         foreground = r.color();
         return true;
-      case 561: // foregroundPattern
+      case 278: // foregroundPattern
         foregroundPattern = r.object(VPattern.new);
         return true;
-      case 156: // interpolation
+      case 280: // interpolation
         interpolation = r.int32();
         return true;
-      case 157: // lineCap
+      case 281: // lineCap
         lineCap = r.intBoxed();
         return true;
-      case 158: // lineDash
+      case 282: // lineDash
         lineDash = r.ints();
         return true;
-      case 160: // lineJoin
+      case 284: // lineJoin
         lineJoin = r.intBoxed();
         return true;
-      case 161: // lineStyle
+      case 285: // lineStyle
         lineStyle = r.intBoxed();
         return true;
-      case 162: // lineWidth
+      case 286: // lineWidth
         lineWidth = r.int32();
         return true;
-      case 562: // transform
+      case 290: // transform
         transform = r.object(VTransform.new);
         return true;
-      case 44: // clippingText
+      case 274: // clippingText
         clippingText = r.object(VPath.new);
         return true;
-      case 159: // lineDashOffset
+      case 283: // lineDashOffset
         lineDashOffset = r.float32();
         return true;
-      case 149: // bufferScale
+      case 270: // bufferScale
         bufferScale = r.float32();
         return true;
-      case 1356: // themedCanvas
+      case 289: // themedCanvas
         themedCanvas = r.boolBoxed();
         return true;
-      case 1372: // hoverFills
-        hoverFills = r.list(() => r.rgb());
+      case 279: // hoverFills
+        hoverFills = r.list((r) => r.rgb());
         return true;
-      case 1373: // selectionFills
-        selectionFills = r.list(() => r.rgb());
+      case 287: // selectionFills
+        selectionFills = r.list((r) => r.rgb());
         return true;
-      case 163: // style
+      case 288: // style
         style = r.int32();
         return true;
       default:
@@ -183,214 +183,207 @@ class VGC extends VWidget {
     super.writeWire(w);
     {
       final v_ = XORMode;
-      if (v_ != null && w.wants(145)) {
-        w.key(145);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(265, v_);
       }
     }
     {
       final v_ = alpha;
-      if (v_ != null && w.wants(146)) {
-        w.key(146);
+      if (v_ != null) {
+        w.key(266);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = antialias;
-      if (v_ != null && w.wants(147)) {
-        w.key(147);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(267, v_);
       }
     }
     {
       final v_ = background;
-      if (v_ != null && w.wants(148)) {
-        w.key(148);
+      if (v_ != null) {
+        w.key(268);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgroundPattern;
-      if (v_ != null && w.wants(560)) {
-        w.key(560);
+      if (v_ != null) {
+        w.key(269);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clipping;
-      if (v_ != null && w.wants(150)) {
-        w.key(150);
+      if (v_ != null) {
+        w.key(271);
         w.rectValue(v_);
       }
     }
     {
       final v_ = clippingPath;
-      if (v_ != null && w.wants(151)) {
-        w.key(151);
+      if (v_ != null) {
+        w.key(272);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clippingRects;
-      if (v_ != null && w.wants(152)) {
-        w.key(152);
+      if (v_ != null) {
+        w.key(273);
         w.ints(v_);
       }
     }
     {
       final v_ = fillRule;
-      if (v_ != null && w.wants(153)) {
-        w.key(153);
+      if (v_ != null) {
+        w.key(275);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = font;
-      if (v_ != null && w.wants(154)) {
-        w.key(154);
+      if (v_ != null) {
+        w.key(276);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
-      if (v_ != null && w.wants(155)) {
-        w.key(155);
+      if (v_ != null) {
+        w.key(277);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregroundPattern;
-      if (v_ != null && w.wants(561)) {
-        w.key(561);
+      if (v_ != null) {
+        w.key(278);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = interpolation;
-      if (v_ != null && w.wants(156)) {
-        w.key(156);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(280, v_);
       }
     }
     {
       final v_ = lineCap;
-      if (v_ != null && w.wants(157)) {
-        w.key(157);
+      if (v_ != null) {
+        w.key(281);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineDash;
-      if (v_ != null && w.wants(158)) {
-        w.key(158);
+      if (v_ != null) {
+        w.key(282);
         w.ints(v_);
       }
     }
     {
       final v_ = lineJoin;
-      if (v_ != null && w.wants(160)) {
-        w.key(160);
+      if (v_ != null) {
+        w.key(284);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineStyle;
-      if (v_ != null && w.wants(161)) {
-        w.key(161);
+      if (v_ != null) {
+        w.key(285);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineWidth;
-      if (v_ != null && w.wants(162)) {
-        w.key(162);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(286, v_);
       }
     }
     {
       final v_ = transform;
-      if (v_ != null && w.wants(562)) {
-        w.key(562);
+      if (v_ != null) {
+        w.key(290);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clippingText;
-      if (v_ != null && w.wants(44)) {
-        w.key(44);
+      if (v_ != null) {
+        w.key(274);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = lineDashOffset;
-      if (v_ != null && w.wants(159)) {
-        w.key(159);
+      if (v_ != null) {
+        w.key(283);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = bufferScale;
-      if (v_ != null && w.wants(149)) {
-        w.key(149);
+      if (v_ != null) {
+        w.key(270);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = themedCanvas;
-      if (v_ != null && w.wants(1356)) {
-        w.key(1356);
+      if (v_ != null) {
+        w.key(289);
         w.boolBoxed(v_);
       }
     }
     {
       final v_ = hoverFills;
-      if (v_ != null && w.wants(1372)) {
-        w.key(1372);
+      if (v_ != null) {
+        w.key(279);
         w.list(v_, (e) => w.rgbValue(e));
       }
     }
     {
       final v_ = selectionFills;
-      if (v_ != null && w.wants(1373)) {
-        w.key(1373);
+      if (v_ != null) {
+        w.key(287);
         w.list(v_, (e) => w.rgbValue(e));
       }
     }
-    if (w.wants(163)) {
-      w.key(163);
-      w.int32(style);
-    }
+    w.keyInt32(288, style);
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(145, XORMode);
-    visit(146, alpha);
-    visit(147, antialias);
-    visit(148, background);
-    visit(560, backgroundPattern);
-    visit(150, clipping);
-    visit(151, clippingPath);
-    visit(152, clippingRects);
-    visit(153, fillRule);
-    visit(154, font);
-    visit(155, foreground);
-    visit(561, foregroundPattern);
-    visit(156, interpolation);
-    visit(157, lineCap);
-    visit(158, lineDash);
-    visit(160, lineJoin);
-    visit(161, lineStyle);
-    visit(162, lineWidth);
-    visit(562, transform);
-    visit(44, clippingText);
-    visit(159, lineDashOffset);
-    visit(149, bufferScale);
-    visit(1356, themedCanvas);
-    visit(1372, hoverFills);
-    visit(1373, selectionFills);
-    visit(163, style);
+    visit(265, XORMode);
+    visit(266, alpha);
+    visit(267, antialias);
+    visit(268, background);
+    visit(269, backgroundPattern);
+    visit(271, clipping);
+    visit(272, clippingPath);
+    visit(273, clippingRects);
+    visit(275, fillRule);
+    visit(276, font);
+    visit(277, foreground);
+    visit(278, foregroundPattern);
+    visit(280, interpolation);
+    visit(281, lineCap);
+    visit(282, lineDash);
+    visit(284, lineJoin);
+    visit(285, lineStyle);
+    visit(286, lineWidth);
+    visit(290, transform);
+    visit(274, clippingText);
+    visit(283, lineDashOffset);
+    visit(270, bufferScale);
+    visit(289, themedCanvas);
+    visit(279, hoverFills);
+    visit(287, selectionFills);
+    visit(288, style);
   }
 }
 
@@ -402,15 +395,18 @@ class VGCCopyAreaImageintint {
   VGCCopyAreaImageintint({this.x = 0, this.y = 0});
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCCopyAreaImageintint.fromBinary(GcWireReader r) {
-    final op = VGCCopyAreaImageintint();
+  factory VGCCopyAreaImageintint.fromBinary(GcWireReader r) =>
+      VGCCopyAreaImageintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     {
       final ww = r.wire();
       op.image = ww.image();
     }
     op.x = r.i();
     op.y = r.i();
-    return op;
   }
 }
 
@@ -434,8 +430,12 @@ class VGCCopyAreaintintintintintintboolean {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCCopyAreaintintintintintintboolean.fromBinary(GcWireReader r) {
-    final op = VGCCopyAreaintintintintintintboolean();
+  factory VGCCopyAreaintintintintintintboolean.fromBinary(GcWireReader r) =>
+      VGCCopyAreaintintintintintintboolean()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.srcX = r.i();
     op.srcY = r.i();
     op.width = r.i();
@@ -443,7 +443,6 @@ class VGCCopyAreaintintintintintintboolean {
     op.destX = r.i();
     op.destY = r.i();
     op.paint = r.b();
-    return op;
   }
 }
 
@@ -465,15 +464,18 @@ class VGCDrawArcintintintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawArcintintintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawArcintintintintintint();
+  factory VGCDrawArcintintintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawArcintintintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
     op.startAngle = r.i();
     op.arcAngle = r.i();
-    return op;
   }
 }
 
@@ -491,13 +493,16 @@ class VGCDrawFocusintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawFocusintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawFocusintintintint();
+  factory VGCDrawFocusintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawFocusintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
-    return op;
   }
 }
 
@@ -509,15 +514,18 @@ class VGCDrawImageImageintint {
   VGCDrawImageImageintint({this.x = 0, this.y = 0});
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawImageImageintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawImageImageintint();
+  factory VGCDrawImageImageintint.fromBinary(GcWireReader r) =>
+      VGCDrawImageImageintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     {
       final ww = r.wire();
       op.image = ww.image();
     }
     op.x = r.i();
     op.y = r.i();
-    return op;
   }
 }
 
@@ -536,8 +544,12 @@ class VGCDrawImageImageintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawImageImageintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawImageImageintintintint();
+  factory VGCDrawImageImageintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawImageImageintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     {
       final ww = r.wire();
       op.image = ww.image();
@@ -546,7 +558,6 @@ class VGCDrawImageImageintintintint {
     op.destY = r.i();
     op.destWidth = r.i();
     op.destHeight = r.i();
-    return op;
   }
 }
 
@@ -573,8 +584,13 @@ class VGCDrawImageImageintintintintintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawImageImageintintintintintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawImageImageintintintintintintintint();
+  factory VGCDrawImageImageintintintintintintintint.fromBinary(
+    GcWireReader r,
+  ) => VGCDrawImageImageintintintintintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     {
       final ww = r.wire();
       op.image = ww.image();
@@ -587,7 +603,6 @@ class VGCDrawImageImageintintintintintintintint {
     op.destY = r.i();
     op.destWidth = r.i();
     op.destHeight = r.i();
-    return op;
   }
 }
 
@@ -600,13 +615,16 @@ class VGCDrawLineintintintint {
   VGCDrawLineintintintint({this.x1 = 0, this.y1 = 0, this.x2 = 0, this.y2 = 0});
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawLineintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawLineintintintint();
+  factory VGCDrawLineintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawLineintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x1 = r.i();
     op.y1 = r.i();
     op.x2 = r.i();
     op.y2 = r.i();
-    return op;
   }
 }
 
@@ -624,13 +642,16 @@ class VGCDrawOvalintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawOvalintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawOvalintintintint();
+  factory VGCDrawOvalintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawOvalintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
-    return op;
   }
 }
 
@@ -640,13 +661,16 @@ class VGCDrawPathPath {
   VGCDrawPathPath();
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawPathPath.fromBinary(GcWireReader r) {
-    final op = VGCDrawPathPath();
+  factory VGCDrawPathPath.fromBinary(GcWireReader r) =>
+      VGCDrawPathPath()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     {
       final ww = r.wire();
       op.path = ww.object(VPath.new);
     }
-    return op;
   }
 }
 
@@ -657,11 +681,14 @@ class VGCDrawPointintint {
   VGCDrawPointintint({this.x = 0, this.y = 0});
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawPointintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawPointintint();
+  factory VGCDrawPointintint.fromBinary(GcWireReader r) =>
+      VGCDrawPointintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
-    return op;
   }
 }
 
@@ -671,10 +698,13 @@ class VGCDrawPolygonint {
   VGCDrawPolygonint();
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawPolygonint.fromBinary(GcWireReader r) {
-    final op = VGCDrawPolygonint();
+  factory VGCDrawPolygonint.fromBinary(GcWireReader r) =>
+      VGCDrawPolygonint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.pointArray = r.ints();
-    return op;
   }
 }
 
@@ -684,10 +714,13 @@ class VGCDrawPolylineint {
   VGCDrawPolylineint();
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawPolylineint.fromBinary(GcWireReader r) {
-    final op = VGCDrawPolylineint();
+  factory VGCDrawPolylineint.fromBinary(GcWireReader r) =>
+      VGCDrawPolylineint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.pointArray = r.ints();
-    return op;
   }
 }
 
@@ -705,13 +738,16 @@ class VGCDrawRectangleintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawRectangleintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawRectangleintintintint();
+  factory VGCDrawRectangleintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawRectangleintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
-    return op;
   }
 }
 
@@ -733,15 +769,18 @@ class VGCDrawRoundRectangleintintintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawRoundRectangleintintintintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawRoundRectangleintintintintintint();
+  factory VGCDrawRoundRectangleintintintintintint.fromBinary(GcWireReader r) =>
+      VGCDrawRoundRectangleintintintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
     op.arcWidth = r.i();
     op.arcHeight = r.i();
-    return op;
   }
 }
 
@@ -759,13 +798,16 @@ class VGCDrawTextStringintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCDrawTextStringintintint.fromBinary(GcWireReader r) {
-    final op = VGCDrawTextStringintintint();
+  factory VGCDrawTextStringintintint.fromBinary(GcWireReader r) =>
+      VGCDrawTextStringintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.string = r.string() ?? '';
     op.x = r.i();
     op.y = r.i();
     op.flags = r.i();
-    return op;
   }
 }
 
@@ -787,15 +829,18 @@ class VGCFillArcintintintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCFillArcintintintintintint.fromBinary(GcWireReader r) {
-    final op = VGCFillArcintintintintintint();
+  factory VGCFillArcintintintintintint.fromBinary(GcWireReader r) =>
+      VGCFillArcintintintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
     op.startAngle = r.i();
     op.arcAngle = r.i();
-    return op;
   }
 }
 
@@ -817,14 +862,16 @@ class VGCFillGradientRectangleintintintintboolean {
   /// The op as a GC's binary frame carries it; see GcWireReader.
   factory VGCFillGradientRectangleintintintintboolean.fromBinary(
     GcWireReader r,
-  ) {
-    final op = VGCFillGradientRectangleintintintintboolean();
+  ) => VGCFillGradientRectangleintintintintboolean()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
     op.vertical = r.b();
-    return op;
   }
 }
 
@@ -842,13 +889,16 @@ class VGCFillOvalintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCFillOvalintintintint.fromBinary(GcWireReader r) {
-    final op = VGCFillOvalintintintint();
+  factory VGCFillOvalintintintint.fromBinary(GcWireReader r) =>
+      VGCFillOvalintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
-    return op;
   }
 }
 
@@ -858,13 +908,16 @@ class VGCFillPathPath {
   VGCFillPathPath();
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCFillPathPath.fromBinary(GcWireReader r) {
-    final op = VGCFillPathPath();
+  factory VGCFillPathPath.fromBinary(GcWireReader r) =>
+      VGCFillPathPath()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     {
       final ww = r.wire();
       op.path = ww.object(VPath.new);
     }
-    return op;
   }
 }
 
@@ -874,10 +927,13 @@ class VGCFillPolygonint {
   VGCFillPolygonint();
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCFillPolygonint.fromBinary(GcWireReader r) {
-    final op = VGCFillPolygonint();
+  factory VGCFillPolygonint.fromBinary(GcWireReader r) =>
+      VGCFillPolygonint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.pointArray = r.ints();
-    return op;
   }
 }
 
@@ -895,13 +951,16 @@ class VGCFillRectangleintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCFillRectangleintintintint.fromBinary(GcWireReader r) {
-    final op = VGCFillRectangleintintintint();
+  factory VGCFillRectangleintintintint.fromBinary(GcWireReader r) =>
+      VGCFillRectangleintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
-    return op;
   }
 }
 
@@ -923,14 +982,17 @@ class VGCFillRoundRectangleintintintintintint {
   });
 
   /// The op as a GC's binary frame carries it; see GcWireReader.
-  factory VGCFillRoundRectangleintintintintintint.fromBinary(GcWireReader r) {
-    final op = VGCFillRoundRectangleintintintintintint();
+  factory VGCFillRoundRectangleintintintintintint.fromBinary(GcWireReader r) =>
+      VGCFillRoundRectangleintintintintintint()..readBinary(r);
+
+  /// Sets every argument to the next op [r] reads: an object refilled per op.
+  void readBinary(GcWireReader r) {
+    final op = this;
     op.x = r.i();
     op.y = r.i();
     op.width = r.i();
     op.height = r.i();
     op.arcWidth = r.i();
     op.arcHeight = r.i();
-    return op;
   }
 }

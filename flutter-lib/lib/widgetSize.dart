@@ -16,7 +16,7 @@ import 'package:swtflutter/src/theme/theme.dart';
 import 'main.dart';
 import 'src/comm/comm.dart';
 import 'src/comm/v_registry.dart';
-import 'src/comm/widget_wire.dart' show widgetWireChannel;
+import 'src/comm/widget_key.dart' show WidgetKey;
 
 const SCREENSHOT = false;
 
@@ -152,8 +152,8 @@ void printSizes(RenderBox renderBox) {
 void measureRequest(String bridge, int id) {
   print("Listen on $bridge/$id/widgetSizeRequest");
   // The widget to measure arrives as the app's widgets do, as records of the binary wire.
-  EquoCommService.onBytes(widgetWireChannel, VRegistry.instance.applyWire);
-  EquoCommService.onRaw("$bridge/$id/widgetSizeRequest", (payload) {
+  EquoCommService.onBytesAt(WireChannel.swtEvolveWire, VRegistry.instance.applyWire);
+  EquoCommService.on(WidgetKey.typeOf(bridge), id, WireChannel.widgetSizeRequest, (payload) {
     final Map<String, dynamic> widgetConfig = payload as Map<String, dynamic>;
 
     // The flags as the widget wire writes an object's fields.
@@ -208,7 +208,7 @@ void measureRequest(String bridge, int id) {
           ),
       };
 
-      EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", response);
+      EquoCommService.sendTo(WidgetKey.typeOf(bridge), id, WireChannel.widgetSizeResponse, response);
     });
   });
   runApp(SizedBox());

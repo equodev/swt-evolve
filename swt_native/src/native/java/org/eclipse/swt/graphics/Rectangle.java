@@ -578,34 +578,34 @@ public sealed class Rectangle implements Serializable, Cloneable, dev.equo.swt.W
 
     @Override
     public int wireTypeId() {
-        return 408;
+        return 83;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(406);
+        w.key(419);
         w.write((int) x);
-        w.key(407);
+        w.key(420);
         w.write((int) y);
-        w.key(405);
+        w.key(418);
         w.write((int) width);
-        w.key(404);
+        w.key(417);
         w.write((int) height);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 406:
+            case 419:
                 x = r.int32();
                 return true;
-            case 407:
+            case 420:
                 y = r.int32();
                 return true;
-            case 405:
+            case 418:
                 width = r.int32();
                 return true;
-            case 404:
+            case 417:
                 height = r.int32();
                 return true;
         }

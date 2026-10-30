@@ -85,13 +85,13 @@ class TableTopIndexFollowsScrollTest {
         };
     }
 
-    /** Event.y, as wire-ids.txt numbers it. */
-    private static final int EVENT_Y = 362;
+    /** Event.y, as the wire numbers it. */
+    private static final int EVENT_Y = dev.equo.swt.harness.WireFrames.property("Event.y");
 
     /** The real dispatcher, fed frames directly instead of over a socket. */
     private static final class Feeder extends AbstractBinaryCommService {
         void deliver(String channel, byte[] payload) {
-            byte[] header = CommService.frameHeader(channel);
+            byte[] header = dev.equo.swt.harness.Channels.header(channel);
             byte[] frame = java.util.Arrays.copyOf(header, header.length + payload.length);
             System.arraycopy(payload, 0, frame, header.length, payload.length);
             onBinaryMessage(frame, 0, frame.length);

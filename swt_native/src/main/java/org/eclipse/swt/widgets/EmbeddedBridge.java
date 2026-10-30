@@ -157,7 +157,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
 
     @Override
     public void initFlutterView(Composite parent, DartControl control) {
-        super.onReady(control, Void.class);
+        super.onReady(control, ClientReadyPayload.class);
 
         String theme = detectTheme();
 //        System.out.println("Final detected theme: " + theme);

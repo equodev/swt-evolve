@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../comm/channel_header.dart';
 import '../comm/comm.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 import 'utils/perf_marks.dart';
 import 'utils/text_utils.dart';
 import '../gen/color.dart';
@@ -31,7 +33,7 @@ import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
-import '../comm/widget_wire.dart' show WidgetWireReader, sendWireWith;
+import '../comm/widget_wire.dart' show WidgetWireReader, WidgetWireWriter;
 
 // ─────────────────────────────────────────────
 // GCDrawer — concrete shape engine
@@ -41,13 +43,45 @@ class GCDrawer extends GCDrawerBase {
   final List<Shape> shapes = [];
   final void Function(List<Shape>)? onShapesUpdated;
 
-  // Channel -> token for this drawer's extra channels (gcDispose/imageInit/renderSnapshot),
-  // removed by token so a stale drawer can't unregister a newer one's handler.
-  final Map<String, Object> _localTokens = {};
+  /// What this drawer does with its own channels' frames, by mode: a standalone (image) drawer and an
+  /// embedded (control) one answer differently. Null for a channel the mode does not answer.
+  FutureOr<void> Function(Uint8List frame, int start)? _imageInit, _gcDispose, _renderSnapshot, _nextFrame;
 
-  /// Marks a channel registered through [EquoCommService.onBytes], which hands back no token of its
-  /// own and holds one handler per channel, so it can only be removed by name.
-  static final Object _rawByteChannel = Object();
+  /// Stops answering this drawer's own channels: what arrives on them from now on is held for the
+  /// drawer that takes its id next.
+  void _unregisterImageListeners() {
+    _imageInit = _gcDispose = _renderSnapshot = _nextFrame = null;
+  }
+
+  /// Registers what every GC answers (see `registerWidgetOps`): its paint frames and ops, and the
+  /// channels a drawer answers by [_imageInit] and the rest.
+  static void registerOps() {
+    final type = WireType.gc;
+    GCDrawerBase.registerOps(type);
+    EquoCommService.onWidgetOp(type, WireChannel.imageInit, _imageInitOp);
+    EquoCommService.onWidgetOp(type, WireChannel.gcDispose, _gcDisposeOp);
+    EquoCommService.onWidgetOp(type, WireChannel.renderSnapshot, _renderSnapshotOp);
+    EquoCommService.onWidgetOp(type, WireChannel.nextFrame, _nextFrameOp);
+  }
+
+  static FutureOr<bool> _imageInitOp(int id, Uint8List frame, int start, int end) =>
+      _apply((GCDrawerBase.live[id] as GCDrawer?)?._imageInit, frame, start);
+
+  static FutureOr<bool> _gcDisposeOp(int id, Uint8List frame, int start, int end) =>
+      _apply((GCDrawerBase.live[id] as GCDrawer?)?._gcDispose, frame, start);
+
+  static FutureOr<bool> _renderSnapshotOp(int id, Uint8List frame, int start, int end) =>
+      _apply((GCDrawerBase.live[id] as GCDrawer?)?._renderSnapshot, frame, start);
+
+  static FutureOr<bool> _nextFrameOp(int id, Uint8List frame, int start, int end) =>
+      _apply((GCDrawerBase.live[id] as GCDrawer?)?._nextFrame, frame, start);
+
+  static FutureOr<bool> _apply(
+      FutureOr<void> Function(Uint8List, int)? handler, Uint8List frame, int start) {
+    if (handler == null) return false;
+    final applied = handler(frame, start);
+    return applied is Future ? applied.then((_) => true) : true;
+  }
 
   final List<Shape> _lateLoadedImages = [];
 
@@ -114,28 +148,25 @@ class GCDrawer extends GCDrawerBase {
         onFullRepaintNeeded = null,
         super(state) {
     // The Image's properties as the widget wire writes an object's fields.
-    EquoCommService.onBytes("${state.swt}/${state.id}/imageInit", (bytes) {
+    _imageInit = (frame, start) {
       final completer = Completer<void>();
       _baseImageCompleter = completer;
       // Only awaited when a cycle ends; the frame queue reports a failure instead.
       completer.future.catchError((Object _) {});
-      final ready = _handleImageInit(WidgetWireReader(bytes).fields(VImage())).then(
+      final ready = _handleImageInit((WidgetWireReader(frame)..pos = start).fields(VImage())).then(
         (_) => completer.complete(),
         onError: (Object e) => completer.completeError(e),
       );
       // Returned so the next frame waits: ops such as copyArea read the base, not just draw over it.
       return ready;
-    });
-    _localTokens["${state.swt}/${state.id}/imageInit"] = _rawByteChannel;
-    // Tagged values, so it can travel in the same message as the ops it ends.
-    _localTokens["${state.swt}/${state.id}/gcDispose"] =
-        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (raw) async {
+    };
+    _gcDispose = (frame, start) async {
       _settleNormalFill();
-      final payload = raw as Map;
-      final ref = (payload['ref'] as num).toInt();
-      final wantPixels = payload['pixels'] == true;
+      final ending = _Dispose(frame, start);
+      final ref = ending.ref;
+      final wantPixels = ending.pixels;
       // Java keeps one drawer per Image: the next GC on it draws on top of this render.
-      final retain = payload['retain'] == true;
+      final retain = ending.retain;
       final myGeneration = ++_gcDisposeGeneration;
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
@@ -155,18 +186,17 @@ class GCDrawer extends GCDrawerBase {
       onDisposed?.call();
       // Nothing reuses this gcId after this point, so tear down now.
       dispose();
-    });
+    };
     // Non-terminal: renders the current draw state (staged + already-committed shapes) without
     // clearing staging or unregistering listeners, so more ops (and a later real gcDispose, or
     // another snapshot) still work afterward. Used when Java asks for the image mid-drawing —
     // this backend only paints in response to an explicit signal, unlike real SWT where GC draws
     // are immediately visible in the image.
-    _localTokens["${state.swt}/${state.id}/renderSnapshot"] =
-        EquoCommService.onRaw("${state.swt}/${state.id}/renderSnapshot", (_) async {
+    _renderSnapshot = (frame, start) async {
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
       await _renderSnapshotAndSend();
-    });
+    };
   }
 
   final void Function(List<Shape>)? onGCDispose;
@@ -182,106 +212,120 @@ class GCDrawer extends GCDrawerBase {
   // Set once the full-area Paint is asked for, so the cycles before it arrives don't ask again.
   bool _fullRepaintRequested = false;
 
-  /// The rectangle a Paint was scoped to, or null when it covered the whole client area.
-  static Rect? _damageOf(Object? payload) {
-    if (payload is! Map) return null;
-    final damage = payload['damage'];
-    if (damage is! Map) return null;
-    final width = (damage['width'] as num?)?.toDouble() ?? 0;
-    final height = (damage['height'] as num?)?.toDouble() ?? 0;
-    if (width <= 0 || height <= 0) return null;
-    return Rect.fromLTWH((damage['x'] as num?)?.toDouble() ?? 0,
-        (damage['y'] as num?)?.toDouble() ?? 0, width, height);
-  }
-
   /// Embedded mode: registers comm listeners for state + all draw ops + gcDispose.
   /// onShapesUpdated triggers GCImpl.setState().
   GCDrawer.embedded(VGC state,
       {this.onShapesUpdated, this.onGCDispose, this.onFullRepaintNeeded})
       : super(state) {
-    _localTokens["${state.swt}/${state.id}/gcDispose"] =
-        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (payload) async {
+    _gcDispose = (frame, start) {
+      final ending = _Dispose.read(frame, start);
       // Whether this GC mirrors a real SWT.Paint (ControlHelper.firePaint()) versus one
       // the app opened outside any Paint dispatch (e.g. GEF/draw2d drag/hover feedback on
-      // a FigureCanvas). Malformed/missing payload defaults to true (replace).
-      final fullRepaint =
-          !(payload is Map && payload['fullRepaint'] == false);
+      // a FigureCanvas).
+      final fullRepaint = ending.fullRepaint;
+      final damage = ending.damage;
       final cycleStaging = _staging;
-      _staging = [];
+      _staging = _spareStaging ?? [];
+      _spareStaging = null;
       _settleNormalFill();
-
-      final pending = List<Future<Shape>>.from(_pendingImages);
-      _pendingImages.clear();
-
-      final previousCommit = _commitChain;
-      final thisCommit = Completer<void>();
-      _commitChain = thisCommit.future;
-      try {
-        if (pending.isNotEmpty) {
-          try {
-            await Future.wait(pending);
-          } catch (e) {
-            // Failed images will be replaced with fallback shapes
-          }
-        }
-        // Decoding runs concurrently across cycles; only the commit is serialized.
-        await previousCommit;
-
-        cycleStaging.removeWhere((s) => s is _PlaceholderShape);
-        final damage = _damageOf(payload);
-        _settleScreenCopies(cycleStaging, fullRepaint, damage);
-
-        final keep = <ui.Image>{};
-        collectShapeImages(cycleStaging, keep);
-        collectShapeImages(_lateLoadedImages, keep);
-        if (_droppedCaptures.isNotEmpty) {
-          for (final image in _droppedCaptures) {
-            if (!keep.contains(image)) image.dispose();
-          }
-          _droppedCaptures.clear();
-        }
-        if (damage != null) {
-          // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
-          // stays and this cycle becomes a layer over it. It erases its rectangle first, so
-          // whatever was painted entirely inside it is gone; anything whose area is unknown stays.
-          _dropShapes((s) {
-            final area = s.paintedBounds;
-            return area != null && _containsRect(damage, area);
-          }, keep);
-          shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
-          _lateLoadedImages.clear();
-          if (!_fullRepaintRequested &&
-              shapes.whereType<RegionShape>().length > _maxRegionLayers) {
-            _fullRepaintRequested = true;
-            onFullRepaintNeeded?.call();
-          }
-        } else {
-          // A full-area Paint repaints the whole client area, so nothing the previous cycle left
-          // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
-          if (fullRepaint) {
-            _fullRepaintRequested = false;
-            disposeShapeImages(shapes, keep: keep);
-            shapes.clear();
-          } else {
-            _dropWhatThisCycleCovers(cycleStaging, keep);
-          }
-          shapes.addAll(cycleStaging);
-          shapes.addAll(_lateLoadedImages);
-          _lateLoadedImages.clear();
-        }
-
-        // The committed frame, empty included: a cycle that drew nothing has to blank the control,
-        // not leave the owner rendering the last frame that had content.
-        onGCDispose?.call(List.from(shapes));
-        onShapesUpdated?.call(shapes);
-        _reportInFrame();
-      } finally {
-        thisCommit.complete();
+      // Nothing to wait for: committed now, with nothing made for the wait.
+      if (_pendingImages.isEmpty && _commitsInFlight == 0) {
+        _commit(cycleStaging, fullRepaint, damage);
+        _spareStaging = cycleStaging..clear();
+        return null;
       }
-    });
+      return _commitWhenReady(cycleStaging, fullRepaint, damage);
+    };
     // A repaint of what is already shown is not resent; Java still waits for the frame it is due in.
-    _localTokens["${state.swt}/${state.id}/nextFrame"] = EquoCommService.onRaw(
-        "${state.swt}/${state.id}/nextFrame", (_) => _reportInFrame());
+    _nextFrame = (frame, start) => _reportInFrame();
+  }
+
+  /// Commits a cycle that has images still decoding, or that an earlier one is still committing
+  /// ahead of: decoding runs concurrently across cycles; only the commit is serialized.
+  Future<void> _commitWhenReady(List<Shape> cycleStaging, bool fullRepaint, Rect? damage) async {
+    final pending = List<Future<Shape>>.from(_pendingImages);
+    _pendingImages.clear();
+
+    final previousCommit = _commitChain;
+    final thisCommit = Completer<void>();
+    _commitChain = thisCommit.future;
+    _commitsInFlight++;
+    try {
+      if (pending.isNotEmpty) {
+        try {
+          await Future.wait(pending);
+        } catch (e) {
+          // Failed images will be replaced with fallback shapes
+        }
+      }
+      await previousCommit;
+      _commit(cycleStaging, fullRepaint, damage);
+    } finally {
+      _commitsInFlight--;
+      thisCommit.complete();
+    }
+  }
+
+  /// Commits that are waiting on images or on an earlier commit.
+  int _commitsInFlight = 0;
+
+  /// The staging list of the cycle last committed, emptied for the next one to fill.
+  List<Shape>? _spareStaging;
+
+  /// Images a commit must not dispose: those a shape still draws. Reused from commit to commit.
+  final Set<ui.Image> _keep = {};
+
+  /// Makes [cycleStaging] what the control shows: over the last frame within [damage], instead
+  /// of it when [fullRepaint], else over what it does not cover.
+  void _commit(List<Shape> cycleStaging, bool fullRepaint, Rect? damage) {
+    var kept = 0;
+    for (var k = 0; k < cycleStaging.length; k++) {
+      final shape = cycleStaging[k];
+      if (shape is! _PlaceholderShape) cycleStaging[kept++] = shape;
+    }
+    cycleStaging.length = kept;
+    _settleScreenCopies(cycleStaging, fullRepaint, damage);
+
+    final keep = _keep..clear();
+    collectShapeImages(cycleStaging, keep);
+    collectShapeImages(_lateLoadedImages, keep);
+    if (_droppedCaptures.isNotEmpty) {
+      for (final image in _droppedCaptures) {
+        if (!keep.contains(image)) image.dispose();
+      }
+      _droppedCaptures.clear();
+    }
+    if (damage != null) {
+      // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
+      // stays and this cycle becomes a layer over it. It erases its rectangle first, so
+      // whatever was painted entirely inside it is gone; anything whose area is unknown stays.
+      _dropInside(damage, keep);
+      shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
+      _lateLoadedImages.clear();
+      if (!_fullRepaintRequested && _regionLayers() > _maxRegionLayers) {
+        _fullRepaintRequested = true;
+        onFullRepaintNeeded?.call();
+      }
+    } else {
+      // A full-area Paint repaints the whole client area, so nothing the previous cycle left
+      // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
+      if (fullRepaint) {
+        _fullRepaintRequested = false;
+        disposeShapeImages(shapes, keep: keep);
+        shapes.clear();
+      } else {
+        _dropWhatThisCycleCovers(cycleStaging, keep);
+      }
+      shapes.addAll(cycleStaging);
+      shapes.addAll(_lateLoadedImages);
+      _lateLoadedImages.clear();
+    }
+
+    // The committed frame, empty included: a cycle that drew nothing has to blank the control,
+    // not leave the owner rendering the last frame that had content.
+    onGCDispose?.call(List.of(shapes, growable: false));
+    onShapesUpdated?.call(shapes);
+    _reportInFrame();
   }
 
   /// Captures [_settleScreenCopies] replaced by the background, disposed once nothing draws them.
@@ -311,51 +355,98 @@ class GCDrawer extends GCDrawerBase {
     }
   }
 
+  int _regionLayers() {
+    var n = 0;
+    for (var k = 0; k < shapes.length; k++) {
+      if (shapes[k] is RegionShape) n++;
+    }
+    return n;
+  }
+
   /// Tells Java the frame that shows this paint has begun, which is when it sends the control's next
   /// Paint: that one is built while this frame renders and lands in the next, so repaints come at
   /// the rate frames are shown, as a native toolkit delivers them, without waiting out the render.
   void _reportInFrame() {
-    final id = state.id;
-    WidgetsBinding.instance.scheduleFrameCallback((_) {
-      sendWireWith('GC/inFrame', (w) => w.int64(id));
-    });
+    // Java counts the reports, one per paint it sent: paints committed before the frame begins each
+    // get theirs, from one callback.
+    if (_inFrameDue++ == 0) WidgetsBinding.instance.scheduleFrameCallback(_inFrame);
     WidgetsBinding.instance.scheduleFrame();
+  }
+
+  /// The reports the next frame owes Java.
+  int _inFrameDue = 0;
+
+  /// [_sendInFrame], torn off once: scheduling it allocates nothing.
+  late final void Function(Duration) _inFrame = _sendInFrame;
+
+  void _sendInFrame(Duration _) {
+    final due = _inFrameDue;
+    _inFrameDue = 0;
+    for (var k = 0; k < due; k++) {
+      EquoCommService.sendWritten(WidgetWireWriter.startOn(WireChannel.gcInFrame)..int64(state.id));
+    }
   }
 
   /// Drops what [cycle] paints over, so a control redrawn outside a Paint does not retain every
   /// superseded cycle for its lifetime. Only *opaque* coverage counts, and only shapes whose own
   /// area is known are dropped: anything unsure is kept, which costs retention, never correctness.
   void _dropWhatThisCycleCovers(List<Shape> cycle, Set<ui.Image> keep) {
-    final covered = <Rect>[];
-    for (final s in cycle) {
-      final area = s.opaqueCoverage;
+    final covered = _covered..clear();
+    for (var k = 0; k < cycle.length; k++) {
+      final area = cycle[k].opaqueCoverage;
       if (area != null && !area.isEmpty) covered.add(area);
     }
     if (covered.isEmpty) return;
-    _dropShapes((s) {
-      final area = s.paintedBounds;
-      return area != null && covered.any((c) => _containsRect(c, area));
-    }, keep);
+    _dropShapes(null, keep);
+    covered.clear();
+  }
+
+  /// What the cycle being committed paints opaquely: reused from commit to commit.
+  final List<Rect> _covered = [];
+
+  /// Drops the shapes painted entirely inside [damage], which a scoped Paint erases.
+  void _dropInside(Rect damage, Set<ui.Image> keep) => _dropShapes(damage, keep);
+
+  /// Whether [s] is hidden: painted entirely inside [damage] when there is one, else inside one of
+  /// [_covered].
+  bool _hidden(Shape s, Rect? damage) {
+    final area = s.paintedBounds;
+    if (area == null) return false;
+    if (damage != null) return _containsRect(damage, area);
+    for (var k = 0; k < _covered.length; k++) {
+      if (_containsRect(_covered[k], area)) return true;
+    }
+    return false;
   }
 
   /// Removes the shapes [hidden] selects and releases their images, except those a surviving shape
   /// still draws: copyArea gives its copy the original's image.
-  void _dropShapes(bool Function(Shape) hidden, Set<ui.Image> keep) {
-    final dropped = <Shape>[];
-    final kept = <Shape>[];
-    for (final s in shapes) {
-      (hidden(s) ? dropped : kept).add(s);
+  void _dropShapes(Rect? damage, Set<ui.Image> keep) {
+    // Kept shapes move down in place; dropped ones are listed only when one holds an image.
+    final dropped = _dropped..clear();
+    var kept = 0;
+    var droppedImages = false;
+    for (var k = 0; k < shapes.length; k++) {
+      final s = shapes[k];
+      if (_hidden(s, damage)) {
+        if (s.holdsImages) {
+          dropped.add(s);
+          droppedImages = true;
+        }
+      } else {
+        shapes[kept++] = s;
+      }
     }
-    if (dropped.isEmpty) return;
-    shapes
-      ..clear()
-      ..addAll(kept);
-    final droppedImages = <ui.Image>{};
-    collectShapeImages(dropped, droppedImages);
-    if (droppedImages.isEmpty) return;
+    if (kept == shapes.length) return;
+    shapes.length = kept;
+    if (!droppedImages) return;
     collectShapeImages(shapes, keep);
     disposeShapeImages(dropped, keep: keep);
+    dropped.clear();
   }
+
+  /// The dropped shapes that hold images, to release them: reused from commit to commit.
+  final List<Shape> _dropped = [];
 
   /// Called by GCImpl.build() to provide context for text style resolution.
   void syncContext(BuildContext ctx) {
@@ -401,8 +492,22 @@ class GCDrawer extends GCDrawerBase {
 
   Color _themed(VColor? swtColor, Color? themeColor, Color fallback) {
     if (_useThemeColors) return themeColor ?? fallback;
-    return colorFromVColor(swtColor, defaultColor: fallback);
+    if (swtColor == null) return fallback;
+    // Every op asks for its colour; the last two made are kept, by value, since a paint alternates
+    // between its background and its foreground.
+    final argb = swtColor.alpha * 0x1000000 + (swtColor.red << 16) + (swtColor.green << 8) + swtColor.blue;
+    if (argb == _argb0) return _color0!;
+    if (argb == _argb1) return _color1!;
+    final color = colorFromVColor(swtColor, defaultColor: fallback);
+    _argb1 = _argb0;
+    _color1 = _color0;
+    _argb0 = argb;
+    _color0 = color;
+    return color;
   }
+
+  int _argb0 = -1, _argb1 = -1;
+  Color? _color0, _color1;
 
   // Used until a theme is resolved: the standalone image drawer renders offscreen, never builds,
   // and so never gets a context (_canvasTheme stays null). Falls back to the global dark/light
@@ -819,6 +924,10 @@ class GCDrawer extends GCDrawerBase {
   }
 
   /// Fills [path] with the GC's background pattern. False when no pattern is set.
+  /// Whether fills draw with a pattern: checked before building the path [_addPatternFill] takes,
+  /// which nearly every fill would otherwise build for nothing.
+  bool get _patterned => state.backgroundPattern != null;
+
   bool _addPatternFill(Path path) {
     final pattern = state.backgroundPattern;
     if (pattern == null) return false;
@@ -949,6 +1058,7 @@ class GCDrawer extends GCDrawerBase {
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
     if (isFilled &&
+        _patterned &&
         _addPatternFill(
             Path()..addRRect(RRect.fromRectXY(rect, arcWidth / 2.0, arcHeight / 2.0)))) {
       return;
@@ -975,7 +1085,7 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    if (isFilled && _addPatternFill(Path()..addOval(rect))) return;
+    if (isFilled && _patterned && _addPatternFill(Path()..addOval(rect))) return;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled && _addDashedStroke(() => Path()..addOval(rect), color)) return;
@@ -991,7 +1101,7 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    if (isFilled && _addPatternFill(Path()..addRect(rect))) return;
+    if (isFilled && _patterned && _addPatternFill(Path()..addRect(rect))) return;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
@@ -1012,6 +1122,7 @@ class GCDrawer extends GCDrawerBase {
     if (points.length.isOdd) points = points.sublist(0, points.length - 1);
     if (points.length >= minPoints) {
       if (isFilled &&
+          _patterned &&
           _addPatternFill(_polygonPath(points, close: true)..fillType = _fillType)) {
         return;
       }
@@ -1164,6 +1275,7 @@ class GCDrawer extends GCDrawerBase {
     final rect = Rect.fromPoints(Offset(x.toDouble(), y.toDouble()),
         Offset((x + width).toDouble(), (y + height).toDouble()));
     if (isFilled &&
+        _patterned &&
         _addPatternFill(
             piePath(rect, _degToRad(-startAngle.toDouble()), _degToRad(-arcAngle.toDouble())))) {
       return;
@@ -1384,7 +1496,7 @@ class GCDrawer extends GCDrawerBase {
       final pngBytes = await ImageUtils.toBytes(image!, ui.ImageByteFormat.png);
       // Binary path: raw PNG bytes, no base64 (the comm channel carries them verbatim).
       if (pngBytes != null) {
-        EquoCommService.sendBytes('${state.swt}/${state.id}/imageResult', pngBytes);
+        EquoCommService.sendTo(state.wireType, state.id, WireChannel.imageResult, pngBytes);
       }
     }
     // Unregistered: nothing here owns it, so nothing would ever dispose it.
@@ -1409,22 +1521,7 @@ class GCDrawer extends GCDrawerBase {
   Future<void> _renderSnapshotAndSend() async {
     final bytes = await _paintToPngBytes([...shapes, ..._staging]);
     if (bytes == null) return;
-    EquoCommService.sendBytes(
-        '${state.swt}/${state.id}/imageSnapshotResult', bytes);
-  }
-
-  void _unregisterImageListeners() {
-    // Remove by token; channels this drawer never registered are absent and skipped.
-    for (final channel in const ['imageInit', 'gcDispose', 'renderSnapshot', 'nextFrame']) {
-      final key = '${state.swt}/${state.id}/$channel';
-      final token = _localTokens.remove(key);
-      if (token == null) continue;
-      if (identical(token, _rawByteChannel)) {
-        EquoCommService.remove(key);
-      } else {
-        EquoCommService.remove(key, token);
-      }
-    }
+    EquoCommService.sendTo(state.wireType, state.id, WireChannel.imageSnapshotResult, bytes);
   }
 
   // ── CopyArea helpers ────────────────────────────────────────────────────
@@ -1440,11 +1537,14 @@ class GCDrawer extends GCDrawerBase {
   /// nested picture -- it draws in full, past the clip (see [_drawPicture]) -- so the picture goes
   /// to pixels first. [ui.Picture.toImageSync] keeps them on the GPU, so nothing is read back, and
   /// [disposeShapeImages] owns the image the shape carries.
+  /// [sourceScale] is the picture's units per unit of [srcRect], as [ImageShape.sourceScale].
   static ImageShape _boundedPicture(
       ui.Picture picture, Rect srcRect, Rect destRect, Rect clip,
-      {int alpha = 255}) {
-    final raster = picture.toImageSync(srcRect.right.ceil(), srcRect.bottom.ceil());
-    return ImageShape.raster(raster, srcRect, destRect, clipRect: clip, alpha: alpha);
+      {int alpha = 255, double sourceScale = 1}) {
+    final k = sourceScale;
+    final source = Rect.fromLTRB(srcRect.left * k, srcRect.top * k, srcRect.right * k, srcRect.bottom * k);
+    final raster = picture.toImageSync(source.right.ceil(), source.bottom.ceil());
+    return ImageShape.raster(raster, source, destRect, clipRect: clip, alpha: alpha);
   }
 
   @visibleForTesting
@@ -1455,14 +1555,20 @@ class GCDrawer extends GCDrawerBase {
     required Rect srcRect,
     required Offset destOffset,
     Offset baseOffset = Offset.zero,
+    double bufferScale = 1,
   }) {
     final destRect = srcRect.shift(destOffset);
+    // The base is in the buffer's pixels, [bufferScale] to a unit of the area copied.
+    final s = bufferScale;
     return [
       // Under the shapes drawn through this GC, so the copy keeps their z-order.
       if (basePicture != null)
-        _boundedPicture(basePicture, srcRect, destRect, destRect)
+        _boundedPicture(basePicture, srcRect, destRect, destRect, sourceScale: s)
       else if (baseImage != null)
-        ImageShape.raster(baseImage.clone(), srcRect.shift(baseOffset), destRect, clipRect: destRect),
+        ImageShape.raster(baseImage.clone(),
+            Rect.fromLTRB(srcRect.left * s, srcRect.top * s, srcRect.right * s, srcRect.bottom * s)
+                .shift(baseOffset),
+            destRect, clipRect: destRect),
       for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
         _translateShapeWithClip(shape, destOffset, srcRect),
     ];
@@ -1539,7 +1645,7 @@ class GCDrawer extends GCDrawerBase {
           opaqueSource: s.opaqueSource, inkMask: s.inkMask),
       ImageShape s when s.type == ImageType.picture => _boundedPicture(
           s.remotePicture!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipArea, alpha: s.alpha),
+          clipArea, alpha: s.alpha, sourceScale: s.sourceScale),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
@@ -1625,7 +1731,13 @@ class GCDrawer extends GCDrawerBase {
   void onDrawImageImageintintintintintintintint(
       VGCDrawImageImageintintintintintintintint o) {
     if (o.image == null) return;
-    _processImageAsync(o.image!, o);
+    // Copied: the image resolves after this op, and the op's object is refilled by the next one.
+    final opArgs = VGCDrawImageImageintintintintintintintint(
+      destX: o.destX, destY: o.destY, destWidth: o.destWidth, destHeight: o.destHeight,
+      srcX: o.srcX, srcY: o.srcY, srcWidth: o.srcWidth, srcHeight: o.srcHeight,
+    );
+    opArgs.image = o.image;
+    _processImageAsync(o.image!, opArgs);
   }
 
   void _processImageAsync(
@@ -1832,10 +1944,8 @@ class GCDrawer extends GCDrawerBase {
       print('[GC copyArea] Error: $e\n$stack');
     } finally {
       // Binary path: raw PNG bytes, no base64 (see imageResult above).
-      EquoCommService.sendBytes(
-        '${state.swt}/${state.id}/copyAreaImageintintResponse',
-        pngBytes ?? Uint8List(0),
-      );
+      EquoCommService.sendTo(
+          state.wireType, state.id, WireChannel.copyAreaImageintintResponse, pngBytes ?? Uint8List(0));
     }
   }
 
@@ -1853,6 +1963,8 @@ class GCDrawer extends GCDrawerBase {
       srcRect: srcRect,
       destOffset: destOffset,
       baseOffset: captured?.offset ?? Offset.zero,
+      // A control's GC captures what the control shows, at its own units.
+      bufferScale: captured == null ? _bufferScale : 1,
     );
     // Whether the screen as captured is what the copy starts from is known when the cycle ends.
     if (captured != null) copied[0] = _ScreenCopy(copied[0] as ImageShape, srcRect, destOffset);
@@ -1863,7 +1975,6 @@ class GCDrawer extends GCDrawerBase {
   @override
   void dispose() {
     super.dispose();
-    _unregisterImageListeners();
     _baseImage?.dispose();
     _baseImage = null;
 
@@ -1877,9 +1988,12 @@ class GCDrawer extends GCDrawerBase {
 // Each image is an independently disposable clone; track [seen] since copyArea can duplicate
 // a shape while reusing the same ui.Image reference, and double-disposing throws.
 void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>? keep}) {
-  final disposed = seen ?? <ui.Image>{};
-  for (final s in shapes) {
+  // Most shapes hold no image, and a walk that meets none makes no set.
+  Set<ui.Image>? made = seen;
+  for (var k = 0; k < shapes.length; k++) {
+    final s = shapes[k];
     if (!s.holdsImages) continue;
+    final disposed = made ??= <ui.Image>{};
     if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
       final img = s.image!;
       if (keep != null && keep.contains(img)) continue;
@@ -1912,7 +2026,8 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
 }
 
 void collectShapeImages(List<Shape> shapes, Set<ui.Image> out) {
-  for (final s in shapes) {
+  for (var k = 0; k < shapes.length; k++) {
+    final s = shapes[k];
     if (!s.holdsImages) continue;
     if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
       out.add(s.image!);
@@ -2011,21 +2126,19 @@ void _drawClipped(ui.Canvas c, Shape shape) {
 /// clipped once, and consecutive straight strokes and convex fills go as one triangle list.
 /// [background] is the scene's, for the scoped repaints ([RegionShape]) a scene holds.
 void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
-  double? px;
-  double devicePixel() => px ??= _devicePixel(c);
+  // No closures here: a call would allocate what they capture, on every frame that repaints.
+  // One device pixel, read from the canvas the first time a run needs it; 0 until then.
+  var px = 0.0;
   Rect? open;
   var clipped = false;
-  void close() {
-    if (clipped) c.restore();
-    clipped = false;
-    open = null;
-  }
 
   var i = 0;
   while (i < shapes.length) {
     final s = shapes[i];
     if (s is RegionShape && background != null) {
-      close();
+      if (clipped) c.restore();
+      clipped = false;
+      open = null;
       s.drawOver(c, background);
       i++;
       continue;
@@ -2041,7 +2154,9 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
       continue;
     }
     if (s is ClipPathShape) {
-      close();
+      if (clipped) c.restore();
+      clipped = false;
+      open = null;
       // The GC keeps its clip as one path while the clip holds, so consecutive shapes under it share
       // it: clipped once instead of once each, clipping to a path being the costly part on a GPU.
       var end = i + 1;
@@ -2058,14 +2173,18 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
       continue;
     }
     if (!s.clipsBody) {
-      close();
+      if (clipped) c.restore();
+      clipped = false;
+      open = null;
       s.draw(c);
       i++;
       continue;
     }
     final clip = s.clipRect;
     if (clip != open || (clip == null && clipped)) {
-      close();
+      if (clipped) c.restore();
+      clipped = false;
+      open = null;
       if (clip != null) {
         c.save();
         c.clipRect(clip);
@@ -2073,27 +2192,40 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
         open = clip;
       }
     }
-    if (!_mayJoinRun(s)) {
+    // A run needs a second shape to join it: one alone draws as itself.
+    if (!_mayJoinRun(s) ||
+        i + 1 == shapes.length ||
+        !_mayJoinRun(shapes[i + 1]) ||
+        shapes[i + 1].clipRect != clip) {
       s.paintBody(c);
       i++;
       continue;
     }
-    final run = _trianglesFrom(shapes, i, devicePixel());
-    if (run.length > 1) {
-      final list = _TriangleList(run.fold(0, (n, p) => n + p.vertices), run.fold(0, (n, p) => n + p.indices),
-          devicePixel());
-      for (final piece in run) {
-        piece.addTo(list);
+    if (px == 0) px = _devicePixel(c);
+    final count = _trianglesFrom(shapes, i, px);
+    if (count > 1) {
+      final run = _run;
+      var vertices = 0, indices = 0;
+      for (var k = 0; k < count; k++) {
+        vertices += run[k]!.vertices;
+        indices += run[k]!.indices;
       }
-      c.drawVertices(list.build(), BlendMode.dst, Paint());
-      i += run.length;
+      final list = _TriangleList(vertices, indices, px);
+      for (var k = 0; k < count; k++) {
+        run[k]!.addTo(list);
+      }
+      c.drawVertices(list.build(), BlendMode.dst, _runPaint);
+      i += count;
     } else {
       s.paintBody(c);
       i++;
     }
   }
-  close();
+  if (clipped) c.restore();
 }
+
+/// What a triangle run draws with: the colours are the vertices', so the paint carries nothing.
+final Paint _runPaint = Paint();
 
 /// What a triangle run draws for one shape: its geometry, prepared once.
 abstract class _Piece {
@@ -2116,22 +2248,6 @@ class _Strokes implements _Piece {
   int get indices => points.length ~/ 4 * _TriangleList.indicesFor(4);
   @override
   void addTo(_TriangleList list) => list.addSegments(points, strokeWidth, lineCap, color);
-}
-
-/// One straight segment with a flat or square cap, written straight from its shape.
-class _Line implements _Piece {
-  _Line(this.shape);
-  final LineShape shape;
-
-  @override
-  int get vertices => _TriangleList.verticesFor(4);
-  @override
-  int get indices => _TriangleList.indicesFor(4);
-  @override
-  void addTo(_TriangleList list) {
-    final s = shape;
-    list.addSegment(s.p1.dx, s.p1.dy, s.p2.dx, s.p2.dy, s.strokeWidth, s.lineCap, s.color);
-  }
 }
 
 /// A filled convex polygon as its outline inset and outset by half a device pixel, corner by corner.
@@ -2220,7 +2336,7 @@ bool _mayJoinRun(Shape s) =>
 
 /// What a triangle run can draw [s] as, or null when it is drawn on its own.
 _Piece? _pieceOf(Shape s, double px) {
-  if (s is LineShape && s.lineCap != SWT.CAP_ROUND) return _Line(s);
+  if (s is LineShape && s.lineCap != SWT.CAP_ROUND) return s;
   if (s is SegmentsShape && s.lineCap != SWT.CAP_ROUND && s.points.isNotEmpty) {
     return _Strokes(s.points, s.strokeWidth, s.lineCap, s.color);
   }
@@ -2228,11 +2344,13 @@ _Piece? _pieceOf(Shape s, double px) {
   return null;
 }
 
-/// The pieces of the shapes from [start] under the same clip that one triangle list can hold.
-/// Paint may change along the run: triangles in one list are blended in the order they are listed,
-/// as separate draws would be, so the run paints what drawing the shapes one by one does.
-List<_Piece> _trianglesFrom(List<Shape> shapes, int start, double px) {
-  final run = <_Piece>[];
+/// Puts in [_run] the pieces of the shapes from [start] under the same clip that one triangle list
+/// can hold, and returns how many. Paint may change along the run: triangles in one list are blended
+/// in the order they are listed, as separate draws would be, so the run paints what drawing the
+/// shapes one by one does.
+int _trianglesFrom(List<Shape> shapes, int start, double px) {
+  // Kept, and read before the next run is made: no run is made while another is being drawn.
+  var count = 0;
   var vertices = 0;
   final clip = shapes[start].clipRect;
   for (var i = start; i < shapes.length; i++) {
@@ -2241,10 +2359,13 @@ List<_Piece> _trianglesFrom(List<Shape> shapes, int start, double px) {
     final piece = _pieceOf(s, px);
     if (piece == null || vertices + piece.vertices > _TriangleList.maxVertices) break;
     vertices += piece.vertices;
-    run.add(piece);
+    if (count == _run.length) _run = List.filled(count * 2, null)..setRange(0, count, _run);
+    _run[count++] = piece;
   }
-  return run;
+  return count;
 }
+
+List<_Piece?> _run = List.filled(64, null);
 
 /// One device pixel in [c]'s current coordinates.
 double _devicePixel(ui.Canvas c) {
@@ -2586,6 +2707,12 @@ Offset _strokeShift(double strokeWidth, bool stroked) {
   return !stroked || width.isEven && width != 0 ? Offset.zero : const Offset(0.5, 0.5);
 }
 
+/// [r] moved by [_strokeShift]: [r] itself when that is no move, which is every fill.
+Rect _alignedRect(Rect r, double strokeWidth, bool stroked) {
+  final shift = _strokeShift(strokeWidth, stroked);
+  return identical(shift, Offset.zero) ? r : r.shift(shift);
+}
+
 void _strokeAligned(ui.Canvas c, double strokeWidth, bool stroked, void Function() draw) {
   final width = strokeWidth.round();
   if (!stroked || width.isEven && width != 0) {
@@ -2726,7 +2853,19 @@ final class _LayoutKey {
       (identical(other.style, style) || other.style == style);
 }
 
-class LineShape extends Shape {
+class LineShape extends Shape implements _Piece {
+  /// What every line draws with: a canvas call takes what a paint holds when it is made, and a line
+  /// sets everything it draws with, so one paint serves them all instead of one per line.
+  static final Paint _linePaint = Paint();
+
+  /// The ends as drawn, moved by [_strokeShift] once rather than per draw.
+  late final Offset _from = _aligned(p1), _to = _aligned(p2);
+
+  Offset _aligned(Offset p) {
+    final shift = _strokeShift(strokeWidth, true);
+    return identical(shift, Offset.zero) ? p : p + shift;
+  }
+
   LineShape(this.p1, this.p2, this.color, this.strokeWidth, this.lineCap,
       this.lineJoin, [this.clipRect]);
   final Offset p1, p2;
@@ -2745,13 +2884,22 @@ class LineShape extends Shape {
 
   @override
   void paintBody(ui.Canvas c) {
-    final shift = _strokeShift(strokeWidth, true);
-    c.drawLine(p1 + shift, p2 + shift, _paint()
+    c.drawLine(_from, _to, _linePaint
+      ..isAntiAlias = _RenderHints.antiAlias
       ..color = color
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
       ..strokeJoin = getStrokeJoin(lineJoin));
   }
+
+  // As a piece of a triangle run: one straight segment with a flat or square cap.
+  @override
+  int get vertices => _TriangleList.verticesFor(4);
+  @override
+  int get indices => _TriangleList.indicesFor(4);
+  @override
+  void addTo(_TriangleList list) =>
+      list.addSegment(p1.dx, p1.dy, p2.dx, p2.dy, strokeWidth, lineCap, color);
 
   @override
   String toString() => 'Line $p1 → $p2${clipRect != null ? " [clipped]" : ""}';
@@ -2778,7 +2926,7 @@ class OvalShape extends Shape {
 
   @override
   void paintBody(ui.Canvas c) {
-    c.drawOval(rect.shift(_strokeShift(strokeWidth, !isFilled)), _paint()
+    c.drawOval(_alignedRect(rect, strokeWidth, !isFilled), _paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth);
@@ -2798,6 +2946,13 @@ abstract interface class GCGround {
 }
 
 class RectShape extends Shape {
+  /// What every rectangle draws with, as [LineShape] has one: a rectangle sets its style, and its
+  /// stroke when it strokes, so nothing another one left behind shows.
+  static final Paint _rectPaint = Paint();
+
+  /// [rect] as drawn: moved by [_strokeShift] once rather than per draw.
+  late final Rect _drawn = _alignedRect(rect, strokeWidth, !isFilled);
+
   RectShape(this.rect, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
       {this.isFilled = false, this.clipRect});
   final Rect rect;
@@ -2827,7 +2982,9 @@ class RectShape extends Shape {
 
   @override
   void paintBody(ui.Canvas c) {
-    final paint = _paint()..color = color;
+    final paint = _rectPaint
+      ..isAntiAlias = _RenderHints.antiAlias
+      ..color = color;
     if (isFilled) {
       paint.style = PaintingStyle.fill;
     } else {
@@ -2837,7 +2994,7 @@ class RectShape extends Shape {
         ..strokeCap = getStrokeCap(lineCap)
         ..strokeJoin = getStrokeJoin(lineJoin);
     }
-    c.drawRect(rect.shift(_strokeShift(strokeWidth, !isFilled)), paint);
+    c.drawRect(_drawn, paint);
   }
 
   @override
@@ -2970,7 +3127,7 @@ class SegmentsShape extends Shape {
             (_TriangleList(segments * _TriangleList.verticesFor(4), segments * _TriangleList.indicesFor(4), px)
                   ..addSegments(part, strokeWidth, lineCap, color))
                 .build(),
-            BlendMode.dst, Paint());
+            BlendMode.dst, _runPaint);
       }
       return;
     }
@@ -2999,10 +3156,22 @@ class SegmentsShape extends Shape {
 /// time, and without multisampling plain triangles would lose the edges a thin dot is made of.
 /// Each shape carries its own colour, so shapes of any paint share one list.
 class _TriangleList {
+  /// A list of [vertices] and [indices], written into buffers kept for every list: one is drawn
+  /// before the next is made, and the canvas takes what it draws when it is drawn.
   _TriangleList(int vertices, int indices, this.px)
-      : positions = Float32List(vertices * 2),
-        colors = Int32List(vertices),
-        indices = strip ? null : Uint16List(indices);
+      : positions = _positionsBuffer.length >= vertices * 2
+            ? _positionsBuffer
+            : (_positionsBuffer = Float32List(vertices * 2)),
+        colors = _colorsBuffer.length >= vertices ? _colorsBuffer : (_colorsBuffer = Int32List(vertices)),
+        indices = strip
+            ? null
+            : _indicesBuffer.length >= indices
+                ? _indicesBuffer
+                : (_indicesBuffer = Uint16List(indices));
+
+  static Float32List _positionsBuffer = Float32List(0);
+  static Int32List _colorsBuffer = Int32List(0);
+  static Uint16List _indicesBuffer = Uint16List(0);
 
   /// Whether lists go as one strip with no indices rather than indexed triangles. The CanvasKit
   /// build checks every index of an indexed list in Dart before drawing it, which costs more than
@@ -3344,7 +3513,7 @@ class ArcShape extends Shape {
       final path = piePath(rect, startAngle, sweepAngle);
       _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, paint));
     } else {
-      c.drawArc(rect.shift(_strokeShift(strokeWidth, true)), startAngle, sweepAngle, false, paint);
+      c.drawArc(_alignedRect(rect, strokeWidth, true), startAngle, sweepAngle, false, paint);
     }
   }
 
@@ -3383,7 +3552,8 @@ class RoundRectShape extends Shape {
         topRight: Radius.elliptical(radiusX, radiusY),
         bottomLeft: Radius.elliptical(radiusX, radiusY),
         bottomRight: Radius.elliptical(radiusX, radiusY));
-    c.drawRRect(rrect.shift(_strokeShift(strokeWidth, !isFilled)), _paint()
+    final shift = _strokeShift(strokeWidth, !isFilled);
+    c.drawRRect(identical(shift, Offset.zero) ? rrect : rrect.shift(shift), _paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
@@ -3498,7 +3668,13 @@ class ImageShape extends Shape {
     this.opaqueSource = false,
     this.inkMask,
     this.remotePicture,
+    this.sourceScale = 1,
   });
+
+  /// Units of [remotePicture] per unit of [srcRect] and [destRect]: the render of an Image held
+  /// denser than its size is in its buffer's pixels, while a copy of it is placed in the Image's
+  /// units.
+  final double sourceScale;
 
   /// Masks a tinted glyph by its darkness, so a light fill it carries is not flooded with the tint.
   final ColorFilter? inkMask;
@@ -3533,10 +3709,11 @@ class ImageShape extends Shape {
       : null;
 
   factory ImageShape.picture(ui.Picture picture, Rect srcRect, Rect destRect,
-      {Rect? clipRect, int alpha = 255}) {
+      {Rect? clipRect, int alpha = 255, double sourceScale = 1}) {
     return ImageShape._(
         type: ImageType.picture, remotePicture: picture, srcRect: srcRect,
-        destRect: destRect, clipRect: clipRect, alpha: alpha, opaqueSource: true);
+        destRect: destRect, clipRect: clipRect, alpha: alpha, opaqueSource: true,
+        sourceScale: sourceScale);
   }
 
   factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect,
@@ -3795,6 +3972,7 @@ class ImageShape extends Shape {
     if (picture == null) return;
     c.save();
     c.translate(destRect.left - (srcRect?.left ?? 0), destRect.top - (srcRect?.top ?? 0));
+    if (sourceScale != 1) c.scale(1 / sourceScale);
     c.drawPicture(picture);
     c.restore();
   }
@@ -3823,7 +4001,8 @@ class ImageShape extends Shape {
   String toString() => 'ImageShape($type) dest:$destRect';
 
   @override
-  String describe() => 'Image(${type.name}) dest=${_dr(destRect)} src=${_dr(srcRect)} alpha=$alpha tinted=${colorFilter != null}${_dk(clipRect)}';
+  String describe() => 'Image(${type.name}) dest=${_dr(destRect)} src=${_dr(srcRect)}'
+      '${sourceScale != 1 ? ' scale=$sourceScale' : ''} alpha=$alpha tinted=${colorFilter != null}${_dk(clipRect)}';
 }
 
 StrokeCap getStrokeCap(int swtCap) {
@@ -3842,4 +4021,45 @@ StrokeJoin getStrokeJoin(int swtJoin) {
     case SWT.JOIN_BEVEL: return StrokeJoin.bevel;
     default: return StrokeJoin.miter;
   }
+}
+
+/// What ends a GC's paint (Java's `GcWire.Dispose`), positionally: a flags byte (1, the paint
+/// replaces what was drawn; 2, a damage rectangle follows; 4, the render's pixels go back to Java;
+/// 8, the drawer keeps drawing on the render), the image's render ref, then the damage as zigzag x,
+/// y, width and height.
+class _Dispose {
+  _Dispose(Uint8List frame, int start) {
+    _read(frame, start);
+  }
+
+  _Dispose._();
+
+  /// The fields at [start] in [frame], read into one instance every call reuses: for a caller that
+  /// takes what it needs before the next.
+  static _Dispose read(Uint8List frame, int start) => _shared.._read(frame, start);
+
+  static final _Dispose _shared = _Dispose._();
+  static final WidgetWireReader _reader = WidgetWireReader(Uint8List(0));
+
+  void _read(Uint8List frame, int start) {
+    final r = _reader..reset(frame, start, frame.length);
+    final flags = r.u8();
+    fullRepaint = flags & 1 != 0;
+    pixels = flags & 4 != 0;
+    retain = flags & 8 != 0;
+    ref = r.varint();
+    damage = null;
+    if (flags & 2 != 0) {
+      final x = r.zigzag().toDouble(), y = r.zigzag().toDouble();
+      final width = r.zigzag().toDouble(), height = r.zigzag().toDouble();
+      // The rectangle a Paint was scoped to; an empty one covers nothing to scope to.
+      if (width > 0 && height > 0) damage = Rect.fromLTWH(x, y, width, height);
+    }
+  }
+
+  bool fullRepaint = false;
+  bool pixels = false;
+  bool retain = false;
+  int ref = 0;
+  Rect? damage;
 }

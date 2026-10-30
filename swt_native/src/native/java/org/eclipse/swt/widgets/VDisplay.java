@@ -109,16 +109,16 @@ public class VDisplay {
         return v;
     }
 
-    /** Property numbers, as wire-ids.txt gives them. */
-    static final int SHELLS = 1;
-    static final int POPUPS = 2;
-    static final int SYSTEM_MENU = 3;
-    static final int TOOLTIPS = 4;
-    static final int ACTIVE_SHELL_ID = 5;
-    static final int MAIN_SHELL_ID = 6;
-    static final int WINDOWED_SHELL_IDS = 7;
-    static final int CONFIG = 8;
-    static final int FOCUS_HOLDER_ID = 1396;
+    /** Property numbers, as the generated wire table gives them. */
+    static final int SHELLS = dev.equo.swt.WireTable.DISPLAY_SHELLS;
+    static final int POPUPS = dev.equo.swt.WireTable.DISPLAY_POPUPS;
+    static final int SYSTEM_MENU = dev.equo.swt.WireTable.DISPLAY_SYSTEM_MENU;
+    static final int TOOLTIPS = dev.equo.swt.WireTable.DISPLAY_TOOLTIPS;
+    static final int ACTIVE_SHELL_ID = dev.equo.swt.WireTable.DISPLAY_ACTIVE_SHELL_ID;
+    static final int MAIN_SHELL_ID = dev.equo.swt.WireTable.DISPLAY_MAIN_SHELL_ID;
+    static final int WINDOWED_SHELL_IDS = dev.equo.swt.WireTable.DISPLAY_WINDOWED_SHELL_IDS;
+    static final int CONFIG = dev.equo.swt.WireTable.DISPLAY_CONFIG;
+    static final int FOCUS_HOLDER_ID = dev.equo.swt.WireTable.DISPLAY_FOCUS_HOLDER_ID;
 
     /** The properties a record of the binary widget wire describes the display by. */
     public static final int[] WIRE_KEYS = {
@@ -149,11 +149,11 @@ public class VDisplay {
             case WINDOWED_SHELL_IDS:
                 w.write(windowedShellIds);
                 return true;
-            case FOCUS_HOLDER_ID:
-                w.write(focusHolderId);
-                return true;
             case CONFIG:
                 w.object(config);
+                return true;
+            case FOCUS_HOLDER_ID:
+                w.write(focusHolderId);
                 return true;
         }
         return false;

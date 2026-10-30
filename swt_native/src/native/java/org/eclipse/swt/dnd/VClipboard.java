@@ -3,7 +3,6 @@ package org.eclipse.swt.dnd;
 import java.util.concurrent.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
-import java.util.ArrayList;
 
 public class VClipboard implements dev.equo.swt.WireObject {
 
@@ -20,10 +19,16 @@ public class VClipboard implements dev.equo.swt.WireObject {
         String[] values = ((DartClipboard) impl).availableTypeNames;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setAvailableTypeNames(String[] value) {
@@ -34,10 +39,16 @@ public class VClipboard implements dev.equo.swt.WireObject {
         TransferData[] values = ((DartClipboard) impl).availableTypes;
         if (values == null)
             return null;
-        ArrayList<TransferData> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TransferData v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TransferData[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TransferData[] result = new TransferData[kept];
+        kept = 0;
+        for (TransferData v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setAvailableTypes(TransferData[] value) {
@@ -54,12 +65,12 @@ public class VClipboard implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 667;
+        return 17;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(666);
+        w.key(74);
         w.write(getAvailableTypeNames());
     }
 }

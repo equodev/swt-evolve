@@ -23,22 +23,22 @@ class VImage implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 69: // filename
+      case 333: // filename
         filename = r.string();
         return true;
-      case 70: // height
+      case 334: // height
         height = r.int32();
         return true;
-      case 71: // imageData
+      case 335: // imageData
         imageData = r.object(VImageData.new);
         return true;
-      case 72: // remoteRef
+      case 336: // remoteRef
         remoteRef = r.longBoxed();
         return true;
-      case 73: // svgContent
+      case 337: // svgContent
         svgContent = r.string();
         return true;
-      case 74: // width
+      case 338: // width
         width = r.int32();
         return true;
       default:
@@ -50,56 +50,54 @@ class VImage implements WireReadable, WireWritable, WireVisitable {
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = filename;
-      if (v_ != null && w.wants(69)) {
-        w.key(69);
+      if (v_ != null) {
+        w.key(333);
         w.string(v_);
       }
     }
     {
       final v_ = height;
-      if (v_ != null && w.wants(70)) {
-        w.key(70);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(334, v_);
       }
     }
     {
       final v_ = imageData;
-      if (v_ != null && w.wants(71)) {
-        w.key(71);
+      if (v_ != null) {
+        w.key(335);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = remoteRef;
-      if (v_ != null && w.wants(72)) {
-        w.key(72);
+      if (v_ != null) {
+        w.key(336);
         w.longBoxed(v_);
       }
     }
     {
       final v_ = svgContent;
-      if (v_ != null && w.wants(73)) {
-        w.key(73);
+      if (v_ != null) {
+        w.key(337);
         w.string(v_);
       }
     }
     {
       final v_ = width;
-      if (v_ != null && w.wants(74)) {
-        w.key(74);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(338, v_);
       }
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(69, filename);
-    visit(70, height);
-    visit(71, imageData);
-    visit(72, remoteRef);
-    visit(73, svgContent);
-    visit(74, width);
+    visit(333, filename);
+    visit(334, height);
+    visit(335, imageData);
+    visit(336, remoteRef);
+    visit(337, svgContent);
+    visit(338, width);
   }
 }
 

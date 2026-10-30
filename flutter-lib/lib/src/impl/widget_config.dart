@@ -220,6 +220,11 @@ Duration get doubleClickTimeout {
   return ms > 0 ? Duration(milliseconds: ms) : kDoubleTapTimeout;
 }
 
+/// How far apart, in logical pixels, two clicks of a double-click may land: a mouse's tolerance, as
+/// the platforms use (GTK 5, Windows 4). Flutter's [kDoubleTapSlop] is a finger's, 100px, which pairs
+/// clicks on neighbouring characters of a text.
+const double doubleClickSlop = 5.0;
+
 void setConfigFlags(ConfigFlags newFlags) {
   final prev = configFlags;
   String? mergeString(String? incoming, String? previous) {

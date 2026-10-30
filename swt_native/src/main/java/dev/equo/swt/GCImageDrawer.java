@@ -61,14 +61,6 @@ public class GCImageDrawer extends EmbeddedBridge {
     /** Drawers whose queued ops have not been sent yet. */
     private static final java.util.Set<GCImageDrawer> holdingOps = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
-    private static byte[] gcDispose(long remoteRef, boolean wantPixels, boolean retain) {
-        java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
-        payload.put("ref", remoteRef);
-        payload.put("pixels", wantPixels);
-        payload.put("retain", retain);
-        return dev.equo.swt.comm.TaggedValues.encode(payload, null);
-    }
-
     /** The id the Flutter side addresses this drawer's GC frames to. */
     public long channelId() {
         return gcId;
@@ -233,13 +225,13 @@ public class GCImageDrawer extends EmbeddedBridge {
         if (comm != null) {
             // No handshake: frames apply one at a time in arrival order, so the GC/create handler
             // has built the drawer before anything sent after it is applied.
-            comm.send("GC/create", ByteBuffer.allocate(8).putLong(gcId).array());
-            if (imageInit != null) comm.send("GC/" + gcId + "/imageInit", imageInit);
+            comm.send(0, 0, WireTable.CHANNEL_GC_CREATE, ByteBuffer.allocate(8).putLong(gcId).array());
+            if (imageInit != null) comm.send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_INIT, imageInit);
             flushOps();
             return;
         }
         // An isolated off-screen engine has to boot before it can be addressed at all.
-        Java8.orTimeout(super.onReady(this, Void.class), CLIENT_READY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        Java8.orTimeout(super.onReady(this, org.eclipse.swt.widgets.ClientReadyPayload.class), CLIENT_READY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .whenComplete((ignored, err) -> {
                     if (err != null) {
                         System.err.println("[GCImageDrawer] Engine did not answer ClientReady within "
@@ -248,7 +240,7 @@ public class GCImageDrawer extends EmbeddedBridge {
                         return;
                     }
                     try {
-                        if (imageInit != null) comm().send("GC/" + gcId + "/imageInit", imageInit);
+                        if (imageInit != null) comm().send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_INIT, imageInit);
                     } catch (Exception e) {
                         System.err.println("[GCImageDrawer] Failed to send imageInit: " + e.getMessage());
                     }
@@ -303,23 +295,22 @@ public class GCImageDrawer extends EmbeddedBridge {
         // Ref 0 means retain nothing there, since nothing here could read or release it.
         long remoteRef = flutterOwns ? org.eclipse.swt.graphics.GCHelper.nextRemoteRef() : 0L;
         if (wantPixels) {
-            String resultEvent = "GC/" + gcId + "/imageResult";
-            c.on(resultEvent, ByteBuffer.class, bytes -> {
-                c.remove(resultEvent); // the shared comm outlives this one-shot render
+            c.on(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_RESULT, ByteBuffer.class, bytes -> {
+                c.remove(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_RESULT); // the shared comm outlives this one-shot render
                 Consumer<ByteBuffer> sink = onImageResult;
                 if (sink != null) sink.accept(bytes);
             });
         }
-        byte[] payload = gcDispose(remoteRef, wantPixels, false);
-        if (!FlutterBridge.flushBufferedOpsWith(this, "gcDispose", payload)) {
-            queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        GcWire.Dispose dispose = GcWire.Dispose.ofImage(remoteRef, wantPixels, false);
+        if (!FlutterBridge.flushBufferedOpsWith(this, dispose)) {
+            queueOp(() -> c.send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_GC_DISPOSE, dispose.encode()));
         }
         Image image = dartImage;
         if (image == null || remoteRef == 0) return wantPixels;
         if (image.isDisposed()) {
             // The Image was abandoned mid-construction (its drawer threw), so nothing will ever
             // dispose it and release the ref the render is about to register. Release it here.
-            queueOp(() -> c.send("Image/releaseRemoteRef", ByteBuffer.allocate(8).putLong(remoteRef).array()));
+            queueOp(() -> c.send(0, 0, WireTable.CHANNEL_IMAGE_RELEASE_REMOTE_REF, ByteBuffer.allocate(8).putLong(remoteRef).array()));
         } else if (image.getImpl() instanceof DartImage) {
             DartImage dart = (DartImage) image.getImpl();
             // Its pixels change, so a client must be sent the image again, not just its name.
@@ -336,9 +327,9 @@ public class GCImageDrawer extends EmbeddedBridge {
     public void sendGcDispose() {
         start();
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
-        byte[] payload = gcDispose(0L, false, false);
-        if (!FlutterBridge.flushBufferedOpsWith(this, "gcDispose", payload)) {
-            queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        GcWire.Dispose dispose = GcWire.Dispose.ofImage(0L, false, false);
+        if (!FlutterBridge.flushBufferedOpsWith(this, dispose)) {
+            queueOp(() -> c.send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_GC_DISPOSE, dispose.encode()));
         }
     }
 
@@ -381,9 +372,8 @@ public class GCImageDrawer extends EmbeddedBridge {
         start();
         FlutterBridge.flushBufferedOps(this);
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
-        String snapshotEvent = "GC/" + gcId + "/imageSnapshotResult";
-        c.on(snapshotEvent, ByteBuffer.class, bytes -> {
-            c.remove(snapshotEvent);
+        c.on(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_SNAPSHOT_RESULT, ByteBuffer.class, bytes -> {
+            c.remove(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_SNAPSHOT_RESULT);
             onSnapshot.accept(bytes);
             // The UI thread is parked waiting for this answer; without a wake it only notices on its
             // next timed park.
@@ -391,7 +381,7 @@ public class GCImageDrawer extends EmbeddedBridge {
             if (image != null && image.getDevice() instanceof Display && !((Display) image.getDevice()).isDisposed())
                 ((Display) image.getDevice()).wake();
         });
-        queueOp(() -> c.send("GC/" + gcId + "/renderSnapshot"));
+        queueOp(() -> c.send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_RENDER_SNAPSHOT, null));
     }
 
     public void disposeView() {

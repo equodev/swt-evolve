@@ -16,19 +16,16 @@ import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/impl/utils/tracker_session.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
 
 void _open(String host, int hostId, int trackerId) {
-  final action = utf8.encode('$host/$hostId/Tracker/open');
   final body = TaggedValues.encode({'itemId': trackerId});
-  final frame = Uint8List(2 + action.length + body.length);
-  frame[0] = (action.length >> 8) & 0xFF;
-  frame[1] = action.length & 0xFF;
-  frame.setRange(2, 2 + action.length, action);
-  frame.setRange(2 + action.length, frame.length, body);
+  final frame = channels.frame('$host/$hostId/Tracker/open', body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 

@@ -817,6 +817,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         return visible;
     }
 
+    boolean hasRange = true;
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

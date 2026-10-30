@@ -67,7 +67,7 @@ class PushCopyAllocationTest {
         client = new Client(URI.create("ws://localhost:" + comm.getPort()));
         assertThat(client.connectBlocking(5, TimeUnit.SECONDS)).isTrue();
         // The server registers the session on its own thread; a frame arriving proves it has.
-        comm.send("probe");
+        dev.equo.swt.harness.Channels.send(comm, "evolve.test.query", null);
         client.awaitFrames(1);
         bridge = new RecordingBridge(comm);
         FlutterBridge.set(bridge);
@@ -86,13 +86,13 @@ class PushCopyAllocationTest {
             String text = "x".repeat(chars);
             return () -> {
                 try {
-                    bridge.serializeAndSend("Probe/1", text);
+                    bridge.serializeAndSend(dev.equo.swt.comm.ChannelHeader.requireType("Label"), 1, dev.equo.swt.comm.ChannelHeader.requireChannel("Paint/Paint"), text);
                 } catch (java.io.IOException e) {
                     throw new java.io.UncheckedIOException(e);
                 }
             };
         });
-        assertThat(client.lastEvent()).isEqualTo("Probe/1");
+        assertThat(client.lastEvent()).isEqualTo("Label/1/Paint/Paint");
         assertThat(client.lastPayload()).isEqualTo("x".repeat(2 * TEXT_CHARS));
         assertThat(copies).as("payload copies per push, direct").isLessThan(1.5);
     }
@@ -119,8 +119,8 @@ class PushCopyAllocationTest {
         double copies = copiesPerWireByte(chars -> {
             byte[] payload = ("\"" + "x".repeat(chars) + "\"").getBytes(StandardCharsets.UTF_8);
             return () -> {
-                batch.add("GC/1/drawText", payload);
-                batch.add("GC/1/drawText", payload);
+                dev.equo.swt.harness.Channels.add(batch, "GC/1/drawTextStringintintint", payload);
+                dev.equo.swt.harness.Channels.add(batch, "GC/1/drawTextStringintintint", payload);
                 comm.send(batch);
                 batch.clear();
             };
@@ -128,14 +128,14 @@ class PushCopyAllocationTest {
         String text = "\"" + "x".repeat(2 * TEXT_CHARS) + "\"";
         assertThat(client.lastEvent()).isEqualTo(MessageBatch.EVENT);
         assertThat(client.lastBatch()).containsExactly(
-                new GcFrames.Entry("GC/1/drawText", text), new GcFrames.Entry("GC/1/drawText", text));
+                new GcFrames.Entry("GC/1/drawTextStringintintint", text), new GcFrames.Entry("GC/1/drawTextStringintintint", text));
         assertThat(copies).as("payload copies per push, batch of owned payloads").isLessThan(1.5);
     }
 
     @Test
     void loneFrameInABatch_travelsAsItself() {
         MessageBatch batch = new MessageBatch();
-        batch.add("Button/7", "{\"text\":\"ok\"}".getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.add(batch, "Button/7", "{\"text\":\"ok\"}".getBytes(StandardCharsets.UTF_8));
         long before = client.frames.get();
         comm.send(batch);
         client.awaitFrames(before + 1);

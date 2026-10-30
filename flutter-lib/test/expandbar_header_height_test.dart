@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/expandbar.dart';
 import 'package:swtflutter/src/gen/expanditem.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const _band = 24;
 const _spacing = 4;
@@ -75,7 +76,7 @@ class _RecordingBar extends ExpandBarSwt<VExpandBar> {
     : super(value: value);
 
   @override
-  void sendEvent(VExpandBar val, String ev, VEvent? payload) => calls.add(ev);
+  void sendEvent(VExpandBar val, int channel, VEvent? payload) => calls.add(wireChannelNames[channel]!);
 }
 
 Future<void> _pump(

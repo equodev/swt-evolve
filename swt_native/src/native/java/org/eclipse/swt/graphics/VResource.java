@@ -33,7 +33,7 @@ public class VResource implements dev.equo.swt.WireObject {
      * Records that {@code key} changed and schedules the widget for the next flush. Both, always: a flag without a flush never ships, and a flush without a flag ships an update that claims nothing changed.
      */
     public void markDirty(int key) {
-        assert java.util.Arrays.stream(wireKeys()).anyMatch(k -> k == key) : "key " + key + " is not a property of " + getClass().getSimpleName();
+        assert dev.equo.swt.ChangedKeys.among(wireKeys(), key) : "key " + key + " is not a property of " + getClass().getSimpleName();
         changed.add(key);
         if (impl instanceof DartResource)
             ((DartResource) impl).dirty();
@@ -157,7 +157,7 @@ public class VResource implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 370;
+        return 85;
     }
 
     @Override

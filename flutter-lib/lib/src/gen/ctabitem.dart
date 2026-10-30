@@ -48,25 +48,25 @@ class VCTabItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 413: // control
+      case 61: // control
         control = r.ref<VControl>();
         return true;
-      case 414: // font
+      case 62: // font
         font = r.object(VFont.new);
         return true;
-      case 415: // foreground
+      case 63: // foreground
         foreground = r.color();
         return true;
-      case 416: // selectionForeground
+      case 64: // selectionForeground
         selectionForeground = r.color();
         return true;
-      case 417: // showClose
+      case 65: // showClose
         showClose = r.boolean();
         return true;
-      case 418: // showing
+      case 66: // showing
         showing = r.boolean();
         return true;
-      case 419: // toolTipText
+      case 67: // toolTipText
         toolTipText = r.string();
         return true;
       default:
@@ -79,50 +79,47 @@ class VCTabItem extends VItem {
     super.writeWire(w);
     {
       final v_ = control;
-      if (v_ != null && w.wants(413)) {
-        w.key(413);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(61, v_.id);
       }
     }
     {
       final v_ = font;
-      if (v_ != null && w.wants(414)) {
-        w.key(414);
+      if (v_ != null) {
+        w.key(62);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
-      if (v_ != null && w.wants(415)) {
-        w.key(415);
+      if (v_ != null) {
+        w.key(63);
         w.colorValue(v_);
       }
     }
     {
       final v_ = selectionForeground;
-      if (v_ != null && w.wants(416)) {
-        w.key(416);
+      if (v_ != null) {
+        w.key(64);
         w.colorValue(v_);
       }
     }
     {
       final v_ = showClose;
-      if (v_ != null && w.wants(417)) {
-        w.key(417);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(65, v_);
       }
     }
     {
       final v_ = showing;
-      if (v_ != null && w.wants(418)) {
-        w.key(418);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(66, v_);
       }
     }
     {
       final v_ = toolTipText;
-      if (v_ != null && w.wants(419)) {
-        w.key(419);
+      if (v_ != null) {
+        w.key(67);
         w.string(v_);
       }
     }
@@ -131,13 +128,13 @@ class VCTabItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(413, control);
-    visit(414, font);
-    visit(415, foreground);
-    visit(416, selectionForeground);
-    visit(417, showClose);
-    visit(418, showing);
-    visit(419, toolTipText);
+    visit(61, control);
+    visit(62, font);
+    visit(63, foreground);
+    visit(64, selectionForeground);
+    visit(65, showClose);
+    visit(66, showing);
+    visit(67, toolTipText);
   }
 
   @override

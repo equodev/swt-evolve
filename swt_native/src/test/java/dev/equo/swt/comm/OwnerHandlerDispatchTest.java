@@ -19,7 +19,7 @@ class OwnerHandlerDispatchTest {
 
     @Test
     void anEventReachesTheOwnersHandlerWithItsChannel() {
-        comm.onOwner("Button/7", new String[] { "Mouse/MouseDown", "Selection/Selection" }, Object.class,
+        dev.equo.swt.harness.Channels.onOwner(comm, "Button/7", new String[] { "Mouse/MouseDown", "Selection/Selection" }, Object.class,
                 (channel, value) -> seen.add(channel));
 
         comm.deliver("Button/7/Selection/Selection");
@@ -30,8 +30,8 @@ class OwnerHandlerDispatchTest {
 
     @Test
     void aChannelWithAHandlerOfItsOwnGoesToThatHandler() {
-        comm.onOwner("Table/3", new String[] { "PaintItem/PaintItem" }, Object.class, (channel, value) -> seen.add("owner"));
-        comm.on("Table/3/PaintItem/PaintItem", Object.class, value -> seen.add("own"));
+        dev.equo.swt.harness.Channels.onOwner(comm, "Table/3", new String[] { "PaintItem/PaintItem" }, Object.class, (channel, value) -> seen.add("owner"));
+        dev.equo.swt.harness.Channels.on(comm, "Table/3/PaintItem/PaintItem", Object.class, value -> seen.add("own"));
 
         comm.deliver("Table/3/PaintItem/PaintItem");
 
@@ -40,7 +40,7 @@ class OwnerHandlerDispatchTest {
 
     @Test
     void aChannelTheOwnerDoesNotTakeIsNotHandedToIt() {
-        comm.onOwner("Label/5", new String[] { "Mouse/MouseDown" }, Object.class, (channel, value) -> seen.add(channel));
+        dev.equo.swt.harness.Channels.onOwner(comm, "Label/5", new String[] { "Mouse/MouseDown" }, Object.class, (channel, value) -> seen.add(channel));
 
         comm.deliver("Label/5/Key/KeyDown");
 
@@ -49,10 +49,10 @@ class OwnerHandlerDispatchTest {
 
     @Test
     void removingTheOwnerRemovesBothKindsOfHandler() {
-        comm.onOwner("Shell/9", new String[] { "Shell/Close" }, Object.class, (channel, value) -> seen.add("owner"));
-        comm.on("Shell/9/Shell/SetBounds", Object.class, value -> seen.add("own"));
+        dev.equo.swt.harness.Channels.onOwner(comm, "Shell/9", new String[] { "Shell/Close" }, Object.class, (channel, value) -> seen.add("owner"));
+        dev.equo.swt.harness.Channels.on(comm, "Shell/9/Shell/SetBounds", Object.class, value -> seen.add("own"));
 
-        comm.removeOwner("Shell/9");
+        dev.equo.swt.harness.Channels.removeOwner(comm, "Shell/9");
         comm.deliver("Shell/9/Shell/Close");
         comm.deliver("Shell/9/Shell/SetBounds");
 
@@ -61,11 +61,11 @@ class OwnerHandlerDispatchTest {
 
     @Test
     void removingAnOwnerByTypeAndIdRemovesItsHandlers() {
-        comm.onOwner("Shell/9", new String[] { "Shell/Close" }, Object.class, (channel, value) -> seen.add("owner"));
-        comm.on("Shell/9/Shell/SetBounds", Object.class, value -> seen.add("own"));
-        comm.on("Shell/10/Shell/SetBounds", Object.class, value -> seen.add("other"));
+        dev.equo.swt.harness.Channels.onOwner(comm, "Shell/9", new String[] { "Shell/Close" }, Object.class, (channel, value) -> seen.add("owner"));
+        dev.equo.swt.harness.Channels.on(comm, "Shell/9/Shell/SetBounds", Object.class, value -> seen.add("own"));
+        dev.equo.swt.harness.Channels.on(comm, "Shell/10/Shell/SetBounds", Object.class, value -> seen.add("other"));
 
-        comm.removeOwner("Shell", 9);
+        comm.removeOwner(dev.equo.swt.comm.ChannelHeader.requireType("Shell"), 9);
         comm.deliver("Shell/9/Shell/Close");
         comm.deliver("Shell/9/Shell/SetBounds");
         comm.deliver("Shell/10/Shell/SetBounds");
@@ -75,11 +75,11 @@ class OwnerHandlerDispatchTest {
 
     @Test
     void theLastOwnerOfATypeGoesTooOnceItsOnlyHandlerIsRemoved() {
-        comm.on("Label/5/Mouse/MouseDown", Object.class, value -> seen.add("first"));
-        comm.remove("Label/5/Mouse/MouseDown");
-        comm.on("Label/6/Mouse/MouseDown", Object.class, value -> seen.add("second"));
+        dev.equo.swt.harness.Channels.on(comm, "Label/5/Mouse/MouseDown", Object.class, value -> seen.add("first"));
+        { long[] n_ = dev.equo.swt.harness.Channels.of("Label/5/Mouse/MouseDown"); comm.remove((int) n_[0], n_[1], (int) n_[2]); }
+        dev.equo.swt.harness.Channels.on(comm, "Label/6/Mouse/MouseDown", Object.class, value -> seen.add("second"));
 
-        comm.removeOwner("Label", 6);
+        comm.removeOwner(dev.equo.swt.comm.ChannelHeader.requireType("Label"), 6);
         comm.deliver("Label/6/Mouse/MouseDown");
 
         assertThat(seen).isEmpty();
@@ -88,7 +88,7 @@ class OwnerHandlerDispatchTest {
     /** The real dispatcher, fed frames directly instead of over a socket. */
     private static final class Feeder extends AbstractBinaryCommService {
         void deliver(String channel) {
-            byte[] header = CommService.frameHeader(channel);
+            byte[] header = dev.equo.swt.harness.Channels.header(channel);
             byte[] frame = Arrays.copyOf(header, header.length);
             onBinaryMessage(frame, 0, frame.length);
         }

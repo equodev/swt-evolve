@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
+import '../comm/channel_header.dart';
 import '../comm/v_registry.dart';
 import '../gen/menu.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 import 'utils/window_origin.dart';
 import '../gen/menuitem.dart';
 import '../gen/swt.dart';
@@ -66,24 +69,24 @@ class OpenPopupMenuTracker {
 /// to the menu, so whoever draws the cascade has to listen for it. [onItems] is called once the
 /// delivery has been applied whole, because the items it names are described after it.
 class MenuItemsWatch {
-  MenuItemsWatch(VMenu menu, this.onItems) : _channel = VRegistry.channelOf(menu) {
-    VRegistry.instance.watch(_channel, _changed);
+  MenuItemsWatch(VMenu menu, this.onItems) : _key = VRegistry.keyOf(menu) {
+    VRegistry.instance.watchAt(_key, _changed);
   }
 
-  final String _channel;
+  final int _key;
   final void Function(List<VMenuItem> items) onItems;
   bool _disposed = false;
 
-  bool watches(VMenu menu) => _channel == VRegistry.channelOf(menu);
+  bool watches(VMenu menu) => _key == VRegistry.keyOf(menu);
 
   void _changed(VChange change) {
     scheduleMicrotask(() {
       if (_disposed) return;
-      final menu = VRegistry.instance.valueOn(_channel);
+      final menu = VRegistry.instance.valueAt(_key);
       if (menu is! VMenu) return;
       onItems([
         for (final item in menu.items ?? const <VMenuItem>[])
-          switch (VRegistry.instance.valueOn(VRegistry.channelOf(item))) {
+          switch (VRegistry.instance.valueAt(VRegistry.keyOf(item))) {
             final VMenuItem held => held,
             _ => item,
           },
@@ -93,7 +96,7 @@ class MenuItemsWatch {
 
   void dispose() {
     _disposed = true;
-    VRegistry.instance.unwatch(_channel, _changed);
+    VRegistry.instance.unwatchAt(_key, _changed);
   }
 }
 
@@ -237,18 +240,37 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   int? _activatedBarId;
 
   // Every mounted popup per menu: a control's own copy and the one its window renders once shown.
-  static final Map<String, Set<MenuImpl>> _mounted = {};
+  static final Map<int, Set<MenuImpl>> _mounted = {};
+
+  /// Registers what every Menu answers (see `registerWidgetOps`).
+  static void registerOps() =>
+      EquoCommService.onWidgetOp(WireType.menu, WireChannel.shown, _shownOp);
+
+  /// Drop-downs of a menu bar waiting for Java's `shown`, by the id of the menu they open.
+  static final Map<int, VoidCallback> _dropDownsAwaitingShown = {};
+
+  /// Java's `shown`: the menu is on screen, for the drop-down that asked and every mounted copy of it.
+  static FutureOr<bool> _shownOp(int id, Uint8List frame, int start, int end) {
+    final dropDown = _dropDownsAwaitingShown.remove(id);
+    dropDown?.call();
+    final copies = _mounted[id];
+    if (copies == null) return dropDown != null;
+    for (final copy in List.of(copies)) {
+      copy._onMenuShown();
+    }
+    return true;
+  }
 
   /// The other mounted copy of this menu that is already open, or about to be.
   MenuImpl? get _presentingPeer {
-    for (final peer in _mounted[_rawChannel] ?? const <MenuImpl>{}) {
+    for (final peer in _mounted[_mountedId] ?? const <MenuImpl>{}) {
       if (identical(peer, this) || !peer.mounted) continue;
       if (peer._menuController.isOpen || peer._pendingContextMenuPosition != null) return peer;
     }
     return null;
   }
 
-  String? _rawChannel;
+  int? _mountedId;
 
   @override
   void initState() {
@@ -260,7 +282,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   @override
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if ("${state.swt}/${state.id}" != _rawChannel) {
+    if (state.id != _mountedId) {
       _unsubscribeRawChannels();
       _subscribeRawChannels();
       _pendingContextMenuPosition = null;
@@ -269,36 +291,30 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   }
 
   void _subscribeRawChannels() {
-    final channel = "${state.swt}/${state.id}";
-    _rawChannel = channel;
+    final id = state.id;
+    _mountedId = id;
     if ((state.style & SWT.BAR) != 0) {
-      _activatedBarId = state.id;
-      MenuBarActivators.add(state.id, _activateBar);
+      _activatedBarId = id;
+      MenuBarActivators.add(id, _activateBar);
     }
-    final copies = _mounted.putIfAbsent(channel, () => {});
+    final copies = _mounted.putIfAbsent(id, () => {});
     copies.add(this);
-    if (copies.length > 1) return;
-    // A channel holds one handler, so the copies share it: a second subscription would silence the first.
-    EquoCommService.onRaw("$channel/shown", (_) {
-      for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
-        copy._onMenuShown();
-      }
-    });
+    // What arrived before any copy was mounted applies now that one is.
+    if (copies.length == 1) EquoCommService.replayWidgetOps(id);
   }
 
   void _unsubscribeRawChannels() {
-    final channel = _rawChannel;
-    if (channel == null) return;
-    _rawChannel = null;
+    final id = _mountedId;
+    if (id == null) return;
+    _mountedId = null;
     final barId = _activatedBarId;
     if (barId != null) {
       _activatedBarId = null;
       MenuBarActivators.remove(barId, _activateBar);
     }
-    final copies = _mounted[channel];
+    final copies = _mounted[id];
     if (copies == null || !copies.remove(this) || copies.isNotEmpty) return;
-    _mounted.remove(channel);
-    EquoCommService.remove("$channel/shown");
+    _mounted.remove(id);
   }
 
   @override
@@ -903,9 +919,8 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     if (_subMenuController.isOpen || _showingMenuId != null) return;
     widget.onOpening();
     _focusFirstItemWhenOpen = focusFirstItem;
-    final channel = 'Menu/${menu.id}';
     _showingMenuId = menu.id;
-    EquoCommService.onRaw('$channel/shown', (_) => _onShown());
+    MenuImpl._dropDownsAwaitingShown[menu.id] = _onShown;
     MenuSwt<VMenu>(value: menu).sendMenuShow(menu, null);
   }
 
@@ -913,7 +928,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     final id = _showingMenuId;
     if (id == null) return;
     _showingMenuId = null;
-    EquoCommService.remove('Menu/$id/shown');
+    if (MenuImpl._dropDownsAwaitingShown[id] == _onShown) MenuImpl._dropDownsAwaitingShown.remove(id);
   }
 
   void _onShown() {

@@ -5,24 +5,22 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
+import 'package:swtflutter/src/gen/widgets.dart' show WireType;
 
 void _deliver(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
   final body = TaggedValues.encode(payload);
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
+  final frame = channels.frame(actionId, body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 
 void main() {
   testWidgets('a gate stays disarmed until Java says a veto is possible', (tester) async {
-    final gate = VetoGate('key')..attach('Spinner', 7);
+    final gate = VetoGate.key()..attach(WireType.spinner, 7);
     addTearDown(gate.detach);
 
     expect(gate.armed, isFalse, reason: 'no listener on the Java side yet');
@@ -32,7 +30,7 @@ void main() {
   });
 
   testWidgets('verdicts resolve proposals in order', (tester) async {
-    final gate = VetoGate('key')..attach('Text', 3);
+    final gate = VetoGate.key()..attach(WireType.text, 3);
     addTearDown(gate.detach);
     _deliver('Text/3/key/vetoable', {'value': true});
     await tester.pump();
@@ -54,8 +52,8 @@ void main() {
   });
 
   testWidgets('a proposal fails open when no verdict arrives', (tester) async {
-    final gate = VetoGate('modify', timeout: const Duration(milliseconds: 400))
-      ..attach('Text', 4);
+    final gate = VetoGate.modify(timeout: const Duration(milliseconds: 400))
+      ..attach(WireType.text, 4);
     addTearDown(gate.detach);
     _deliver('Text/4/modify/vetoable', {'value': true});
     await tester.pump();
@@ -70,8 +68,8 @@ void main() {
 
   testWidgets('a late verdict cannot resolve the proposal behind a timed-out one',
       (tester) async {
-    final gate = VetoGate('modify', timeout: const Duration(milliseconds: 400))
-      ..attach('Text', 5);
+    final gate = VetoGate.modify(timeout: const Duration(milliseconds: 400))
+      ..attach(WireType.text, 5);
     addTearDown(gate.detach);
     _deliver('Text/5/modify/vetoable', {'value': true});
     await tester.pump();
@@ -96,27 +94,27 @@ void main() {
   testWidgets('gates are scoped per control, so one control cannot veto another',
       (tester) async {
     // The bug DragStartVeto had: a single process-wide flag, set by any control's answer.
-    final a = VetoGate('drag')..attach('Tree', 11);
-    final b = VetoGate('drag')..attach('Table', 12);
+    final a = VetoGate.key()..attach(WireType.tree, 11);
+    final b = VetoGate.key()..attach(WireType.table, 12);
     addTearDown(a.detach);
     addTearDown(b.detach);
 
-    _deliver('Tree/11/drag/vetoable', {'value': true});
+    _deliver('Tree/11/key/vetoable', {'value': true});
     await tester.pump();
     expect(a.armed, isTrue);
     expect(b.armed, isFalse, reason: 'arming Tree must not arm Table');
 
-    _deliver('Table/12/drag/vetoable', {'value': true});
+    _deliver('Table/12/key/vetoable', {'value': true});
     await tester.pump();
     final seen = <String>[];
     a.propose((doit) => seen.add('tree:$doit'));
     b.propose((doit) => seen.add('table:$doit'));
 
-    _deliver('Tree/11/drag/verdict', {'doit': false});
+    _deliver('Tree/11/key/verdict', {'doit': false});
     await tester.pump();
     expect(seen, ['tree:false'], reason: "Tree's veto must not reach Table");
 
-    _deliver('Table/12/drag/verdict', {'doit': true});
+    _deliver('Table/12/key/verdict', {'doit': true});
     await tester.pump();
     expect(seen, ['tree:false', 'table:true']);
   });
@@ -126,7 +124,7 @@ void main() {
     // The Display forwards the keystroke to Java from its own top-level handler, before the
     // focused widget's text pipeline has produced the edit to withhold — so Java's answer can
     // legitimately beat the proposal it belongs to.
-    final gate = VetoGate('key')..attach('Spinner', 11);
+    final gate = VetoGate.key()..attach(WireType.spinner, 11);
     addTearDown(gate.detach);
     _deliver('Spinner/11/key/vetoable', {'value': true});
     await tester.pump();
@@ -141,7 +139,7 @@ void main() {
   });
 
   testWidgets('an early veto still vetoes', (tester) async {
-    final gate = VetoGate('key')..attach('Spinner', 12);
+    final gate = VetoGate.key()..attach(WireType.spinner, 12);
     addTearDown(gate.detach);
     _deliver('Spinner/12/key/vetoable', {'value': true});
     await tester.pump();
@@ -155,7 +153,7 @@ void main() {
 
   testWidgets('losing focus abandons a held proposal instead of committing it',
       (tester) async {
-    final gate = VetoGate('key')..attach('Spinner', 9);
+    final gate = VetoGate.key()..attach(WireType.spinner, 9);
     addTearDown(gate.detach);
     _deliver('Spinner/9/key/vetoable', {'value': true});
     await tester.pump();

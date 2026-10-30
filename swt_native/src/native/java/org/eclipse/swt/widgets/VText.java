@@ -118,23 +118,23 @@ public class VText extends VScrollable {
         return ((DartText) impl).apiEdits.texts();
     }
 
-    public static final int CARET_POSITION = 515;
+    public static final int CARET_POSITION = 575;
 
-    public static final int ECHO_CHARACTER = 516;
+    public static final int ECHO_CHARACTER = 576;
 
-    public static final int EDIT_TEXTS = 1430;
+    public static final int EDIT_TEXTS = 577;
 
-    public static final int EDITABLE = 517;
+    public static final int EDITABLE = 578;
 
-    public static final int EDITS = 1354;
+    public static final int EDITS = 579;
 
-    public static final int MESSAGE = 518;
+    public static final int MESSAGE = 580;
 
-    public static final int SELECTION = 519;
+    public static final int SELECTION = 581;
 
-    public static final int TEXT = 520;
+    public static final int TEXT = 582;
 
-    public static final int TEXT_LIMIT = 521;
+    public static final int TEXT_LIMIT = 583;
 
     @Override
     public String wireName(int key) {
@@ -164,31 +164,31 @@ public class VText extends VScrollable {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 515:
+            case 575:
                 w.write((int) getCaretPosition());
                 return true;
-            case 516:
+            case 576:
                 w.write((int) getEchoCharacter());
                 return true;
-            case 517:
+            case 578:
                 w.write(getEditable());
                 return true;
-            case 518:
+            case 580:
                 w.write(getMessage());
                 return true;
-            case 519:
+            case 581:
                 w.write(getSelection());
                 return true;
-            case 520:
+            case 582:
                 w.write(getText());
                 return true;
-            case 521:
+            case 583:
                 w.write((int) getTextLimit());
                 return true;
-            case 1354:
+            case 579:
                 w.write(getEdits());
                 return true;
-            case 1430:
+            case 577:
                 w.write(getEditTexts());
                 return true;
         }
@@ -198,92 +198,92 @@ public class VText extends VScrollable {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 515:
+            case 575:
                 {
                     int v_ = getCaretPosition();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(515);
+                    w.key(575);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 516:
+            case 576:
                 {
                     int v_ = getEchoCharacter();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(516);
+                    w.key(576);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 517:
+            case 578:
                 {
                     boolean v_ = getEditable();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(517);
+                    w.key(578);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 518:
+            case 580:
                 {
                     String v_ = getMessage();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(518);
+                    w.key(580);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 519:
+            case 581:
                 {
                     Point v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(519);
+                    w.key(581);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 520:
+            case 582:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(520);
+                    w.key(582);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 521:
+            case 583:
                 {
                     int v_ = getTextLimit();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(521);
+                    w.key(583);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1354:
+            case 579:
                 {
                     int[] v_ = getEdits();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(1354);
+                    w.key(579);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1430:
+            case 577:
                 {
                     String[] v_ = getEditTexts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(1430);
+                    w.key(577);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -291,7 +291,7 @@ public class VText extends VScrollable {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 515, 516, 517, 518, 519, 520, 521, 1354, 1430 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 575, 576, 578, 580, 581, 582, 583, 579, 577 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

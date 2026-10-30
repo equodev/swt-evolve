@@ -44,6 +44,7 @@ class DisplayWakeDeskFlutterTest {
     @Test
     void asyncExecFromAnotherThread_wakesTheNativeLoop() throws Exception {
         TestDeskBridge desk = install();
+        desk.armWake(); // the UI thread is about to wait, as Display.sleep arms it
 
         runOffUiThread(() -> display.asyncExec(() -> {
         }));
@@ -54,6 +55,61 @@ class DisplayWakeDeskFlutterTest {
     }
 
     @Test
+    void asyncExecWhileTheUiThreadRunsATurn_postsNothingAndStillRuns() throws Exception {
+        TestDeskBridge desk = install();
+        while (display.readAndDispatch()) {
+            /* the UI thread is mid-turn, not waiting */
+        }
+        desk.nativeWakes.set(0);
+        boolean[] ran = { false };
+
+        runOffUiThread(() -> display.asyncExec(() -> ran[0] = true));
+
+        assertThat(desk.nativeWakes.get())
+                .as("a running turn finds the work before it waits again; a wake would only be an OS event to dispatch")
+                .isZero();
+        while (display.readAndDispatch()) {
+            /* the next turn runs it */
+        }
+        assertThat(ran[0]).isTrue();
+    }
+
+    @Test
+    void asyncExecFromTheUiThreadItself_postsNothing() {
+        TestDeskBridge desk = install();
+        while (display.readAndDispatch()) {
+            /* settle */
+        }
+        desk.nativeWakes.set(0);
+
+        display.asyncExec(() -> {
+        });
+
+        assertThat(desk.nativeWakes.get())
+                .as("the UI thread posting work to itself is running, and runs it before it waits")
+                .isZero();
+    }
+
+    @Test
+    void asyncExecFromTheUiThreadDuringTheNativeWait_wakesIt() {
+        TestDeskBridge desk = install();
+        while (display.readAndDispatch()) {
+            /* settle */
+        }
+        desk.nativeWakes.set(0);
+        // The OS loop runs the client's callbacks on the UI thread while Java waits in it.
+        desk.duringWait = () -> display.asyncExec(() -> {
+        });
+
+        display.sleep();
+
+        assertThat(desk.waits.get()).as("the UI thread waited").isEqualTo(1);
+        assertThat(desk.nativeWakes.get())
+                .as("work a callback posts inside the wait has to end it, though it comes from the UI thread")
+                .isEqualTo(1);
+    }
+
+    @Test
     void stateDirtiedFromAnotherThread_wakesTheNativeLoop() throws Exception {
         TestDeskBridge desk = install();
         Shell shell = new Shell(display);
@@ -61,6 +117,7 @@ class DisplayWakeDeskFlutterTest {
             /* settle the shell's own delivery */
         }
         desk.nativeWakes.set(0);
+        desk.armWake();
 
         runOffUiThread(() -> desk.dirty((DartWidget) shell.getImpl()));
 
@@ -88,6 +145,7 @@ class DisplayWakeDeskFlutterTest {
     @Test
     void wakesWhileOneIsQueued_postOnlyOnceUntilThePumpDrainsIt() throws Exception {
         TestDeskBridge desk = install();
+        desk.armWake();
 
         runOffUiThread(() -> {
             for (int i = 0; i < 100; i++) display.asyncExec(() -> {
@@ -101,11 +159,12 @@ class DisplayWakeDeskFlutterTest {
         while (display.readAndDispatch()) {
             /* the pump drains the queued wake */
         }
+        desk.armWake();
         runOffUiThread(() -> display.asyncExec(() -> {
         }));
 
         assertThat(desk.nativeWakes.get())
-                .as("once the pump has drained it, the next wake is posted again")
+                .as("once the pump has drained it, the next wait is woken again")
                 .isEqualTo(2);
     }
 
@@ -142,6 +201,9 @@ class DisplayWakeDeskFlutterTest {
     private static final class TestDeskBridge extends DeskDisplayBridge {
         final RecordingComm comm = new RecordingComm();
         final AtomicInteger nativeWakes = new AtomicInteger();
+        final AtomicInteger waits = new AtomicInteger();
+        /** Runs inside each wait, as the OS loop runs callbacks while Java waits in it. */
+        Runnable duringWait;
 
         TestDeskBridge(DartDisplay display) {
             super(display);
@@ -175,6 +237,12 @@ class DisplayWakeDeskFlutterTest {
         @Override
         protected void wakeNativeWindow() {
             nativeWakes.incrementAndGet();
+        }
+
+        @Override
+        protected void waitNativeWindow(int millis) {
+            waits.incrementAndGet();
+            if (duringWait != null) duringWait.run();
         }
 
         @Override

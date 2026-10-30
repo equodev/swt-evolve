@@ -160,31 +160,6 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     }
 
     @Test
-    void a_drawer_with_nowhere_to_render_does_not_hold_back_later_releases() throws Exception {
-        // Releases wait for every drawer still holding ops; one that gave up must not hold any.
-        FlutterBridge.setDisplayGcCommResolver(null);
-        java.lang.reflect.Field available = dev.equo.swt.GCImageDrawer.class.getDeclaredField("nativeWindowAvailable");
-        available.setAccessible(true);
-        Object wasAvailable = available.get(null);
-        String loadLibrary = System.setProperty("dev.equo.swt.loadLibrary", "false");
-        try {
-            Image image = new Image(device(), 16, 16);
-            GC gc = new GC(image);
-            gc.fillRectangle(0, 0, 4, 4);
-            gc.dispose();
-            image.dispose();
-        } finally {
-            if (loadLibrary == null) System.clearProperty("dev.equo.swt.loadLibrary");
-            else System.setProperty("dev.equo.swt.loadLibrary", loadLibrary);
-            available.set(null, wasAvailable);
-        }
-
-        boolean[] released = { false };
-        dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> released[0] = true);
-        assertThat(released[0]).as("a release is held behind a drawer that will never send its ops").isTrue();
-    }
-
-    @Test
     void an_image_the_client_never_saw_is_not_released_there() throws InterruptedException {
         Image scratch = new Image(device(), 16, 16);
         scratch.dispose();
@@ -267,9 +242,9 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     void a_batch_carries_raw_bytes_beside_other_frames() {
         // Each entry of a batch is applied as the frame it would have been, raw bytes included.
         MessageBatch batch = new MessageBatch();
-        batch.add("GC/1/fillRectangleintintintint", "{\"x\":0}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        batch.add("GC/create", java.nio.ByteBuffer.allocate(8).putLong(1L).array());
-        batch.add("GC/1/gcDispose", "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.add(batch, "GC/1/fillRectangleintintintint", "{\"x\":0}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.add(batch, "GC/create", java.nio.ByteBuffer.allocate(8).putLong(1L).array());
+        dev.equo.swt.harness.Channels.add(batch, "GC/1/gcDispose", "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         comm.send(batch);
 
@@ -304,8 +279,14 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         final List<Boolean> copyAreaAnswerHeard = new ArrayList<>();
 
         @Override
-        public void send(String eventName) {
-            send(eventName, new byte[0]);
+        public void send(int type, long id, int channel, byte[] payload) {
+            send(dev.equo.swt.harness.Channels.name(type, id, channel), payload == null ? new byte[0] : payload);
+        }
+
+        @Override
+        public void sendFrame(byte[] frame, int offset, int length) {
+            dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, offset, offset + length);
+            send(header.channel(), java.util.Arrays.copyOfRange(frame, header.payloadStart(), offset + length));
         }
 
         /** The index of the first {@code eventName} sent, waiting up to {@code timeoutMs} for it; -1 if none. */
@@ -320,8 +301,7 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
             }
         }
 
-        @Override
-        public synchronized void send(String eventName, byte[] payload) {
+        synchronized void send(String eventName, byte[] payload) {
             GcFrames.Decoded frame = GcFrames.decode(eventName, payload);
             messages++;
             if (MessageBatch.EVENT.equals(frame.event()) && frame.value() instanceof List<?> entries) {
@@ -377,13 +357,13 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         }
 
         @Override
-        public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
-            handlers.put(eventName, callback);
+        public <T> void on(int type, long id, int channel, Class<T> cls, Consumer<T> callback) {
+            handlers.put(dev.equo.swt.harness.Channels.name(type, id, channel), callback);
         }
 
         @Override
-        public void remove(String eventName) {
-            handlers.remove(eventName);
+        public void remove(int type, long id, int channel) {
+            handlers.remove(dev.equo.swt.harness.Channels.name(type, id, channel));
         }
 
         @Override

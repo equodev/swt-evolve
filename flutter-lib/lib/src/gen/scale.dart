@@ -22,11 +22,11 @@ class ScaleSwt<V extends VScale> extends ControlSwt<V> {
   State createState() => ScaleImpl<ScaleSwt<VScale>, VScale>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -53,13 +53,13 @@ class VScale extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 442: // maximum
+      case 428: // maximum
         maximum = r.int32();
         return true;
-      case 443: // minimum
+      case 429: // minimum
         minimum = r.int32();
         return true;
-      case 444: // selection
+      case 430: // selection
         selection = r.int32();
         return true;
       default:
@@ -72,23 +72,20 @@ class VScale extends VControl {
     super.writeWire(w);
     {
       final v_ = maximum;
-      if (v_ != null && w.wants(442)) {
-        w.key(442);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(428, v_);
       }
     }
     {
       final v_ = minimum;
-      if (v_ != null && w.wants(443)) {
-        w.key(443);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(429, v_);
       }
     }
     {
       final v_ = selection;
-      if (v_ != null && w.wants(444)) {
-        w.key(444);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(430, v_);
       }
     }
   }
@@ -96,8 +93,8 @@ class VScale extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(442, maximum);
-    visit(443, minimum);
-    visit(444, selection);
+    visit(428, maximum);
+    visit(429, minimum);
+    visit(430, selection);
   }
 }

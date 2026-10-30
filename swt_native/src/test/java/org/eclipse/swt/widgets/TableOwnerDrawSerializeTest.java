@@ -172,7 +172,7 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
         serialize(item);
 
         // The scaled draw must be captured into the cell, not leaked onto the table's GC overlay.
-        verify(comm, never()).send(anyString(), any(byte[].class));
+        verify(comm, never()).send(anyInt(), anyLong(), anyInt(), any(byte[].class));
     }
 
     /**

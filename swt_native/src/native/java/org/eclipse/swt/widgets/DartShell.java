@@ -1703,7 +1703,10 @@ public class DartShell extends DartDecorations implements IShell {
         ((DartDisplay) display.getImpl()).updateQuitMenu();
         if (isDisposed())
             return;
-        getBridge().setVisible(this, visible);
+        {
+            getValue().markDirty(VControl.VISIBLE);
+            getBridge().setVisible(this, visible);
+        }
     }
 
     @Override

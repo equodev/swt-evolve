@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -26,7 +27,7 @@ class _CapturingComboSwt extends ComboSwt<VCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCombo _combo({int seq = 1, bool listVisible = false}) => VCombo()

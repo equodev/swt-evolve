@@ -55,37 +55,37 @@ class VTableItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 113: // background
+      case 564: // background
         background = r.color();
         return true;
-      case 114: // backgrounds
-        backgrounds = r.list(() => r.color());
+      case 565: // backgrounds
+        backgrounds = r.list((r) => r.color());
         return true;
-      case 115: // checked
+      case 566: // checked
         checked = r.boolean();
         return true;
-      case 116: // font
+      case 567: // font
         font = r.object(VFont.new);
         return true;
-      case 117: // fonts
-        fonts = r.list(() => r.object(VFont.new));
+      case 568: // fonts
+        fonts = r.list((r) => r.object(VFont.new));
         return true;
-      case 118: // foreground
+      case 569: // foreground
         foreground = r.color();
         return true;
-      case 119: // foregrounds
-        foregrounds = r.list(() => r.color());
+      case 570: // foregrounds
+        foregrounds = r.list((r) => r.color());
         return true;
-      case 120: // grayed
+      case 571: // grayed
         grayed = r.boolean();
         return true;
-      case 121: // images
-        images = r.list(() => r.image());
+      case 572: // images
+        images = r.list((r) => r.image());
         return true;
-      case 122: // paintedTexts
+      case 573: // paintedTexts
         paintedTexts = r.ints();
         return true;
-      case 123: // texts
+      case 574: // texts
         texts = r.strings();
         return true;
       default:
@@ -98,78 +98,76 @@ class VTableItem extends VItem {
     super.writeWire(w);
     {
       final v_ = background;
-      if (v_ != null && w.wants(113)) {
-        w.key(113);
+      if (v_ != null) {
+        w.key(564);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgrounds;
-      if (v_ != null && w.wants(114)) {
-        w.key(114);
+      if (v_ != null) {
+        w.key(565);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = checked;
-      if (v_ != null && w.wants(115)) {
-        w.key(115);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(566, v_);
       }
     }
     {
       final v_ = font;
-      if (v_ != null && w.wants(116)) {
-        w.key(116);
+      if (v_ != null) {
+        w.key(567);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = fonts;
-      if (v_ != null && w.wants(117)) {
-        w.key(117);
+      if (v_ != null) {
+        w.key(568);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = foreground;
-      if (v_ != null && w.wants(118)) {
-        w.key(118);
+      if (v_ != null) {
+        w.key(569);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregrounds;
-      if (v_ != null && w.wants(119)) {
-        w.key(119);
+      if (v_ != null) {
+        w.key(570);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = grayed;
-      if (v_ != null && w.wants(120)) {
-        w.key(120);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(571, v_);
       }
     }
     {
       final v_ = images;
-      if (v_ != null && w.wants(121)) {
-        w.key(121);
+      if (v_ != null) {
+        w.key(572);
         w.list(v_, (e) => w.ref(e?.id));
       }
     }
     {
       final v_ = paintedTexts;
-      if (v_ != null && w.wants(122)) {
-        w.key(122);
+      if (v_ != null) {
+        w.key(573);
         w.ints(v_);
       }
     }
     {
       final v_ = texts;
-      if (v_ != null && w.wants(123)) {
-        w.key(123);
+      if (v_ != null) {
+        w.key(574);
         w.strings(v_);
       }
     }
@@ -178,16 +176,16 @@ class VTableItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(113, background);
-    visit(114, backgrounds);
-    visit(115, checked);
-    visit(116, font);
-    visit(117, fonts);
-    visit(118, foreground);
-    visit(119, foregrounds);
-    visit(120, grayed);
-    visit(121, images);
-    visit(122, paintedTexts);
-    visit(123, texts);
+    visit(564, background);
+    visit(565, backgrounds);
+    visit(566, checked);
+    visit(567, font);
+    visit(568, fonts);
+    visit(569, foreground);
+    visit(570, foregrounds);
+    visit(571, grayed);
+    visit(572, images);
+    visit(573, paintedTexts);
+    visit(574, texts);
   }
 }

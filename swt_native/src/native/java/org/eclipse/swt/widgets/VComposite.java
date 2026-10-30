@@ -45,9 +45,9 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).tabList = value;
     }
 
-    public static final int BACKGROUND_MODE = 427;
+    public static final int BACKGROUND_MODE = 85;
 
-    public static final int CHILDREN = 428;
+    public static final int CHILDREN = 86;
 
     @Override
     public String wireName(int key) {
@@ -63,10 +63,10 @@ public class VComposite extends VScrollable {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 427:
+            case 85:
                 w.write((int) getBackgroundMode());
                 return true;
-            case 428:
+            case 86:
                 w.refs(getChildren());
                 return true;
         }
@@ -76,23 +76,23 @@ public class VComposite extends VScrollable {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 427:
+            case 85:
                 {
                     int v_ = getBackgroundMode();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(427);
+                    w.key(85);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 428:
+            case 86:
                 {
                     Control[] v_ = getChildren();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(428);
+                    w.key(86);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -100,7 +100,7 @@ public class VComposite extends VScrollable {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 427, 428 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 85, 86 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

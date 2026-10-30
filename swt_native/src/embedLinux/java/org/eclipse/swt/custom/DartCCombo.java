@@ -2022,7 +2022,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "List", "Visible", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_LIST_VISIBLE, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;

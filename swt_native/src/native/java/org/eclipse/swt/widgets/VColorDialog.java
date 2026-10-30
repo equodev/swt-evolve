@@ -2,7 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VColorDialog extends VDialog {
 
@@ -25,10 +24,16 @@ public class VColorDialog extends VDialog {
         RGB[] values = ((DartColorDialog) impl).rgbs;
         if (values == null)
             return null;
-        ArrayList<RGB> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (RGB v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new RGB[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        RGB[] result = new RGB[kept];
+        kept = 0;
+        for (RGB v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setRGBs(RGB[] value) {
@@ -37,15 +42,15 @@ public class VColorDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 625;
+        return 19;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(623);
+        w.key(79);
         w.write(getRGB());
-        w.key(624);
+        w.key(80);
         {
             RGB[] a_ = getRGBs();
             if (a_ == null)

@@ -21,7 +21,7 @@ class TypeHandlerDispatchTest {
     private CommService.TypeCallback<Object> recording(String... rests) {
         return new CommService.TypeCallback<>() {
             @Override
-            public Object target(String type, long id, String rest) {
+            public Object target(String type, long id, int channel, String rest) {
                 return Arrays.asList(rests).contains(rest) ? type + " " + id : null;
             }
 
@@ -34,7 +34,7 @@ class TypeHandlerDispatchTest {
 
     @Test
     void anEventReachesItsTypesHandlerWithTheIdAndChannel() {
-        comm.onType("TreeItem", Object.class, recording("Selection/Selection"));
+        comm.onType(dev.equo.swt.comm.ChannelHeader.requireType("TreeItem"), Object.class, recording("Selection/Selection"));
 
         comm.deliver("TreeItem/12/Selection/Selection");
         comm.deliver("TreeItem/-34/Selection/Selection");
@@ -44,7 +44,7 @@ class TypeHandlerDispatchTest {
 
     @Test
     void aChannelTheTypeDoesNotTakeIsNotHandedToIt() {
-        comm.onType("TreeItem", Object.class, recording("Selection/Selection"));
+        comm.onType(dev.equo.swt.comm.ChannelHeader.requireType("TreeItem"), Object.class, recording("Selection/Selection"));
 
         comm.deliver("TreeItem/12/Key/KeyDown");
 
@@ -53,9 +53,9 @@ class TypeHandlerDispatchTest {
 
     @Test
     void anOwnersOrAChannelsOwnHandlerComesFirst() {
-        comm.onType("Table", Object.class, recording("PaintItem/PaintItem", "Selection/Selection"));
-        comm.on("Table/3/PaintItem/PaintItem", Object.class, value -> seen.add("own"));
-        comm.onOwner("Table/3", new String[] { "Selection/Selection" }, Object.class, (rest, value) -> seen.add("owner"));
+        comm.onType(dev.equo.swt.comm.ChannelHeader.requireType("Table"), Object.class, recording("PaintItem/PaintItem", "Selection/Selection"));
+        dev.equo.swt.harness.Channels.on(comm, "Table/3/PaintItem/PaintItem", Object.class, value -> seen.add("own"));
+        dev.equo.swt.harness.Channels.onOwner(comm, "Table/3", new String[] { "Selection/Selection" }, Object.class, (rest, value) -> seen.add("owner"));
 
         comm.deliver("Table/3/PaintItem/PaintItem");
         comm.deliver("Table/3/Selection/Selection");
@@ -66,10 +66,10 @@ class TypeHandlerDispatchTest {
 
     @Test
     void registeringATypeAgainKeepsTheFirstHandler() {
-        assertThat(comm.onType("Button", Object.class, recording("Selection/Selection"))).isTrue();
-        comm.onType("Button", Object.class, new CommService.TypeCallback<>() {
+        assertThat(comm.onType(dev.equo.swt.comm.ChannelHeader.requireType("Button"), Object.class, recording("Selection/Selection"))).isTrue();
+        comm.onType(dev.equo.swt.comm.ChannelHeader.requireType("Button"), Object.class, new CommService.TypeCallback<>() {
             @Override
-            public Object target(String type, long id, String rest) {
+            public Object target(String type, long id, int channel, String rest) {
                 return type;
             }
 
@@ -87,7 +87,7 @@ class TypeHandlerDispatchTest {
     /** The real dispatcher, fed frames directly instead of over a socket. */
     private static final class Feeder extends AbstractBinaryCommService {
         void deliver(String channel) {
-            byte[] header = CommService.frameHeader(channel);
+            byte[] header = dev.equo.swt.harness.Channels.header(channel);
             byte[] frame = Arrays.copyOf(header, header.length);
             onBinaryMessage(frame, 0, frame.length);
         }

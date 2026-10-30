@@ -504,7 +504,7 @@ public class DartDragSource extends DartWidget implements IDragSource {
     private void sendDragStartResult(boolean doit) {
         if (control == null)
             return;
-        FlutterBridge.send((DartWidget) control.getImpl(), "DragDetect/dragStartResult", dev.equo.swt.Java8.map("doit", doit));
+        FlutterBridge.send((DartWidget) control.getImpl(), dev.equo.swt.WireTable.CHANNEL_DRAG_DETECT_DRAG_START_RESULT, dev.equo.swt.Java8.map("doit", doit));
     }
 
     Object lastDragData;

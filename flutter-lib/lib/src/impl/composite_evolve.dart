@@ -90,9 +90,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
       // the same rule. See onPointerMove below for what leaving it out costs.
       if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition)) return;
-      final event = VEvent()
-        ..x = e.localPosition.dx.round()
-        ..y = e.localPosition.dy.round();
+      final event = impl.moveEvent(e.localPosition.dx.round(), e.localPosition.dy.round());
       impl.sendThrottledMouseMove(state, event, e.buttons);
       impl.restartHover(state, event, e.position);
     },

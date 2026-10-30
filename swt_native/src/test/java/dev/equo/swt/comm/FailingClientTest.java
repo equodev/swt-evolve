@@ -1,5 +1,6 @@
 package dev.equo.swt.comm;
 
+import dev.equo.swt.WireTable;
 import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
@@ -74,7 +75,7 @@ class FailingClientTest {
         field.setAccessible(true);
         ((Set<WebSocket>) field.get(comm)).add(gone);
 
-        for (int i = 0; i < frames; i++) comm.send("Label/1/c", new byte[] {(byte) i});
+        for (int i = 0; i < frames; i++) comm.send(WireTable.TYPE_LABEL, 1, WireTable.CHANNEL_C, new byte[] {(byte) i});
 
         assertThat(received.await(10, TimeUnit.SECONDS)).as("the live client got every frame").isTrue();
     }

@@ -6,6 +6,7 @@
 // reason a hidden subtree used to come back empty.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';

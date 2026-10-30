@@ -51,7 +51,7 @@ public final class MnemonicHelper {
                 continue;
             if (!(item.getImpl() instanceof DartMenuItem))
                 return;
-            FlutterBridge.sendEvent(item.getImpl(), "openMenu");
+            FlutterBridge.sendEvent(item.getImpl(), dev.equo.swt.WireTable.CHANNEL_OPEN_MENU);
             return;
         }
     }

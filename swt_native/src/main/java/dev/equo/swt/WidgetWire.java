@@ -34,7 +34,7 @@ import java.util.Map;
  *             object (the first counts from 0); a class's numbers are consecutive, so most are 1 byte
  * </pre>
  *
- * A property is named by its number, the one the generator gave its name (wire-ids.txt), and both
+ * A property is named by its number, the one the generator gave its name ({@link WireTable}), and both
  * sides know from the property what its value is, so the frame carries no types and no names. A
  * widget or an image is named by its id: anything named that the client does not hold is described
  * by its own record in the same frame, so a new subtree arrives as consecutive records, parents
@@ -81,31 +81,19 @@ public final class WidgetWire {
     /** Where the last empty string, array or map was written, for {@link #isEmpty}. */
     private int emptyAt = -1;
     private Names names = IGNORE;
-    private final HashMap<String, Integer> types = new HashMap<>();
 
-    /** Record types by name, numbered as the client knows them (wire-types.txt, generated). */
-    private static final Map<String, Integer> TYPE_NUMBERS = loadTypeNumbers();
+    /** Record types by name, numbered as the client knows them ({@link WireTable}, generated). */
+    private static final Map<String, Integer> TYPE_NUMBERS = new HashMap<>();
 
-    private static Map<String, Integer> loadTypeNumbers() {
-        HashMap<String, Integer> numbers = new HashMap<>();
-        try (java.io.InputStream s = WidgetWire.class.getResourceAsStream("wire-types.txt")) {
-            if (s == null) return numbers;
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(s, java.nio.charset.StandardCharsets.UTF_8));
-            for (String line; (line = reader.readLine()) != null; ) {
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                int space = line.indexOf(' ');
-                numbers.put(line.substring(space + 1), Integer.parseInt(line.substring(0, space)));
-            }
-        } catch (java.io.IOException e) {
-            throw new java.io.UncheckedIOException(e);
-        }
-        return numbers;
+    static {
+        for (int i = 1; i < WireTable.TYPES.length; i++) TYPE_NUMBERS.put(WireTable.TYPES[i], i);
     }
+
+    private static final byte[] HEADER = dev.equo.swt.comm.ChannelHeader.encode(0, 0, WireTable.CHANNEL_SWT_EVOLVE_WIRE);
 
     /** Starts an empty frame. */
     public void begin() {
-        byte[] header = CommService.frameHeader(CHANNEL);
+        byte[] header = HEADER;
         size = 0;
         ensure(header.length + 4);
         System.arraycopy(header, 0, buf, 0, header.length);
@@ -115,7 +103,6 @@ public final class WidgetWire {
         lastStamp = 0;
         lastKey = 0;
         emptyAt = -1;
-        types.clear();
     }
 
     /** Where the widgets and images that values name are reported. */
@@ -176,18 +163,11 @@ public final class WidgetWire {
         int start = size;
         lastKey = 0;
         if (type != null) {
-            // A type the client numbers goes as its number, odd; any other is spelled out once per
-            // frame and referred to after by its place, even.
-            Integer known = number != null ? null : types.get(type);
-            if (number != null) {
-                varint(number << 1 | 1);
-            } else if (known != null) {
-                varint((known + 1) << 1);
-            } else {
-                types.put(type, types.size());
-                varint(0);
-                writeString(type);
+            // Every type is numbered when the code is generated; the number goes odd.
+            if (number == null) {
+                throw new IllegalArgumentException("type \"" + type + "\" has no wire number: add it to the generator's types");
             }
+            varint(number << 1 | 1);
         }
         varlong((id << 1) ^ (id >> 63));
         return start;
@@ -310,13 +290,11 @@ public final class WidgetWire {
 
     private int markSize;
     private long markStamp;
-    private int markTypes;
 
     /** Remembers where the frame stands, for {@link #rollback} to return to. */
     public void mark() {
         markSize = size;
         markStamp = lastStamp;
-        markTypes = types.size();
     }
 
     /** Takes back everything since {@link #mark}: a record that turned out to say nothing. */
@@ -324,7 +302,6 @@ public final class WidgetWire {
         truncate(markSize);
         lastStamp = markStamp;
         lastKey = 0;
-        if (types.size() > markTypes) types.values().removeIf(index -> index >= markTypes);
     }
 
     // --- buffers, kept per thread: a flush's frame is built and sent on one thread ---
@@ -337,6 +314,11 @@ public final class WidgetWire {
     public static WidgetWire borrow() {
         WidgetWire w = spare.get().poll();
         return w != null ? w : new WidgetWire();
+    }
+
+    /** Whether this buffer is small enough to keep for reuse. */
+    public boolean keepable() {
+        return buf.length <= KEPT_BUFFER_BYTES;
     }
 
     /** Returns {@code w}'s buffer for the next {@link #borrow}; {@code w} is not used after this. */
@@ -601,6 +583,21 @@ public final class WidgetWire {
         v.writeWireFields(this);
         varint(0);
         lastKey = outer;
+    }
+
+    /**
+     * Opens a frame in this buffer: the header of the channel numbered {@code channel} of the widget
+     * of type {@code type} numbered {@code id}. Returns where the payload starts.
+     */
+    public int header(int type, long id, int channel) {
+        ensure(dev.equo.swt.comm.ChannelHeader.MAX_NUMBERED);
+        size = dev.equo.swt.comm.ChannelHeader.write(buf, size, type, id, channel);
+        return size;
+    }
+
+    /** Writes {@code v}'s fields, closed by a 0, after what is already written. */
+    public void writeFields(WireObject v) {
+        fields(v);
     }
 
     /** {@code v}'s fields, closed by a 0: an object sent as a message of its own. */

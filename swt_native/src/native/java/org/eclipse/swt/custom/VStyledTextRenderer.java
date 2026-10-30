@@ -66,10 +66,16 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
         Bullet[] values = ((DartStyledTextRenderer) impl).bullets;
         if (values == null)
             return null;
-        ArrayList<Bullet> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Bullet v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Bullet[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Bullet[] result = new Bullet[kept];
+        kept = 0;
+        for (Bullet v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setBullets(Bullet[] value) {
@@ -139,10 +145,16 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
         TextLayout[] values = ((DartStyledTextRenderer) impl).layouts;
         if (values == null)
             return null;
-        ArrayList<TextLayout> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TextLayout v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TextLayout[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TextLayout[] result = new TextLayout[kept];
+        kept = 0;
+        for (TextLayout v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setLayouts(TextLayout[] value) {
@@ -249,10 +261,16 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
         StyleRange[] values = ((DartStyledTextRenderer) impl).styles;
         if (values == null)
             return null;
-        ArrayList<StyleRange> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (StyleRange v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new StyleRange[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        StyleRange[] result = new StyleRange[kept];
+        kept = 0;
+        for (StyleRange v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setStyles(StyleRange[] value) {
@@ -263,10 +281,16 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
         StyleRange[] values = ((DartStyledTextRenderer) impl).stylesSet;
         if (values == null)
             return null;
-        ArrayList<StyleRange> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (StyleRange v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new StyleRange[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        StyleRange[] result = new StyleRange[kept];
+        kept = 0;
+        for (StyleRange v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setStylesSet(StyleRange[] value) {
@@ -357,14 +381,14 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
         @Override
         public int wireTypeId() {
-            return 476;
+            return 62;
         }
 
         @Override
         public void writeWireFields(dev.equo.swt.WidgetWire w) {
-            w.key(474);
+            w.key(357);
             w.write((int) getHeight());
-            w.key(475);
+            w.key(358);
             w.write((int) getWidth());
         }
     }
@@ -489,52 +513,52 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
         @Override
         public int wireTypeId() {
-            return 487;
+            return 61;
         }
 
         @Override
         public void writeWireFields(dev.equo.swt.WidgetWire w) {
-            w.key(479);
+            w.key(349);
             w.write((int) getFlags());
-            w.key(478);
+            w.key(348);
             w.write(getBackground());
-            w.key(477);
+            w.key(347);
             w.write((int) getAlignment());
-            w.key(480);
+            w.key(350);
             w.write((int) getIndent());
-            w.key(486);
+            w.key(356);
             w.write((int) getWrapIndent());
-            w.key(481);
+            w.key(351);
             w.write(getJustify());
-            w.key(482);
+            w.key(352);
             w.write(getSegments());
-            w.key(483);
+            w.key(353);
             w.write(getSegmentsChars());
-            w.key(484);
+            w.key(354);
             w.write(getTabStops());
-            w.key(485);
+            w.key(355);
             w.write((int) getVerticalIndent());
         }
     }
 
     @Override
     public int wireTypeId() {
-        return 496;
+        return 101;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(488);
+        w.key(511);
         w.write((int) getAscent());
-        w.key(490);
+        w.key(518);
         w.write((int) getDescent());
-        w.key(494);
+        w.key(533);
         w.object((getRegularFont() == null || getRegularFont().isDisposed() ? null : ((DartFont) getRegularFont().getImpl()).getValue()));
-        w.key(493);
+        w.key(531);
         w.write(getRanges());
-        w.key(495);
+        w.key(534);
         w.write((int) getStyleCount());
-        w.key(492);
+        w.key(527);
         {
             VStyledTextRenderer.VLineInfo[] a_ = getLines();
             if (a_ == null)
@@ -544,9 +568,9 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
                 for (VStyledTextRenderer.VLineInfo e_ : a_) w.object(e_);
             }
         }
-        w.key(491);
+        w.key(526);
         w.write(getLineSpacings());
-        w.key(489);
+        w.key(516);
         w.write(getBulletTexts());
     }
 }

@@ -17,21 +17,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class GcWireTest {
 
     private static final String CHANNEL = "GC/7";
-
-    /** Numbers no channel has, for ops only these tests write. */
-    private static final int EVERY_KIND = 4001, CLIP_TO = 4002;
+    private static final int GC = dev.equo.swt.comm.ChannelHeader.requireType("GC");
 
     /** drawLine's shape: four ints. */
     private static GcWire.Op line(int x1, int y1, int x2, int y2) {
         return new GcWire.Op() {
             @Override
-            public int wireNumber() {
-                return dev.equo.swt.comm.ChannelHeader.number("drawLineintintintint");
+            public String signature() {
+                return "iiii";
             }
 
             @Override
-            public String signature() {
-                return "iiii";
+            public int number() {
+                return dev.equo.swt.comm.ChannelHeader.requireChannel("drawLineintintintint");
             }
 
             @Override
@@ -47,13 +45,13 @@ public class GcWireTest {
     private static GcWire.Op everyKind() {
         return new GcWire.Op() {
             @Override
-            public int wireNumber() {
-                return EVERY_KIND;
+            public String signature() {
+                return "IIbsfd";
             }
 
             @Override
-            public String signature() {
-                return "IIbsfd";
+            public int number() {
+                return dev.equo.swt.comm.ChannelHeader.requireChannel("evolve.test.frameStats");
             }
 
             @Override
@@ -96,7 +94,7 @@ public class GcWireTest {
     @DisplayName("a frame reads back past its own channel header, which is numbered rather than spelled out")
     void frameReadsBackPastItsNumberedHeader() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         w.op(line(1, 2, 3, 4));
         int spelledOut = 2 + GcWire.frameEvent(CHANNEL).length();
         assertThat(dev.equo.swt.comm.ChannelHeader.decode(w.buffer(), 0, w.byteSize()).payloadStart())
@@ -108,7 +106,7 @@ public class GcWireTest {
     @DisplayName("an op reads back as its arguments in order, on its own channel")
     void opReadsBack() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         w.op(line(-3, 0, 40000, Integer.MAX_VALUE));
         assertEntries(w, entry("GC/7/drawLineintintintint", List.of(-3, 0, 40000, Integer.MAX_VALUE)));
     }
@@ -117,17 +115,43 @@ public class GcWireTest {
     @DisplayName("every argument type reads back as the value written")
     void everyArgumentKindReadsBack() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         w.op(everyKind());
-        assertEntries(w, entry("GC/7/op" + EVERY_KIND,
+        assertEntries(w, entry("GC/7/evolve.test.frameStats",
                 Arrays.asList(List.of(-1, 0, 70000, Integer.MIN_VALUE), null, true, "dé\"jà", 1.5, -0.25)));
+    }
+
+    @Test
+    @DisplayName("a generated op writes the frame its arguments make, frame after frame")
+    void generatedOpWritesWhatItsArgumentsMake() {
+        VGC.VGCDrawLineintintintint numbered = new VGC.VGCDrawLineintintintint();
+        numbered.x1 = 1;
+        numbered.y1 = 2;
+        numbered.x2 = 3;
+        numbered.y2 = 4;
+        assertThat(numbered.number()).isEqualTo(dev.equo.swt.comm.ChannelHeader.number("drawLineintintintint"));
+        GcWire byNumber = new GcWire();
+        GcWire byHand = new GcWire();
+        for (int frame = 0; frame < 2; frame++) {
+            byNumber.begin(GC, 7);
+            byHand.begin(GC, 7);
+            byNumber.op(numbered);
+            byNumber.op(everyKind());
+            byNumber.op(numbered);
+            byHand.op(line(1, 2, 3, 4));
+            byHand.op(everyKind());
+            byHand.op(line(1, 2, 3, 4));
+            assertThat(java.util.Arrays.copyOf(byNumber.buffer(), byNumber.byteSize()))
+                    .isEqualTo(java.util.Arrays.copyOf(byHand.buffer(), byHand.byteSize()));
+        }
+        assertThat(describe(byNumber)).isEqualTo(describe(byHand));
     }
 
     @Test
     @DisplayName("a repeated op is named once, then referred to by number")
     void repeatedOpIsNamedOnce() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         w.op(line(1, 2, 3, 4));
         int afterFirst = w.byteSize();
         w.op(line(1, 2, 3, 4));
@@ -137,10 +161,10 @@ public class GcWireTest {
     }
 
     @Test
-    @DisplayName("a change and a whole state carry their properties as the widget wire writes them; an escape its payload")
+    @DisplayName("a change and a whole state carry their properties as the widget wire writes them; a gcDispose its fields")
     void stateAndEscapeReadBack() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         WidgetWire change = w.scratch();
         change.key(VGC.LINE_WIDTH);
         change.write(3);
@@ -153,18 +177,18 @@ public class GcWireTest {
         whole.key(VGC.LINE_WIDTH);
         whole.write(-1);
         w.state(GcWire.WHOLE, whole);
-        byte[] dispose = dev.equo.swt.comm.TaggedValues.encode(java.util.Map.of("fullRepaint", true), null);
-        w.escape(CHANNEL + "/gcDispose", dispose, 0, dispose.length);
+        w.dispose(GcWire.Dispose.ofPaint(true, new org.eclipse.swt.graphics.Rectangle(-1, 2, 30, 40)));
         assertEntries(w, entry("GC/7", record("_d", 0, "lineWidth", 3, "alpha", null, "bufferScale", 2.0)),
                 entry("GC/7", record("_whole", true, "lineWidth", -1)),
-                entry("GC/7/gcDispose", record("fullRepaint", true)));
+                entry("GC/7/gcDispose", record("fullRepaint", true, "pixels", false, "retain", false, "ref", 0L,
+                        "damage", record("x", -1, "y", 2, "width", 30, "height", 40))));
     }
 
     @Test
     @DisplayName("an op and a state key both sides number go by their numbers, spelling out no name")
     void numberedOpAndKeySpellNothing() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         int start = w.byteSize();
         w.op(line(1, 2, 3, 4));
         WidgetWire change = w.scratch();
@@ -181,7 +205,7 @@ public class GcWireTest {
     @DisplayName("a removed transform goes as null")
     void nullTransformReadsBack() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         WidgetWire change = w.scratch();
         change.key(VGC.TRANSFORM);
         change.object(null);
@@ -193,16 +217,16 @@ public class GcWireTest {
     @DisplayName("an argument of any other type travels as the widget wire encodes it")
     void wireArgumentReadsBack() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         w.op(new GcWire.Op() {
-            @Override
-            public int wireNumber() {
-                return CLIP_TO;
-            }
-
             @Override
             public String signature() {
                 return "wi";
+            }
+
+            @Override
+            public int number() {
+                return dev.equo.swt.comm.ChannelHeader.requireChannel("evolve.test.wireStats");
             }
 
             @Override
@@ -218,14 +242,14 @@ public class GcWireTest {
                 return new String[] { "rect" };
             }
         });
-        assertEntries(w, entry("GC/7/op" + CLIP_TO, List.of(record("x", 1, "y", -2, "width", 30, "height", 40), 5)));
+        assertEntries(w, entry("GC/7/evolve.test.wireStats", List.of(record("x", 1, "y", -2, "width", 30, "height", 40), 5)));
     }
 
     @Test
     @DisplayName("a frame with nothing in it is not sent")
     void emptyFrameIsEmpty() {
         GcWire w = new GcWire();
-        w.begin(CHANNEL);
+        w.begin(GC, 7);
         assertThat(w.isEmpty()).isTrue();
         w.op(line(0, 0, 0, 0));
         assertThat(w.isEmpty()).isFalse();

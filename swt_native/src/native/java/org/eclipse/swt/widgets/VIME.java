@@ -2,7 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.util.ArrayList;
 
 public class VIME extends VWidget {
 
@@ -33,10 +32,16 @@ public class VIME extends VWidget {
         TextStyle[] values = ((DartIME) impl).styles;
         if (values == null)
             return null;
-        ArrayList<TextStyle> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TextStyle v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TextStyle[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TextStyle[] result = new TextStyle[kept];
+        kept = 0;
+        for (TextStyle v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setStyles(TextStyle[] value) {

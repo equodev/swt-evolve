@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ctabfolder.dart';
@@ -41,7 +42,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCTabFolder _folder({int selection = 0, int? showListPopupSeq, int seq = 0}) => VCTabFolder()

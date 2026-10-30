@@ -511,53 +511,53 @@ public class TextStyle implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 441;
+        return 113;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(432);
+        w.key(587);
         w.object((font == null || font.isDisposed() ? null : font.getImpl() instanceof DartFont ? ((DartFont) font.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(font).getImpl()).getValue()));
-        w.key(433);
+        w.key(588);
         w.write(foreground);
-        w.key(429);
+        w.key(584);
         w.write(background);
-        w.key(438);
+        w.key(593);
         w.write(underline);
-        w.key(439);
+        w.key(594);
         w.write(underlineColor);
-        w.key(440);
+        w.key(595);
         w.write((int) underlineStyle);
-        w.key(436);
+        w.key(591);
         w.write(strikeout);
-        w.key(437);
+        w.key(592);
         w.write(strikeoutColor);
-        w.key(431);
+        w.key(586);
         w.write((int) borderStyle);
-        w.key(430);
+        w.key(585);
         w.write(borderColor);
-        w.key(434);
+        w.key(589);
         w.object(metrics);
-        w.key(435);
+        w.key(590);
         w.write((int) rise);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 438:
+            case 593:
                 underline = r.bool();
                 return true;
-            case 440:
+            case 595:
                 underlineStyle = r.int32();
                 return true;
-            case 436:
+            case 591:
                 strikeout = r.bool();
                 return true;
-            case 431:
+            case 586:
                 borderStyle = r.int32();
                 return true;
-            case 435:
+            case 590:
                 rise = r.int32();
                 return true;
         }

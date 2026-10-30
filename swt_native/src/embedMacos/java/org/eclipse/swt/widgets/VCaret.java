@@ -49,15 +49,15 @@ public class VCaret extends VWidget {
         return ((DartCaret) impl).blinkRate;
     }
 
-    public static final int BLINK_RATE = 1417;
+    public static final int BLINK_RATE = 69;
 
-    public static final int BOUNDS = 365;
+    public static final int BOUNDS = 70;
 
-    public static final int FOCUSED = 1418;
+    public static final int FOCUSED = 71;
 
-    public static final int IMAGE = 1419;
+    public static final int IMAGE = 72;
 
-    public static final int VISIBLE = 1420;
+    public static final int VISIBLE = 73;
 
     @Override
     public String wireName(int key) {
@@ -79,19 +79,19 @@ public class VCaret extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 1420:
+            case 73:
                 w.write(getVisible());
                 return true;
-            case 365:
+            case 70:
                 w.write(getBounds());
                 return true;
-            case 1419:
+            case 72:
                 w.image(getImage());
                 return true;
-            case 1418:
+            case 71:
                 w.write(getFocused());
                 return true;
-            case 1417:
+            case 69:
                 w.write((int) getBlinkRate());
                 return true;
         }
@@ -101,46 +101,46 @@ public class VCaret extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 1420:
+            case 73:
                 {
                     boolean v_ = getVisible();
-                    w.key(1420);
+                    w.key(73);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 365:
+            case 70:
                 {
                     Rectangle v_ = getBounds();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(365);
+                    w.key(70);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1419:
+            case 72:
                 {
                     Image v_ = getImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1419);
+                    w.key(72);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1418:
+            case 71:
                 {
                     boolean v_ = getFocused();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1418);
+                    w.key(71);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 1417:
+            case 69:
                 {
                     int v_ = getBlinkRate();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(1417);
+                    w.key(69);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -148,7 +148,7 @@ public class VCaret extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 1420, 365, 1419, 1418, 1417 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 73, 70, 72, 71, 69 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -162,7 +162,7 @@ public class VCaret extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 1420:
+            case 73:
                 return true;
         }
         return super.wireAlways(key);

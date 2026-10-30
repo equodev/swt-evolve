@@ -5374,7 +5374,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public int getTopIndex() {
         checkWidget();
-        Integer geometryTopIndex = StyledTextHelper.geometryLineIndex(this, 0);
+        Integer geometryTopIndex = StyledTextHelper.geometryTopIndex(this);
         if (geometryTopIndex != null)
             return geometryTopIndex;
         return topIndex;
@@ -10585,6 +10585,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (verticalBar != null) {
             setScrollBar(verticalBar, clientAreaHeight, ((DartStyledTextRenderer) renderer.getImpl()).getHeight(), topMargin + bottomMargin);
         }
+        if (verticalBar != null && verticalScrollOffset >= 0 && verticalBar.getSelection() != verticalScrollOffset)
+            verticalBar.setSelection(verticalScrollOffset);
         if (horizontalBar != null && !wordWrap) {
             setScrollBar(horizontalBar, clientAreaWidth, ((DartStyledTextRenderer) renderer.getImpl()).getWidth(), leftMargin + rightMargin);
             if (!alwaysShowScroll && horizontalBar.getVisible() && verticalBar != null) {

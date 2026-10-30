@@ -59,7 +59,7 @@ abstract class BridgeTap {
     }
 
     /** A message goes out: {@code buffer[0, length)} is the frame, its payload from {@code payloadStart}. */
-    void sent(String eventName, byte[] buffer, int payloadStart, int length) {
+    void sent(byte[] buffer, int payloadStart, int length) {
     }
 
     /** A GC's paint goes out. */
@@ -127,8 +127,8 @@ abstract class BridgeTap {
         }
 
         @Override
-        void sent(String eventName, byte[] buffer, int payloadStart, int length) {
-            for (BridgeTap t : taps) t.sent(eventName, buffer, payloadStart, length);
+        void sent(byte[] buffer, int payloadStart, int length) {
+            for (BridgeTap t : taps) t.sent(buffer, payloadStart, length);
         }
 
         @Override

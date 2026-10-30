@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/image.dart';
@@ -12,14 +13,10 @@ import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 
 import 'support/gc_frames.dart';
+import 'support/channels.dart' as channels;
 
 Uint8List _frame(String actionId, List<int> body) {
-  final action = utf8.encode(actionId);
-  final out = Uint8List(2 + action.length + body.length);
-  out[0] = (action.length >> 8) & 0xFF;
-  out[1] = action.length & 0xFF;
-  out.setRange(2, 2 + action.length, action);
-  out.setRange(2 + action.length, out.length, body);
+  final out = channels.frame(actionId, Uint8List.fromList(body));
   return out;
 }
 
@@ -64,7 +61,7 @@ void main() {
           ..height = 20)));
     comm.receiveBinary(_frame('GC/$gcId/b', gcOp('fillRectangleintintintint', [0, 0, 5, 5])));
     comm.receiveBinary(_frame('GC/$gcId/gcDispose',
-        tagged({'ref': ref, 'pixels': false, 'retain': false})));
+        gcDisposeOf({'ref': ref, 'pixels': false, 'retain': false})));
 
     await _settle();
 

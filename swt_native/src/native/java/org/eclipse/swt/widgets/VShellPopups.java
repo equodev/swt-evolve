@@ -19,7 +19,7 @@ public class VShellPopups {
     public long shellId;
     public Menu[] popups;
 
-    /** The property a record of the binary widget wire describes the popups by: wire-ids.txt's "popups". */
+    /** The property a record of the binary widget wire describes the popups by: the display's "popups". */
     public static final int[] WIRE_KEYS = { VDisplay.POPUPS };
 
     /** Writes one of {@link #WIRE_KEYS}, as a widget's keyed writer does. */

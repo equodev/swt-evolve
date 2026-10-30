@@ -124,7 +124,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         }
 
         // ---------- J→D echo response handler (persistent) ----------
-        comm().on(eventName(this, C_J2D_ECHO_RESP), byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm(), eventName(this, C_J2D_ECHO_RESP), byte[].class, bytes -> {
             CompletableFuture<Long> p = j2dPending.getAndSet(null);
             if (p != null) p.complete(System.nanoTime());
         });
@@ -135,7 +135,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         //   - image shapes → a base64 PNG String, then base64-decode it (the imageResult path
         //     GCImageDrawer/GCHelper.updateImageFromPng uses).
         // The expected decode type for the in-flight run is set by d2jEcho before the run is sent.
-        comm().on(eventName(this, C_D2J_PROBE), byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm(), eventName(this, C_D2J_PROBE), byte[].class, bytes -> {
             if (bytes != null) {
                 try {
                     if (d2jProbeIsImage) {
@@ -148,11 +148,11 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
                     System.err.println("[BenchBridge] D→J decode failed: " + e);
                 }
             }
-            comm().send(eventName(this, C_D2J_PROBE_RESP), EMPTY_ACK);
+            dev.equo.swt.harness.Channels.send(comm(), eventName(this, C_D2J_PROBE_RESP), EMPTY_ACK);
         });
 
         // ---------- D→J result handler (persistent) ----------
-        comm().on(eventName(this, C_D2J_RESULT), byte[].class, bytes -> handleD2jResult(d2jPending, bytes));
+        dev.equo.swt.harness.Channels.on(comm(), eventName(this, C_D2J_RESULT), byte[].class, bytes -> handleD2jResult(d2jPending, bytes));
     }
 
     private void startWebClient() {
@@ -248,7 +248,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
             return failed;
         }
         byte[] payload = shape.serialize();
-        clientReady.thenRun(() -> comm().send(eventName(this, C_J2D_ECHO), payload));
+        clientReady.thenRun(() -> dev.equo.swt.harness.Channels.send(comm(), eventName(this, C_J2D_ECHO), payload));
         return result;
     }
 
@@ -268,7 +268,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         buf.putInt(seq);
         buf.put((byte) shapeBytes.length);
         buf.put(shapeBytes);
-        clientReady.thenRun(() -> comm().send(eventName(this, C_D2J_RUN), buf.array()));
+        clientReady.thenRun(() -> dev.equo.swt.harness.Channels.send(comm(), eventName(this, C_D2J_RUN), buf.array()));
         return result;
     }
 

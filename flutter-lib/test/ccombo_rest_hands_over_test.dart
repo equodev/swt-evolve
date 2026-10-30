@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   const _CapturingCComboSwt({required super.value, required this.events});
@@ -18,7 +19,7 @@ class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   final List<String> events;
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) => events.add(ev);
+  void sendEvent(VCCombo val, int channel, VEvent? payload) => events.add(wireChannelNames[channel]!);
 }
 
 VCCombo _combo(int style) => VCCombo()

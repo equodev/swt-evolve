@@ -81,7 +81,7 @@ class GCScopedPaintClipNativeTest {
             assertThat(ran[0]).as("pending work ran while waiting").isTrue();
             Canvas canvas = new Canvas(new Shell(display), SWT.NONE);
             display.asyncExec(() -> ran[0] = false);
-            org.eclipse.swt.graphics.GCHelper.callOnDisplayBytes(canvas.getImpl(), "probe", null, bytes -> {
+            org.eclipse.swt.graphics.GCHelper.callOnDisplayBytes(canvas.getImpl(), dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT, dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT_RESPONSE, null, bytes -> {
             }, 50);
             assertThat(ran[0]).isFalse();
             org.eclipse.swt.graphics.Image image = new org.eclipse.swt.graphics.Image(display, 2, 2);

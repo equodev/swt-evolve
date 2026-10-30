@@ -3,7 +3,7 @@ import '../theme/theme_settings/theme_color_palette_theme_settings.dart';
 
 import '../comm/comm.dart';
 import '../comm/widget_wire.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireKey, WireChannel;
 import '../impl/widget_config.dart';
 import '../theme/named_themes.dart';
 import '../theme/theme_extensions/theme_color_palette_theme_extension.dart';
@@ -33,7 +33,7 @@ class _ThemeFlags implements WireWritable {
 }
 
 void _sendThemeFlags(_ThemeFlags flags) =>
-    EquoCommService.sendBytes(_kEvolvePropertySetChannel, WidgetWireWriter.encode(flags));
+    EquoCommService.sendOn(WireChannel.swtEvolvePropertySet, flags);
 
 void _syncThemeColor(String hex6or8) {
   final trimmed = hex6or8.trim();

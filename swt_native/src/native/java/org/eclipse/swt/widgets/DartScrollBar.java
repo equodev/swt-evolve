@@ -745,6 +745,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         if (this.selection != clamped)
             getValue().markDirty(VScrollBar.SELECTION);
         this.selection = clamped;
+        ScrollBarHelper.updateRange(this, minimum, maximum, thumb);
     }
 
     boolean enabled = true;
@@ -792,6 +793,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public boolean _visible() {
         return visible;
     }
+
+    boolean hasRange = true;
 
     public FlutterBridge getBridge() {
         if (bridge != null)

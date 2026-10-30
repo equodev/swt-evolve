@@ -461,7 +461,7 @@ public class ControlHelper {
 
     /** Answers the client's held context menu after the MenuDetect listeners have run. */
     public static void sendMenuDetectVerdict(DartWidget widget, Event e) {
-        dev.equo.swt.FlutterBridge.send(widget, "menu/verdict", dev.equo.swt.Java8.map("doit", e.doit));
+        dev.equo.swt.FlutterBridge.send(widget, dev.equo.swt.WireTable.CHANNEL_MENU_VERDICT, dev.equo.swt.Java8.map("doit", e.doit));
     }
 
     /**

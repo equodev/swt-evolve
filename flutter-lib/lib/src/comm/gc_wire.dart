@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import '../gen/gcdrawer.dart' show gcOpSignatures;
-import '../gen/widgets.dart' show wireChannelNames;
 import 'channel_header.dart';
 import 'tagged_values.dart';
 import 'widget_wire.dart';
@@ -10,8 +9,7 @@ import 'widget_wire.dart';
 /// arguments, a change to the GC's state or the whole of it, or an escape carrying a channel and its
 /// payload.
 ///
-/// An op goes by the number both sides know it by the first time a frame uses it, and by its place in
-/// the frame after.
+/// An op goes by its number the first time a frame uses it, and by its place in the frame after.
 class GcWireReader {
   static const int state = 1;
   static const int escape = 2;
@@ -19,18 +17,57 @@ class GcWireReader {
   static const int whole = 4;
   static const int opFirst = 5;
 
-  final Uint8List _bytes;
-  final ByteData _data;
-  int _pos = 0;
+  Uint8List _bytes;
+  ByteData? _view;
+  int _pos;
+  int _end;
 
-  /// Per op number: its name and its argument signature.
-  final List<String> opNames = [];
-  final List<String> signatures = [];
+  /// The frame as ByteData, made the first time a float is read from it.
+  ByteData get _data => _view ??= ByteData.sublistView(_bytes);
 
-  GcWireReader(this._bytes)
-      : _data = ByteData.sublistView(_bytes);
+  /// What a [state] or [whole] record, or a `w` argument, is read with: kept, and read before the
+  /// next one is asked for.
+  final WidgetWireReader _wire = WidgetWireReader(Uint8List(0));
 
-  bool get hasMore => _pos < _bytes.length;
+  /// Per op by its place in the frame: its number.
+  List<int> _numbers = List.filled(8, 0);
+  int _ops = 0;
+
+  /// A reader over [_bytes] from [start] up to [end], its end when not given.
+  GcWireReader(this._bytes, [int start = 0, int? end])
+      : _pos = start,
+        _end = end ?? _bytes.length;
+
+  /// Reads [bytes] from [start] to [end] next, as a new reader would: for one kept and reused.
+  void reset(Uint8List bytes, int start, int end) {
+    _bytes = bytes;
+    _view = null;
+    _pos = start;
+    _end = end;
+    _ops = 0;
+  }
+
+  /// The frame read, for an [escape] record's header (see [readEscape]).
+  Uint8List get bytes => _bytes;
+
+  /// Where the last [readEscape] found its channel's header in [bytes].
+  int escapeHeaderAt = 0;
+
+  /// Where the last [readEscape]'s payload lies in [bytes].
+  int escapePayloadStart = 0, escapePayloadEnd = 0;
+
+  /// Reads an [escape] record without naming its channel: the comm reads the header where it is.
+  void readEscape() {
+    escapeHeaderAt = _pos;
+    _pos = ChannelHeader.skip(_bytes, _pos);
+    final length = varint();
+    escapePayloadStart = _pos;
+    escapePayloadEnd = _pos + length - 1;
+    _pos += length - 1;
+  }
+
+  bool get hasMore => _pos < _end;
+
 
   /// An unsigned varint, by arithmetic as [WidgetWireReader.varint] reads it, so a value past 2^31
   /// reads the same on the web.
@@ -47,31 +84,29 @@ class GcWireReader {
     }
   }
 
-  /// An op's number, defining it first when the frame names it here.
+  /// The number of the op [tag] introduces (see [opNumbered]), defining its place in the frame
+  /// first when the frame numbers it here.
   int opNumber(int tag) {
-    if (tag == opNumbered) {
-      final number = varint();
-      opNames.add(wireChannelNames[number] ?? '');
-      signatures.add(gcOpSignatures[number] ?? '');
-      return opNames.length - 1;
+    if (tag >= opFirst) return _numbers[tag - opFirst];
+    if (tag != opNumbered) throw StateError('GC frame tag $tag is not one');
+    final number = varint();
+    if (_ops == _numbers.length) {
+      _numbers = List.filled(_ops * 2, 0)..setRange(0, _ops, _numbers);
     }
-    return tag - opFirst;
+    _numbers[_ops++] = number;
+    return number;
   }
 
-  /// The channel an escape is delivered on, as a message's header names it.
-  String channel() {
-    final (name, end) = ChannelHeader.readAt(_bytes, _pos)!;
-    _pos = end;
-    return name;
-  }
+  /// The argument signature of the op [tag] just introduced, for skipping it.
+  String signatureOf(int tag) => gcOpSignatures[_numbers[tag >= opFirst ? tag - opFirst : _ops - 1]] ?? '';
 
   /// A [state] or [whole] record's properties, or a `w` argument: a reader over what the widget wire
   /// wrote there.
   WidgetWireReader wire() {
     final length = varint();
-    final reader = WidgetWireReader(Uint8List.sublistView(_bytes, _pos, _pos + length - 1));
+    _wire.reset(_bytes, _pos, _pos + length - 1);
     _pos += length - 1;
-    return reader;
+    return _wire;
   }
 
   // Arguments, by signature letter.
@@ -150,8 +185,8 @@ class GcWireReader {
         case 0x64: // d
           _pos += 8;
         case 0x73: // s
-          final header = varint();
           // Latin-1: n bytes after (n << 1) + 1; UTF-16: 2n bytes after (n << 1 | 1) + 1.
+          final header = varint();
           if (header > 0) _pos += (header - 1).isEven ? (header - 1) >> 1 : header - 2;
         default: // w
           final length = varint();
@@ -160,6 +195,3 @@ class GcWireReader {
     }
   }
 }
-
-/// Whether [actionId] names a GC's binary frame: the GC's channel with `/b` appended.
-bool isGcFrame(String actionId) => actionId.endsWith('/b') && actionId.startsWith('GC/');

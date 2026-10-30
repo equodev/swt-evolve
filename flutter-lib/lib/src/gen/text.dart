@@ -24,23 +24,23 @@ class TextSwt<V extends VText> extends ScrollableSwt<V> {
   State createState() => TextImpl<TextSwt<VText>, VText>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, "Modify/Modify", payload);
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSegmentSegments(V val, VEvent? payload) {
-    sendEvent(val, "Segment/Segments", payload);
+    sendEvent(val, 85, payload); // Segment/Segments
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, "Verify/Verify", payload);
+    sendEvent(val, 107, payload); // Verify/Verify
   }
 }
 
@@ -79,31 +79,31 @@ class VText extends VScrollable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 515: // caretPosition
+      case 575: // caretPosition
         caretPosition = r.int32();
         return true;
-      case 516: // echoCharacter
+      case 576: // echoCharacter
         echoCharacter = r.int32();
         return true;
-      case 517: // editable
+      case 578: // editable
         editable = r.boolean();
         return true;
-      case 518: // message
+      case 580: // message
         message = r.string();
         return true;
-      case 519: // selection
+      case 581: // selection
         selection = r.point();
         return true;
-      case 520: // text
+      case 582: // text
         text = r.string();
         return true;
-      case 521: // textLimit
+      case 583: // textLimit
         textLimit = r.int32();
         return true;
-      case 1354: // edits
+      case 579: // edits
         edits = r.ints();
         return true;
-      case 1430: // editTexts
+      case 577: // editTexts
         editTexts = r.strings()?.map((e) => e ?? '').toList();
         return true;
       default:
@@ -116,64 +116,60 @@ class VText extends VScrollable {
     super.writeWire(w);
     {
       final v_ = caretPosition;
-      if (v_ != null && w.wants(515)) {
-        w.key(515);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(575, v_);
       }
     }
     {
       final v_ = echoCharacter;
-      if (v_ != null && w.wants(516)) {
-        w.key(516);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(576, v_);
       }
     }
     {
       final v_ = editable;
-      if (v_ != null && w.wants(517)) {
-        w.key(517);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(578, v_);
       }
     }
     {
       final v_ = message;
-      if (v_ != null && w.wants(518)) {
-        w.key(518);
+      if (v_ != null) {
+        w.key(580);
         w.string(v_);
       }
     }
     {
       final v_ = selection;
-      if (v_ != null && w.wants(519)) {
-        w.key(519);
+      if (v_ != null) {
+        w.key(581);
         w.pointValue(v_);
       }
     }
     {
       final v_ = text;
-      if (v_ != null && w.wants(520)) {
-        w.key(520);
+      if (v_ != null) {
+        w.key(582);
         w.string(v_);
       }
     }
     {
       final v_ = textLimit;
-      if (v_ != null && w.wants(521)) {
-        w.key(521);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(583, v_);
       }
     }
     {
       final v_ = edits;
-      if (v_ != null && w.wants(1354)) {
-        w.key(1354);
+      if (v_ != null) {
+        w.key(579);
         w.ints(v_);
       }
     }
     {
       final v_ = editTexts;
-      if (v_ != null && w.wants(1430)) {
-        w.key(1430);
+      if (v_ != null) {
+        w.key(577);
         w.strings(v_);
       }
     }
@@ -182,15 +178,15 @@ class VText extends VScrollable {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(515, caretPosition);
-    visit(516, echoCharacter);
-    visit(517, editable);
-    visit(518, message);
-    visit(519, selection);
-    visit(520, text);
-    visit(521, textLimit);
-    visit(1354, edits);
-    visit(1430, editTexts);
+    visit(575, caretPosition);
+    visit(576, echoCharacter);
+    visit(578, editable);
+    visit(580, message);
+    visit(581, selection);
+    visit(582, text);
+    visit(583, textLimit);
+    visit(579, edits);
+    visit(577, editTexts);
   }
 
   @override

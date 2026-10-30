@@ -37,14 +37,14 @@ public final class PathData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 126;
+        return 73;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(125);
+        w.key(393);
         w.write(types);
-        w.key(124);
+        w.key(392);
         w.write(points);
     }
 }

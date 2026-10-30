@@ -8,15 +8,29 @@ import java.nio.charset.StandardCharsets;
  */
 public final class WireReader {
 
-    private final byte[] buf;
+    private byte[] buf;
     private int pos;
-    private final int end;
+    private int end;
 
     public WireReader(byte[] buf, int offset, int length) {
         this.buf = buf;
         this.pos = offset;
         this.end = offset + length;
     }
+
+    /**
+     * This thread's reader over {@code buf[offset, offset + length)}: valid until the next call on
+     * the thread, for a reader that reads and lets go, as a frame's handler does.
+     */
+    public static WireReader over(byte[] buf, int offset, int length) {
+        WireReader r = LENT.get();
+        r.buf = buf;
+        r.pos = offset;
+        r.end = offset + length;
+        return r;
+    }
+
+    private static final ThreadLocal<WireReader> LENT = ThreadLocal.withInitial(() -> new WireReader(new byte[0], 0, 0));
 
     /** What a handler was lent: the frame's body. */
     public WireReader(java.nio.ByteBuffer body) {

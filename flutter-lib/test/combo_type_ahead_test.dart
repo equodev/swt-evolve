@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/combo_evolve.dart' show ComboValueText;
 import 'package:swtflutter/src/impl/focus_requests.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const int comboId = 7;
 const List<String> items = ['Alpha', 'Tango', 'Bravo', 'Tiger', 'Charlie', 'tom', 'Delta'];
@@ -25,7 +26,7 @@ class _CapturingComboSwt extends ComboSwt<VCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 Future<List<(String, VEvent?)>> _pumpFocused(WidgetTester tester, int style) async {

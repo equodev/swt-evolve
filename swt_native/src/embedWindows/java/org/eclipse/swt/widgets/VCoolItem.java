@@ -40,9 +40,9 @@ public class VCoolItem extends VItem {
         ((DartCoolItem) impl).preferredSize = value;
     }
 
-    public static final int CONTROL = 171;
+    public static final int CONTROL = 150;
 
-    public static final int PREFERRED_SIZE = 172;
+    public static final int PREFERRED_SIZE = 151;
 
     @Override
     public String wireName(int key) {
@@ -58,10 +58,10 @@ public class VCoolItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 171:
+            case 150:
                 w.ref(getControl());
                 return true;
-            case 172:
+            case 151:
                 w.write(getPreferredSize());
                 return true;
         }
@@ -71,21 +71,21 @@ public class VCoolItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 171:
+            case 150:
                 {
                     Control v_ = getControl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(171);
+                    w.key(150);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 172:
+            case 151:
                 {
                     Point v_ = getPreferredSize();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(172);
+                    w.key(151);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -93,7 +93,7 @@ public class VCoolItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 171, 172 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 150, 151 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

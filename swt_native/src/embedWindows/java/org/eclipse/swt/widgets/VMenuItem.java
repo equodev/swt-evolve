@@ -64,15 +64,15 @@ public class VMenuItem extends VItem {
         ((DartMenuItem) impl).toolTipText = value;
     }
 
-    public static final int ACCELERATOR = 56;
+    public static final int ACCELERATOR = 369;
 
-    public static final int ENABLED = 57;
+    public static final int ENABLED = 370;
 
-    public static final int MENU = 58;
+    public static final int MENU = 371;
 
-    public static final int SELECTION = 59;
+    public static final int SELECTION = 372;
 
-    public static final int TOOL_TIP_TEXT = 60;
+    public static final int TOOL_TIP_TEXT = 373;
 
     @Override
     public String wireName(int key) {
@@ -94,19 +94,19 @@ public class VMenuItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 56:
+            case 369:
                 w.write((int) getAccelerator());
                 return true;
-            case 57:
+            case 370:
                 w.write(getEnabled());
                 return true;
-            case 58:
+            case 371:
                 w.ref(getMenu());
                 return true;
-            case 59:
+            case 372:
                 w.write(getSelection());
                 return true;
-            case 60:
+            case 373:
                 w.write(getToolTipText());
                 return true;
         }
@@ -116,48 +116,48 @@ public class VMenuItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 56:
+            case 369:
                 {
                     int v_ = getAccelerator();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(56);
+                    w.key(369);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 57:
+            case 370:
                 {
                     boolean v_ = getEnabled();
-                    w.key(57);
+                    w.key(370);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 58:
+            case 371:
                 {
                     Menu v_ = getMenu();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(58);
+                    w.key(371);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 59:
+            case 372:
                 {
                     boolean v_ = getSelection();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(59);
+                    w.key(372);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 60:
+            case 373:
                 {
                     String v_ = getToolTipText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(60);
+                    w.key(373);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -165,7 +165,7 @@ public class VMenuItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 56, 57, 58, 59, 60 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 369, 370, 371, 372, 373 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -179,7 +179,7 @@ public class VMenuItem extends VItem {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 57:
+            case 370:
                 return true;
         }
         return super.wireAlways(key);

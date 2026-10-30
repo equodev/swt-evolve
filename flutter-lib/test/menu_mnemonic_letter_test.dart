@@ -30,6 +30,8 @@ import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'support/menu_shown_ack.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
+import 'support/channels.dart' as channels;
 
 const _displayId = 5;
 const _newId = 11;
@@ -124,14 +126,8 @@ Future<void> _openPopup(WidgetTester tester) async {
 
 /// Stands in for Java: `MnemonicHelper` resolved Alt+letter to the menu bar title [itemId].
 Future<void> _javaOpensMenuBarMenu(WidgetTester tester, int itemId) async {
-  final action = utf8.encode('MenuItem/$itemId/openMenu');
   final body = TaggedValues.encode(const <String, Object?>{});
-  final frame = Uint8List(2 + action.length + body.length);
-  frame[0] = (action.length >> 8) & 0xFF;
-  frame[1] = action.length & 0xFF;
-  frame.setRange(2, 2 + action.length, action);
-  frame.setRange(2 + action.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
+  EquoCommService.commForTesting.receiveBinary(channels.frame('MenuItem/$itemId/openMenu', body));
   await tester.pump();
   await tester.pumpAndSettle();
 }

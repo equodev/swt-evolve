@@ -10,13 +10,14 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/slider.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingSliderSwt extends SliderSwt<VSlider> {
   final List<String> calls;
   const _RecordingSliderSwt({required VSlider value, required this.calls}) : super(value: value);
 
   @override
-  void sendEvent(VSlider val, String ev, VEvent? payload) => calls.add(ev);
+  void sendEvent(VSlider val, int channel, VEvent? payload) => calls.add(wireChannelNames[channel]!);
 }
 
 void main() {

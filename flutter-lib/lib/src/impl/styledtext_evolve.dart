@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../comm/comm.dart';
+import '../comm/channel_header.dart';
 import '../comm/comm_frame.dart' show EquoCommBase;
-import '../comm/delivery_gate.dart' show deliveryGate, widgetRefreshChannel;
+import '../comm/delivery_gate.dart' show deliveryGate;
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
@@ -22,7 +23,7 @@ import '../gen/styledtext.dart';
 import '../gen/styledtextrenderer.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
-import '../gen/widgets.dart' show WireKey;
+import '../gen/widgets.dart' show WireKey, WireChannel, WireType;
 import '../impl/canvas_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
@@ -36,7 +37,8 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
 import 'utils/wheel_input.dart';
-import '../comm/widget_wire.dart' show sendWireWith, WidgetWireWriter, WireVisitable;
+import '../comm/widget_wire.dart' show WidgetWireWriter, WireVisitable;
+import '../comm/tagged_values.dart';
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
@@ -64,8 +66,33 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextShape? _shape;
   bool _shapeStale = true;
   _Delimiters _delimiters = _Delimiters.none;
-  Object? _textChangeToken;
-  Object? _resendGeometryToken;
+  /// The mounted StyledTexts by id, where the handlers below find the editor a frame addresses.
+  static final Map<int, StyledTextImpl> _live = {};
+
+  @override
+  Map<int, WidgetSwtState> get liveOfKind => _live;
+
+  /// Registers what every StyledText answers (see `registerWidgetOps`).
+  static void registerOps() {
+    final type = WireType.styledText;
+    EquoCommService.onWidgetOp(type, WireChannel.textChange, _textChangeOp);
+    EquoCommService.onWidgetOp(type, WireChannel.resendGeometry, _resendGeometryOp);
+  }
+
+  /// What Java sends a StyledText: one handler per channel for every StyledText.
+  static FutureOr<bool> _textChangeOp(int id, Uint8List frame, int start, int end) {
+    final editor = _live[id];
+    if (editor == null) return false;
+    editor._onTextChange(TaggedValues.decodeAt(frame, start));
+    return true;
+  }
+
+  static FutureOr<bool> _resendGeometryOp(int id, Uint8List frame, int start, int end) {
+    final editor = _live[id];
+    if (editor == null) return false;
+    editor._sendWholeGeometry();
+    return true;
+  }
 
   static const int _caretBlinkMs = 560;
   Timer? _caretBlinkTimer;
@@ -80,12 +107,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   );
 
   void _sendComposition(String text, int caret, {required bool commit}) {
-    sendWireWith("${state.swt}/${state.id}/ImeComposition", (w) {
-      w
-        ..string(text)
-        ..int32(caret)
-        ..boolean(commit);
-    });
+    EquoCommService.sendWritten(WidgetWireWriter.startTo(state.wireType, state.id, WireChannel.imeComposition)
+          ..string(text)
+          ..int32(caret)
+          ..boolean(commit));
   }
 
   String? _metricsSource;
@@ -132,10 +157,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void initState() {
     super.initState();
     _focusNode.addListener(_onFocusChange);
-    _textChangeToken =
-        EquoCommService.onRaw("StyledText/${state.id}/TextChange", _onTextChange);
-    _resendGeometryToken = EquoCommService.onRaw(
-        "StyledText/${state.id}/ResendGeometry", (_) => _sendWholeGeometry());
     // Updates that arrived while nothing showed this editor were merged with no one to resolve
     // them; a change among them is relative to an index this state never held.
     _takeStyleIndex(state);
@@ -200,7 +221,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         value.styleIndex = _heldStyleIndex;
         deliveryGate.recoveries++;
         print('[delivery] style index change does not fit StyledText/${value.id}: asking for it again');
-        EquoCommService.sendPayload(widgetRefreshChannel, '${value.id}');
+        EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '${value.id}');
         return;
       }
       value.styleIndex = resolved;
@@ -231,7 +252,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   int? _appliedSeq;
 
   void _requestText() {
-    EquoCommService.send("StyledText/${state.id}/ResendText");
+    EquoCommService.sendTo(WireType.styledText, state.id, WireChannel.resendText);
   }
 
   @override
@@ -243,9 +264,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   void dispose() {
-    EquoCommService.remove("StyledText/${state.id}/TextChange", _textChangeToken);
     _geometryTimer?.cancel();
-    EquoCommService.remove("StyledText/${state.id}/ResendGeometry", _resendGeometryToken);
     _composedInput.detach();
     setCanvasEditorFocus(this, false);
     _focusNode.removeListener(_onFocusChange);
@@ -1144,7 +1163,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _geometrySent = geometry;
     debugGeometryPushes++;
     _debugLastTable = geometry;
-    sendWireWith("${state.swt}/${state.id}/TextGeometry", (w) => _writeGeometry(w, geometry, splice));
+    final w = WidgetWireWriter.startTo(state.wireType, state.id, WireChannel.textGeometry);
+    _writeGeometry(w, geometry, splice);
+    EquoCommService.sendWritten(w);
   }
 
   /// Worked out after the frame, since the table only answers Java's position queries: owed ahead
@@ -1867,11 +1888,17 @@ void debugResetLineLayoutCache() {
 /// and on the web a disposed paragraph draws as garbage there. The engine frees it once nothing
 /// references it.
 void _dropLineCaches() {
+  _fontEpoch++;
   _lineLayoutCache.clear();
   _lineLayoutCacheChars = 0;
   _paintedLineCache.clear();
   _VerticalMetrics._ofStyle = Expando();
 }
+
+/// Moves on whenever the line caches are dropped because the fonts changed: what a shape measured
+/// before then is not what its lines lay out to now. A font that finishes loading after the first
+/// layout is the case that matters: an empty line measured in the stand-in font kept that height.
+int _fontEpoch = 0;
 
 bool _watchingSystemFonts = false;
 
@@ -2036,6 +2063,8 @@ class TextShape extends Shape {
   /// Takes over what [other] measured when both lay out the same way. After an edit, [other] answers
   /// for the lines the edit did not reach ([_donatedLine]).
   void inheritMeasurementsFrom(TextShape other) {
+    // Measured in fonts that have changed since: nothing of it carries over.
+    if (other._measuredEpoch != _fontEpoch) return;
     if (other._frameSignature == _frameSignature) {
       _tallestLine = math.max(_tallestLine, other._tallestLine);
     }
@@ -2094,7 +2123,7 @@ class TextShape extends Shape {
   /// and tab stops are unchanged.
   _LineLayout? _donatedLine(int lineIndex, String lineText, bool wantCaretX) {
     final donor = _lineDonor;
-    if (donor == null) return null;
+    if (donor == null || donor._measuredEpoch != _fontEpoch) return null;
     if (_donorPrefix < 0) _matchDonorLines(donor);
     final int theirs;
     if (lineIndex < _donorPrefix) {
@@ -2147,6 +2176,19 @@ class TextShape extends Shape {
 
   _LineTopsCache _lineTopsCache = _LineTopsCache();
 
+  /// The [_fontEpoch] this shape's own measurements were taken in.
+  int _measuredEpoch = _fontEpoch;
+
+  /// Drops what this shape measured in fonts that have changed since: its line layouts, the line
+  /// tops summed from them and the shape it would take lines from.
+  void _forgetStaleMeasurements() {
+    if (_measuredEpoch == _fontEpoch) return;
+    _measuredEpoch = _fontEpoch;
+    _measuredLineCache = null;
+    _lineTopsCache = _LineTopsCache();
+    _lineDonor = null;
+  }
+
   /// Per-line properties that affect layout, from [editingState] when present.
   /// Computed once and shared by every pass over the document.
   List<({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})?>?
@@ -2168,6 +2210,7 @@ class TextShape extends Shape {
 
   /// The layout of [lineIndex] as this shape lays it out, measured once.
   _LineLayout _measuredLine(int lineIndex, String lineText, {bool wantCaretX = false}) {
+    _forgetStaleMeasurements();
     final layout = _measuredLineNow(lineIndex, lineText, wantCaretX);
     if (_uniformRows) _noteLineHeight(_tallestRowOf(layout));
     return layout;
@@ -2353,8 +2396,10 @@ class TextShape extends Shape {
     return base.height;
   }
 
-  List<double> _lineTops(List<String> lines) =>
-      _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+  List<double> _lineTops(List<String> lines) {
+    _forgetStaleMeasurements();
+    return _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+  }
 
   /// Height of the laid-out text, wrapped rows included, from the top of its first line.
   double get textHeight => _lineTops(_lines).last;
@@ -2802,6 +2847,7 @@ class TextShape extends Shape {
       computeGeometryTable(visibleTop: visibleTop, visibleBottom: visibleBottom).toMap();
 
   GeometryTable computeGeometryTable({double? visibleTop, double? visibleBottom}) {
+    _forgetStaleMeasurements();
     final lines = _lines;
     final wholeDocument = text.length <= _charXPayloadLimit || visibleTop == null;
     final top = visibleTop ?? 0;

@@ -21,14 +21,14 @@ import java.util.concurrent.CompletableFuture;
 abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends FlutterHarness implements BeforeAllCallback, AfterAllCallback {
 
     private CompletableFuture<RESULT> result;
-    private final String requestChannel;
-    private final String responseChannel;
+    private final int requestChannel;
+    private final int responseChannel;
     private final Class<SERIALIZED> serializedClass;
     Point windowSize;
 
     protected GenericSizeBridge(String channelPrefix, Class<SERIALIZED> serializedClass) {
-        this.requestChannel = channelPrefix + "Request";
-        this.responseChannel = channelPrefix + "Response";
+        this.requestChannel = dev.equo.swt.comm.ChannelHeader.requireChannel(channelPrefix + "Request");
+        this.responseChannel = dev.equo.swt.comm.ChannelHeader.requireChannel(channelPrefix + "Response");
         this.serializedClass = serializedClass;
     }
 
@@ -58,7 +58,7 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends FlutterHar
         result = new CompletableFuture<>();
         clientReady.thenRun(() -> {
             try {
-                serializeAndSend(eventName(this, requestChannel), request);
+                serializeAndSend(dev.equo.swt.comm.ChannelHeader.requireType(widgetName(this)), id(this), requestChannel, request);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

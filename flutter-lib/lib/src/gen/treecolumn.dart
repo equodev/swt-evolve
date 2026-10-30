@@ -17,19 +17,19 @@ class TreeColumnSwt<V extends VTreeColumn> extends ItemSwt<V> {
       TreeColumnImpl<TreeColumnSwt<VTreeColumn>, VTreeColumn>();
 
   void sendControlMove(V val, VEvent? payload) {
-    sendEvent(val, "Control/Move", payload);
+    sendEvent(val, 20, payload); // Control/Move
   }
 
   void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
+    sendEvent(val, 21, payload); // Control/Resize
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -58,16 +58,16 @@ class VTreeColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 176: // alignment
+      case 633: // alignment
         alignment = r.int32();
         return true;
-      case 177: // moveable
+      case 634: // moveable
         moveable = r.boolean();
         return true;
-      case 1379: // resizable
+      case 635: // resizable
         resizable = r.boolean();
         return true;
-      case 178: // width
+      case 636: // width
         width = r.int32();
         return true;
       default:
@@ -80,30 +80,26 @@ class VTreeColumn extends VItem {
     super.writeWire(w);
     {
       final v_ = alignment;
-      if (v_ != null && w.wants(176)) {
-        w.key(176);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(633, v_);
       }
     }
     {
       final v_ = moveable;
-      if (v_ != null && w.wants(177)) {
-        w.key(177);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(634, v_);
       }
     }
     {
       final v_ = resizable;
-      if (v_ != null && w.wants(1379)) {
-        w.key(1379);
-        w.boolean(v_);
+      if (v_ != null) {
+        w.keyBoolean(635, v_);
       }
     }
     {
       final v_ = width;
-      if (v_ != null && w.wants(178)) {
-        w.key(178);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(636, v_);
       }
     }
   }
@@ -111,9 +107,9 @@ class VTreeColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(176, alignment);
-    visit(177, moveable);
-    visit(1379, resizable);
-    visit(178, width);
+    visit(633, alignment);
+    visit(634, moveable);
+    visit(635, resizable);
+    visit(636, width);
   }
 }

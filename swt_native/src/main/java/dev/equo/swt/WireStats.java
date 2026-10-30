@@ -66,7 +66,7 @@ public final class WireStats {
         }
 
         @Override
-        void sent(String eventName, byte[] buffer, int payloadStart, int length) {
+        void sent(byte[] buffer, int payloadStart, int length) {
             if (!on) return;
             frames++;
             bytes += length;

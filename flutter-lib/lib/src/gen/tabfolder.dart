@@ -25,11 +25,11 @@ class TabFolderSwt<V extends VTabFolder> extends CompositeSwt<V> {
   State createState() => TabFolderImpl<TabFolderSwt<VTabFolder>, VTabFolder>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -54,10 +54,10 @@ class VTabFolder extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 497: // items
+      case 542: // items
         items = r.refs<VTabItem>();
         return true;
-      case 498: // selection
+      case 543: // selection
         selection = r.refs<VTabItem>();
         return true;
       default:
@@ -70,15 +70,15 @@ class VTabFolder extends VComposite {
     super.writeWire(w);
     {
       final v_ = items;
-      if (v_ != null && w.wants(497)) {
-        w.key(497);
+      if (v_ != null) {
+        w.key(542);
         w.refs(v_);
       }
     }
     {
       final v_ = selection;
-      if (v_ != null && w.wants(498)) {
-        w.key(498);
+      if (v_ != null) {
+        w.key(543);
         w.refs(v_);
       }
     }
@@ -87,8 +87,8 @@ class VTabFolder extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(497, items);
-    visit(498, selection);
+    visit(542, items);
+    visit(543, selection);
   }
 
   @override

@@ -29,6 +29,7 @@ import '../gen/widgets.dart';
 import 'comm.dart';
 import 'comm_frame.dart';
 import 'delivery_gate.dart';
+import 'widget_key.dart';
 import 'widget_wire.dart';
 
 /// What one delivery did to a value, as much as is knowable from the delivery itself.
@@ -38,26 +39,76 @@ import 'widget_wire.dart';
 /// either way, because a value is changed in place rather than replaced; that is what keeps every
 /// reference to a widget pointing at the widget.
 class VChange {
-  const VChange({this.keys}) : ofHeld = false;
+  const VChange()
+      : ofHeld = false,
+        _count = -1,
+        _k0 = 0,
+        _k1 = 0,
+        _k2 = 0,
+        _k3 = 0,
+        _more = null;
 
   /// Not this widget's own change: a widget it holds changed, one that has no state of its own and
   /// that this widget may draw.
   const VChange.ofHeld()
-      : keys = null,
-        ofHeld = true;
+      : ofHeld = true,
+        _count = -1,
+        _k0 = 0,
+        _k1 = 0,
+        _k2 = 0,
+        _k3 = 0,
+        _more = null;
+
+  /// A partial binary delivery naming the properties [keys], by number. Up to four are held in the
+  /// object itself, so the common change is one allocation; [keys] is copied, never kept.
+  VChange.ofKeys(WireKeys keys)
+      : ofHeld = false,
+        _count = keys.length,
+        _k0 = keys.length > 0 ? keys[0] : 0,
+        _k1 = keys.length > 1 ? keys[1] : 0,
+        _k2 = keys.length > 2 ? keys[2] : 0,
+        _k3 = keys.length > 3 ? keys[3] : 0,
+        _more = keys.length > 4 ? keys.toList() : null;
 
   /// Whether a widget this one holds changed rather than this one; see [VChange.ofHeld].
   final bool ofHeld;
 
+  /// How many properties a change named, or -1 for any other delivery.
+  final int _count;
+  final int _k0, _k1, _k2, _k3;
+  final List<int>? _more;
+
   /// The properties a change named, by number, or null for a whole description.
-  final List<int>? keys;
+  List<int>? get keys {
+    if (_count < 0) return null;
+    return _more ?? [_k0, _k1, _k2, _k3].sublist(0, _count);
+  }
 
   /// Whether this delivery could have touched the property numbered [key].
-  bool touches(int key) => keys?.contains(key) ?? true;
+  bool touches(int key) {
+    if (_count < 0) return true;
+    final more = _more;
+    if (more != null) return more.contains(key);
+    return (_count > 0 && _k0 == key) ||
+        (_count > 1 && _k1 == key) ||
+        (_count > 2 && _k2 == key) ||
+        (_count > 3 && _k3 == key);
+  }
+
+  /// Whether this delivery could have moved or resized the widget.
+  bool get touchesBounds => touches(WireKey.k_Control_bounds) || touches(WireKey.k_Caret_bounds);
 
   /// Whether this delivery named nothing outside [properties] - a delivery about one thing, which
   /// a listener can then handle on its own instead of rebuilding for it.
-  bool isOnly(Set<int> properties) => keys?.every(properties.contains) ?? false;
+  bool isOnly(Set<int> properties) {
+    if (_count < 0) return false;
+    final more = _more;
+    if (more != null) return more.every(properties.contains);
+    return (_count < 1 || properties.contains(_k0)) &&
+        (_count < 2 || properties.contains(_k1)) &&
+        (_count < 3 || properties.contains(_k2)) &&
+        (_count < 4 || properties.contains(_k3));
+  }
 }
 
 /// The state of one widget, and everyone waiting to hear about it.
@@ -74,17 +125,39 @@ class VNode {
   /// arrived, and that interest has to survive until it does.
   bool awaitingValue;
 
+  /// The widget's [WidgetKey], set when the entry is held under its channel.
+  int key = 0;
+
   /// Mounted widgets waiting to be rebuilt. Attaching and detaching touches only this, which is
   /// why an offstage or disposed widget does not stop the value updating.
-  final List<void Function(VChange change)> listeners = [];
+  ///
+  /// Replaced rather than changed, so telling them needs no copy: a listener that unwatches itself
+  /// while being told leaves the list being iterated alone.
+  List<void Function(VChange change)> listeners = const [];
 
-  /// The channels this value refers to, as of the last thing applied to it. Kept so the next
-  /// arrival can be compared against it: what it no longer mentions is what it let go of.
-  Set<String> references = const {};
+  void listen(void Function(VChange change) listener) =>
+      listeners = List.of(listeners)..add(listener);
+
+  void unlisten(void Function(VChange change) listener) {
+    final at = listeners.indexOf(listener);
+    if (at < 0) return;
+    listeners = List.of(listeners)..removeAt(at);
+  }
+
+  /// The widgets this value refers to, by [WidgetKey], as of the last thing applied to it. Kept so
+  /// the next arrival can be compared against it: what it no longer mentions is what it let go of.
+  Set<int> references = const {};
 
   /// True once something named this widget without describing it and Java was asked for it: the
   /// entry has to survive until the answer arrives, whoever stops watching it meanwhile.
   bool asked = false;
+
+  /// The frame this widget was last noted in as changed with nobody listening; see
+  /// [VRegistry._heldChangedInFrame]. A mark rather than a set, so noting it allocates nothing.
+  int changedInFrame = 0;
+
+  /// The pass that last told this widget a widget it holds changed, so one pass tells it once.
+  int toldInPass = 0;
 }
 
 class VRegistry {
@@ -95,9 +168,9 @@ class VRegistry {
 
   final _NodeMap _nodes = _NodeMap();
 
-  /// The channels being walked right now, so a reference leading back to something already on the
+  /// The widgets being walked right now, so a reference leading back to something already on the
   /// path stops there instead of going round forever.
-  final Set<String> _adopting = {};
+  final Set<int> _adopting = {};
 
   /// Which held values refer to each channel. A widget is reachable while this is not empty, and a
   /// widget reachable from two places — a tab body that is both a child of its folder and the
@@ -106,64 +179,61 @@ class VRegistry {
   /// Also which way to look when a widget nothing renders changes: see [_notify].
   ///
   /// A channel's one holder is kept as that holder's channel, and a [Set] only once a second one
-  /// refers to it: nearly every widget has a single parent.
-  final Map<String, Object> _referrers = {};
+  /// refers to it: nearly every widget has a single parent, and a set per widget was most of what a
+  /// frame describing a new subtree allocated.
+  ///
+  /// By [WidgetKey], each holder as its key.
+  final Map<int, Object> _referrers = {};
 
-  void _addReferrer(String channel, String holder) {
-    final held = _referrers[channel];
+  void _addReferrer(int key, int holderKey) {
+    final held = _referrers[key];
     if (held == null) {
-      _referrers[channel] = holder;
-    } else if (held is String) {
-      if (held != holder) _referrers[channel] = <String>{held, holder};
+      _referrers[key] = holderKey;
+    } else if (held is int) {
+      if (held != holderKey) _referrers[key] = <int>{held, holderKey};
     } else {
-      (held as Set<String>).add(holder);
+      (held as Set<int>).add(holderKey);
     }
   }
 
-  /// Takes [holder] off what refers to [channel]; true when something still does.
-  bool _removeReferrer(String channel, String holder) {
-    final held = _referrers[channel];
+  /// Takes [holderKey] off what refers to [key]; true when something still does.
+  bool _removeReferrer(int key, int holderKey) {
+    final held = _referrers[key];
     if (held == null) return false;
-    if (held is String) {
-      if (held != holder) return true;
-      _referrers.remove(channel);
+    if (held is int) {
+      if (held != holderKey) return true;
+      _referrers.remove(key);
       return false;
     }
-    final holders = held as Set<String>;
-    holders.remove(holder);
+    final holders = held as Set<int>;
+    holders.remove(holderKey);
     if (holders.isNotEmpty) return true;
-    _referrers.remove(channel);
+    _referrers.remove(key);
     return false;
   }
 
-  /// What refers to [channel], as a list taken now: a holder may let go while being told.
-  List<String> _referrersOf(String channel) {
-    final held = _referrers[channel];
-    if (held == null) return const [];
-    if (held is String) return [held];
-    return List.of(held as Set<String>);
-  }
-
   /// What each holder that is not itself a registered value refers to. See [holds].
-  final Map<String, Set<String>> _holdings = {};
+  final Map<int, Set<int>> _holdings = {};
 
   /// One per channel anything has asked to be notified about. See [changesOn].
   /// Told when a delivery could have moved or resized the widget on that channel.
-  final Map<String, _ChannelTick> _boundsTicks = {};
+  final Map<int, _ChannelTick> _boundsTicks = {};
 
   /// Channels an ask is already scheduled for, so several references to one widget in a single
   /// payload - a control that is both a child of its parent and the content of an item - cost one
   /// request rather than one each.
-  final Set<String> _asking = {};
+  final Set<int> _asking = {};
 
   /// How many widgets the client is holding state for. Watched by tests: values now outlive the
   /// widgets that render them, so this growing without bound is the failure mode to guard against.
   int get size => _nodes.values.where((node) => !node.awaitingValue).length;
 
-  /// The channel a value is addressed by, and the key everything here is stored under.
-  static String channelOf(VWidget value) => '${value.swt}/${value.id}';
+  /// The [WidgetKey] a value is stored under here: its wire type and its id, as a frame names it.
+  static int keyOf(VWidget value) => WidgetKey.of(value.wireType, value.id);
 
-  static String _idOf(String channel) => channel.substring(channel.indexOf('/') + 1);
+  /// The channel a value is addressed by, `Type/id`: for tests and logs. Nothing here is stored
+  /// under it; see [keyOf].
+  static String channelOf(VWidget value) => '${value.swt}/${value.id}';
 
   /// Whether two values are about the same widget. Identity is the pair that addresses it, which is
   /// all a value named rather than described carries.
@@ -182,9 +252,9 @@ class VRegistry {
   /// and has to be asked for again. Which of two copies is newer is [_adopt]'s question, asked
   /// the same way here as for a widget arriving inside another.
   VWidget register(VWidget value) {
-    final channel = channelOf(value);
-    final node = _nodes[channel];
-    if (node != null && !node.awaitingValue) return _takeNewerOf(channel, node, value);
+    final key = keyOf(value);
+    final node = _nodes[key];
+    if (node != null && !node.awaitingValue) return _takeNewerOf(node, value);
     // The stand-in an unresolved reference left, handed back by whatever was built from the name:
     // nothing has described the widget, so it is still awaited and still asked for.
     if (node != null && identical(node.value, value)) return value;
@@ -192,55 +262,64 @@ class VRegistry {
     if (node == null) {
       // Entered before listening: a payload held for this channel is replayed as soon as it is
       // listened on, and it has to find the entry it is about.
-      _nodes[channel] = VNode(value);
+      _nodes[key] = VNode(value);
     } else if (isSameWidget(node.value, value) && !value.isReference) {
       // A stand-in left by a reference: whatever named this widget holds that object (a parent's
       // child list), so the description is copied into it, as a whole record is. Swapping it would
       // leave the parent laying out a child with no state at all.
-      return _fill(channel, node, value);
+      return _fill(node, value);
     } else {
       // Something asked to hear about this widget before it arrived, and what it has been waiting
       // on is a stand-in of the wrong type to copy a real widget into. The entry is rebuilt around
       // the value that turned up, carrying the interest over; nothing can be holding the stand-in,
       // which is the difference between this and every other arrival.
-      _nodes[channel] = VNode(value)
+      _nodes[key] = VNode(value)
         ..asked = node.asked
-        ..listeners.addAll(node.listeners);
+        ..listeners = node.listeners;
     }
     // The stamp comes with the value, and recording it is what makes the next update mergeable.
     // Java counts a widget written inside an ancestor's payload as delivered, so it computes that
     // widget's next update against this state; a client that had not noticed would refuse it and
     // ask for the whole widget back.
-    deliveryGate.applied(channel, value.seq);
-    _adoptSubtreeOf(channel, value);
-    _reconcile(channel, _nodes[channel]!, value.seq);
+    deliveryGate.appliedAt(key, value.seq);
+    final entry = _nodes[key]!;
+    _adoptSubtreeOf(entry, value);
+    _reconcile(entry, value.seq);
     return value;
   }
 
   /// Whether [channel] is known only as a name: something referred to this widget before it had
   /// ever been described, and the answer to that request has not come back yet. What is held for it
   /// until then is an identity stub, which is nothing to render.
-  bool isAwaiting(String channel) => _nodes[channel]?.awaitingValue ?? false;
+  bool isAwaitingAt(int key) => _nodes[key]?.awaitingValue ?? false;
+
+  /// [isAwaitingAt], by channel name: for tests.
+  @visibleForTesting
+  bool isAwaiting(String channel) => isAwaitingAt(WidgetKey.ofChannel(channel));
 
   /// The value held for [channel], or null when the widget is unknown here.
   /// Moves on whenever a channel starts or stops holding a value, or holds a different one: what
   /// [valueOn] answers for a channel stays the same until it does.
   int get epoch => _nodes.epoch;
 
-  VWidget? valueOn(String channel) {
-    final node = _nodes[channel];
+  VWidget? valueAt(int key) {
+    final node = _nodes[key];
     return (node == null || node.awaitingValue) ? null : node.value;
   }
 
+  /// [valueAt], by channel name: for tests, and for a request that names a widget as text.
+  VWidget? valueOn(String channel) => valueAt(WidgetKey.ofChannel(channel));
+
   /// Per holder type, what its record is read into; see [onHolder].
-  final Map<String, WireReadable Function()> _holderValues = {};
-  final Map<String, List<void Function(int id, Object value)>> _holderListeners = {};
+  final Map<int, WireReadable Function()> _holderValues = {};
+  final Map<int, List<void Function(int id, Object value)>> _holderListeners = {};
 
   /// Tells [listener] about every record of [type] - something that holds widgets without being one,
   /// such as the display - read into what [create] makes.
   ///
   /// Returns what stops it.
-  void Function() onHolder<T extends WireReadable>(String type, T Function() create, void Function(int id, T value) listener) {
+  void Function() onHolder<T extends WireReadable>(String typeName, T Function() create, void Function(int id, T value) listener) {
+    final type = WidgetKey.typeOf(typeName);
     _holderValues[type] = create;
     void told(int id, Object value) => listener(id, value as T);
     final listeners = _holderListeners[type] ??= [];
@@ -254,15 +333,15 @@ class VRegistry {
   }
 
   /// The write stamp of the last record applied for each holder, by type and id.
-  final Map<String, Map<int, int>> _holderStamps = {};
+  final Map<int, Map<int, int>> _holderStamps = {};
 
   /// The last record of each holder, by type and id; see [onHolder].
-  final Map<String, Map<int, Object>> _holderRecords = {};
+  final Map<int, Map<int, Object>> _holderRecords = {};
 
   /// What each holder's record is read into, before anything has asked to hear about it.
-  static final Map<String, WireReadable Function()> _holderTypes = {
-    'Display': VDisplay.new,
-    'ShellPopups': VShellPopups.new,
+  static final Map<int, WireReadable Function()> _holderTypes = {
+    WireType.display: VDisplay.new,
+    WireType.shellPopups: VShellPopups.new,
   };
 
   /// The value held for the widget a frame names by [id], or null.
@@ -277,35 +356,63 @@ class VRegistry {
   /// the frame describes that nothing here holds yet: the frame names widgets by id, and a parent's
   /// record names children whose records come after it. The second reads every record's properties,
   /// in order, so each name resolves to the object that will be held for that widget.
-  void applyWire(Uint8List body) {
-    final r = WidgetWireReader(body)..resolve = _heldById;
+  void applyWire(Uint8List body, [int start = 0, int? end]) {
+    // A listener may apply a frame of its own while this one applies: only the outermost uses what
+    // the registry keeps for it.
+    final outer = _wireDepth++ == 0;
+    try {
+      final reader = outer
+          ? (_wireReader..reset(body, start, end ?? body.length))
+          : (WidgetWireReader(body, start, end)..resolve = _heldById);
+      _applyWire(reader, outer ? _wireScratch : _WireScratch());
+    } finally {
+      _wireDepth--;
+    }
+  }
+
+  int _wireDepth = 0;
+  late final WidgetWireReader _wireReader = WidgetWireReader(Uint8List(0))..resolve = _heldById;
+  final _WireScratch _wireScratch = _WireScratch();
+  /// The list [_heldChangedInFrame] is when the frame is the registry's own, kept between frames.
+  final _NodeBuffer _heldChangedScratch = _NodeBuffer();
+
+  /// Numbers the outermost frames, for [VNode.changedInFrame].
+  int _frame = 0;
+
+  /// Numbers the passes that tell holders, for [VNode.toldInPass].
+  int _pass = 0;
+
+  void _applyWire(WidgetWireReader r, _WireScratch scratch) {
     final count = r.u32();
-    final kinds = List<int>.filled(count, 0);
-    final starts = List<int>.filled(count, 0);
-    final ends = List<int>.filled(count, 0);
-    final ids = List<int>.filled(count, 0);
-    final stamps = List<int>.filled(count, 0);
-    final bases = List<int>.filled(count, 0);
-    final types = List<String>.filled(count, '');
-    final fresh = List<bool>.filled(count, false);
+    scratch.ensure(count);
+    final kinds = scratch.kinds;
+    final starts = scratch.starts;
+    final ends = scratch.ends;
+    final ids = scratch.ids;
+    final stamps = scratch.stamps;
+    final bases = scratch.bases;
+    final types = scratch.types;
+    final fresh = scratch.fresh;
     var stamp = 0;
     for (var i = 0; i < count; i++) {
       final kind = kinds[i] = r.u8();
       final length = r.varint();
       final end = ends[i] = r.pos + length;
+      fresh[i] = false;
       switch (kind) {
         case wireWhole:
         case wireChange:
-          final type = types[i] = r.type();
+          final type = types[i] = r.typeNumber();
           final id = ids[i] = r.zigzag();
           stamp += r.varint();
           stamps[i] = stamp;
           if (kind == wireChange) bases[i] = stamp - r.varint();
           if (kind == wireWhole) fresh[i] = _enter(type, id);
         case wireImage:
+          types[i] = 0;
           ids[i] = r.zigzag();
         case wireHolder:
-          types[i] = r.type();
+          types[i] = r.typeNumber();
           ids[i] = r.zigzag();
           stamp += r.varint();
           stamps[i] = stamp;
@@ -314,7 +421,9 @@ class VRegistry {
       r.pos = end;
     }
     final outermost = _heldChangedInFrame == null;
-    final heldChanged = _heldChangedInFrame ??= {};
+    final kept = identical(scratch, _wireScratch);
+    if (outermost) _frame++;
+    final heldChanged = _heldChangedInFrame ??= kept ? (_heldChangedScratch..clear()) : _NodeBuffer();
     for (var i = 0; i < count; i++) {
       r.pos = starts[i];
       final end = ends[i];
@@ -324,14 +433,8 @@ class VRegistry {
           case wireWhole:
             _applyWhole(r, types[i], ids[i], stamps[i], end, fresh[i]);
           case wireChange:
-            final held = _nodes.indexedOf(ids[i]);
-            if (held != null && _isOfType(held.channel, types[i])) {
-              _applyChange(r, held.channel, held.node, stamps[i], bases[i], end);
-            } else {
-              final channel = '${types[i]}/${ids[i]}';
-              final node = _nodes[channel];
-              if (node != null) _applyChange(r, channel, node, stamps[i], bases[i], end);
-            }
+            final node = _nodes[WidgetKey.of(types[i], ids[i])];
+            if (node != null) _applyChange(r, node, stamps[i], bases[i], end);
           case wireImage:
             final image = r.imageFor(ids[i]);
             r.readProperties(image, end);
@@ -342,9 +445,12 @@ class VRegistry {
         }
       } catch (e) {
         // A record says how long it is, so one that cannot be read costs only its widget.
-        if (kDebugMode) print('[wire] ${types[i]}/${ids[i]} could not be read ($e): asking for it whole');
+        if (kDebugMode) {
+          print('[wire] ${WidgetKey.typeName(types[i])}/${ids[i]} could not be read ($e): '
+              'asking for it whole');
+        }
         if (kinds[i] == wireWhole || kinds[i] == wireChange) {
-          EquoCommService.sendPayload(widgetRefreshChannel, '${ids[i]}');
+          EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '${ids[i]}');
         }
       }
       r.pos = end;
@@ -352,21 +458,30 @@ class VRegistry {
         // Named, and neither held here nor described in the frame: the two sides disagree about what
         // this client holds. Ask for the widget, then for what named it, so the name resolves.
         for (final id in r.unresolved) {
-          if (kDebugMode) print('[delivery] unresolved reference $id in ${types[i]}/${ids[i]}: asking for it');
-          EquoCommService.sendPayload(widgetRefreshChannel, '$id');
+          if (kDebugMode) {
+            print('[delivery] unresolved reference $id in '
+                '${WidgetKey.typeName(types[i])}/${ids[i]}: asking for it');
+          }
+          EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '$id');
         }
-        EquoCommService.sendPayload(widgetRefreshChannel, '${ids[i]}');
+        EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '${ids[i]}');
         r.unresolved.clear();
       }
     }
     if (r.imagesNamedUnheld.isNotEmpty) _askForUnheldImages(r);
     if (!outermost) return;
     _heldChangedInFrame = null;
-    // Seeded with every changed widget: one that is itself in the set tells its own holders.
-    final seen = Set.of(heldChanged);
-    for (final channel in heldChanged) {
-      _notifyHolders(channel, seen);
+    if (heldChanged.isEmpty) return;
+    // Every changed widget counts as told already: one that is itself among them tells its own
+    // holders.
+    final pass = ++_pass;
+    for (var i = 0; i < heldChanged.length; i++) {
+      heldChanged[i].toldInPass = pass;
     }
+    for (var i = 0; i < heldChanged.length; i++) {
+      _notifyHolders(heldChanged[i].key, pass);
+    }
+    heldChanged.clear();
   }
 
   /// Asks for each widget that named an image this client neither held nor was given in the frame.
@@ -377,14 +492,14 @@ class VRegistry {
     r.imagesNamedUnheld.forEach((image, widget) {
       if (widget == 0 || r.images[image]?.isReference != true || !asked.add(widget)) return;
       if (kDebugMode) print('[delivery] image $image named by $widget never arrived: asking for the widget');
-      EquoCommService.sendPayload(widgetRefreshChannel, '$widget');
+      EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '$widget');
     });
     r.imagesNamedUnheld.clear();
   }
 
   /// The widgets the frame being applied changed that nobody listens to, whose holders are told once
   /// the whole frame is in: a table described with its items would otherwise hear once per item.
-  Set<String>? _heldChangedInFrame;
+  _NodeBuffer? _heldChangedInFrame;
 
   /// [wireRefKeys] as a flag per property number, which needs no hashing to test.
   static final List<bool> _refKeyFlags = () {
@@ -398,75 +513,86 @@ class VRegistry {
   static bool _isRefKey(int key) => key >= 0 && key < _refKeyFlags.length && _refKeyFlags[key];
 
 
-  /// The channel of the widget of [type] a frame names by [id]: the string the entry is held under
-  /// when there is one, whose hash is already known to every map keyed by it.
-  String _channel(String type, int id) {
-    final held = _nodes.indexedOf(id);
-    return held != null && _isOfType(held.channel, type) ? held.channel : '$type/$id';
-  }
-
-  static bool _isOfType(String channel, String type) =>
-      channel.length > type.length && channel.codeUnitAt(type.length) == 0x2F && channel.startsWith(type);
-
   /// Makes the entry for a widget the frame describes in full, when nothing here holds it. True when
   /// it did: the record is then read straight into the entry's value.
-  bool _enter(String type, int id) {
-    final channel = _channel(type, id);
-    final node = _nodes[channel];
+  bool _enter(int type, int id) {
+    final key = WidgetKey.of(type, id);
+    final node = _nodes[key];
     if (node != null && !node.awaitingValue) return false;
-    final value = newWidgetValue(type);
+    final value = newWidgetValue(WidgetKey.typeName(type));
     if (value == null) return false;
     value.id = id;
     final entry = VNode(value);
     // Something asked to hear about this widget before it arrived; the interest carries over.
     if (node != null) {
-      entry.listeners.addAll(node.listeners);
+      entry.listeners = node.listeners;
       entry.asked = node.asked;
     }
-    _nodes.putIndexed(channel, entry, id);
+    _nodes[key] = entry;
     return true;
   }
 
-  void _applyWhole(WidgetWireReader r, String type, int id, int stamp, int end, bool fresh) {
-    final channel = _channel(type, id);
-    final node = _nodes[channel];
+  void _applyWhole(WidgetWireReader r, int type, int id, int stamp, int end, bool fresh) {
+    final node = _nodes[WidgetKey.of(type, id)];
     if (node == null) return;
     if (fresh) {
       r.readProperties(node.value, end);
     } else {
-      final whole = newWidgetValue(type);
-      if (whole == null) return;
-      whole.id = id;
-      r.readProperties(whole, end);
-      if (deliveryGate.decideWhole(channel, stamp) != FrameAction.replace) return;
-      // Copied into the held object, never swapped for it: everything that refers to this widget
-      // refers to that object.
-      node.value.copyFrom(whole);
+      // Asked before reading: a description of the past is not read at all.
+      if (deliveryGate.decideWholeAt(node.key, stamp) != FrameAction.replace) return;
+      final empty = _emptyOf(type);
+      if (empty == null) return;
+      // Read into the held object, never swapped for it: everything that refers to this widget
+      // refers to that object. A whole description names every property it sets, so the object
+      // starts from the defaults of what it leaves out.
+      node.value.copyFrom(empty);
+      r.readProperties(node.value, end);
     }
     node.value.seq = stamp;
-    deliveryGate.applied(channel, stamp);
-    _reconcile(channel, node, stamp);
-    _notify(channel, node, const VChange());
+    deliveryGate.appliedAt(node.key, stamp);
+    _reconcile(node, stamp);
+    _notify(node, const VChange());
   }
 
-  void _applyChange(WidgetWireReader r, String channel, VNode node, int stamp, int base, int end) {
-    switch (deliveryGate.decideChange(channel, stamp, base)) {
+  /// A value of each type with every property at its default, made once: what a whole description
+  /// starts the held value from.
+  final Map<int, VWidget?> _empties = {};
+
+  VWidget? _emptyOf(int type) => _empties.putIfAbsent(type, () => newWidgetValue(WidgetKey.typeName(type)));
+
+  final WireKeys _changedScratch = WireKeys();
+
+  void _applyChange(WidgetWireReader r, VNode node, int stamp, int base, int end) {
+    switch (deliveryGate.decideChangeAt(node.key, stamp, base)) {
       case FrameAction.merge:
-        final changed = <int>[];
+        // Read into a list kept for it: the change copies what it names.
+        final changed = _changedScratch..clear();
         r.readProperties(node.value, end, changed);
         node.value.seq = stamp;
-        deliveryGate.applied(channel, stamp);
-        if (changed.any(_isRefKey)) _reconcile(channel, node, stamp);
-        _notify(channel, node, VChange(keys: changed));
+        deliveryGate.appliedAt(node.key, stamp);
+        // Made only for someone to read: a row nobody listens to tells its holder, which needs
+        // no change of its own.
+        final change = node.listeners.isNotEmpty || _boundsTicks.containsKey(node.key)
+            ? VChange.ofKeys(changed)
+            : null;
+        if (changed.any(_isRefKey)) _reconcile(node, stamp);
+        if (change != null) {
+          _notify(node, change);
+        } else if (node.listeners.isNotEmpty) {
+          // Someone started listening while the references were reconciled.
+          _notify(node, const VChange());
+        } else {
+          _notifyUnheard(node);
+        }
       case FrameAction.recover:
-        EquoCommService.sendPayload(widgetRefreshChannel, '${node.value.id}');
+        EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '${node.value.id}');
       case FrameAction.replace:
       case FrameAction.ignore:
         break;
     }
   }
 
-  void _applyHolder(WidgetWireReader r, String type, int id, int stamp, int end) {
+  void _applyHolder(WidgetWireReader r, int type, int id, int stamp, int end) {
     final create = _holderValues[type] ?? _holderTypes[type];
     if (create == null) return;
     // Written before the description already applied: the past, arriving late.
@@ -478,7 +604,7 @@ class VRegistry {
     _tellHolder(type, id, value);
   }
 
-  void _tellHolder(String type, int id, Object value) {
+  void _tellHolder(int type, int id, Object value) {
     (_holderRecords[type] ??= {})[id] = value;
     for (final listener in List.of(_holderListeners[type] ?? const <void Function(int, Object)>[])) {
       listener(id, value);
@@ -487,7 +613,7 @@ class VRegistry {
 
   /// A holder's record as it is handed on once read, for a test that describes it directly.
   @visibleForTesting
-  void deliverHolderForTesting(String type, int id, Object value) => _tellHolder(type, id, value);
+  void deliverHolderForTesting(String type, int id, Object value) => _tellHolder(WidgetKey.typeOf(type), id, value);
 
   /// What [holder] refers to now, for a holder that is not a registered value itself.
   ///
@@ -498,43 +624,57 @@ class VRegistry {
   /// No write stamp, and none is wanted. The stamp exists to tell a disposal from a widget that
   /// moved, and a shell cannot move: it belongs to one display for its whole life, so a shell the
   /// display stops carrying is a shell that closed.
-  void holds(String holder, Iterable<VWidget> values) {
-    final after = values.map(channelOf).toSet();
-    final before = _holdings[holder] ?? const <String>{};
-    _holdings[holder] = after;
-    _applyReferenceChange(holder, before, after, null);
+  void holdsAt(int holderKey, Iterable<VWidget> values) {
+    final after = {for (final value in values) keyOf(value)};
+    final before = _holdings[holderKey] ?? const <int>{};
+    _holdings[holderKey] = after;
+    _applyReferenceChange(holderKey, before, after, null);
   }
 
-  /// Notifies whenever any of [channels] is told something that could have changed its bounds.
+  /// [holdsAt], with the holder named as a channel: for tests.
+  @visibleForTesting
+  void holds(String holder, Iterable<VWidget> values) => holdsAt(WidgetKey.ofChannel(holder), values);
+
+  /// Notifies whenever any of [keys] is told something that could have changed its bounds.
   ///
   /// Lets a layout that depends on its children's bounds re-run. Bounds only: a layout pass
   /// repaints up to the nearest repaint boundary.
-  Listenable boundsChangesOn(Iterable<String> channels) {
+  Listenable boundsChangesAt(Iterable<int> keys) {
     final ticks = <Listenable>[
-      for (final channel in channels) _boundsTicks.putIfAbsent(channel, _ChannelTick.new),
+      for (final key in keys) _boundsTicks.putIfAbsent(key, _ChannelTick.new),
     ];
     return Listenable.merge(ticks);
   }
 
+  /// [boundsChangesAt], by channel names: for tests.
+  @visibleForTesting
+  Listenable boundsChangesOn(Iterable<String> channels) => boundsChangesAt(channels.map(WidgetKey.ofChannel));
+
   /// Asks to be rebuilt when [channel]'s value changes. Safe to call for a widget that has not
   /// arrived yet — the interest is recorded and honoured once it does.
-  void watch(String channel, void Function(VChange change) listener) {
-    _nodes
-        .putIfAbsent(channel, () => VNode(VWidget.empty(), awaitingValue: true))
-        .listeners
-        .add(listener);
+  void watchAt(int key, void Function(VChange change) listener) {
+    _nodes.putIfAbsent(key, () => VNode(VWidget.empty(), awaitingValue: true)).listen(listener);
   }
 
-  void unwatch(String channel, void Function(VChange change) listener) {
-    final node = _nodes[channel];
+  /// [watchAt], by channel name: for tests.
+  @visibleForTesting
+  void watch(String channel, void Function(VChange change) listener) => watchAt(WidgetKey.ofChannel(channel), listener);
+
+  /// [unwatchAt], by channel name: for tests.
+  @visibleForTesting
+  void unwatch(String channel, void Function(VChange change) listener) =>
+      unwatchAt(WidgetKey.ofChannel(channel), listener);
+
+  void unwatchAt(int key, void Function(VChange change) listener) {
+    final node = _nodes[key];
     if (node == null) return;
-    node.listeners.remove(listener);
+    node.unlisten(listener);
     // An entry that only ever existed to record the interest, and nothing is interested any more.
     // Leaving it would accumulate one empty entry per widget that was watched before it arrived.
     // One that was asked for is waiting on an answer something named it for: a widget that
     // rendered it before a move unmounting afterwards must not drop the answer on the floor.
     if (node.awaitingValue && node.listeners.isEmpty && !node.asked) {
-      _nodes.remove(channel);
+      _nodes.remove(key);
     }
   }
 
@@ -542,24 +682,30 @@ class VRegistry {
   ///
   /// Called when the widget is gone — not when it stops being rendered. That distinction is the
   /// reason this exists at all.
-  void evict(String channel) {
-    final node = _nodes.remove(channel);
+  void evictAt(int key) {
+    final node = _nodes.remove(key);
     if (node == null) return;
     // The overlay a widget is drawn on goes with the widget. Every control mounts a GC keyed by its
     // own id, whether or not anything ever draws on it, and nothing refers to that GC - so it is
     // the one value with no holder to let go of it. An item is drawn by its control, on its GC.
-    if (node.value is! VItem && node.value.swt != 'GC') evict('GC/${node.value.id}');
-    node.listeners.clear();
-    _boundsTicks.remove(channel)?.dispose();
-    deliveryGate.forget(channel);
-    // Frames held for the widget until it listened: it never will now.
-    EquoCommService.forgetHeld(channel);
+    if (node.value is! VItem && WidgetKey.typeOfKey(key) != WireType.gc) {
+      evictAt(WidgetKey.of(WireType.gc, WidgetKey.idOfKey(key)));
+    }
+    node.listeners = const [];
+    _boundsTicks.remove(key)?.dispose();
+    deliveryGate.forgetAt(key);
+    // Frames held for the widget until it could answer: it never will now.
+    if (node.value.id case final int id) EquoCommService.forgetWidgetOps(id);
   }
+
+  /// [evictAt], by channel name: for tests.
+  @visibleForTesting
+  void evict(String channel) => evictAt(WidgetKey.ofChannel(channel));
 
   /// Drops everything. For a fresh client, and between tests.
   void clear() {
-    for (final channel in _nodes.keys.toList()) {
-      evict(channel);
+    for (final key in _nodes.keys.toList()) {
+      evictAt(key);
     }
     _nodes.clear();
     _adopting.clear();
@@ -572,12 +718,12 @@ class VRegistry {
     _boundsTicks.clear();
   }
 
-  void _adoptSubtreeOf(String channel, VWidget value) {
-    if (!_adopting.add(channel)) return;
+  void _adoptSubtreeOf(VNode node, VWidget value) {
+    if (!_adopting.add(node.key)) return;
     try {
       value.adoptChildren(_adopt);
     } finally {
-      _adopting.remove(channel);
+      _adopting.remove(node.key);
     }
   }
 
@@ -589,8 +735,8 @@ class VRegistry {
   /// whole of the stale-subtree problem — and a newer one is Java re-describing the subtree, which
   /// is the newest information there is and has to be taken.
   VWidget _adopt(VWidget incoming) {
-    final channel = channelOf(incoming);
-    final node = _nodes[channel];
+    final key = keyOf(incoming);
+    final node = _nodes[key];
 
     // A name, not a description: the sender knows this widget was already delivered and has not
     // changed, so it sent only which one it is. The answer is the object already held.
@@ -610,15 +756,15 @@ class VRegistry {
       // anything: the row that renders with no text in it.
       //
       // Marked as awaiting until then, so nothing reads the empty shell as the widget's state.
-      final waiting = _nodes.putIfAbsent(channel, () => VNode(incoming, awaitingValue: true));
+      final waiting = _nodes.putIfAbsent(key, () => VNode(incoming, awaitingValue: true));
       waiting.asked = true;
-      _askUnlessItArrives(channel, incoming.id);
+      _askUnlessItArrives(key, incoming.id);
       return waiting.value;
     }
 
     if (node == null || node.awaitingValue) return register(incoming);
 
-    return _takeNewerOf(channel, node, incoming);
+    return _takeNewerOf(node, incoming);
   }
 
   /// The object to hold for [channel], given one already held and one that just turned up.
@@ -632,22 +778,22 @@ class VRegistry {
   ///
   /// One answer for both ways a widget can turn up - carried inside another's payload, or handed
   /// over by a holder registering what it carries - because it is the same question either way.
-  VWidget _takeNewerOf(String channel, VNode node, VWidget incoming) {
+  VWidget _takeNewerOf(VNode node, VWidget incoming) {
     final held = node.value;
     if (identical(held, incoming) || incoming.seq <= held.seq) return held;
-    return _fill(channel, node, incoming);
+    return _fill(node, incoming);
   }
 
   /// Copies [incoming] into the object held for [channel] and tells whoever is listening. The
   /// subtree is adopted before anyone is told, for the reason apply() gives.
-  VWidget _fill(String channel, VNode node, VWidget incoming) {
+  VWidget _fill(VNode node, VWidget incoming) {
     final held = node.value..copyFrom(incoming);
     held.seq = incoming.seq;
     node.awaitingValue = false;
-    deliveryGate.applied(channel, held.seq);
-    _adoptSubtreeOf(channel, held);
-    _reconcile(channel, node, held.seq);
-    _notify(channel, node, const VChange());
+    deliveryGate.appliedAt(node.key, held.seq);
+    _adoptSubtreeOf(node, held);
+    _reconcile(node, held.seq);
+    _notify(node, const VChange());
     return held;
   }
 
@@ -656,17 +802,17 @@ class VRegistry {
   /// A record can name a widget that a later record of the same delivery describes, so the widget
   /// can already be on its way at the moment it looks missing. Deferring by one microtask, past the
   /// rest of the delivery, is what tells the two apart.
-  void _askUnlessItArrives(String channel, int id) {
-    if (!_asking.add(channel)) return;
+  void _askUnlessItArrives(int key, int id) {
+    if (!_asking.add(key)) return;
     scheduleMicrotask(() {
-      _asking.remove(channel);
-      if (!isAwaiting(channel)) return;
+      _asking.remove(key);
+      if (!isAwaitingAt(key)) return;
       // Nothing was held for it and nothing describes it: the sender named a widget this client
       // was never given. Recovering works, but it costs a round trip and should not be reachable -
       // said out loud in debug builds so that it is noticed rather than absorbed; a release build
       // stays quiet, since the app's console is the user's.
-      if (kDebugMode) print('[delivery] unresolved reference $channel: asking for it');
-      EquoCommService.sendPayload(widgetRefreshChannel, '$id');
+      if (kDebugMode) print('[delivery] unresolved reference ${WidgetKey.describe(key)}: asking for it');
+      EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '$id');
     });
   }
 
@@ -676,22 +822,56 @@ class VRegistry {
   /// read out of what arrives — a child no longer in its parent's list, an item no longer in its
   /// table — and [writtenAt] is when the value doing the dropping was written, which is what tells
   /// a disposal apart from a reparent still in flight.
-  void _reconcile(String channel, VNode node, int writtenAt) {
+  void _reconcile(VNode node, int writtenAt) {
     final before = node.references;
-    final after = _referencesOf(node.value);
+    // Collected into a list kept for it first: nearly every change names the same widgets the value
+    // already held, and then nothing is built or compared twice.
+    _referenceCount = 0;
+    node.value.adoptChildren(_collectReference);
+    final keys = _referenceScratch;
+    final count = _referenceCount;
+    if (_sameReferences(before, keys, count)) return;
+    final after = count == 0 ? const <int>{} : {for (var i = 0; i < count; i++) keys[i]};
     node.references = after;
-    _applyReferenceChange(channel, before, after, writtenAt);
+    _applyReferenceChange(node.key, before, after, writtenAt);
   }
 
-  void _applyReferenceChange(
-      String holder, Set<String> before, Set<String> after, int? writtenAt) {
-    for (final channel in after) {
-      if (!before.contains(channel)) {
-        _addReferrer(channel, holder);
-      }
+  /// The child keys [_reconcile] collects, grown and never shrunk; [_referenceCount] are in use.
+  List<int> _referenceScratch = List<int>.filled(16, 0);
+  int _referenceCount = 0;
+
+  /// [VWidget.adoptChildren]'s callback for [_reconcile], torn off once.
+  late final VWidget Function(VWidget) _collectReference = _collectReferenceOf;
+
+  VWidget _collectReferenceOf(VWidget child) {
+    if (_referenceCount == _referenceScratch.length) {
+      _referenceScratch = List<int>.filled(_referenceCount * 2, 0)..setRange(0, _referenceCount, _referenceScratch);
     }
-    for (final channel in before) {
-      if (!after.contains(channel)) _release(holder, channel, writtenAt);
+    _referenceScratch[_referenceCount++] = keyOf(child);
+    return child;
+  }
+
+  /// Whether the first [count] of [keys] name exactly the widgets in [held], in any order and with
+  /// any repeats.
+  static bool _sameReferences(Set<int> held, List<int> keys, int count) {
+    for (var i = 0; i < count; i++) {
+      if (!held.contains(keys[i])) return false;
+    }
+    // Every key is held; the two are the same when nothing held went unnamed.
+    if (count == held.length) return true;
+    final seen = <int>{};
+    for (var i = 0; i < count; i++) {
+      seen.add(keys[i]);
+    }
+    return seen.length == held.length;
+  }
+
+  void _applyReferenceChange(int holder, Set<int> before, Set<int> after, int? writtenAt) {
+    for (final key in after) {
+      if (!before.contains(key)) _addReferrer(key, holder);
+    }
+    for (final key in before) {
+      if (!after.contains(key)) _release(holder, key, writtenAt);
     }
   }
 
@@ -700,14 +880,14 @@ class VRegistry {
   ///
   /// A widget that moves is dropped by its old parent and taken by its new one, and the two frames
   /// can arrive in either order in one run: applied in between, it is held by nothing.
-  void _release(String holder, String channel, int? writtenAt) {
-    if (!_letGo(holder, channel, writtenAt)) return;
+  void _release(int holder, int key, int? writtenAt) {
+    if (!_letGo(holder, key, writtenAt)) return;
     if (_unheld.isEmpty) EquoCommBase.whenApplied(_evictUnheld);
-    _unheld[channel] = writtenAt;
+    _unheld[key] = writtenAt;
   }
 
   /// Widgets that lost their last holder, and when the value that let go of each was written.
-  final Map<String, int?> _unheld = {};
+  final Map<int, int?> _unheld = {};
 
   void _evictUnheld() {
     final unheld = Map.of(_unheld);
@@ -715,21 +895,21 @@ class VRegistry {
     unheld.forEach(_evictIfUnheld);
   }
 
-  void _evictIfUnheld(String channel, int? writtenAt) {
-    if (_referrers.containsKey(channel)) return;
-    final node = _nodes[channel];
+  void _evictIfUnheld(int key, int? writtenAt) {
+    if (_referrers.containsKey(key)) return;
+    final node = _nodes[key];
     if (node == null || _movedSince(node, writtenAt)) return;
     final held = node.references;
-    evict(channel);
+    evictAt(key);
     for (final reference in held) {
-      if (_letGo(channel, reference, writtenAt)) _evictIfUnheld(reference, writtenAt);
+      if (_letGo(key, reference, writtenAt)) _evictIfUnheld(reference, writtenAt);
     }
   }
 
-  /// Takes [holder] off [channel]'s holders; whether that left [channel] held by nothing.
-  bool _letGo(String holder, String channel, int? writtenAt) {
-    if (_removeReferrer(channel, holder)) return false;
-    final node = _nodes[channel];
+  /// Takes [holder] off [key]'s holders; whether that left [key] held by nothing.
+  bool _letGo(int holder, int key, int? writtenAt) {
+    if (_removeReferrer(key, holder)) return false;
+    final node = _nodes[key];
     return node != null && !_movedSince(node, writtenAt);
   }
 
@@ -739,43 +919,28 @@ class VRegistry {
   static bool _movedSince(VNode node, int? writtenAt) =>
       writtenAt != null && !node.awaitingValue && node.value.seq > writtenAt;
 
-  /// The channels a value refers to directly. Handed the identity of each widget it holds, which
-  /// is all this needs — the values themselves are already the ones the registry holds.
-  Set<String> _referencesOf(VWidget value) {
-    Set<String>? channels;
-    value.adoptChildren((child) {
-      (channels ??= <String>{}).add(_heldChannelOf(child));
-      return child;
-    });
-    return channels ?? const <String>{};
+  void _notify(VNode node, VChange change) {
+    if (change.touchesBounds) _boundsTicks[node.key]?.tick();
+    // A listener may unwatch itself while being told, and a widget disposing in response to an
+    // update is an ordinary thing rather than an error: the list is replaced, not changed.
+    final listeners = node.listeners;
+    for (var i = 0; i < listeners.length; i++) {
+      listeners[i](change);
+    }
+    if (node.listeners.isEmpty) _notifyUnheard(node);
   }
 
-  /// [child]'s channel, as the string its entry is held under when it is the held value: that one
-  /// is already hashed, and compares by identity, where a new string would be built and hashed.
-  String _heldChannelOf(VWidget child) {
-    final held = _nodes.indexedOf(child.id);
-    if (held != null && identical(held.node.value, child)) return held.channel;
-    return channelOf(child);
-  }
-
-  void _notify(String channel, VNode node, VChange change) {
-    if (change.touches(WireKey.k_Control_bounds) || change.touches(WireKey.k_Caret_bounds)) {
-      _boundsTicks[channel]?.tick();
-    }
-    // Copied before iterating: a listener may unwatch itself while being told, and a widget
-    // disposing in response to an update is an ordinary thing rather than an error.
-    if (node.listeners.isNotEmpty) {
-      for (final listener in List<void Function(VChange)>.of(node.listeners)) {
-        listener(change);
-      }
-    }
-    if (node.listeners.isEmpty) {
-      final inFrame = _heldChangedInFrame;
-      if (inFrame != null) {
-        inFrame.add(channel);
-      } else {
-        _notifyHolders(channel, {channel});
-      }
+  /// [_notify] for [node], which nobody listens to: its holders hear, once the frame is in.
+  void _notifyUnheard(VNode node) {
+    final inFrame = _heldChangedInFrame;
+    if (inFrame != null) {
+      if (node.changedInFrame == _frame) return;
+      node.changedInFrame = _frame;
+      inFrame.add(node);
+    } else {
+      final pass = ++_pass;
+      node.toldInPass = pass;
+      _notifyHolders(node.key, pass);
     }
   }
 
@@ -789,18 +954,31 @@ class VRegistry {
   ///
   /// This is what Java used to arrange by dirtying the ancestor, which re-sent the whole table to
   /// redraw one cell.
-  void _notifyHolders(String channel, Set<String> seen) {
-    for (final holder in _referrersOf(channel)) {
-      if (!seen.add(holder)) continue;
-      final node = _nodes[holder];
-      if (node == null) continue;
-      // Not a bounds change: what the holder draws changed, not where the holder is.
-      for (final listener in List<void Function(VChange)>.of(node.listeners)) {
-        listener(const VChange.ofHeld());
+  void _notifyHolders(int key, int pass) {
+    final held = _referrers[key];
+    if (held == null) return;
+    // Nearly always one holder, kept as its key; several are copied, since telling one may change
+    // who holds what.
+    if (held is int) {
+      _tellReferrer(held, pass);
+    } else {
+      for (final holder in List.of(held as Set<int>)) {
+        _tellReferrer(holder, pass);
       }
-      // Still nobody: an item inside an item, or a subtree nothing is rendering yet.
-      if (node.listeners.isEmpty) _notifyHolders(holder, seen);
     }
+  }
+
+  void _tellReferrer(int holder, int pass) {
+    final node = _nodes[holder];
+    if (node == null || node.toldInPass == pass) return;
+    node.toldInPass = pass;
+    // Not a bounds change: what the holder draws changed, not where the holder is.
+    final listeners = node.listeners;
+    for (var i = 0; i < listeners.length; i++) {
+      listeners[i](const VChange.ofHeld());
+    }
+    // Still nobody: an item inside an item, or a subtree nothing is rendering yet.
+    if (node.listeners.isEmpty) _notifyHolders(holder, pass);
   }
 }
 
@@ -811,23 +989,20 @@ class _ChannelTick extends ChangeNotifier {
   void tick() => notifyListeners();
 }
 
-/// The registry's entries by channel, with an index from a widget's id to its channel: a binary frame
-/// names widgets by id alone.
-class _NodeMap extends MapBase<String, VNode> {
-  final Map<String, VNode> _map = {};
+/// The registry's entries by [WidgetKey], with an index from a widget's id to its entry: a reference
+/// in a binary frame names a widget by id alone.
+class _NodeMap {
+  final Map<int, VNode> _byKey = {};
   final Map<int, _Indexed> _byId = {};
 
-  /// Entries indexed under an id [_byId] already holds for another channel: a value the client
+  /// Entries indexed under an id [_byId] already holds for another widget: a value the client
   /// makes for itself, such as a CHECK tree item's box, takes the id of the widget it belongs to.
   final Map<int, List<_Indexed>> _sharingId = {};
 
   /// See [VRegistry.epoch].
   int epoch = 0;
 
-  String? channelOf(int id) => _byId[id]?.channel;
-
-  /// The entry a frame names by [id], with the channel it is held under: one lookup by number where
-  /// the channel would take a second by string. With [accepts], the one whose value it accepts.
+  /// The entry a frame names by [id]. With [accepts], the one whose value it accepts.
   _Indexed? indexedOf(int id, [bool Function(VWidget value)? accepts]) {
     final first = _byId[id];
     if (first == null || accepts == null || accepts(first.node.value)) return first;
@@ -837,85 +1012,94 @@ class _NodeMap extends MapBase<String, VNode> {
     return first;
   }
 
-  /// The id a channel indexes, or null. A control's GC overlay shares its control's id, and a frame
-  /// never names a GC, so GC channels are not indexed: they would shadow the control.
-  static int? _idOf(String channel) =>
-      channel.startsWith('GC/') ? null : int.tryParse(channel.substring(channel.lastIndexOf('/') + 1));
+  /// Whether [key]'s entry is indexed by id. A control's GC overlay shares its control's id, and a
+  /// frame never names a GC, so GCs are not indexed: they would shadow the control.
+  static bool _indexed(int key) => WidgetKey.typeOfKey(key) != WireType.gc;
 
-  @override
-  VNode? operator [](Object? key) => _map[key];
+  VNode? operator [](int key) => _byKey[key];
 
-  @override
-  void operator []=(String key, VNode value) {
-    _map[key] = value;
+  void operator []=(int key, VNode value) {
+    _byKey[value.key = key] = value;
     epoch++;
-    final id = _idOf(key);
-    if (id != null) _index(id, key, value);
+    if (_indexed(key)) _index(WidgetKey.idOfKey(key), key, value);
   }
 
-  /// [operator []=] for an entry whose [id] the caller has in hand, as a frame naming it does:
-  /// not parsed back out of the channel. Never a GC's, which a frame does not name.
-  void putIndexed(String key, VNode value, int id) {
-    _map[key] = value;
-    epoch++;
-    _index(id, key, value);
-  }
+  VNode putIfAbsent(int key, VNode Function() create) => this[key] ?? (this[key] = create());
 
-  void _index(int id, String key, VNode value) {
+  void _index(int id, int key, VNode value) {
     final held = _byId[id];
-    if (held == null || held.channel == key) {
+    if (held == null || held.key == key) {
       _byId[id] = _Indexed(key, value);
       return;
     }
     final sharing = _sharingId[id] ??= [];
-    sharing.removeWhere((e) => e.channel == key);
+    sharing.removeWhere((e) => e.key == key);
     sharing.add(_Indexed(key, value));
   }
 
-  @override
-  VNode? remove(Object? key) {
-    final node = _map.remove(key);
-    if (node != null) epoch++;
-    if (node != null && key is String) {
-      // Indexed under its value's id, unless the entry is still waiting for its value.
-      final held = node.value.id;
-      final id = _byId[held]?.channel == key ? held : _idOf(key);
-      if (id != null) _unindex(id, key);
-    }
+  VNode? remove(int key) {
+    final node = _byKey.remove(key);
+    if (node == null) return null;
+    epoch++;
+    if (_indexed(key)) _unindex(WidgetKey.idOfKey(key), key);
     return node;
   }
 
-  void _unindex(int id, String channel) {
+  void _unindex(int id, int key) {
     final sharing = _sharingId[id];
-    if (_byId[id]?.channel == channel) {
+    if (_byId[id]?.key == key) {
       if (sharing == null || sharing.isEmpty) {
         _byId.remove(id);
       } else {
         _byId[id] = sharing.removeAt(0);
       }
     } else {
-      sharing?.removeWhere((e) => e.channel == channel);
+      sharing?.removeWhere((e) => e.key == key);
     }
     if (sharing != null && sharing.isEmpty) _sharingId.remove(id);
   }
 
-  @override
   void clear() {
-    _map.clear();
+    _byKey.clear();
     epoch++;
     _byId.clear();
     _sharingId.clear();
   }
 
-  @override
-  Iterable<String> get keys => _map.keys;
+  Iterable<int> get keys => _byKey.keys;
+
+  Iterable<VNode> get values => _byKey.values;
+}
+
+/// Nodes in the order added, kept in storage that is grown and never given back: a growable list
+/// emptied releases its storage, and filling it again reallocates at every doubling.
+class _NodeBuffer {
+  List<VNode?> _items = List<VNode?>.filled(16, null);
+  int length = 0;
+
+  bool get isEmpty => length == 0;
+
+  VNode operator [](int i) => _items[i]!;
+
+  void add(VNode node) {
+    if (length == _items.length) {
+      _items = List<VNode?>.filled(length * 2, null)..setRange(0, length, _items);
+    }
+    _items[length++] = node;
+  }
+
+  /// Empties it, letting go of the nodes it held.
+  void clear() {
+    _items.fillRange(0, length, null);
+    length = 0;
+  }
 }
 
 /// An entry of [_NodeMap] as its id index holds it.
 class _Indexed {
-  _Indexed(this.channel, this.node);
+  _Indexed(this.key, this.node);
 
-  final String channel;
+  final int key;
   final VNode node;
 }
 
@@ -928,5 +1112,27 @@ class VShellPopups implements WireReadable {
     if (key != WireKey.k_Display_popups) return false;
     popups = r.refs<VMenu>();
     return true;
+  }
+}
+
+/// What [VRegistry.applyWire] reads a flush's record headers into: kept, and grown for a longer
+/// flush.
+class _WireScratch {
+  List<int> kinds = const [], starts = const [], ends = const [], ids = const [];
+  List<int> stamps = const [], bases = const [];
+  List<int> types = const [];
+  List<bool> fresh = const [];
+
+  void ensure(int count) {
+    if (count <= kinds.length) return;
+    final capacity = count < 16 ? 16 : count * 2;
+    kinds = List.filled(capacity, 0);
+    starts = List.filled(capacity, 0);
+    ends = List.filled(capacity, 0);
+    ids = List.filled(capacity, 0);
+    stamps = List.filled(capacity, 0);
+    bases = List.filled(capacity, 0);
+    types = List.filled(capacity, 0);
+    fresh = List.filled(capacity, false);
   }
 }

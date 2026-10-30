@@ -43,7 +43,7 @@ import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
-    extends WidgetSwtState<T, V> {
+    extends WidgetSwtState<T, V> implements HeldMove {
 
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
   int _lastButton = 1;
@@ -56,7 +56,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   int _clickCount = 0;
   Duration? _lastClickStamp;
   Offset? _lastClickPosition;
-  int _lastMouseMoveMs = 0;
+  /// On [_clock]; far enough back that the first move is never held.
+  int _lastMouseMoveMs = -(1 << 30);
 
   Offset? _lastPointerCrossing;
   int _lastDragMoveMs = 0;
@@ -317,18 +318,41 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
     HoverExclusivityArbiter.instance.flushPending();
     event.stateMask = moveStateMask(buttons);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final wait = _lastMouseMoveMs + _mouseMoveThrottleMs - now;
+    final wait = _lastMouseMoveMs + _mouseMoveThrottleMs - _clock.elapsedMilliseconds;
     if (wait > 0) {
       // The pointer may stop here: the move is sent when the window ends unless another replaces it.
-      PendingMove.hold(this, () => _sendMouseMove(state, event), Duration(milliseconds: wait));
+      _heldState = state;
+      _heldEvent = event;
+      PendingMove.hold(this, wait);
       return;
     }
     _sendMouseMove(state, event);
   }
 
+  /// The move [PendingMove] holds for this control.
+  V? _heldState;
+  VEvent? _heldEvent;
+
+  @override
+  void sendHeldMove() {
+    final state = _heldState, event = _heldEvent;
+    _heldState = null;
+    _heldEvent = null;
+    if (state != null && event != null) _sendMouseMove(state, event);
+  }
+
+  /// A move's position, reused from move to move: it is written to the wire as it is sent, and a
+  /// held one is only ever replaced by this control's next.
+  VEvent moveEvent(int x, int y) => (_moveEvent ??= VEvent())
+    ..x = x
+    ..y = y;
+  VEvent? _moveEvent;
+
+  /// What the throttle measures moves by: monotonic, and read without making a date.
+  static final Stopwatch _clock = Stopwatch()..start();
+
   void _sendMouseMove(V state, VEvent event) {
-    _lastMouseMoveMs = DateTime.now().millisecondsSinceEpoch;
+    _lastMouseMoveMs = _clock.elapsedMilliseconds;
     widget.sendMouseMoveMouseMove(state, event);
     // After the send, not around it: this times the round trip the move starts.
     RoundTripTiming.trace();
@@ -382,12 +406,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void dispose() {
     _hoverTimer?.cancel();
     PendingMove.drop(this);
+    _heldState = null;
+    _heldEvent = null;
     _removeTooltip();
     _unwatchFocusRequests();
     if (_focusClaimed) {
       _focusClaimed = false;
       FocusRequests.instance.giveBack(state.id);
     }
+    DragStartVeto.forget(state.id);
     FocusRequests.instance.unregister(state.id, context);
     HoverExclusivityArbiter.instance.unregister(this);
     _mounted.remove(this);
@@ -511,7 +538,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _lastClickPosition != null &&
       swtButtonOf(e.buttons) == _lastButton &&
       e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
-      (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
+      (e.position - _lastClickPosition!).distance <= doubleClickSlop;
 
   /// Records the SWT button/count pair a pointer-down carries, chaining consecutive same-button
   /// downs inside the double-click window. Both interaction chromes funnel through here — [wrap]
@@ -1003,7 +1030,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       hoverDepth,
       mouseCursor,
       state.style.has(SWT.BORDER),
-      menu == null ? null : VRegistry.channelOf(menu),
+      menu == null ? null : VRegistry.keyOf(menu),
       gcOverlay,
       paintsGCOverlay,
       gcMounted,
@@ -1216,9 +1243,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       },
       onHover: (e) {
         if (pointerTakenBelow(e)) return;
-        final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
+        final event = moveEvent(e.localPosition.dx.round(), e.localPosition.dy.round());
         _removeTooltip();
         sendThrottledMouseMove(state, event, e.buttons);
         restartHover(state, event, e.position);
@@ -1327,15 +1352,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   /// Reuses the widget for the same menu: rebuilding the anchor re-lays out its overlay.
   Widget _contextMenuFor(VMenu menu) {
-    final channel = VRegistry.channelOf(menu);
+    final key = VRegistry.keyOf(menu);
     final held = _contextMenu;
-    if (held != null && held.channel == channel) return held.widget;
+    if (held != null && held.key == key) return held.widget;
     final widget = HostedContextMenu(child: MenuSwt(key: _menuKey, value: menu));
-    _contextMenu = (channel: channel, widget: widget);
+    _contextMenu = (key: key, widget: widget);
     return widget;
   }
 
-  ({String channel, Widget widget})? _contextMenu;
+  ({int key, Widget widget})? _contextMenu;
 }
 
 
@@ -1412,25 +1437,6 @@ class _PointerTooltipLayout extends SingleChildLayoutDelegate {
 }
 
 /// The border a plain control's drop target shows while a drag is over it.
-class _DropBorderPainter extends CustomPainter {
-  const _DropBorderPainter(this.hovering);
-
-  final bool hovering;
-
-  static final BoxDecoration _border = BoxDecoration(border: Border.all(color: Colors.blue, width: 2));
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (!hovering) return;
-    final painter = _border.createBoxPainter();
-    painter.paint(canvas, Offset.zero, ImageConfiguration(size: size));
-    painter.dispose();
-  }
-
-  @override
-  bool shouldRepaint(_DropBorderPainter old) => old.hovering != hovering;
-}
-
 /// The control's [Opacity]: a layer of its own only while it is see-through, so that a fade or a
 /// change of enablement updates that layer without repainting, while a control at full opacity
 /// paints into its parent's layer and many of them changing at once are not composited one by one.
@@ -1450,4 +1456,23 @@ class _RenderFadeOpacity extends RenderOpacity {
     final alpha = Color.getAlphaFromOpacity(opacity);
     return child != null && alpha > 0 && alpha < 255;
   }
+}
+
+class _DropBorderPainter extends CustomPainter {
+  const _DropBorderPainter(this.hovering);
+
+  final bool hovering;
+
+  static final BoxDecoration _border = BoxDecoration(border: Border.all(color: Colors.blue, width: 2));
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!hovering) return;
+    final painter = _border.createBoxPainter();
+    painter.paint(canvas, Offset.zero, ImageConfiguration(size: size));
+    painter.dispose();
+  }
+
+  @override
+  bool shouldRepaint(_DropBorderPainter old) => old.hovering != hovering;
 }

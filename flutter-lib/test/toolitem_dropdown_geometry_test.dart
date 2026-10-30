@@ -9,6 +9,7 @@ import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/toolbar_evolve.dart';
 import 'package:swtflutter/src/theme/theme_extensions/toolbar_theme_extension.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   const _CapturingToolItemSwt({required super.value, required this.onEvent});
@@ -16,8 +17,8 @@ class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) =>
-      onEvent(ev, payload);
+  void sendEvent(VToolItem val, int channel, VEvent? payload) =>
+      onEvent(wireChannelNames[channel]!, payload);
 }
 
 class _CapturingToolBarSwt extends ToolBarSwt<VToolBar> {

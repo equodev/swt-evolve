@@ -1336,7 +1336,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void _releaseRemoteRefOnDart(Long ref) {
         if (ref != null)
-            _sendAfterQueuedDraws("Image/releaseRemoteRef", ref);
+            _sendAfterQueuedDraws(dev.equo.swt.WireTable.CHANNEL_IMAGE_RELEASE_REMOTE_REF, ref);
     }
 
     boolean describedToClient;
@@ -1347,15 +1347,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void _forgetOnDart() {
         if (describedToClient)
-            _sendAfterQueuedDraws("Image/forget", dev.equo.swt.FlutterBridge.id(this));
+            _sendAfterQueuedDraws(dev.equo.swt.WireTable.CHANNEL_IMAGE_FORGET, dev.equo.swt.FlutterBridge.id(this));
     }
 
-    private void _sendAfterQueuedDraws(String event, long id) {
+    private void _sendAfterQueuedDraws(int channel, long id) {
         if (device instanceof Display) {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send(event, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send(0, 0, channel, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
             }
         }
     }

@@ -8,18 +8,16 @@ import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/tracker_session.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'support/channels.dart' as channels;
 
 void _deliver(String actionId, Map<String, dynamic> body) {
-  final actionBytes = utf8.encode(actionId);
   final bodyBytes = TaggedValues.encode(body);
-  final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, bodyBytes);
+  final frame = channels.frame(actionId, bodyBytes);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 
@@ -127,7 +125,7 @@ void main() {
     setUp(() {
       sent = [];
       TrackerSession.sendForTesting =
-          (id, action, event) => sent.add('$action ${event.x},${event.y}');
+          (id, action, event) => sent.add('${wireChannelNames[action]} ${event.x},${event.y}');
     });
 
     tearDown(() => TrackerSession.sendForTesting = null);

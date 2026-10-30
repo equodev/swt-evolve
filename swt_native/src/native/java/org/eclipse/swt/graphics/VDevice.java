@@ -1,7 +1,6 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import java.util.ArrayList;
 
 public class VDevice implements dev.equo.swt.WireObject {
 
@@ -26,10 +25,16 @@ public class VDevice implements dev.equo.swt.WireObject {
         FontData[] values = ((DartDevice) impl).fontList;
         if (values == null)
             return null;
-        ArrayList<FontData> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (FontData v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new FontData[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        FontData[] result = new FontData[kept];
+        kept = 0;
+        for (FontData v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFontList(FontData[] value) {
@@ -54,12 +59,12 @@ public class VDevice implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 632;
+        return 28;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(629);
+        w.key(166);
         {
             FontData[] a_ = getFontList();
             if (a_ == null)
@@ -69,9 +74,9 @@ public class VDevice implements dev.equo.swt.WireObject {
                 for (FontData e_ : a_) w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
             }
         }
-        w.key(630);
+        w.key(167);
         w.write(getTracking());
-        w.key(631);
+        w.key(168);
         w.write(getWarnings());
     }
 }

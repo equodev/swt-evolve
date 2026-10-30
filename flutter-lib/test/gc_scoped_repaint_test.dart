@@ -11,6 +11,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
@@ -27,7 +28,8 @@ const Rect cellBounds = Rect.fromLTWH(100, 0, 100, 40);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
+  void deliver(String actionId, Map<String, dynamic> payload) =>
+      receive(actionId, actionId.endsWith('/gcDispose') ? gcDisposeOf(payload) : tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 20; i++) {

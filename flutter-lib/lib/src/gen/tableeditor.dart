@@ -45,10 +45,10 @@ class VTableEditor extends VControlEditor {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 173: // column
+      case 562: // column
         column = r.int32();
         return true;
-      case 174: // item
+      case 563: // item
         item = r.ref<VTableItem>();
         return true;
       default:
@@ -61,16 +61,14 @@ class VTableEditor extends VControlEditor {
     super.writeWire(w);
     {
       final v_ = column;
-      if (v_ != null && w.wants(173)) {
-        w.key(173);
-        w.int32(v_);
+      if (v_ != null) {
+        w.keyInt32(562, v_);
       }
     }
     {
       final v_ = item;
-      if (v_ != null && w.wants(174)) {
-        w.key(174);
-        w.ref(v_.id);
+      if (v_ != null) {
+        w.keyRef(563, v_.id);
       }
     }
   }
@@ -78,8 +76,8 @@ class VTableEditor extends VControlEditor {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(173, column);
-    visit(174, item);
+    visit(562, column);
+    visit(563, item);
   }
 
   @override

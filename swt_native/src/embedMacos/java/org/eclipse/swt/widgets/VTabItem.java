@@ -31,9 +31,9 @@ public class VTabItem extends VItem {
         ((DartTabItem) impl).toolTipText = value;
     }
 
-    public static final int CONTROL = 279;
+    public static final int CONTROL = 544;
 
-    public static final int TOOL_TIP_TEXT = 280;
+    public static final int TOOL_TIP_TEXT = 545;
 
     @Override
     public String wireName(int key) {
@@ -49,10 +49,10 @@ public class VTabItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 279:
+            case 544:
                 w.ref(getControl());
                 return true;
-            case 280:
+            case 545:
                 w.write(getToolTipText());
                 return true;
         }
@@ -62,23 +62,23 @@ public class VTabItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 279:
+            case 544:
                 {
                     Control v_ = getControl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(279);
+                    w.key(544);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 280:
+            case 545:
                 {
                     String v_ = getToolTipText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(280);
+                    w.key(545);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -86,7 +86,7 @@ public class VTabItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 279, 280 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 544, 545 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

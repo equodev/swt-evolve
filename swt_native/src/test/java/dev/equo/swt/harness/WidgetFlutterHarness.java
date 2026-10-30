@@ -66,7 +66,7 @@ public class WidgetFlutterHarness extends FlutterHarness {
     /** Register the generic query + frame-sync handlers. Subclasses may override to add more. */
     protected void registerCommHandlers() {
         // Query-response handler (persistent). The far side replies with the live state by number.
-        comm().on(Q_RESPONSE, byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm(), Q_RESPONSE, byte[].class, bytes -> {
             if (bytes == null) return;
             Map<String, Object> resp = new java.util.HashMap<>(decode(bytes));
             resp.put("state", WireFrames.named(resp.get("state")));
@@ -76,7 +76,7 @@ public class WidgetFlutterHarness extends FlutterHarness {
         });
         // Post-frame ack: completes the future for the matching syncId once Flutter has built +
         // painted the frame requested by flush() (see test_harness.dart).
-        comm().on(FRAME_SYNCED, byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm(), FRAME_SYNCED, byte[].class, bytes -> {
             if (bytes == null) return;
             Map<String, Object> m = decode(bytes);
             Object sid = m == null ? null : m.get("syncId");
@@ -124,7 +124,7 @@ public class WidgetFlutterHarness extends FlutterHarness {
         int sid = syncGen.incrementAndGet();
         CompletableFuture<Void> f = new CompletableFuture<>();
         pendingSyncs.put(sid, f);
-        comm().send(FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", sid), null));
+        dev.equo.swt.harness.Channels.send(comm(), FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", sid), null));
         awaitQuiet(f, QUERY_TIMEOUT_MS);
         pendingSyncs.remove(sid);
     }
@@ -137,7 +137,7 @@ public class WidgetFlutterHarness extends FlutterHarness {
         int qid = queryGen.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pendingQueries.put(qid, f);
-        comm().send(Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", qid, "targetId", w.hashCode()), null));
+        dev.equo.swt.harness.Channels.send(comm(), Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", qid, "targetId", w.hashCode()), null));
         return awaitFuture(f, QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
     }
 

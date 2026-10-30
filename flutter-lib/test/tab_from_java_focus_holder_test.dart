@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireType;
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/traversal_veto_scope.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
@@ -41,7 +42,7 @@ VText _text(int id, int y, String text) => VText()
   ..bounds = _rect(0, y, 120, 24);
 
 Future<void> _pumpTextButtonText(WidgetTester tester) async {
-  final gate = VetoGate('traverse')..attach('Display', 950);
+  final gate = VetoGate.traverse()..attach(WireType.display, 950);
   addTearDown(gate.detach);
   await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
@@ -106,7 +107,7 @@ void main() {
     expect(_textNode(tester, 'first').hasFocus, isFalse,
         reason: 'the client was never asked to focus the field');
 
-    receiveTagged(FocusRequests.holderChannel, {'id': _firstId});
+    receiveTagged('swt.evolve.focusHolder', {'id': _firstId});
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -118,7 +119,7 @@ void main() {
 
   testWidgets('Shift+Tab goes back from the control Java focused', (tester) async {
     await _pumpTextButtonText(tester);
-    receiveTagged(FocusRequests.holderChannel, {'id': _secondId});
+    receiveTagged('swt.evolve.focusHolder', {'id': _secondId});
     await tester.pump();
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -131,11 +132,11 @@ void main() {
 
   testWidgets('a field the client already focused traverses from where it is', (tester) async {
     await _pumpTextButtonText(tester);
-    receiveTagged(FocusRequests.holderChannel, {'id': _firstId});
+    receiveTagged('swt.evolve.focusHolder', {'id': _firstId});
     _textNode(tester, 'second').requestFocus();
     await tester.pump();
     // The client's own move reaches Java and comes back as the new holder.
-    receiveTagged(FocusRequests.holderChannel, {'id': _secondId});
+    receiveTagged('swt.evolve.focusHolder', {'id': _secondId});
     await tester.pump();
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -148,7 +149,7 @@ void main() {
 
   testWidgets('a focus the client holds on another control is left where it is', (tester) async {
     await _pumpTextButtonText(tester);
-    receiveTagged(FocusRequests.holderChannel, {'id': _firstId});
+    receiveTagged('swt.evolve.focusHolder', {'id': _firstId});
     _textNode(tester, 'second').requestFocus();
     await tester.pump();
 

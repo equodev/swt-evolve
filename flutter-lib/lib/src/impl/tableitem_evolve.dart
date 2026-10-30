@@ -27,6 +27,7 @@ import 'utils/dnd_session.dart' show ActiveDragTracker;
 import 'utils/cached_text.dart';
 import 'utils/text_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
+import '../gen/widgets.dart' show WireChannel;
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
@@ -268,7 +269,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         e.segments = [rowIndex];
         _context!.parentTable.sendEvent(
           _context!.parentTableValue,
-          "Mouse/MouseDown",
+          WireChannel.mouseMouseDown,
           e,
         );
       }
@@ -280,7 +281,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       sendMouseDown(button, 1, globalPosition);
       if (enabled && _context?.tableImpl != null) {
         MenuDetectGate.withhold(
-          _context!.parentTableValue.swt,
+          _context!.parentTableValue.wireType,
           _context!.parentTableValue.id,
           () => _context!.tableImpl!.openContextMenu(globalPosition),
         );
@@ -301,7 +302,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         e.button = button;
         _context!.parentTable.sendEvent(
           _context!.parentTableValue,
-          "Mouse/MouseDoubleClick",
+          WireChannel.mouseMouseDoubleClick,
           e,
         );
         _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);

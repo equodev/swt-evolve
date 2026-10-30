@@ -140,7 +140,7 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
                 .node("imageData").isObject()
                 .containsEntry("width", 12)
                 .containsEntry("height", 12);
-        verify(comm, never()).send(anyString(), any(byte[].class));
+        verify(comm, never()).send(anyInt(), anyLong(), anyInt(), any(byte[].class));
     }
 
     @Test
