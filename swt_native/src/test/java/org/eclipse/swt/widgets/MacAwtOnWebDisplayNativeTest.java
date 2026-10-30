@@ -2,16 +2,7 @@ package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import org.eclipse.swt.internal.cocoa.NSApplication;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -22,16 +13,18 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
  * application that loads AWT gets the first; the web Display has to answer the same, or AWT keeps
  * the main thread and the Display thread never gets it back.
  *
- * <p>Each scenario runs in a child JVM started with {@code -XstartOnFirstThread}, so the Display and
- * AWT share the main thread the way an application's do.
+ * <p>Each scenario runs in a {@link MacChildJvm}, so the Display and AWT share the main thread the
+ * way an application's do.
  */
 @Tag("native-unit")
 @EnabledOnOs(org.junit.jupiter.api.condition.OS.MAC)
 public class MacAwtOnWebDisplayNativeTest {
 
-    private static final long TIMEOUT_MS = 20_000;
-
     private static final String RUNNING = "NSApp is running";
+
+    private static final String STOPPED_ON_DISPOSE = "NSApp stops running with the Display";
+
+    private static final String RUNNING_AGAIN = "NSApp runs again with a new Display";
 
     private static final String AWT_LOADED = "AWT loaded on the main thread";
 
@@ -39,9 +32,18 @@ public class MacAwtOnWebDisplayNativeTest {
 
     @Test
     void aWebDisplayLeavesNSAppRunning() throws Exception {
-        assertThat(runProbe(IsRunningProbe.class))
+        assertThat(MacChildJvm.run(IsRunningProbe.class))
                 .as("the child's output")
                 .contains(RUNNING);
+    }
+
+    /** As native SWT's: NSApp reports running only while a Display is alive. */
+    @Test
+    void nsAppStopsRunningWithTheLastWebDisplay() throws Exception {
+        assertThat(MacChildJvm.run(DisposeProbe.class))
+                .as("the child's output")
+                .contains(STOPPED_ON_DISPOSE)
+                .contains(RUNNING_AGAIN);
     }
 
     /**
@@ -50,73 +52,50 @@ public class MacAwtOnWebDisplayNativeTest {
      */
     @Test
     void aWebDisplayKeepsTheMainThreadAfterAwtLoadsOnIt() throws Exception {
-        assertThat(runProbe(AwtProbe.class))
+        assertThat(MacChildJvm.run(AwtProbe.class, "-Djava.awt.headless=false"))
                 .as("the child's output")
                 .contains(AWT_LOADED)
                 .contains(DISPATCHED);
     }
 
-    /** Runs {@code probe}'s main in a child JVM on a web Display, and returns everything it printed. */
-    private static String runProbe(Class<?> probe) throws Exception {
-        try {
-            NSApplication.sharedApplication();
-        } catch (Throwable notAvailable) {
-            Assumptions.abort("no native SWT library on this runner: " + notAvailable);
-        }
-
-        Path log = Files.createTempFile("awt-web-display", ".log");
-        try {
-            List<String> command = new ArrayList<>();
-            command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
-            command.add("-XstartOnFirstThread");
-            command.add("-Djava.awt.headless=false");
-            command.add("-Ddev.equo.swt.mode=web");
-            command.add("-Dequo.swt.browser=none");
-            command.add("-Ddev.equo.swt.crashReport.disabled=true");
-            command.add("-cp");
-            command.add(System.getProperty("java.class.path"));
-            command.add(probe.getName());
-            Process child = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile()).start();
-            if (!child.waitFor(TIMEOUT_MS + 30_000, TimeUnit.MILLISECONDS))
-                child.destroyForcibly().waitFor();
-
-            return new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
-        } finally {
-            Files.deleteIfExists(log);
-        }
-    }
-
-    /** Ends the child after twice {@link #TIMEOUT_MS} with {@code message}, whatever the main thread is doing. */
+    /** Ends the child after twice the timeout with {@code message}, whatever the main thread is doing. */
     private static void haltAfterTimeout(String message) {
         Thread watchdog = new Thread(() -> {
             try {
-                Thread.sleep(2 * TIMEOUT_MS);
+                Thread.sleep(2 * MacChildJvm.TIMEOUT_MS);
             } catch (InterruptedException e) {
                 return;
             }
-            System.out.println(message);
-            System.out.flush();
-            Runtime.getRuntime().halt(0);
+            MacChildJvm.exitWith(message);
         });
         watchdog.setDaemon(true);
         watchdog.start();
+    }
+
+    private static boolean running() {
+        return NSApplication.sharedApplication().isRunning();
     }
 
     public static final class IsRunningProbe {
 
         public static void main(String[] args) {
             new Display();
-            boolean running = NSApplication.sharedApplication().isRunning();
-            System.out.println(running ? RUNNING : "NSApp is not running");
-            System.out.flush();
-            Runtime.getRuntime().halt(0);
+            MacChildJvm.exitWith(running() ? RUNNING : "NSApp is not running");
+        }
+    }
+
+    public static final class DisposeProbe {
+
+        public static void main(String[] args) {
+            new Display().dispose();
+            System.out.println(running() ? "NSApp still runs after the Display is disposed" : STOPPED_ON_DISPOSE);
+            new Display();
+            MacChildJvm.exitWith(running() ? RUNNING_AGAIN : "NSApp does not run with a new Display");
         }
     }
 
     /** What an application that loads AWT on the Display thread does, then its event loop. */
     public static final class AwtProbe {
-
-        private static volatile boolean dispatched;
 
         public static void main(String[] args) throws Exception {
             haltAfterTimeout("the main thread never came back from AWT");
@@ -127,17 +106,8 @@ public class MacAwtOnWebDisplayNativeTest {
             System.out.println(AWT_LOADED);
             System.out.flush();
 
-            Thread poster = new Thread(() -> display.asyncExec(() -> dispatched = true));
-            poster.setDaemon(true);
-            poster.start();
-            long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-            while (!dispatched && System.currentTimeMillis() < deadline) {
-                if (!display.readAndDispatch())
-                    display.sleep();
-            }
-            System.out.println(dispatched ? DISPATCHED : "the Display thread never dispatched after AWT");
-            System.out.flush();
-            Runtime.getRuntime().halt(0);
+            MacChildJvm.exitWith(MacChildJvm.dispatchesOffThreadWork(display)
+                    ? DISPATCHED : "the Display thread never dispatched after AWT");
         }
     }
 }
